@@ -440,6 +440,83 @@ public class CellFormatTests
         }
     }
 
+    [Fact] // ADR-0071, case 14-14: Inside over whole rows sets every vertical side, the left of column A and the right of column XFD included, and the line between the rows, recorded on the rows as Excel's file records it: row 3 left, right and bottom, row 4 left, right and top
+    public void Inside_over_whole_rows_sets_every_vertical_side_case_14_14()
+    {
+        var sheet = NewSheet();
+
+        var step = Set(sheet, new CellFormatChange { Borders = BorderChange.Inside(Thin) }, "3:4");
+
+        var document = sheet.ToDocument();
+        Assert.Empty(document.Cells);
+        Assert.Equal([2, 3], document.Rows.Select(r => r.First));
+        Assert.Equal(new CellBorders(Bottom: Thin, Left: Thin, Right: Thin), document.Rows[0].Borders);
+        Assert.Equal(new CellBorders(Top: Thin, Left: Thin, Right: Thin), document.Rows[1].Borders);
+        Assert.Equal(new CellBorders(Bottom: Thin, Left: Thin, Right: Thin), sheet.GetCellFormat(At("A3")).Borders);
+        Assert.Equal(new CellBorders(Top: Thin, Left: Thin, Right: Thin), sheet.GetCellFormat(At("A4")).Borders);
+        Assert.Equal(new CellBorders(Bottom: Thin, Left: Thin, Right: Thin), sheet.GetBorders(At("XFD3")));
+        Assert.Equal(new CellBorders(Top: Thin, Left: Thin, Right: Thin), sheet.GetBorders(At("C4")));
+        // The rows beside them record nothing, and show nothing of it.
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("A2")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("C5")));
+
+        // The Sheet Document round-trips it.
+        var json = document.ToJson();
+        var reopened = Sheet.Open(SheetDocument.FromJson(json));
+        Assert.Equal(json, reopened.ToDocument().ToJson());
+        foreach (var cell in new[] { "A3", "A4", "C3", "XFD4" }) Assert.Equal(sheet.GetCellFormat(At(cell)), reopened.GetCellFormat(At(cell)));
+
+        // One undo takes it back.
+        step.Undo();
+        Assert.Empty(sheet.ToDocument().Rows);
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("A3")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("A4")));
+    }
+
+    [Fact] // ADR-0071, case 14-14: over whole rows Inside vertical alone sets the left of column A too, on a cell that holds an Entry and on one that recorded a left of its own; the rows record it
+    public void Inside_vertical_over_whole_rows_reaches_column_As_own_records_case_14_14()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("A3", "1");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Left = ThickRed } }, "A4");
+
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { InsideVertical = Thin } }, "3:4");
+
+        Assert.Equal(new CellBorders(Left: Thin, Right: Thin), sheet.GetBorders(At("A3")));
+        Assert.Equal(new CellBorders(Left: Thin, Right: Thin), sheet.GetBorders(At("A4")));
+        Assert.Equal(new CellBorders(Left: Thin, Right: Thin), sheet.GetBorders(At("XFD4")));
+        var document = sheet.ToDocument();
+        Assert.Equal(["A3"], document.Cells.Select(c => c.Address).Addresses());
+        Assert.Null(document.Cells[0].Borders);
+    }
+
+    [Fact] // ADR-0071, cases 12-14 and 14-14: over whole rows a left edge the change sets is column A's left, and the inside vertical line every other vertical side, XFD's right included
+    public void A_left_edge_over_whole_rows_is_column_As_left_case_14_14()
+    {
+        var sheet = NewSheet();
+
+        Set(sheet, new CellFormatChange { Borders = BorderChange.Outline(ThickRed) with { InsideVertical = Thin } }, "3:3");
+
+        Assert.Equal(new CellBorders(ThickRed, ThickRed, ThickRed, Thin), sheet.GetBorders(At("A3")));
+        Assert.Equal(new CellBorders(ThickRed, ThickRed, Thin, Thin), sheet.GetBorders(At("B3")));
+        Assert.Equal(new CellBorders(ThickRed, ThickRed, Thin, Thin), sheet.GetBorders(At("XFD3")));
+    }
+
+    [Fact] // ADR-0071, case 14-15: Inside over the whole Sheet sets every side, the left of column A, the right of column XFD, the top of row 1 and the bottom of row 1048576 included, recorded on the columns
+    public void Inside_over_the_whole_sheet_sets_every_side_case_14_15()
+    {
+        var sheet = NewSheet();
+
+        Set(sheet, new CellFormatChange { Borders = BorderChange.Inside(Thin) }, "A:XFD");
+
+        var document = sheet.ToDocument();
+        Assert.Empty(document.Cells);
+        Assert.Empty(document.Rows);
+        var every = new CellBorders(Thin, Thin, Thin, Thin);
+        Assert.All(document.Columns, c => Assert.Equal(every, c.Borders));
+        foreach (var cell in new[] { "A1", "B1", "XFD1", "B2", "M500", "A1048576", "XFD1048576" }) Assert.Equal(every, sheet.GetBorders(At(cell)));
+    }
+
     [Fact] // ADR-0071, ADR-0050 item 15 (SH-44): a changed top or bottom side names the row across that edge as well, which shows the line; so do its undo, a paste and a fill
     public void A_changed_edge_names_the_row_across_it()
     {

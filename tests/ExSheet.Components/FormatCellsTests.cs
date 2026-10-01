@@ -550,6 +550,33 @@ public class FormatCellsTests : SheetTestContext
         Assert.True(cut.Find(".ex-format-cells-edge[data-edge=InsideVertical]").HasAttribute("disabled"));
     }
 
+    [Fact] // ADR-0071, the fourteenth run's case 14: Inside over rows 3:4 sets every vertical side, A's left and XFD's right included, and the line between the rows, as one undo step
+    public async Task Inside_over_whole_rows_sets_every_vertical_side_case_14_14()
+    {
+        var cut = RenderSheet();
+        await OpenAsync(cut, "3:4");
+        await ShowTabAsync(cut, "Border");
+        await cut.FindAll(".ex-format-cells-preset").Single(b => b.TextContent == "Inside").ClickAsync(new MouseEventArgs());
+
+        await OkAsync(cut);
+
+        Assert.Equal(new CellBorders(Bottom: Thin, Left: Thin, Right: Thin), FormatAt(cut, "A3").Borders);
+        Assert.Equal(new CellBorders(Top: Thin, Left: Thin, Right: Thin), FormatAt(cut, "A4").Borders);
+        Assert.Equal(new CellBorders(Top: Thin, Left: Thin, Right: Thin), FormatAt(cut, "XFD4").Borders);
+        Assert.Equal(CellBorders.None, FormatAt(cut, "A5").Borders);
+        // Recorded on the rows, as Excel's file records it: row 3 left, right and bottom, row 4 left, right and top.
+        var document = cut.Instance.ToDocument();
+        Assert.Empty(document.Cells);
+        Assert.Equal([2, 3], document.Rows.Select(r => r.First));
+        Assert.Equal(new CellBorders(Bottom: Thin, Left: Thin, Right: Thin), document.Rows[0].Borders);
+        Assert.Equal(new CellBorders(Top: Thin, Left: Thin, Right: Thin), document.Rows[1].Borders);
+
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.Equal(CellBorders.None, FormatAt(cut, "A3").Borders);
+        Assert.Equal(CellBorders.None, FormatAt(cut, "A4").Borders);
+        Assert.False(cut.Instance.CanUndo);
+    }
+
     [Fact] // ADR-0071 / SH-45: an edge's button sets the chosen style and colour on that edge of the cell
     public async Task An_edge_button_sets_the_chosen_line()
     {

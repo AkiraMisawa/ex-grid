@@ -5,8 +5,10 @@ namespace ExSheet;
 
 /// <summary>
 /// The columns a number widens, as Excel's do: a number or date typed into a column that does not
-/// hold it (ADR-0047, second round; SH-20), and the numbers a Number Format is set on that it no
-/// longer fits — a formatting key, Format Cells' OK, <c>SetCellFormatAsync</c> (ADR-0071, case 17).
+/// hold it (ADR-0047, second round; SH-20), the numbers a Number Format is set on that it no
+/// longer fits — a formatting key, Format Cells' OK, <c>SetCellFormatAsync</c> (ADR-0071, case 17)
+/// — and the numbers Ctrl+5 sets or clears strikethrough on that do not fit (the fourteenth
+/// Windows run, case 7).
 /// </summary>
 /// <remarks>
 /// A recorded width is one of three kinds (ADR-0046, 2026-09-28; SH-26). A column at the default
