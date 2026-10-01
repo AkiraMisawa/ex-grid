@@ -6,7 +6,7 @@ namespace ExGrid.MudBlazor.Tests;
 /// <summary>
 /// Roboto's character classes cover the widest glyph each holds (ADR-0016, "The estimate charges
 /// per character class"; ADR-0030: the widths are the Wrapper's metrics-bearing obligation), so a
-/// number they judge to fit is never cut. The numbers are ticket 77's measurement: Chrome 154,
+/// number they judge to fit is never cut. The numbers are ticket 82's measurement: Chrome 154,
 /// 14px, tabular digits, the Roboto the demo pages serve, each glyph the wider of itself alone and
 /// a hundred in a row. Regular is the widest at 400, 500 and 600, the weights the grid paints
 /// regular text in; bold is 700.
@@ -54,7 +54,7 @@ public class RobotoWidthTests
     public void Each_regular_class_covers_its_widest_glyph(char glyph, double measuredPx)
         => Assert.True(Roboto.WidthOf(glyph) >= measuredPx, $"'{glyph}' is {measuredPx}px and is charged {Roboto.WidthOf(glyph)}px");
 
-    [Theory] // ADR-0016 / ADR-0030 / ADR-0063: each bold class is at least its widest glyph at 700
+    [Theory] // ADR-0016 / ADR-0030 / ADR-0071: each bold class is at least its widest glyph at 700
     [InlineData('0', 8.047)]
     [InlineData('£', 8.328)]
     [InlineData('₺', 8.297)]

@@ -17,7 +17,7 @@ public static class MudExGridPresentation
     /// cell, 500 for the header, 600 for group and total rows. Each class is declared over its
     /// widest glyph at any of the three, not at the boldest alone: Roboto is a variable face,
     /// and some glyphs narrow as the weight grows — <c>/</c> is 5.781px at 400 and 5.328 at
-    /// 600 (ticket 77). A glyph's width is the wider of the glyph alone and the average of a
+    /// 600 (ticket 82). A glyph's width is the wider of the glyph alone and the average of a
     /// hundred in a row: <c>//</c> kerns, so a run alone reads <c>/</c> short. The wide
     /// class's widest is <c>%</c>, 10.344px at 600
     /// (<c>#</c> 8.625 at 400). Declared a shade over each: overshooting errs toward an early
@@ -31,7 +31,7 @@ public static class MudExGridPresentation
     /// the class holds, 8.281px at 600 (<c>₺</c> 8.188, <c>₫</c> 8.109, <c>¥</c> 7.484). Not
     /// covered: the currency signs <c>₼</c> <c>₽</c> <c>¤</c> (9.5px to 10.0px) are wider than
     /// this class and <c>₱</c> <c>₩</c> <c>₦</c> <c>₪</c> (10.406px to 11.891px) than the wide
-    /// class too, and so are capital letters such as <c>M</c> and <c>W</c> (ticket 77).
+    /// class too, and so are capital letters such as <c>M</c> and <c>W</c> (ticket 82).
     /// </summary>
     public const double RobotoDigitPx = 8.3;
 

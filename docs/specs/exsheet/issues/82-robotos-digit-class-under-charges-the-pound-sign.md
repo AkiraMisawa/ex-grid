@@ -163,7 +163,7 @@ as a web font to stand in for Linux, so that 600 matches Bold as it does there.
 - **`/appearance`'s `#appearance-bold` "Fits" column is now 99px, not 97.** It was sized for ten
   regular digits at 8.0. At 8.3, the regular digits fit it exactly and the bold ones, at 8.33, need
   99.3, so DC-58 (`appearance.spec.mjs`) still tells the two apart.
-- **ADR-0063 records Roboto's bold widths as 10.4 / 8.33 / 4.95.** The narrow one is now 5.25.
+- **ADR-0071 records Roboto's bold widths as 10.4 / 8.33 / 4.95.** The narrow one is now 5.25.
 - **ADR-0016 equates "every painted variant" with "the boldest weight the grid itself paints".**
   That does not hold for a variable face (`/` above). The widths here take the widest at every
   weight painted. `CellTextMetrics`' summary repeats the boldest-weight wording.
