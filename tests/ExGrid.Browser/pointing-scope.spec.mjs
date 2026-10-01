@@ -792,4 +792,72 @@ test.describe('/pointing?narrow', () => {
         }
         await expect(editor(sheet(page))).toBeFocused();
     });
+
+    // The column ← or → reaches from a header is scrolled into view across, and only across
+    // (ADR-0058, "What Part B of the ninth Windows run settled", decided with the user on 2026-10-01;
+    // DC-55): the grid is first scrolled down its rows, so that a vertical offset left alone can be
+    // told from one put back. Down, a column's dashes run the painted rows, which the Viewport cuts:
+    // across is what the reveal is for.
+    test('ADR-0058/DC-55/SH-35: =, a press on Id\'s header, → gives Positions[PV], and PV is brought whole into the client area across, scrollTop unchanged; ← brings Id back', async ({ page }, testInfo) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        const scroller = positions.locator('.ex-scroller');
+        const dashes = positions.locator('.ex-point-dashes');
+        const scrollOf = () => scroller.evaluate((element) => ({ top: element.scrollTop, left: element.scrollLeft }));
+
+        // Ten rows down. The grid has heard it once it no longer paints R-1.
+        await scroller.evaluate((element) => {
+            element.scrollTop = 280;
+        });
+        await expect(cell(positions, 'A1')).toHaveCount(0);
+        const { top, left } = await scrollOf();
+        expect(top, 'the grid stands down its rows').toBeGreaterThan(0);
+        expect(left).toBe(0);
+        const before = await clientAreaOf(scroller);
+        testInfo.annotations.push({ type: 'gutter', description: `${before.gutterWidth}x${before.gutterHeight} on ${process.platform}` });
+        // As in the test above: off macOS the vertical scrollbar occupies layout, or "beside the
+        // gutter" would prove nothing.
+        if (process.platform !== 'darwin') {
+            expect(before.gutterWidth, 'the vertical scrollbar occupies layout').toBeGreaterThan(0);
+        }
+        // Until the grid is scrolled right, PV runs under the vertical gutter.
+        const pvUnscrolled = await boxOf(header(positions, 'PV'));
+        expect(pvUnscrolled.x + pvUnscrolled.width, 'PV ends past the client area').toBeGreaterThan(before.right + SLACK_PX);
+
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toHaveValue('=');
+        await expectPointedAt(positions);
+        await header(positions, 'Id').click({ force: true });
+        await expect(editor(grid)).toHaveValue('=Positions[Id]');
+
+        await page.keyboard.press('ArrowRight');
+
+        await expect(editor(grid)).toHaveValue('=Positions[PV]');
+        await expect.poll(async () => (await scrollOf()).left).toBeGreaterThan(0);
+        // PV's dashes lie whole inside the client area across, their right side against the vertical
+        // gutter: the grid moved no further than it had to.
+        const client = await clientAreaOf(scroller);
+        const pv = await boxOf(dashes);
+        expect(pv.x, 'PV starts inside the client area').toBeGreaterThanOrEqual(client.left - SLACK_PX);
+        expect(pv.x + pv.width, 'PV runs under the vertical gutter').toBeLessThanOrEqual(client.right + SLACK_PX);
+        expect(Math.abs(pv.x + pv.width - client.right), 'PV ends at the vertical gutter').toBeLessThanOrEqual(SLACK_PX);
+        const pvHeader = await boxOf(header(positions, 'PV'));
+        expect(Math.abs(pvHeader.x - pv.x), 'the dashes are down PV').toBeLessThanOrEqual(SLACK_PX);
+        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
+
+        await page.keyboard.press('ArrowLeft');
+
+        await expect(editor(grid)).toHaveValue('=Positions[Id]');
+        await expect.poll(async () => (await scrollOf()).left).toBe(0);
+        const id = await boxOf(dashes);
+        const idHeader = await boxOf(header(positions, 'Id'));
+        expect(Math.abs(id.x - idHeader.x), 'the dashes are down Id').toBeLessThanOrEqual(SLACK_PX);
+        expect(id.x, 'Id starts inside the client area').toBeGreaterThanOrEqual(client.left - SLACK_PX);
+        expect(id.x + id.width, 'Id ends inside the client area').toBeLessThanOrEqual(client.right + SLACK_PX);
+        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
+        await expect(editor(grid)).toBeFocused();
+        await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        await expect(page.locator('#pointing-refused')).toHaveText('');
+    });
 });

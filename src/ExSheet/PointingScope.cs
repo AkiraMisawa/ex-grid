@@ -25,8 +25,8 @@ namespace ExSheet;
 /// keyboard leaves it, no grid is pointed at, and the edit stands. A Sheet is never pointed at. After
 /// a press on a cell, that Sheet's arrow keys point inside the grid pressed: one row up or down in its
 /// current order, or to the next column its table has. After a press on a column header, ↓ points at
-/// the column's first row, and ← and → at the next column its table has, as a column (ADR-0058, "The
-/// keyboard").</para>
+/// the column's first row, and ← and → at the next column its table has, as a column, which the grid
+/// scrolls into view across (ADR-0058, "The keyboard").</para>
 ///
 /// <para>The Scope also draws in its grids what ADR-0057 and ADR-0058 ask of them. While a Formula
 /// is edited in a Sheet of the Scope, the Linked Table columns it reads are outlined in the grids
@@ -295,9 +295,9 @@ public sealed class PointingScope
     /// has left or right, passing over the grid's columns the table does not have. From a column (Part
     /// B of the ninth Windows run, Q52): down to the column's first row, or the next column the table
     /// has left or right, as a column; up is an edge. The dashes move with it, and the grid scrolls a
-    /// cell reached into view. At an edge nothing moves. A row that has not arrived, Shift and an
-    /// arrow, and the Primary Modifier and an arrow write nothing, leave the text as it was, and the
-    /// reason is told.
+    /// cell reached into view, and a column reached into view across only (2026-10-01). At an edge
+    /// nothing moves. A row that has not arrived, Shift and an arrow, and the Primary Modifier and an
+    /// arrow write nothing, leave the text as it was, and the reason is told.
     /// </summary>
     internal async Task PointArrowAsync(IPointingSheet sheet, GridPointArrow arrow)
     {
@@ -369,8 +369,7 @@ public sealed class PointingScope
         _wrote = null;
         _dashedBeforeWrite = null;
         Dash(new Dashed(grid, sheet, dashes));
-        if (dashes.IsRow is not null)
-            await grid.RevealAsync(dashes);
+        await grid.RevealAsync(dashes);
     }
 
     /// <summary>What a column of a registered grid writes, <c>T[&lt;column&gt;]</c>, as a press on its
@@ -527,8 +526,9 @@ public sealed class PointingScope
         /// read as the table's row, or another grid column, as a column.</summary>
         public abstract Task<Step> StepFromColumnAsync(string column, GridDirection direction, Func<string, bool> isColumn);
 
-        /// <summary>Asks the grid to scroll the dashed cell into view (DC-55).</summary>
-        public abstract Task RevealAsync(PointDashes cell);
+        /// <summary>Asks the grid to scroll the dashed cell into view, or the dashed column into view
+        /// across only (DC-55).</summary>
+        public abstract Task RevealAsync(PointDashes dashes);
     }
 
     /// <summary>Where a step from a cell or a column of a registered grid landed, whatever its row
@@ -597,10 +597,8 @@ public sealed class PointingScope
         private Step Read(GridPointedStep<TRow> step)
             => new(step.Kind, step.Row is { } reached ? () => _tableRow(reached) : null, step.Column);
 
-        public override Task RevealAsync(PointDashes cell)
-        {
-            var isRow = cell.IsRow!;
-            return Declaration.RevealAsync(row => isRow(_tableRow(row)), cell.Column);
-        }
+        public override Task RevealAsync(PointDashes dashes) => dashes.IsRow is { } isRow
+            ? Declaration.RevealAsync(row => isRow(_tableRow(row)), dashes.Column)
+            : Declaration.RevealColumnAsync(dashes.Column);
     }
 }

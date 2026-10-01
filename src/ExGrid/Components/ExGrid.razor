@@ -7572,8 +7572,20 @@
         // revealed whether or not this grid has a Selection of its own (ADR-0058, DC-55).
         var target = _revealTarget;
         _revealTarget = null;
-        if (_disposed || _scrollHandle is null || (target is null && _selection.Selection.IsEmpty))
+        var across = _revealColumnAcross;
+        _revealColumnAcross = null;
+        if (_disposed || _scrollHandle is null || (target is null && across is null && _selection.Selection.IsEmpty))
             return;
+        // A column pointed at from outside is revealed across only (ADR-0058, 2026-10-01; DC-55): its
+        // body is what is dashed, and no row of it is the one pointed at, so the rows stay where they
+        // are painted, as they do when a cell's row is already in view. A pinned column, or one whole
+        // in view, answers the offset the grid already has, and nothing is written.
+        if (across is { } column)
+        {
+            if (column < _columnStyles.Geometry.Count)
+                StageScroll(_scrollTopPx, _columnStyles.Geometry.ScrollLeftToReveal(column, _scrollLeftPx));
+            return;
+        }
 
         var focus = target?.Cell ?? _selection.Selection.Focus;
         if (focus.Row >= TotalRows || focus.Column >= _columnStyles.Geometry.Count)
@@ -7627,6 +7639,15 @@
             if (extending.Range.SpansEveryColumn(extent) && !toRowStart)
                 left = _expectedScrollLeftPx;
         }
+        StageScroll(top, left);
+    }
+
+    /// <summary>
+    /// Moves the model to a reveal's offsets and sends the browser the same, from inside the render
+    /// that paints them (<see cref="StageReveal"/>): nothing when the scroller is already going there.
+    /// </summary>
+    private void StageScroll(double top, double left)
+    {
         // The no-op check compares against where the scroller is GOING TO BE — the last
         // scroll event or the last write, whichever is newer — never against the event
         // mirror alone. A previous reveal's write can still be in flight; judged against

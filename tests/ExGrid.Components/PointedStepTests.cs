@@ -14,7 +14,8 @@ namespace ExGrid.Components.Tests;
 /// by one row in its current order, or left or right to the nearest of the columns the Consumer
 /// names; no cell at an edge; a row that has not arrived answered as such. From a column (Part B of
 /// the ninth run): down to the column's first row, left or right to the nearest named column as a
-/// column, and up is an edge. Neither request moves the
+/// column, and up is an edge. Asked to, it scrolls a column into view across only, leaving the
+/// vertical offset as it is (2026-10-01). No request moves the
 /// Selection or the Focus, and the step scrolls nothing. No JavaScript is added: the module stand-in
 /// is strict, so a new call would fail these tests. 50 rows of 20px in a 350 × 200 Viewport under a
 /// 20px header, 9 rows painted; Book, Note and Amount are 100px each.
@@ -36,7 +37,8 @@ public class PointedStepTests : GridTestContext
         => new(_ => Task.CompletedTask) { IsPointedAt = pointedAt };
 
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(
-        GridPointedAt<TestRow> pointedAt, TestRow[] rows, int? total = null, Action<ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? more = null)
+        GridPointedAt<TestRow> pointedAt, TestRow[] rows, int? total = null, Action<ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? more = null,
+        int width = 350)
         => Render<ExGrid<TestRow>>(ps =>
         {
             ps.Add(g => g.Window, rows)
@@ -44,7 +46,7 @@ public class PointedStepTests : GridTestContext
               .Add(g => g.Columns, Columns())
               .Add(g => g.RowHeight, 20d)
               .Add(g => g.ViewportHeight, 200)
-              .Add(g => g.ViewportWidth, 350)
+              .Add(g => g.ViewportWidth, width)
               .Add(g => g.SelectionChanged, (GridSelection s) => _selections.Add(s))
               .Add(g => g.PointedAt, pointedAt);
             more?.Invoke(ps);
@@ -62,6 +64,13 @@ public class PointedStepTests : GridTestContext
 
     private static Task<bool> RevealAsync(IRenderedComponent<ExGrid<TestRow>> cut, GridPointedAt<TestRow> declared, TestRow row, string column)
         => cut.InvokeAsync(() => declared.RevealAsync(candidate => ReferenceEquals(candidate, row), column));
+
+    private static Task<bool> RevealColumnAsync(IRenderedComponent<ExGrid<TestRow>> cut, GridPointedAt<TestRow> declared, string column)
+        => cut.InvokeAsync(() => declared.RevealColumnAsync(column));
+
+    /// <summary>The labels of the column headers painted.</summary>
+    private static List<string> PaintedHeaders(IRenderedComponent<ExGrid<TestRow>> cut)
+        => [.. cut.FindAll(".ex-header-cell").Select(header => header.TextContent.Trim())];
 
     /// <summary>The rows painted, by their position in the whole result.</summary>
     private static List<int> PaintedRows(IRenderedComponent<ExGrid<TestRow>> cut)
@@ -297,5 +306,103 @@ public class PointedStepTests : GridTestContext
         Assert.Contains(12, PaintedRows(cut));
         Assert.DoesNotContain(0, PaintedRows(cut));
         Assert.Empty(_selections);
+    }
+
+    // A column revealed across (ADR-0058, "What Part B of the ninth Windows run settled", decided
+    // with the user on 2026-10-01; DC-55): the grid is 200px wide, so it shows two of its three
+    // columns, and it stands 100px down its rows, which the reveal leaves where they are.
+
+    [Fact] // ADR-0058 (2026-10-01) / DC-55: a column out of view to the right is scrolled whole into the client area beside the vertical gutter, across only; the Selection and the Focus do not move
+    public async Task A_column_out_of_view_to_the_right_is_scrolled_into_view_across_only()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows, width: 200);
+        // The browser reports a vertical scrollbar of 12px: the client area is 188px wide.
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(12, 0, 200, 200));
+        await ScrollToAsync(cut.Find(".ex-scroller"), 100, 0);
+        Assert.DoesNotContain("Amount", PaintedHeaders(cut));
+        var scrolls = Js.ScrolledTo.Count;
+
+        Assert.True(await RevealColumnAsync(cut, declared, "Amount"));
+
+        // Amount (200 to 300px) ends at the client area's right edge: 300 - 188.
+        Assert.Equal([(100d, 112d)], Js.ScrolledTo.Skip(scrolls));
+        Assert.Contains("Amount", PaintedHeaders(cut));
+        Assert.Empty(_selections);
+        Assert.Empty(cut.FindAll(".ex-focus, .ex-range"));
+    }
+
+    [Fact] // ADR-0058 (2026-10-01) / DC-55: a column out of view to the left is scrolled into view across only
+    public async Task A_column_out_of_view_to_the_left_is_scrolled_into_view_across_only()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows, width: 200);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 100, 100);
+        var scrolls = Js.ScrolledTo.Count;
+
+        Assert.True(await RevealColumnAsync(cut, declared, "Book"));
+
+        Assert.Equal([(100d, 0d)], Js.ScrolledTo.Skip(scrolls));
+    }
+
+    [Fact] // ADR-0058 (2026-10-01) / DC-55: a column already whole in view moves nothing, even with the grid's own Focus out of view
+    public async Task A_column_whole_in_view_moves_nothing()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration(pointedAt: false);
+        var cut = RenderGrid(declared, rows, width: 200);
+        // The grid's own Focus, on the last cell, then scrolled out of view: the reveal is the
+        // column's, never a reveal of the Focus.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("End", true, false, false, false, false));
+        await cut.InvokeAsync(() => declared.IsPointedAt = true);
+        await ScrollToAsync(cut.Find(".ex-scroller"), 100, 100);
+        var scrolls = Js.ScrolledTo.Count;
+
+        Assert.True(await RevealColumnAsync(cut, declared, "Amount"));
+        Assert.True(await RevealColumnAsync(cut, declared, "Note"));
+
+        Assert.Equal(scrolls, Js.ScrolledTo.Count);
+
+        // Book is not whole in view: it comes in across, and the Focus's row stays out of view.
+        Assert.True(await RevealColumnAsync(cut, declared, "Book"));
+        Assert.Equal([(100d, 0d)], Js.ScrolledTo.Skip(scrolls));
+    }
+
+    [Fact] // ADR-0058 (2026-10-01) / DC-55 / ADR-0004: a pinned column is whole in view wherever the grid is scrolled, and moves nothing; a column beside the pinned one comes clear of it
+    public async Task A_pinned_column_moves_nothing()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows, width: 200, more: ps => ps.Add(g => g.PinnedColumnCount, 1));
+        await ScrollToAsync(cut.Find(".ex-scroller"), 100, 100);
+        var scrolls = Js.ScrolledTo.Count;
+
+        Assert.True(await RevealColumnAsync(cut, declared, "Book"));
+
+        Assert.Equal(scrolls, Js.ScrolledTo.Count);
+
+        // Note (100 to 200px) is under the pinned Book at 100px: it comes back clear of it.
+        Assert.True(await RevealColumnAsync(cut, declared, "Note"));
+        Assert.Equal([(100d, 0d)], Js.ScrolledTo.Skip(scrolls));
+    }
+
+    [Fact] // ADR-0058 (2026-10-01) / DC-55: no column is revealed that the grid does not show, or for a declaration given no grid
+    public async Task No_column_is_revealed_that_the_grid_does_not_show()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows, width: 200);
+        var scrolls = Js.ScrolledTo.Count;
+
+        Assert.False(await RevealColumnAsync(cut, declared, "Nope"));
+        Assert.Equal(scrolls, Js.ScrolledTo.Count);
+
+        var alone = Declaration();
+        Assert.False(await alone.RevealColumnAsync("Amount"));
+        await Assert.ThrowsAsync<ArgumentException>(() => alone.RevealColumnAsync(""));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => alone.RevealColumnAsync(null!));
     }
 }
