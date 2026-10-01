@@ -379,6 +379,13 @@ nobody had asked for. What that means when writing a test:
   changing nothing, taken from the browser — no page opened — said in ExSheet's notice and in the
   page's status line, and the edit committing as typed (SH-43). A Font is not painted yet, so the
   page's line under the Sheet reads the Focus cell's Cell Format back.
+- `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0063, SH-45, DC-60;
+  tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
+  Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
+  one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
+  speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside; cells that differ showing an
+  empty Font style and No Colour (case 24); scrolling inside a small box and closing as a Cancel when
+  the box shrinks below one row; and two Sheets each with their own.
 - `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0063, SH-45;
   ticket 53) on `/sheet?chrome=mud` and `/sheets?chrome=mud`: a MudDialog at page level, nothing
   of it inside the grid, opened from the Context Menu, the page's button and Ctrl+1 with the
