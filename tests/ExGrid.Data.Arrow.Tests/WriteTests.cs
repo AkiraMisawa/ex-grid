@@ -210,6 +210,21 @@ public class WriteTests
         Assert.Equal(0, stream.Length);
     }
 
+    [Fact] // ADR-0064: an entry no row holds any more is no value, so one UTF-8 cannot carry is written with U+FFFD rather than refusing the Snapshot
+    public async Task A_dictionary_entry_no_row_holds_is_written_even_when_not_unicode()
+    {
+        var builder = new SnapshotBuilder<(long Id, string Name)>().Integer("Id", v => v.Id).Text("Name", v => v.Name).Key("Id");
+        var snapshot = builder.Build([(1, "fine"), (2, "lone \uD800 surrogate")]);
+        snapshot = snapshot.Apply(builder.Batch(changed: [(2, "mended")])).After;
+
+        var payload = await WriteAsync(snapshot);
+
+        AssertSame(snapshot, await ReadAsync(payload), sameDictionaries: false);
+        using var reader = new ArrowStreamReader(payload);
+        var entries = (StringArray)((DictionaryArray)reader.ReadNextRecordBatch()!.Column("Name")).Dictionary;
+        Assert.Equal(["fine", "lone � surrogate", "mended"], Enumerable.Range(0, entries.Length).Select(i => entries.GetString(i)));
+    }
+
     [Fact] // ADR-0064: Text is written as the Snapshot's own dictionary, its codes the indices — after Change Batches, entries no row holds included
     public async Task Text_is_written_as_the_snapshots_own_dictionary()
     {

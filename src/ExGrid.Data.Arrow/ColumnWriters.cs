@@ -100,21 +100,32 @@ internal sealed class TextWriter : ColumnWriter
         return new DictionaryArray(Type, new Int32Array(data), dictionary);
     }
 
+    /// <summary>
+    /// The Snapshot's dictionary as UTF-8, every entry at its code. Text holding a lone surrogate,
+    /// which no UTF-8 carries, is refused by the first row that holds it; an entry no row of this
+    /// version holds — left behind by a Change Batch — is written with U+FFFD for its lone
+    /// surrogates, since no value read back depends on it.
+    /// </summary>
     private static StringArray Encode(Snapshot snapshot, TextColumn column, RowOrder order)
     {
         var entries = column.Dictionary;
         var offsets = new byte[(entries.Count + 1) * 4];
         var ends = MemoryMarshal.Cast<byte, int>(offsets.AsSpan());
+        HashSet<int>? replaced = null;
         long total = 0;
         for (var code = 0; code < entries.Count; code++)
         {
+            var text = entries[code];
             try
             {
-                total += Strict.GetByteCount(entries[code]);
+                total += Strict.GetByteCount(text);
             }
             catch (EncoderFallbackException)
             {
-                throw NotUnicode(snapshot, column, order, code);
+                if (FirstRowHolding(snapshot, column, order, code) is { } row)
+                    throw new SnapshotException(row + 1L, column.Name, "the text is not valid Unicode — it holds a lone surrogate — so UTF-8 cannot carry it.");
+                (replaced ??= []).Add(code);
+                total += Encoding.UTF8.GetByteCount(text);
             }
             if (total > int.MaxValue)
                 throw new SnapshotException(null, column.Name, "the column's distinct texts come to more than the 2 GiB a utf8 dictionary holds.");
@@ -122,22 +133,24 @@ internal sealed class TextWriter : ColumnWriter
         }
         var bytes = new byte[total];
         for (var code = 0; code < entries.Count; code++)
-            Strict.GetBytes(entries[code], bytes.AsSpan(ends[code], ends[code + 1] - ends[code]));
+        {
+            var encoding = replaced is not null && replaced.Contains(code) ? Encoding.UTF8 : Strict;
+            encoding.GetBytes(entries[code], bytes.AsSpan(ends[code], ends[code + 1] - ends[code]));
+        }
         return new StringArray(entries.Count, new ArrowBuffer(offsets), new ArrowBuffer(bytes), ArrowBuffer.Empty);
     }
 
-    /// <summary>The refusal of a text holding a lone surrogate, which no UTF-8 carries: by the first row
-    /// that holds it, or by its entry when no row of this version does.</summary>
-    private static SnapshotException NotUnicode(Snapshot snapshot, TextColumn column, RowOrder order, int code)
+    /// <summary>The place in the Snapshot's order of the first row that holds <paramref name="code"/>,
+    /// or <see langword="null"/> when no row of this version does.</summary>
+    private static int? FirstRowHolding(Snapshot snapshot, TextColumn column, RowOrder order, int code)
     {
-        const string Reason = "is not valid Unicode — it holds a lone surrogate — so UTF-8 cannot carry it.";
         foreach (var run in order.Runs)
         {
             var at = snapshot.Slice(run.Slice).Codes(column).Slice(run.Offset, run.Length).IndexOf(code);
             if (at >= 0)
-                return new SnapshotException(run.Start + at + 1L, column.Name, "the text " + Reason);
+                return run.Start + at;
         }
-        return new SnapshotException(null, column.Name, string.Create(CultureInfo.InvariantCulture, $"the dictionary's entry {code} {Reason}"));
+        return null;
     }
 }
 
