@@ -73,6 +73,12 @@ internal sealed class CsvTokenizer
     private int[] lengths = new int[16];
     private byte[] flags = new byte[16];
 
+    /// <summary>Where the fields of the record last cut begin among those held.</summary>
+    private int first;
+
+    /// <summary>The fields held: those of the records appended since <see cref="Clear"/>.</summary>
+    private int held;
+
     public CsvTokenizer(byte separator)
     {
         this.separator = separator;
@@ -98,19 +104,41 @@ internal sealed class CsvTokenizer
     /// <summary>Where, in the bytes cut, the record broke RFC 4180.</summary>
     public int ErrorAt { get; private set; }
 
-    public int Start(int field) => starts[field];
+    /// <summary>Where each field held begins in the bytes cut, record after record.</summary>
+    public ReadOnlySpan<int> Starts => starts.AsSpan(0, held);
 
-    public int Length(int field) => lengths[field];
+    /// <summary>The length of each field held.</summary>
+    public ReadOnlySpan<int> Lengths => lengths.AsSpan(0, held);
 
-    public byte Flags(int field) => flags[field];
+    /// <summary>Whether each field held is quoted, and holds a doubled quote.</summary>
+    public ReadOnlySpan<byte> FieldFlags => flags.AsSpan(0, held);
+
+    public int Start(int field) => starts[first + field];
+
+    public int Length(int field) => lengths[first + field];
+
+    public byte Flags(int field) => flags[first + field];
+
+    /// <summary>Lets go of the fields held, to append the records of a new batch.</summary>
+    public void Clear() => held = 0;
 
     /// <summary>
     /// Cuts the record that begins at <paramref name="pos"/> in <paramref name="data"/>. When
     /// <paramref name="final"/>, the data ends where <paramref name="data"/> does; otherwise more may
     /// follow, and a record that reaches the end is not cut until it has. <paramref name="next"/> is
-    /// where the next record begins, when a record was cut.
+    /// where the next record begins, when a record was cut. The fields held before are let go.
     /// </summary>
     public CutResult Cut(ReadOnlySpan<byte> data, int pos, bool final, out int next)
+    {
+        held = 0;
+        return Append(data, pos, final, out next);
+    }
+
+    /// <summary>
+    /// Cuts the record that begins at <paramref name="pos"/>, as <see cref="Cut"/> does, and holds its
+    /// fields after those of the records appended before it. A record not cut leaves those as they were.
+    /// </summary>
+    public CutResult Append(ReadOnlySpan<byte> data, int pos, bool final, out int next)
     {
         next = pos;
         if (pos >= data.Length)
@@ -118,6 +146,7 @@ internal sealed class CsvTokenizer
         FieldCount = 0;
         Breaks = 0;
         Error = CsvFault.None;
+        first = held;
         // The scans below look at sixteen bytes at a time where the hardware can, and at one byte at a
         // time for the last few: the same bytes are found either way. They are written out in this
         // one method, rather than called, because a browser runs .NET in an interpreter, where a call
@@ -238,16 +267,17 @@ internal sealed class CsvTokenizer
                 p = q;
             }
 
-            if (fields == starts.Length)
+            var index = first + fields;
+            if (index == starts.Length)
                 Grow();
-            starts[fields] = start;
-            lengths[fields] = length;
-            flags[fields] = flag;
+            starts[index] = start;
+            lengths[index] = length;
+            flags[index] = flag;
             fields++;
             if (p >= end)
             {
                 next = p;
-                return Cut(fields, breaks);
+                return Done(fields, breaks);
             }
             var b = data[p];
             if (b == separator)
@@ -258,25 +288,26 @@ internal sealed class CsvTokenizer
             if (b == Lf)
             {
                 next = p + 1;
-                return Cut(fields, breaks);
+                return Done(fields, breaks);
             }
             // CR, alone or before LF.
             if (p + 1 < end)
             {
                 next = data[p + 1] == Lf ? p + 2 : p + 1;
-                return Cut(fields, breaks);
+                return Done(fields, breaks);
             }
             if (!final)
                 return CutResult.NeedMore;
             next = p + 1;
-            return Cut(fields, breaks);
+            return Done(fields, breaks);
         }
     }
 
-    private CutResult Cut(int fields, int breaks)
+    private CutResult Done(int fields, int breaks)
     {
         FieldCount = fields;
         Breaks = breaks;
+        held = first + fields;
         return CutResult.Record;
     }
 

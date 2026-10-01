@@ -123,9 +123,12 @@ internal enum ParseStatus
 }
 
 /// <summary>
-/// One load of a CSV: the header matched to the declared columns, then each record's fields read into
-/// them. It knows the record at hand — its row among the data records, from one, and the line of the
-/// file it begins on — so every refusal names them.
+/// One load of a CSV: the header matched to the declared columns, then the records read into them a
+/// batch at a time — the records cut first, then each declared column's field of every record of the
+/// batch read in one loop. It knows the line of the file each record of the batch begins on, and its
+/// row among the data records, from one, so every refusal names them. A batch is refused as the
+/// records would be one after another: at the first record, and in it the first declared column,
+/// that cannot be read.
 /// </summary>
 internal sealed class CsvRead : IFieldContext
 {
@@ -135,12 +138,12 @@ internal sealed class CsvRead : IFieldContext
     private readonly ColumnBuilder[] targets;
     private readonly CsvTokenizer tokenizer;
     private readonly int[] fieldOf;
+    private readonly long[] lines = new long[Batch];
     private FieldReader[] readers = [];
     private Dictionary<int, string>? columnAt;
     private string[]? header;
     private int expectedFields = -1;
     private bool headerPending;
-    private byte[] scratch = new byte[256];
 
     public CsvRead(CsvPlan plan, SnapshotColumnsBuilder builder)
     {
@@ -189,30 +192,92 @@ internal sealed class CsvRead : IFieldContext
     public ParseStatus Parse(ReadOnlySpan<byte> data, bool final, out int consumed)
     {
         var pos = 0;
-        for (var n = 0; n < Batch; n++)
+        consumed = 0;
+        if (headerPending)
         {
             var cut = tokenizer.Cut(data, pos, final, out var next);
             if (cut == CutResult.NeedMore)
-            {
-                consumed = pos;
                 return ParseStatus.NeedMore;
-            }
             if (cut == CutResult.End)
-            {
-                consumed = pos;
                 return ParseStatus.Done;
-            }
             if (cut == CutResult.Malformed)
                 throw Malformed(data);
-            if (headerPending)
-                MatchHeader(data);
-            else
-                Commit(data);
+            MatchHeader(data);
             Line += 1 + tokenizer.Breaks;
             pos = next;
         }
+
+        // The records first, each beside the line it begins on; a record that ends the batch short —
+        // one that breaks RFC 4180, or has as many fields as no other — is refused once the records
+        // before it are read, as it would be read after them.
+        tokenizer.Clear();
+        var records = 0;
+        var status = ParseStatus.Paused;
+        var malformed = false;
+        var miscounted = false;
+        while (records < Batch)
+        {
+            var cut = tokenizer.Append(data, pos, final, out var next);
+            if (cut == CutResult.NeedMore)
+            {
+                status = ParseStatus.NeedMore;
+                break;
+            }
+            if (cut == CutResult.End)
+            {
+                status = ParseStatus.Done;
+                break;
+            }
+            if (cut == CutResult.Malformed)
+            {
+                malformed = true;
+                break;
+            }
+            var count = tokenizer.FieldCount;
+            if (expectedFields < 0)
+                Place(count);
+            if (count != expectedFields)
+            {
+                miscounted = true;
+                break;
+            }
+            lines[records++] = Line;
+            Line += 1 + tokenizer.Breaks;
+            pos = next;
+        }
+
+        if (records > 0)
+            ReadBatch(data, records);
+        if (malformed)
+            throw Malformed(data);
+        if (miscounted)
+            throw FieldCount(tokenizer.FieldCount);
         consumed = pos;
-        return ParseStatus.Paused;
+        return status;
+    }
+
+    /// <summary>
+    /// Reads the batch's records into the columns, column by column. A column refused at a record
+    /// leaves the columns after it to read only the records before that one, so the refusal thrown is
+    /// the one a record-by-record read meets first.
+    /// </summary>
+    private void ReadBatch(ReadOnlySpan<byte> data, int records)
+    {
+        var batch = new CsvRecords(data, tokenizer, expectedFields);
+        var rows = records;
+        SnapshotException? first = null;
+        for (var c = 0; c < readers.Length; c++)
+        {
+            var read = readers[c].Read(batch, fieldOf[c], rows, out var refusal);
+            if (refusal is not null)
+            {
+                first = refusal;
+                rows = read;
+            }
+        }
+        if (first is not null)
+            throw first;
+        Rows += records;
     }
 
     /// <summary>Ends the load once the file has.</summary>
@@ -222,8 +287,12 @@ internal sealed class CsvRead : IFieldContext
             throw new SnapshotException(null, null, "The file is empty.");
     }
 
+    /// <summary>A refusal of the record at hand — the one after the last read — in <paramref name="column"/>.</summary>
     public SnapshotException Refuse(string? column, string reason)
         => new(Rows + 1L, column, string.Create(CultureInfo.InvariantCulture, $"{reason} (line {Line:N0})."));
+
+    public SnapshotException Refuse(int row, string? column, string reason)
+        => new(Rows + row + 1L, column, string.Create(CultureInfo.InvariantCulture, $"{reason} (line {lines[row]:N0})."));
 
     /// <summary>The refusal of a record longer than <see cref="CsvLoad.MaxRecordBytes"/>.</summary>
     public SnapshotException TooLong()
@@ -232,18 +301,6 @@ internal sealed class CsvRead : IFieldContext
         return headerPending
             ? new SnapshotException(null, null, string.Create(CultureInfo.InvariantCulture, $"The header {reason} (line {Line:N0})."))
             : Refuse(null, $"the record {reason}");
-    }
-
-    private void Commit(ReadOnlySpan<byte> data)
-    {
-        var count = tokenizer.FieldCount;
-        if (expectedFields < 0)
-            Place(count);
-        if (count != expectedFields)
-            throw FieldCount(count);
-        for (var c = 0; c < readers.Length; c++)
-            readers[c].Read(Field(data, fieldOf[c]));
-        Rows++;
     }
 
     /// <summary>Matches the declared columns to the header row: by position where one is declared, and
@@ -355,22 +412,21 @@ internal sealed class CsvRead : IFieldContext
         return column is null ? Refuse(null, $"in field {field + 1} of the record, {reason}") : Refuse(column, reason);
     }
 
-    /// <summary>A field's content: what lies between its quotes, with a doubled quote made single.</summary>
+    /// <summary>A header field's content: what lies between its quotes, with a doubled quote made single.</summary>
     private ReadOnlySpan<byte> Field(ReadOnlySpan<byte> data, int field)
     {
         var content = data.Slice(tokenizer.Start(field), tokenizer.Length(field));
         if ((tokenizer.Flags(field) & CsvTokenizer.Doubled) == 0)
             return content;
-        if (scratch.Length < content.Length)
-            scratch = new byte[content.Length * 2];
+        var unescaped = new byte[content.Length];
         var written = 0;
         for (var i = 0; i < content.Length; i++)
         {
-            scratch[written++] = content[i];
+            unescaped[written++] = content[i];
             if (content[i] == CsvTokenizer.Quote)
                 i++;
         }
-        return scratch.AsSpan(0, written);
+        return unescaped.AsSpan(0, written);
     }
 
     private static string Fields(int count) => count == 1 ? "1 field" : string.Create(CultureInfo.InvariantCulture, $"{count:N0} fields");
