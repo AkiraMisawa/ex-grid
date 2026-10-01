@@ -270,3 +270,9 @@ where the caret never stands at a Reference's place. At an open value list it do
 points there, closing the list. So a list takes only ↑, ↓, Tab and Escape, and ← and → do what they do
 without it: point where Point can, and move the caret elsewhere. Tab closes any list, and the grid does
 not open it again on the text Tab wrote.
+
+*(Widened by Part B of the ninth Windows run, 2026-10-01, decided with the user; ADR-0058.)* Where
+Point can go, `Home`, `End` and the Shift+arrows do the same: they close the list and do what Point
+does with them, as Excel's do in Enter mode. Elsewhere they stay the editor's. A value list opens only
+while nothing of the argument stands after the caret: with the caret before a value, Excel lists
+nothing.
