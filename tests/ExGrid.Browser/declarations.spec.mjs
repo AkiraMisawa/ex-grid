@@ -431,6 +431,9 @@ const writtenIntoTheBar = {
         await expect(editor(grid)).toHaveValue('=A1+');
         await clickBarEnd(grid);
         await expect(bar(grid)).toBeFocused();
+        // The bar shows the cell's text once the core has heard it; typeSteadily reads it first.
+        // Typing before that is the next test's.
+        await expect(bar(grid)).toHaveValue('=A1+');
         await typeSteadily(page, bar(grid), 'B1');
     },
 };
@@ -464,6 +467,37 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'D10')).toHaveText('');
         });
     }
+}
+
+// The same edit with no wait, on a circuit (ED-22, ED-29; ADR-0021, 2026-10-01). The bar's text is a
+// round trip behind the typing in the cell. Keys typed into the bar before the core had answered the
+// press went into that older text — "=" here — and the render of the cell's last input then wrote
+// "=A1+" over them: B1 was gone from the page, while the core held "=B1", which Enter would have
+// committed (found on CI, the Server host). The press is held among the keys, and the keys after it
+// are typed into the text its answer leaves.
+for (const chrome of ['builtin', 'mud']) {
+    test(`ED-22/ED-29: =A1+ typed in the cell, the Formula Bar pressed and B1 typed at once, on a 150 ms circuit, commits =A1+B1 (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'D10');
+        await setRoundTrip(150);
+        // The edit open first, so A1+ is typed by the browser into the Cell Editor and the core
+        // hears it a round trip later: keys held behind the = would be answered with the bar.
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toBeFocused();
+        await page.keyboard.type('A1+');
+        await clickBarEnd(grid);
+        await page.keyboard.type('B1');
+
+        await expect(bar(grid)).toHaveValue('=A1+B1');
+        await expect(editor(grid)).toHaveValue('=A1+B1');
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(editor(grid)).toHaveCount(0);
+        await setRoundTrip(0);
+        await pressCell(grid, 'D10');
+        await expect(bar(grid)).toHaveValue('=A1+B1');
+    });
 }
 
 // Case 7k of the eighth Windows run's Part B: =A1+B1 typed into the bar, F2, Home. Excel's F2 takes its
