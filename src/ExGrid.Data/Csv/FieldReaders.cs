@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using ExGrid.Data.Storage;
 
 namespace ExGrid.Data.Csv;
@@ -89,6 +90,9 @@ internal abstract class FieldReader
     public abstract int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal);
 
     /// <summary>A field's content: what lies between its quotes, with a doubled quote made single.</summary>
+    // The helpers each field passes through are inlined: a browser's interpreter inlines a method so
+    // marked, and a call costs it about 15 ns, a fifth of what a field costs (ticket 07).
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected ReadOnlySpan<byte> Content(in CsvRecords records, int index)
     {
         var content = records.Data.Slice(records.Starts[index], records.Lengths[index]);
@@ -96,6 +100,7 @@ internal abstract class FieldReader
     }
 
     /// <summary>Whether a field's content is a Blank: empty, or one of the column's blank texts.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected bool IsBlank(ReadOnlySpan<byte> content)
     {
         if (content.IsEmpty)
@@ -111,6 +116,7 @@ internal abstract class FieldReader
 
     /// <summary>A field's content without the ASCII spaces around it, which the kinds other than Text
     /// set aside; <paramref name="content"/> is not empty.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected static ReadOnlySpan<byte> Trimmed(ReadOnlySpan<byte> content)
         => content[0] != (byte)' ' && content[^1] != (byte)' ' ? content : CsvText.Trim(content);
 
