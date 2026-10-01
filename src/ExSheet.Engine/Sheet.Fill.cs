@@ -76,7 +76,7 @@ public sealed partial class Sheet
 
             // Position along the axis relative to the source's first cell: 0..length-1 is the
             // source; the target is length.. going forward and ..-1 going back.
-            var cells = Enumerable.Range(0, length).Select(i => ShownState(SourceAt(i))).ToArray();
+            var cells = Enumerable.Range(0, length).Select(i => CarriedState(SourceAt(i))).ToArray();
             var rule = FillRule(cells, SourceAt, copyOnly, out var refusal);
             if (refusal is not null) return (refusal, []);
             for (var k = 0; k < count; k++)

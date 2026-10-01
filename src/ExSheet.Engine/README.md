@@ -146,10 +146,12 @@ step.Undo();                                         // Entries, formats and Ref
   Reference names off is done, as in Excel, with a range cut at the edge and a Reference left
   with no cells written `#REF!`. Inserted rows take the Number Format, Alignment, Font and Fill
   of the row above — its cells' and the row's own — and inserted columns those of the column to
-  the left, as Excel's default does; Entries are never copied. Borders are not taken: the first
-  inserted row's top edge reads the line on the bottom of the row above, and no other edge of the
-  inserted rows has a line but where a column's runs through them (columns alike). Formats set on
-  rows and columns move with them, and so do column widths.
+  the left, as Excel's default does; Entries are never copied. Borders are not taken, and every
+  cell moves with its own four sides: the first inserted row's top shows the line on the bottom of
+  the row above, and a line on row 1's top moves down with row 1 (columns alike). Where a deletion
+  brings two rows together and both record a line on their edge, the upper row's is shown (the
+  left column's for columns). Formats set on rows and columns move with them, and so do column
+  widths.
 - **Column widths** are part of the Sheet Document, in characters as Excel counts them.
   A width is one of three kinds (ADR-0046, 2026-09-28): **default** (never set, not recorded),
   **widened by entry** (`SheetColumnWidthKind.WidenedByEntry`: an entry widened the column to it;
@@ -175,13 +177,18 @@ step.Undo();                                         // Entries, formats and Ref
   names on several ranges — a selection of several rectangles, whole columns and rows among them
   — as one step; every part it does not name stays as each cell has it, each Font emphasis on its
   own, and its `BorderChange` (outline, inside, each edge, none) is relative to each range, so
-  each range gets its own outline. The line between two cells is one line: an outer edge is
-  written on the range's cells and on the cells beside it, at whichever level they lie, so the
-  later setting wins from either side. An outline over whole columns sets only their left and
-  right edges, over whole rows only their top and bottom. `Sheet.GetCellFormat` answers what a
-  cell shows, and `GetNumberFormat`, `GetAlignment`, `GetFont`, `GetFill` and `GetBorders` one
-  part of it; `GetRowNumberFormat`, `GetColumnNumberFormat` and their alignment counterparts what
-  a level records. A colour (`CellColour`) is Automatic or RGB; a Fill is RGB or none; a Border
+  each range gets its own outline. Each cell records its own four sides, as Excel's files do. An
+  outer edge is recorded on the range's cells, and the cells beside it lose their record of the
+  same edge, at whichever level they lie, so the later setting wins from either side. A copy, a
+  paste, Ctrl+D, Ctrl+R and the fill handle write each target's own four sides and touch no
+  neighbour. An outline over whole columns sets their left and right edges, over whole rows their
+  top and bottom and the left of column A, and over the whole Sheet nothing. `Sheet.GetCellFormat`
+  answers what a cell shows, and `GetNumberFormat`, `GetAlignment`, `GetFont`, `GetFill` and
+  `GetBorders` one part of it. Its Borders are the edges as shown, the same from either cell:
+  where both cells record a line on an edge, the upper cell's (the left cell's) is shown, and
+  otherwise whichever records one. `GetCellFormats(range)`, what Format Cells reads, answers each
+  cell's own sides instead, as Excel's Format Cells compares them. `GetRowNumberFormat`, `GetColumnNumberFormat` and their
+  alignment counterparts answer what a level records. A colour (`CellColour`) is Automatic or RGB; a Fill is RGB or none; a Border
   is one of Excel's thirteen line styles and a colour. The per-cell forms taking addresses keep
   working.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside

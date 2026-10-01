@@ -8,7 +8,10 @@ namespace ExSheet.Engine.Tests;
 /// ADR-0063 (SH-38): Font, Fill and Borders follow every rule the Number Format and the Alignment
 /// follow — insertion and deletion move them, an inserted row or column copies the one before it
 /// but for its Borders, an ExSheet-to-ExSheet copy, Ctrl+D, Ctrl+R and the fill handle carry them,
-/// Delete keeps them, and every operation is one undo step that puts them back exactly.
+/// Delete keeps them, and every operation is one undo step that puts them back exactly. A copy
+/// writes the target's own four sides and a structural edit moves each cell with its own, and the
+/// edge two cells share shows the upper or left cell's line where both record one (the twelfth
+/// Windows run, cases 12-1 to 12-13).
 /// </summary>
 public class CellFormatCarryTests
 {
@@ -16,6 +19,8 @@ public class CellFormatCarryTests
     private static readonly CellFill Blue = CellFill.Solid(CellColour.FromRgb(0x0000FF));
     private static readonly BorderLine Thin = new(BorderLineStyle.Thin);
     private static readonly BorderLine Thick = new(BorderLineStyle.Thick);
+    private static readonly BorderLine ThickRed = new(BorderLineStyle.Thick, CellColour.FromRgb(0xFF0000));
+    private static readonly BorderLine ThinBlue = new(BorderLineStyle.Thin, CellColour.FromRgb(0x0000FF));
     private static readonly CellFont Bold = new(Bold: true);
     private static readonly CellFont Italic = new(Italic: true);
 
@@ -58,11 +63,11 @@ public class CellFormatCarryTests
         Assert.Equal(Italic, sheet.GetFont(At("D1")));
     }
 
-    [Fact] // ADR-0063 (SH-38), the eleventh Windows run, case 12: an inserted row takes the Fill of the row above and not its Borders; its top edge is the one it shares with that row, the row that moved down reads none on its top, and undo puts back both. That it takes the Font too is a reading, not observed
-    public void An_inserted_row_takes_the_fill_and_not_the_borders_case_12()
+    [Fact] // ADR-0063 (SH-38), cases 11-12 and 12-12: an inserted row takes the Fill and the Font of the row above and not its Borders; its top edge is the one it shares with that row, so it shows that row's bottom, and undo puts back both
+    public void An_inserted_row_takes_the_fill_and_not_the_borders_case_11_12()
     {
         var sheet = NewSheet();
-        // Case 12: B2 filled yellow, its top edge thin and its bottom edge thick; a row inserted at row 3.
+        // Case 11-12: B2 filled yellow, its top edge thin and its bottom edge thick; a row inserted at row 3.
         Set(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Top = Thin, Bottom = Thick } }, "B2");
         Set(sheet, new CellFormatChange { Italic = true }, "2:2");
         Assert.Equal(new CellBorders(Top: Thick), sheet.GetBorders(At("B3")));
@@ -76,7 +81,7 @@ public class CellFormatCarryTests
         Assert.Equal(CellBorders.None, sheet.GetBorders(At("B4")));
         Assert.True(sheet.GetFill(At("B4")).IsNone);
         Assert.Null(sheet.GetEntry(At("B3")));
-        // The Font is taken as the Fill is: a reading, not observed.
+        Assert.Null(Assert.Single(sheet.ToDocument().Cells, c => c.Address == At("B3")).Borders);
         Assert.Equal(Italic, sheet.GetFont(At("B3")));
         Assert.Equal(Italic, sheet.GetFont(At("C3")));
 
@@ -88,36 +93,55 @@ public class CellFormatCarryTests
         Assert.Equal(after, sheet.ToDocument().ToJson());
     }
 
-    [Fact] // ADR-0063 (SH-38), case 12: of several inserted rows only the first shares an edge with the row above, so only its top reads that row's line — a reading, not observed
-    public void Of_several_inserted_rows_only_the_first_reads_the_line_above_case_12()
+    [Fact] // ADR-0063 (SH-38), case 12-12: an inserted row takes the Font of the cell above as it takes the Fill, and the cells beside it stay plain
+    public void An_inserted_row_takes_the_font_case_12_12()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("B2", "abc");
+        var font = new CellFont(CellColour.FromRgb(0xFF0000), Bold: true, Italic: true);
+        Set(sheet, new CellFormatChange { Bold = true, Italic = true, FontColour = font.Colour, Fill = Yellow }, "B2");
+
+        sheet.InsertRows(2);
+
+        Assert.Equal(font, sheet.GetFont(At("B3")));
+        Assert.Equal(Yellow, sheet.GetFill(At("B3")));
+        Assert.Null(sheet.GetEntry(At("B3")));
+        foreach (var cell in new[] { "B4", "A3", "C3" }) Assert.Equal(CellFormat.Default, sheet.GetCellFormat(At(cell)));
+    }
+
+    [Fact] // ADR-0063 (SH-38), case 12-11: of two inserted rows the first shows the line of the row above on its top, the edges between and below them are empty, and both take the Fill
+    public void Of_two_inserted_rows_the_first_shows_the_line_above_case_12_11()
     {
         var sheet = NewSheet();
         Set(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Bottom = Thick } }, "B2");
 
-        sheet.InsertRows(2, 3);
+        sheet.InsertRows(2, 2);
 
         Assert.Equal(new CellBorders(Top: Thick), sheet.GetBorders(At("B3")));
         Assert.Equal(CellBorders.None, sheet.GetBorders(At("B4")));
         Assert.Equal(CellBorders.None, sheet.GetBorders(At("B5")));
-        Assert.Equal(CellBorders.None, sheet.GetBorders(At("B6")));
-        foreach (var cell in new[] { "B3", "B4", "B5" }) Assert.Equal(Yellow, sheet.GetFill(At(cell)));
+        foreach (var cell in new[] { "B3", "B4" }) Assert.Equal(Yellow, sheet.GetFill(At(cell)));
+        Assert.True(sheet.GetFill(At("B5")).IsNone);
     }
 
-    [Fact] // ADR-0063 (SH-38), case 12: rows inserted at the top take nothing, so the row that moved down reads no line on the top it now shares with them — a reading, not observed
-    public void Rows_inserted_at_the_top_take_no_line_case_12()
+    [Fact] // ADR-0063 (SH-38), case 12-10: a row inserted at row 1 takes nothing, and a line on row 1's top moves down with its cell, so it shows between the new row 1 and row 2
+    public void A_line_on_row_1s_top_moves_down_with_it_case_12_10()
     {
         var sheet = NewSheet();
-        Set(sheet, new CellFormatChange { Borders = BorderChange.Outline(Thin) }, "A1");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Top = Thick } }, "B1");
 
         sheet.InsertRows(0);
 
-        Assert.Equal(CellBorders.None, sheet.GetBorders(At("A1")));
-        Assert.Equal(new CellBorders(Bottom: Thin, Left: Thin, Right: Thin), sheet.GetBorders(At("A2")));
-        Assert.Equal(new CellBorders(Top: Thin), sheet.GetBorders(At("A3")));
+        Assert.Equal(new CellBorders(Bottom: Thick), sheet.GetBorders(At("B1")));
+        Assert.Equal(new CellBorders(Top: Thick), sheet.GetBorders(At("B2")));
+        var document = sheet.ToDocument();
+        Assert.Empty(document.Rows);
+        var cell = Assert.Single(document.Cells);
+        Assert.Equal((At("B2"), new CellBorders(Top: Thick)), (cell.Address, cell.Borders));
     }
 
-    [Fact] // ADR-0063 (SH-38), the eleventh Windows run, case 12: recorded on whole rows and whole columns, the edges an insertion leaves are one line each, a column's line runs on through the new row, and undo puts back both sides
-    public void An_insertion_leaves_one_line_on_each_edge_at_every_level_case_12()
+    [Fact] // ADR-0063 (SH-38), case 11-12: recorded on whole rows and whole columns, an inserted row takes no Borders, a column's line runs on through it, and its top shows the bottom of the row above; undo puts back both
+    public void An_inserted_row_takes_no_borders_at_any_level_case_11_12()
     {
         var sheet = NewSheet();
         Set(sheet, new CellFormatChange { Fill = Yellow, Borders = BorderChange.Outline(Thin) }, "2:2");
@@ -133,6 +157,9 @@ public class CellFormatCarryTests
         Assert.Equal(new CellBorders(Top: Thin, Right: Thick), sheet.GetBorders(At("B3")));
         Assert.Equal(new CellBorders(Left: Thick), sheet.GetBorders(At("C4")));
         Assert.Equal(new CellBorders(Right: Thick), sheet.GetBorders(At("B4")));
+        // The left of column A on row 2 (case 12-14) is not taken either.
+        Assert.Equal(new CellBorders(Top: Thin, Bottom: Thin, Left: Thin), sheet.GetBorders(At("A2")));
+        Assert.Equal(new CellBorders(Top: Thin), sheet.GetBorders(At("A3")));
 
         var after = sheet.ToDocument().ToJson();
         step.Undo();
@@ -142,8 +169,22 @@ public class CellFormatCarryTests
         Assert.Equal(after, sheet.ToDocument().ToJson());
     }
 
-    [Fact] // ADR-0063 (SH-38), case 12 by mirror: an inserted column takes the Fill and Font of the one to its left, cell and column, and not its Borders; its left edge reads that column's right line, and the column that moved right reads none on its left — a reading, not observed
-    public void An_inserted_column_takes_the_fill_and_not_the_borders_case_12()
+    [Fact] // ADR-0063 (SH-38), case 12-13: an inserted column takes the Fill of the one to its left and not its Borders; its left edge shows that column's right line, its right edge is empty, and the cells beside it stay plain
+    public void An_inserted_column_takes_the_fill_and_not_the_borders_case_12_13()
+    {
+        var sheet = NewSheet();
+        Set(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Right = Thick } }, "B2");
+
+        sheet.InsertColumns(2);
+
+        Assert.Equal(Yellow, sheet.GetFill(At("C2")));
+        Assert.Equal(new CellBorders(Left: Thick), sheet.GetBorders(At("C2")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("D2")));
+        foreach (var cell in new[] { "D2", "C1", "C3" }) Assert.True(sheet.GetFill(At(cell)).IsNone);
+    }
+
+    [Fact] // ADR-0063 (SH-38), case 12-13 at every level: an inserted column takes the Fill and Font of the one to its left, cell and column, and not its Borders; its left edge shows that column's right line, and the column that moved right shows none on its left; undo puts back both
+    public void An_inserted_column_takes_no_borders_at_any_level_case_12_13()
     {
         var sheet = NewSheet();
         Set(sheet, new CellFormatChange { Italic = true, Fill = Blue, Borders = BorderChange.Outline(Thick) }, "B:B");
@@ -172,6 +213,52 @@ public class CellFormatCarryTests
         Assert.Equal(before, sheet.ToDocument().ToJson());
         step.Redo();
         Assert.Equal(after, sheet.ToDocument().ToJson());
+    }
+
+    [Theory] // ADR-0063 (SH-38), cases 12-6 and 12-8: two rows brought together by a deletion keep their own sides; where both record a line the upper row's is shown, and the lower row's own stays under it; undo puts the row back
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Rows_brought_together_show_the_upper_rows_line_case_12_6_and_12_8(bool lowerRecordsOne)
+    {
+        var sheet = NewSheet();
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = Thick } }, "B2");
+        if (lowerRecordsOne) Set(sheet, new CellFormatChange { Borders = new BorderChange { Top = ThinBlue } }, "B4");
+        var before = sheet.ToDocument().ToJson();
+
+        var step = sheet.Do(SheetEdit.DeleteRows(2));
+
+        Assert.Equal(new CellBorders(Bottom: Thick), sheet.GetBorders(At("B2")));
+        Assert.Equal(new CellBorders(Top: Thick), sheet.GetBorders(At("B3")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("B4")));
+        step.Undo();
+        Assert.Equal(before, sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0063 (SH-38), case 12-7: two columns brought together by a deletion show the left column's line where both record one
+    public void Columns_brought_together_show_the_left_columns_line_case_12_7()
+    {
+        var sheet = NewSheet();
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Right = Thick } }, "B2");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Left = ThinBlue } }, "D2");
+
+        sheet.DeleteColumns(2);
+
+        Assert.Equal(new CellBorders(Right: Thick), sheet.GetBorders(At("B2")));
+        Assert.Equal(new CellBorders(Left: Thick), sheet.GetBorders(At("C2")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("D2")));
+    }
+
+    [Fact] // ADR-0063 (SH-38), case 12-9: where the upper row records no line, the line the lower row records stays, from either side
+    public void Rows_brought_together_show_the_lower_rows_line_where_the_upper_has_none_case_12_9()
+    {
+        var sheet = NewSheet();
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Top = ThinBlue } }, "B3");
+
+        sheet.DeleteRows(1);
+
+        Assert.Equal(new CellBorders(Bottom: ThinBlue), sheet.GetBorders(At("B1")));
+        Assert.Equal(new CellBorders(Top: ThinBlue), sheet.GetBorders(At("B2")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("B3")));
     }
 
     [Theory] // ADR-0063, ADR-0048 (SH-38): undoing an insertion or deletion puts Font, Fill and Borders back exactly
@@ -258,6 +345,79 @@ public class CellFormatCarryTests
         Assert.Equal(CellFormat.Default, sheet.GetCellFormat(At(far)));
     }
 
+    [Fact] // ADR-0063 (SH-38), case 12-1: a paste writes the target's own four sides and touches no neighbour; where both cells then record a line on an edge, the left cell's is shown
+    public void A_paste_writes_the_targets_own_sides_case_12_1()
+    {
+        var sheet = NewSheet();
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Left = ThinBlue } }, "C2");
+        sheet.Enter("E5", "1");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Right = ThickRed } }, "E5");
+
+        sheet.Do(SheetEdit.Paste(sheet.Copy(Range("E5")).Block!, At("B2")));
+
+        Assert.Equal(1, sheet.Number("B2"));
+        Assert.Equal(new CellBorders(Right: ThickRed), sheet.GetBorders(At("B2")));
+        Assert.Equal(new CellBorders(Left: ThickRed), sheet.GetBorders(At("C2")));
+        // C2 still records its own line under B2's: the paste did not touch it.
+        Assert.Equal(new CellBorders(Left: ThinBlue), Assert.Single(sheet.ToDocument().Cells, c => c.Address == At("C2")).Borders);
+    }
+
+    [Fact] // ADR-0063 (SH-38), case 12-2: a paste of a cell with no Borders takes away the line its target recorded, from either side
+    public void A_paste_without_borders_takes_the_targets_line_away_case_12_2()
+    {
+        var sheet = NewSheet();
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Right = ThickRed } }, "B2");
+        sheet.Enter("E5", "1");
+
+        sheet.Do(SheetEdit.Paste(sheet.Copy(Range("E5")).Block!, At("B2")));
+
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("B2")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(At("C2")));
+    }
+
+    [Theory] // ADR-0063 (SH-38, SH-23), cases 12-3 and 12-5: Ctrl+D and the fill handle write the source's own four sides on each target and touch no neighbour; the edge the source shares with its first target shows the source's bottom, and a target's right line is shown over the one the cell to its right records
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Filling_down_writes_the_targets_own_sides_case_12_3_and_12_5(bool ctrlD)
+    {
+        var sheet = NewSheet();
+        sheet.Enter("B2", "1");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Right = ThickRed, Bottom = Thick } }, "B2");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Left = ThinBlue } }, "C3");
+
+        sheet.Do(ctrlD
+            ? SheetEdit.FillCopy(Range("B2"), Range("B3:B4"), FillDirection.Down)
+            : SheetEdit.Fill(Range("B2"), Range("B3:B4"), FillDirection.Down));
+
+        Assert.Equal(1, sheet.Number("B4"));
+        Assert.Equal(new CellBorders(Bottom: Thick, Right: ThickRed), sheet.GetBorders(At("B2")));
+        Assert.Equal(new CellBorders(Top: Thick, Bottom: Thick, Right: ThickRed), sheet.GetBorders(At("B3")));
+        Assert.Equal(new CellBorders(Top: Thick, Bottom: Thick, Right: ThickRed), sheet.GetBorders(At("B4")));
+        Assert.Equal(new CellBorders(Top: Thick), sheet.GetBorders(At("B5")));
+        Assert.Equal(new CellBorders(Left: ThickRed), sheet.GetBorders(At("C3")));
+        Assert.Equal(new CellBorders(Left: ThickRed), sheet.GetBorders(At("C4")));
+        // Each target records the source's own sides, which have no top, and C3 keeps its own.
+        var cells = sheet.ToDocument().Cells.ToDictionary(c => c.Address.ToString());
+        Assert.Equal(new CellBorders(Bottom: Thick, Right: ThickRed), cells["B3"].Borders);
+        Assert.Equal(new CellBorders(Left: ThinBlue), cells["C3"].Borders);
+    }
+
+    [Fact] // ADR-0063 (SH-38, SH-23), case 12-4: Ctrl+R writes the source's own four sides on each target and touches no neighbour; the right line of the last target is shown over the one the cell to its right records
+    public void Filling_right_writes_the_targets_own_sides_case_12_4()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("B2", "1");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = Thick, Right = ThickRed } }, "B2");
+        Set(sheet, new CellFormatChange { Borders = new BorderChange { Left = ThinBlue } }, "E2");
+
+        sheet.Do(SheetEdit.FillCopy(Range("B2"), Range("C2:D2"), FillDirection.Right));
+
+        foreach (var cell in new[] { "C2", "D2" }) Assert.Equal(new CellBorders(Bottom: Thick, Left: ThickRed, Right: ThickRed), sheet.GetBorders(At(cell)));
+        foreach (var cell in new[] { "C3", "D3" }) Assert.Equal(new CellBorders(Top: Thick), sheet.GetBorders(At(cell)));
+        Assert.Equal(new CellBorders(Left: ThickRed), sheet.GetBorders(At("E2")));
+        Assert.Equal(new CellBorders(Left: ThinBlue), Assert.Single(sheet.ToDocument().Cells, c => c.Address == At("E2")).Borders);
+    }
+
     [Fact] // ADR-0063 (SH-38): the fill handle carries Font, Fill and Borders with the series it continues
     public void The_fill_handle_carries_them()
     {
@@ -285,7 +445,7 @@ public class CellFormatCarryTests
 
         Assert.Null(sheet.GetValue(At("B2")));
         Assert.Equal(shown, sheet.GetCellFormat(At("B2")));
-        var cell = Assert.Single(sheet.ToDocument().Cells, c => c.Address == At("B2"));
+        var cell = Assert.Single(sheet.ToDocument().Cells);
         Assert.Null(cell.Entry);
         Assert.Equal(Bold, cell.Font);
 
@@ -294,7 +454,7 @@ public class CellFormatCarryTests
         Assert.Equal(shown, sheet.GetCellFormat(At("B2")));
     }
 
-    [Theory] // ADR-0063, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly — the cells beside each range included (case 7), where they lie in another range
+    [Theory] // ADR-0063, ADR-0048 (SH-38, SH-44): a change over several ranges is one undo step, and undo puts every level back exactly — the cells beside each range included, whose record of an edge it clears (case 11-7), where they lie in another range
     [InlineData("B2:C3", "E5:F6")]
     [InlineData("B:B", "3:4")]
     [InlineData("3:4", "B:B")]

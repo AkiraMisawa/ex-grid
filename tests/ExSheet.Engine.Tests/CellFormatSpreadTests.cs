@@ -6,13 +6,15 @@ namespace ExSheet.Engine.Tests;
 
 /// <summary>
 /// The Cell Formats a range shows, each once (ADR-0063, SH-45): what Format Cells reads to show a
-/// part that differs across the Selection. Read from what is recorded — cells, rows and columns —
-/// so that a range of whole columns is answered from its levels, not a million cells.
+/// part that differs across the Selection, each Border side the cell's own. Read from what is
+/// recorded — cells, rows and columns — so that a range of whole columns is answered from its
+/// levels, not a million cells.
 /// </summary>
 public class CellFormatSpreadTests
 {
     private static readonly CellFill Yellow = CellFill.Solid(CellColour.FromRgb(0xFFFF00));
     private static readonly NumberFormat Percent = NumberFormat.Parse("0%");
+    private static readonly BorderLine Thick = new(BorderLineStyle.Thick);
 
     private static CellFormat Bold => CellFormat.Default with { Font = new CellFont(Bold: true) };
 
@@ -85,5 +87,16 @@ public class CellFormatSpreadTests
         Set(sheet, "A1:A2", new CellFormatChange { Fill = CellFill.None, Bold = true });
 
         Assert.Equal([Bold], sheet.GetCellFormats(CellRange.Parse("A1:A2")));
+    }
+
+    [Fact] // ADR-0063 / SH-45, case 11-24: each cell's own sides are answered, not the edge as shown, since Excel's Format Cells shows a thick bottom over a plain cell as an edge that differs
+    public void Each_cells_own_sides_are_answered_case_11_24()
+    {
+        var sheet = NewSheet();
+        Set(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+
+        Assert.Equal([CellFormat.Default], sheet.GetCellFormats(CellRange.Parse("A2")));
+        Assert.Equal(new CellBorders(Top: Thick), sheet.GetBorders(CellAddress.Parse("A2")));
+        Assert.Equal(2, sheet.GetCellFormats(CellRange.Parse("A1:A2")).Count);
     }
 }
