@@ -4,7 +4,8 @@
    Visual Token with a system-colour default, so the bare pivot follows the host's scheme and a
    Wrapper sets the tokens on its own element (ADR-0029/0030/0061). The report itself is ExGrid,
    styled by ex-grid.css; nothing here reaches inside the grid but the label cells' own content,
-   which ExPivot renders. */
+   which ExPivot renders, and the grid's root is touched only to leave it unpainted while a details
+   tab covers it. */
 
 /* The root: the report beside the Field List. A Stretch height is written inline as the grid's
    is: a flex item as tall as its parent (ADR-0028). */
@@ -39,8 +40,12 @@
 }
 /* The box the report and a details tab's records share: the records stand over the report, which
    stays where it is, measured and with its state, while a details tab is selected (ADR-0058). A
-   Stretch height makes it the flex item the grid stretches in, written inline from C#. */
+   Stretch height makes it the flex item the grid stretches in, written inline from C#. The covered
+   report — the grid's instance root, its stable class (ADR-0029) — is not painted meanwhile: the
+   grid's sticky header stands in layers of the grid's own, which would paint it over the records'
+   header, and a report nobody sees takes no keyboard and is not read out. */
 .ex-pivot-sheet { position: relative; min-width: 0; }
+.ex-pivot-sheet-covered > .ex-grid { visibility: hidden; }
 .ex-pivot-details-panel {
     position: absolute;
     inset: 0;

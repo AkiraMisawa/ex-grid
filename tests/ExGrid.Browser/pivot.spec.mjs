@@ -132,6 +132,12 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(records.first()).toBeVisible();
             await expect(panel.getByRole('columnheader', { name: 'Trade date' })).toBeVisible();
             await expect(records.first().locator('[role=gridcell]').first()).toHaveText('Americas');
+            // The records cover the report, which is not painted meanwhile: the report's own header
+            // would otherwise stand over the records' headings.
+            await expect(report(page)).toBeHidden();
+            const heading = await panel.getByRole('columnheader', { name: 'Trade date' }).boundingBox();
+            expect(await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('.ex-pivot-details-panel') !== null,
+                [heading.x + heading.width / 2, heading.y + heading.height / 2])).toBe(true);
             // Not part of the Pivot Layout.
             await expect(page.locator('#pivot-status')).toHaveText(layout ?? '');
 

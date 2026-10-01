@@ -26,7 +26,11 @@
            is always present, so a notice that appears in it is announced, without interrupting
            the reader as the toolbar's refusal of their own change does. Empty, it takes no room. *@
         <div class="ex-pivot-stale" role="status">@StaleNotice()</div>
-        <div class="ex-pivot-sheet" style="@SheetStyle">
+        @* While a details tab is selected its records cover the report, which stays laid out, with
+           its state, and is not painted: its own header would otherwise paint over the records'
+           (ExGrid's layers are its own), and a report nobody sees takes no keyboard and is not
+           read out (ADR-0058). *@
+        <div class="@(_selectedSheet is null ? "ex-pivot-sheet" : "ex-pivot-sheet ex-pivot-sheet-covered")" style="@SheetStyle">
             @if (_report is null || _report.IsEmpty)
             {
                 <div class="ex-pivot-empty" style="@EmptyStyle" role="status">@EmptyText</div>

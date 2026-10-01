@@ -155,7 +155,8 @@
 }
 .mud-ex-pivot-entry-values .mud-ex-pivot-entry-caption { font-style: italic; }
 
-/* A placed field's menu: MudButtons laid out as a Material menu, each label at the start. */
+/* A placed field's menu, and the Layout menu: MudButtons laid out as a Material menu, each label at
+   the start — a choice that wraps, as the Layout menu's longer ones do, wraps from there too. */
 .mud-ex-pivot-menu {
     display: flex;
     flex-direction: column;
@@ -163,6 +164,7 @@
 .mud-ex-pivot-menu .mud-ex-pivot-menu-item,
 .mud-ex-pivot-menu .mud-ex-pivot-menu-item .mud-button-label {
     justify-content: flex-start;
+    text-align: start;
 }
 /* A group's heading in the Layout menu: Subtotals, Grand Totals, Report Layout. */
 .mud-ex-pivot-menu .mud-ex-pivot-menu-heading {
