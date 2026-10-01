@@ -403,4 +403,59 @@ public class CompletionOverPointTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-point"));
         Assert.Empty(intents);
     }
+
+    // ---- What Point writes is shown --------------------------------------------------------------
+
+    private (string Text, int Caret, int End)? CaretPlaced()
+        => JSInterop.Invocations.LastOrDefault(i => i.Identifier == "setCaret") is { } call
+            ? ((string)call.Arguments[0]!, (int)call.Arguments[1]!, (int)call.Arguments[2]!)
+            : null;
+
+    [Theory] // ADR-0058 (the thirteenth Windows run, seen and not asked) / ticket 75: every key Point writes with — at a list open over Point (b3, b5) or with none — tells the listener the caret after what it wrote, which is where the listener brings the field's view (ShippedStylesheetTests)
+    [InlineData("=F(1,,", "Home", "=F(1,,A2")]
+    [InlineData("=F(1,,", "Shift+ArrowRight", "=F(1,,B2:C2")]
+    [InlineData("=F(1,,", "Shift+ArrowDown", "=F(1,,B2:B3")]
+    [InlineData("=F(1,,", "ArrowLeft", "=F(1,,A2")]
+    [InlineData("=F(1,,", "ArrowRight", "=F(1,,C2")]
+    [InlineData("=F(1,", "ArrowDown", "=F(1,B3")]
+    [InlineData("=F(1,", "ArrowUp", "=F(1,B1")]
+    [InlineData("=F(1,", "Home", "=F(1,A2")]
+    [InlineData("=F(1,", "Shift+ArrowLeft", "=F(1,A2:B2")]
+    public async Task Ticket75_every_key_point_writes_with_tells_the_listener_its_caret(string typed, string key, string written)
+    {
+        var cut = RenderGrid();
+        await TypeFormulaAsync(cut, typed, row: 1);
+
+        await PressAsync(cut, key, typed);
+
+        Assert.Equal(written, EditorText(cut));
+        Assert.Equal((written, written.Length, written.Length), CaretPlaced());
+
+        // Pointing on, the next key rewrites the Reference, and the caret follows it again.
+        await PressAsync(cut, "Shift+ArrowDown", written);
+        var extended = EditorText(cut);
+        Assert.NotEqual(written, extended);
+        Assert.Equal((extended, extended.Length, extended.Length), CaretPlaced());
+    }
+
+    [Fact] // ADR-0058 (the thirteenth Windows run) / ticket 75: a press on the Sheet writes as a key does, and tells the listener the caret after what it wrote — in the middle of the text too
+    public async Task Ticket75_a_press_tells_the_listener_the_caret_after_what_it_wrote()
+    {
+        var cut = RenderGrid();
+        await TypeFormulaAsync(cut, "=F(1,", row: 1);
+
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 250, OffsetY = 70 });
+
+        Assert.Equal("=F(1,C4", EditorText(cut));
+        Assert.Equal(("=F(1,C4", 7, 7), CaretPlaced());
+
+        // With text after the caret: the caret placed is after the Reference, short of the end.
+        await PressAsync(cut, "Escape", "=F(1,C4");
+        await TypeFormulaAsync(cut, "=F(1,)", row: 1);
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=F(1,)", 5));
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 250, OffsetY = 70 });
+
+        Assert.Equal("=F(1,C4)", EditorText(cut));
+        Assert.Equal(("=F(1,C4)", 7, 7), CaretPlaced());
+    }
 }

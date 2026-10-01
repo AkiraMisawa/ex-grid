@@ -552,7 +552,9 @@
                            apart (it carries no isComposing). A composing IME is left alone, as
                            ADR-0010 requires of every key the grid hears. Clearing is the
                            "clear-filter" command above it (ADR-0044), so the actions are OK and
-                           Cancel. *@
+                           Cancel. OK shows it is unavailable while nothing is ticked among the
+                           values the list shows; Enter is not gated on it, and what it submits is
+                           refused on the same rule (ticket 76). *@
                         <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
@@ -616,7 +618,7 @@
                                 }
                             }
                             <div class="ex-popover-actions">
-                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
+                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
                                 <button type="button" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
                             </div>
                         </form>
@@ -5091,9 +5093,13 @@
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
     /// replaced or removed in the whole Filter, columns combined with AND, and the
-    /// Consumer notified — the grid never evaluates any of it.</summary>
+    /// Consumer notified — the grid never evaluates any of it. An <c>In</c> with no values
+    /// is refused here, whichever panel handed it over, and the panel stands: the engine
+    /// would refuse it inside this very handler (ADR-0023, ticket 76).</summary>
     private async Task ApplyFilterSpecAsync(string column, FilterSpec? spec)
     {
+        if (!FilterPanelChoices.CanApply(spec))
+            return;
         var columns = _filter is null
             ? new Dictionary<string, FilterSpec>(StringComparer.Ordinal)
             : new Dictionary<string, FilterSpec>(_filter.Columns, StringComparer.Ordinal);
@@ -5120,11 +5126,8 @@
     private Task ApplyPanelAsync(int column)
     {
         var declared = Columns[column];
-        if (_panelValues is { IsTooMany: false } values && _panelChecked is { } chosen)
-        {
-            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromValueList(
-                values, chosen, v => PanelText(v, column), _panelSearch, _panelAddToCurrent, CurrentSpecOf(declared.Name)));
-        }
+        if (TryValueListAnswer(column, out var answer))
+            return ApplyFilterSpecAsync(declared.Name, answer);
 
         // Each condition's operand read as the column's type. Empty is an unfinished
         // condition, left out; text that does not read applies nothing, and the panel stands.
@@ -5136,6 +5139,25 @@
         return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromConditions(
             _panelOperator, first, _panelCombinator, _panelSecondOperator, second));
     }
+
+    /// <summary>The built-in value list's answer, by <see cref="FilterPanelChoices"/>' rules:
+    /// the checked values, among a search's matches while one stands. False where no value
+    /// list stands.</summary>
+    private bool TryValueListAnswer(int column, out FilterSpec? answer)
+    {
+        answer = null;
+        if (_panelValues is not { IsTooMany: false } values || _panelChecked is not { } chosen)
+            return false;
+        answer = FilterPanelChoices.FromValueList(
+            values, chosen, v => PanelText(v, column), _panelSearch, _panelAddToCurrent, CurrentSpecOf(Columns[column].Name));
+        return true;
+    }
+
+    /// <summary>Whether OK shows it can apply: not while the value list's answer keeps
+    /// nothing (ADR-0009, as Excel's OK). The condition form's OK stays available, and an
+    /// operand that does not read applies nothing when it is pressed.</summary>
+    private bool PanelCanApply(int column)
+        => !TryValueListAnswer(column, out var answer) || FilterPanelChoices.CanApply(answer);
 
     /// <summary>Where a popover stands (ADR-0018/0040): under the header band, at the
     /// column's visible left edge, clamped inside the Viewport and bounded by its bottom —

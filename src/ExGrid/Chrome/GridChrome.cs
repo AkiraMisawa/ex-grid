@@ -121,6 +121,11 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// hands them over carries the class <c>ex-value-list</c>, by which the grid's key listener
 /// knows the keys typed behind a letter there are to be held while it acts (ADR-0010).</para>
 ///
+/// <para><see cref="Apply"/> is OK. It refuses an answer
+/// <see cref="FilterPanelChoices.CanApply"/> says cannot be applied — an <c>In</c> with no
+/// values, nothing ticked — and the panel stands; the panel shows its Apply unavailable
+/// while its answer is that one, as Excel's OK is (ADR-0009, ticket 76).</para>
+///
 /// <para><see cref="Clear"/> removes the column's filter and closes. The one popover offers
 /// it as the "clear-filter" command above the panel, so the panels this package and
 /// <c>ExGrid.MudBlazor</c> ship draw no Clear of their own (ADR-0044).</para>
