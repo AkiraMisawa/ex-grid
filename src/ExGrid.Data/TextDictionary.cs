@@ -11,6 +11,11 @@ namespace ExGrid.Data;
 /// Codes read from a later version may lie past <see cref="Count"/>; read them through that
 /// version's column.
 /// </para>
+/// <para>
+/// A dictionary read from a UTF-8 CSV is looked up by text only once asked: the first
+/// <see cref="TryGetCode(string, out int)"/>, or the first Change Batch, indexes its entries, once
+/// for every version that shares them.
+/// </para>
 /// </summary>
 public sealed class TextDictionary : IReadOnlyList<string>
 {
