@@ -75,6 +75,14 @@ public sealed class PivotCube
     /// <summary>Every cell's key, for the hash's own test.</summary>
     internal IEnumerable<long> CellKeys => _cells.Keys;
 
+    /// <summary>The cell a key names, for layer 1, which holds the sliced cube to the synchronous
+    /// one cell by cell.</summary>
+    internal int CellOf(long key) => _cells[key];
+
+    /// <summary>The parts of the field in Values <paramref name="source"/> at every cell, for
+    /// layer 1.</summary>
+    internal PartColumns ValuesOf(int source) => _values[source];
+
     /// <summary>
     /// The cube of an answer (ADR-0065). Refuses by name an answer to another question — other row
     /// or column fields, other fields in Values, fewer parts than asked, more leaves than allowed —
@@ -84,6 +92,21 @@ public sealed class PivotCube
         PivotQuery query,
         PivotAnswer answer,
         IReadOnlyDictionary<string, FieldMeta> meta,
+        object? records = null,
+        object? fields = null,
+        Func<string, IReadOnlyList<ItemKey>>? allItems = null)
+        => Slicer.Run(BuildAsync(query, answer, meta, Slicer.Unsliced, records, fields, allItems));
+
+    /// <summary>
+    /// <see cref="Build"/> in slices (PV-40): the same steps — the trees, the leaves' cells, every
+    /// total merged, every exact value written in one form — each over its leaves or cells a piece
+    /// at a time, yielding whenever the slice is spent. The answer is only read.
+    /// </summary>
+    internal static async ValueTask<PivotCube> BuildAsync(
+        PivotQuery query,
+        PivotAnswer answer,
+        IReadOnlyDictionary<string, FieldMeta> meta,
+        Slicer slicer,
         object? records = null,
         object? fields = null,
         Func<string, IReadOnlyList<ItemKey>>? allItems = null)
@@ -101,54 +124,68 @@ public sealed class PivotCube
         var columnRoot = new AxisNode(0, -1, null, null);
         var rowNodes = new List<AxisNode> { rowRoot };
         var columnNodes = new List<AxisNode> { columnRoot };
-        var rowLeaves = Tree(answer.RowAxes, rowRoot, rowNodes, leafCount);
-        var columnLeaves = Tree(answer.ColumnAxes, columnRoot, columnNodes, leafCount);
+        var rowLeaves = await TreeAsync(answer.RowAxes, rowRoot, rowNodes, leafCount, slicer).ConfigureAwait(false);
+        var columnLeaves = await TreeAsync(answer.ColumnAxes, columnRoot, columnNodes, leafCount, slicer).ConfigureAwait(false);
 
         var sources = answer.ValueColumns.Select(v => v.Field).ToArray();
-        var values = answer.ValueColumns.Select(v =>
+        var values = new PartColumns[answer.ValueColumns.Length];
+        for (var v = 0; v < values.Length; v++)
         {
-            var columns = new PartColumns(v.Parts, Math.Max(16, leafCount * 2));
-            columns.CopyFrom(v.Columns, leafCount);
-            return columns;
-        }).ToArray();
+            var answered = answer.ValueColumns[v].Columns;
+            var columns = values[v] = new PartColumns(answer.ValueColumns[v].Parts, Math.Max(16, leafCount * 2));
+            // A copy of memory: a piece of a few thousand cells is a moment's work.
+            await slicer.ForAsync(leafCount, (from, to) => columns.CopyRange(answered, from, to), weight: 1).ConfigureAwait(false);
+        }
 
         // The leaves are the first cells, as the source answered them.
         var cells = new Dictionary<long, int>(Math.Max(16, leafCount * 2), CellKey.Comparer);
         long included = 0;
-        for (var leaf = 0; leaf < leafCount; leaf++)
+        await slicer.ForAsync(leafCount, (from, to) =>
         {
-            if (!cells.TryAdd(CellKey.Of(rowLeaves[leaf].Id, columnLeaves[leaf].Id), leaf))
-                throw new InvalidOperationException($"The answer has two leaves for one cell (leaf {leaf}); a source answers each combination of Items once (ADR-0065).");
-            included += answer.Records[leaf];
-        }
+            for (var leaf = from; leaf < to; leaf++)
+            {
+                if (!cells.TryAdd(CellKey.Of(rowLeaves[leaf].Id, columnLeaves[leaf].Id), leaf))
+                    throw new InvalidOperationException($"The answer has two leaves for one cell (leaf {leaf}); a source answers each combination of Items once (ADR-0065).");
+                included += answer.Records[leaf];
+            }
+        }, weight: 2).ConfigureAwait(false);
 
         // Every total from its leaves (ADR-0059): each leaf is merged into every cell whose row
         // and column are its own or their ancestors. An ancestor's cell is never a leaf's, so
         // nothing is counted twice, and the parts combine exactly. With no field in Values there
         // is nothing to read at a cell, and no total is made.
         var cellCount = leafCount;
-        for (var leaf = 0; values.Length > 0 && leaf < leafCount; leaf++)
+        if (values.Length > 0)
         {
-            var rowLeaf = rowLeaves[leaf];
-            var columnLeaf = columnLeaves[leaf];
-            for (var row = rowLeaf; row is not null; row = row.Parent)
+            // What one leaf costs: a cell looked up, and every field merged into it, for each pair
+            // of its row and column or their ancestors.
+            var pairs = ((answer.RowAxes.Length + 1) * (answer.ColumnAxes.Length + 1)) - 1;
+            await slicer.ForAsync(leafCount, (from, to) =>
             {
-                for (var column = columnLeaf; column is not null; column = column.Parent)
+                for (var leaf = from; leaf < to; leaf++)
                 {
-                    if (row == rowLeaf && column == columnLeaf)
-                        continue;
-                    ref var cell = ref CollectionsMarshal.GetValueRefOrAddDefault(cells, CellKey.Of(row.Id, column.Id), out var exists);
-                    if (!exists)
+                    var rowLeaf = rowLeaves[leaf];
+                    var columnLeaf = columnLeaves[leaf];
+                    for (var row = rowLeaf; row is not null; row = row.Parent)
                     {
-                        cell = cellCount++;
-                        foreach (var columns in values)
-                            columns.EnsureCapacity(cellCount);
+                        for (var column = columnLeaf; column is not null; column = column.Parent)
+                        {
+                            if (row == rowLeaf && column == columnLeaf)
+                                continue;
+                            ref var cell = ref CollectionsMarshal.GetValueRefOrAddDefault(cells, CellKey.Of(row.Id, column.Id), out var exists);
+                            if (!exists)
+                            {
+                                cell = cellCount++;
+                                foreach (var columns in values)
+                                    columns.EnsureCapacity(cellCount);
+                            }
+                            var target = cell;
+                            foreach (var columns in values)
+                                columns.Merge(target, columns, leaf);
+                        }
                     }
-                    var target = cell;
-                    foreach (var columns in values)
-                        columns.Merge(target, columns, leaf);
                 }
-            }
+            }, weight: Math.Max(1, pairs * (1 + values.Length))).ConfigureAwait(false);
         }
 
         // One form for each exact value (ADR-0063): a source may write a Decimal at any scale — a
@@ -156,7 +193,7 @@ public sealed class PivotCube
         // 0.25 + 0.25 is 0.50. The report, and the raw form a copy carries, is then the same
         // whichever source answered (PV-22).
         foreach (var columns in values)
-            columns.Canonicalize(cellCount);
+            await slicer.ForAsync(cellCount, columns.Canonicalize).ConfigureAwait(false);
 
         return new PivotCube(query, answer.SourceVersion, included, meta, rowRoot, columnRoot, sources, cells, values)
         {
@@ -166,21 +203,35 @@ public sealed class PivotCube
         };
     }
 
-    // One axis's tree from the leaves' Items, level by level; the node each leaf ends at.
-    private static AxisNode[] Tree(PivotAnswerAxis[] axes, AxisNode root, List<AxisNode> nodes, int leafCount)
+    // One axis's tree from the leaves' Items, level by level, a piece of leaves at a time; the node
+    // each leaf ends at.
+    private static async ValueTask<AxisNode[]> TreeAsync(PivotAnswerAxis[] axes, AxisNode root, List<AxisNode> nodes, int leafCount, Slicer slicer)
     {
-        var refs = axes.Select(axis => axis.ItemArray.Select(ItemRef.Of).ToArray()).ToArray();
-        var leaves = new AxisNode[leafCount];
-        for (var leaf = 0; leaf < leafCount; leaf++)
+        var refs = new ItemRef[axes.Length][];
+        for (var level = 0; level < axes.Length; level++)
         {
-            var node = root;
-            for (var level = 0; level < axes.Length; level++)
+            var items = axes[level].ItemArray;
+            var levelRefs = refs[level] = new ItemRef[items.Length];
+            await slicer.ForAsync(items.Length, (from, to) =>
             {
-                var item = axes[level].ItemOfLeaf[leaf];
-                node = node.Child(item, refs[level][item], nodes);
-            }
-            leaves[leaf] = node;
+                for (var i = from; i < to; i++)
+                    levelRefs[i] = ItemRef.Of(items[i]);
+            }, weight: 2).ConfigureAwait(false);
         }
+        var leaves = new AxisNode[leafCount];
+        await slicer.ForAsync(leafCount, (from, to) =>
+        {
+            for (var leaf = from; leaf < to; leaf++)
+            {
+                var node = root;
+                for (var level = 0; level < axes.Length; level++)
+                {
+                    var item = axes[level].ItemOfLeaf[leaf];
+                    node = node.Child(item, refs[level][item], nodes);
+                }
+                leaves[leaf] = node;
+            }
+        }, weight: Math.Max(1, axes.Length)).ConfigureAwait(false);
         return leaves;
     }
 

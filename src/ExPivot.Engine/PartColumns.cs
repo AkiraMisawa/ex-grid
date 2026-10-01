@@ -100,15 +100,24 @@ internal sealed class PartColumns
     public void CopyFrom(PartColumns other, int count)
     {
         EnsureCapacity(count);
-        Array.Copy(other.Counts, Counts, count);
+        CopyRange(other, 0, count);
+    }
+
+    /// <summary>Cells [<paramref name="from"/>, <paramref name="to"/>) of <paramref name="other"/>,
+    /// which holds at least these parts, as this one's same cells, which there is room for — a cube
+    /// made in slices copies its leaves a piece at a time (PV-40).</summary>
+    public void CopyRange(PartColumns other, int from, int to)
+    {
+        var count = to - from;
+        Array.Copy(other.Counts, from, Counts, from, count);
         if (Sums is not null)
-            Array.Copy(other.Sums!, Sums, count);
+            Array.Copy(other.Sums!, from, Sums, from, count);
         if (Extremes is not null)
-            Array.Copy(other.Extremes!, Extremes, count);
+            Array.Copy(other.Extremes!, from, Extremes, from, count);
         if (Products is not null)
-            Array.Copy(other.Products!, Products, count);
+            Array.Copy(other.Products!, from, Products, from, count);
         if (Variances is not null)
-            Array.Copy(other.Variances!, Variances, count);
+            Array.Copy(other.Variances!, from, Variances, from, count);
     }
 
     /// <summary>Cell <paramref name="from"/> of <paramref name="other"/>, which holds at least these
@@ -146,11 +155,15 @@ internal sealed class PartColumns
     /// folded from segments at different scales then reads alike however it was made, and a
     /// batch folded in leaves it as a fresh aggregation would.
     /// </summary>
-    public void Canonicalize(int count)
+    public void Canonicalize(int count) => Canonicalize(0, count);
+
+    /// <summary><see cref="Canonicalize(int)"/> over cells [<paramref name="from"/>,
+    /// <paramref name="to"/>), a piece at a time (PV-40); each cell is its own.</summary>
+    public void Canonicalize(int from, int to)
     {
         if (Sums is not null)
         {
-            for (var i = 0; i < count; i++)
+            for (var i = from; i < to; i++)
             {
                 ref var sum = ref Sums[i];
                 if (!sum.Inexact)
@@ -159,7 +172,7 @@ internal sealed class PartColumns
         }
         if (Extremes is not null)
         {
-            for (var i = 0; i < count; i++)
+            for (var i = from; i < to; i++)
             {
                 ref var extremes = ref Extremes[i];
                 if (!extremes.Inexact)
@@ -414,11 +427,15 @@ internal sealed class PartColumns
     /// its compensation in, the figures a part does not use are zeroed, and a NaN is the one NaN —
     /// so a part is one value, whatever path it took, and crosses JSON unchanged.
     /// </summary>
-    public void Finish(int count)
+    public void Finish(int count) => Finish(0, count);
+
+    /// <summary><see cref="Finish(int)"/> over cells [<paramref name="from"/>, <paramref name="to"/>),
+    /// a piece at a time (PV-40); each cell is its own.</summary>
+    public void Finish(int from, int to)
     {
         if (Sums is not null)
         {
-            for (var i = 0; i < count; i++)
+            for (var i = from; i < to; i++)
             {
                 ref var sum = ref Sums[i];
                 if (sum.Inexact)
@@ -436,7 +453,7 @@ internal sealed class PartColumns
         }
         if (Extremes is not null)
         {
-            for (var i = 0; i < count; i++)
+            for (var i = from; i < to; i++)
             {
                 ref var extremes = ref Extremes[i];
                 if (extremes.Inexact)
@@ -455,12 +472,12 @@ internal sealed class PartColumns
         }
         if (Products is not null)
         {
-            for (var i = 0; i < count; i++)
+            for (var i = from; i < to; i++)
                 Products[i] = Canonical(Products[i]);
         }
         if (Variances is not null)
         {
-            for (var i = 0; i < count; i++)
+            for (var i = from; i < to; i++)
             {
                 ref var variance = ref Variances[i];
                 variance.Mean = Canonical(variance.Mean);

@@ -123,16 +123,26 @@ public sealed class PivotAnswerAxis
     private readonly PivotItemKey[] _items;
 
     internal PivotAnswerAxis(string field, PivotItemKey[] items, int[] itemOfLeaf, int leafCount)
+        : this(field, items, itemOfLeaf)
     {
-        Field = field;
-        _items = items;
-        ItemOfLeaf = itemOfLeaf;
         for (var leaf = 0; leaf < leafCount; leaf++)
         {
             if ((uint)itemOfLeaf[leaf] >= (uint)items.Length)
                 throw new FormatException($"Leaf {leaf} names Item {itemOfLeaf[leaf]} of '{field}', which has {items.Length}.");
         }
     }
+
+    private PivotAnswerAxis(string field, PivotItemKey[] items, int[] itemOfLeaf)
+    {
+        Field = field;
+        _items = items;
+        ItemOfLeaf = itemOfLeaf;
+    }
+
+    /// <summary>An axis the bundled source assembled, whose every leaf names one of
+    /// <paramref name="items"/> by construction: not walked again to check it, which a source's
+    /// answer read from elsewhere is.</summary>
+    internal static PivotAnswerAxis Made(string field, PivotItemKey[] items, int[] itemOfLeaf) => new(field, items, itemOfLeaf);
 
     /// <summary>The Pivot Field's name.</summary>
     public string Field { get; }

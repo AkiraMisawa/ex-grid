@@ -69,12 +69,41 @@ public static class PivotEngine
     }
 
     /// <summary>
+    /// <see cref="Cube"/> in slices (ADR-0065, PV-40): the same cube, made a piece at a time, the
+    /// thread yielded whenever a slice of <see cref="PivotSlicing.Budget"/> is spent — so a browser
+    /// keeps painting while the cube of a large answer is made. Cancelled, it throws at the next
+    /// yield. A small answer is made without reading the clock, and the task is complete when it
+    /// returns.
+    /// </summary>
+    /// <param name="query">The question the answer was given to.</param>
+    /// <param name="answer">The source's answer.</param>
+    /// <param name="fields">The source's fields: how Items are labelled and ordered.</param>
+    /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <param name="cancellationToken">Stops the work at the next yield.</param>
+    public static ValueTask<PivotCube> CubeAsync(
+        PivotQuery query,
+        PivotAnswer answer,
+        IReadOnlyList<PivotField> fields,
+        PivotSlicing? slicing = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(answer);
+        ArgumentNullException.ThrowIfNull(fields);
+        var meta = FieldMeta.Of(fields);
+        return PivotCube.BuildAsync(query, answer, meta, Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken));
+    }
+
+    /// <summary>
     /// Lays a cube out under <paramref name="layout"/> (ADR-0059): the rows, the label columns,
     /// the value columns and their Header Group spans. Cheap — nothing is asked of the source —
     /// and what a collapse, a sort, a form or a Value Field's Aggregation changing costs. Refuses a
     /// layout the cube does not hold (<see cref="PivotCube.Holds"/>).
     /// </summary>
     public static PivotReport Report(PivotCube cube, PivotLayout layout, PivotOptions? options = null)
+        => Builder(cube, layout, options).Build();
+
+    private static ReportBuilder Builder(PivotCube cube, PivotLayout layout, PivotOptions? options)
     {
         ArgumentNullException.ThrowIfNull(cube);
         ArgumentNullException.ThrowIfNull(layout);
@@ -86,7 +115,31 @@ public static class PivotEngine
                 "has, or without the parts one of its Aggregations reads; ask again (PivotEngine.Aggregate, or the " +
                 "source with PivotQuery.For) before laying it out (ADR-0059/0065).");
         }
-        return new ReportBuilder(cube, layout, options ?? PivotOptions.Default).Build();
+        return new ReportBuilder(cube, layout, options ?? PivotOptions.Default);
+    }
+
+    /// <summary>
+    /// <see cref="Report"/> in slices (ADR-0065, PV-40): the same report, laid out a piece at a
+    /// time — the value columns and their spans, then the rows, each axis walked in its Items'
+    /// order — the thread yielded whenever a slice of <see cref="PivotSlicing.Budget"/> is spent, so
+    /// a layout that grows long never holds a browser. Cancelled, it throws at the next yield. A
+    /// small report is laid out without reading the clock, and the task is complete when it
+    /// returns. Refuses, at once, what <see cref="Report"/> refuses.
+    /// </summary>
+    /// <param name="cube">The cube to lay out.</param>
+    /// <param name="layout">The layout, which the cube must hold.</param>
+    /// <param name="options">The culture and the words; <see cref="PivotOptions.Default"/> when left out.</param>
+    /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <param name="cancellationToken">Stops the work at the next yield.</param>
+    public static ValueTask<PivotReport> ReportAsync(
+        PivotCube cube,
+        PivotLayout layout,
+        PivotOptions? options = null,
+        PivotSlicing? slicing = null,
+        CancellationToken cancellationToken = default)
+    {
+        var builder = Builder(cube, layout, options);
+        return builder.BuildAsync(Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken));
     }
 
     /// <summary>Whether <paramref name="cube"/> was aggregated from exactly these records and
