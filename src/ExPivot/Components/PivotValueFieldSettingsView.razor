@@ -1,6 +1,7 @@
 @* The built-in Value Field Settings… (ADR-0060): the caption, the Aggregation, Show Values As
    and the number format with a sample, as ExPivot's draft until OK — which a taken caption or an
-   unusable format refuses, the sentence shown here. *@
+   unusable format refuses, the sentence shown here. An Aggregation the Pivot Source does not
+   answer is offered disabled, with the reason (ADR-0065). *@
 <div class="ex-pivot-panel ex-pivot-value-settings">
     <div class="ex-pivot-panel-title">@Context.Word("value-field-settings")</div>
     <div class="ex-pivot-row ex-pivot-source">@Context.FieldCaption</div>
@@ -15,10 +16,16 @@
                 @onchange="e => Context.AggregationChanged(Enum.Parse<PivotAggregation>((string)e.Value!))">
             @foreach (var choice in Context.Aggregations)
             {
-                <option value="@choice.Value.ToString()">@choice.Label</option>
+                <option value="@choice.Value.ToString()" disabled="@(!choice.Enabled)" title="@choice.Reason">@choice.Label</option>
             }
         </select>
     </label>
+    @* An Aggregation the source does not answer is offered disabled, and the reason is said
+       (ADR-0065). *@
+    @foreach (var reason in Context.Aggregations.Where(c => !c.Enabled && c.Reason is not null).Select(c => c.Reason))
+    {
+        <div class="ex-pivot-note ex-pivot-not-offered">@reason</div>
+    }
     <label class="ex-pivot-row">
         <span>@Context.Word("show-values-as")</span>
         <select class="ex-pivot-select" value="@Context.ShowValuesAs.ToString()"

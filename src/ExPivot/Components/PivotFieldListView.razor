@@ -3,7 +3,8 @@
    drop or a command means is ExPivot's. Every Area and the list of fields prevent dragover's
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
    ExPivot's to ignore. Each entry's open menu or panel stands directly under it, and no element
-   here is positioned, so the frame takes the pane's width. *@
+   here is positioned, so the frame takes the pane's width. Defer Layout Update and Update stand
+   at the foot. *@
 <div class="ex-pivot-pane">
     <div class="ex-pivot-pane-title">@Context.Title</div>
     <div class="ex-pivot-pane-caption">@Context.Word("choose-fields")</div>
@@ -64,6 +65,15 @@
                 </div>
             </div>
         }
+    </div>
+    @* Excel's Defer Layout Update at the pane's foot (ADR-0060): while it is ticked, the pane's
+       changes build a pending layout, and Update applies it in one change. *@
+    <div class="ex-pivot-defer">
+        <label class="ex-pivot-defer-label">
+            <input type="checkbox" checked="@Context.DeferLayoutUpdate" @onchange="e => Context.DeferLayoutUpdateChanged(e.Value is true)" />
+            <span>@Context.Word("defer-layout-update")</span>
+        </label>
+        <button type="button" class="ex-pivot-update" disabled="@(!Context.CanUpdate)" @onclick="Context.Update">@Context.Word("update")</button>
     </div>
 </div>
 

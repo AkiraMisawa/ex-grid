@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests;
 
@@ -25,7 +26,7 @@ public class ReportCommandTests : PivotTestContext
     [Fact] // ADR-0058: on a value cell — collapse its group, sort by it, Show Details, the Value Field's settings
     public void Context_commands_on_a_value_cell()
     {
-        var cut = RenderPivot(RegionProduct, ps => ps.Add(p => p.OnShowDetails, (PivotDetails<Sale> _) => { }));
+        var cut = RenderPivot(RegionProduct, ps => ps.Add(p => p.OnShowDetails, (PivotDetails _) => { }));
         var valueColumn = Grid(cut).Instance.Columns[1].Name;
 
         var commands = ContextCommands(cut, 1, valueColumn);
@@ -65,20 +66,24 @@ public class ReportCommandTests : PivotTestContext
         Assert.Equal(["West | 90", "North | 10", "East | 180", "(blank) | 5", "Grand Total | 285"], RowTexts(cut));
     }
 
-    [Fact] // ADR-0062: a double click on a value cell shows the records behind it
+    [Fact] // ADR-0062/0058: a double click on a value cell hands the Consumer that listens the records behind it, paged from the source
     public async Task A_double_click_on_a_value_shows_its_details()
     {
-        PivotDetails<Sale>? shown = null;
+        PivotDetails? shown = null;
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Product")], Values = [Sum("Amount")] },
-            ps => ps.Add(p => p.OnShowDetails, (PivotDetails<Sale> details) => shown = details));
+            ps => ps.Add(p => p.OnShowDetails, (PivotDetails details) => shown = details));
 
         await cut.InvokeAsync(() => Grid(cut).Instance.OnCellDoubleClick.InvokeAsync(new CellPosition(0, 1)));
 
         Assert.NotNull(shown);
-        Assert.Equal([Sales[0], Sales[2]], shown!.Records);
+        var page = await shown!.DetailsAsync(0, 100, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal([Sales[0], Sales[2]], page.Records.Select(r => r.Record));
+        Assert.Equal(2, page.Total);
         Assert.Equal([new PivotDetailItem("Region", "East")], shown.RowItems);
         Assert.Equal([new PivotDetailItem("Product", "Apples")], shown.ColumnItems);
         Assert.Equal("Sum of Amount", shown.ValueField);
+        Assert.Equal("Details: East / Apples", shown.Title);
+        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, shown.SourceVersion);
     }
 
     [Fact] // ADR-0062: an empty cell has no records to show, and a double click there shows nothing
@@ -86,7 +91,7 @@ public class ReportCommandTests : PivotTestContext
     {
         var shown = 0;
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Columns = [P("Product")], Values = [Sum("Amount")] },
-            ps => ps.Add(p => p.OnShowDetails, (PivotDetails<Sale> _) => shown++));
+            ps => ps.Add(p => p.OnShowDetails, (PivotDetails _) => shown++));
 
         await cut.InvokeAsync(() => Grid(cut).Instance.OnCellDoubleClick.InvokeAsync(new CellPosition(0, 3)));
 
@@ -107,7 +112,7 @@ public class ReportCommandTests : PivotTestContext
     public async Task The_layout_binds_both_ways()
     {
         var page = RenderPage<BoundPage>();
-        var cut = page.FindComponent<ExPivot<Sale>>();
+        var cut = page.FindComponent<PivotComponent>();
 
         await FieldItem(cut, "Online").QuerySelector("input")!.ChangeAsync(new ChangeEventArgs { Value = true });
         Assert.Equal(["Region", "Online"], page.Instance.Layout.Rows.Select(p => p.Field));
@@ -143,7 +148,7 @@ public class ReportCommandTests : PivotTestContext
     public async Task Two_pivots_are_independent()
     {
         var page = RenderPage<TwoPivots>();
-        var pivots = page.FindComponents<ExPivot<Sale>>();
+        var pivots = page.FindComponents<PivotComponent>();
 
         await OpenMenuAsync(pivots[0], "Rows", "Region");
 
@@ -186,6 +191,9 @@ public class ReportCommandTests : PivotTestContext
     /// <summary>A Consumer's page binding the layout both ways.</summary>
     private sealed class BoundPage : ComponentBase
     {
+        // Held in a field: a new source is a refresh (ADR-0065).
+        private readonly PivotSource _source = Bundled();
+
         public PivotLayout Layout { get; private set; } = new() { Rows = [P("Region")], Values = [Sum("Amount")] };
 
         public void Replace(PivotLayout layout)
@@ -196,14 +204,13 @@ public class ReportCommandTests : PivotTestContext
 
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
-            builder.OpenComponent<ExPivot<Sale>>(0);
-            builder.AddComponentParameter(1, nameof(ExPivot<Sale>.Records), Sales);
-            builder.AddComponentParameter(2, nameof(ExPivot<Sale>.Fields), Fields);
-            builder.AddComponentParameter(3, nameof(ExPivot<Sale>.Layout), Layout);
-            builder.AddComponentParameter(4, nameof(ExPivot<Sale>.LayoutChanged),
+            builder.OpenComponent<PivotComponent>(0);
+            builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
+            builder.AddComponentParameter(3, nameof(PivotComponent.Layout), Layout);
+            builder.AddComponentParameter(4, nameof(PivotComponent.LayoutChanged),
                 EventCallback.Factory.Create<PivotLayout>(this, layout => Layout = layout));
-            builder.AddComponentParameter(5, nameof(ExPivot<Sale>.ViewportHeight), (ExGrid.ViewportSize)300);
-            builder.AddComponentParameter(6, nameof(ExPivot<Sale>.ViewportWidth), (ExGrid.ViewportSize)600);
+            builder.AddComponentParameter(5, nameof(PivotComponent.ViewportHeight), (ExGrid.ViewportSize)300);
+            builder.AddComponentParameter(6, nameof(PivotComponent.ViewportWidth), (ExGrid.ViewportSize)600);
             builder.CloseComponent();
         }
     }
@@ -211,16 +218,18 @@ public class ReportCommandTests : PivotTestContext
     /// <summary>Two pivots over the same records, each with a layout of its own.</summary>
     private sealed class TwoPivots : ComponentBase
     {
+        // One source serves both: a source holds no state of a pivot's.
+        private readonly PivotSource _source = Bundled();
+
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             for (var i = 0; i < 2; i++)
             {
-                builder.OpenComponent<ExPivot<Sale>>(0);
-                builder.AddComponentParameter(1, nameof(ExPivot<Sale>.Records), Sales);
-                builder.AddComponentParameter(2, nameof(ExPivot<Sale>.Fields), Fields);
-                builder.AddComponentParameter(3, nameof(ExPivot<Sale>.Layout), new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
-                builder.AddComponentParameter(4, nameof(ExPivot<Sale>.ViewportHeight), (ExGrid.ViewportSize)300);
-                builder.AddComponentParameter(5, nameof(ExPivot<Sale>.ViewportWidth), (ExGrid.ViewportSize)600);
+                builder.OpenComponent<PivotComponent>(0);
+                builder.AddComponentParameter(1, nameof(PivotComponent.Source), _source);
+                builder.AddComponentParameter(3, nameof(PivotComponent.Layout), new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+                builder.AddComponentParameter(4, nameof(PivotComponent.ViewportHeight), (ExGrid.ViewportSize)300);
+                builder.AddComponentParameter(5, nameof(PivotComponent.ViewportWidth), (ExGrid.ViewportSize)600);
                 builder.CloseComponent();
             }
         }

@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Services;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.MudBlazor.Tests.Support;
 
@@ -75,11 +76,12 @@ public abstract class MudPivotTestContext : BunitContext
     /// <summary>Renders an ExPivot in a <c>MudExGridPaper</c>, connected and interactive, in
     /// en-US, dressed by <paramref name="chrome"/> — the Mud Chrome unless told otherwise; pass
     /// <see cref="BuiltIn"/> for ExPivot's own markup.</summary>
-    internal IRenderedComponent<ExPivot<Sale>> RenderPivot(
+    internal IRenderedComponent<PivotComponent> RenderPivot(
         PivotLayout? layout = null,
         IPivotChrome? chrome = null,
         Func<string, string?>? label = null,
-        EventCallback<PivotDetails<Sale>>? showDetails = null)
+        EventCallback<PivotDetails>? showDetails = null,
+        PivotSource? source = null)
     {
         if (!_rendererInfoSet)
         {
@@ -93,25 +95,24 @@ public abstract class MudPivotTestContext : BunitContext
             builder.OpenComponent<MudExGridPaper>(0);
             builder.AddComponentParameter(1, nameof(MudExGridPaper.ChildContent), (RenderFragment)(inner =>
             {
-                inner.OpenComponent<ExPivot<Sale>>(0);
-                inner.AddComponentParameter(1, nameof(ExPivot<Sale>.Records), Sales);
-                inner.AddComponentParameter(2, nameof(ExPivot<Sale>.Fields), Fields);
-                inner.AddComponentParameter(3, nameof(ExPivot<Sale>.Culture), CultureInfo.GetCultureInfo("en-US"));
-                inner.AddComponentParameter(4, nameof(ExPivot<Sale>.ViewportHeight), (ViewportSize)400);
-                inner.AddComponentParameter(5, nameof(ExPivot<Sale>.ViewportWidth), (ViewportSize)700);
+                inner.OpenComponent<PivotComponent>(0);
+                inner.AddComponentParameter(1, nameof(PivotComponent.Source), source ?? PivotSource.From(Sales, Fields));
+                inner.AddComponentParameter(3, nameof(PivotComponent.Culture), CultureInfo.GetCultureInfo("en-US"));
+                inner.AddComponentParameter(4, nameof(PivotComponent.ViewportHeight), (ViewportSize)400);
+                inner.AddComponentParameter(5, nameof(PivotComponent.ViewportWidth), (ViewportSize)700);
                 if (pivotChrome is not null)
-                    inner.AddComponentParameter(6, nameof(ExPivot<Sale>.PivotChrome), pivotChrome);
+                    inner.AddComponentParameter(6, nameof(PivotComponent.PivotChrome), pivotChrome);
                 if (layout is not null)
-                    inner.AddComponentParameter(7, nameof(ExPivot<Sale>.Layout), layout);
+                    inner.AddComponentParameter(7, nameof(PivotComponent.Layout), layout);
                 if (label is not null)
-                    inner.AddComponentParameter(8, nameof(ExPivot<Sale>.Label), label);
+                    inner.AddComponentParameter(8, nameof(PivotComponent.Label), label);
                 if (showDetails is { } details)
-                    inner.AddComponentParameter(9, nameof(ExPivot<Sale>.OnShowDetails), details);
+                    inner.AddComponentParameter(9, nameof(PivotComponent.OnShowDetails), details);
                 inner.CloseComponent();
             }));
             builder.CloseComponent();
         });
-        return host.FindComponent<ExPivot<Sale>>();
+        return host.FindComponent<PivotComponent>();
     }
 
     /// <summary>Asks <see cref="RenderPivot"/> for ExPivot's built-in markup.</summary>
@@ -119,64 +120,64 @@ public abstract class MudPivotTestContext : BunitContext
 
     private sealed class BuiltInMarker : IPivotChrome;
 
-    internal static IRenderedComponent<ExGrid<PivotReportRow>> Grid(IRenderedComponent<ExPivot<Sale>> cut)
+    internal static IRenderedComponent<ExGrid<PivotReportRow>> Grid(IRenderedComponent<PivotComponent> cut)
         => cut.FindComponent<ExGrid<PivotReportRow>>();
 
     /// <summary>Each painted row's cells as text, label cells first, joined with " | ".</summary>
-    internal static string[] RowTexts(IRenderedComponent<ExPivot<Sale>> cut)
+    internal static string[] RowTexts(IRenderedComponent<PivotComponent> cut)
         => cut.FindAll(".ex-viewport .ex-row")
             .Select(row => string.Join(" | ", row.QuerySelectorAll("[role=gridcell]").Select(c => c.TextContent.Trim())).TrimEnd())
             .ToArray();
 
     /// <summary>The leaf headers as painted.</summary>
-    internal static string[] HeaderTexts(IRenderedComponent<ExPivot<Sale>> cut)
+    internal static string[] HeaderTexts(IRenderedComponent<PivotComponent> cut)
         => cut.FindAll(".ex-header [role=columnheader]").Select(h => h.TextContent.Trim()).ToArray();
 
     /// <summary>One Area of the Mud pane, by its title.</summary>
-    internal static IElement Area(IRenderedComponent<ExPivot<Sale>> cut, string title)
+    internal static IElement Area(IRenderedComponent<PivotComponent> cut, string title)
         => cut.FindAll(".mud-ex-pivot-area").Single(a => a.QuerySelector(".mud-ex-pivot-area-name")!.TextContent.Trim() == title);
 
     /// <summary>The entries of one Area of the Mud pane, as captioned.</summary>
-    internal static string[] Entries(IRenderedComponent<ExPivot<Sale>> cut, string title)
+    internal static string[] Entries(IRenderedComponent<PivotComponent> cut, string title)
         => Area(cut, title).QuerySelectorAll(".mud-ex-pivot-entry-caption").Select(e => e.TextContent.Trim()).ToArray();
 
     /// <summary>A field's row in the Mud pane's list of fields.</summary>
-    internal static IElement Field(IRenderedComponent<ExPivot<Sale>> cut, string caption)
+    internal static IElement Field(IRenderedComponent<PivotComponent> cut, string caption)
         => cut.FindAll(".mud-ex-pivot-field").Single(f => f.TextContent.Trim() == caption);
 
     /// <summary>Ticks or unticks a field in the Mud pane.</summary>
-    internal static Task TickFieldAsync(IRenderedComponent<ExPivot<Sale>> cut, string caption, bool tick)
+    internal static Task TickFieldAsync(IRenderedComponent<PivotComponent> cut, string caption, bool tick)
         => Field(cut, caption).QuerySelector("input[type=checkbox]")!.ChangeAsync(new ChangeEventArgs { Value = tick });
 
     /// <summary>An entry's MudButton in the Mud pane.</summary>
-    internal static IElement EntryButton(IRenderedComponent<ExPivot<Sale>> cut, string area, string caption)
+    internal static IElement EntryButton(IRenderedComponent<PivotComponent> cut, string area, string caption)
         => Area(cut, area).QuerySelectorAll(".mud-ex-pivot-entry-button")
             .Single(b => b.QuerySelector(".mud-ex-pivot-entry-caption")!.TextContent.Trim() == caption);
 
     /// <summary>Opens the menu of an entry in the Mud pane.</summary>
-    internal static Task OpenMenuAsync(IRenderedComponent<ExPivot<Sale>> cut, string area, string caption)
+    internal static Task OpenMenuAsync(IRenderedComponent<PivotComponent> cut, string area, string caption)
         => EntryButton(cut, area, caption).ClickAsync(new MouseEventArgs());
 
     /// <summary>The open menu's commands, as the Mud Chrome draws them.</summary>
-    internal static IReadOnlyList<IElement> MenuItems(IRenderedComponent<ExPivot<Sale>> cut)
+    internal static IReadOnlyList<IElement> MenuItems(IRenderedComponent<PivotComponent> cut)
         => cut.FindAll(".mud-ex-pivot-menu .mud-ex-pivot-menu-item");
 
     /// <summary>Runs the open menu's command called <paramref name="label"/>.</summary>
-    internal static Task RunMenuAsync(IRenderedComponent<ExPivot<Sale>> cut, string label)
+    internal static Task RunMenuAsync(IRenderedComponent<PivotComponent> cut, string label)
         => MenuItems(cut).Single(b => b.TextContent.Trim() == label).ClickAsync(new MouseEventArgs());
 
     /// <summary>Ticks or unticks an Item in the Mud Filter….</summary>
-    internal static Task TickItemAsync(IRenderedComponent<ExPivot<Sale>> cut, string label, bool tick)
+    internal static Task TickItemAsync(IRenderedComponent<PivotComponent> cut, string label, bool tick)
         => cut.FindAll(".mud-ex-pivot-item-filter .mud-checkbox")
             .Single(c => c.TextContent.Trim() == label)
             .QuerySelector("input[type=checkbox]")!
             .ChangeAsync(new ChangeEventArgs { Value = tick });
 
     /// <summary>The Context Menu's commands the grid would show on (row, column).</summary>
-    internal static IReadOnlyList<GridCommand> ContextCommands(IRenderedComponent<ExPivot<Sale>> cut, int row, string column)
+    internal static IReadOnlyList<GridCommand> ContextCommands(IRenderedComponent<PivotComponent> cut, int row, string column)
         => Grid(cut).Instance.ContextCommands!(ContextAt(cut, row, column)).ToArray();
 
-    internal static ContextMenuContext<PivotReportRow> ContextAt(IRenderedComponent<ExPivot<Sale>> cut, int row, string column)
+    internal static ContextMenuContext<PivotReportRow> ContextAt(IRenderedComponent<PivotComponent> cut, int row, string column)
     {
         var grid = Grid(cut).Instance;
         return new ContextMenuContext<PivotReportRow>(

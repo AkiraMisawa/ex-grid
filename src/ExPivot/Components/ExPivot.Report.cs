@@ -15,15 +15,15 @@ using Microsoft.AspNetCore.Components.Web;
 namespace ExPivot.Components;
 
 /// <summary>
-/// Excel's PivotTable, drawn by ExGrid as that grid's Consumer (ADR-0058): the report filter band,
-/// one ExGrid over the Pivot Report, and the Field List beside it (ADR-0060). ExPivot holds the
-/// Pivot Layout and computes the report with ExPivot.Engine; ExGrid paints, selects, navigates,
-/// copies and reports.
+/// Excel's PivotTable, drawn by ExGrid as that grid's Consumer (ADR-0058): the toolbar above the
+/// report, one ExGrid over the Pivot Report, Show Details' tabs at its foot, and the Field List
+/// beside it (ADR-0060). ExPivot holds the Pivot Layout, asks its Pivot Source for the Leaf
+/// Aggregates and lays the report out with ExPivot.Engine (ADR-0065); ExGrid paints, selects,
+/// navigates, copies and reports.
 /// </summary>
-/// <typeparam name="TRecord">The Consumer's Source Record type.</typeparam>
 // This part is the report half: the one ExGrid, its columns, its label cells, its Context Menu
 // and its double click (ADR-0058/0062).
-public partial class ExPivot<TRecord>
+public partial class ExPivot
 {
     /// <summary>The widest a label column is sized to by its labels; a wider label is cut with an
     /// ellipsis, as text is (ADR-0016). A user's drag may make it wider.</summary>
@@ -58,7 +58,6 @@ public partial class ExPivot<TRecord>
     private readonly EventCallback<CellPosition> _doubleClick;
     private readonly RenderFragment _gridFragment;
 
-    private PivotCube? _cube;
     private PivotReport? _report;
     private int _rowSequenceVersion;
     private IReadOnlyList<GridColumn<PivotReportRow>> _columns = [];
@@ -70,7 +69,7 @@ public partial class ExPivot<TRecord>
     // grid, and the label column its button is in.
     private (PivotToggle Toggle, int Column)? _focusAfterToggle;
 
-    /// <summary>Creates the component; the report is computed when its parameters arrive.</summary>
+    /// <summary>Creates the component; the report is asked for when its parameters arrive.</summary>
     public ExPivot()
     {
         // Held in fields: a delegate's identity reaches the grid, and one made per render would
@@ -81,6 +80,8 @@ public partial class ExPivot<TRecord>
         _doubleClick = new EventCallback<CellPosition>(null, (Func<CellPosition, Task>)OnCellDoubleClickAsync);
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);
+        _closeDialog = new EventCallback(null, (Action)CloseDialog);
+        _idPrefix = "ex-pivot-" + Guid.NewGuid().ToString("N")[..12];
     }
 
     // The Pivot Chrome's grid Chrome, asked once per Pivot Chrome and held: one made per render
@@ -113,6 +114,15 @@ public partial class ExPivot<TRecord>
         ? "flex: 1 1 auto; min-height: 0"
         : string.Create(CultureInfo.InvariantCulture, $"height: {ViewportHeight.Px}px");
 
+    // The box the report and a details tab's records share: under a Stretch height it is the
+    // flex item the grid stretches in (ADR-0028).
+    private string? SheetStyle => ViewportHeight.IsStretch ? "display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0" : null;
+
+    // What the box says while there is no report to show: that one is on its way, or how to start.
+    private string EmptyText => _loading && _layout.Rows.Count + _layout.Columns.Count + _layout.Values.Count > 0
+        ? Word("loading")
+        : Word("empty-report");
+
     // Bumped whenever anything the grid reads may have changed (PivotGridHost).
     private int _gridVersion;
 
@@ -135,20 +145,6 @@ public partial class ExPivot<TRecord>
         _metrics = metrics;
         _indentStyles.Clear();
         return true;
-    }
-
-    private void Recompute()
-    {
-        var options = new PivotOptions { Culture = _culture, Label = Label };
-        if (!PivotEngine.CanReuse(_cube, Records, Fields, _layout))
-            _cube = PivotEngine.Aggregate(Records, Fields, _layout);
-        var report = PivotEngine.Report(_cube!, _layout, options);
-        // The order a selection is written in (ADR-0011): kept when only values moved.
-        if (_report is null || !report.HasSameRowsAs(_report))
-            _rowSequenceVersion++;
-        _report = report;
-        _items.Clear();
-        BuildColumns();
     }
 
     private void BuildColumns()
@@ -367,17 +363,20 @@ public partial class ExPivot<TRecord>
         builder.AddComponentParameter(13, nameof(ExGrid<PivotReportRow>.ViewportHeight), ViewportHeight);
         builder.AddComponentParameter(14, nameof(ExGrid<PivotReportRow>.ViewportWidth), ViewportWidth);
         builder.AddComponentParameter(15, nameof(ExGrid<PivotReportRow>.OnCellDoubleClick), _doubleClick);
+        // While a question is out, the report stays as it was under the grid's own indication
+        // (ADR-0010/0065).
+        builder.AddComponentParameter(16, nameof(ExGrid<PivotReportRow>.IsLoading), _loading);
         if (RowHeight is { } rowHeight)
-            builder.AddComponentParameter(16, nameof(ExGrid<PivotReportRow>.RowHeight), rowHeight);
+            builder.AddComponentParameter(17, nameof(ExGrid<PivotReportRow>.RowHeight), rowHeight);
         if (Density is { } density)
-            builder.AddComponentParameter(17, nameof(ExGrid<PivotReportRow>.Density), density);
+            builder.AddComponentParameter(18, nameof(ExGrid<PivotReportRow>.Density), density);
         if (CellMetrics is { } metrics)
-            builder.AddComponentParameter(18, nameof(ExGrid<PivotReportRow>.CellMetrics), metrics);
+            builder.AddComponentParameter(19, nameof(ExGrid<PivotReportRow>.CellMetrics), metrics);
         if (GridChrome is { } chrome)
-            builder.AddComponentParameter(19, nameof(ExGrid<PivotReportRow>.Chrome), chrome);
+            builder.AddComponentParameter(20, nameof(ExGrid<PivotReportRow>.Chrome), chrome);
         if (SelectionChanged.HasDelegate)
-            builder.AddComponentParameter(20, nameof(ExGrid<PivotReportRow>.SelectionChanged), SelectionChanged);
-        builder.AddComponentReferenceCapture(21, grid => _grid = (ExGrid<PivotReportRow>)grid);
+            builder.AddComponentParameter(21, nameof(ExGrid<PivotReportRow>.SelectionChanged), SelectionChanged);
+        builder.AddComponentReferenceCapture(22, grid => _grid = (ExGrid<PivotReportRow>)grid);
         builder.CloseComponent();
     }
 
@@ -386,7 +385,8 @@ public partial class ExPivot<TRecord>
     {
         // The toggled Item keeps the Focus, as it does in Excel: placed once the report it was
         // toggled into has reached the grid, under that report's order (ADR-0050 item 4, ADR-0011).
-        if (_focusAfterToggle is { } pending && _grid is { } grid && _report is { } report)
+        if (_focusAfterToggle is { } pending && _grid is { } grid && _report is { } report
+            && ReferenceEquals(report.Layout, _layout))
         {
             _focusAfterToggle = null;
             var (toggle, column) = pending;
@@ -405,7 +405,7 @@ public partial class ExPivot<TRecord>
     private Task ToggleAsync(PivotToggle toggle, int column)
     {
         _focusAfterToggle = (toggle, column);
-        return ApplyAsync(PivotLayoutEdits.SetCollapsed(_layout, toggle.Field, toggle.Item, !toggle.IsCollapsed));
+        return ReportEditAsync(layout => PivotLayoutEdits.SetCollapsed(layout, toggle.Field, toggle.Item, !toggle.IsCollapsed));
     }
 
     private async Task OnWidthChangedAsync(ColumnWidthChange change)
@@ -435,28 +435,29 @@ public partial class ExPivot<TRecord>
         await ShowDetailsAsync(row, cell.Column - labels);
     }
 
-    private async Task ShowDetailsAsync(PivotReportRow row, int valueColumn)
+    private IReadOnlyList<PivotDetailItem> Items(PivotReport report, IReadOnlyList<(string Field, PivotItemKey Item)> path)
+        => path.Select(step => new PivotDetailItem(CaptionOf(step.Field), LabelOf(report, step.Field, step.Item))).ToArray();
+
+    private string CaptionOf(string field) => FieldOf(field)?.Caption ?? field;
+
+    private PivotField? FieldOf(string field)
     {
-        if (!OnShowDetails.HasDelegate || _report is not { } report || !ReferenceEquals(row.Report, report))
-            return;
-        if (row.ValueAt(valueColumn) is null)
-            return;
-        var records = PivotEngine.RecordsBehind(Records, Fields, report, row, valueColumn);
-        var details = new PivotDetails<TRecord>(
-            records,
-            Items(report.RowPath(row)),
-            Items(report.ColumnPath(valueColumn)),
-            report.ValueFieldAt(row, valueColumn) is var vf and >= 0 ? report.ValueCaptions[vf] : null);
-        await OnShowDetails.InvokeAsync(details);
+        foreach (var declared in Source.Fields)
+        {
+            if (declared.Name == field)
+                return declared;
+        }
+        return null;
     }
 
-    private IReadOnlyList<PivotDetailItem> Items(IReadOnlyList<(string Field, PivotItemKey Item)> path)
-        => path.Select(step => new PivotDetailItem(CaptionOf(step.Field), ItemLabel(step.Field, step.Item))).ToArray();
-
-    private string CaptionOf(string field) => Fields.FirstOrDefault(f => f.Name == field)?.Caption ?? field;
-
-    private string ItemLabel(string field, PivotItemKey item)
-        => ItemsOf(field).FirstOrDefault(i => i.Key.Equals(item))?.Label ?? item.Value ?? Word(PivotWords.Blank);
+    /// <summary>An Item's label, by the engine's rule for its field (ADR-0059).</summary>
+    private string LabelOf(PivotReport report, string field, PivotItemKey item)
+    {
+        if (FieldOf(field) is not { } declared)
+            return item.Value ?? Word(PivotWords.Blank);
+        var page = new PivotItemPage(report.Cube.SourceVersion, [item], 1);
+        return PivotEngine.ItemsOf(page, report.Layout, declared, _options)[0].Label;
+    }
 
     // ---- The Context Menu (ADR-0036/0058) --------------------------------------------------------
 
@@ -473,6 +474,7 @@ public partial class ExPivot<TRecord>
     {
         if (_report is not { } report || !ReferenceEquals(context.Row.Report, report))
             return [];
+        var layout = report.Layout;
         var row = context.Row;
         var labelColumn = report.LabelColumns.ToList().FindIndex(c => c.Name == context.Column);
         var valueColumn = labelColumn >= 0 ? -1 : report.ValueColumns.ToList().FindIndex(c => c.Name == context.Column);
@@ -480,56 +482,59 @@ public partial class ExPivot<TRecord>
 
         if (CollapsibleItemOf(report, row) is { } item)
         {
-            var placement = _layout.Rows.First(p => p.Field == item.Field);
+            var placement = layout.Rows.First(p => p.Field == item.Field);
             var collapsed = placement.IsCollapsed(item.Item);
             commands.Add(new GridCommand(PivotCommandIds.Expand, collapsed,
                 () => ToggleFromMenuAsync(item.Field, item.Item, collapse: false)));
             commands.Add(new GridCommand(PivotCommandIds.Collapse, !collapsed,
                 () => ToggleFromMenuAsync(item.Field, item.Item, collapse: true)));
             commands.Add(new GridCommand(PivotCommandIds.ExpandField, placement.Collapsed || placement.ToggledItems.Count > 0,
-                () => ApplyAsync(PivotLayoutEdits.SetFieldCollapsed(_layout, item.Field, false))));
+                () => ReportEditAsync(l => PivotLayoutEdits.SetFieldCollapsed(l, item.Field, false))));
             commands.Add(new GridCommand(PivotCommandIds.CollapseField, !placement.Collapsed || placement.ToggledItems.Count > 0,
-                () => ApplyAsync(PivotLayoutEdits.SetFieldCollapsed(_layout, item.Field, true))));
+                () => ReportEditAsync(l => PivotLayoutEdits.SetFieldCollapsed(l, item.Field, true))));
         }
 
         var field = labelColumn >= 0 ? FieldOfLabel(report, row, labelColumn) : InnermostFieldOf(report, row);
         if (labelColumn >= 0 && field is not null)
         {
-            var sort = _layout.Rows.First(p => p.Field == field).Sort;
+            var sort = layout.Rows.First(p => p.Field == field).Sort;
             commands.Add(new GridCommand(PivotCommandIds.SortAscending, sort != PivotSort.Ascending,
-                () => ApplyAsync(PivotLayoutEdits.SetSort(_layout, field, PivotSort.Ascending))));
+                () => ReportEditAsync(l => PivotLayoutEdits.SetSort(l, field, PivotSort.Ascending))));
             commands.Add(new GridCommand(PivotCommandIds.SortDescending, sort != PivotSort.Descending,
-                () => ApplyAsync(PivotLayoutEdits.SetSort(_layout, field, PivotSort.Descending))));
+                () => ReportEditAsync(l => PivotLayoutEdits.SetSort(l, field, PivotSort.Descending))));
         }
         if (valueColumn >= 0)
         {
             var vf = report.ValueFieldAt(row, valueColumn);
             if (field is not null && vf >= 0)
             {
-                var sort = _layout.Rows.First(p => p.Field == field).Sort;
+                var sort = layout.Rows.First(p => p.Field == field).Sort;
                 var smallest = new PivotSort(PivotSortDirection.Ascending, vf);
                 var largest = new PivotSort(PivotSortDirection.Descending, vf);
                 commands.Add(new GridCommand(PivotCommandIds.SortSmallestToLargest, sort != smallest,
-                    () => ApplyAsync(PivotLayoutEdits.SetSort(_layout, field, smallest))));
+                    () => ReportEditAsync(l => PivotLayoutEdits.SetSort(l, field, smallest))));
                 commands.Add(new GridCommand(PivotCommandIds.SortLargestToSmallest, sort != largest,
-                    () => ApplyAsync(PivotLayoutEdits.SetSort(_layout, field, largest))));
+                    () => ReportEditAsync(l => PivotLayoutEdits.SetSort(l, field, largest))));
             }
-            if (OnShowDetails.HasDelegate)
-            {
-                commands.Add(new GridCommand(PivotCommandIds.ShowDetails, row.ValueAt(valueColumn) is not null,
-                    () => ShowDetailsAsync(row, valueColumn)));
-            }
+            // Show Details is always offered: the tab, the dialog or the Consumer takes the
+            // records (ADR-0058). An empty cell has none to show.
+            commands.Add(new GridCommand(PivotCommandIds.ShowDetails, row.ValueAt(valueColumn) is not null,
+                () => ShowDetailsAsync(row, valueColumn)));
             if (vf >= 0)
             {
-                commands.Add(new GridCommand(PivotCommandIds.ValueFieldSettings, true,
+                // The panel opens in the pane, under the Value Field's entry: offered while the
+                // pane shows that Value Field where the report does.
+                var shownInPane = vf < PaneLayout.Values.Count && Equals(PaneLayout.Values[vf], layout.Values[vf]);
+                commands.Add(new GridCommand(PivotCommandIds.ValueFieldSettings, shownInPane,
                     () => OpenFromReportAsync(new PivotEntry(PivotArea.Values, vf), Surface.ValueFieldSettings)));
             }
         }
         if (field is not null)
         {
-            var at = _layout.PlacementOf(field)!.Value;
             commands.Add(new GridCommand(PivotCommandIds.RemoveNamedField + ":" + CaptionOf(field), true,
-                () => ApplyAsync(PivotLayoutEdits.Remove(_layout, new PivotEntry(at.Area, at.Index)))));
+                () => ReportEditAsync(l => l.PlacementOf(field) is { } at
+                    ? PivotLayoutEdits.Remove(l, new PivotEntry(at.Area, at.Index))
+                    : throw new ArgumentException($"'{field}' no longer stands in the layout."))));
         }
         commands.Add(_fieldListShown
             ? new GridCommand(PivotCommandIds.HideFieldList, true, () => SetFieldListShownAsync(false))
@@ -541,35 +546,40 @@ public partial class ExPivot<TRecord>
     {
         var column = _report?.LabelColumns.Count == 1 ? 0 : Math.Max(0, _layout.Rows.ToList().FindIndex(p => p.Field == field));
         _focusAfterToggle = (new PivotToggle(field, item, "", !collapse), column);
-        return ApplyAsync(PivotLayoutEdits.SetCollapsed(_layout, field, item, collapse));
+        return ReportEditAsync(layout => PivotLayoutEdits.SetCollapsed(layout, field, item, collapse));
     }
 
-    private Task SetFieldListShownAsync(bool shown)
+    /// <summary>Shows or hides the Field List — the toolbar's toggle, or the Context Menu — and
+    /// tells a Consumer that binds it (ADR-0060).</summary>
+    private async Task SetFieldListShownAsync(bool shown)
     {
+        if (_fieldListShown == shown)
+            return;
         _fieldListShown = shown;
-        if (!shown)
+        _showFieldListParameter = shown;
+        if (!shown && _open is { OnToolbar: false })
             CloseOpenQuietly();
         StateHasChanged();
-        return Task.CompletedTask;
+        await ShowFieldListChanged.InvokeAsync(shown);
     }
 
     /// <summary>The Item a row's Expand and Collapse act on: its own when it is an outer Item, its
     /// parent's when it is an innermost one, as Excel's Collapse on a detail row collapses the
     /// group it is in. None on a grand total row.</summary>
-    private (string Field, PivotItemKey Item)? CollapsibleItemOf(PivotReport report, PivotReportRow row)
+    private static (string Field, PivotItemKey Item)? CollapsibleItemOf(PivotReport report, PivotReportRow row)
     {
         var path = report.RowPath(row);
         for (var level = path.Count - 1; level >= 0; level--)
         {
-            if (level < _layout.Rows.Count - 1)
+            if (level < report.Layout.Rows.Count - 1)
                 return path[level];
         }
         return null;
     }
 
-    private string? InnermostFieldOf(PivotReport report, PivotReportRow row)
+    private static string? InnermostFieldOf(PivotReport report, PivotReportRow row)
         => report.RowPath(row) is { Count: > 0 } path ? path[^1].Field : null;
 
-    private string? FieldOfLabel(PivotReport report, PivotReportRow row, int labelColumn)
+    private static string? FieldOfLabel(PivotReport report, PivotReportRow row, int labelColumn)
         => report.LabelColumns[labelColumn].Field ?? (row.ValueField < 0 ? InnermostFieldOf(report, row) : null);
 }
