@@ -6,12 +6,12 @@ namespace ExSheet.Engine.Tests;
 
 /// <summary>
 /// ADR-0063, ADR-0048 (SH-38): the Sheet Document records Font, Fill and Borders for cells, rows and
-/// columns at version 7; an older version reads with none of them; a colour of any other kind than
+/// columns at version 8; an older version reads with none of them; a colour of any other kind than
 /// Automatic or RGB is refused by name.
 /// </summary>
 public class CellFormatDocumentTests
 {
-    private const string Head = "{\"version\":7,\"culture\":\"en-US\",\"name\":\"Sheet1\"";
+    private const string Head = "{\"version\":8,\"culture\":\"en-US\",\"name\":\"Sheet1\"";
 
     private static CellAddress At(string address) => CellAddress.Parse(address);
 
@@ -115,7 +115,7 @@ public class CellFormatDocumentTests
     }
 
     [Fact] // ADR-0048 (SH-38): the reader takes an explicit Automatic colour, false emphasis and either case of hex
-    public void The_reader_takes_what_version_7_defines()
+    public void The_reader_takes_what_version_8_defines()
     {
         var document = SheetDocument.FromJson(Head + ""","cells":[{"at":"A1","font":{"color":"automatic","bold":false,"italic":true},"fill":"#c0ffee","borders":{"left":{"style":"hair","color":"automatic"}}}]}""");
 
@@ -144,6 +144,7 @@ public class CellFormatDocumentTests
     [InlineData("""{"version":6,"culture":"en-US","name":"Sheet1","cells":[{"at":"A1","font":{"bold":true}}]}""")]
     [InlineData("""{"version":6,"culture":"en-US","name":"Sheet1","cells":[{"at":"A1","fill":"#FFFF00"}]}""")]
     [InlineData("""{"version":6,"culture":"en-US","name":"Sheet1","rows":[{"at":"2:2","borders":{}}],"cells":[]}""")]
+    [InlineData("""{"version":7,"culture":"en-US","name":"Sheet1","cells":[{"at":"A1","font":{"bold":true}}]}""")]
     [InlineData("""{"version":3,"culture":"en-US","name":"Sheet1","columns":[{"at":"A:A","fill":"none"}],"cells":[]}""")]
     public void An_older_version_holding_them_is_refused(string json)
     {
@@ -167,7 +168,7 @@ public class CellFormatDocumentTests
         Assert.Contains(named, refusal.Message, StringComparison.Ordinal);
     }
 
-    [Theory] // ADR-0063, ADR-0048 (SH-38): anything else version 7 does not define in a Font, Fill or Borders is refused
+    [Theory] // ADR-0063, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused
     [InlineData(""","cells":[{"at":"A1","font":{"size":14}}]}""")]
     [InlineData(""","cells":[{"at":"A1","font":{"bold":"yes"}}]}""")]
     [InlineData(""","cells":[{"at":"A1","font":{"underline":"double"}}]}""")]

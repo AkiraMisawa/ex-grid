@@ -157,8 +157,10 @@ public abstract class SheetTestContext : BunitContext
         return row.QuerySelectorAll("[role=gridcell]").Single(c => c.GetAttribute("aria-colindex") == (at.Column + 1).ToString(System.Globalization.CultureInfo.InvariantCulture));
     }
 
-    /// <summary>Moves the browser's scroll position and raises the scroll event the grid listens for.</summary>
-    internal async Task ScrollToAsync(IRenderedComponent<SheetComponent> cut, double top, double left)
+    /// <summary>Moves the browser's scroll position and raises the scroll event the grid listens for:
+    /// the Sheet's grid, or a grid of the page's own.</summary>
+    internal async Task ScrollToAsync<TComponent>(IRenderedComponent<TComponent> cut, double top, double left)
+        where TComponent : IComponent
     {
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(new ScrollOffset(top, left));
         await cut.Find(".ex-scroller").ScrollAsync(EventArgs.Empty);

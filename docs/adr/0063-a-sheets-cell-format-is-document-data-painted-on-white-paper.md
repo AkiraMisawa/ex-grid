@@ -596,7 +596,9 @@ then decides (ADR-0047's rule).
   - ADR-0027 and ADR-0030: the Paper and Ink tokens are not the Wrapper's to darken, and bold
     widths join the metrics a Wrapper supplies.
 - **The Sheet Document gains Font, Fill and Border, at a new version.** Version 7 is already taken
-  on `claude/exsheet-pointing-scope`, so the number is fixed when the branches merge.
+  on `claude/exsheet-pointing-scope`, so the number is fixed when the branches merge. *(2026-10-01:
+  it is version 8. Pointing Scope reached `claude/exsheet-start-8cx3v1` first, with version 7 for a
+  Linked Table's key (ADR-0049).)*
 - **The code's names follow the glossary.** `AxisStyle` becomes `AxisFormat`, `SetStyle` becomes
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.

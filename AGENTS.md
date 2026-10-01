@@ -49,7 +49,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 56 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 58 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -323,7 +323,7 @@ rules that make this safe:
 
 Project skills from [mattpocock/skills](https://github.com/mattpocock/skills) live in
 `.claude/skills/`: `/grill-with-docs` (with `grilling` and `domain-modeling`), `tdd` (with
-`codebase-design`), `/to-spec`, `/implement`, and `/setup-matt-pocock-skills`. They are ordinary
+`codebase-design`), `/to-spec`, `/implement`, `/research`, and `/setup-matt-pocock-skills`. They are ordinary
 files; where one disagrees with this document, this document wins.
 
 ### Implement

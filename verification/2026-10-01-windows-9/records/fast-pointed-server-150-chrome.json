@@ -1,0 +1,2604 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5298",
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1586,
+   956
+  ],
+  "forcedColors": false,
+  "dark": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+ },
+ "label": "server-150",
+ "mode": "fast",
+ "fast": "pointed",
+ "rtt": 150,
+ "started": "2026-10-01T00:08:53.176Z",
+ "cases": [
+  {
+   "case": "dc54-pointed",
+   "rep": 1,
+   "started": "2026-10-01T00:08:57.150Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 105,
+   "targetBefore": "",
+   "pointedAtMs": 169,
+   "burst": "ok burstclick events=6 ms=5",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 3579,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3004,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 2,
+   "started": "2026-10-01T00:09:01.131Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 176,
+   "burst": "ok burstclick events=6 ms=3",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 7482,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3004,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 3,
+   "started": "2026-10-01T00:09:04.858Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 160,
+   "burst": "ok burstclick events=6 ms=7",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 11191,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3004,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 4,
+   "started": "2026-10-01T00:09:08.572Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 159,
+   "burst": "ok burstclick events=6 ms=4",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 14901,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3002,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 5,
+   "started": "2026-10-01T00:09:12.282Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 160,
+   "burst": "ok burstclick events=6 ms=3",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 18613,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3004,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 6,
+   "started": "2026-10-01T00:09:16.006Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 156,
+   "burst": "ok burstclick events=6 ms=3",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 22336,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3003,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 7,
+   "started": "2026-10-01T00:09:19.710Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 156,
+   "burst": "ok burstclick events=6 ms=3",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 26042,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3004,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 8,
+   "started": "2026-10-01T00:09:23.415Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 159,
+   "burst": "ok burstclick events=6 ms=11",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 29744,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3002,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 9,
+   "started": "2026-10-01T00:09:27.129Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 162,
+   "burst": "ok burstclick events=6 ms=11",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 33460,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3003,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  },
+  {
+   "case": "dc54-pointed",
+   "rep": 10,
+   "started": "2026-10-01T00:09:30.849Z",
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "focusMs": 0,
+   "targetBefore": "",
+   "pointedAtMs": 162,
+   "burst": "ok burstclick events=6 ms=4",
+   "read": {
+    "active": "sheet:cell",
+    "editing": true,
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 695.54,
+      "w": 99,
+      "h": 28
+     },
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 695.54,
+       "w": 99,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 558.06,
+         "t": 700.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 640.42,
+         "t": 700.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+     "selection": [
+      49,
+      49
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 387.54,
+      "w": 606.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 387.54,
+       "w": 606.58,
+       "h": 28
+      },
+      "spans": [
+       {
+        "text": "Positions[Id]",
+        "pointed": false,
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 290.29,
+         "t": 392.21,
+         "w": 75.48,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "Positions[PV]",
+        "pointed": false,
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 372.65,
+         "t": 392.21,
+         "w": 80.05,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": true,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [
+      {
+       "cls": "ex-reference-outline ex-reference-1",
+       "color": "#326ac7",
+       "lineColour": "#326ac7",
+       "outline": "solid 2px #326ac7 offset -2px",
+       "border": "none 0px #326ac7",
+       "background": "#326ac7/0.1",
+       "box": {
+        "l": 784,
+        "t": 415.54,
+        "w": 90,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "Id"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      },
+      {
+       "cls": "ex-reference-outline ex-reference-2",
+       "color": "#c0353e",
+       "lineColour": "#c0353e",
+       "outline": "solid 2px #c0353e offset -2px",
+       "border": "none 0px #c0353e",
+       "background": "#c0353e/0.1",
+       "box": {
+        "l": 964,
+        "t": 415.54,
+        "w": 120,
+        "h": 140
+       },
+       "covers": {
+        "columns": [
+         "PV"
+        ],
+        "rows": "R-1102..R-6120 (5)"
+       },
+       "insideClient": true
+      }
+     ],
+     "dashes": [],
+     "scroller": {
+      "top": 0,
+      "left": 0,
+      "clientWidth": 330,
+      "clientHeight": 420,
+      "offsetWidth": 330,
+      "offsetHeight": 420,
+      "scrollWidth": 330,
+      "scrollHeight": 420,
+      "client": {
+       "l": 784,
+       "t": 387.54168701171875,
+       "w": 330,
+       "h": 420
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 784,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 874,
+        "t": 387.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 964,
+        "t": 387.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-1102",
+     "lastRow": "R-6120"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 37182,
+      "grid": "sheet0",
+      "el": "input.ex-editor"
+     }
+    ]
+   },
+   "readAtMs": 3006,
+   "value": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])*",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   }
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-01T00:08:54.072Z",
+   "type": "info",
+   "text": "[2026-10-01T00:08:54.070Z] Information: Normalizing '_blazor' to 'http://localhost:5298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T00:08:54.078Z",
+   "type": "info",
+   "text": "[2026-10-01T00:08:54.078Z] Information: WebSocket connected to ws://localhost:5298/_blazor?id=YqS5CxWBGrglPmFXKQhRGw."
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "emulation": "playwright",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok layout 0x08090809"
+ },
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 671,
+    "py": 371,
+    "client": {
+     "x": 400,
+     "y": 120
+    }
+   }
+  ]
+ },
+ "roundTripSet": {
+  "status": 200,
+  "now": "rtt=150\n"
+ },
+ "clip": {
+  "x": 28,
+  "y": 383,
+  "width": 1090,
+  "height": 429
+ },
+ "finished": "2026-10-01T00:09:34.574Z"
+}

@@ -289,6 +289,13 @@ script:
   but the core hears of it a round trip later. Keys typed in that gap — F2, ↓, a character held
   for another reason — were read as keys outside an edit, and were lost or did the wrong thing. The
   press is queued as a marker, and the keys after it wait for the core's answer to it.
+  *(Found on CI, the Server host, 2026-10-01.)* The listener held only a press that opened an
+  edit, not one into the bar while an edit was open in the cell — which moves the edit into the
+  bar, in Caret (ED-29), and so changes the mode too. On a circuit the bar's text is also a round
+  trip behind the typing in the cell: `=A1+` typed there, the bar pressed and `B1` typed at once,
+  the `B1` went into the bar's older `=`, and the render of the cell's last input wrote `=A1+`
+  over it. The page showed `=A1+` while the core held `=B1`, which Enter would have committed.
+  Any press into an editable, unfocused bar is held now, as this entry already said.
 - **A held press on the rows suppresses its default**, which would move DOM focus onto the rows.
   The rows hand focus back to the root a round trip later, and that hand-over is not held; landing
   just after the Cell Editor took focus, it pulled the keyboard off the editor and every later key
@@ -377,3 +384,41 @@ runs when the browser acknowledges that render, a round trip after it.
 - **Open, not decided here:** a popover's opening focus (the column menu, the filter, Find) and a
   Template cell's own focus. Each is taken a round trip after a gesture in this grid too, so the same
   race exists there in principle. Nothing has been seen to fail there. It is recorded, not built.
+- **Narrowed as the hand-back was** *(2026-10-01, decided with the user)*. The request also leaves a
+  field beside the rows that holds the keyboard of its own, the Formula Bar's text or the Name Box (the
+  band `reclaimFocus` checks, a Chrome's control inside it included), unless the core means to take the
+  keyboard out of that field, which only a Reject met by a press into the Name Box does. Found on CI,
+  msedge against the Server host, in two runs of four: `x` typed onto F2, a press on F5 and a press
+  into the Formula Bar at once, then `7`. The core asked the Cell Editor to take the keyboard in the
+  after-render of the edit `x` opened, before it had heard the press into the bar; the request landed
+  after that press, DOM focus was inside the root, and the keyboard went from the bar to the Cell
+  Editor. `7` then opened an edit in F5's cell, not in the bar the user had pressed. The race was on
+  the base before the Pointing Scope (6 of 6 at a920922 with the bar pressed in the task that paints
+  the Cell Editor). A field a press on the rows left standing is still taken.
+
+*(Added 2026-09-30, decided with the user, with
+[ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md): a press handed on
+through a Pointing Scope keeps its place among the keys of the Sheet that points.)* While a grid is
+pointed at, the render that says so names the root of the Sheet that points. For each primary press
+the grid hands on, its capture-phase `mousedown`, the listener above, dispatches one event on that
+root. The Sheet hears the event through one listener for it on its own root. It then starts the hold
+it starts for a press on its own rows: the keys typed after it are held, in order, until the Sheet's
+core has answered the press, and are then replayed
+([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s hold). *(Widened the same day,
+when ticket 37 was built:)* the press also waits behind the keys typed before it that the Sheet still
+holds. The pressed grid sends its press to the core itself, so it can reach the core ahead of them:
+on the Server host at 0 ms, `=1+` typed and the positions grid pressed at once gave
+`=XLOOKUP(...)` in 2 runs of 4, the `1+` lost. The Scope therefore answers a handed-on press only
+once the Sheet's listener has passed the place the event took in its queue.
+
+- **Why script: the ground is the first, technically required.** On a circuit, the text Point writes
+  reaches the Sheet's field a round trip after the press. A key typed meanwhile reaches the field
+  first, and the field's text is the newest the core hears of (ADR-0051), so the written text would
+  be lost. Only the browser sees the press and the key in the order the user made them.
+- **Nothing is shared between instances.** The module keeps no registry of instances. The pressed
+  grid finds the Sheet's root from what its own render named, and the DOM event is the whole message.
+  No listener is added on `document` or `window`, and no layout is read.
+- **Nothing else in the Scope is script.** The press's default is suppressed by the grid's Blazor
+  handler, as it already is for a press that points (ADR-0051), so DOM focus stays in the Sheet. The
+  `cell` pointer is a class on the root. Whether a grid is pointed at is decided in C#, and it reaches
+  the grid with a render. The round trip that leaves is accepted (ADR-0058, "On a circuit").

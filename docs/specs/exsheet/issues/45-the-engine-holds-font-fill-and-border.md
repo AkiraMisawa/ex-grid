@@ -95,3 +95,7 @@ Alignment, and each new part follows the rules the first two follow.
   `CellFormatDocumentTests` (layer 1), named with ADR-0063 and SH-38 or SH-44. ExSheet.Engine.Tests
   2036, ExSheet.Components.Tests 290, ExGrid.Tests 826, ExGrid.Components 1062 (one skipped) and
   ExGrid.MudBlazor.Tests 88, all passing.
+
+*(2026-10-01, orchestrator, at the merge of `claude/exsheet-start-8cx3v1`.)* Pointing Scope reached the
+base branch first with version 7 for a Linked Table's key, so the Cell Format parts are version 8:
+`font`, `fill` and `borders` are read from version 8, and a version 7 document holding them is refused.

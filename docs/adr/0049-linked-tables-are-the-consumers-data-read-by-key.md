@@ -105,3 +105,33 @@ outline them as Excel outlines a Table's column
 ([ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md)). Rule 1 holds:
 ExSheet reaches no other instance. The Consumer passes the notification on, because only it knows
 which grid shows the table, and whether that grid shows all of the rows the Formula reads.
+
+## A key, declared with the table, and checked on every snapshot *(2026-09-30, decided with the user)*
+
+A Pointing Scope ([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md)) writes
+what reads a pointed cell: `XLOOKUP("R-4471", Positions[Id], Positions[PV])` for a cell,
+`Positions[PV]` for a column. It never writes an address, so rule 2 holds. Reading a cell by key
+needs a key, and `XLOOKUP` over a column in which a key repeats returns the first match without a
+word. That is a plausible wrong value.
+
+- **A Linked Table may be declared with a key column**, one of its columns:
+  `DeclareLinkedTableAsync(name, columns, key)`. It is declared once, with the table, and not per grid
+  that shows the table. The Scope reads it from the declaration of the Sheet that points. The Sheet
+  Document records it with the rest of the declaration. A declaration with another key is a
+  declaration with another shape, and it replaces the held one as other columns do (above).
+- **One column.** A table whose rows are told apart by several columns gets a column that joins them
+  (`ACME|5Y`) from its Consumer, and that column is the key. ADR-0058 records why several columns wait,
+  and the test that fails when they no longer need to.
+- **Every snapshot of a keyed table is checked.** No value may appear twice in the key column. Values
+  are compared as `XLOOKUP`'s exact match compares them, so `r-4471` and `R-4471` are the same key. A
+  blank key is not a key: any number of rows may have none, and a press on such a row's cell writes
+  nothing (ADR-0058).
+- **A snapshot in which a key repeats is refused by name.** The push throws, naming the table, the key
+  column and a value that repeats. The table goes back to waiting, so every Formula that reads it
+  shows `#GETTING_DATA`, and `IFERROR` does not catch that (above). The previous snapshot is not kept:
+  it would show an older value, which this ADR refuses.
+  - **A catchable Error Value was rejected.** `#VALUE!` in every reader would be caught by the common
+    `IFERROR(XLOOKUP(…), 0)` and show 0.
+  - **An Error Value of ExSheet's own was rejected.** `#GETTING_DATA` already means what a reader needs
+    to know, that there is no table to read yet. The reason is the Consumer's to act on, and the
+    refusal names it.

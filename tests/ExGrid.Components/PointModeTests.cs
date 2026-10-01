@@ -182,6 +182,71 @@ public class PointModeTests : GridTestContext
         Assert.Equal("=A1:A2", EditorText(cut));
     }
 
+    [Fact] // ADR-0058 (Q53) / SH-36: at a Reference's place with no outline standing, Home starts pointing at the row's first column, as Excel's Home in Enter mode does (Part B of the ninth Windows run, x4)
+    public async Task ADR0058_Q53_home_at_a_references_place_points_at_the_rows_first_column()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(intents);
+        await ClickAsync(cut, 150, 30);
+        await PressAsync(cut, "=");
+
+        await PressAsync(cut, "Home", text: "=", caret: 1);
+
+        Assert.Equal("=A2", EditorText(cut));
+        Assert.Equal("left: 0px; top: 20px; width: 100px; height: 20px", PointStyle(cut));
+        Assert.Equal("point", EditingModesTold()[^1]);
+        Assert.Empty(intents);
+    }
+
+    [Fact] // ADR-0058 (Q53) / SH-36: at a Reference's place with no outline standing, End writes nothing and asks for no commit — Excel's turns End Mode on, which the grid does not have (x5)
+    public async Task ADR0058_Q53_end_at_a_references_place_writes_nothing_and_commits_nothing()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(intents, selections);
+        await ClickAsync(cut, 150, 30);
+        await PressAsync(cut, "=");
+        var selectionsBefore = selections.Count;
+
+        await PressAsync(cut, "End", text: "=", caret: 1);
+
+        Assert.Equal("=", EditorText(cut));
+        Assert.Null(PointStyle(cut));
+        Assert.Empty(intents);
+        Assert.Equal(selectionsBefore, selections.Count);
+        Assert.Equal("overwrite", EditingModesTold()[^1]);
+    }
+
+    [Fact] // ADR-0051 / ADR-0058 (Q53): with an outline standing, Home and End move it to the row's first and last columns, as before
+    public async Task Home_and_end_move_an_outline_that_stands()
+    {
+        var cut = RenderGrid();
+        await ClickAsync(cut, 150, 30);
+        await PressAsync(cut, "=");
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        Assert.Equal("=B3", EditorText(cut));
+
+        await PressAsync(cut, "End", text: "=B3", caret: 3);
+        Assert.Equal("=C3", EditorText(cut));
+        await PressAsync(cut, "Home", text: "=C3", caret: 3);
+        Assert.Equal("=A3", EditorText(cut));
+    }
+
+    [Fact] // ADR-0012 / ADR-0058 (Q53, the tenth Windows run, case 20): where no Reference can go, Home is Overwrite's — it commits and moves to the row's first column, as before
+    public async Task Where_no_reference_can_go_home_commits_and_moves()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(intents, selections);
+        await ClickAsync(cut, 150, 30);
+        await PressAsync(cut, "=");
+
+        await PressAsync(cut, "Home", text: "=1", caret: 2);
+
+        Assert.Equal("=1", Assert.Single(intents).Value);
+        Assert.Equal(new CellPosition(1, 0), selections[^1].Focus);
+    }
+
     [Fact] // ADR-0051/0012: typing a constant, the arrows still commit and move
     public async Task A_constant_commits_and_moves()
     {

@@ -56,6 +56,11 @@ public class EditorFocusTests : GridTestContext
     private List<bool> SurfacesAsked()
         => [.. Js.EditorFocusAsked.Invocations.Select(i => (bool)i.Arguments[0]!)];
 
+    /// <summary>Whether each request said it means to take the keyboard out of a field beside the
+    /// rows, in order.</summary>
+    private List<bool> FieldsTakenFrom()
+        => [.. Js.EditorFocusAsked.Invocations.Select(i => (bool)i.Arguments[1]!)];
+
     private int BlazorFocusCalls()
         => JSInterop.Invocations.Count(i => i.Identifier == GridJSInterop.BlazorFocus);
 
@@ -96,6 +101,19 @@ public class EditorFocusTests : GridTestContext
 
         Assert.Equal([false], SurfacesAsked());
         Assert.Equal(0, BlazorFocusCalls());
+    }
+
+    [Fact] // ADR-0021 / ADR-0034 / ED-28: only a Reject the press into the Name Box met asks to take the keyboard out of a field beside the rows; an opening's request leaves a field pressed since alone
+    public async Task Only_a_reject_met_by_the_name_box_asks_to_take_the_keyboard_out_of_a_field()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("no"), formulaBar: true);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "5");
+
+        await cut.Find(".ex-name-box").FocusAsync(new FocusEventArgs());
+
+        cut.WaitForAssertion(() => Assert.Equal([false, false], SurfacesAsked()));
+        Assert.Equal([false, true], FieldsTakenFrom());
     }
 
     [Fact] // ADR-0021 (note of 2026-09-30) / ADR-0010 / ED-28: F2 asks again, through the module, as the opening did

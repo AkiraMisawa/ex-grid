@@ -331,3 +331,23 @@ has a Formula open, or while a Consumer asks for columns to be outlined.
   `--ex-reference-pointed-background` and `--ex-reference-pointed-color` paint the pointed
   Reference's ground and text. Their defaults approximate Excel's `#c6c6c6` and the Reference's
   colour darkened (2026-09-30).
+  *(Changed 2026-09-30, decided with the user after Part B of the eighth Windows run:)* the pointed
+  text's shade is one token per place in the palette, `--ex-reference-1-pointed` to
+  `--ex-reference-7-pointed`, so that each can be Excel's. All seven default to Excel's shades, the
+  last five as the tenth Windows run read them (ADR-0057); over a dark ground they keep the mix toward
+  white.
+  `--ex-reference-pointed-color`, which set one shade for all seven, is retired with it.
+
+## Added by ADR-0058 *(2026-09-30, decided with the user)*
+
+A grid in a Pointing Scope ([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md))
+is painted in two more ways while a Sheet points at it.
+
+- **Internal classes**, which may change without notice:
+  - `ex-pointed-at`: joins the root while the grid is pointed at, and makes the pointer `cell` over
+    its rows and headers.
+  - `ex-point-dashes`: the dashed line over the cell, or down the column's body, that a press handed
+    on to a Sheet. It is drawn in the selection overlay and cut to the painted rows, as a Reference
+    Outline is.
+- **No new token.** The dashes take `--ex-focus-outline`, as ADR-0057's dashes over Point's outline
+  do. The column outlines are ADR-0057's own Reference Outlines.

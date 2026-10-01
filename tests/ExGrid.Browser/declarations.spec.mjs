@@ -9,8 +9,8 @@ import {
 // /sheet, driven with real keys, the real mouse and the real clipboard: completion, Point, the
 // Formula Bar under a delayed circuit, F4 cycling the Reference at the caret, the Reference Outlines, the fill handle, a spilling paste, copy and paste inside
 // the Sheet, undo and redo, the resize grips. The positions grid beside the Sheet declares none
-// of them, and is the "one not declaring" of DC-25; it outlines the table's columns the page
-// passes it (SH-31). Two ExSheets on one page are on /sheets.
+// of them, and is the "one not declaring" of DC-25; it outlines the table's columns the Sheet's
+// Pointing Scope passes it (SH-31, ADR-0058). Two ExSheets on one page are on /sheets.
 
 // Tall enough that every Sheet on the page, Formula Bar to horizontal scrollbar, is inside the
 // window: a pointer below the window's edge reaches nothing, and the edge band sits there.
@@ -170,6 +170,328 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(completion(grid)).toContainText('num_digits');
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
+        });
+    });
+}
+
+// ---------------------------------------------------------------------------------------------
+// Completion as the tenth Windows run saw it (SH-36; ADR-0058, "What the tenth Windows run
+// settled"): a list takes only ↑, ↓, Tab and Escape. At an argument's value list, where a
+// Reference can go at the caret, → points and closes the list; Tab closes any list, and it is not
+// opened again on what Tab wrote. The cases are the run's group 1 (excel-only.md), on D10. And as
+// Part B of the ninth run saw it (ADR-0058, Q49 and Q51; pointing-scope.md, x1–x6): with the caret
+// before a value nothing is listed, and Home and the Shift+arrows at an open value list point. And
+// as the thirteenth run saw it (ADR-0058, Q54 and Q55; pointing-scope.md, Part A's groups 1 and 2):
+// a letter there lists every value, a number that is no value nothing, and with the caret before
+// white space nothing is listed.
+
+const AT_MATCH_MODE = '=XLOOKUP(1,A2:A4,B2:B4,,';
+const MATCH_MODES = [
+    '0 - Exact match',
+    '-1 - Exact match or next smaller item',
+    '1 - Exact match or next larger item',
+    '2 - Wildcard character match',
+    '3 - Regex match',
+];
+
+/** The spans of a field's Reference layer the core marks as the Reference Point is writing (ADR-0057). */
+const pointedIn = (field) => field.evaluate((input) =>
+    [...input.previousElementSibling.querySelectorAll('.ex-reference-pointed')].map((span) => span.textContent));
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`SH-36 under the ${chrome} Chrome`, () => {
+        test.beforeEach(async ({ page }) => {
+            await underChrome(page, chrome);
+        });
+
+        test('SH-36: → at an open value list points — E10, shown selected — and closes the list (the tenth run, case 6)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(AT_MATCH_MODE);
+            await expect(editor(grid)).toHaveValue(AT_MATCH_MODE);
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+            await expect(items(grid).first()).toHaveAttribute('aria-selected', 'true');
+
+            await page.keyboard.press('ArrowRight');
+
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}E10`);
+            await expect(bar(grid)).toHaveValue(`${AT_MATCH_MODE}E10`);
+            await expect(items(grid)).toHaveCount(0);
+            await expect.poll(() => pointedIn(editor(grid))).toEqual(['E10']);
+            await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
+            // The caret after the Reference: the look is not a selection of the field's text.
+            expect(await caret(editor(grid))).toBe(AT_MATCH_MODE.length + 3);
+            // Pointing goes on: ↓ moves the outline and rewrites the Reference.
+            await page.keyboard.press('ArrowDown');
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}E11`);
+            await expect(nameBox(grid)).toHaveValue('E11');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
+        test('SH-36: ← at an open value list points too; in a list of names ← and → move the caret and the list stays', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(AT_MATCH_MODE);
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+
+            await page.keyboard.press('ArrowLeft');
+
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}C10`);
+            await expect(items(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // A list of names, where no Reference can go at the caret.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type('=Posit');
+            await expect(items(grid)).toHaveText(['Positions']);
+            await page.waitForTimeout(150); // the gate is told a message after the list is painted
+            await page.keyboard.press('ArrowLeft');
+            await expect.poll(() => caret(editor(grid))).toBe(5);
+            await page.keyboard.press('ArrowRight');
+            await expect.poll(() => caret(editor(grid))).toBe(6);
+            await expect(editor(grid)).toHaveValue('=Posit');
+            await expect(nameBox(grid)).toHaveValue('D10');
+            await expect(items(grid)).toHaveText(['Positions']);
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+        });
+
+        test('SH-36: Tab closes the list after a value, a column and a table\'s name, and it is not opened again on what Tab wrote (the tenth run, cases 1–5)', async ({ page }) => {
+            const grid = sheet(page);
+            // A value typed whole lists that value alone; any other beginning lists every value.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(`${AT_MATCH_MODE}0`);
+            await expect(items(grid)).toHaveText(['0 - Exact match']);
+            await expect(items(grid).first()).toHaveAttribute('aria-selected', 'true');
+            await page.keyboard.press('Backspace');
+            await page.keyboard.type('-');
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}-`);
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+            await expect(items(grid).first()).toHaveAttribute('aria-selected', 'true');
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // A value: ↓ chooses -1, Tab writes it and closes the list; match_mode's hint stays.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(AT_MATCH_MODE);
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+            await page.keyboard.press('ArrowDown');
+            await expect(items(grid).nth(1)).toHaveAttribute('aria-selected', 'true');
+            await page.keyboard.press('Tab');
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}-1`);
+            await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + 2);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for a list asked again to come back
+            await expect(items(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // A column: Positions[PV without the ], and SUM's hint stays.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type('=SUM(Positions[');
+            await expect(items(grid)).toHaveText(['Id', 'Book', 'PV']);
+            await page.keyboard.press('ArrowDown');
+            await page.keyboard.press('ArrowDown');
+            await expect(items(grid).nth(2)).toHaveAttribute('aria-selected', 'true');
+            await page.keyboard.press('Tab');
+            await expect(editor(grid)).toHaveValue('=SUM(Positions[PV');
+            await expect(completion(grid)).toContainText('number1');
+            await page.waitForTimeout(300);
+            await expect(items(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // A table's name: nothing at all is shown for the name written.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type('=Posit');
+            await expect(items(grid)).toHaveText(['Positions']);
+            await page.keyboard.press('Tab');
+            await expect(editor(grid)).toHaveValue('=Positions');
+            await page.waitForTimeout(300);
+            await expect(completion(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
+        test('SH-36: with the caret moved back before a value nothing is listed, the hint stays, and Tab commits (Part B of the ninth run, x1)', async ({ page }) => {
+            const grid = sheet(page);
+            const typed = `${AT_MATCH_MODE}1)`;
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(typed);
+            await expect(editor(grid)).toHaveValue(typed);
+
+            // F2 to Caret, then ←← to stand between ,, and 1.
+            await page.keyboard.press('F2');
+            await page.keyboard.press('ArrowLeft');
+            await page.keyboard.press('ArrowLeft');
+
+            await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for a list asked about this caret to come back
+            await expect(items(grid)).toHaveCount(0);
+
+            await page.keyboard.press('Tab');
+
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(nameBox(grid)).toHaveValue('E10');
+            await pressCell(grid, 'D10');
+            await expect(bar(grid)).toHaveValue(typed);
+        });
+
+        test('SH-36: a letter at match_mode lists every value, 0 selected, and Tab writes 0 over it; 4 lists nothing (the thirteenth run, Q54)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(`${AT_MATCH_MODE}X`);
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}X`);
+            // The list for X, not the one for ,, before it: no Reference can go after X, so this
+            // list is not open over Point.
+            await expect(completion(grid)).not.toHaveAttribute('data-ex-over-point');
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+            await expect(items(grid).first()).toHaveAttribute('aria-selected', 'true');
+
+            await page.keyboard.press('Tab');
+
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}0`);
+            await expect(bar(grid)).toHaveValue(`${AT_MATCH_MODE}0`);
+            await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + 1);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for a list asked again to come back
+            await expect(items(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // A number that is no value lists nothing; the hint stays.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(`${AT_MATCH_MODE}4`);
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}4`);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for the list for 4 to replace the one for ,,
+            await expect(items(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
+        test('SH-36: with the caret before two spaces nothing is listed, and Tab commits the Formula with the spaces kept (the thirteenth run, Q55; 11a)', async ({ page }) => {
+            const grid = sheet(page);
+            const typed = `${AT_MATCH_MODE}  )`;
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(typed);
+            await expect(editor(grid)).toHaveValue(typed);
+
+            // F2 to Caret, then ←←← to stand straight after ,, before the two spaces.
+            await page.keyboard.press('F2');
+            await page.keyboard.press('ArrowLeft');
+            await page.keyboard.press('ArrowLeft');
+            await page.keyboard.press('ArrowLeft');
+
+            await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for a list asked about this caret to come back
+            await expect(items(grid)).toHaveCount(0);
+
+            await page.keyboard.press('Tab');
+
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(nameBox(grid)).toHaveValue('E10');
+            await pressCell(grid, 'D10');
+            await expect(bar(grid)).toHaveValue(typed);
+        });
+
+        test('SH-36: Home at an open value list points at A10 and closes the list; End closes it and writes nothing, list or no list (Part B of the ninth run, x4 and x5; Q53)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(AT_MATCH_MODE);
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+
+            await page.keyboard.press('Home');
+
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}A10`);
+            await expect(items(grid)).toHaveCount(0);
+            await expect.poll(() => pointedIn(editor(grid))).toEqual(['A10']);
+            // /sheet pins column A: the outline is painted in the pinned layer.
+            await expect(grid.locator('.ex-selection-pinned .ex-point')).toHaveCount(1);
+            await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
+            await expect(nameBox(grid)).toHaveValue('A10');
+            expect(await caret(editor(grid))).toBe(AT_MATCH_MODE.length + 3);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // End: the list closes, nothing is written, and no commit is asked for, so nothing is refused.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(AT_MATCH_MODE);
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+            await page.keyboard.press('End');
+            await expect(items(grid)).toHaveCount(0);
+            await page.waitForTimeout(300); // long enough for a refusal to have been shown
+            await expect(editor(grid)).toHaveValue(AT_MATCH_MODE);
+            await expect(grid.locator('.ex-message')).toHaveCount(0);
+            await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
+            await expect(nameBox(grid)).toHaveValue('D10');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // With no list: Home points, End writes nothing. The names listed while SUM was typed
+            // must be gone, and the gate told so, or Home would be the editor's.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type('=SUM(');
+            await expect(editor(grid)).toHaveValue('=SUM(');
+            await expect(items(grid)).toHaveCount(0);
+            await page.waitForTimeout(150); // the gate is told a message after the list is gone
+            await page.keyboard.press('Home');
+            await expect(editor(grid)).toHaveValue('=SUM(A10');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type('=SUM(');
+            await expect(editor(grid)).toHaveValue('=SUM(');
+            await expect(items(grid)).toHaveCount(0);
+            await page.waitForTimeout(150);
+            await page.keyboard.press('End');
+            await page.waitForTimeout(300);
+            await expect(editor(grid)).toHaveValue('=SUM(');
+            await expect(grid.locator('.ex-message')).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
+        test('SH-36: Shift+→ at an open value list points at D10:E10 and closes the list; in a list of names Home moves the caret (Part B of the ninth run, x6)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(AT_MATCH_MODE);
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+
+            await page.keyboard.press('Shift+ArrowRight');
+
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}D10:E10`);
+            await expect(bar(grid)).toHaveValue(`${AT_MATCH_MODE}D10:E10`);
+            await expect(items(grid)).toHaveCount(0);
+            await expect.poll(() => pointedIn(editor(grid))).toEqual(['D10:E10']);
+            await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
+            expect(await caret(editor(grid))).toBe(AT_MATCH_MODE.length + 7);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // A list of names, where no Reference can go at the caret: Home is the editor's.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type('=Posit');
+            await expect(items(grid)).toHaveText(['Positions']);
+            await page.waitForTimeout(150); // the gate is told a message after the list is painted
+            await page.keyboard.press('Home');
+            await expect.poll(() => caret(editor(grid))).toBe(0);
+            await expect(editor(grid)).toHaveValue('=Posit');
+            await expect(nameBox(grid)).toHaveValue('D10');
+            await page.keyboard.press('Escape');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
         });
     });
 }
@@ -404,6 +726,127 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// An edit in the Formula Bar is in Caret unless F2 takes it out (ED-29; ADR-0051, 2026-09-30). Excel's
+// bar stays in Edit while it is typed in, so there Home, → and Delete edit the text. The ways the text
+// reaches the bar: typed there; pointed from there with a press on A1 and typed on, which ends Point;
+// and begun in the cell (Overwrite) and carried into the bar by a press, which goes into Caret. F2 is
+// the one way out of Caret there, as the tenth Windows run saw of Excel's bar (below).
+const writtenIntoTheBar = {
+    'typed into the bar': async (page, grid) => {
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=A1+B1');
+    },
+    'pointed from the bar, then typed on': async (page, grid) => {
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=');
+        await clickCell(grid, 'A1');
+        await expect(bar(grid)).toHaveValue('=A1');
+        // A1 is in /sheet's Pinned Column, so its outline is in the pinned layer, not .ex-selection.
+        await expect(grid.locator('.ex-point')).toHaveCount(1);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '+B1');
+    },
+    'begun in the cell, then pressed into the bar': async (page, grid) => {
+        await page.keyboard.type('=A1+');
+        await expect(editor(grid)).toHaveValue('=A1+');
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        // The bar shows the cell's text once the core has heard it; typeSteadily reads it first.
+        // Typing before that is the next test's.
+        await expect(bar(grid)).toHaveValue('=A1+');
+        await typeSteadily(page, bar(grid), 'B1');
+    },
+};
+for (const chrome of ['builtin', 'mud']) {
+    for (const [how, write] of Object.entries(writtenIntoTheBar)) {
+        test(`ED-29: =A1+B1 ${how}, then Home, → and three Deletes, leaves =B1 in the bar, the edit open and the Focus on D10 (${chrome} Chrome)`, async ({ page }) => {
+            await underChrome(page, chrome);
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await write(page, grid);
+            await expect(bar(grid)).toHaveValue('=A1+B1');
+            // The Cell Editor shows the one text once the core has heard it (ADR-0051).
+            await expect(editor(grid)).toHaveValue('=A1+B1');
+            await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
+            await expect(candidates(grid)).toHaveCount(0);
+            await page.waitForTimeout(150); // typing that ends Point tells the gate after its render
+
+            await page.keyboard.press('Home');
+            await page.keyboard.press('ArrowRight');
+            await page.keyboard.press('Delete');
+            await page.keyboard.press('Delete');
+            await page.keyboard.press('Delete');
+
+            await expect(bar(grid)).toHaveValue('=B1');
+            await expect(editor(grid)).toHaveValue('=B1');
+            await expect(bar(grid)).toBeFocused();
+            await expect(grid).toHaveClass(/ex-editing/);
+            await expectFocusAt(grid, 'D10');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+    }
+}
+
+// The same edit with no wait, on a circuit (ED-22, ED-29; ADR-0021, 2026-10-01). The bar's text is a
+// round trip behind the typing in the cell. Keys typed into the bar before the core had answered the
+// press went into that older text — "=" here — and the render of the cell's last input then wrote
+// "=A1+" over them: B1 was gone from the page, while the core held "=B1", which Enter would have
+// committed (found on CI, the Server host). The press is held among the keys, and the keys after it
+// are typed into the text its answer leaves.
+for (const chrome of ['builtin', 'mud']) {
+    test(`ED-22/ED-29: =A1+ typed in the cell, the Formula Bar pressed and B1 typed at once, on a 150 ms circuit, commits =A1+B1 (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'D10');
+        await setRoundTrip(150);
+        // The edit open first, so A1+ is typed by the browser into the Cell Editor and the core
+        // hears it a round trip later: keys held behind the = would be answered with the bar.
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toBeFocused();
+        await page.keyboard.type('A1+');
+        await clickBarEnd(grid);
+        await page.keyboard.type('B1');
+
+        await expect(bar(grid)).toHaveValue('=A1+B1');
+        await expect(editor(grid)).toHaveValue('=A1+B1');
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(editor(grid)).toHaveCount(0);
+        await setRoundTrip(0);
+        await pressCell(grid, 'D10');
+        await expect(bar(grid)).toHaveValue('=A1+B1');
+    });
+}
+
+// Case 7k of the eighth Windows run's Part B: =A1+B1 typed into the bar, F2, Home. Excel's F2 takes its
+// bar from Edit to Enter, and Home then enters the Formula and moves the active cell (the tenth run,
+// cases 20 and 23). Here F2 takes the bar's edit from Caret to Overwrite where no Reference can go, and
+// Home enters the Formula into D10 and moves the Focus to A10, as there.
+for (const chrome of ['builtin', 'mud']) {
+    test(`ED-29: =A1+B1 typed into the bar, then F2 and Home, enters the Formula into D10 and moves the Focus to A10, as Excel does (case 7k; ${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'D10');
+        await clickBarEnd(grid);
+        await expect(bar(grid)).toBeFocused();
+        await typeSteadily(page, bar(grid), '=A1+B1');
+        await expect(editor(grid)).toHaveValue('=A1+B1');
+        await page.waitForTimeout(150); // typing tells the gate after its render
+
+        await page.keyboard.press('F2');
+        await page.keyboard.press('Home');
+
+        await expect(editor(grid)).toHaveCount(0);
+        await expectFocusAt(grid, 'A10');
+        await pressCell(grid, 'D10');
+        await expect(bar(grid)).toHaveValue('=A1+B1');
+    });
+}
+
 // A press on the rows asks for the keyboard back at the root, and on a circuit that request
 // lands a round trip late — after a press into the Formula Bar or the Name Box that followed it.
 // Before ADR-0021's narrowed hand-back (2026-09-28) it took the keyboard from the field the user
@@ -448,6 +891,61 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Enter');
         await expectFocusAt(grid, 'D4');
         await expect(grid).toBeFocused();
+        await setRoundTrip(0);
+    });
+}
+
+// The same steps with the press into the bar made at one moment of the round trip: once the Cell
+// Editor is painted, the core has heard that render acknowledged and asked the Cell Editor to take
+// the keyboard, and it hears of the press into the bar only afterwards; the request lands in the
+// browser after that press. Granted there, because DOM focus was inside the root, it took the
+// keyboard from the bar, the row press's commit handed it on to the root, and `7` opened an edit in
+// the cell instead of typing into the bar (found on CI, msedge, the Server host, 2026-10-01: 2 runs
+// of 4; under Chrome throttled 4×, 2 of 15).
+/** Resolves in the task that paints the Cell Editor over the rows: heard from the markup, not polled. */
+const cellEditorPainted = (grid) => grid.evaluate((root) => new Promise((resolve, reject) => {
+    const painted = () => root.querySelector('.ex-viewport .ex-editor') !== null;
+    if (painted()) {
+        resolve();
+        return;
+    }
+    const observer = new MutationObserver(() => {
+        if (painted()) {
+            observer.disconnect();
+            clearTimeout(timer);
+            resolve();
+        }
+    });
+    const timer = setTimeout(() => {
+        observer.disconnect();
+        reject(new Error('the Cell Editor was never painted'));
+    }, 5000);
+    observer.observe(root, { childList: true, subtree: true });
+}));
+
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0021: an edit's request for the Cell Editor, landing after a press into the Formula Bar, leaves the keyboard in the bar, on a 150 ms circuit (${chrome} Chrome)`, async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly has no round trip: the request lands before a press can follow it');
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await expect(bar(grid)).toHaveValue('');
+        const field = await bar(grid).boundingBox();
+        await setRoundTrip(150);
+
+        await page.keyboard.type('x');
+        await clickCell(grid, 'F5');
+        await cellEditorPainted(grid);
+        await page.mouse.click(field.x + field.width - 4, field.y + field.height / 2);
+        await page.keyboard.type('7');
+
+        await expect(bar(grid)).toHaveValue('7');
+        await expect(editor(grid)).toHaveValue('7');
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'F2')).toHaveText('x');
+        await expect(cell(grid, 'F5')).toHaveText('7');
+        await expectFocusAt(grid, 'F6');
         await setRoundTrip(0);
     });
 }
@@ -856,10 +1354,10 @@ test('DC-46: =, ↓, ↓ outlines the pointed cell in the first colour under das
 
 // ---------------------------------------------------------------------------------------------
 // A Linked Table's columns, outlined in the grid that shows them (SH-31, DC-50; ADR-0057). The
-// Sheet tells the page which of the table's columns the Formula being edited reads, and in which
-// colour; the page passes that to the positions grid beside it, which outlines each column over
-// all its rows. The positions grid holds no Selection and no edit for it, and its five rows are
-// all painted.
+// Sheet tells which of the table's columns the Formula being edited reads, and in which colour; the
+// Pointing Scope /sheet puts it in with the positions grid beside it passes that to the grid, which
+// outlines each column over all its rows (ADR-0058). The page wires no OutlinedColumns. The
+// positions grid holds no Selection and no edit for it, and its five rows are all painted.
 
 const positionsGrid = (page) => page.locator('#sheet-positions .ex-grid');
 
@@ -1110,8 +1608,11 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(cell(grid, 'E3')).toHaveText('');
         await copied('C2', '0.5');
 
-        // Enter and Escape in the Formula Bar, whose field stays in the page.
-        await clickCell(grid, 'E4');
+        // Enter and Escape in the Formula Bar, whose field stays in the page. The cell is pressed
+        // until the bar shows it: on the Server host the bar read a round trip early still shows
+        // C2's 0.5, and the typing was expected after it, where the grid rightly wrote 8 alone
+        // (CI, the Server host, 2026-10-01).
+        await pressCell(grid, 'E4');
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '8');
         await page.keyboard.press('Enter');
@@ -1119,7 +1620,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(cell(grid, 'E4')).toHaveText('8');
         await expect(grid).toBeFocused();
         await copied('B3', '7');
-        await clickCell(grid, 'E5');
+        await pressCell(grid, 'E5');
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '9');
         await page.keyboard.press('Escape');

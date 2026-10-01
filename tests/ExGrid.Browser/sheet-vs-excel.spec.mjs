@@ -89,6 +89,10 @@ async function entryOf(page, a1) {
 
 async function dragFillHandle(page, toA1) {
     await page.waitForTimeout(PACE_MS);
+    // The drag ends where a user could see it: a target below the window's bottom edge is
+    // scrolled into view first, as a user scrolls before dragging. Nothing past that edge
+    // receives the drag (/sheet's prose above the Sheet grew with ADR-0058, and E10 fell past it).
+    await cell(page, toA1).scrollIntoViewIfNeeded();
     const handle = await sheet(page).locator('.ex-fill-handle').first().boundingBox();
     const target = await cell(page, toA1).boundingBox();
     await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);

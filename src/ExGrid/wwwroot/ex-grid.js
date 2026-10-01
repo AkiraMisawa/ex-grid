@@ -5,15 +5,21 @@
 // mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
 // keys after one made while an edit is open; the root taking the keyboard back only while DOM
 // focus is still its own; that same mousedown bringing the keyboard back to an edit left
-// standing when a press returns to the rows or the headings; and the editor listener keeping
-// the coloured text beneath a field honest (ADR-0057). Anything else — text measurement,
-// overlay geometry, popovers — stays in C#; adding to this file needs an ADR.
+// standing when a press returns to the rows or the headings; that same mousedown, while the grid
+// is pointed at through a Pointing Scope, dispatching one event, `ex-press-handed-on`, on the root
+// of the grid that points, and the listener for that event on each root, which gives the press
+// its place among the keys held there (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30);
+// and the editor listener keeping the coloured text beneath a field honest (ADR-0057). Anything
+// else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
+// ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
 // the instance's own element. Every listener here is on the instance root, but one:
 // `selectionchange` fires only on the document, so that one acts only while DOM focus is in
-// an editor surface inside this instance's root, and is removed with the instance.
+// an editor surface inside this instance's root, and is removed with the instance. One instance
+// reaches another in one place only: a press handed on is told to the root its own render names,
+// by a DOM event that is the whole message, and nothing of either instance is kept by the other.
 
 /**
  * @param {HTMLElement} root the instance's root element — where keys are captured, so a
@@ -117,11 +123,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
     // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
     // extend the outline rather than select text in the input. And while a completion list
-    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ← and → move the caret.
+    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
+    // Shift+arrows are the editor's — unless the list is open over Point, where they do what
+    // Point does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B
+    // of the ninth).
     const pointKeys = new Set([
         ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+    // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
+    // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
+    // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let
+    // them move the caret.
+    const pointedKeys = new Set([
+        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
-    const claimedWhile = { overwrite: overwriteKeys, point: pointKeys, completion: completionKeys };
+    const completionOverPointKeys = new Set([
+        ...completionKeys, 'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+    const claimedWhile = {
+        overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,
+        completionOverPoint: completionOverPointKeys,
+    };
     // The keys macOS binds to a scroll in a text field, where Windows and Linux move the caret
     // (ADR-0010's note of 2026-09-30, ticket 32): Home and End scroll the document there, PageUp
     // and PageDown a page. Left to the browser in an editor surface, they scrolled the grid away
@@ -134,7 +156,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the core claims — Home and End in Overwrite and Point — stay the core's.
     const appleCaretKeys = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
     const pageKeys = new Set(['PageUp', 'PageDown']);
-    const listShown = () => !!root && root.querySelector('.ex-completion[data-ex-list]') !== null;
+    const listShown = () => (root ? root.querySelector('.ex-completion[data-ex-list]') : null);
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
@@ -278,8 +300,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // A list of candidates painted is open, whatever the gate was last told: on a circuit
         // the render that paints it and the message that tells the gate are two messages, and a
         // ← typed between them would be claimed as Overwrite's and swallowed. The core marks
-        // the list on its box (data-ex-list) in the render itself; read, not measured.
-        const claimed = listShown() ? completionKeys : (claimedWhile[editing] ?? editingKeys);
+        // the list on its box (data-ex-list) in the render itself, and a list open over Point
+        // (data-ex-over-point), whose ←, →, Home, End and Shift+arrows point (ADR-0058); read,
+        // not measured.
+        const list = listShown();
+        const claimed = list === null
+            ? (claimedWhile[editing] ?? editingKeys)
+            : (list.hasAttribute('data-ex-over-point') ? completionOverPointKeys : completionKeys);
         // Every key the core claims while editing commits, cancels, moves or switches
         // the mode: each is a mode change. F4 rewrites the text, and the keys after it wait
         // for the rewrite, so that each carries the text the one before it left.
@@ -555,6 +582,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the press still to be asked about, and the answer the keys wait for while one is awaited.
     let pressToAsk = null;
     let pressAnswer = null;
+    // The answer the drain waits for first, when it is the answer to a press on another grid,
+    // handed on to this root (onPressHandedOn): a press on this grid's own rows does not pass on
+    // ahead of it, as it would behind one of its own — Blazor keeps this grid's presses in order,
+    // and that one travels through the other grid's core.
+    let handedOnAnswer = null;
     // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus only
     // because a press on the rows had the default that would have moved it suppressed: held
     // here, or passed on while an edit is open where the core keeps the keyboard in the edit
@@ -847,6 +879,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (pressAnswer === answer) {
                 pressAnswer = null;
             }
+            if (handedOnAnswer === answer) {
+                handedOnAnswer = null;
+            }
         }
         // Settled before anything else, even with nothing held yet: the answer can arrive
         // before the popover or the editor has taken DOM focus, and a key typed in that
@@ -860,6 +895,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             if (k.press) {
                 await replayPress(k);
+                continue;
+            }
+            // A press on another grid, handed on to this root: its turn has come, so its answer
+            // may be given now, and the keys after it wait for that answer (onPressHandedOn).
+            if (k.handedOn) {
+                k.handedOn.inTurn();
+                await k.handedOn.answered;
+                await editorSettled();
                 continue;
             }
             // A modifier's own keydown — the Shift pressed for a capital, or for Shift+Enter —
@@ -1136,9 +1179,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // press itself passes untouched: DOM focus onto the bar is its default, and the bar's focus
     // is what the core answers. Only a field that takes typing — a read-only bar opens nothing —
     // and only one not already holding DOM focus, which a press would not focus again.
-    const opensBarEdit = (event) => {
+    //
+    // With an edit open in the cell the press is held the same way. It moves the edit into the
+    // bar in Caret (ED-29), a change of mode too; and on a circuit the bar's text is a round trip
+    // behind the typing in the cell. A key typed into the bar before the core's answer went into
+    // that older text, and the render of the cell's last input then wrote the cell's text over
+    // it: the keys were gone from the page, while the core held the older text with them, which
+    // Enter would have committed (found on CI, the Server host, 2026-10-01). Held, they are typed
+    // once the answer is in, into the text the answer left.
+    const holdsBarPress = (event) => {
         const target = event.target;
-        return !!core && !replaying && event.button === 0 && (editing === 'none' || answering)
+        return !!core && !replaying && event.button === 0
             && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
             && !target.readOnly && !target.disabled && document.activeElement !== target
             && target.closest('.ex-formula-bar-text') !== null && root.contains(target);
@@ -1245,6 +1296,96 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
     };
 
+    // A press handed on through a Pointing Scope keeps its place among the keys of the grid that
+    // points (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30). On a circuit, the text this
+    // grid's Consumer writes for a press reaches the pointing grid's field a round trip later, and a
+    // key typed there meanwhile would reach the field first; and this grid sends its press to its
+    // own core, where it could overtake keys typed before it that the pointing grid still holds
+    // (`=1+` and a press at once gave `=XLOOKUP(...)`). So, while this grid is pointed at, the render
+    // that says so names the root of the grid that points (data-ex-pointed-from), and each primary
+    // press on the rows or the headings that goes on to Blazor — at once, or at its replay if it
+    // was held here — is told to that root by one event. The listener there (onPressHandedOn) gives
+    // the press its place among its keys: it says when the keys before it have been handed on
+    // (inTurn), and holds the keys after it until this grid's core has answered the press
+    // (answered). This core hands the press over only once it is in turn, and answers it once its
+    // Consumer has taken it — written or refused — or at once, for a press that hands nothing over
+    // (ExGrid.PressHandedOnAsync). The core is told of the press here, in the capture phase, ahead
+    // of Blazor's own dispatch of it, so the press it hears next is the one it was told of.
+    //
+    // Nothing is kept of the other grid: its root is found from this render's attribute at the
+    // press, and the event is the whole message. An event nobody takes — a root with no listener —
+    // leaves the press to go on at once. Reads an attribute; no layout.
+    let pressesHandedOn = 0;
+    const handOn = (event) => {
+        const pointing = root ? root.getAttribute('data-ex-pointed-from') : null;
+        if (!core || !pointing || event.button !== 0 || !isOwnRowsOrHeadings(event.target)) {
+            return;
+        }
+        const other = root.ownerDocument.getElementById(pointing);
+        if (!(other instanceof Element) || other === root || !other.classList.contains('ex-grid')) {
+            return;
+        }
+        const press = ++pressesHandedOn;
+        let told = false;
+        let inTurn = false;
+        let answer = null;
+        const answered = new Promise((resolve) => {
+            answer = resolve;
+        });
+        const detail = {
+            inTurn: () => {
+                if (inTurn) {
+                    return;
+                }
+                inTurn = true;
+                if (told && core) {
+                    core.invokeMethodAsync('PressInTurn', press).catch((error) => {
+                        if (core) {
+                            console.error('[ex-grid] the grid failed to hand on a press', error);
+                        }
+                    });
+                }
+            },
+            answered,
+        };
+        const taken = !other.dispatchEvent(new CustomEvent('ex-press-handed-on', { cancelable: true, detail }));
+        if (!taken) {
+            answer();
+            return;
+        }
+        told = true;
+        answer(core.invokeMethodAsync('PressHandedOnAsync', press, inTurn).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to hand on a press', error);
+            }
+        }));
+    };
+
+    // A press on another grid, handed on to this root while this grid points at it (handOn, on
+    // that grid's listener). It takes its place among the keys held here: with nothing held and
+    // nothing being answered it is in turn at once; otherwise it waits in the queue, and is in turn
+    // when the drain reaches it, after every key typed before it. The keys typed after it are held
+    // until the other grid's core has answered it, and are then handed on against the mode that
+    // answer leaves: the hold behind a press on this grid's own rows (holdBehindPress), whose
+    // answer is the other core's because only that core knows whether it handed the press over at
+    // all. Taking the event (preventDefault) says the press has its place here.
+    const onPressHandedOn = (event) => {
+        const hand = event.detail;
+        if (!core || !hand || typeof hand.inTurn !== 'function') {
+            return;
+        }
+        event.preventDefault();
+        if (answering) {
+            held.push({ handedOn: hand });
+            return;
+        }
+        hand.inTurn();
+        pressAnswer = hand.answered;
+        handedOnAnswer = pressAnswer;
+        startHold();
+    };
+    root.addEventListener('ex-press-handed-on', onPressHandedOn);
+
     const onPress = (event) => {
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
@@ -1257,7 +1398,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
             noteCaretMove(event.target);
         }
-        if (opensBarEdit(event)) {
+        if (holdsBarPress(event)) {
             holdBehindBarPress();
             return;
         }
@@ -1279,8 +1420,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             focusDeclined = false;
         }
         // Only a press on this grid's own rows is held or holds the keys after it: one on a
-        // nested grid's rows is that grid's to answer, and this core never hears it.
+        // nested grid's rows is that grid's to answer, and this core never hears it. A press that
+        // goes on to Blazor from here, or is replayed, is told to the grid that points, if this
+        // one is pointed at (handOn).
         if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {
+            handOn(event);
             return;
         }
         // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
@@ -1294,7 +1438,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // held, and no key being answered. Behind a press still being answered, with no key held
         // after it, it goes on too: Blazor keeps presses in order among themselves, and the
         // second press of a double click reaches it ahead of the double click, as it always did.
-        if (held.length === 0 && (!answering || pressAnswer !== null)) {
+        // Not behind a press on another grid handed on to this root: that one reaches this core
+        // through the other grid's, and this press, which may point too, would overtake it.
+        if (held.length === 0 && (!answering || (pressAnswer !== null && pressAnswer !== handedOnAnswer))) {
+            handOn(event);
             // While an edit is open, the keys after it wait for its answer (holdBehindPress).
             // Where a press may point, the core also suppresses its default so the keyboard stays
             // in the edit (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus
@@ -1633,7 +1780,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // entry — the clipboard — and not a fifth (ADR-0021).
         writeCopy: (withHeaders) => writeAsync(withHeaders === true),
         // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
-        // 'caret', 'point' or 'completion' (ADR-0051), whether inputs report their caret,
+        // 'caret', 'point', 'completion' (ADR-0051), 'completionOverPoint' (ADR-0058: a list
+        // open where ←, →, Home, End and the Shift+arrows point) or 'pointed' (ADR-0058: what
+        // Point wrote came from a press on another grid), whether inputs report their caret,
         // and whether F4 is claimed while editing. Set by the core when the mode changes —
         // a mode change is a different set of claimed keys. (A focusable descendant holding
         // the keyboard — ADR-0020's interactive cell — is not a mode: it is read off
@@ -1791,7 +1940,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // about focus made in script (ADR-0021's note of 2026-09-30); it reads
         // document.activeElement and no layout. Declined, the keys held behind the key that
         // opened the edit go into it (focusDeclined).
-        focusEditor: (bar) => {
+        //
+        // Nor from a field beside the rows with focus of its own, as reclaimFocus leaves it — the
+        // Formula Bar's text or the Name Box the user pressed while the request was on its way,
+        // whose press the core heard only after asking — unless the core means to take the
+        // keyboard out of that field (fromField: a Reject the press into the Name Box met). The
+        // keyboard stays where the user put it, and the edit goes on there: a request for the
+        // Cell Editor, landing after a press into the bar, took the keyboard from the bar, and the
+        // key typed next opened an edit in the cell (found on CI, msedge, the Server host).
+        focusEditor: (bar, fromField) => {
             if (!root) {
                 return;
             }
@@ -1802,6 +1959,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             const active = document.activeElement;
+            const fieldOfItsOwn = active instanceof Element && active !== staleField && !field.contains(active)
+                && root.contains(active) && active.closest('.ex-formula-bar') !== null;
+            if (fieldOfItsOwn && fromField !== true) {
+                return;
+            }
             if (!active || active === document.body || active === document.documentElement || root.contains(active)) {
                 focusDeclined = false;
                 // Scrolled into view as Blazor's FocusAsync scrolled it: an editor opened by keys
@@ -1839,6 +2001,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('keydown', onKeyDown, true);
             root.removeEventListener('mousedown', onPress, true);
             root.removeEventListener('mouseup', onRelease, true);
+            root.removeEventListener('ex-press-handed-on', onPressHandedOn);
+            // A press on another grid still waiting for its turn here is let go: that grid's core
+            // hands it over rather than wait for keys this grid will never hand on.
+            for (const k of held) {
+                k.handedOn?.inTurn();
+            }
             root.removeEventListener('input', onEditorInput, true);
             document.removeEventListener('selectionchange', onSelectionChange);
             cancelAnimationFrame(caretFrame);

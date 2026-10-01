@@ -1,0 +1,2393 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "mode": "cases",
+ "rtt": 0,
+ "started": "2026-09-30T17:49:30.470Z",
+ "cases": [
+  {
+   "case": "7k",
+   "surface": "cell",
+   "started": "2026-09-30T17:49:35.536Z",
+   "states": [
+    {
+     "state": "typed",
+     "addition": false,
+     "did": "=A1{+}B1",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 430.77,
+           "t": 678.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 456.94,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 163,
+           "t": 370.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 189.17,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 116.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "A1 (1 in view)"
+       },
+       {
+        "cls": "ex-reference-outline ex-reference-2",
+        "color": "#c0353e",
+        "outline": "solid 2px #c0353e offset -2px",
+        "background": "#c0353e/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "A1",
+        "shownFraction": 1,
+        "ground": "#ffffff:539",
+        "saturated": [
+         "#326ac7:22",
+         "#92b0e1:13",
+         "#7399d9:6"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:495",
+        "saturated": [
+         "#c0353e:16",
+         "#c84e55:16",
+         "#e09da1:15"
+        ],
+        "darkest": "#c0353e"
+       },
+       {
+        "kind": "outline",
+        "cells": "A1 (1 in view)",
+        "line": [
+         "#326ac7:1110"
+        ],
+        "fill": [
+         "#eaf0f9:2826",
+         "#050b14:45"
+        ]
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#c0353e:1104"
+        ],
+        "fill": [
+         "#f8eaeb:2848",
+         "#130506:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-cell-typed-wasm-msedge.png",
+     "tookMs": 1040
+    },
+    {
+     "state": "F2",
+     "addition": false,
+     "did": "{F2}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 430.77,
+           "t": 678.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 456.94,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 163,
+           "t": 370.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 189.17,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 116.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "A1 (1 in view)"
+       },
+       {
+        "cls": "ex-reference-outline ex-reference-2",
+        "color": "#c0353e",
+        "outline": "solid 2px #c0353e offset -2px",
+        "background": "#c0353e/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "A1",
+        "shownFraction": 1,
+        "ground": "#ffffff:539",
+        "saturated": [
+         "#326ac7:22",
+         "#92b0e1:13",
+         "#7399d9:6"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:495",
+        "saturated": [
+         "#c0353e:16",
+         "#c84e55:16",
+         "#e09da1:15"
+        ],
+        "darkest": "#c0353e"
+       },
+       {
+        "kind": "outline",
+        "cells": "A1 (1 in view)",
+        "line": [
+         "#326ac7:1110"
+        ],
+        "fill": [
+         "#eaf0f9:2826",
+         "#050b14:45"
+        ]
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#c0353e:1104"
+        ],
+        "fill": [
+         "#f8eaeb:2848",
+         "#130506:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-cell-F2-wasm-msedge.png",
+     "tookMs": 1004
+    },
+    {
+     "state": "HOME",
+     "addition": false,
+     "did": "{HOME}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=A1+B1",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 430.77,
+           "t": 678.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 456.94,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 163,
+           "t": 370.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 189.17,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 116.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "A1 (1 in view)"
+       },
+       {
+        "cls": "ex-reference-outline ex-reference-2",
+        "color": "#c0353e",
+        "outline": "solid 2px #c0353e offset -2px",
+        "background": "#c0353e/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "A1",
+        "shownFraction": 1,
+        "ground": "#ffffff:539",
+        "saturated": [
+         "#326ac7:22",
+         "#92b0e1:13",
+         "#7399d9:6"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:495",
+        "saturated": [
+         "#c0353e:16",
+         "#c84e55:16",
+         "#e09da1:15"
+        ],
+        "darkest": "#c0353e"
+       },
+       {
+        "kind": "outline",
+        "cells": "A1 (1 in view)",
+        "line": [
+         "#326ac7:1110"
+        ],
+        "fill": [
+         "#eaf0f9:2826",
+         "#050b14:45"
+        ]
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#c0353e:1104"
+        ],
+        "fill": [
+         "#f8eaeb:2848",
+         "#130506:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-cell-HOME-wasm-msedge.png",
+     "tookMs": 996
+    },
+    {
+     "state": "RIGHT",
+     "addition": false,
+     "did": "{RIGHT}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=A1+B1",
+       "selection": [
+        1,
+        1
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 430.77,
+           "t": 678.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 456.94,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 163,
+           "t": 370.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 189.17,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 116.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "A1 (1 in view)"
+       },
+       {
+        "cls": "ex-reference-outline ex-reference-2",
+        "color": "#c0353e",
+        "outline": "solid 2px #c0353e offset -2px",
+        "background": "#c0353e/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "A1",
+        "shownFraction": 1,
+        "ground": "#ffffff:539",
+        "saturated": [
+         "#326ac7:22",
+         "#92b0e1:13",
+         "#7399d9:6"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:495",
+        "saturated": [
+         "#c0353e:16",
+         "#c84e55:16",
+         "#e09da1:15"
+        ],
+        "darkest": "#c0353e"
+       },
+       {
+        "kind": "outline",
+        "cells": "A1 (1 in view)",
+        "line": [
+         "#326ac7:1110"
+        ],
+        "fill": [
+         "#eaf0f9:2826",
+         "#050b14:45"
+        ]
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#c0353e:1104"
+        ],
+        "fill": [
+         "#f8eaeb:2848",
+         "#130506:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-cell-RIGHT-wasm-msedge.png",
+     "tookMs": 996
+    },
+    {
+     "state": "DEL-1",
+     "addition": false,
+     "did": "{DEL}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=1+B1",
+       "selection": [
+        1,
+        1
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=1+B1",
+        "drawn": "=1+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "B1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 447.9,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=1+B1",
+       "selection": [
+        5,
+        5
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=1+B1",
+        "drawn": "=1+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "B1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 180.13,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:477",
+        "saturated": [
+         "#326ac7:24",
+         "#92b0e1:24",
+         "#3c71ca:15"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#326ac7:1104"
+        ],
+        "fill": [
+         "#eaf0f9:2848",
+         "#050b14:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-cell-DEL-1-wasm-msedge.png",
+     "tookMs": 987
+    },
+    {
+     "state": "DEL-2",
+     "addition": false,
+     "did": "{DEL}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=+B1",
+       "selection": [
+        1,
+        1
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=+B1",
+        "drawn": "=+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "B1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 440.34,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=+B1",
+       "selection": [
+        4,
+        4
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=+B1",
+        "drawn": "=+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "B1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 172.57,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:467",
+        "saturated": [
+         "#326ac7:16",
+         "#4779cd:16",
+         "#92b0e1:15"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#326ac7:1104"
+        ],
+        "fill": [
+         "#eaf0f9:2848",
+         "#050b14:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-cell-DEL-2-wasm-msedge.png",
+     "tookMs": 993
+    },
+    {
+     "state": "DEL-3",
+     "addition": false,
+     "did": "{DEL}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=B1",
+       "selection": [
+        1,
+        1
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=B1",
+        "drawn": "=B1",
+        "visibility": "visible",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "B1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 430.77,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=B1",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=B1",
+        "drawn": "=B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "B1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 163,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:493",
+        "saturated": [
+         "#4779cd:22",
+         "#5c88d2:16",
+         "#7198d8:15"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#326ac7:1104"
+        ],
+        "fill": [
+         "#eaf0f9:2848",
+         "#050b14:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-cell-DEL-3-wasm-msedge.png",
+     "tookMs": 999
+    }
+   ],
+   "escapesBefore": 0,
+   "focusMs": 4,
+   "d10Before": "",
+   "escapesAfter": 1,
+   "after": {
+    "editing": false,
+    "focus": "ex1-r9c3",
+    "completion": false
+   },
+   "d10After": ""
+  },
+  {
+   "case": "7k",
+   "surface": "bar",
+   "started": "2026-09-30T17:49:43.298Z",
+   "states": [
+    {
+     "state": "typed",
+     "addition": false,
+     "did": "=A1{+}B1",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "bar",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 430.77,
+           "t": 678.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 456.94,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 163,
+           "t": 370.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 189.17,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 116.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "A1 (1 in view)"
+       },
+       {
+        "cls": "ex-reference-outline ex-reference-2",
+        "color": "#c0353e",
+        "outline": "solid 2px #c0353e offset -2px",
+        "background": "#c0353e/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "A1",
+        "shownFraction": 1,
+        "ground": "#ffffff:516",
+        "saturated": [
+         "#326ac7:24",
+         "#59b1eb:18",
+         "#829cd2:5"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:475",
+        "saturated": [
+         "#c0353e:30",
+         "#ffe2a8:15",
+         "#c4353e:15"
+        ],
+        "darkest": "#c0353e"
+       },
+       {
+        "kind": "outline",
+        "cells": "A1 (1 in view)",
+        "line": [
+         "#326ac7:1110"
+        ],
+        "fill": [
+         "#eaf0f9:2826",
+         "#050b14:45"
+        ]
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#c0353e:1104"
+        ],
+        "fill": [
+         "#f8eaeb:2848",
+         "#130506:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-bar-typed-wasm-msedge.png",
+     "tookMs": 998
+    },
+    {
+     "state": "F2",
+     "addition": false,
+     "did": "{F2}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "bar",
+      "editing": true,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "D10",
+      "nameBox": "D10",
+      "cell": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 413.19,
+        "t": 674.21,
+        "w": 99,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "hidden",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 430.77,
+           "t": 678.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 456.94,
+           "t": 678.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=A1+B1",
+       "selection": [
+        6,
+        6
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=A1+B1",
+        "drawn": "=A1+B1",
+        "visibility": "visible",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": [
+         {
+          "text": "A1",
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 163,
+           "t": 370.88,
+           "w": 16.58,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "B1",
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 189.17,
+           "t": 370.88,
+           "w": 15.57,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "outlines": [
+       {
+        "cls": "ex-reference-outline ex-reference-1",
+        "color": "#326ac7",
+        "outline": "solid 2px #326ac7 offset -2px",
+        "background": "#326ac7/0.1",
+        "box": {
+         "l": 116.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "A1 (1 in view)"
+       },
+       {
+        "cls": "ex-reference-outline ex-reference-2",
+        "color": "#c0353e",
+        "outline": "solid 2px #c0353e offset -2px",
+        "background": "#c0353e/0.1",
+        "box": {
+         "l": 215.19,
+         "t": 422.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B1 (1 in view)"
+       }
+      ],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 413.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "D10 (1 in view)"
+       }
+      ],
+      "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+      "positions": [],
+      "completion": null,
+      "d10": ""
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "A1",
+        "shownFraction": 1,
+        "ground": "#ffffff:516",
+        "saturated": [
+         "#326ac7:24",
+         "#59b1eb:18",
+         "#829cd2:5"
+        ],
+        "darkest": "#326ac7"
+       },
+       {
+        "kind": "text",
+        "text": "B1",
+        "shownFraction": 1,
+        "ground": "#ffffff:475",
+        "saturated": [
+         "#c0353e:30",
+         "#ffe2a8:15",
+         "#c4353e:15"
+        ],
+        "darkest": "#c0353e"
+       },
+       {
+        "kind": "outline",
+        "cells": "A1 (1 in view)",
+        "line": [
+         "#326ac7:1110"
+        ],
+        "fill": [
+         "#eaf0f9:2826",
+         "#050b14:45"
+        ]
+       },
+       {
+        "kind": "outline",
+        "cells": "B1 (1 in view)",
+        "line": [
+         "#c0353e:1104"
+        ],
+        "fill": [
+         "#f8eaeb:2848",
+         "#130506:30"
+        ]
+       }
+      ]
+     },
+     "shot": "7k-bar-F2-wasm-msedge.png",
+     "tookMs": 992
+    },
+    {
+     "state": "HOME",
+     "addition": false,
+     "did": "{HOME}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "div.ex-grid",
+      "editing": false,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "A10",
+      "nameBox": "A10",
+      "cell": null,
+      "bar": {
+       "value": "Positions",
+       "selection": [
+        9,
+        9
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "",
+        "drawn": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": []
+       }
+      },
+      "outlines": [],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 116.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "A10 (1 in view)"
+       }
+      ],
+      "editorOutline": null,
+      "positions": [],
+      "completion": null,
+      "d10": "#VALUE!"
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": []
+     },
+     "shot": "7k-bar-HOME-wasm-msedge.png",
+     "tookMs": 989
+    },
+    {
+     "state": "RIGHT",
+     "addition": false,
+     "did": "{RIGHT}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "div.ex-grid",
+      "editing": false,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "B10",
+      "nameBox": "B10",
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "",
+        "drawn": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": []
+       }
+      },
+      "outlines": [],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 215.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B10 (1 in view)"
+       }
+      ],
+      "editorOutline": null,
+      "positions": [],
+      "completion": null,
+      "d10": "#VALUE!"
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": []
+     },
+     "shot": "7k-bar-RIGHT-wasm-msedge.png",
+     "tookMs": 985
+    },
+    {
+     "state": "DEL-1",
+     "addition": false,
+     "did": "{DEL}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "div.ex-grid",
+      "editing": false,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "B10",
+      "nameBox": "B10",
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "",
+        "drawn": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": []
+       }
+      },
+      "outlines": [],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 215.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B10 (1 in view)"
+       }
+      ],
+      "editorOutline": null,
+      "positions": [],
+      "completion": null,
+      "d10": "#VALUE!"
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": []
+     },
+     "shot": "7k-bar-DEL-1-wasm-msedge.png",
+     "tookMs": 986
+    },
+    {
+     "state": "DEL-2",
+     "addition": false,
+     "did": "{DEL}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "div.ex-grid",
+      "editing": false,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "B10",
+      "nameBox": "B10",
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "",
+        "drawn": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": []
+       }
+      },
+      "outlines": [],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 215.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B10 (1 in view)"
+       }
+      ],
+      "editorOutline": null,
+      "positions": [],
+      "completion": null,
+      "d10": "#VALUE!"
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": []
+     },
+     "shot": "7k-bar-DEL-2-wasm-msedge.png",
+     "tookMs": 986
+    },
+    {
+     "state": "DEL-3",
+     "addition": false,
+     "did": "{DEL}",
+     "readAtMs": 600,
+     "settled": true,
+     "read": {
+      "active": "div.ex-grid",
+      "editing": false,
+      "view": {
+       "l": 32,
+       "t": 394.21,
+       "w": 708,
+       "h": 380
+      },
+      "focus": "B10",
+      "nameBox": "B10",
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 366.21,
+        "w": 606.58,
+        "h": 28
+       },
+       "scrollLeft": 0,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "",
+        "drawn": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 366.21,
+         "w": 606.58,
+         "h": 28
+        },
+        "lineScrollLeft": 0,
+        "spans": []
+       }
+      },
+      "outlines": [],
+      "points": [],
+      "focusOutline": [
+       {
+        "cls": "ex-focus",
+        "color": "#000000",
+        "outline": "solid 2px #000000 offset -2px",
+        "background": "#000000/0",
+        "box": {
+         "l": 215.19,
+         "t": 674.21,
+         "w": 99,
+         "h": 28
+        },
+        "cells": "B10 (1 in view)"
+       }
+      ],
+      "editorOutline": null,
+      "positions": [],
+      "completion": null,
+      "d10": "#VALUE!"
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": []
+     },
+     "shot": "7k-bar-DEL-3-wasm-msedge.png",
+     "tookMs": 991
+    }
+   ],
+   "escapesBefore": 0,
+   "focusMs": 0,
+   "d10Before": "",
+   "barMs": 1,
+   "escapesAfter": 0,
+   "after": {
+    "editing": false,
+    "focus": "ex1-r9c1",
+    "completion": false
+   },
+   "d10After": "#VALUE!"
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-09-30T17:49:31.582Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "browserVersion": "154.0.4258.37",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok layout 0x08090809"
+ },
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1578,
+   959
+  ],
+  "forcedColors": false,
+  "dark": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0"
+ },
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 677,
+    "py": 360,
+    "client": {
+     "x": 400,
+     "y": 120
+    }
+   }
+  ]
+ },
+ "clip": {
+  "x": 28,
+  "y": 362,
+  "width": 1090,
+  "height": 429
+ },
+ "finished": "2026-09-30T17:49:50.725Z"
+}

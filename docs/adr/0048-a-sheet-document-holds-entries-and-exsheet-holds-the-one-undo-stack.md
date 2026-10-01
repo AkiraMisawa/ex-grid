@@ -149,4 +149,5 @@ and Border to a Sheet's Cell Format.
   colour, such as an `.xlsx` theme colour, is refused by name, as an unread Number Format is. It is
   not guessed at.
 - **The version number** is fixed when the branches merge, because version 7 is already taken on
-  `claude/exsheet-pointing-scope`.
+  `claude/exsheet-pointing-scope`. *(2026-10-01: version 8. Version 7 is a Linked Table's key, which
+  reached the base branch first.)*

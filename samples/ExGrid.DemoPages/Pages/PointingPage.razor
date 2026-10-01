@@ -1,0 +1,129 @@
+@page "/pointing"
+@using System.Globalization
+@* global::, for the reasons SheetPage.razor gives. *@
+@using global::ExSheet
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+
+<DemoNav />
+
+<h1>Pointing — the arrow keys inside another grid</h1>
+
+<p>
+    The Sheet and the positions grid beside it are in one Pointing Scope (ADR-0058). Type
+    <code>=</code> into a cell and press a PV cell of the positions grid: the Sheet writes what reads it
+    by its row's key, <code>XLOOKUP("R-1", Positions[Id], Positions[PV])</code>. The arrow keys then
+    point inside the positions grid: ↑ and ↓ one row further in the order it shows, ← and → to the next
+    column the table has, and the grid scrolls to keep the pointed cell in view. After a press on a
+    column's header, <code>Positions[PV]</code>, ↓ points at the column's first row, and ← and → at the
+    next column the table has, as a column, scrolled into view across.
+</p>
+
+@if (Narrow is not null)
+{
+    <p id="pointing-narrow">
+        Narrow: the positions grid is laid out narrower than its columns, so it shows both of its own
+        scrollbars, and PV runs under the vertical one until the grid is scrolled right. What the Scope
+        draws in it stops where the scrollbars begin (ADR-0013, ADR-0058). After a press on Id's header,
+        → brings PV whole into view, and leaves the rows where they are.
+    </p>
+}
+
+<div class="demo-side-by-side">
+    <ExSheet @ref="_sheet" @bind-Document="_document" Culture="Culture" ViewportHeight="360" ViewportWidth="560"
+             PointingScope="_scope" OnPointingRefused="ShowRefusal" EditingChanged="_editingChanged" />
+    <div id="pointing-positions">
+        <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                ViewportHeight="280" ViewportWidth="PositionsWidth" PointedAt="_positionsPointedAt" />
+    </div>
+</div>
+
+@* Why a press or an arrow key wrote nothing, as the Sheet tells the page (ADR-0058). *@
+<p class="demo-status">
+    <span id="pointing-refused">@_refusal</span>
+</p>
+
+<p>
+    The Linked Table <code>Positions</code> has two columns, <code>Id</code>, its key, and
+    <code>PV</code>. Book is the grid's own: a press on it writes nothing, and ← and → pass over it.
+    Shift and an arrow, which would point at a range, and Ctrl and an arrow, which would go to the edge
+    of the data, write nothing either, and the line above says why.
+</p>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private const string Table = "Positions";
+    private static readonly string[] TableColumns = ["Id", "PV"];
+    // A row is read by its Id, and no Id appears twice in a snapshot (ADR-0049, 2026-09-30).
+    private const string TableKey = "Id";
+
+    // The page's own data, shown by the grid and read by the Sheet (ADR-0049). More positions than
+    // the grid paints at once.
+    private sealed record Position(string Id, string Book, double PV);
+
+    private static readonly string[] Books = ["Rates", "FX", "Credit", "Equity"];
+
+    private static readonly Position[] Positions =
+        [.. Enumerable.Range(1, 40).Select(i => new Position($"R-{i}", Books[(i - 1) % Books.Length], i * 10))];
+
+    // Id and PV are named as the table's columns are declared; Book is the grid's own.
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
+            format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
+    ];
+
+    /// <summary><c>?narrow</c> lays the positions grid out narrower than its columns, so it shows both
+    /// of its own scrollbars: the view the ninth Windows run could not set up (ticket 72).</summary>
+    [SupplyParameterFromQuery(Name = "narrow")]
+    public string? Narrow { get; set; }
+
+    // The columns are 300 px together. At 330 the grid shows only its vertical scrollbar, and PV ends
+    // 18 px short of it (the ninth Windows run, Part B). At 260 the columns overflow too, and once the
+    // grid is scrolled right Id still shows, so both of the lookup's column outlines can be seen
+    // beside the gutters. Through the grid's parameter, never the stylesheet (ADR-0013).
+    private ViewportSize PositionsWidth => Narrow is null ? 330 : 260;
+
+    private ExSheet? _sheet;
+    private SheetDocument? _document = Opening();
+    private readonly PointingScope _scope = new();
+    private GridPointedAt<Position>? _positionsPointedAt;
+    private string _refusal = "";
+    private EventCallback<bool> _editingChanged;
+
+    // The table's total, so the page shows when its snapshot has landed.
+    private static SheetDocument Opening()
+    {
+        var sheet = new Sheet(Culture);
+        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
+        sheet.Enter(CellAddress.Parse("A1"), "Total PV");
+        sheet.Enter(CellAddress.Parse("B1"), $"=SUM({Table}[PV])");
+        return sheet.ToDocument();
+    }
+
+    protected override void OnInitialized()
+    {
+        _positionsPointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
+        // Held in a field: a method group would be a new delegate on every render (AGENTS.md, the
+        // Blazor traps).
+        _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _sheet is not null)
+            await _sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+    }
+
+    // A position as the table's row, in the declared column order: what the page pushes, and what the
+    // Scope reads a pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) => [Value.FromText(p.Id), Value.FromNumber(p.PV)];
+
+    private void ShowRefusal(PointingRefusal refusal) => _refusal = refusal.Message;
+
+    // A new edit starts with nothing said.
+    private void OnEditingChanged(bool open) => _refusal = "";
+}

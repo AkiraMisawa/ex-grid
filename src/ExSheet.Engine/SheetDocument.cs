@@ -6,8 +6,8 @@ namespace ExSheet.Engine;
 
 /// <summary>
 /// The serialisable form of a Sheet (CONTEXT.md, ADR-0048). It records the Sheet's culture, its
-/// name (ADR-0046), the Linked Tables declared on it — each one's name and column names, never its
-/// rows (ADR-0049) — its Entries — constants already parsed, Formulas in invariant syntax — the
+/// name (ADR-0046), the Linked Tables declared on it — each one's name, column names and key, never
+/// its rows (ADR-0049) — its Entries — constants already parsed, Formulas in invariant syntax — the
 /// Cell Formats recorded on its columns, rows and cells (ADR-0047, ADR-0063) and the widths set on
 /// its columns (ADR-0046), and never a Value: opening one
 /// computes every Value again. The Consumer persists it; ExSheet never does.
@@ -15,25 +15,22 @@ namespace ExSheet.Engine;
 /// <remarks>
 /// The document is a format with a version. A reader meeting a version it does not know refuses
 /// the document rather than guess at it (ADR-0048); so does a reader meeting anything it does not
-/// understand. This engine writes version 7 and reads versions 1 to 7: version 1 recorded no
+/// understand. This engine writes version 8 and reads versions 1 to 8: version 1 recorded no
 /// name and no Linked Table, and a Sheet opened from one is named <see cref="Sheet.DefaultName"/>
 /// and declares none; versions 1 and 2 recorded formats on cells only, where General meant the
 /// cell set nothing; versions 1 to 3 recorded no column width, and every column of a Sheet
 /// opened from one is at the default width; version 4 recorded widths without saying whether the
 /// user set them, and each is read as one the user set, which is what version 4 meant; version 5
 /// said whether each was custom, and a custom one is read as the user's and any other as widened
-/// by entry, which is what version 5 meant by them (ADR-0046, 2026-09-28); versions 1 to 6
-/// recorded no Font, Fill or Borders, and a Sheet opened from one has none (ADR-0063, ADR-0048).
+/// by entry, which is what version 5 meant by them (ADR-0046, 2026-09-28); versions 2 to 6 recorded
+/// no Linked Table's key, and every table of a Sheet opened from one is declared without one
+/// (ADR-0049, 2026-09-30); versions 1 to 7 recorded no Font, Fill or Borders, and a Sheet opened
+/// from one has none (ADR-0063, ADR-0048).
 /// </remarks>
 public sealed class SheetDocument
 {
-    // Version 7 is also taken on claude/exsheet-pointing-scope, for a Linked Table's key. The two
-    // are different formats under one number, so this one's number is fixed when the branches
-    // merge (ADR-0048, "The Sheet Document records Cell Format whole"). Every "version >= 7" below
-    // moves with it.
-
     /// <summary>The version this engine writes.</summary>
-    public const int CurrentVersion = 7;
+    public const int CurrentVersion = 8;
 
     /// <summary>The oldest version this engine reads.</summary>
     public const int OldestReadableVersion = 1;
@@ -56,8 +53,8 @@ public sealed class SheetDocument
     public string Name { get; }
 
     /// <summary>
-    /// The Linked Tables declared on the Sheet, in the order they were declared: names and column
-    /// names only (ADR-0049). A Sheet opened from the document declares them again, and their
+    /// The Linked Tables declared on the Sheet, in the order they were declared: names, column names
+    /// and keys only (ADR-0049). A Sheet opened from the document declares them again, and their
     /// readers show <c>#GETTING_DATA</c> until the Consumer pushes a snapshot.
     /// </summary>
     public IReadOnlyList<SheetDocumentTable> LinkedTables { get; }
@@ -105,6 +102,7 @@ public sealed class SheetDocument
                     json.WriteStartArray("columns");
                     foreach (var column in table.Columns) json.WriteStringValue(column);
                     json.WriteEndArray();
+                    if (table.Key is { } key) json.WriteString("key", key);
                     json.WriteEndObject();
                 }
                 json.WriteEndArray();
@@ -274,7 +272,7 @@ public sealed class SheetDocument
                         if (property.Value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("The Linked Tables are not an array.");
                         foreach (var element in property.Value.EnumerateArray())
                         {
-                            var table = ReadTable(element);
+                            var table = ReadTable(element, number);
                             if (tables.Any(t => string.Equals(t.Name, table.Name, StringComparison.OrdinalIgnoreCase)))
                             {
                                 throw new SheetDocumentException($"The Linked Table '{table.Name}' is declared twice.");
@@ -352,13 +350,13 @@ public sealed class SheetDocument
                     case "align":
                         alignment = ReadAlignment(property.Value, allowGeneral: true);
                         break;
-                    case "font" when version >= 7:
+                    case "font" when version >= 8:
                         font = ReadFont(property.Value);
                         break;
-                    case "fill" when version >= 7:
+                    case "fill" when version >= 8:
                         fill = ReadFill(property.Value);
                         break;
-                    case "borders" when version >= 7:
+                    case "borders" when version >= 8:
                         borders = ReadBorders(property.Value);
                         break;
                     default:
@@ -443,7 +441,7 @@ public sealed class SheetDocument
             : throw new SheetDocumentException($"'{value}' is not a number format this version reads.");
 
     /// <summary>
-    /// A colour as version 7 records it: <c>"automatic"</c> or <c>"#RRGGBB"</c>. Any other kind —
+    /// A colour as version 8 records it: <c>"automatic"</c> or <c>"#RRGGBB"</c>. Any other kind —
     /// an <c>.xlsx</c> theme colour, a colour's name — is refused by name, never guessed at
     /// (ADR-0048, 2026-09-30).
     /// </summary>
@@ -569,11 +567,12 @@ public sealed class SheetDocument
             _ => throw new SheetDocumentException($"'{value}' is not an alignment."),
         } : throw new SheetDocumentException($"'{value}' is not an alignment.");
 
-    private static SheetDocumentTable ReadTable(JsonElement element)
+    private static SheetDocumentTable ReadTable(JsonElement element, int version)
     {
         if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException("A Linked Table is not a JSON object.");
         string? name = null;
         List<string>? columns = null;
+        string? key = null;
         foreach (var property in element.EnumerateObject())
         {
             var value = property.Value;
@@ -586,14 +585,18 @@ public sealed class SheetDocument
                     if (value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("A Linked Table's columns are not an array.");
                     columns = [.. value.EnumerateArray().Select(c => c.ValueKind == JsonValueKind.String ? c.GetString()! : throw new SheetDocumentException($"'{c}' is not a column name."))];
                     break;
+                case "key" when version >= 7:
+                    key = value.ValueKind == JsonValueKind.String ? value.GetString() : throw new SheetDocumentException($"'{value}' is not a Linked Table's key column.");
+                    break;
                 default:
-                    throw new SheetDocumentException($"'{property.Name}' is not part of a Linked Table's declaration.");
+                    throw new SheetDocumentException($"'{property.Name}' is not part of a version {version} Linked Table's declaration.");
             }
         }
         if (name is null) throw new SheetDocumentException("A Linked Table has no name.");
         if (columns is null) throw new SheetDocumentException($"The Linked Table '{name}' has no columns.");
         if (Sheet.WhyNotALinkedTable(name, columns) is { } why) throw new SheetDocumentException(why);
-        return new SheetDocumentTable(name, columns);
+        if (Sheet.WhyNotAKey(name, columns, key) is { } whyNotKey) throw new SheetDocumentException(whyNotKey);
+        return new SheetDocumentTable(name, columns, key);
     }
 
     private static SheetDocumentCell ReadCell(JsonElement element, int version)
@@ -657,13 +660,13 @@ public sealed class SheetDocument
                 case "align":
                     alignment = ReadAlignment(value, allowGeneral: version >= 3);
                     break;
-                case "font" when version >= 7:
+                case "font" when version >= 8:
                     font = ReadFont(value);
                     break;
-                case "fill" when version >= 7:
+                case "fill" when version >= 8:
                     fill = ReadFill(value);
                     break;
-                case "borders" when version >= 7:
+                case "borders" when version >= 8:
                     borders = ReadBorders(value);
                     break;
                 default:
@@ -729,10 +732,14 @@ public sealed record SheetDocumentColumnWidth(int First, int Last, double Width,
     public bool IsCustom => true;
 }
 
-/// <summary>A Linked Table's declaration as a Sheet Document records it: its name and its column names, never its rows (ADR-0049).</summary>
+/// <summary>A Linked Table's declaration as a Sheet Document records it: its name, its column names and its key, never its rows (ADR-0049).</summary>
 /// <param name="Name">The name Formulas read it by.</param>
 /// <param name="Columns">The column names, in order.</param>
-public sealed record SheetDocumentTable(string Name, IReadOnlyList<string> Columns);
+/// <param name="Key">
+/// The key column, one of <paramref name="Columns"/>, or <see langword="null"/> for a table declared
+/// without one, and for every table of a document read from versions 2 to 6 (ADR-0049, 2026-09-30).
+/// </param>
+public sealed record SheetDocumentTable(string Name, IReadOnlyList<string> Columns, string? Key = null);
 
 /// <summary>A Sheet Document that cannot be read: an unknown version, or anything the version does not define (ADR-0048).</summary>
 public sealed class SheetDocumentException : FormatException

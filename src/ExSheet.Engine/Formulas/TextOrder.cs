@@ -44,6 +44,25 @@ internal static class TextOrder
         return leftHyphens.CompareTo(rightHyphens);
     }
 
+    /// <summary>
+    /// A text two texts share exactly when <see cref="Compare"/> gives 0 for them: their primary
+    /// weights, their accents, and how many hyphens and apostrophes were passed over. A set of keys
+    /// finds the texts <c>XLOOKUP</c>'s exact match cannot tell apart without comparing every pair
+    /// (ADR-0049, 2026-09-30).
+    /// </summary>
+    public static string EqualityKey(string text)
+    {
+        var weights = Weigh(text, out var hyphens);
+        var key = new StringBuilder(text.Length * 3 + 4);
+        // Each weight is its class, its base character and its accents behind their length, so no
+        // two lists of weights are written alike.
+        foreach (var (@class, baseCharacter, accents) in weights)
+        {
+            key.Append((char)('0' + @class)).Append(baseCharacter).Append((char)accents.Length).Append(accents);
+        }
+        return key.Append('|').Append(hyphens).ToString();
+    }
+
     /// <summary>The primary weights and accents of the text's characters, a hyphen or an apostrophe passed over and counted, <c>ß</c> as <c>ss</c>.</summary>
     private static List<(int Class, char Base, string Accents)> Weigh(string text, out int hyphens)
     {
