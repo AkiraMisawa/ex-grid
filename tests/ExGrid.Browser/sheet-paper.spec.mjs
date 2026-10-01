@@ -101,7 +101,9 @@ async function selectionLook(page) {
     await page.keyboard.press('Shift+ArrowDown');
     await expect(grid.locator('.ex-range-single')).toHaveCount(1);
     await page.mouse.move(0, 0);
-    const outline = await colourOf(grid.locator('.ex-range-single').first(), 'outlineColor');
+    // The outline is the border of the range's box of its own, the ::after (ADR-0008, 2026-10-01).
+    const outline = await resolvedColour(page, await grid.locator('.ex-range-single').first()
+        .evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
     const tinted = await groundOf(page, cell(grid, 'C3'));
     return { outline, tinted };
 }

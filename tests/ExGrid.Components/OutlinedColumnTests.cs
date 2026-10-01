@@ -52,7 +52,7 @@ public class OutlinedColumnTests : GridTestContext
 
     /// <summary>A rectangle's inline style without the hole a range holding the Focus carries.</summary>
     private static string Rectangle(string? style)
-        => System.Text.RegularExpressions.Regex.Replace(style ?? "", @";\s*--ex-range-hole:[^;]*;?$", "");
+        => System.Text.RegularExpressions.Regex.Replace(style ?? "", @";\s*--ex-(range-hole|outline-in-[tl]):[^;]*", "");
 
     /// <summary>The Reference Outlines in one layer of the overlay, as class and style.</summary>
     private static List<(string? Class, string? Style)> Outlines(IRenderedComponent<ExGrid<TestRow>> cut, string layer = ".ex-selection")
@@ -95,7 +95,8 @@ public class OutlinedColumnTests : GridTestContext
         var outline = Assert.Single(Outlines(cut));
         Assert.Equal("ex-reference-outline ex-reference-2", outline.Class);
         // The same rectangle. A range holding the Focus also carries the hole where the Focus is
-        // (--ex-range-hole, ADR-0008), which an outline, being no selection, never has.
+        // (--ex-range-hole, ADR-0008), and the sides of the Selection's outline that stay inside
+        // it (--ex-outline-in-t, --ex-outline-in-l), which an outline, being no selection, never has.
         Assert.Equal(Rectangle(column.GetAttribute("style")), outline.Style);
         Assert.StartsWith("left: 100px; top: 0px; width: 100px; height: ", outline.Style);
 

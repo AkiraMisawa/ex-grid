@@ -1,6 +1,6 @@
 # 49: Borders on the Sheet, as Excel draws them
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the Sheet's Borders, drawn through ADR-0050 item 15, as [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) says.
 
@@ -24,7 +24,7 @@ core's question of which line to draw by its rule (the upper or left cell's, whe
       gridline; medium and the medium dashes on the gridline and the pixel above it; thick on the
       gridline and a pixel each side; double as two 1-px lines either side of the gridline with the
       gridline's pixel white; the dash and dot patterns as tabled (dashes 8 px at 100%, 9 at 150%).
-- [ ] Inside the Selection, borders stay drawn over its shade; the Selection's outline covers the
+- [x] Inside the Selection, borders stay drawn over its shade; the Selection's outline covers the
       outer ones (case 11).
 - [x] Rows keep their one height where Excel would raise them for a medium or a thick line (ADR-0071).
 - [x] A line on column A's left edge lies under the Row Headings' edge, as Excel draws it (run 12,
@@ -145,8 +145,65 @@ the user's call:
 *(2026-10-01, orchestrator.)* **Case 11 decided with the user: (c).** The outline lies on the gridline and one
 pixel outside the range, as Excel's does. Beside the Headings, a Pinned Column and the header it stays inside, so
 UX-18 holds. ADR-0008's note of this date records it.
-- [ ] Build it, and turn the case-11 `fixme` into a test of all four sides in the open.
-- [ ] Add a test that the outline's sides keep equal widths beside the Headings, a Pinned Column and the header
+- [x] Build it, and turn the case-11 `fixme` into a test of all four sides in the open.
+- [x] Add a test that the outline's sides keep equal widths beside the Headings, a Pinned Column and the header
       (UX-18).
 
 DC-48 is ticket 86's.
+
+2026-10-01, agent cf-48: case 11, as decided.
+
+### What was built
+
+- **The Selection's outline lies where Excel's does.** That is the Focus's outline, and the one
+  round a Selection of a single range.
+  - It sits on the gridline and one pixel outside the range: the outline's width above the top and
+    left of the left; on the bottom and the right, the range's own last pixel (the gridline) and one
+    past it.
+  - So it covers a Border on every outer edge.
+- **Where a side stays inside.** A side whose outer pixels something above the selection layer would
+  cover stays inside the range, as before, so its width stays equal (UX-18):
+  - a top edge at or above the readable area's top, under the header;
+  - a left edge at or left of the Row Headings' edge;
+  - for a scrollable column, a left edge at or left of the pinned block's edge, scrolled sideways
+    too.
+- **How the core decides it.** It works this out from geometry it already holds
+  (`SelectionStyles.OutlineSides`, from `ExGrid.OutlineCoverAt`): the first row whose top lies below
+  the header, and the horizontal scroll offset. It marks a side that stays inside with
+  `--ex-outline-in-t` or `--ex-outline-in-l` on the element's inline style.
+- **How the stylesheet draws it.** The outline is the border of a box of its own, the element's
+  `::after`, so a side moves without moving the range's tint.
+  - `ex-grid.css` places that box from the two markers, the Focus outline's 2px and
+    `--ex-rule-width`. Nothing in C# reads the outline's width.
+  - A range across the pinned boundary is clipped to its side on that edge only. Its clip lets a
+    row's height past its other edges, more than any outline is wide.
+  - Under forced colors every range and the Focus are outlined inside their boxes as before, with
+    no `::after`.
+- **The DemoHost's case pages no longer pin column A** (`/sheet?case=…`). The run's workbook had no
+  frozen panes, so Part C now compares like with like. The page's own Sheet still pins A.
+
+### Tests
+
+- **Layer 2** (`SelectionLookTests`):
+  - which sides stay inside, for the Focus at the corner, the top and the left edges and in the
+    open;
+  - a range's top under the header when scrolled, and the row below in the open;
+  - a scrollable column's left beside the pinned block, and the same scrolled sideways;
+  - a column's left beside the Row Headings.
+  - The style strings the earlier tests pin now carry the markers and the new clip. A Reference
+    Outline's comparison with a range's or the Focus's box leaves the markers out.
+- **Layer 3**, `--project=chrome`, WebAssembly, headless on this Mac:
+  - `sheet-borders.spec.mjs`, 34 passed, and 29 passed in `chrome-150`. Case 11's `fixme` is now a
+    test under MudBlazor's Chrome: on all four outer edges of B2:C3 the gridline's pixel and the
+    one outside it are the outline's, the range's own pixel past the outline is not, and the lines
+    inside stay dark over the shade.
+  - `selection-look.spec.mjs`, 15 passed. That includes the new UX-18 test: a single range's
+    outline has four equal edges beside a Pinned Column, beside the Headings, under the header and
+    in the open. The UX-19 tests now read the outline from the `::after`.
+  - `sheet-paper.spec.mjs`, 9 passed.
+  - `mud.spec.mjs`'s UX-9 test, 1 passed. It reads the outline a pixel above the cell now.
+  - The rest is CI's.
+- **Layers 1 and 2**: ExGrid.Tests 874, ExSheet.Engine.Tests 2317, ExGrid.MudBlazor.Tests 133,
+  ExGrid.Components 1279 (one skipped), ExSheet.MudBlazor.Tests 38, ExSheet.Components.Tests 583.
+
+Part C (SH-46) is the Windows session's run by hand. The DemoHost shows its cases.

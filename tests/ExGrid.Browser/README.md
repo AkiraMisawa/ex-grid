@@ -389,10 +389,11 @@ nobody had asked for. What that means when writing a test:
   here and at 150% in `chrome-150` (case 9's table, the long dash 8 and 9); rows keeping their one
   height; a Fill over its four gridlines (case 4), a white Fill taking them away (case 5), two
   Fills meeting (case 6); a thick line over the Fill below it (case 10); the left cell's line drawn
-  where both cells record one (the twelfth run's case 1); inside the Selection the lines staying
-  drawn and its outline covering the outer ones on its bottom and right (case 11), its top and left
-  left as `fixme` for ADR-0008; and a line on column A's left lying under the Row Headings' edge
-  (the twelfth run's case 14).
+  where both cells record one (the twelfth run's case 1); the Selection's outline lying on the
+  gridline and a pixel outside the range on all four sides, over the outer lines, with the lines
+  inside staying drawn over its shade (case 11, ADR-0008 of 2026-10-01); and a line on column A's
+  left lying under the Row Headings' edge (the twelfth run's case 14). The case pages pin no
+  column, as the run's workbook did not.
 - `sheet-paper.spec.mjs` — the Paper and the Ink (ADR-0071, SH-39, SH-40, DC-58; ticket 48) on
   `/sheet?case=paper`, under the built-in Chrome and `ExSheet.MudBlazor`'s, with `?scheme=light` and
   `?scheme=dark`: the Paper white and the Ink black in both schemes; a Font colour, a Number

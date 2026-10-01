@@ -140,10 +140,14 @@
 
     private bool Dark => DemoChrome.IsDark(Scheme);
 
+    // The page's own Sheet pins column A; a run's case does not, as Excel's workbook in the run had
+    // no frozen panes, so what Part C puts beside Excel's picture is drawn as Excel drew it.
+    private int PinnedColumns => Case is null ? 1 : 0;
+
     private IGridChrome? _chrome;
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
-    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
+    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome"
                                               EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : 420)" ViewportWidth="720"
                                               SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
                                               PointingScope="_scope" OnPointingRefused="ShowPointingRefusal" />;
