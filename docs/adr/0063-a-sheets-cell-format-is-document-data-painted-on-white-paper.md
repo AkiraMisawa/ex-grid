@@ -502,8 +502,8 @@ Ticket 57 takes the model. Ticket 58 takes the keys' widening and the localised 
 
 ## Readings until the thirteenth Windows run *(2026-10-01)*
 
-Ticket 58 built the widening and the localised built-ins. Building them meant reading some things that
-neither run observed, and one earlier answer may contradict them. ExSheet follows each reading below
+Ticket 58 built the widening and the localised built-ins, and ticket 57 built the edge model. Building
+them meant reading some things that no run observed, and one earlier answer may contradict them. ExSheet follows each reading below
 until [`verify-on-windows-13.md`](../specs/exsheet/verify-on-windows-13.md) observes it. Excel's answer
 then decides (ADR-0047's rule).
 
@@ -525,6 +525,16 @@ then decides (ADR-0047's rule).
 - **Under ja-JP only built-in 15 shows the month as a number.** Excel's own local code for 15 reads
   `dd-mmm-yy`, yet it shows `05-1-26`. So Excel may show `mmm` as a number in every format under ja-JP.
   ExSheet shows .NET's `1月` there.
+- **Ticket 57's model, where the runs saw only the edge as shown:**
+  - **Format Cells shows each cell's own sides, not the edge as shown.** The eleventh run's case 24
+    observed this for the inside edge of A1:A2. ExSheet also reads it for a single cell: A2 opens with
+    no top under A1's thick bottom.
+  - **A paste leaves the neighbour's own record under the line that is shown.** In case 12-1, C2 keeps
+    its thin blue left under B2's thick red right. COM and the pixels show only the edge, but the
+    saved file shows each cell's own record.
+  - **Inside over whole rows** sets the right of XFD and leaves A's left alone. **Inside over the
+    whole Sheet** sets every side, including A's left and XFD's right. Both follow from cases 14
+    to 16.
 - **Not a reading but an estimate.** ExSheet widens column A for `05-Jan-26`, which fitted Excel's 8.09
   in case 19. ExSheet's fitting charges every character one digit width (ADR-0047). That is the same
   estimate that otherwise decides `####`, and it errs towards widening, never towards hiding text.

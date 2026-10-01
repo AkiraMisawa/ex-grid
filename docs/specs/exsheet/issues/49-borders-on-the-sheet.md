@@ -11,8 +11,14 @@ core's question of which line to draw by its rule (the upper or left cell's, whe
 - [ ] ExSheet answers each cell's Border sides from the engine.
 - [ ] A Border on a whole row or column is drawn on cells that hold nothing, so a change to a level
       repaints every painted row it covers, as ticket 48 does for Fills.
-- [ ] The line between two cells is one line (case 7; ticket 55 keeps both sides equal), so the core
-      can draw either side's record.
+  - An edge set on a row's top shows on the bottom of the row above, and a bottom on the row below.
+    `SheetChange.Rows` names the row across a changed edge for cell records (ticket 57), but a level
+    change still lists only rows that hold a cell. So the repaint after a level change reaches one row
+    further on each side.
+- [ ] ExSheet answers the core's "which line to draw" from `Sheet.GetBorders`, which gives the edge
+      as shown (ticket 57): where both cells record a line the upper or left cell's, otherwise whichever
+      records one. The two records of an edge can differ after a paste, a fill or a deletion, so the
+      core must not draw either side's record on its own.
 - [ ] A Fill covers the gridlines at its cell's edges, as the run observed (cases 4–6).
 - [ ] The thirteen line styles match case 9's table at 100% and 150%: every 1-px style on the
       gridline; medium and the medium dashes on the gridline and the pixel above it; thick on the

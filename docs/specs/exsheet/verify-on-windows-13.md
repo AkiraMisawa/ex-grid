@@ -16,7 +16,8 @@ until the thirteenth Windows run". Ticket 58 built ExSheet on those readings, so
 confirms the code or names what to change. The readings cover three things:
 - when a formatting key widens a column that is no longer at the standard width;
 - what else widens a column;
-- how ja-JP shows `mmm`.
+- how ja-JP shows `mmm`;
+- what each cell records for itself under the edge model of ticket 57.
 
 ## Setup
 
@@ -67,6 +68,20 @@ Restore en-GB after case 3, and say so.
 | 11 | As 10, but type each code into Format Cells → Custom (mouse and keys) instead of COM | The same | the same as 10 |
 
 Restore en-GB after group 3, and say so.
+
+### Group 4 — what each cell records, where the runs saw only the edge
+
+Ticket 57 built Excel's edge model (ADR-0063, "What the twelfth Windows run settled"). These cases read
+what the model says each cell keeps for itself. **Save as `.xlsx` and read the file**: unzip it, then
+record each named cell's `s` index in `xl/worksheets/sheet1.xml`, its `cellXfs` entry and the `border`
+it points to in `xl/styles.xml`.
+
+| # | Set up (COM) | Keys / mouse | What is asked | Reading |
+|---|---|---|---|---|
+| 12 | As the twelfth run's case 1: C2's left thin blue; E5's right thick red, E5 = 1 | Select E5, Ctrl+C, select B2, Ctrl+V. Save | B2's and C2's own `border` in the file; the line drawn | B2 records a thick red right; C2 still records its thin blue left; the thick red line is drawn |
+| 13 | A1's bottom thick black; A2 plain | Select A2 alone, Ctrl+1, the Border tab | A screenshot of the preview: does it show a top line? Then Cancel | no top: the dialog shows A2's own sides |
+| 14 | — | Select rows 3:4 (A3, Shift+Space, Shift+Down), Ctrl+1 → Border → **Inside** (mouse) → OK. Save | A3's and A4's left edges, XFD3's right edge, B3's bottom edge (COM and the file) | the line between rows 3 and 4 and between columns; XFD's right set; A's left not set |
+| 15 | — | Select the whole Sheet (the corner box, mouse), Ctrl+1 → Border → **Inside** → OK | A1's left and top, XFD1's right, B2's top, A1048576's bottom (COM) | every side, including A's left and XFD's right. Record the top of row 1 and the bottom of row 1048576 |
 
 ## Results
 
