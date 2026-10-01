@@ -98,6 +98,15 @@ every font. It errs towards `####`, never towards a cut number.
     this". On white Paper it reads as it did when it was chosen.
 - **What lies on the Paper takes its light-scheme appearance.** That is the Focus, the Selection,
   Reference Outlines and the pointed shade, the Cell Editor in its cell, and the gridlines.
+  - *(2026-10-01, ticket 48.)* **The gridlines are Excel's:** `#e0e0e0` on white, sampled by the
+    eleventh Windows run. They are drawn on every row and column under both Chromes. Before
+    ticket 48, the built-in Chrome drew none: the core's rule tokens default to transparent. Under
+    MudBlazor only the Wrapper's row rules showed, and they vanished on the Paper in its dark theme.
+    - They are the Ink mixed 12% into the Paper, through the core's existing
+      `--ex-row-rule-color` and `--ex-column-rule-color`, so a Consumer's Paper and Ink carry them
+      along. No new token was added.
+    - On the Sheet they replace the Wrapper's row rules. That is the user's criterion, as close to
+      Excel as possible.
   - **What frames the Paper follows the colour scheme.** That is the Headings, the Name Box, the
     Formula Bar (with its coloured References), popovers and the Size Tip.
   - The dark-scheme shades of
@@ -615,11 +624,11 @@ then decides (ADR-0047's rule).
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
 - **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done.
-- **Tickets** 44 to 58 and 81 to 85, in `docs/specs/exsheet/issues/`:
+- **Tickets** 44 to 58 and 81 to 90, in `docs/specs/exsheet/issues/`:
   - ticket 55 was added by the eleventh run;
   - 56 by ticket 51's Server fix;
   - 57 and 58 by the twelfth run;
-  - 81 and 82 by ticket 47, 83 by ticket 82, and 84 and 85 by ticket 81.
+  - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, and 86 to 90 by ticket 48.
 
   59 to 75 are `claude/exsheet-start-8cx3v1`'s, and 76 to 80 are Pointing Scope's line
   (`docs/agents/numbering.md`).

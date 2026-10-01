@@ -1,6 +1,6 @@
 # 48: ExSheet paints Font and Fill on white Paper
 
-Status: needs-info
+Status: done
 
 **What to build:** the component's half of [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "What a Cell Format holds" and "Paper and Ink".
 
@@ -160,3 +160,12 @@ I recommend (a), and I have not done any of them.
 - **A Pinned Column's cell that draws a line layer** (`.ex-lined`) loses its row gridline, because
   the core's line rule replaces the cell's background image. This is ticket 81's area (a pinned
   cell's tint under lines).
+
+*(2026-10-01, orchestrator.)* **Decided: (a).** The drift is a defect, ticket 48 only made it visible, and a
+check is not loosened to hide one (AGENTS.md). Ticket 86 fixes the drift. The other findings are tickets:
+- item 26 → ticket 87;
+- the Cell Editor's Fill and Font → ticket 88;
+- `0;[Red]@` → ticket 89;
+- a pinned lined cell's gridline → ticket 90.
+
+The Focus under MudBlazor's dark scheme stays the Wrapper's (ADR-0030).
