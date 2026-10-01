@@ -112,6 +112,8 @@ for (const chrome of ['builtin', 'mud']) {
             const details = tabs.getByRole('tab', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
             await expect(details).toHaveAttribute('aria-selected', 'true');
             await expect(tabs.getByRole('tab', { name: 'PivotTable', exact: true })).toHaveAttribute('aria-selected', 'false');
+            // The keyboard leaves the report the records now cover, for the new tab.
+            await expect(details).toBeFocused();
             // The tabs stand at the report's foot, under it.
             const sheet = await pivot(page).locator('.ex-pivot-sheet').boundingBox();
             expect((await tabs.boundingBox()).y).toBeGreaterThanOrEqual(sheet.y + sheet.height - 1);
@@ -126,12 +128,24 @@ for (const chrome of ['builtin', 'mud']) {
             // Not part of the Pivot Layout.
             await expect(page.locator('#pivot-status')).toHaveText(layout ?? '');
 
-            // The report's tab brings the report back; the tab's close button closes it.
+            // The report's tab brings the report back, and a second Show Details opens a second
+            // tab beside the first.
             await tabs.getByRole('tab', { name: 'PivotTable', exact: true }).click();
             await expect(panel).toHaveCount(0);
             await expect(rows(page).first()).toBeVisible();
+            await rows(page).nth(2).locator('[role=gridcell]').nth(2).dblclick({ force: true });
+            await expect(tabs.getByRole('tab', { name: /^Details: / })).toHaveCount(2);
+            const second = tabs.getByRole('tab', { name: /^Details: / }).nth(1);
+            await expect(second).toBeFocused();
+
+            // A tab's close button closes it, and the keyboard goes to the tab selected then.
+            await tabs.getByRole('button', { name: `Close ${await second.textContent()}`, exact: true }).click();
+            await expect(tabs.getByRole('tab', { name: /^Details: / })).toHaveCount(1);
+            await expect(details).toHaveAttribute('aria-selected', 'true');
+            await expect(details).toBeFocused();
             await tabs.getByRole('button', { name: /^Close Details: Americas/ }).click();
             await expect(pivot(page).getByRole('tablist')).toHaveCount(0);
+            await expect(rows(page).first()).toBeVisible();
         });
 
         test(`ADR-0058: Show Details opens ExPivot's dialog when the page asks for one, which takes the keyboard and closes on Escape (${chrome})`, async ({ page }) => {
@@ -144,10 +158,14 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
             await expect(dialog.locator('.ex-grid .ex-viewport .ex-row').first()).toBeVisible();
             await expect(pivot(page).getByRole('tablist')).toHaveCount(0);
+            // Modal: what it covers takes neither the keyboard nor the pointer.
+            await expect(pivot(page).locator('.ex-pivot-report')).toHaveAttribute('inert', '');
+            await expect(pivot(page).locator('.ex-pivot-field-list')).toHaveAttribute('inert', '');
 
             await page.keyboard.press('Escape');
 
             await expect(dialog).toHaveCount(0);
+            await expect(pivot(page).locator('.ex-pivot-report')).not.toHaveAttribute('inert');
         });
 
         test(`ADR-0062: a page that listens to Show Details takes the trades, and neither a tab nor a dialog opens (${chrome})`, async ({ page }) => {

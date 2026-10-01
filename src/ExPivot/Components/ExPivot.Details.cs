@@ -17,6 +17,10 @@ public partial class ExPivot
     private int _dialogFocus;
     private int _sheetSequence;
 
+    // The tab whose button takes the keyboard next — null for the report's own — and the request
+    // that asks it; zero while none is asked.
+    private (PivotDetailsSheet? Sheet, int Request) _tabFocus;
+
     /// <summary>
     /// The records behind a value cell (ADR-0058/0062): an empty cell has none. They are asked of the
     /// source the report came from, under its Source Version, so they add up to the cell. The
@@ -51,6 +55,9 @@ public partial class ExPivot
         {
             _sheets.Add(sheet);
             _selectedSheet = sheet;
+            // The records now cover the report, so the keyboard leaves it for the new tab: keys
+            // left in a report nobody sees would move and copy what is not on screen.
+            _tabFocus = (sheet, ++_focusSequence);
         }
         StateHasChanged();
     }
@@ -76,6 +83,8 @@ public partial class ExPivot
         // Excel's next sheet: the one after the closed tab, or before it, or the report.
         if (ReferenceEquals(_selectedSheet, sheet))
             _selectedSheet = _sheets.Count == 0 ? null : _sheets[Math.Min(at, _sheets.Count - 1)];
+        // The close button that held the keyboard is gone: the selected tab takes it.
+        _tabFocus = (_selectedSheet, ++_focusSequence);
         StateHasChanged();
     }
 
@@ -90,14 +99,21 @@ public partial class ExPivot
 
     private RenderFragment DetailsTabs() => builder =>
     {
-        var report = new PivotDetailsTab($"{_idPrefix}-report", Word("report-tab"), _selectedSheet is null, () => SelectSheet(null), null, null);
+        var (focused, request) = _tabFocus;
+        var report = new PivotDetailsTab($"{_idPrefix}-report", Word("report-tab"), _selectedSheet is null, () => SelectSheet(null), null, null)
+        {
+            FocusRequest = focused is null ? request : 0,
+        };
         var tabs = _sheets.Select(sheet => new PivotDetailsTab(
             sheet.Id,
             sheet.Details.Title,
             ReferenceEquals(sheet, _selectedSheet),
             () => SelectSheet(sheet),
             () => CloseSheet(sheet),
-            PivotWords.Fill(Word("close-tab"), sheet.Details.Title))).ToArray();
+            PivotWords.Fill(Word("close-tab"), sheet.Details.Title))
+        {
+            FocusRequest = ReferenceEquals(focused, sheet) ? request : 0,
+        }).ToArray();
         var context = new PivotDetailsTabsContext(Word("sheets"), report, tabs, Word);
         if (PivotChrome?.DetailsTabs(context) is { } custom)
         {

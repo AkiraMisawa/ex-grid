@@ -16,7 +16,9 @@
     selects, and the column menu is left out; the grips stay.
 *@
 <div class="ex-pivot" style="@RootStyle">
-    <div class="ex-pivot-report">
+    @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
+       the dialog is modal (ADR-0058). *@
+    <div class="ex-pivot-report" inert="@(_dialog is not null)">
         @Toolbar()
         <div class="ex-pivot-sheet" style="@SheetStyle">
             @if (_report is null || _report.IsEmpty)
@@ -41,7 +43,7 @@
     </div>
     @if (_fieldListShown)
     {
-        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")">
+        <div class="ex-pivot-field-list" role="region" aria-label="@Word("field-list")" inert="@(_dialog is not null)">
             <div class="ex-pivot-field-list-scroll">@FieldList()</div>
         </div>
     }

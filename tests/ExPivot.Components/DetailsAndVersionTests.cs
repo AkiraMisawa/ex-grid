@@ -103,6 +103,37 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Single(cut.FindComponents<ExGrid<PivotReportRow>>());
     }
 
+    [Fact] // ADR-0058 (PV-14): a tab Show Details opens takes the keyboard, which the report it covers keeps no longer; closing a tab gives it to the tab selected next
+    public async Task The_keyboard_follows_the_tabs()
+    {
+        var cut = RenderPivot(ByRegionAndProduct);
+        int FocusCalls() => JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+        IRenderedComponent<PivotFocusButton> TabButton(string title)
+            => cut.FindComponents<PivotFocusButton>().Single(b => b.Instance.Class == "ex-pivot-tab-button" && b.Find("button").TextContent == title);
+
+        var before = FocusCalls();
+        await DoubleClickAsync(cut, 0, 1);
+
+        Assert.NotEqual(0, TabButton("Details: East / Apples").Instance.FocusRequest);
+        Assert.Equal(0, TabButton("PivotTable").Instance.FocusRequest);
+        Assert.True(FocusCalls() > before);
+
+        await DoubleClickAsync(cut, 1, 4);
+        var opened = TabButton("Details: North").Instance.FocusRequest;
+        Assert.NotEqual(0, opened);
+        Assert.Equal(0, TabButton("Details: East / Apples").Instance.FocusRequest);
+
+        before = FocusCalls();
+        await cut.FindAll(".ex-pivot-tab-close")[1].ClickAsync(new MouseEventArgs());
+
+        Assert.Equal("true", TabButton("Details: East / Apples").Find("button").GetAttribute("aria-selected"));
+        Assert.True(TabButton("Details: East / Apples").Instance.FocusRequest > opened);
+        Assert.True(FocusCalls() > before);
+
+        await cut.Find(".ex-pivot-tab-close").ClickAsync(new MouseEventArgs());
+        Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
+    }
+
     [Fact] // ADR-0058 (PV-14): the grand total's records, every one, under the title of the grand total
     public async Task The_grand_totals_details()
     {
@@ -169,6 +200,24 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
         cut.WaitForAssertion(() => Assert.Equal(2, DetailRows(cut, ".ex-pivot-dialog-records").Length));
         Assert.True(JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus") > focusCalls);
+    }
+
+    [Fact] // ADR-0058 (PV-14): the dialog is modal — what it covers, the report and the Field List, takes neither the keyboard nor the pointer while it stands
+    public async Task What_the_dialog_covers_is_inert()
+    {
+        var cut = RenderPivot(ByRegionAndProduct, ps => ps.Add(p => p.DetailsView, PivotDetailsView.Dialog));
+        Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
+
+        await DoubleClickAsync(cut, 0, 1);
+
+        Assert.True(cut.Find(".ex-pivot-report").HasAttribute("inert"));
+        Assert.True(cut.Find(".ex-pivot-field-list").HasAttribute("inert"));
+        Assert.Null(cut.Find(".ex-pivot-dialog").Closest("[inert]"));
+
+        await cut.Find(".ex-pivot-dialog").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
+        Assert.False(cut.Find(".ex-pivot-field-list").HasAttribute("inert"));
     }
 
     [Theory] // ADR-0058 (PV-14): Escape, Close and the backdrop close the dialog

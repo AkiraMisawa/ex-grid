@@ -433,7 +433,13 @@ public sealed record PivotDetailsTabsContext(
 /// <param name="Close">Closes it; null for the report's tab.</param>
 /// <param name="CloseLabel">The close button's accessible name, "Close Details: …"; null for the
 /// report's tab.</param>
-public sealed record PivotDetailsTab(string Id, string Title, bool IsSelected, Action Select, Action? Close, string? CloseLabel);
+public sealed record PivotDetailsTab(string Id, string Title, bool IsSelected, Action Select, Action? Close, string? CloseLabel)
+{
+    /// <summary>Changes when the tab's button should take DOM focus: a tab Show Details has just
+    /// opened — the report under it is covered, and keeps no keyboard — and the tab selected when
+    /// the one holding the keyboard closed. Zero asks nothing.</summary>
+    public int FocusRequest { get; init; }
+}
 
 /// <summary>
 /// Show Details' dialog content (ADR-0058), inside ExPivot's frame: the cell's title, the records'
