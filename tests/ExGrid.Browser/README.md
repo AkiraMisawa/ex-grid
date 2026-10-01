@@ -22,7 +22,10 @@ BIG-1, BIG-5, VZ-15, the Focus against the scrollbars, and the Sheet's SH-2, SH-
 and every test that scrolls a compressed grid to a row (MK-6, `sheet-vs-excel` items 3 and 5,
 active-cell cases 7 and 8). Those go through `scrollRowToTop` in `fixtures.mjs`, which maps a
 row to a scroll offset through ADR-0053's `c(s) = s × k`: a `scrollTop` of rows × row height
-shows a later row once the height is compressed, which only a run at 150% can see.
+shows a later row once the height is compressed, which only a run at 150% can see. It returns
+once the grid has painted the slice for the offset the browser holds, as the offset the grid
+wrote on the Viewport says: compressed, the rows move when the grid is told of the scroll, a
+round trip later on the Server host, and a reading taken before that is of rows that are leaving.
 It launches Chrome with `--force-device-scale-factor=1.5` and `viewport: null`, headed, so
 the display scale reaches layout the way the OS's does and Chrome clamps at 22,369,618 CSS
 px. Playwright's `deviceScaleFactor` would not do: it raises `devicePixelRatio` and leaves
