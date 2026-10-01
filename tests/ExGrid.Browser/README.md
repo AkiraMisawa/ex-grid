@@ -378,7 +378,14 @@ nobody had asked for. What that means when writing a test:
   Shift as a UK layout types it (SH-42); with an edit open, Ctrl+U, Ctrl+B and Ctrl+Shift+$
   changing nothing, taken from the browser — no page opened — said in ExSheet's notice and in the
   page's status line, and the edit committing as typed (SH-43). A Font is not painted yet, so the
-  page's line under the Sheet reads the Focus cell's Cell Format back.
+  page's line under the Sheet reads the Focus cell's Cell Format back. The page's
+  *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
+  the Sheet has heard the move, formats the extended range as one step (ticket 56).
+- `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0063, ADR-0050 item 16;
+  ticket 52). Among its tests, on a 150 ms circuit on the Server host: the page's *Format Cells…*
+  pressed straight after Shift+ArrowDown, and the Context Menu's item chosen as soon as the menu
+  opens on another cell, each opening over the Selection the grid holds and standing when the
+  move's notification lands (ticket 56).
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed

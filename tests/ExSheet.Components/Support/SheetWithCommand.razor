@@ -1,0 +1,29 @@
+@* A Consumer's page in small (ticket 56): an ExSheet, and a button of the page's own whose handler
+   the test writes. A handler's synchronous part runs inside its event's batch, so the renders it
+   causes come after it, and with them the selection notification the grid raises after its render.
+   A key forwarded to the grid and a command given in one handler are therefore the order a circuit
+   gives a toolbar button pressed straight after a key: the command reaches ExSheet before the
+   move's notification does. *@
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Web
+@using global::ExGrid.Selection
+@using global::ExSheet.Components
+
+<ExSheet ViewportHeight="400" ViewportWidth="700" Culture="Culture" SelectionChanged="_heard" />
+<button class="page-command" @onclick="RunAsync">Command</button>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private EventCallback<GridSelection> _heard;
+
+    /// <summary>What the button does, set by the test.</summary>
+    public Func<Task>? Command { get; set; }
+
+    /// <summary>Every Selection the Sheet raised to the page, in order.</summary>
+    public List<GridSelection> Heard { get; } = [];
+
+    protected override void OnInitialized() => _heard = EventCallback.Factory.Create<GridSelection>(this, Heard.Add);
+
+    private Task RunAsync() => Command?.Invoke() ?? Task.CompletedTask;
+}

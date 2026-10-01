@@ -137,6 +137,10 @@ A Cell Format set on a selection of whole columns or whole rows is recorded on t
 rows, one entry each, as Excel records it, and `CellFormatAt` answers what a cell shows, part by
 part from the cell, its row or its column. It is a read, and answers while an edit is open.
 
+These commands, and `OpenFormatCellsAsync`, act on the selection as the grid holds it when they
+run. On Blazor Server, `SelectionChanged` arrives a round trip after a move, so a button pressed
+straight after Shift+arrow still formats the extended range, not the one your page last heard.
+
 While an edit is open — a cell or the Formula Bar typed in, and not yet committed or cancelled —
 these commands, `RedoAsync`, `SetCellFormatAsync` and `SetAlignmentAsync` among them, are refused with
 `SheetRefusalReason.EditIsOpen` and change nothing, as Excel greys out its ribbon while a cell is
