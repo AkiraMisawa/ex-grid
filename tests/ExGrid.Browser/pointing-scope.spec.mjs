@@ -27,7 +27,12 @@ test.use({ viewport: { width: 1280, height: 1000 } });
 
 const LOOKUP_4471 = '=XLOOKUP("R-4471", Positions[Id], Positions[PV])';
 
-/** Whether a grid is pointed at: ex-pointed-at on its root (DC-52). */
+/**
+ * Whether a grid is pointed at: ex-pointed-at on its root (DC-52). On a circuit the class can be the
+ * one painted for an earlier text. Typed =SUM(, the class painted for = still stands while the server
+ * has yet to hear SUM(, and =S is out of Point: a press then is the grid's own. A test that types more
+ * than = before it asks waits for the Formula Bar, the server's view of the text, to show it first.
+ */
 async function expectPointedAt(grid, pointed = true) {
     if (pointed) {
         await expect(grid).toHaveClass(/\bex-pointed-at\b/);
@@ -129,6 +134,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
+        await expect(bar(grid)).toHaveValue('=SUM(');
         await expectPointedAt(table);
 
         await header(table, 'PV').click({ force: true });
@@ -152,6 +158,7 @@ test.describe('/sheet', () => {
         // The text the press lands after, as the user sees it: a press made while keys typed before
         // it are still on their way is DC-54's, below.
         await expect(editor(grid)).toHaveValue('=1+');
+        await expect(bar(grid)).toHaveValue('=1+');
         await expectPointedAt(table);
 
         await clickCell(table, 'C3');
@@ -188,6 +195,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
+        await expect(bar(grid)).toHaveValue('=SUM(');
         await expectPointedAt(table);
 
         await clickCell(table, 'C3', { modifiers: ['Shift'] });
@@ -203,6 +211,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
+        await expect(bar(grid)).toHaveValue('=SUM(');
         await expectPointedAt(table);
         const from = await boxOf(cell(table, 'C1'));
         const to = await boxOf(cell(table, 'C3'));
@@ -311,6 +320,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(1,');
         await expect(editor(grid)).toHaveValue('=SUM(1,');
+        await expect(bar(grid)).toHaveValue('=SUM(1,');
         await expectPointedAt(table);
         await setRoundTrip(150);
 
@@ -361,6 +371,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(1,');
         await expect(editor(grid)).toHaveValue('=SUM(1,');
+        await expect(bar(grid)).toHaveValue('=SUM(1,');
         await expectPointedAt(table);
 
         await clickCell(table, 'C3');
@@ -426,6 +437,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=1+');
         await expect(editor(grid)).toHaveValue('=1+');
+        await expect(bar(grid)).toHaveValue('=1+');
         await expectPointedAt(table);
 
         await header(table, 'PV').click({ force: true });
@@ -681,6 +693,7 @@ test.describe('/pointing', () => {
         await pressCell(grid, 'C3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
+        await expect(bar(grid)).toHaveValue('=SUM(');
         await expectPointedAt(positions);
         await header(positions, 'PV').click({ force: true });
         await expect(editor(grid)).toHaveValue('=SUM(Positions[PV]');
