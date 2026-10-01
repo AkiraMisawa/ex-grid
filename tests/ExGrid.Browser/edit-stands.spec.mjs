@@ -30,8 +30,15 @@ test.use({ viewport: { width: 1280, height: 1000 } });
  * other grid on the page is.
  */
 async function pressPositions(page) {
+    // Revalue replaces every position's row, and the render that lands it replaces the cells: a
+    // press aimed at FX's cell while it lands found that cell detached (found on CI, the Server
+    // host, 2026-10-01). So the press waits until FX's row shows its new PV.
+    const pv = positions(page).locator('.ex-row', { has: page.locator('.ex-cell', { hasText: /^FX$/ }) })
+        .first().locator('.ex-cell').nth(2);
+    const before = await pv.textContent();
     await page.locator('#sheet-revalue').click();
     await expect(positions(page)).not.toHaveClass(/\bex-pointed-at\b/);
+    await expect(pv).not.toHaveText(before);
     const fx = positions(page).locator('.ex-cell', { hasText: /^FX$/ }).first();
     await expect(fx).toBeVisible();
     // Cells are pointer-events: none; the press lands on the Viewport (ADR-0004).
