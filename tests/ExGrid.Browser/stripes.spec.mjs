@@ -132,7 +132,13 @@ test('a group or total row paints its own ground over the stripe and still count
  * device pixels down through its top edge, from the last one of the row above.
  */
 async function edgesOf(page, cells) {
-    const region = await painted(page, await page.locator('.ex-grid').boundingBox());
+    // From a capture of the whole viewport, as groundsOf reads it. A capture clipped to the grid
+    // lost the hover band under headed Chrome on Linux (CI, 2026-10-01): the trace's frames show the
+    // band over the row after the move, and the frame of the clipped capture shows the page laid out
+    // from the grid's top and no band on any row, as if the pointer, left where it was on the screen,
+    // were over another part of the page. Headless Chrome on macOS kept the band.
+    const size = page.viewportSize() ?? await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+    const region = await painted(page, { x: 0, y: 0, ...size });
     const device = (n) => n / region.scale;
     const out = [];
     for (const [row, column] of cells) {
@@ -207,6 +213,9 @@ test('the hover band reads the same over a group row\'s pinned and scrollable ce
     await expect.poll(() => hoverBandRows(page, [12])).toEqual([12, 12]);
 
     const grounds = (await edgesOf(page, [[12, 0], [12, 1], [12, 3]])).map((c) => c.ground);
+    // The read itself left the band where it was: a band gone by now says the capture moved the
+    // pointer, not that the cells cover the band.
+    expect(await hoverBandRows(page, [12]), 'the band still stands on row 12 after the read').toEqual([12, 12]);
     expect(grounds.every((g) => sameColour(g, grounds[0], 1)),
         `hovered group row: pinned ${grounds[0]}, scrollable ${grounds.slice(1).join(' / ')}`).toBe(true);
     expect(sameColour(grounds[2], before, 1), `the band paints over the group row (${before} → ${grounds[2]})`).toBe(false);
