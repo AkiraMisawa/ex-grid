@@ -180,17 +180,19 @@ public sealed class PivotCube
     /// <summary>
     /// Whether <paramref name="layout"/> can be laid out from this cube without asking again
     /// (ADR-0059/0065): the same row and column fields in the same order, the same report filter
-    /// fields, the same Hidden Items on each, and every Value Field reading a field in Values here
-    /// whose parts its Aggregation reads — Sum and Average read one part, so a change between them
-    /// asks nothing; Max reads another, so a change from Sum to Max asks again. Everything else in
-    /// a layout only lays the cube out.
+    /// fields that hide Items, the same Hidden Items on each, and every Value Field reading a field
+    /// in Values here whose parts its Aggregation reads — Sum and Average read one part, so a
+    /// change between them asks nothing; Max reads another, so a change from Sum to Max asks
+    /// again. A field in Filters that hides nothing changes no leaf, so placing it, or moving it
+    /// while it hides nothing, needs no new answer (ADR-0065, refined). Everything else in a
+    /// layout only lays the cube out.
     /// </summary>
     public bool Holds(PivotLayout layout)
     {
         ArgumentNullException.ThrowIfNull(layout);
         if (!SameFields(layout.Rows, Query.Rows, ordered: true)
             || !SameFields(layout.Columns, Query.Columns, ordered: true)
-            || !SameFields(layout.Filters, Query.Filters, ordered: false))
+            || !SameFields(PivotQuery.Hiding(layout.Filters), Query.Filters.Where(f => f.HiddenItems.Count > 0).ToArray(), ordered: false))
             return false;
         foreach (var value in layout.Values)
         {

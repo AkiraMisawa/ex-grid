@@ -72,10 +72,12 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
     public IEnumerable<PivotQueryField> Placed => Rows.Concat(Columns).Concat(Filters);
 
     /// <summary>
-    /// The question a Pivot Layout asks (ADR-0065): its rows, columns and report filter fields
-    /// with their Hidden Items, and each field in Values once, with the parts of all of its Value
-    /// Fields' Aggregations (<see cref="PartsOf"/>). Everything else in a layout only lays the
-    /// answer out.
+    /// The question a Pivot Layout asks (ADR-0065): its rows and columns with their Hidden Items,
+    /// the report filter fields that hide Items, with those Items, and each field in Values once,
+    /// with the parts of all of its Value Fields' Aggregations (<see cref="PartsOf"/>). Everything
+    /// else in a layout only lays the answer out. A field in Filters that hides nothing changes no
+    /// leaf, so it does not travel: placing it, or moving it while it hides nothing, asks nothing
+    /// new (ADR-0065, refined while building it).
     /// </summary>
     public static PivotQuery For(PivotLayout layout, int maxLeaves = DefaultMaxLeaves)
     {
@@ -96,7 +98,8 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
                 values.Add(new PivotQueryValue(value.Field, parts));
             }
         }
-        return new PivotQuery(Placements(layout.Rows), Placements(layout.Columns), Placements(layout.Filters), values, maxLeaves);
+        return new PivotQuery(
+            Placements(layout.Rows), Placements(layout.Columns), Placements(Hiding(layout.Filters)), values, maxLeaves);
     }
 
     /// <summary>
@@ -150,6 +153,10 @@ public sealed class PivotQuery : IEquatable<PivotQuery>
 
     private static PivotQueryField[] Placements(IReadOnlyList<PivotFieldPlacement> placements)
         => placements.Select(p => new PivotQueryField(p.Field, p.HiddenItems)).ToArray();
+
+    /// <summary>The report filter fields that hide Items — the only ones a question carries.</summary>
+    internal static PivotFieldPlacement[] Hiding(IReadOnlyList<PivotFieldPlacement> filters)
+        => filters.Where(p => p.HiddenItems.Count > 0).ToArray();
 
     internal static T[] Copy<T>(IReadOnlyList<T>? list, string name) where T : class
     {

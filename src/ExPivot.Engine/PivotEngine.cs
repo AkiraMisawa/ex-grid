@@ -111,8 +111,10 @@ public static class PivotEngine
         ArgumentNullException.ThrowIfNull(cube);
         ArgumentNullException.ThrowIfNull(layout);
         ArgumentNullException.ThrowIfNull(field);
-        if (!cube.Query.Places(field))
-            throw new ArgumentException($"'{field}' stands in none of Filters, Rows and Columns of the cube's layout.", nameof(field));
+        // The layout's placement, not the question's: a field in Filters that hides nothing is
+        // placed, and is not in the question (ADR-0065, refined).
+        if (layout.PlacementOf(field) is null && !cube.Query.Places(field))
+            throw new ArgumentException($"'{field}' stands in none of Filters, Rows and Columns of the layout.", nameof(field));
         if (cube.AllItems is not { } allItems)
         {
             throw new InvalidOperationException(
