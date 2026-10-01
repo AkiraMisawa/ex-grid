@@ -467,8 +467,9 @@ nobody had asked for. What that means when writing a test:
   page focused while the report's request is on its way keeps the keyboard, and so does a second
   grid pressed meanwhile — the other pivot's report on `/pivot-db`. On the Server host the request
   lands two round trips after the Escape or the close, with 150 ms injected; on WebAssembly the
-  same tests are the case without a round trip. Not asserted: a held Escape (layer 2 holds the
-  repeats to one `OnLeave` per press).
+  same tests are the case without a round trip. Not asserted: a held Escape. Layer 2 holds its
+  repeats to one `OnLeave` per press, and what the repeats do to the report once the dialog has
+  closed waits on a decision (ticket 21 of docs/specs/expivot).
 - `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0063, PV-20), **run once per
   Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
   the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through
