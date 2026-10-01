@@ -197,13 +197,43 @@ public sealed partial class Sheet
         Dictionary<int, AxisFormat> ColumnsBefore);
 
     /// <summary>
-    /// A change set on a range, as Excel sets it (ADR-0047, ADR-0063). Whole columns record it on
-    /// the column level; whole rows on the row level. The whole Sheet is whole columns: the rows'
-    /// own Number Format, Alignment and Fill are cleared, and a Font or Borders a row records is
-    /// patched. A cell a level alone would not show what it should is given it as its own
-    /// (<see cref="CellsGivenTheirOwn"/>). Any other range sets its cells.
+    /// A change set on a range, as Excel sets it (ADR-0047, ADR-0063): on the range
+    /// (<see cref="ApplyCellFormatOn"/>), and on the cells beside it across each outer edge the
+    /// change sets, at whichever level they lie on, because the line between two cells is one line
+    /// and reads the same from either cell (the eleventh Windows run, cases 7 and 13). Undoing it
+    /// puts back both.
     /// </summary>
     internal CellFormatOutcome ApplyCellFormat(CellRange range, CellFormatChange change)
+    {
+        var own = ApplyCellFormatOn(range, change);
+        if (!change.SetsBorders) return own;
+        List<CellFormatOutcome> parts = [own];
+        foreach (var (beside, borders) in change.Borders!.Beside(range)) parts.Add(ApplyCellFormatOn(beside, new CellFormatChange { Borders = borders }));
+        return Combined(parts);
+    }
+
+    /// <summary>
+    /// The parts of one change as one outcome: the levels as they were before the first part, and
+    /// each cell as it was before the first part that touched it.
+    /// </summary>
+    private static CellFormatOutcome Combined(List<CellFormatOutcome> parts)
+    {
+        var seen = new HashSet<CellAddress>();
+        return new CellFormatOutcome(
+            SheetChange.Merge(parts.Select(p => p.Change)),
+            [.. parts.SelectMany(p => p.Before).Where(b => seen.Add(b.Address))],
+            parts[0].RowsBefore,
+            parts[0].ColumnsBefore);
+    }
+
+    /// <summary>
+    /// A change set on the range alone. Whole columns record it on the column level; whole rows on
+    /// the row level. The whole Sheet is whole columns: the rows' own Number Format, Alignment and
+    /// Fill are cleared, and a Font or Borders a row records is patched. A cell a level alone would
+    /// not show what it should is given it as its own (<see cref="CellsGivenTheirOwn"/>). Any other
+    /// range sets its cells.
+    /// </summary>
+    private CellFormatOutcome ApplyCellFormatOn(CellRange range, CellFormatChange change)
     {
         var rowsBefore = new Dictionary<int, AxisFormat>(_rowFormats);
         var columnsBefore = new Dictionary<int, AxisFormat>(_columnFormats);
@@ -219,10 +249,7 @@ public sealed partial class Sheet
         {
             if (wholeRows)
             {
-                foreach (var row in _rowFormats.Keys.ToList())
-                {
-                    SetAxis(_rowFormats, row, UnderWholeSheet(_rowFormats[row], change, new PlaceInRange(row == range.First.Row, row == range.Last.Row, false, false)));
-                }
+                foreach (var row in _rowFormats.Keys.ToList()) SetAxis(_rowFormats, row, UnderWholeSheet(_rowFormats[row], change));
             }
             for (var column = range.First.Column; column <= range.Last.Column; column++)
             {
@@ -259,15 +286,16 @@ public sealed partial class Sheet
     /// the levels alone would not show them what they should:
     /// <list type="bullet">
     /// <item>every cell inside that holds anything;</item>
-    /// <item>on whole columns, the cells of a row that records a part the change sets, since a row's
-    /// hides the column's;</item>
+    /// <item>on whole columns short of the whole Sheet, the cells of a row that records a part the
+    /// change sets, since a row's hides the column's;</item>
+    /// <item>on the whole Sheet, the cells in its first and last columns of a row that records
+    /// Borders, since the row's are patched as the inner cells take them and would hide the left
+    /// edge of column A and the right edge of the last column;</item>
     /// <item>on whole rows, the cells of a column that records a Font or Borders, since the row's is
-    /// patched from its own and would hide the column's the cell showed;</item>
-    /// <item>the cells on an outer edge of the range that runs across a level — the top and bottom of
-    /// whole columns, the left and right of whole rows — since a level is the same the whole length
-    /// of its column or row. Where a whole column's outline lies is a reading until the eleventh
-    /// Windows run, case 15.</item>
+    /// patched from its own and would hide the column's the cell showed.</item>
     /// </list>
+    /// No cell is given its own for an outer edge that runs across a level: whole columns have no top
+    /// or bottom edge, and whole rows no left or right edge (<see cref="PlaceInRange.Of"/>).
     /// </summary>
     private List<CellAddress> CellsGivenTheirOwn(CellRange range, CellFormatChange change)
     {
@@ -285,18 +313,8 @@ public sealed partial class Sheet
                 }
                 else if (borders is not null && level.Borders is not null)
                 {
-                    // Over the whole Sheet a row's Borders are patched as its inner cells take them,
-                    // and would hide the left edge from column A and the right edge from the last column.
                     if (borders.Left != borders.InsideVertical) touched.Add(new CellAddress(row, range.First.Column));
                     if (borders.Right != borders.InsideVertical) touched.Add(new CellAddress(row, range.Last.Column));
-                }
-            }
-            if (borders is not null)
-            {
-                for (var column = range.First.Column; column <= range.Last.Column; column++)
-                {
-                    if (borders.Top != borders.InsideHorizontal) touched.Add(new CellAddress(range.First.Row, column));
-                    if (borders.Bottom != borders.InsideHorizontal) touched.Add(new CellAddress(range.Last.Row, column));
                 }
             }
         }
@@ -308,14 +326,6 @@ public sealed partial class Sheet
                 if (!(change.SetsFont && level.Font is not null) && !(borders is not null && level.Borders is not null)) continue;
                 for (var row = range.First.Row; row <= range.Last.Row; row++) touched.Add(new CellAddress(row, column));
             }
-            if (borders is not null)
-            {
-                for (var row = range.First.Row; row <= range.Last.Row; row++)
-                {
-                    if (borders.Left != borders.InsideVertical) touched.Add(new CellAddress(row, range.First.Column));
-                    if (borders.Right != borders.InsideVertical) touched.Add(new CellAddress(row, range.Last.Column));
-                }
-            }
         }
         return touched;
     }
@@ -323,14 +333,15 @@ public sealed partial class Sheet
     /// <summary>
     /// A row's level when a change is set on the whole Sheet: the Number Format, Alignment and Fill
     /// it sets are now every column's, so the row's own are cleared; a Font or Borders the row
-    /// records hides the columns' from its cells, so it is patched as they take the change.
+    /// records hides the columns' from its cells, so it is patched as they take the change. Its
+    /// cells' sides are all inside the Sheet's outline, which lies only on columns A and the last.
     /// </summary>
-    private static AxisFormat UnderWholeSheet(AxisFormat level, CellFormatChange change, PlaceInRange place) => new(
+    private static AxisFormat UnderWholeSheet(AxisFormat level, CellFormatChange change) => new(
         change.NumberFormat is null ? level.NumberFormat : null,
         change.Alignment is null ? level.Alignment : null,
         change.SetsFont && level.Font is { } font ? change.ApplyTo(font) : level.Font,
         change.Fill is null ? level.Fill : null,
-        change.SetsBorders && level.Borders is { } borders ? change.Borders!.ApplyTo(borders, place) : level.Borders);
+        change.SetsBorders && level.Borders is { } borders ? change.Borders!.ApplyTo(borders, PlaceInRange.Inside) : level.Borders);
 
     private static void SetAxis(Dictionary<int, AxisFormat> levels, int index, AxisFormat level)
     {
@@ -397,7 +408,8 @@ public sealed partial class Sheet
     /// <summary>
     /// The row (or column) levels after a structural edit: moved with their rows (columns), those
     /// deleted or pushed off the edge dropped, and inserted rows (columns) given the level of the
-    /// one before them when <paramref name="formatInserted"/> (ADR-0046).
+    /// one before them, all but its Borders, when <paramref name="formatInserted"/> (ADR-0046,
+    /// ADR-0063). The Borders are the edges' (<see cref="JoinInserted"/>).
     /// </summary>
     private void ShiftAxisFormats(StructuralEdit edit, bool formatInserted)
     {
@@ -409,9 +421,9 @@ public sealed partial class Sheet
             var to = edit.Move(rows ? new CellAddress(index, 0) : new CellAddress(0, index));
             if (to is { } moved) shifted[rows ? moved.Row : moved.Column] = level;
         }
-        if (edit.IsInsert && formatInserted && edit.Start > 0 && levels.TryGetValue(edit.Start - 1, out var above))
+        if (edit.IsInsert && formatInserted && edit.Start > 0 && levels.TryGetValue(edit.Start - 1, out var above) && above with { Borders = null } is { IsEmpty: false } taken)
         {
-            for (var i = 0; i < edit.Count; i++) shifted[edit.Start + i] = above;
+            for (var i = 0; i < edit.Count; i++) shifted[edit.Start + i] = taken;
         }
         if (rows) _rowFormats = shifted;
         else _columnFormats = shifted;

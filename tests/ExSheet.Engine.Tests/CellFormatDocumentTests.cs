@@ -38,7 +38,9 @@ public class CellFormatDocumentTests
             Head + ""","columns":[{"at":"B:B","font":{"italic":true},"fill":"#FFFF00"}]"""
             + ""","rows":[{"at":"3:3","font":{"color":"#FF0000","bold":true}}]"""
             + ""","cells":[{"at":"B3","font":{"color":"#FF0000","bold":true,"italic":true}},"""
-            + """{"at":"B5","font":{"italic":true,"underline":true,"strikethrough":true},"fill":"none","borders":{"top":{"style":"thin"},"bottom":{"style":"double","color":"#0000FF"}}}]}""",
+            + """{"at":"B4","borders":{"bottom":{"style":"thin"}}},"""
+            + """{"at":"B5","font":{"italic":true,"underline":true,"strikethrough":true},"fill":"none","borders":{"top":{"style":"thin"},"bottom":{"style":"double","color":"#0000FF"}}},"""
+            + """{"at":"B6","borders":{"top":{"style":"double","color":"#0000FF"}}}]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         Assert.Equal(json, reopened.ToDocument().ToJson());
@@ -67,7 +69,9 @@ public class CellFormatDocumentTests
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         for (var i = 0; i < styles.Count; i++)
         {
-            Assert.Equal(new CellBorders(Bottom: new BorderLine(styles[i], CellColour.FromRgb(i))), reopened.GetBorders(At($"B{i + 2}")));
+            Assert.Equal(new BorderLine(styles[i], CellColour.FromRgb(i)), reopened.GetBorders(At($"B{i + 2}")).Bottom);
+            // The cell below reads the same line on its top: one line (case 7).
+            Assert.Equal(new BorderLine(styles[i], CellColour.FromRgb(i)), reopened.GetBorders(At($"B{i + 3}")).Top);
         }
     }
 

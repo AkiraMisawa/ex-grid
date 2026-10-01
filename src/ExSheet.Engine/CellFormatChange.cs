@@ -77,22 +77,24 @@ public sealed record CellFormatChange
 /// has it. <see cref="Outline"/>, <see cref="Inside"/> and <see cref="None"/> are Excel's presets.
 /// </summary>
 /// <remarks>
-/// A cell records only its own sides: the range's top edge is the top side of its first row's
-/// cells, and the bottom side of the cells above is left alone. Whether Excel also writes the
-/// neighbour's side is a reading until the eleventh Windows run, case 7.
+/// The line between two cells is one line, as Excel's is (the eleventh Windows run, cases 7 and 13):
+/// an outer edge is set on the range's cells and on the cells beside it, which read the same line
+/// from the other side. An edge on the Sheet's outer edge has no cell beside it. Whole columns have
+/// no top or bottom edge, and whole rows no left or right edge, so an outline over them sets only
+/// their sides (case 15); the whole Sheet is its columns.
 /// </remarks>
 public sealed record BorderChange
 {
-    /// <summary>The range's top edge: the top side of its first row's cells.</summary>
+    /// <summary>The range's top edge: the top side of its first row's cells, and the bottom side of the cells above them.</summary>
     public BorderLine? Top { get; init; }
 
-    /// <summary>The range's bottom edge: the bottom side of its last row's cells.</summary>
+    /// <summary>The range's bottom edge: the bottom side of its last row's cells, and the top side of the cells below them.</summary>
     public BorderLine? Bottom { get; init; }
 
-    /// <summary>The range's left edge: the left side of its first column's cells.</summary>
+    /// <summary>The range's left edge: the left side of its first column's cells, and the right side of the cells to their left.</summary>
     public BorderLine? Left { get; init; }
 
-    /// <summary>The range's right edge: the right side of its last column's cells.</summary>
+    /// <summary>The range's right edge: the right side of its last column's cells, and the left side of the cells to their right.</summary>
     public BorderLine? Right { get; init; }
 
     /// <summary>Every edge between two of the range's rows: the bottom side of the upper cell and the top side of the lower.</summary>
@@ -128,6 +130,32 @@ public sealed record BorderChange
         (place.LastRow ? Bottom : InsideHorizontal) ?? borders.Bottom,
         (place.FirstColumn ? Left : InsideVertical) ?? borders.Left,
         (place.LastColumn ? Right : InsideVertical) ?? borders.Right);
+
+    /// <summary>
+    /// The cells beside <paramref name="range"/> across each outer edge the change sets, with the
+    /// change that sets their side of it to the same line. An edge on the Sheet's outer edge has
+    /// none, which is also why whole columns have none above or below and whole rows none to
+    /// either side.
+    /// </summary>
+    internal IEnumerable<(CellRange Range, BorderChange Borders)> Beside(CellRange range)
+    {
+        if (Top is { } top && range.First.Row > 0)
+        {
+            yield return (new CellRange(new CellAddress(range.First.Row - 1, range.First.Column), new CellAddress(range.First.Row - 1, range.Last.Column)), new BorderChange { Bottom = top });
+        }
+        if (Bottom is { } bottom && range.Last.Row < Sheet.RowCount - 1)
+        {
+            yield return (new CellRange(new CellAddress(range.Last.Row + 1, range.First.Column), new CellAddress(range.Last.Row + 1, range.Last.Column)), new BorderChange { Top = bottom });
+        }
+        if (Left is { } left && range.First.Column > 0)
+        {
+            yield return (new CellRange(new CellAddress(range.First.Row, range.First.Column - 1), new CellAddress(range.Last.Row, range.First.Column - 1)), new BorderChange { Right = left });
+        }
+        if (Right is { } right && range.Last.Column < Sheet.ColumnCount - 1)
+        {
+            yield return (new CellRange(new CellAddress(range.First.Row, range.Last.Column + 1), new CellAddress(range.Last.Row, range.Last.Column + 1)), new BorderChange { Left = right });
+        }
+    }
 }
 
 /// <summary>
@@ -139,9 +167,24 @@ internal readonly record struct PlaceInRange(bool FirstRow, bool LastRow, bool F
     /// <summary>A cell set on its own: all four sides are outer edges.</summary>
     public static PlaceInRange Alone { get; } = new(true, true, true, true);
 
-    public static PlaceInRange Of(CellRange range, CellAddress at) => new(
-        at.Row == range.First.Row,
-        at.Row == range.Last.Row,
-        at.Column == range.First.Column,
-        at.Column == range.Last.Column);
+    /// <summary>A cell none of whose sides is an outer edge.</summary>
+    public static PlaceInRange Inside { get; } = new(false, false, false, false);
+
+    /// <summary>
+    /// Where <paramref name="at"/> lies in <paramref name="range"/>. Whole columns have no top or
+    /// bottom edge, and whole rows no left or right edge: an outline over whole columns sets only
+    /// their left and right edges (the eleventh Windows run, case 15), and over whole rows only
+    /// their top and bottom, a reading by mirror. The whole Sheet is its columns, also a reading by
+    /// mirror.
+    /// </summary>
+    public static PlaceInRange Of(CellRange range, CellAddress at)
+    {
+        var columns = range.IsWholeColumns;
+        var rows = range.IsWholeRows && !columns;
+        return new(
+            !columns && at.Row == range.First.Row,
+            !columns && at.Row == range.Last.Row,
+            !rows && at.Column == range.First.Column,
+            !rows && at.Column == range.Last.Column);
+    }
 }

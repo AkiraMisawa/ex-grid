@@ -73,6 +73,7 @@ public sealed partial class Sheet
         var states = new List<(CellAddress, CellState)>();
         foreach (var (address, entry) in outcome.Rewritten) states.Add((address, StateOf(address).Recorded with { Entry = entry }));
         states.AddRange(outcome.Dropped.Select(d => (d.Address, d.State.Recorded)));
+        states.AddRange(outcome.Rejoined);
         recalculated.AddRange(Restore(states).Recalculated);
         return SheetChange.Merge([Diff(before, recalculated, shownBefore), new SheetChange([], [], [], WidthsChangedSince(widthsBefore))]);
     }

@@ -146,7 +146,7 @@ public class CellFormatCommandTests : SheetTestContext
 
     // ---- Borders relative to each range (SH-44) ----
 
-    [Fact] // ADR-0063, SH-44: over a Selection of several ranges, each range gets its own outline, as in Excel
+    [Fact] // ADR-0063, SH-44: over a Selection of several ranges, each range gets its own outline, read from the cells beside it too (the eleventh Windows run, cases 13 and 14), as in Excel
     public async Task Each_selected_range_gets_its_own_outline()
     {
         GridSelection? selection = null;
@@ -165,15 +165,20 @@ public class CellFormatCommandTests : SheetTestContext
             for (var column = 0; column < 7; column++)
             {
                 var at = new CellAddress(row, column);
-                var expected = ranges.Where(r => r.Contains(at)).Select(r => new CellBorders(
-                    Top: at.Row == r.First.Row ? Thin : BorderLine.None,
-                    Bottom: at.Row == r.Last.Row ? Thin : BorderLine.None,
-                    Left: at.Column == r.First.Column ? Thin : BorderLine.None,
-                    Right: at.Column == r.Last.Column ? Thin : BorderLine.None)).SingleOrDefault();
+                // A side lies on a range's outline from inside the range or from the cell beside it.
+                var expected = new CellBorders(
+                    Top: ranges.Any(r => Across(r, at) && (at.Row == r.First.Row || at.Row == r.Last.Row + 1)) ? Thin : BorderLine.None,
+                    Bottom: ranges.Any(r => Across(r, at) && (at.Row == r.Last.Row || at.Row == r.First.Row - 1)) ? Thin : BorderLine.None,
+                    Left: ranges.Any(r => Along(r, at) && (at.Column == r.First.Column || at.Column == r.Last.Column + 1)) ? Thin : BorderLine.None,
+                    Right: ranges.Any(r => Along(r, at) && (at.Column == r.Last.Column || at.Column == r.First.Column - 1)) ? Thin : BorderLine.None);
                 var shown = cut.Instance.CellFormatAt(at).Borders;
                 Assert.True(expected == shown, $"{at}: expected {expected}, was {shown}");
             }
         }
+
+        // Whether the cell lies across the range's columns (for a top or bottom edge), or along its rows (for a left or right edge).
+        static bool Across(CellRange range, CellAddress at) => at.Column >= range.First.Column && at.Column <= range.Last.Column;
+        static bool Along(CellRange range, CellAddress at) => at.Row >= range.First.Row && at.Row <= range.Last.Row;
     }
 
     // ---- The shorthands (SH-44) ----
