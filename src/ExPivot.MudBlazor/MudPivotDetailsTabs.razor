@@ -14,6 +14,7 @@
    the one selected when the tab holding the keyboard closed — through Blazor's own FocusAsync on
    MudTabs' tab element. The panel ExPivot places is labelled by the tab's title, which carries the
    tab's id (MudTabs gives its tab element an id of its own). *@
+@{ _rendered = _signature; }
 <MudTabs @key="_key" Position="Position.Bottom" HideSlider="true" MinimumTabWidth="72px"
          ActivePanelIndex="SelectedIndex" ActivePanelIndexChanged="_activated"
          Class="mud-ex-pivot-tabs" TabButtonsClass="mud-ex-pivot-tab" ActiveTabClass="mud-ex-pivot-tab-selected"
@@ -30,6 +31,7 @@
     private readonly Dictionary<string, MudTabPanel> _panels = new(StringComparer.Ordinal);
     private EventCallback<int> _activated;
     private string _key = "";
+    private string _signature = "";
     private string? _rendered;
     private int _acted;
 
@@ -63,6 +65,7 @@
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        _signature = Signature();
         var key = string.Join('\n', Tabs.Select(t => t.Id));
         if (key == _key)
             return;
@@ -78,10 +81,7 @@
         => string.Join('\u001F', Tabs.Select(t => $"{t.Id}\u001E{t.Title}\u001E{t.IsSelected}\u001E{t.CloseLabel}\u001E{t.FocusRequest}").Prepend(Context.Title));
 
     /// <inheritdoc />
-    protected override bool ShouldRender() => Signature() != _rendered;
-
-    /// <inheritdoc />
-    protected override void OnAfterRender(bool firstRender) => _rendered = Signature();
+    protected override bool ShouldRender() => _signature != _rendered;
 
     /// <inheritdoc />
     protected override Task OnAfterRenderAsync(bool firstRender)
