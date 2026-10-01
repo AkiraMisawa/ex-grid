@@ -25,7 +25,8 @@ public enum PivotDatePart
 /// The words a date part's Items are painted with, by id, with their English (ADR-0059). They are
 /// resolved as <see cref="PivotWords"/>' are: through the Consumer's <see cref="PivotOptions.Label"/>,
 /// then the English, then the id itself. A word with <c>{0}</c> is a template, filled with the
-/// part's number.
+/// part's number. <see cref="PivotWords.Japanese"/> has the Japanese edition's: <c>{0}年</c>,
+/// <c>第{0}四半期</c>, <c>1月</c> to <c>12月</c>.
 /// </summary>
 public static class PivotDateWords
 {

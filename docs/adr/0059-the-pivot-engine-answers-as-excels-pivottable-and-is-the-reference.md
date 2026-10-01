@@ -285,6 +285,34 @@ on CoreCLR, and 6–7 times in the browser. A change that needs a part the answe
 **A value cell is computed when it is first read.** ExGrid reads only the rows it paints, so a
 report of many rows costs its rows, not its rows × its columns.
 
+## Refined while building it
+
+*(2026-10-01, when the engine was rebuilt on the Snapshot.)*
+
+- **An exact sum is a 128-bit integer, not a 64-bit one.** "Money stays exact" above said a sum
+  was a 64-bit integer at the column's scale, or a `decimal`. A leaf now sums each run of 64-bit
+  values into a 128-bit integer, at the scale of the run, so slices written at different scales
+  sum exactly. The finished sum is a `decimal` without trailing zeros. It falls back to Excel's
+  `double` only when no `decimal` holds the sum exactly — when its digits, trailing zeros gone,
+  need more than a `decimal`'s 96 bits — and past 128 bits it stays a `double`. A `decimal`
+  rounded quietly is never the answer. How a source writes a Decimal is not part of the report
+  either: `75.60` and `75.6` are one value, and every exact value is painted and copied as `75.6`
+  ([ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+- **The Order Key never keys `(blank)` or `#NUM!`.** They keep their places, last, as they do
+  under every order. An Item the key leaves null still comes after the keyed ones.
+- **Keys of two types are refused**, naming the field, an Item of each type and the two types. An
+  `int` beside a `string` has no order the Consumer chose, and comparing their texts would be the
+  order that looks right until `10` comes before `9`.
+- **A date part is captioned as any declared field is**: by the caption it is given, or else by
+  its name. The first build captioned it as Excel's automatic date grouping does, `Months (Trade
+  date)`. Excel makes that name up because nobody named the field; here the Consumer declared it
+  and named it.
+- **A date part's labels are words with ids** (`date-year`, `date-quarter`, `date-month-1` to
+  `date-month-12`), so a Consumer replaces them as it replaces any other word. The bundled
+  Japanese words have the Japanese edition's: `2026年`, `第3四半期`, `9月`.
+- **A record behind a cell carries a date part as its number**: `2026`, `3`, `9`. The label is the
+  report's painting, and a record is data.
+
 ## Consequences
 
 - **`ExPivot.Engine`'s tests pin every rule here** (layer 1), and name this ADR. Readings are marked

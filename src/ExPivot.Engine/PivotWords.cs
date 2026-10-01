@@ -79,7 +79,8 @@ public static class PivotWords
     /// The words of Excel's Japanese edition (ADR-0059): <c>行ラベル</c>, <c>総計</c>,
     /// <c>合計 / 金額</c>, <c>(空白)</c>, <c>ピボットテーブルのフィールド</c> and every other word
     /// ExPivot paints, with the ExGrid commands of the report's Context Menu, which ExGrid words
-    /// only in English. A function from id to word, to hand to ExPivot's <c>Label</c> — or to
+    /// only in English, and a date part's Items (<see cref="PivotDateWords"/>): <c>2026年</c>,
+    /// <c>第3四半期</c>, <c>9月</c>. A function from id to word, to hand to ExPivot's <c>Label</c> — or to
     /// <see cref="PivotOptions.Label"/> on a server — in one line. It answers null for an id it
     /// does not know, which keeps the English.
     /// </summary>
@@ -437,5 +438,21 @@ public static class PivotWords
         // ExGrid's commands in the report's Context Menu (ExGrid.Chrome.GridCommandIds).
         ["copy"] = "コピー",
         ["copy-with-headers"] = "見出し付きでコピー",
+
+        // A date part's Items (PivotDateWords), as the Japanese edition's date grouping labels them.
+        [PivotDateWords.Year] = "{0}年",
+        [PivotDateWords.Quarter] = "第{0}四半期",
+        ["date-month-1"] = "1月",
+        ["date-month-2"] = "2月",
+        ["date-month-3"] = "3月",
+        ["date-month-4"] = "4月",
+        ["date-month-5"] = "5月",
+        ["date-month-6"] = "6月",
+        ["date-month-7"] = "7月",
+        ["date-month-8"] = "8月",
+        ["date-month-9"] = "9月",
+        ["date-month-10"] = "10月",
+        ["date-month-11"] = "11月",
+        ["date-month-12"] = "12月",
     };
 }

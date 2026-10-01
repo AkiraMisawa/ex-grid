@@ -92,6 +92,17 @@ public class DatePartTests
         Assert.Equal(["i Jan || 2", "i Apr || 4", "i Aug || 32", "i 9月 || 65"], (await Lines(By(P("Month")), japanese))[..4]);
     }
 
+    [Fact] // ADR-0059 (PV-32, PV-33): the bundled Japanese words a date part as the Japanese edition's date grouping does
+    public async Task The_bundled_japanese_words_the_parts()
+    {
+        var japanese = new PivotOptions { Culture = EnUs.Culture, Label = PivotWords.Japanese };
+
+        Assert.Equal(["i 2025年 || 68", "i 2026年 || 43", "i (空白) || 16", "t 総計 || 127"], await Lines(By(P("Year")), japanese));
+        Assert.Equal("i 第3四半期 || 97", (await Lines(By(P("Quarter")), japanese))[2]);
+        Assert.Equal(["i 1月 || 2", "i 4月 || 4", "i 8月 || 32", "i 9月 || 65"], (await Lines(By(P("Month")), japanese))[..4]);
+        Assert.All(PivotDateWords.Ids, id => Assert.NotNull(PivotWords.JapaneseFor(id)));
+    }
+
     [Fact] // ADR-0059 (PV-32): the word ids, each with its English
     public void The_words_have_ids_with_their_english()
     {
