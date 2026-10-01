@@ -339,3 +339,17 @@ has a Formula open, or while a Consumer asks for columns to be outlined.
   last five as the tenth Windows run read them (ADR-0057); over a dark ground they keep the mix toward
   white.
   `--ex-reference-pointed-color`, which set one shade for all seven, is retired with it.
+
+## Added by ADR-0058 *(2026-09-30, decided with the user)*
+
+A grid in a Pointing Scope ([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md))
+is painted in two more ways while a Sheet points at it.
+
+- **Internal classes**, which may change without notice:
+  - `ex-pointed-at`: joins the root while the grid is pointed at, and makes the pointer `cell` over
+    its rows and headers.
+  - `ex-point-dashes`: the dashed line over the cell, or down the column's body, that a press handed
+    on to a Sheet. It is drawn in the selection overlay and cut to the painted rows, as a Reference
+    Outline is.
+- **No new token.** The dashes take `--ex-focus-outline`, as ADR-0057's dashes over Point's outline
+  do. The column outlines are ADR-0057's own Reference Outlines.

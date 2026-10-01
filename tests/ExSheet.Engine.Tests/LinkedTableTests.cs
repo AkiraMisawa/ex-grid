@@ -4,7 +4,7 @@ using static ExSheet.Engine.Tests.SheetTestExtensions;
 
 namespace ExSheet.Engine.Tests;
 
-/// <summary>Linked Tables (ticket 16): SH-16's engine half.</summary>
+/// <summary>Linked Tables (ticket 16): SH-16's engine half; a table's key (ticket 36): SH-33.</summary>
 public class LinkedTableTests
 {
     private static Value? N(double n) => Value.FromNumber(n);
@@ -296,5 +296,219 @@ public class LinkedTableTests
         Assert.Throws<ArgumentException>(() => sheet.PushLinkedTable("Positions", [[T("a"), Value.FromError(ErrorValue.GettingData), T("b")]]));
 
         Assert.Equal(300.5, sheet.Number("A1"));
+    }
+
+    private static Sheet WithKeyedPositions()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"], key: "Id");
+        sheet.Enter("A1", "=SUM(Positions[PV])");
+        sheet.Enter("A2", "=XLOOKUP(\"R-1\", Positions[Id], Positions[PV])");
+        sheet.Enter("A3", "=IFERROR(XLOOKUP(\"R-1\", Positions[Id], Positions[PV]), 0)");
+        sheet.Enter("A4", "=A1+1");
+        return sheet;
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: a keyed table's snapshot in which every key differs is taken
+    public void A_keyed_snapshot_without_a_repeat_is_taken()
+    {
+        var sheet = WithKeyedPositions();
+
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("FX")], [T("R-2"), N(20), T("FX")], [T("R-10"), N(30), T("FX")]]);
+
+        Assert.Equal(60, sheet.Number("A1"));
+        Assert.Equal(10, sheet.Number("A2"));
+        Assert.Equal(new LinkedTable("Positions", ["Id", "PV", "Desk"], false, 3, "Id"), sheet.LinkedTables.Single(),
+            (a, b) => a.Name == b.Name && a.Columns.SequenceEqual(b.Columns) && a.IsWaiting == b.IsWaiting && a.RowCount == b.RowCount && a.Key == b.Key);
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: a repeated key refuses the snapshot by name; the table waits again and no earlier Value is shown
+    public void A_repeated_key_refuses_the_snapshot_and_the_table_waits()
+    {
+        var sheet = WithKeyedPositions();
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("FX")], [T("R-2"), N(20), T("FX")]]);
+        Assert.Equal(30, sheet.Number("A1"));
+
+        var refused = Assert.Throws<RepeatedKeyException>(() =>
+            sheet.PushLinkedTable("Positions", [[T("R-1"), N(11), T("FX")], [T("R-2"), N(21), T("FX")], [T("R-1"), N(12), T("Rates")]]));
+
+        Assert.Contains("'Positions'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("'Id'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("\"R-1\"", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(("Positions", "Id", Value.FromText("R-1"), 0, 2), (refused.Table, refused.KeyColumn, refused.Key, refused.FirstRow, refused.SecondRow));
+        // Neither the earlier snapshot's 30 nor the refused one's Values: every reader waits.
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A2"));
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A4"));
+        Assert.Equal(["A1", "A2", "A3", "A4"], refused.Change.ValueChanges.Addresses());
+        var table = sheet.LinkedTables.Single();
+        Assert.True(table.IsWaiting);
+        Assert.Equal(0, table.RowCount);
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: IFERROR(XLOOKUP(…), 0) over a refused table shows #GETTING_DATA, never 0
+    public void Iferror_does_not_catch_a_refused_table()
+    {
+        var sheet = WithKeyedPositions();
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("FX")]]);
+        Assert.Equal(10, sheet.Number("A3"));
+
+        Assert.Throws<RepeatedKeyException>(() => sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("FX")], [T("R-1"), N(10), T("FX")]]));
+
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A3"));
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: case does not tell keys apart, as it does not for XLOOKUP's exact match
+    public void Keys_that_differ_only_by_case_repeat()
+    {
+        var sheet = WithKeyedPositions();
+
+        var refused = Assert.Throws<RepeatedKeyException>(() =>
+            sheet.PushLinkedTable("Positions", [[T("r-1"), N(1), T("FX")], [T("R-1"), N(2), T("FX")]]));
+
+        Assert.Contains("\"r-1\" in row 0 and \"R-1\" in row 1", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A2"));
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: a number and text of the same digits are two keys, as XLOOKUP tells them apart
+    public void A_number_and_text_of_the_same_digits_do_not_repeat()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Codes", ["Code", "V"], key: "Code");
+        sheet.Enter("A1", "=XLOOKUP(1, Codes[Code], Codes[V])");
+        sheet.Enter("A2", "=XLOOKUP(\"1\", Codes[Code], Codes[V])");
+
+        sheet.PushLinkedTable("Codes", [[N(1), N(10)], [T("1"), N(20)], [Value.FromBoolean(true), N(30)], [T("TRUE"), N(40)]]);
+
+        Assert.Equal(10, sheet.Number("A1"));
+        Assert.Equal(20, sheet.Number("A2"));
+        Assert.Equal(4, sheet.LinkedTables.Single().RowCount);
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: a blank key is not a key; any number of rows may have none
+    public void Blank_keys_are_not_compared()
+    {
+        var sheet = WithKeyedPositions();
+
+        sheet.PushLinkedTable("Positions", [[null, N(1), T("FX")], [T("R-1"), N(10), T("FX")], [null, N(2), T("FX")], [null, N(3), T("FX")]]);
+
+        Assert.Equal(16, sheet.Number("A1"));
+        Assert.Equal(10, sheet.Number("A2"));
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: a key repeats exactly when XLOOKUP's exact match cannot tell the two apart
+    public void A_repeat_is_what_xlookup_cannot_tell_apart()
+    {
+        (Value First, Value Second)[] pairs =
+        [
+            (Value.FromText("R-1"), Value.FromText("r-1")),
+            (Value.FromText("Straße"), Value.FromText("STRASSE")),
+            (Value.FromText("é"), Value.FromText("e")),
+            (Value.FromText("co-op"), Value.FromText("coop")),
+            (Value.FromText("R-1"), Value.FromText("R-1 ")),
+            (Value.FromNumber(1), Value.FromText("1")),
+            (Value.FromNumber(0.1 + 0.2), Value.FromNumber(0.3)),
+            (Value.FromBoolean(true), Value.FromText("TRUE")),
+            (Value.FromBoolean(false), Value.FromBoolean(false)),
+            (Value.FromNumber(2), Value.FromNumber(2)),
+        ];
+        foreach (var (first, second) in pairs)
+        {
+            var sheet = NewSheet();
+            sheet.DeclareLinkedTable("Keys", ["Key", "Row"]);
+            sheet.DeclareLinkedTable("Keyed", ["Key", "Row"], key: "Key");
+            sheet.PushLinkedTable("Keys", [[second, N(2)]]);
+            sheet.Enter("A1", "=XLOOKUP(B1, Keys[Key], Keys[Row], \"none\")");
+            sheet.SetEntry(CellAddress.Parse("B1"), Entry.FromValue(first));
+            var xlookupMatches = sheet.Value("A1") is { Kind: ValueKind.Number };
+
+            var refused = Record.Exception(() => sheet.PushLinkedTable("Keyed", [[first, N(1)], [second, N(2)]]));
+
+            Assert.True(xlookupMatches == refused is RepeatedKeyException,
+                $"{first} and {second}: XLOOKUP {(xlookupMatches ? "matches" : "tells them apart")}, and the snapshot was {(refused is null ? "taken" : "refused")}.");
+        }
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: the key names one of the columns, without regard to case; any other name is refused by name
+    public void The_key_is_one_of_the_columns()
+    {
+        var sheet = NewSheet();
+
+        var refused = Assert.Throws<ArgumentException>(() => sheet.DeclareLinkedTable("Positions", ["Id", "PV"], key: "Book"));
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Mid"], key: "pair");
+
+        Assert.Contains("'Book'", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("'Positions'", refused.Message, StringComparison.Ordinal);
+        Assert.Equal("key", refused.ParamName);
+        Assert.Equal(["Rates"], sheet.LinkedTables.Select(t => t.Name));
+        Assert.Equal("Pair", sheet.LinkedTables.Single().Key);
+        Assert.Throws<ArgumentException>(() => sheet.DeclareLinkedTable("Empty", ["V"], key: ""));
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), SH-33: a declaration with another key replaces the held one; the rows are dropped and readers wait
+    public void A_declaration_with_another_key_replaces_the_held_one()
+    {
+        var sheet = WithKeyedPositions();
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("FX")], [T("R-2"), N(20), T("FX")]]);
+
+        var same = sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"], key: "id");
+        Assert.Empty(same.ValueChanges);
+        Assert.Equal(30, sheet.Number("A1"));
+
+        var change = sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"], key: "Desk");
+
+        Assert.Equal(["A1", "A2", "A3", "A4"], change.ValueChanges.Addresses());
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
+        Assert.Equal("Desk", sheet.LinkedTables.Single().Key);
+        // The new key is the one checked: Desk repeats, Id no longer counts.
+        Assert.Throws<RepeatedKeyException>(() => sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("FX")], [T("R-2"), N(20), T("FX")]]));
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(10), T("FX")], [T("R-1"), N(20), T("Rates")]]);
+        Assert.Equal(30, sheet.Number("A1"));
+
+        sheet.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"]);
+
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
+        Assert.Null(sheet.LinkedTables.Single().Key);
+    }
+
+    [Fact] // ADR-0049 (2026-09-30), ADR-0048, SH-33: the Sheet Document records the key with the declaration, and it opens with it
+    public void The_document_records_the_key()
+    {
+        var sheet = WithKeyedPositions();
+        sheet.DeclareLinkedTable("Rates", ["Pair", "Mid"]);
+
+        var json = sheet.ToDocument().ToJson();
+        var reopened = Sheet.Open(SheetDocument.FromJson(json));
+
+        Assert.Contains("""
+            "linkedTables":[{"name":"Positions","columns":["Id","PV","Desk"],"key":"Id"},{"name":"Rates","columns":["Pair","Mid"]}]
+            """, json, StringComparison.Ordinal);
+        Assert.Equal(["Id", null], reopened.LinkedTables.Select(t => t.Key));
+        Assert.Throws<RepeatedKeyException>(() => reopened.PushLinkedTable("Positions", [[T("R-1"), N(1), T("FX")], [T("R-1"), N(2), T("FX")]]));
+        Assert.Empty(reopened.DeclareLinkedTable("Positions", ["Id", "PV", "Desk"], key: "Id").ValueChanges);
+    }
+
+    [Fact] // ADR-0048/0049 (2026-09-30): a document written before keys were recorded still opens, its tables without a key
+    public void A_document_without_a_key_still_opens()
+    {
+        var document = SheetDocument.FromJson("""{"version":6,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"Positions","columns":["Id","PV"]}],"cells":[{"at":"A1","formula":"=SUM(Positions[PV])"}]}""");
+        var sheet = Sheet.Open(document);
+
+        Assert.Null(Assert.Single(document.LinkedTables).Key);
+        Assert.Null(sheet.LinkedTables.Single().Key);
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
+        sheet.PushLinkedTable("Positions", [[T("R-1"), N(1)], [T("R-1"), N(2)]]);
+        Assert.Equal(3, sheet.Number("A1"));
+    }
+
+    [Theory] // ADR-0048/0049 (2026-09-30): a key the document cannot hold is refused, as is a key in a document before version 7
+    [InlineData("""{"version":6,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"key":"V"}],"cells":[]}""")]
+    [InlineData("""{"version":7,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"key":"W"}],"cells":[]}""")]
+    [InlineData("""{"version":7,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"key":1}],"cells":[]}""")]
+    [InlineData("""{"version":7,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"key":null}],"cells":[]}""")]
+    [InlineData("""{"version":7,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"key":""}],"cells":[]}""")]
+    public void A_bad_key_in_a_document_is_refused(string json)
+    {
+        Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
     }
 }

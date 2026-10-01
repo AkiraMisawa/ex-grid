@@ -307,6 +307,8 @@ The editing state in which the arrow keys and the mouse **point at cells for a F
 of committing: a **Reference Outline** moves over the grid and its Reference is written at the
 caret. It holds only while the Consumer says the caret stands where a Reference can go; F2 switches
 between it and Caret. The Selection and the Focus do not move ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+Through a **Pointing Scope**, a press on another grid that shows a Linked Table points too
+([ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).
 _Avoid_: reference mode, pick mode
 
 **Reference Outline**:
@@ -662,9 +664,22 @@ structured references — `SUM(Positions[PV])`. Its rows are reached by key thro
 Reference into it would change value without anyone editing it. ExSheet never reads another
 component instance; what a Linked Table holds comes from the Consumer, pushed as one whole
 snapshot. Until it has arrived, a Formula that reads it shows `#GETTING_DATA` — never 0, never an
-older value — and `IFERROR` does not catch the wait ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md)).
+older value — and `IFERROR` does not catch the wait. The Consumer may declare one of its columns as
+its key; a snapshot in which a key repeats is refused, and the table waits again ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md)).
 _Avoid_: external reference (Excel's name for a reference into another workbook), data
 connection, link
+
+**Pointing Scope**:
+The Sheets and grids a Consumer groups so that a Formula can **Point** across instances. For each
+grid in it, the Consumer says which **Linked Table** the grid shows and which of the grid's columns
+are which of the table's; the key column is the table's own, declared with it. While a Sheet in the
+scope is pointing, a press on one of its grids moves neither DOM focus nor that grid's Selection. It
+writes what reads the pressed cell by key (`XLOOKUP("R-4471", Positions[Id], Positions[PV])`) or the pressed
+column's name (`Positions[PV]`). Only the Sheet that holds the keyboard points. Nothing on a page
+is joined unless the Consumer put it in the same scope, and a grid in no scope behaves as it
+always does ([ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).
+_Avoid_: link (it sounds like one pair), workbook (ADR-0049 keeps that for Sheets that read each
+other)
 
 **Headings**:
 The column letters and row numbers framing a Sheet — Column Headings and Row Headings. Clicking

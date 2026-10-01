@@ -192,6 +192,66 @@ public partial class ReferenceTextTests : GridTestContext
         Assert.Equal(drawn, Drawn(cut.Find(".ex-formula-bar > .ex-reference-text")));
     }
 
+    /// <summary>Types <paramref name="formula"/> onto A1 and reports the caret at its end, as the
+    /// listener does, then writes <paramref name="written"/> as a press outside the grid does
+    /// (ADR-0058).</summary>
+    private static async Task WriteFromOutsideAsync(IRenderedComponent<ExGrid<TestRow>> cut, string formula, string written)
+    {
+        await TypeFormulaAsync(cut, formula);
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync(formula, formula.Length));
+        Assert.True(await cut.InvokeAsync(() => cut.Instance.WritePointedTextAsync(written)));
+    }
+
+    [Fact] // ADR-0058 / ADR-0057 (2026-09-30) / SH-34: text written from outside is shown selected as a whole, its References in their colours inside it, in both surfaces' layers
+    public async Task Text_written_from_outside_is_shown_selected_as_a_whole()
+    {
+        var cut = RenderGrid(more: ps => ps.Add(g => g.ShowFormulaBar, true));
+
+        await WriteFromOutsideAsync(cut, "=1+", "SUM(A5, B6)");
+
+        const string drawn = "=1+<span class=\"ex-reference-pointed\">SUM(<span class=\"ex-reference-1\">A5</span>, "
+            + "<span class=\"ex-reference-2\">B6</span>)</span>";
+        Assert.Equal(drawn, Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+        Assert.Equal(drawn, Drawn(cut.Find(".ex-formula-bar > .ex-reference-text")));
+    }
+
+    [Theory] // ADR-0058 / ADR-0057 / SH-34: what is written from outside wears the look as one Reference does when it is one, and as a whole when it holds none
+    [InlineData("A5", "=1+<span class=\"ex-reference-1 ex-reference-pointed\">A5</span>")]
+    [InlineData("PI()", "=1+<span class=\"ex-reference-pointed\">PI()</span>")]
+    public async Task Text_written_from_outside_wears_the_look_whatever_it_holds(string written, string drawn)
+    {
+        var cut = RenderGrid();
+
+        await WriteFromOutsideAsync(cut, "=1+", written);
+
+        Assert.Equal(drawn, Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+    }
+
+    [Fact] // ADR-0058 / ADR-0057 (cases 19, 20x) / SH-34: text written from outside straight after the text's first character is not shown selected
+    public async Task Text_written_from_outside_straight_after_the_first_character_is_not_shown_selected()
+    {
+        var cut = RenderGrid();
+
+        await WriteFromOutsideAsync(cut, "=", "SUM(A5, B6)");
+
+        Assert.Equal(
+            "=SUM(<span class=\"ex-reference-1\">A5</span>, <span class=\"ex-reference-2\">B6</span>)",
+            Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+    }
+
+    [Fact] // ADR-0058 / ADR-0057: a pointed span that cuts through a Reference wears no look — half a Reference on the grey would say the rest was pointed too
+    public async Task A_pointed_span_that_cuts_a_reference_wears_no_look()
+    {
+        // The Consumer reads 1+A5 as one Reference, which begins before what was written.
+        static IReadOnlyList<EditorReference> Across(string text)
+            => text == "=1+A5" ? [new EditorReference(1, 4, new SelectionRange(4, 0, 1, 1))] : References(text);
+        var cut = RenderGrid(references: false, more: ps => ps.Add(g => g.ReferencesIn, Across));
+
+        await WriteFromOutsideAsync(cut, "=1+", "A5");
+
+        Assert.Equal("=<span class=\"ex-reference-1\">1+A5</span>", Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
+    }
+
     [Fact] // ADR-0051 / ADR-0057 (cases 19, 20x): a Reference straight after the text's first character is not shown selected, however often it is pointed
     public async Task A_reference_pointed_straight_after_the_first_character_is_not_shown_selected()
     {

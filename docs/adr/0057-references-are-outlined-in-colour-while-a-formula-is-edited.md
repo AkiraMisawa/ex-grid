@@ -298,6 +298,25 @@ Bar showed no text at all.
   layer's text lies, if its field is narrower than the core's box. That is a mistake in the page's
   setup, and it shows in plain sight.
 
+
+## In the grids of a Pointing Scope *(2026-09-30, decided with the user)*
+
+[ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md) lets Point write from
+another grid on the page, and decides three things this ADR had left to it:
+
+- **The Scope wires this ADR's structured-reference outlines into its grids itself.** It knows which
+  grid shows which Linked Table, and which grid column is which table column, so the page does not
+  write that correspondence a second time. A page without a Scope wires `OutlinedColumns` by hand, as
+  above.
+- **A cell pressed in a Scope's grid gets only the dashes**, in the Focus outline's colour, and no
+  outline. `XLOOKUP("R-4471", Positions[Id], Positions[PV])` reads the Id and PV columns, which are
+  outlined in their colours. It does not read the pressed cell by position. The dashes are remembered
+  by the row's key, are drawn only while that row is painted, and go when Point ends. A pressed column
+  header dashes the whole column's body.
+- **The written `XLOOKUP(...)` lies on the grey ground as a whole**, unless it follows the `=`
+  directly. The two column references inside it wear their colours' darker shades. The grey covers
+  what a further press would replace.
+
 ## What Part B of the eighth Windows run settled *(2026-09-30)*
 
 Part B of `docs/specs/exsheet/verify-on-windows-8.md` typed every case of Part A into ExSheet on

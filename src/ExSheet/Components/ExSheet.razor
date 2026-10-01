@@ -17,6 +17,10 @@
     not headers, unless the Consumer switches it on with AllowCopyWithHeaders (ADR-0048, ADR-0050
     item 13).
 *@
+@* One element around the Sheet, laid out as if it were not there (display: contents), so the
+   browser's focus events reach ExSheet: while the Sheet is in a Pointing Scope, whether DOM focus is
+   inside it decides whether it points (ADR-0058). Without a Scope nothing listens. *@
+<div class="ex-sheet" style="display: contents" @attributes="_keyboardListeners">
 <ExGrid TRow="SheetRow" @ref="_grid"
         Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
         Columns="_columns" OnColumnWidthChanged="_columnWidthChanged" HideColumnMenu="true"
@@ -30,6 +34,7 @@
         DataEdge="_dataEdge"
         ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
         CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" CycleReference="CycleReferenceAt"
+        OnPointStateChanged="_pointStateChanged" OnPointArrowFromOutside="_pointArrow"
         ReferencesIn="_references" OnReferenceKeyColoursChanged="_keyColoursChanged"
         ContextCommands="_contextCommands" CommandLabel="_commandLabel"
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
@@ -40,6 +45,7 @@
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
+</div>
 
 @code {
     /// <summary>Excel's default row height in ExGrid's geometry, and the Grid's own default: 28 px.</summary>
@@ -127,6 +133,7 @@
         // Held in fields: a delegate's identity reaches the grid, and one made per render would
         // look like a change every time (ADR-0003).
         _dataEdge = FindEdge;
+        InitialisePointing();
         // Answered synchronously from the engine, so the list shows in the render the keystroke
         // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
         _contextCommands = ContextCommandsFor;
@@ -268,9 +275,11 @@
     /// appearance, under the table's and the column's names as the Consumer declared them. Raised
     /// once whenever that list changes and never when it does not, and with an empty list when the
     /// edit ends. A table or column not declared names nothing and is not told. ExSheet does not
-    /// know where, or whether, the table is on screen, and outlines none of it: the Consumer passes
-    /// the list to the grid that shows the table (ExGrid's <c>OutlinedColumns</c>), and only the
-    /// Consumer can vouch that that grid shows the rows the Formula reads.
+    /// know where, or whether, the table is on screen, and outlines none of it itself. A
+    /// <see cref="PointingScope"/> outlines the columns in the grids registered in it (ADR-0058); for
+    /// any other grid, the Consumer passes the list to the grid that shows the table (ExGrid's
+    /// <c>OutlinedColumns</c>). Either way, only the Consumer can vouch that that grid shows the rows
+    /// the Formula reads.
     /// </summary>
     [Parameter] public EventCallback<LinkedColumnColours> OnLinkedColumnColoursChanged { get; set; }
 
@@ -327,6 +336,7 @@
     protected override void OnParametersSet()
     {
         RefuseUnreachableRows();
+        BindPointingScope();
         if (!_initialised)
         {
             _initialised = true;
@@ -464,22 +474,34 @@
 
     /// <summary>
     /// The Linked Tables declared on the Sheet, in the order they were declared (ADR-0049): each
-    /// one's name, columns, whether it is still waiting for its first snapshot, and how many
-    /// rows the last one held.
+    /// one's name, columns and key, whether it is waiting for a snapshot, and how many rows the
+    /// last one held.
     /// </summary>
     public IReadOnlyList<LinkedTable> LinkedTables => CurrentSheet.LinkedTables;
 
     /// <summary>
-    /// Declares a Linked Table by name and columns, before any of its rows arrive (ADR-0049).
+    /// Declares a Linked Table by name, columns and key, before any of its rows arrive (ADR-0049).
     /// Formulas naming it stop being <c>#NAME?</c> and show <c>#GETTING_DATA</c> until the first
     /// snapshot is pushed, and completion offers its name. The declaration is recorded in the Sheet
     /// Document, so <see cref="DocumentChanged"/> is raised when it changes what was declared.
-    /// Declaring the same table with the same columns changes nothing. Other columns replace the
-    /// declaration and drop the rows held so far. It is the Consumer's data, not a user's
-    /// operation, so it is no step on the undo stack.
+    /// Declaring the same table with the same columns and key changes nothing. Other columns or
+    /// another key replace the declaration and drop the rows held so far. It is the Consumer's
+    /// data, not a user's operation, so it is no step on the undo stack.
     /// </summary>
-    /// <exception cref="ArgumentException">The name or the columns are not ones a structured reference can name.</exception>
-    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns)
+    /// <param name="name">The name Formulas read the table by.</param>
+    /// <param name="columns">The column names, in order: none empty, no two the same without regard to case.</param>
+    /// <param name="key">
+    /// The key column, one of <paramref name="columns"/>, or <see langword="null"/> for none
+    /// (ADR-0049, 2026-09-30). A row is read by its key, and every snapshot of a keyed table is
+    /// checked: one in which a key repeats is refused (<see cref="PushLinkedTableAsync"/>). A table
+    /// whose rows are told apart by several columns is given a column that joins them, and that
+    /// column is its key.
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// The name or the columns are not ones a structured reference can name, or the key is not one
+    /// of the columns.
+    /// </exception>
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, string? key = null)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(columns);
@@ -487,7 +509,7 @@
         {
             var sheet = CurrentSheet;
             var before = sheet.LinkedTables;
-            var change = sheet.DeclareLinkedTable(name, columns);
+            var change = sheet.DeclareLinkedTable(name, columns, key);
             await ChangedAsync(change, raiseDocument: !SameDeclarations(before, sheet.LinkedTables), byUser: false);
         });
     }
@@ -502,12 +524,33 @@
     /// <param name="name">The declared table's name.</param>
     /// <param name="rows">The rows, each holding one Value per declared column, in order; null is a blank.</param>
     /// <exception cref="InvalidOperationException">No table of that name is declared.</exception>
+    /// <exception cref="RepeatedKeyException">
+    /// The table was declared with a key, and a key repeats in the snapshot, compared as
+    /// <c>XLOOKUP</c>'s exact match compares (case does not tell keys apart; blank keys are not
+    /// compared). The snapshot is refused and the previous one is not kept: the table waits again,
+    /// and every Formula that reads it shows <c>#GETTING_DATA</c> before the refusal is thrown.
+    /// </exception>
     /// <exception cref="ArgumentException">A row does not have one Value per column, or holds a Value that is not data.</exception>
     public Task PushLinkedTableAsync(string name, IEnumerable<IReadOnlyList<Value?>> rows)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(rows);
-        return InvokeAsync(() => ChangedAsync(CurrentSheet.PushLinkedTable(name, rows), raiseDocument: false, byUser: false));
+        return InvokeAsync(async () =>
+        {
+            SheetChange change;
+            try
+            {
+                change = CurrentSheet.PushLinkedTable(name, rows);
+            }
+            catch (RepeatedKeyException refused)
+            {
+                // The table went back to waiting: its readers show #GETTING_DATA, and then the
+                // Consumer hears why (ADR-0049, 2026-09-30).
+                await ChangedAsync(refused.Change, raiseDocument: false, byUser: false);
+                throw;
+            }
+            await ChangedAsync(change, raiseDocument: false, byUser: false);
+        });
     }
 
     // The colours the grid gave the keys of the Formula being edited, as the Linked Table columns
@@ -517,6 +560,8 @@
         var columns = _sheet is { } sheet ? SheetFormulaAids.LinkedColumnsOf(sheet, keys) : LinkedColumnColours.None;
         if (SameLinkedColumns(columns, _linkedColumnsTold)) return Task.CompletedTask;
         _linkedColumnsTold = columns;
+        // The Scope outlines them in its grids, and the Consumer hears them for any other grid.
+        _joinedScope?.OutlineLinkedColumns(this, columns);
         return OnLinkedColumnColoursChanged.InvokeAsync(columns);
     }
 
@@ -528,9 +573,9 @@
             && string.Equals(p.First.Column.Table, p.Second.Column.Table, StringComparison.Ordinal)
             && string.Equals(p.First.Column.Column, p.Second.Column.Column, StringComparison.Ordinal));
 
-    // What the Sheet Document records of the tables: names and columns, in order (ADR-0049).
+    // What the Sheet Document records of the tables: names, columns and keys, in order (ADR-0049).
     private static bool SameDeclarations(IReadOnlyList<LinkedTable> a, IReadOnlyList<LinkedTable> b) =>
-        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns));
+        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns) && p.First.Key == p.Second.Key);
 
     /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
     public SheetDocument ToDocument() => CurrentSheet.ToDocument();

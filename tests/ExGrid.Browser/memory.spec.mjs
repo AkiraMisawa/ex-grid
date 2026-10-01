@@ -130,13 +130,14 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    // The per-instance handle's eight on the instance root (ADR-0018): the capture-phase
+    // The per-instance handle's nine on the instance root (ADR-0018): the capture-phase
     // keys, the capture-phase press and release that keep a press on the rows among held
-    // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report and the
-    // two clipboard events.
+    // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report, the
+    // two clipboard events, and the press another grid hands on while this one points
+    // through a Pointing Scope (ADR-0058, DC-54).
     expect(attached).toEqual([
-        'copy', 'input (capture)', 'keydown (capture)', 'mousedown (capture)', 'mouseleave',
-        'mousemove', 'mouseup (capture)', 'paste',
+        'copy', 'ex-press-handed-on', 'input (capture)', 'keydown (capture)', 'mousedown (capture)',
+        'mouseleave', 'mousemove', 'mouseup (capture)', 'paste',
     ].map(fromModule));
     // And one on the document, the only place `selectionchange` fires: it acts only while
     // DOM focus is in this instance's editor surface (ADR-0051), and it goes with the

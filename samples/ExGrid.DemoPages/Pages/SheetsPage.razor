@@ -25,32 +25,38 @@
 
 <p>
     Both Sheets read the page's positions as the Linked Table <code>Positions</code> (ADR-0049), and
-    beneath each is a grid showing them. The page passes each Sheet's word of the columns its Formula
-    reads to the grid beneath that Sheet only, so <code>=SUM(Positions[PV])</code> typed into one
-    outlines the PV column under that one (ADR-0057).
+    beneath each is a grid showing them. Each Sheet and the grid beneath it are a Pointing Scope of
+    their own (ADR-0058): <code>=SUM(Positions[PV])</code> typed into one outlines the PV column under
+    that one only (ADR-0057), and while a Formula is typed on the left, a press on the left grid writes
+    what reads the pressed cell, and a press on the right grid is an ordinary press.
 </p>
 
 <div class="demo-side-by-side">
     <div id="sheet-left">
         @OnPaper(@<ExSheet @ref="_leftSheet" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
-                           OnLinkedColumnColoursChanged="OutlineLeft" />)
+                           PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
         <div id="sheet-left-positions">
             <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_leftOutlined" />
+                    ViewportHeight="200" ViewportWidth="330" PointedAt="_leftPointedAt" />
         </div>
     </div>
     <div id="sheet-right">
         @OnPaper(@<ExSheet @ref="_rightSheet" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
-                           OnLinkedColumnColoursChanged="OutlineRight" />)
+                           PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
         <div id="sheet-right-positions">
             <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
-                    ViewportHeight="200" ViewportWidth="330" OutlinedColumns="_rightOutlined" />
+                    ViewportHeight="200" ViewportWidth="330" PointedAt="_rightPointedAt" />
         </div>
     </div>
 </div>
 
 <p class="demo-status">
     <span id="sheets-status">@_status</span>
+</p>
+
+@* Why a press on a positions grid wrote nothing, as the Sheet of its Scope tells the page. *@
+<p class="demo-status">
+    <span id="sheets-pointing">@_pointingStatus</span>
 </p>
 
 @code {
@@ -71,6 +77,8 @@
 
     private const string Table = "Positions";
     private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+    // A row is read by its Id, and no Id appears twice in a snapshot (ADR-0049, 2026-09-30).
+    private const string TableKey = "Id";
 
     // The page's own data, shown by both grids and read by both Sheets (ADR-0049).
     private sealed record Position(string Id, string Book, double PV);
@@ -96,10 +104,14 @@
     private SheetDocument? _right = Opening("Right", 20);
     private ExSheet? _leftSheet;
     private ExSheet? _rightSheet;
-    // What each grid outlines: what its own Sheet told, and nothing from the other (ADR-0018).
-    private IReadOnlyList<OutlinedColumn> _leftOutlined = [];
-    private IReadOnlyList<OutlinedColumn> _rightOutlined = [];
     private string _status = "";
+    // One Pointing Scope per side (ADR-0058): a Sheet points only at the grid beneath it, and outlines
+    // the columns its Formula reads only there, nothing from the other (ADR-0018).
+    private readonly PointingScope _leftScope = new();
+    private readonly PointingScope _rightScope = new();
+    private GridPointedAt<Position>? _leftPointedAt;
+    private GridPointedAt<Position>? _rightPointedAt;
+    private string _pointingStatus = "";
 
     // Each Sheet names itself in A1 and holds a number and a Formula over it, so a key that
     // crossed from one to the other would show in the other's cells.
@@ -110,11 +122,16 @@
         sheet.Enter(CellAddress.Parse("B1"), value.ToString(CultureInfo.InvariantCulture));
         sheet.Enter(CellAddress.Parse("C1"), "=B1*2");
         // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
-        sheet.DeclareLinkedTable(Table, TableColumns);
+        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
         return sheet.ToDocument();
     }
 
-    protected override void OnInitialized() => Count();
+    protected override void OnInitialized()
+    {
+        _leftPointedAt = _leftScope.RegisterGrid<Position>(Table, TableRow);
+        _rightPointedAt = _rightScope.RegisterGrid<Position>(Table, TableRow);
+        Count();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -122,16 +139,17 @@
         foreach (var sheet in new[] { _leftSheet, _rightSheet })
         {
             if (sheet is not null)
-                await sheet.PushLinkedTableAsync(Table, Positions.Select(p => (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+                await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
         }
     }
 
-    private void OutlineLeft(LinkedColumnColours columns) => _leftOutlined = OutlinedOf(columns);
+    // A position as the table's row, in the declared column order: what the page pushes, and what
+    // each Scope reads a pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) => [Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
 
-    private void OutlineRight(LinkedColumnColours columns) => _rightOutlined = OutlinedOf(columns);
+    private void RefusedLeft(PointingRefusal refusal) => _pointingStatus = "Left: " + refusal.Message;
 
-    private static IReadOnlyList<OutlinedColumn> OutlinedOf(LinkedColumnColours columns) =>
-        [.. columns.Where(c => c.Column.Table == Table).Select(c => new OutlinedColumn(c.Column.Column, c.Colour))];
+    private void RefusedRight(PointingRefusal refusal) => _pointingStatus = "Right: " + refusal.Message;
 
     private void Count() =>
         _status = $"Left: {_left?.Cells.Count ?? 0} cells; right: {_right?.Cells.Count ?? 0} cells.";
