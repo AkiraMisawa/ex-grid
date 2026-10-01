@@ -196,13 +196,12 @@ public class MudFormatCellsTests : MudSheetTestContext
         await OpenAsync(page, "B2");
         var before = FormatAt(page, "B2");
         await ChooseAsync(page, "Percentage");
-        var reclaims = ReclaimCount;
 
+        // OK waits for the keyboard's hand-back, which comes after the change is set.
         await OkAsync(page);
 
-        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        Assert.False(IsOpen(page));
         Assert.Equal("0.00%", FormatAt(page, "B2").NumberFormat.Code);
-        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
         Assert.True(await page.InvokeAsync(Sheet(page).UndoAsync));
         Assert.Equal(before, FormatAt(page, "B2"));
         Assert.False(Sheet(page).CanUndo);
@@ -263,9 +262,11 @@ public class MudFormatCellsTests : MudSheetTestContext
         await ChooseAsync(page, "Custom");
 
         await page.Find(".mud-ex-sheet-format-cells-code input").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "#,##0.0000" });
+        var reclaims = ReclaimCount;
         await page.Find("form.mud-ex-sheet-format-cells-form").SubmitAsync();
 
-        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+        Assert.False(IsOpen(page));
         Assert.Equal("#,##0.0000", FormatAt(page, "B2").NumberFormat.Code);
     }
 

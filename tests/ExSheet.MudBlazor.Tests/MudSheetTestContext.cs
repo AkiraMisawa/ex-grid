@@ -158,9 +158,16 @@ public abstract class MudSheetTestContext : BunitContext
     protected static Task SwatchAsync(IRenderedComponent<ContainerFragment> page, string name) =>
         page.FindAll(".mud-ex-sheet-swatch").First(s => s.GetAttribute("aria-label") == name).ChangeAsync(new ChangeEventArgs { Value = "on" });
 
-    /// <summary>Presses OK.</summary>
-    protected static Task OkAsync(IRenderedComponent<ContainerFragment> page) =>
-        page.Find(".mud-ex-sheet-format-cells-ok").ClickAsync(new MouseEventArgs());
+    /// <summary>
+    /// Presses OK, and waits until the keyboard has been handed back, which comes last: OK's change
+    /// is set once the dialog has left the page, after it closes.
+    /// </summary>
+    protected async Task OkAsync(IRenderedComponent<ContainerFragment> page)
+    {
+        var reclaims = ReclaimCount;
+        await page.Find(".mud-ex-sheet-format-cells-ok").ClickAsync(new MouseEventArgs());
+        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+    }
 
     /// <summary>Presses Cancel.</summary>
     protected static Task CancelAsync(IRenderedComponent<ContainerFragment> page) =>

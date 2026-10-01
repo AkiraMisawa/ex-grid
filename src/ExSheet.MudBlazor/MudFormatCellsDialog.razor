@@ -19,7 +19,7 @@
         <MudText Typo="Typo.h6">@Title</MudText>
     </TitleContent>
     <DialogContent>
-        <form class="mud-ex-sheet-format-cells-form" @onsubmit="OkAsync" @onsubmit:preventDefault @onfocusin="OnFocusIn">
+        <form class="mud-ex-sheet-format-cells-form" @onsubmit="Ok" @onsubmit:preventDefault @onfocusin="OnFocusIn">
             @* The form's default button: the first submit button, which implicit submission clicks. *@
             <button type="submit" class="mud-ex-sheet-format-cells-default" hidden tabindex="-1" aria-hidden="true"></button>
             @Tabs
@@ -30,7 +30,7 @@
         </form>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OkAsync" Class="mud-ex-sheet-format-cells-ok">OK</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Ok" Class="mud-ex-sheet-format-cells-ok">OK</MudButton>
         <MudButton Variant="Variant.Text" OnClick="Cancel" Class="mud-ex-sheet-format-cells-cancel">Cancel</MudButton>
     </DialogActions>
 </MudDialog>
@@ -117,17 +117,14 @@
         }
     };
 
-    // OK sets what was touched as one undo step, and ExSheet ends this opening; a refusal keeps the
-    // dialog open and says why (SH-45).
-    private async Task OkAsync()
+    // OK: a refusal — a Custom code ExSheet does not read, More Colours text that is not a colour —
+    // keeps the dialog open and says why, as ExSheet's OK would refuse it (SH-45). Otherwise the
+    // dialog closes, and the frame sets what was touched, as one undo step, once the dialog has
+    // left the page (MudFormatCellsFrame says why).
+    private void Ok()
     {
-        _refusal = null;
-        if (await Context.Ok())
-        {
-            Dialog?.Close(DialogResult.Ok(true));
-            return;
-        }
         _refusal = Draft.Refusal;
+        if (_refusal is null) Dialog?.Close(DialogResult.Ok(true));
     }
 
     private void Cancel() => Dialog?.Cancel();
