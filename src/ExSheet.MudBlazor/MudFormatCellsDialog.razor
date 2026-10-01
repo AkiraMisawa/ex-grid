@@ -1,0 +1,481 @@
+@using System.Globalization
+
+@*
+    Format Cells under the MudBlazor Chrome (ADR-0063): the contents of the MudDialog that
+    MudFormatCellsFrame shows. What it offers is FormatCellsOffer's and every choice is set through
+    the context's draft, so what a choice means and what OK sets are ExSheet's, the same under
+    either Chrome. MudBlazor's controls draw it: tabs that switch with the arrow keys
+    (MudFormatCellsTabs), radio groups for each list of choices, and MudBlazor's colour picker for
+    More Colours. The palette's swatches are radio buttons drawn as their colour, as the built-in
+    Chrome draws them: MudBlazor has no palette of its own.
+
+    Enter in a field is OK, through the browser's implicit submission of the form and a hidden
+    default button, as in ExGrid.MudBlazor's panels. Escape, the dialog's × and a press on its
+    backdrop are MudBlazor's own Cancel, which the frame turns into the context's. MudBlazor's focus
+    trap wraps Tab inside the dialog. No script is added.
+*@
+<MudDialog Class="mud-ex-sheet-format-cells" ContentClass="mud-ex-sheet-format-cells-content">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <form class="mud-ex-sheet-format-cells-form" @onsubmit="OkAsync" @onsubmit:preventDefault @onfocusin="OnFocusIn">
+            @* The form's default button: the first submit button, which implicit submission clicks. *@
+            <button type="submit" class="mud-ex-sheet-format-cells-default" hidden tabindex="-1" aria-hidden="true"></button>
+            @Tabs
+            @if (_refusal is { } refusal)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mud-ex-sheet-format-cells-refusal">@refusal</MudAlert>
+            }
+        </form>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OkAsync" Class="mud-ex-sheet-format-cells-ok">OK</MudButton>
+        <MudButton Variant="Variant.Text" OnClick="Cancel" Class="mud-ex-sheet-format-cells-cancel">Cancel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>The dialog's title, as Excel's.</summary>
+    public const string Title = "Format Cells";
+
+    private static int _instances;
+
+    // Ids unique on the page, for the palette's radio groups: two Sheets each have their own (ADR-0018).
+    private readonly string _id = "mud-ex-sheet-format-cells-" + Interlocked.Increment(ref _instances).ToString(CultureInfo.InvariantCulture);
+    private EventCallback<int> _showTab;
+    private int _tab;
+    private bool _keyboardTaken;
+    private string? _refusal;
+
+    [CascadingParameter] private IMudDialogInstance? Dialog { get; set; }
+
+    /// <summary>ExSheet's Format Cells, as it opened (ADR-0063).</summary>
+    [Parameter, EditorRequired] public FormatCellsContext Context { get; set; } = default!;
+
+    /// <summary>Raised once, when the dialog first has the keyboard.</summary>
+    [Parameter] public Action? KeyboardTaken { get; set; }
+
+    /// <summary>Raised when a dialog provider draws the dialog.</summary>
+    [Parameter] public Action? Drawn { get; set; }
+
+    private FormatCellsDraft Draft => Context.Draft;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        Drawn?.Invoke();
+        _showTab = EventCallback.Factory.Create<int>(this, ShowTab);
+        for (var i = 0; i < FormatCellsOffer.Tabs.Count; i++)
+        {
+            if (FormatCellsOffer.Tabs[i] == Context.Tab) _tab = i;
+        }
+    }
+
+    private void ShowTab(int index)
+    {
+        _tab = index;
+        Context.TabShown(FormatCellsOffer.Tabs[index]);
+    }
+
+    private void OnFocusIn()
+    {
+        if (_keyboardTaken) return;
+        _keyboardTaken = true;
+        KeyboardTaken?.Invoke();
+    }
+
+    // The tabs, in Excel's order, each showing its tab's contents. MudFormatCellsTabs is this
+    // package's own, so it is opened here rather than written as markup, which finds only public
+    // components.
+    private RenderFragment Tabs => builder =>
+    {
+        builder.OpenComponent<MudFormatCellsTabs>(0);
+        builder.AddComponentParameter(1, nameof(MudFormatCellsTabs.ActivePanelIndex), _tab);
+        builder.AddComponentParameter(2, nameof(MudFormatCellsTabs.ActivePanelIndexChanged), _showTab);
+        builder.AddComponentParameter(3, nameof(MudFormatCellsTabs.FocusOnOpen), true);
+        builder.AddComponentParameter(4, nameof(MudFormatCellsTabs.Elevation), 0);
+        builder.AddComponentParameter(5, nameof(MudFormatCellsTabs.KeepPanelsAlive), false);
+        builder.AddComponentParameter(6, nameof(MudFormatCellsTabs.ChildContent), TabPanels);
+        builder.CloseComponent();
+    };
+
+    private RenderFragment TabPanels => __builder =>
+    {
+        @foreach (var tab in FormatCellsOffer.Tabs)
+        {
+            <MudTabPanel Text="@FormatCellsOffer.NameOf(tab)" PanelClass="mud-ex-sheet-format-cells-panel">
+                @(tab switch
+                {
+                    FormatCellsTab.Number => NumberTab,
+                    FormatCellsTab.Alignment => AlignmentTab,
+                    FormatCellsTab.Font => FontTab,
+                    FormatCellsTab.Border => BorderTab,
+                    _ => FillTab,
+                })
+            </MudTabPanel>
+        }
+    };
+
+    // OK sets what was touched as one undo step, and ExSheet ends this opening; a refusal keeps the
+    // dialog open and says why (SH-45).
+    private async Task OkAsync()
+    {
+        _refusal = null;
+        if (await Context.Ok())
+        {
+            Dialog?.Close(DialogResult.Ok(true));
+            return;
+        }
+        _refusal = Draft.Refusal;
+    }
+
+    private void Cancel() => Dialog?.Cancel();
+
+    // ---- Number ----
+
+    private RenderFragment NumberTab => __builder =>
+    {
+        <div class="mud-ex-sheet-format-cells-columns">
+            <div class="mud-ex-sheet-format-cells-categories">
+                <MudText Typo="Typo.subtitle2">Category</MudText>
+                <MudRadioGroup T="NumberFormatCategory" Value="Draft.Category" ValueChanged="Draft.SelectCategory" Class="mud-ex-sheet-format-cells-list">
+                    @foreach (var offer in FormatCellsOffer.Categories)
+                    {
+                        <MudRadio T="NumberFormatCategory" Value="offer.Category" Disabled="!offer.Enabled" Dense="true" Size="Size.Small"
+                                  Label="@FormatCellsOffer.NameOf(offer.Category)" />
+                        @if (offer.DisabledReason is { } reason)
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-ex-sheet-format-cells-reason">@reason</MudText>
+                        }
+                    }
+                </MudRadioGroup>
+            </div>
+            <div class="mud-ex-sheet-format-cells-options">
+                @NumberOptions
+            </div>
+        </div>
+    };
+
+    private RenderFragment NumberOptions => __builder =>
+    {
+        var category = Draft.Category;
+        @if (category == NumberFormatCategory.General)
+        {
+            <MudText Typo="Typo.body2">General cells have no specific number format.</MudText>
+        }
+        else if (category == NumberFormatCategory.Text)
+        {
+            <MudText Typo="Typo.body2">Text cells show what is typed, as typed.</MudText>
+        }
+        @if (Draft.TakesDecimalPlaces)
+        {
+            <MudNumericField T="int" Label="Decimal places" Value="Draft.DecimalPlaces" ValueChanged="SetPlaces" Min="0" Max="MostDecimalPlaces"
+                             Immediate="true" Variant="Variant.Outlined" Margin="Margin.Dense" Class="mud-ex-sheet-format-cells-places" />
+        }
+        @if (category == NumberFormatCategory.Number)
+        {
+            <MudCheckBox T="bool" Value="Draft.ThousandsSeparator" ValueChanged="Draft.SetThousandsSeparator" Dense="true" Size="Size.Small"
+                         Label="Use 1000 Separator (,)" Class="mud-ex-sheet-format-cells-separator" />
+        }
+        @if (category == NumberFormatCategory.Currency)
+        {
+            <MudText Typo="Typo.body2" Class="mud-ex-sheet-format-cells-symbol">Symbol: @Draft.CurrencySymbol</MudText>
+        }
+        @if (Draft.NegativeNumbers is { Count: > 0 } negatives)
+        {
+            <MudText Typo="Typo.subtitle2">Negative numbers</MudText>
+            <MudRadioGroup T="int" Value="Draft.NegativeNumber" ValueChanged="Draft.SetNegativeNumber" Class="mud-ex-sheet-format-cells-list">
+                @for (var i = 0; i < negatives.Count; i++)
+                {
+                    <MudRadio T="int" Value="i" Dense="true" Size="Size.Small" Label="@negatives[i]" />
+                }
+            </MudRadioGroup>
+        }
+        @if (category == NumberFormatCategory.Custom)
+        {
+            var refusal = Draft.NumberFormatRefusal;
+            <MudTextField T="string" Label="Type" Value="Draft.TypeCode" ValueChanged="SetCode" Immediate="true"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" spellcheck="false"
+                          Error="refusal is not null" ErrorText="@refusal" Class="mud-ex-sheet-format-cells-code" />
+        }
+        @if (Draft.Types is { Count: > 0 } types)
+        {
+            <MudText Typo="Typo.subtitle2">@(category == NumberFormatCategory.Custom ? "Codes" : "Type")</MudText>
+            <MudRadioGroup T="string" Value="Draft.TypeCode" ValueChanged="SetType" Class="mud-ex-sheet-format-cells-list mud-ex-sheet-format-cells-types">
+                @foreach (var type in types)
+                {
+                    <MudRadio T="string" Value="type" Dense="true" Size="Size.Small" Label="@type" />
+                }
+            </MudRadioGroup>
+        }
+    };
+
+    // The most decimal places the draft takes, as the built-in field allows.
+    private const int MostDecimalPlaces = 30;
+
+    private void SetPlaces(int places) => Draft.SetDecimalPlaces(Math.Clamp(places, 0, MostDecimalPlaces));
+
+    private void SetCode(string? code) => Draft.SetType(code ?? "");
+
+    private void SetType(string? code) => Draft.SetType(code ?? "");
+
+    // ---- Alignment ----
+
+    private RenderFragment AlignmentTab => __builder =>
+    {
+        <MudText Typo="Typo.subtitle2">Horizontal</MudText>
+        <MudRadioGroup T="HorizontalAlignment" Value="Draft.Alignment" ValueChanged="Draft.SetAlignment" Class="mud-ex-sheet-format-cells-list mud-ex-sheet-format-cells-alignment">
+            @foreach (var alignment in FormatCellsOffer.Alignments)
+            {
+                <MudRadio T="HorizontalAlignment" Value="alignment" Dense="true" Size="Size.Small" Label="@FormatCellsOffer.NameOf(alignment)" />
+            }
+        </MudRadioGroup>
+    };
+
+    // ---- Font ----
+
+    private RenderFragment FontTab => __builder =>
+    {
+        <div class="mud-ex-sheet-format-cells-columns">
+            <div>
+                <MudText Typo="Typo.subtitle2">Font style</MudText>
+                @* Empty while bold or italic differs across the Selection (case 24): no style is checked. *@
+                <MudRadioGroup T="FontStyle?" Value="Draft.FontStyle" ValueChanged="SetFontStyle" Class="mud-ex-sheet-format-cells-list mud-ex-sheet-format-cells-font-styles">
+                    @foreach (var style in FormatCellsOffer.FontStyles)
+                    {
+                        <MudRadio T="FontStyle?" Value="style" Dense="true" Size="Size.Small" Label="@FormatCellsOffer.NameOf(style)" />
+                    }
+                </MudRadioGroup>
+            </div>
+            <div class="mud-ex-sheet-format-cells-options">
+                <MudText Typo="Typo.subtitle2">Underline</MudText>
+                <MudRadioGroup T="bool" Value="Draft.Underline" ValueChanged="Draft.SetUnderline" Class="mud-ex-sheet-format-cells-list mud-ex-sheet-format-cells-underline">
+                    <MudRadio T="bool" Value="false" Dense="true" Size="Size.Small" Label="None" />
+                    <MudRadio T="bool" Value="true" Dense="true" Size="Size.Small" Label="Single" />
+                </MudRadioGroup>
+                <MudCheckBox T="bool" Value="Draft.Strikethrough" ValueChanged="Draft.SetStrikethrough" Dense="true" Size="Size.Small"
+                             Label="Strikethrough" Class="mud-ex-sheet-format-cells-strikethrough" />
+            </div>
+        </div>
+        @Palette(ColourTarget.Font, Draft.FontColour)
+    };
+
+    private void SetFontStyle(FontStyle? style)
+    {
+        if (style is { } chosen) Draft.SetFontStyle(chosen);
+    }
+
+    // ---- Border ----
+
+    private RenderFragment BorderTab => __builder =>
+    {
+        <div class="mud-ex-sheet-format-cells-columns">
+            <div>
+                <MudText Typo="Typo.subtitle2">Style</MudText>
+                <MudRadioGroup T="BorderLineStyle" Value="Draft.LineStyle" ValueChanged="Draft.SetLineStyle" Class="mud-ex-sheet-format-cells-line-styles">
+                    <div class="mud-ex-sheet-format-cells-columns">
+                        @foreach (var column in FormatCellsOffer.LineStyleColumns)
+                        {
+                            <div class="mud-ex-sheet-format-cells-line-column">
+                                @foreach (var style in column)
+                                {
+                                    <MudRadio T="BorderLineStyle" Value="style" Dense="true" Size="Size.Small" AriaLabel="@FormatCellsOffer.NameOf(style)">
+                                        @LineSample(style)
+                                    </MudRadio>
+                                }
+                            </div>
+                        }
+                    </div>
+                </MudRadioGroup>
+            </div>
+            <div class="mud-ex-sheet-format-cells-options">
+                <MudText Typo="Typo.subtitle2">Presets</MudText>
+                <div class="mud-ex-sheet-format-cells-buttons" role="group" aria-label="Presets">
+                    @foreach (var preset in FormatCellsOffer.Presets)
+                    {
+                        var chosen = preset;
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="!Draft.CanApply(chosen)"
+                                   OnClick="() => Draft.ApplyPreset(chosen)" Class="mud-ex-sheet-format-cells-preset">@chosen</MudButton>
+                    }
+                </div>
+                <MudText Typo="Typo.subtitle2">Border</MudText>
+                <div class="mud-ex-sheet-format-cells-buttons" role="group" aria-label="Border">
+                    @foreach (var edge in FormatCellsOffer.Edges)
+                    {
+                        var chosen = edge;
+                        var pressed = PressedOf(Draft.EdgeLine(chosen));
+                        <MudButton Variant="@(pressed == "true" ? Variant.Filled : Variant.Outlined)" Size="Size.Small" Disabled="!Draft.CanSet(chosen)"
+                                   aria-pressed="@pressed" data-edge="@chosen"
+                                   OnClick="() => Draft.ToggleEdge(chosen)" Class="mud-ex-sheet-format-cells-edge">@FormatCellsOffer.NameOf(chosen)</MudButton>
+                    }
+                </div>
+                @Preview
+            </div>
+        </div>
+        @Palette(ColourTarget.Border, Draft.LineColour)
+    };
+
+    // An edge shows its line; one whose cells' sides differ reads mixed, as Excel's button does.
+    private static string PressedOf(BorderLine? line) => line switch
+    {
+        null => "mixed",
+        { IsNone: true } => "false",
+        _ => "true",
+    };
+
+    // A line style's sample: a stroke and its dashes. Only a picture of the style; how a Border is
+    // painted on the Sheet is the grid's (ADR-0063).
+    private static RenderFragment LineSample(BorderLineStyle style) => __builder =>
+    {
+        var (width, dashes) = StrokeOf(style);
+        <svg class="mud-ex-sheet-format-cells-line" width="56" height="8" aria-hidden="true">
+            @if (style == BorderLineStyle.Double)
+            {
+                <line x1="0" y1="2.5" x2="56" y2="2.5" stroke="currentColor" stroke-width="1" />
+                <line x1="0" y1="5.5" x2="56" y2="5.5" stroke="currentColor" stroke-width="1" />
+            }
+            else if (style != BorderLineStyle.None)
+            {
+                <line x1="0" y1="4" x2="56" y2="4" stroke="currentColor" stroke-width="@width" stroke-dasharray="@dashes" />
+            }
+        </svg>
+    };
+
+    private static (string Width, string? Dashes) StrokeOf(BorderLineStyle style) => style switch
+    {
+        BorderLineStyle.Hair => ("1", "1 1"),
+        BorderLineStyle.Dotted => ("1", "1 2"),
+        BorderLineStyle.DashDotDot => ("1", "6 2 1 2 1 2"),
+        BorderLineStyle.DashDot => ("1", "6 2 1 2"),
+        BorderLineStyle.Dashed => ("1", "4 2"),
+        BorderLineStyle.MediumDashDotDot => ("2", "6 2 2 2 2 2"),
+        BorderLineStyle.SlantedDashDot => ("2", "8 2 4 2"),
+        BorderLineStyle.MediumDashDot => ("2", "8 2 2 2"),
+        BorderLineStyle.MediumDashed => ("2", "6 3"),
+        BorderLineStyle.Medium => ("2", null),
+        BorderLineStyle.Thick => ("3", null),
+        _ => ("1", null),
+    };
+
+    // The preview: the range's edges as they will be — outer ones round the box, inner ones across
+    // it where a range has them — and an edge whose cells' sides differ as a grey dotted line, as
+    // Excel draws it (the eleventh Windows run, case 24).
+    private RenderFragment Preview => __builder =>
+    {
+        <svg class="mud-ex-sheet-format-cells-preview" width="120" height="72" viewBox="0 0 120 72" role="img" aria-label="Preview">
+            @PreviewEdge(BorderEdge.Top, 4, 4, 116, 4)
+            @PreviewEdge(BorderEdge.Bottom, 4, 68, 116, 68)
+            @PreviewEdge(BorderEdge.Left, 4, 4, 4, 68)
+            @PreviewEdge(BorderEdge.Right, 116, 4, 116, 68)
+            @if (Draft.HasInsideHorizontal)
+            {
+                @PreviewEdge(BorderEdge.InsideHorizontal, 4, 36, 116, 36)
+            }
+            @if (Draft.HasInsideVertical)
+            {
+                @PreviewEdge(BorderEdge.InsideVertical, 60, 4, 60, 68)
+            }
+        </svg>
+    };
+
+    private RenderFragment PreviewEdge(BorderEdge edge, int x1, int y1, int x2, int y2) => __builder =>
+    {
+        var line = Draft.EdgeLine(edge);
+        if (line is null)
+        {
+            <line class="mud-ex-sheet-format-cells-differs" data-edge="@edge" x1="@x1" y1="@y1" x2="@x2" y2="@y2" stroke="#808080" stroke-width="1" stroke-dasharray="1 2" />
+        }
+        else if (!line.Value.IsNone)
+        {
+            var (width, dashes) = StrokeOf(line.Value.Style);
+            <line data-edge="@edge" x1="@x1" y1="@y1" x2="@x2" y2="@y2" stroke="@ColourOf(line.Value.Colour)" stroke-width="@width" stroke-dasharray="@dashes" />
+        }
+    };
+
+    // ---- Fill ----
+
+    private RenderFragment FillTab => __builder =>
+    {
+        @Palette(ColourTarget.Fill, Draft.Fill.Colour)
+    };
+
+    // ---- The palette ----
+
+    // Case 23's palette as one group of radio buttons: Automatic (the Font and the Border) or No
+    // Colour (the Fill) first, then the theme's sixty and the ten standard colours, each named as
+    // Excel names it, and More Colours, which is MudBlazor's colour picker (ADR-0063).
+    private RenderFragment Palette(ColourTarget target, CellColour? chosen) => __builder =>
+    {
+        var name = _id + "-palette-" + target.ToString().ToLowerInvariant();
+        var legend = target == ColourTarget.Fill ? "Background Colour" : "Colour";
+        var first = target == ColourTarget.Fill ? "No Colour" : "Automatic";
+        var none = target == ColourTarget.Fill ? chosen is null : chosen is { IsAutomatic: true };
+        <div class="mud-ex-sheet-palette" role="radiogroup" aria-label="@legend" data-target="@target">
+            <MudText Typo="Typo.subtitle2">@legend</MudText>
+            <label class="mud-ex-sheet-palette-first">
+                <input type="radio" name="@name" checked="@none" @onchange="() => Choose(target, null)" />
+                <MudText Typo="Typo.body2" HtmlTag="span">@first</MudText>
+            </label>
+            <div class="mud-ex-sheet-swatches">
+                @foreach (var row in FormatCellsOffer.ThemeColours)
+                {
+                    @foreach (var swatch in row)
+                    {
+                        @Swatch(name, target, swatch, chosen)
+                    }
+                }
+            </div>
+            <div class="mud-ex-sheet-swatches">
+                @foreach (var swatch in FormatCellsOffer.StandardColours)
+                {
+                    @Swatch(name, target, swatch, chosen)
+                }
+            </div>
+            <MudColorPicker Label="More Colours" Value="PickerValue(chosen)" ValueChanged="colour => Picked(target, colour)"
+                            ShowAlpha="false" ColorPickerMode="ColorPickerMode.HEX" Variant="Variant.Outlined" Margin="Margin.Dense"
+                            Class="mud-ex-sheet-more-colours" />
+        </div>
+    };
+
+    private RenderFragment Swatch(string name, ColourTarget target, PaletteSwatch swatch, CellColour? chosen) => __builder =>
+    {
+        <input type="radio" name="@name" class="mud-ex-sheet-swatch" style="@("background-color: " + ColourOf(swatch.Colour))"
+               aria-label="@swatch.Name" title="@swatch.Name" data-rgb="@ColourOf(swatch.Colour)"
+               checked="@(chosen is { IsAutomatic: false } colour && colour == swatch.Colour)"
+               @onchange="() => Choose(target, swatch.Colour)" />
+    };
+
+    // A colour chosen for a target: null is Automatic for the Font and the Border, and No Colour for the Fill.
+    private void Choose(ColourTarget target, CellColour? colour)
+    {
+        switch (target)
+        {
+            case ColourTarget.Font:
+                Draft.SetFontColour(colour ?? CellColour.Automatic);
+                break;
+            case ColourTarget.Fill:
+                Draft.SetFill(colour is { } fill ? CellFill.Solid(fill) : CellFill.None);
+                break;
+            default:
+                Draft.SetLineColour(colour ?? CellColour.Automatic);
+                break;
+        }
+    }
+
+    // What MudBlazor's picker shows: the colour chosen, or nothing for Automatic and No Colour.
+    private static MudColor? PickerValue(CellColour? colour) => colour is { IsAutomatic: false } rgb
+        ? new MudColor((byte)(rgb.Rgb >> 16), (byte)(rgb.Rgb >> 8 & 0xFF), (byte)(rgb.Rgb & 0xFF), (byte)255)
+        : null;
+
+    // A colour picked under More Colours: its red, green and blue, without alpha — a Cell Format's
+    // colours are opaque (ADR-0063).
+    private void Picked(ColourTarget target, MudColor? colour)
+    {
+        if (colour is null) return;
+        Choose(target, CellColour.FromRgb(colour.R, colour.G, colour.B));
+    }
+
+    // A colour as the preview and the swatches paint it: Automatic is the Ink of the text around it.
+    private static string ColourOf(CellColour colour) => colour.IsAutomatic ? "currentColor" : colour.ToString();
+}

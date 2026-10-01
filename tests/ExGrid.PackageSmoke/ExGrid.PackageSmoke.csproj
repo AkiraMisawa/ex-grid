@@ -21,6 +21,7 @@
     <PackageReference Include="ExGrid.MudBlazor" Version="$(ExGridVersion)" />
     <PackageReference Include="ExSheet.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExSheet" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExSheet.MudBlazor" Version="$(ExGridVersion)" />
   </ItemGroup>
 
   <Target Name="RequireThePackedVersion" BeforeTargets="CollectPackageReferences">

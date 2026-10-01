@@ -175,6 +175,9 @@ small. A Chrome that implements `ISheetChrome` draws it in a frame of its own â€
 dialog â€” from a `FormatCellsContext`: what ExSheet offers is in `FormatCellsOffer`, and the
 context's `FormatCellsDraft` holds what the dialog opens on and what OK sets, so every Chrome sets
 the same parts. Such a Chrome calls the context's `ReturnKeyboard` once its frame has closed.
+In a MudBlazor application, [ExSheet.MudBlazor](https://www.nuget.org/packages/ExSheet.MudBlazor)'s
+`MudSheetChrome` is that Chrome: Format Cells as a `MudDialog`, and ExGrid.MudBlazor's controls in
+the grid.
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any
