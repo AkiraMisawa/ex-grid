@@ -1,0 +1,1864 @@
+=== i1: D10: the IME on, kana, Space, Enter, Enter. Reading (ED-11): nothing commits or moves while composing; the first Enter ends the composition, the second commits the cell and moves to D11
+  -- ime-on: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width, romaji
+       events: keydown Unidentified@sheet:div.ex-grid
+  -- k: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'k' caret [1, 1]
+       layer: shown 'k'
+       bar: 'k'
+       D10: ''
+       IME: open=False hiragana, full-width, romaji
+       events: keydown k@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'ka' caret [2, 2]
+       layer: shown 'ka'
+       bar: 'ka'
+       D10: ''
+       IME: open=False hiragana, full-width, romaji
+       events: keydown a@cell; input insertText 'a'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kan' caret [3, 3]
+       layer: shown 'kan'
+       bar: 'kan'
+       D10: ''
+       IME: open=False hiragana, full-width, romaji
+       events: keydown n@cell; input insertText 'n'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 3 of 3
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 3 of 3
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kana' caret [4, 4]
+       layer: shown 'kana'
+       bar: 'kana'
+       D10: ''
+       IME: open=False hiragana, full-width, romaji
+       events: keydown a@cell; input insertText 'a'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 4 of 4
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 4 of 4
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- space: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kana ' caret [5, 5]
+       layer: shown 'kana '
+       bar: 'kana '
+       D10: ''
+       IME: open=False hiragana, full-width, romaji
+       events: keydown  @cell; input insertText ' '
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 5 of 5
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 5 of 5
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- enter-1: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width, romaji
+       events: keydown Enter@cell
+  -- enter-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D12
+       Name Box: D12
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width, romaji
+       events: keydown Enter@sheet:div.ex-grid
+  D10's Entry afterwards: 'kana '
+=== i1x: An addition: i1 with the edit opened by F2 first and the IME switched on in the Cell Editor: F2, the IME on, kana, Space, Enter, Enter
+  -- f2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width, romaji
+       events: keydown F2@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #594ae2
+  -- ime-on: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #594ae2
+  -- k: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'ｋ' caret [1, 1]
+       layer: hidden 'ｋ'
+       bar: 'ｋ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'ｋ'@cell; input insertCompositionText 'ｋ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'か' caret [1, 1]
+       layer: hidden 'か'
+       bar: 'か'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'か'@cell; input insertCompositionText 'か' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かｎ' caret [2, 2]
+       layer: hidden 'かｎ'
+       bar: 'かｎ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かｎ'@cell; input insertCompositionText 'かｎ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- space: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- enter-1: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: shown 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing; end 'かな'@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- enter-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'かな'
+       IME: open=True hiragana, full-width
+       events: keydown Enter@cell
+  D10's Entry afterwards: 'かな'
+=== i1y: An addition: i1 with the IME left on by an earlier edit: F2, the IME on, Escape (the edit closed), then kana, Space, Enter, Enter
+  -- f2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown F2@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #594ae2
+  -- ime-on: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #594ae2
+  -- escape: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Escape@cell
+  -- k: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'k' caret [1, 1]
+       layer: shown 'k'
+       bar: 'k'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown k@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kあ' caret [2, 2]
+       layer: hidden 'kあ'
+       bar: 'kあ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'あ'@cell; input insertCompositionText 'あ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kあｎ' caret [3, 3]
+       layer: hidden 'kあｎ'
+       bar: 'kあｎ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'あｎ'@cell; input insertCompositionText 'あｎ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 3 of 3
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 3 of 3
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kあな' caret [3, 3]
+       layer: hidden 'kあな'
+       bar: 'kあな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'あな'@cell; input insertCompositionText 'あな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 3 of 3
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 3 of 3
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- space: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'k穴' caret [2, 2]
+       layer: hidden 'k穴'
+       bar: 'k穴'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update '穴'@cell; input insertCompositionText '穴' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- enter-1: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'k穴' caret [2, 2]
+       layer: shown 'k穴'
+       bar: 'k穴'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update '穴'@cell; input insertCompositionText '穴' composing; end '穴'@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- enter-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'k穴'
+       IME: open=True hiragana, full-width
+       events: keydown Enter@cell
+  D10's Entry afterwards: 'k穴'
+=== i2: D10: the IME on, kana, Escape, Escape. Asked: does the first Escape end only the composition, leaving the edit open? The second cancels the edit, and D10 is unchanged
+  -- ime-on: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Unidentified@sheet:div.ex-grid
+  -- k: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'k' caret [1, 1]
+       layer: shown 'k'
+       bar: 'k'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown k@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'ka' caret [2, 2]
+       layer: shown 'ka'
+       bar: 'ka'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown a@cell; input insertText 'a'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kan' caret [3, 3]
+       layer: shown 'kan'
+       bar: 'kan'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown n@cell; input insertText 'n'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 3 of 3
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 3 of 3
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kana' caret [4, 4]
+       layer: shown 'kana'
+       bar: 'kana'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown a@cell; input insertText 'a'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 4 of 4
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 4 of 4
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- escape-1: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Escape@cell
+  -- escape-2: the same in all 12
+       keyboard: body
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Escape@sheet:div.ex-grid
+  D10's Entry afterwards: ''
+=== i2x: An addition: i2 with the edit opened by F2 first: F2, the IME on, kana, Escape, Escape
+  -- f2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown F2@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #594ae2
+  -- ime-on: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #594ae2
+  -- k: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'ｋ' caret [1, 1]
+       layer: hidden 'ｋ'
+       bar: 'ｋ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'ｋ'@cell; input insertCompositionText 'ｋ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'か' caret [1, 1]
+       layer: hidden 'か'
+       bar: 'か'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'か'@cell; input insertCompositionText 'か' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かｎ' caret [2, 2]
+       layer: hidden 'かｎ'
+       bar: 'かｎ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かｎ'@cell; input insertCompositionText 'かｎ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- escape-1: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update ''@cell; input insertCompositionText None composing; end ''@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #594ae2
+  -- escape-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Escape@cell
+  D10's Entry afterwards: ''
+=== i3: D10: the IME on, kana, Space, Down, Down, Enter, Enter. Reading: the arrows choose among the candidates; the Focus does not move and nothing points
+  -- ime-on: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Unidentified@sheet:div.ex-grid
+  -- k: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'k' caret [1, 1]
+       layer: shown 'k'
+       bar: 'k'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown k@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'ka' caret [2, 2]
+       layer: shown 'ka'
+       bar: 'ka'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown a@cell; input insertText 'a'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kan' caret [3, 3]
+       layer: shown 'kan'
+       bar: 'kan'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown n@cell; input insertText 'n'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 3 of 3
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 3 of 3
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kana' caret [4, 4]
+       layer: shown 'kana'
+       bar: 'kana'
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown a@cell; input insertText 'a'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 4 of 4
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 4 of 4
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- space: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'kana ' caret [5, 5]
+       layer: shown 'kana '
+       bar: 'kana '
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown  @cell; input insertText ' '
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 5 of 5
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 5 of 5
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:376, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:496, darkest #424242
+  -- down-1: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width
+       events: keydown ArrowDown@cell
+  -- down-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D12
+       Name Box: D12
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width
+       events: keydown ArrowDown@sheet:div.ex-grid
+  -- enter-1: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D13
+       Name Box: D13
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width
+       events: keydown Enter@sheet:div.ex-grid
+  -- enter-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D14
+       Name Box: D14
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width
+       events: keydown Enter@sheet:div.ex-grid
+  D10's Entry afterwards: 'kana '
+=== i3x: An addition: i3 with the edit opened by F2 first: F2, the IME on, kana, Space, Down, Down, Enter, Enter
+  -- f2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown F2@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #594ae2
+  -- ime-on: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #594ae2
+  -- k: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'ｋ' caret [1, 1]
+       layer: hidden 'ｋ'
+       bar: 'ｋ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'ｋ'@cell; input insertCompositionText 'ｋ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'か' caret [1, 1]
+       layer: hidden 'か'
+       bar: 'か'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'か'@cell; input insertCompositionText 'か' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かｎ' caret [2, 2]
+       layer: hidden 'かｎ'
+       bar: 'かｎ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かｎ'@cell; input insertCompositionText 'かｎ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- space: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- down-1: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; keydown ArrowDown composing@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- down-2: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; keydown ArrowDown composing@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- enter-1: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: 'かな' caret [2, 2]
+       layer: shown 'かな'
+       bar: 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing; end 'かな'@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #424242
+  -- enter-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'かな'
+       IME: open=True hiragana, full-width
+       events: keydown Enter@cell
+  D10's Entry afterwards: 'かな'
+=== i4: The Formula Bar: the IME on, a press on D10, a press into the bar's end (the IME switched on again there), kana, Space, Enter, Enter. Reading: as i1, in the bar; D10 holds what was chosen
+  -- ime-on: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Unidentified@sheet:div.ex-grid
+  -- pressed-d10: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: (none)
+  -- into-bar: 2 readings
+     [sheet-wasm-chrome, mud-wasm-chrome, sheet-wasm-msedge, mud-wasm-msedge]
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: '' caret [0, 0]
+       layer: shown ''
+       D10: ''
+       IME: open=False hiragana, full-width
+     [sheet-server-chrome, mud-server-chrome, sheet-server-msedge, mud-server-msedge, sheet-server-150-chrome, mud-server-150-chrome, sheet-server-150-msedge, mud-server-150-msedge]
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: '' caret [0, 0]
+       layer: hidden ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, darkest #594ae2
+  -- ime-on-in-bar: 2 readings
+     [sheet-wasm-chrome, mud-wasm-chrome, sheet-wasm-msedge, mud-wasm-msedge]
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: '' caret [0, 0]
+       layer: shown ''
+       D10: ''
+       IME: open=True hiragana, full-width
+     [sheet-server-chrome, mud-server-chrome, sheet-server-msedge, mud-server-msedge, sheet-server-150-chrome, mud-server-150-chrome, sheet-server-150-msedge, mud-server-150-msedge]
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: '' caret [0, 0]
+       layer: hidden ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, darkest #0078d7
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, darkest #594ae2
+  -- k: the same in all 12
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: 'ｋ' caret [1, 1]
+       layer: hidden 'ｋ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@bar; start ''@bar; update 'ｋ'@bar; input insertCompositionText 'ｋ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-server-chrome, sheet-server-150-chrome]: (the whole field): saturated #0078d7:4766, #de8a29:20, #005db5:17, darkest #000000
+       pixels [mud-wasm-chrome, mud-server-chrome, mud-server-150-chrome]: (the whole field): saturated #594ae2:5472, #a46342:20, #85c3ff:16, darkest #424242
+       pixels [sheet-wasm-msedge, sheet-server-msedge, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, #b55d00:16, #5ab2ff:12, darkest #000000
+       pixels [mud-wasm-msedge, mud-server-msedge, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, #ffffc2:16, #854242:16, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: 'か' caret [1, 1]
+       layer: hidden 'か'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@bar; update 'か'@bar; input insertCompositionText 'か' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, #8cdbff:3, #002c8c:3, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, #4263a4:3, #60a2e1:3, darkest #424242
+  -- n: the same in all 12
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: 'かｎ' caret [2, 2]
+       layer: hidden 'かｎ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@bar; update 'かｎ'@bar; input insertCompositionText 'かｎ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-server-chrome, sheet-server-150-chrome]: (the whole field): saturated #0078d7:4766, #ffdb8c:15, #8cdbff:13, darkest #000000
+       pixels [mud-wasm-chrome, mud-server-chrome, mud-server-150-chrome]: (the whole field): saturated #594ae2:5472, #e1a260:15, #4263a4:13, darkest #424242
+       pixels [sheet-wasm-msedge, sheet-server-msedge, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, #ffdb8c:14, #8cdbff:10, darkest #000000
+       pixels [mud-wasm-msedge, mud-server-msedge, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, #e1a260:14, #4263a4:10, darkest #424242
+  -- a2: the same in all 12
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@bar; update 'かな'@bar; input insertCompositionText 'かな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, #002c8c:5, #ffdb8c:5, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, #60a2e1:5, #e1a260:5, darkest #424242
+  -- space: the same in all 12
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: 'かな' caret [2, 2]
+       layer: hidden 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@bar; update 'かな'@bar; input insertCompositionText 'かな' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, #002c8c:5, #ffdb8c:5, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, #60a2e1:5, #e1a260:5, darkest #424242
+  -- enter-1: the same in all 12
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: 'かな' caret [2, 2]
+       layer: shown 'かな'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@bar; update 'かな'@bar; input insertCompositionText 'かな' composing; end 'かな'@bar
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, #002c8c:5, #ffdb8c:5, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, #60a2e1:5, #e1a260:5, darkest #424242
+  -- enter-2: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'かな'
+       IME: open=True hiragana, full-width
+       events: keydown Enter@bar
+  D10's Entry afterwards: 'かな'
+=== i5: D10: the IME off, =A1+; the IME on, a; Escape; the IME off, B1, Enter. Reading: while あ is composed after =A1+, A1 keeps its colour and the composition is shown once, not doubled or hidden (ADR-0057). After Enter, D10 holds =A1+B1
+  -- typed: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=A1+' caret [4, 4]
+       layer: shown '=A1+' [A1 #326ac7]
+       bar: '=A1+'
+       drawn: 0 point(s), 1 outline(s)
+       D10: ''
+       IME: open=False hiragana, full-width
+       events [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, mud-server-chrome, sheet-server-msedge, mud-server-msedge]: keydown Unidentified@sheet:div.ex-grid; keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 1@cell; input insertText '1'; keydown Shift@cell; keydown +@cell; input insertText '+'
+       events [mud-wasm-chrome, mud-wasm-msedge]: keydown Unidentified@sheet:div.ex-grid; keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown A@cell; input None None; keydown 1@cell; input insertText '1'; keydown Shift@cell; keydown +@cell; input insertText '+'
+       events [sheet-server-150-chrome, mud-server-150-chrome, sheet-server-150-msedge, mud-server-150-msedge]: keydown Unidentified@sheet:div.ex-grid; keydown =@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown A@sheet:div.ex-grid; keydown 1@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown +@sheet:div.ex-grid; input None None; input None None; input None None
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 4 of 4
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 4 of 4
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A1: saturated #326ac7:22, #92b0e1:13, #7399d9:6, darkest #326ac7; (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A1: saturated #326ac7:28, #7198d8:12, #346bc7:5, darkest #326ac7; (the whole field): saturated #594ae2:372, #8378ea:124, #326ac7:28, darkest #424242
+  -- ime-on: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=A1+' caret [4, 4]
+       layer: shown '=A1+' [A1 #326ac7]
+       bar: '=A1+'
+       drawn: 0 point(s), 1 outline(s)
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 4 of 4
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 4 of 4
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A1: saturated #326ac7:22, #92b0e1:13, #7399d9:6, darkest #326ac7; (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A1: saturated #326ac7:28, #7198d8:12, #346bc7:5, darkest #326ac7; (the whole field): saturated #594ae2:372, #8378ea:124, #326ac7:28, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=A1+あ' caret [5, 5]
+       layer: hidden '=A1+あ' [A1 #326ac7]
+       bar: '=A1+あ'
+       drawn: 0 point(s), 1 outline(s)
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'あ'@cell; input insertCompositionText 'あ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 5 of 5
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 5 of 5
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A1: saturated none, darkest #000000; (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A1: saturated none, darkest #424242; (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  -- escape: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=A1+' caret [4, 4]
+       layer: shown '=A1+' [A1 #326ac7]
+       bar: '=A1+'
+       drawn: 0 point(s), 1 outline(s)
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update ''@cell; input insertCompositionText None composing; end ''@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 4 of 4
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 4 of 4
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A1: saturated #326ac7:22, #92b0e1:13, #7399d9:6, darkest #326ac7; (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A1: saturated #326ac7:28, #7198d8:12, #346bc7:5, darkest #326ac7; (the whole field): saturated #594ae2:372, #8378ea:124, #326ac7:28, darkest #424242
+  -- ime-off: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=A1+' caret [4, 4]
+       layer: shown '=A1+' [A1 #326ac7]
+       bar: '=A1+'
+       drawn: 0 point(s), 1 outline(s)
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 4 of 4
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 4 of 4
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A1: saturated #326ac7:22, #92b0e1:13, #7399d9:6, darkest #326ac7; (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A1: saturated #326ac7:28, #7198d8:12, #346bc7:5, darkest #326ac7; (the whole field): saturated #594ae2:372, #8378ea:124, #326ac7:28, darkest #424242
+  -- b1: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=A1+B1' caret [6, 6]
+       layer: shown '=A1+B1' [A1 #326ac7, B1 #c0353e]
+       bar: '=A1+B1'
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 1@cell; input insertText '1'
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 6 of 6
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 6 of 6
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A1: saturated #326ac7:22, #92b0e1:13, #7399d9:6, darkest #326ac7; B1: saturated #c0353e:16, #c84e55:16, #e09da1:15, darkest #c0353e; (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A1: saturated #326ac7:28, #7198d8:12, #346bc7:5, darkest #326ac7; B1: saturated #c84e55:27, #c0353e:20, #cf656b:16, darkest #c0353e; (the whole field): saturated #594ae2:372, #8378ea:124, #326ac7:28, darkest #424242
+  -- enter: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: '#VALUE!'
+       IME: open=False hiragana, full-width
+       events: keydown Enter@cell
+  D10's Entry afterwards: '=A1+B1'
+=== i6: D10: the IME off, =; the IME on, a; Down; Escape; the IME off, Down. Reading: while composing, Down is the IME's: no outline, nothing written. After the composition ends, Down points at D11 (=D11)
+  -- typed: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=' caret [1, 1]
+       layer: shown '='
+       bar: '='
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Unidentified@sheet:div.ex-grid; keydown =@sheet:div.ex-grid
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  -- ime-on: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=' caret [1, 1]
+       layer: shown '='
+       bar: '='
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 1 of 1
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 1 of 1
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=あ' caret [2, 2]
+       layer: hidden '=あ'
+       bar: '=あ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'あ'@cell; input insertCompositionText 'あ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  -- down-composing: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=あるみたいだから' caret [9, 9]
+       layer: hidden '=あるみたいだから'
+       bar: '=あるみたいだから'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'あるみたいだから'@cell; input insertCompositionText 'あるみたいだから' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 38 of scrollWidth 138 (clientWidth 99), caret at 9 of 9
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 36.66666793823242 of scrollWidth 120 (clientWidth 83), caret at 9 of 9
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  -- escape: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=あ' caret [2, 2]
+       layer: hidden '=あ'
+       bar: '=あ'
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update 'あ'@cell; input insertCompositionText 'あ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  -- ime-off: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=あ' caret [2, 2]
+       layer: hidden '=あ'
+       bar: '=あ'
+       D10: ''
+       IME: open=True alphanumeric, half-width
+       events: keydown Process composing@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 2 of 2
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 2 of 2
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  -- down: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=あるみたいだから' caret [9, 9]
+       layer: hidden '=あるみたいだから'
+       bar: '=あるみたいだから'
+       D10: ''
+       IME: open=True alphanumeric, half-width
+       events: keydown Process composing@cell; update 'あるみたいだから'@cell; input insertCompositionText 'あるみたいだから' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 38 of scrollWidth 138 (clientWidth 99), caret at 9 of 9
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 36.66666793823242 of scrollWidth 120 (clientWidth 83), caret at 9 of 9
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8378ea:124, darkest #424242
+  D10's Entry afterwards: ''
+=== i7: The Name Box: a press on it, the IME on, kana, Enter, then Escape. Reading: the first Enter ends the composition and goes nowhere
+  -- pressed: the same in all 12
+       keyboard: sheet:name-box
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       name box: 'D10' caret [3, 3]
+       bar: ''
+       D10: ''
+       IME: open=False alphanumeric, half-width
+       events: (none)
+  -- ime-on: the same in all 12
+       keyboard: sheet:name-box
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       name box: 'D10' caret [3, 3]
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+  -- k: the same in all 12
+       keyboard: sheet:name-box
+       edit: closed
+       Focus: D10
+       Name Box: D10ｋ
+       name box: 'D10ｋ' caret [4, 4]
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@name-box; start ''@name-box; update 'ｋ'@name-box; input insertCompositionText 'ｋ' composing
+  -- a: the same in all 12
+       keyboard: sheet:name-box
+       edit: closed
+       Focus: D10
+       Name Box: D10か
+       name box: 'D10か' caret [4, 4]
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@name-box; update 'か'@name-box; input insertCompositionText 'か' composing
+  -- n: the same in all 12
+       keyboard: sheet:name-box
+       edit: closed
+       Focus: D10
+       Name Box: D10かｎ
+       name box: 'D10かｎ' caret [5, 5]
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@name-box; update 'かｎ'@name-box; input insertCompositionText 'かｎ' composing
+  -- a2: the same in all 12
+       keyboard: sheet:name-box
+       edit: closed
+       Focus: D10
+       Name Box: D10かな
+       name box: 'D10かな' caret [5, 5]
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@name-box; update 'かな'@name-box; input insertCompositionText 'かな' composing
+  -- enter: the same in all 12
+       keyboard: sheet:name-box
+       edit: closed
+       Focus: D10
+       Name Box: D10かな
+       name box: 'D10かな' caret [5, 5]
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@name-box; update 'かな'@name-box; input insertCompositionText 'かな' composing; end 'かな'@name-box
+  -- escape: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Escape@name-box
+  D10's Entry afterwards: ''
+=== i8: Find: the IME on, Ctrl+F (the IME switched on again in Find's field), kana, Enter, then Escape. Reading: the first Enter ends the composition and finds nothing yet
+  -- ime-on: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Unidentified@sheet:div.ex-grid
+  -- ctrl-f: the same in all 12
+       keyboard: find
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       Find: '' outcome ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Control@sheet:div.ex-grid; keydown f@sheet:div.ex-grid
+  -- ime-on-in-find: the same in all 12
+       keyboard: find
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       Find: '' outcome ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+  -- k: the same in all 12
+       keyboard: find
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       Find: 'ｋ' outcome ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@find; start ''@find; update 'ｋ'@find; input insertCompositionText 'ｋ' composing
+  -- a: the same in all 12
+       keyboard: find
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       Find: 'か' outcome ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@find; update 'か'@find; input insertCompositionText 'か' composing
+  -- n: the same in all 12
+       keyboard: find
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       Find: 'かｎ' outcome ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@find; update 'かｎ'@find; input insertCompositionText 'かｎ' composing
+  -- a2: the same in all 12
+       keyboard: find
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       Find: 'かな' outcome ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@find; update 'かな'@find; input insertCompositionText 'かな' composing
+  -- enter: the same in all 12
+       keyboard: find
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       Find: 'かな' outcome ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@find; update 'かな'@find; input insertCompositionText 'かな' composing; end 'かな'@find
+  -- escape: the same in all 12
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Escape@find
+  D10's Entry afterwards: ''
+=== i9: D10: the IME off, =SUM(A2:A4,B2:B4,C2:C4,; the IME on, a; Escape; the IME off, Down. Reading: after Down, =SUM(A2:A4,B2:B4,C2:C4,D11 is written and the caret is inside the Cell Editor's visible width (ticket 75)
+  -- typed: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=SUM(A2:A4,B2:B4,C2:C4,' caret [23, 23]
+       layer: shown '=SUM(A2:A4,B2:B4,C2:C4,' [A2:A4 #326ac7, B2:B4 #c0353e, C2:C4 #8157b7]
+       bar: '=SUM(A2:A4,B2:B4,C2:C4,'
+       list: (empty)
+       drawn: 0 point(s), 3 outline(s)
+       D10: ''
+       IME: open=False hiragana, full-width
+       events [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, mud-server-chrome, sheet-server-msedge, mud-server-msedge]: keydown Unidentified@sheet:div.ex-grid; keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown S@cell; input insertText 'S'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown M@cell; input insertText 'M'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown C@cell; input insertText 'C'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown C@cell; input insertText 'C'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','
+       events [mud-wasm-chrome, mud-wasm-msedge]: keydown Unidentified@sheet:div.ex-grid; keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown S@cell; input None None; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown M@cell; input insertText 'M'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown C@cell; input insertText 'C'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown C@cell; input insertText 'C'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','
+       events [sheet-server-150-chrome, mud-server-150-chrome, sheet-server-150-msedge, mud-server-150-msedge]: keydown Unidentified@sheet:div.ex-grid; keydown =@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown S@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown U@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown M@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown (@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown A@sheet:div.ex-grid; keydown 2@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown :@sheet:div.ex-grid; keydown Shift@sheet:div.ex-grid; keydown A@sheet:div.ex-grid; keydown 4@sheet:div.ex-grid; input None None; input None None; input None None; input None None; input None None; input None None; input None None; input None None; input None None; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown C@cell; input insertText 'C'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown C@cell; input insertText 'C'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 75.33333587646484 of scrollWidth 174 (clientWidth 99), caret at 23 of 23
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 78.66666412353516 of scrollWidth 162 (clientWidth 83), caret at 23 of 23
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A2:A4: saturated #0078d7:28, #7198d8:14, #4779cd:9, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; C2:C4: saturated #8157b7:26, #ab8fcf:24, #875fba:19, darkest #8157b7; (the whole field): saturated #0078d7:376, #50a2e4:146, #c44149:41, darkest #0d0d0d
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A2:A4: saturated none, darkest #b4c8e8; B2:B4: saturated #be353e:26, #bc343d:15, #b9333c:14, darkest #ac3038; C2:C4: saturated #7e55b3:14, #8056b6:14, #aa8ecd:7, darkest #744ea4; (the whole field): saturated #594ae2:248, #8378ea:124, #3c3298:123, darkest #444444
+  -- ime-on: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=SUM(A2:A4,B2:B4,C2:C4,' caret [23, 23]
+       layer: shown '=SUM(A2:A4,B2:B4,C2:C4,' [A2:A4 #326ac7, B2:B4 #c0353e, C2:C4 #8157b7]
+       bar: '=SUM(A2:A4,B2:B4,C2:C4,'
+       list: (empty)
+       drawn: 0 point(s), 3 outline(s)
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 75.33333587646484 of scrollWidth 174 (clientWidth 99), caret at 23 of 23
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 78.66666412353516 of scrollWidth 162 (clientWidth 83), caret at 23 of 23
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A2:A4: saturated #0078d7:28, #7198d8:14, #4779cd:9, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; C2:C4: saturated #8157b7:26, #ab8fcf:24, #875fba:19, darkest #8157b7; (the whole field): saturated #0078d7:376, #50a2e4:146, #c44149:41, darkest #0d0d0d
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A2:A4: saturated none, darkest #b4c8e8; B2:B4: saturated #be353e:26, #bc343d:15, #b9333c:14, darkest #ac3038; C2:C4: saturated #7e55b3:14, #8056b6:14, #aa8ecd:7, darkest #744ea4; (the whole field): saturated #594ae2:248, #8378ea:124, #3c3298:123, darkest #444444
+  -- a: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=SUM(A2:A4,B2:B4,C2:C4,あ' caret [24, 24]
+       layer: hidden '=SUM(A2:A4,B2:B4,C2:C4,あ' [A2:A4 #326ac7, B2:B4 #c0353e, C2:C4 #8157b7]
+       bar: '=SUM(A2:A4,B2:B4,C2:C4,あ'
+       list: (empty)
+       drawn: 0 point(s), 3 outline(s)
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'あ'@cell; input insertCompositionText 'あ' composing
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 89.33333587646484 of scrollWidth 188 (clientWidth 99), caret at 24 of 24
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 92.66666412353516 of scrollWidth 176 (clientWidth 83), caret at 24 of 24
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A2:A4: saturated none, darkest None; B2:B4: saturated none, darkest #000000; C2:C4: saturated none, darkest #000000; (the whole field): saturated #0078d7:376, #50a2e4:146, darkest #000000
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A2:A4: saturated none, darkest None; B2:B4: saturated none, darkest #3d3d3d; C2:C4: saturated none, darkest #3d3d3d; (the whole field): saturated #594ae2:248, #8378ea:124, #3c3298:123, darkest #3d3d3d
+  -- escape: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=SUM(A2:A4,B2:B4,C2:C4,' caret [23, 23]
+       layer: shown '=SUM(A2:A4,B2:B4,C2:C4,' [A2:A4 #326ac7, B2:B4 #c0353e, C2:C4 #8157b7]
+       bar: '=SUM(A2:A4,B2:B4,C2:C4,'
+       list: (empty)
+       drawn: 0 point(s), 3 outline(s)
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: keydown Process composing@cell; update ''@cell; input insertCompositionText None composing; end ''@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 75.33333587646484 of scrollWidth 174 (clientWidth 99), caret at 23 of 23
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 78.66666412353516 of scrollWidth 162 (clientWidth 83), caret at 23 of 23
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A2:A4: saturated #0078d7:28, #7198d8:14, #4779cd:9, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; C2:C4: saturated #8157b7:26, #ab8fcf:24, #875fba:19, darkest #8157b7; (the whole field): saturated #0078d7:376, #50a2e4:146, #c44149:41, darkest #0d0d0d
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A2:A4: saturated none, darkest #b4c8e8; B2:B4: saturated #be353e:26, #bc343d:15, #b9333c:14, darkest #ac3038; C2:C4: saturated #7e55b3:14, #8056b6:14, #aa8ecd:7, darkest #744ea4; (the whole field): saturated #594ae2:248, #8378ea:124, #3c3298:123, darkest #444444
+  -- ime-off: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=SUM(A2:A4,B2:B4,C2:C4,' caret [23, 23]
+       layer: shown '=SUM(A2:A4,B2:B4,C2:C4,' [A2:A4 #326ac7, B2:B4 #c0353e, C2:C4 #8157b7]
+       bar: '=SUM(A2:A4,B2:B4,C2:C4,'
+       list: (empty)
+       drawn: 0 point(s), 3 outline(s)
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: (none)
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 75.33333587646484 of scrollWidth 174 (clientWidth 99), caret at 23 of 23
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 78.66666412353516 of scrollWidth 162 (clientWidth 83), caret at 23 of 23
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A2:A4: saturated #0078d7:28, #7198d8:14, #4779cd:9, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; C2:C4: saturated #8157b7:26, #ab8fcf:24, #875fba:19, darkest #8157b7; (the whole field): saturated #0078d7:376, #50a2e4:146, #c44149:41, darkest #0d0d0d
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A2:A4: saturated none, darkest #b4c8e8; B2:B4: saturated #be353e:26, #bc343d:15, #b9333c:14, darkest #ac3038; C2:C4: saturated #7e55b3:14, #8056b6:14, #aa8ecd:7, darkest #744ea4; (the whole field): saturated #594ae2:248, #8378ea:124, #3c3298:123, darkest #444444
+  -- down: the same in all 12
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D11
+       cell: '=SUM(A2:A4,B2:B4,C2:C4,D11' caret [26, 26]
+       layer: shown '=SUM(A2:A4,B2:B4,C2:C4,D11' [A2:A4 #326ac7, B2:B4 #c0353e, C2:C4 #8157b7, D11 #007c20]
+       bar: '=SUM(A2:A4,B2:B4,C2:C4,D11'
+       drawn: 1 point(s), 4 outline(s)
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown ArrowDown@cell
+       cell scroll [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 100 of scrollWidth 199 (clientWidth 99), caret at 26 of 26
+       cell scroll [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 103.33333587646484 of scrollWidth 187 (clientWidth 83), caret at 26 of 26
+       pixels [sheet-wasm-chrome, sheet-wasm-msedge, sheet-server-chrome, sheet-server-msedge, sheet-server-150-chrome, sheet-server-150-msedge]: A2:A4: saturated none, darkest None; B2:B4: saturated #0078d7:28, #c44149:25, #e09da1:23, darkest #c0353e; C2:C4: saturated #8157b7:26, #ab8fcf:24, #875fba:19, darkest #8157b7; D11: saturated none, darkest #003600; (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #101010
+       pixels [mud-wasm-chrome, mud-wasm-msedge, mud-server-chrome, mud-server-msedge, mud-server-150-chrome, mud-server-150-msedge]: A2:A4: saturated none, darkest None; B2:B4: saturated #c0353e:57, #d88187:13, #d67b81:11, darkest #c0353e; C2:C4: saturated #8157b7:53, #8258b8:18, #ab8fcf:16, darkest #8157b7; D11: saturated none, darkest #003600; (the whole field): saturated #594ae2:372, #8378ea:124, #c0353e:57, darkest #003600
+  D10's Entry afterwards: ''
+=== i10a: i10, i1 at a typist's pace: the IME on, then kana, Space, Enter, Enter, 150 ms apart. Reading: as at 0 ms; no key lost or doubled
+  -- ime-on: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Unidentified@sheet:div.ex-grid
+  -- typed: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D12
+       Name Box: D12
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width
+       events [sheet-server-150-chrome]: keydown k@sheet:div.ex-grid; keydown a@sheet:div.ex-grid; input None None; keydown n@cell; input insertText 'n'; keydown a@cell; input insertText 'a'; keydown  @cell; input insertText ' '; keydown Enter@cell; keydown Enter@cell
+       events [mud-server-150-chrome]: keydown k@sheet:div.ex-grid; keydown a@sheet:div.ex-grid; keydown n@sheet:div.ex-grid; input None None; input None None; keydown a@cell; input insertText 'a'; keydown  @cell; input insertText ' '; keydown Enter@cell; keydown Enter@sheet:div.ex-grid
+       events [sheet-server-150-msedge]: keydown k@sheet:div.ex-grid; keydown a@sheet:div.ex-grid; keydown n@sheet:div.ex-grid; input None None; input None None; keydown a@cell; input insertText 'a'; keydown  @cell; input insertText ' '; keydown Enter@cell; keydown Enter@cell
+       events [mud-server-150-msedge]: keydown k@sheet:div.ex-grid; keydown a@sheet:div.ex-grid; keydown n@cell; input None None; input None None; keydown a@cell; input insertText 'a'; keydown  @cell; input insertText ' '; keydown Enter@cell; keydown Enter@cell
+  -- later: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D12
+       Name Box: D12
+       bar: ''
+       D10: 'kana '
+       IME: open=False hiragana, full-width
+       events: (none)
+  D10's Entry afterwards: 'kana '
+=== i10ax: i10, i1x at a typist's pace: F2, the IME on, then kana, Space, Enter, Enter, 150 ms apart. Reading: as at 0 ms; no key lost or doubled
+  -- f2: the same in all 4
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown F2@sheet:div.ex-grid
+       cell scroll [sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #0078d7
+       pixels [mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #594ae2
+  -- ime-on: the same in all 4
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '' caret [0, 0]
+       layer: shown ''
+       bar: ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:230, #afd4f2:146, #50a2e4:146, darkest #0078d7
+       pixels [mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:372, #8277e9:124, darkest #594ae2
+  -- typed: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'かな'
+       IME: open=True hiragana, full-width
+       events: keydown Process@cell; start ''@cell; update 'ｋ'@cell; input insertCompositionText 'ｋ' composing; keydown Process composing@cell; update 'か'@cell; input insertCompositionText 'か' composing; keydown Process composing@cell; update 'かｎ'@cell; input insertCompositionText 'かｎ' composing; keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing; keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing; keydown Process composing@cell; update 'かな'@cell; input insertCompositionText 'かな' composing; end 'かな'@cell; keydown Enter@cell
+  -- later: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'かな'
+       IME: open=True hiragana, full-width
+       events: (none)
+  D10's Entry afterwards: 'かな'
+=== i10b: i10, i4 at a typist's pace: the IME on, a press on D10, a press into the bar's end, the IME on again, then kana, Space, Enter, Enter, 150 ms apart. Reading: as at 0 ms; no key lost or doubled
+  -- ime-on: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D10
+       Name Box: D10
+       bar: ''
+       D10: ''
+       IME: open=False hiragana, full-width
+       events: keydown Unidentified@sheet:div.ex-grid
+  -- into-bar: the same in all 4
+       keyboard: sheet:bar
+       edit: open
+       Focus: D10
+       Name Box: D10
+       bar: '' caret [0, 0]
+       layer: hidden ''
+       D10: ''
+       IME: open=True hiragana, full-width
+       events: (none)
+       cell scroll [sheet-server-150-chrome, sheet-server-150-msedge]: scrollLeft 0 of scrollWidth 99 (clientWidth 99), caret at 0 of 0
+       cell scroll [mud-server-150-chrome, mud-server-150-msedge]: scrollLeft 0 of scrollWidth 83 (clientWidth 83), caret at 0 of 0
+       pixels [sheet-server-150-chrome, sheet-server-150-msedge]: (the whole field): saturated #0078d7:4766, darkest #0078d7
+       pixels [mud-server-150-chrome, mud-server-150-msedge]: (the whole field): saturated #594ae2:5472, darkest #594ae2
+  -- typed: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'かな'
+       IME: open=True hiragana, full-width
+       events: keydown Process@bar; start ''@bar; update 'ｋ'@bar; input insertCompositionText 'ｋ' composing; keydown Process composing@bar; update 'か'@bar; input insertCompositionText 'か' composing; keydown Process composing@bar; update 'かｎ'@bar; input insertCompositionText 'かｎ' composing; keydown Process composing@bar; update 'かな'@bar; input insertCompositionText 'かな' composing; keydown Process composing@bar; update 'かな'@bar; input insertCompositionText 'かな' composing; keydown Process composing@bar; update 'かな'@bar; input insertCompositionText 'かな' composing; end 'かな'@bar; keydown Enter@bar
+  -- later: the same in all 4
+       keyboard: sheet:div.ex-grid
+       edit: closed
+       Focus: D11
+       Name Box: D11
+       bar: ''
+       D10: 'かな'
+       IME: open=True hiragana, full-width
+       events: (none)
+  D10's Entry afterwards: 'かな'
+=== c1: Part C, c1: "=XLOOKUP(1,A2:A4,B2:B4,,1.0". ExSheet as decided (ADR-0058): 1 - Exact match or next larger item alone
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,1.0' caret [27, 27]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,1.0' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,1.0'
+       list: *1 - Exact match or next larger item
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input None None; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown 1@cell; input insertText '1'; keydown .@cell; input insertText '.'; keydown 0@cell; input insertText '0'
+       cell scroll: scrollLeft 100 of scrollWidth 199 (clientWidth 99), caret at 27 of 27
+       pixels: A2:A4: saturated #0078d7:28, #326ac7:19, #7198d8:15, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+=== c2: Part C, c2: "=XLOOKUP(1,A2:A4,B2:B4,,+1". ExSheet as decided (ADR-0058): the same
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,+1' caret [26, 26]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,+1' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,+1'
+       list: *1 - Exact match or next larger item
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown +@cell; input insertText '+'; keydown 1@cell; input insertText '1'
+       cell scroll: scrollLeft 98.66666412353516 of scrollWidth 198 (clientWidth 99), caret at 26 of 26
+       pixels: A2:A4: saturated #0078d7:28, #326ac7:21, #7198d8:15, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+=== c3: Part C, c3: "=XLOOKUP(1,A2:A4,B2:B4,,1 ". ExSheet as decided (ADR-0058): the same
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,1 ' caret [26, 26]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,1 ' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,1 '
+       list: *1 - Exact match or next larger item
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown 1@cell; input insertText '1'; keydown  @cell; input insertText ' '
+       cell scroll: scrollLeft 92.66666412353516 of scrollWidth 192 (clientWidth 99), caret at 26 of 26
+       pixels: A2:A4: saturated #326ac7:28, #769cda:17, #7198d8:16, darkest #326ac7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+=== c4: Part C, c4: "=XLOOKUP(1,A2:A4,B2:B4,,-0". ExSheet as decided (ADR-0058): 0 - Exact match alone
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,-0' caret [26, 26]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,-0' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,-0'
+       list: *0 - Exact match
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown -@cell; input insertText '-'; keydown 0@cell; input insertText '0'
+       cell scroll: scrollLeft 94.66666412353516 of scrollWidth 194 (clientWidth 99), caret at 26 of 26
+       pixels: A2:A4: saturated #0078d7:28, #326ac7:28, #769cda:17, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+=== c5: Part C, c5: "=XLOOKUP(1,A2:A4,B2:B4,,--1". ExSheet as decided (ADR-0058): every value, the first selected
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,--1' caret [27, 27]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,--1' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,--1'
+       list: *0 - Exact match / -1 - Exact match or next smaller item / 1 - Exact match or next larger item / 2 - Wildcard character match / 3 - Regex match
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown -@cell; input insertText '-'; keydown -@cell; input insertText '-'; keydown 1@cell; input insertText '1'
+       cell scroll: scrollLeft 100.66666412353516 of scrollWidth 200 (clientWidth 99), caret at 27 of 27
+       pixels: A2:A4: saturated #0078d7:28, #326ac7:18, #7198d8:15, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+=== c6: Part C, c6: "=XLOOKUP(1,A2:A4,B2:B4,,50%". ExSheet as decided (ADR-0058): every value, the first selected
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,50%' caret [27, 27]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,50%' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,50%'
+       list: *0 - Exact match / -1 - Exact match or next smaller item / 1 - Exact match or next larger item / 2 - Wildcard character match / 3 - Regex match
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown 5@cell; input insertText '5'; keydown 0@cell; input insertText '0'; keydown Shift@cell; keydown %@cell; input insertText '%'
+       cell scroll: scrollLeft 108 of scrollWidth 207 (clientWidth 99), caret at 27 of 27
+       pixels: A2:A4: saturated #0078d7:28, #326ac7:17, #7198d8:14, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+=== c7: Part C, c7: "=XLOOKUP(1,A2:A4,B2:B4,,(". ExSheet as decided (ADR-0058): nothing
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,(' caret [25, 25]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,(' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,('
+       list: (empty)
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown (@cell; input insertText '('
+       cell scroll: scrollLeft 86 of scrollWidth 185 (clientWidth 99), caret at 25 of 25
+       pixels: A2:A4: saturated #326ac7:35, #769cda:22, #7198d8:16, darkest #326ac7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #090909
+  D10's Entry afterwards: ''
+=== c8: Part C, c8: "=XLOOKUP(1,A2:A4,B2:B4,,(A". ExSheet as decided (ADR-0058): the functions beginning with A
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,(A' caret [26, 26]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,(A' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,(A'
+       list: *AVERAGE
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown (@cell; input insertText '('; keydown Shift@cell; keydown A@cell; input insertText 'A'
+       cell scroll: scrollLeft 94.66666412353516 of scrollWidth 194 (clientWidth 99), caret at 26 of 26
+       pixels: A2:A4: saturated #0078d7:28, #326ac7:28, #769cda:17, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+=== c9: Part C, c9: "=XLOOKUP(1,A2:A4,B2:B4,,Positions[". ExSheet as decided (ADR-0058): the table's columns
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[' caret [34, 34]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,Positions[' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,Positions['
+       list: *Id / Book / PV
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown o@cell; input insertText 'o'; keydown s@cell; input insertText 's'; keydown i@cell; input insertText 'i'; keydown t@cell; input insertText 't'; keydown i@cell; input insertText 'i'; keydown o@cell; input insertText 'o'; keydown n@cell; input insertText 'n'; keydown s@cell; input insertText 's'; keydown [@cell; input insertText '['
+       cell scroll: scrollLeft 140.6666717529297 of scrollWidth 240 (clientWidth 99), caret at 34 of 34
+       pixels: A2:A4: saturated none, darkest None; B2:B4: saturated #0078d7:28, #c44149:25, #e09da1:23, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:25, #e09da1:23, darkest #000000
+  D10's Entry afterwards: ''
+=== c10: Part C, c10: "=XLOOKUP(1,A2:A4,B2:B4,,Positions[Id]". ExSheet as decided (ADR-0058): every value, the first selected
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[Id]' caret [37, 37]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,Positions[Id]' [A2:A4 #326ac7, B2:B4 #c0353e, Positions[Id] #8157b7]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,Positions[Id]'
+       list: *0 - Exact match / -1 - Exact match or next smaller item / 1 - Exact match or next larger item / 2 - Wildcard character match / 3 - Regex match
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown o@cell; input insertText 'o'; keydown s@cell; input insertText 's'; keydown i@cell; input insertText 'i'; keydown t@cell; input insertText 't'; keydown i@cell; input insertText 'i'; keydown o@cell; input insertText 'o'; keydown n@cell; input insertText 'n'; keydown s@cell; input insertText 's'; keydown [@cell; input insertText '['; keydown Shift@cell; keydown I@cell; input insertText 'I'; keydown d@cell; input insertText 'd'; keydown ]@cell; input insertText ']'
+       cell scroll: scrollLeft 157.3333282470703 of scrollWidth 256 (clientWidth 99), caret at 37 of 37
+       pixels: A2:A4: saturated none, darkest None; B2:B4: saturated #0078d7:28, #c0353e:1, #e09da1:1, darkest #c0353e; Positions[Id]: saturated #8157b7:65, #8e68be:52, #875fba:51, darkest #8157b7; (the whole field): saturated #0078d7:376, #8157b7:65, #8e68be:52, darkest #101010
+  D10's Entry afterwards: ''
+=== c11: Part C, c11: "=XLOOKUP(1,A2:A4,B2:B4,,(1)". ExSheet as decided (ADR-0058): every value, the first selected
+  -- typed: the same in all 1
+       keyboard: sheet:cell
+       edit: open
+       Focus: D10
+       Name Box: D10
+       cell: '=XLOOKUP(1,A2:A4,B2:B4,,(1)' caret [27, 27]
+       layer: shown '=XLOOKUP(1,A2:A4,B2:B4,,(1)' [A2:A4 #326ac7, B2:B4 #c0353e]
+       bar: '=XLOOKUP(1,A2:A4,B2:B4,,(1)'
+       list: *0 - Exact match / -1 - Exact match or next smaller item / 1 - Exact match or next larger item / 2 - Wildcard character match / 3 - Regex match
+       drawn: 0 point(s), 2 outline(s)
+       D10: ''
+       IME: open=False hiragana, half-width
+       events: keydown =@sheet:div.ex-grid; keydown Shift@cell; keydown X@cell; input insertText 'X'; keydown Shift@cell; keydown L@cell; input insertText 'L'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown O@cell; input insertText 'O'; keydown Shift@cell; keydown K@cell; input insertText 'K'; keydown Shift@cell; keydown U@cell; input insertText 'U'; keydown Shift@cell; keydown P@cell; input insertText 'P'; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown A@cell; input insertText 'A'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 2@cell; input insertText '2'; keydown Shift@cell; keydown :@cell; input insertText ':'; keydown Shift@cell; keydown B@cell; input insertText 'B'; keydown 4@cell; input insertText '4'; keydown ,@cell; input insertText ','; keydown ,@cell; input insertText ','; keydown Shift@cell; keydown (@cell; input insertText '('; keydown 1@cell; input insertText '1'; keydown Shift@cell; keydown )@cell; input insertText ')'
+       cell scroll: scrollLeft 97.33333587646484 of scrollWidth 197 (clientWidth 99), caret at 27 of 27
+       pixels: A2:A4: saturated #0078d7:28, #326ac7:24, #769cda:16, darkest #0078d7; B2:B4: saturated #c44149:41, #c0353e:39, #e09da1:32, darkest #c0353e; (the whole field): saturated #0078d7:376, #c44149:41, #c0353e:39, darkest #000000
+  D10's Entry afterwards: ''
+
+131 of 133 states read the same in every configuration that ran them.
+
+Console messages per record:
+  sheet-wasm-chrome (153.0.8010.54): info: Debugging hotkey: Shift+Alt+D (when application has focus) x1
+  mud-wasm-chrome (153.0.8010.54): info: Debugging hotkey: Shift+Alt+D (when application has focus) x1
+  sheet-wasm-msedge (154.0.4258.48): info: Debugging hotkey: Shift+Alt+D (when application has focus) x1
+  mud-wasm-msedge (154.0.4258.48): info: Debugging hotkey: Shift+Alt+D (when application has focus) x1
+  sheet-server-chrome (153.0.8010.54): info: [2026-10-01T21:06:40.714Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'. x1; info: [2026-10-01T21:06:40.729Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=d35jaA x1
+  mud-server-chrome (153.0.8010.54): info: [2026-10-01T21:08:29.824Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'. x1; info: [2026-10-01T21:08:29.830Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=kLPIa7 x1
+  sheet-server-msedge (154.0.4258.48): info: [2026-10-01T21:10:19.078Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'. x1; info: [2026-10-01T21:10:19.091Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=VkFT7c x1
+  mud-server-msedge (154.0.4258.48): info: [2026-10-01T21:12:08.871Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'. x1; info: [2026-10-01T21:12:08.897Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=LcNunz x1
+  sheet-server-150-chrome (153.0.8010.54): info: [2026-10-01T21:13:58.688Z] Information: Normalizing '_blazor' to 'http://localhost:5298/_blazor'. x1; info: [2026-10-01T21:13:58.708Z] Information: WebSocket connected to ws://localhost:5298/_blazor?id=8pQMMs x1
+  mud-server-150-chrome (153.0.8010.54): info: [2026-10-01T21:17:02.942Z] Information: Normalizing '_blazor' to 'http://localhost:5298/_blazor'. x1; info: [2026-10-01T21:17:02.950Z] Information: WebSocket connected to ws://localhost:5298/_blazor?id=teX2Yd x1
+  sheet-server-150-msedge (154.0.4258.48): info: [2026-10-01T21:20:07.486Z] Information: Normalizing '_blazor' to 'http://localhost:5298/_blazor'. x1; info: [2026-10-01T21:20:07.496Z] Information: WebSocket connected to ws://localhost:5298/_blazor?id=v-aJxN x1
+  mud-server-150-msedge (154.0.4258.48): info: [2026-10-01T21:23:12.413Z] Information: Normalizing '_blazor' to 'http://localhost:5298/_blazor'. x1; info: [2026-10-01T21:23:12.440Z] Information: WebSocket connected to ws://localhost:5298/_blazor?id=mzPHBA x1
+  partc-sheet-wasm-chrome (153.0.8010.54): info: Debugging hotkey: Shift+Alt+D (when application has focus) x1
+
+The keyboard per record (before, set, after):
+  sheet-wasm-chrome: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  mud-wasm-chrome: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  sheet-wasm-msedge: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  mud-wasm-msedge: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  sheet-server-chrome: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  mud-server-chrome: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  sheet-server-msedge: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  mud-server-msedge: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  sheet-server-150-chrome: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  mud-server-150-chrome: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  sheet-server-150-msedge: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  mud-server-150-msedge: ok layout 0x08090809 | ok japanese was=0x08090809 now=0x04110411 | ok english was=0x04110411 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809
+  partc-sheet-wasm-chrome: ok layout 0x08090809 | ok english was=0x08090809 now=0x08090809 | ok english was=0x08090809 now=0x08090809 | ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809

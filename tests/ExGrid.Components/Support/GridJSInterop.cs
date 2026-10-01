@@ -15,24 +15,26 @@ internal sealed class GridJSInterop
     internal const string ModulePath = "./_content/ExGrid/ex-grid.js";
 
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
-    private readonly JSRuntimeInvocationHandler _blur;
+    private readonly JSRuntimeInvocationHandler _releaseTab;
     private BunitJSModuleInterop? _module;
     private BunitContext _context = default!;
     private BunitJSModuleInterop? _handle;
 
     private GridJSInterop(
         JSRuntimeInvocationHandler<ScrollOffset> offset,
-        JSRuntimeInvocationHandler blur,
+        JSRuntimeInvocationHandler releaseTab,
         JSRuntimeInvocationHandler dispose)
     {
         _offset = offset;
-        _blur = blur;
+        _releaseTab = releaseTab;
         Dispose = dispose;
     }
 
-    /// <summary>How many times Escape's Leave has released the grid's focus — the way
-    /// "the grid was not blurred" is observable without a browser (ADR-0012).</summary>
-    internal int BlurCount => _blur.Invocations.Count;
+    /// <summary>How many times Escape's Leave has told the gate to release Tab — the way "the
+    /// grid kept Tab" is observable without a browser (ADR-0012, rewritten 2026-10-01). The
+    /// handle has no blur any more: DOM focus stays on the root, and a call to one fails the
+    /// strict stub.</summary>
+    internal int TabReleases => _releaseTab.Invocations.Count;
 
     /// <summary>The handle's own dispose — asserted by the teardown test (ADR-0018).</summary>
     internal JSRuntimeInvocationHandler Dispose { get; }
@@ -93,8 +95,8 @@ internal sealed class GridJSInterop
         // A re-anchoring write, conditional on where the browser stands (ADR-0028/0053):
         // written, unless a test says the browser has moved.
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        var blur = handle.SetupVoid("blur");
-        blur.SetVoidResult();
+        var releaseTab = handle.SetupVoid("releaseTab");
+        releaseTab.SetVoidResult();
 
         // The Cell Editor's mode reaching the key gate (ADR-0010). The tests drive
         // OnKeyAsync directly, so the mode only has to be accepted here.
@@ -155,7 +157,7 @@ internal sealed class GridJSInterop
         focusEditor.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
-        return new GridJSInterop(offset, blur, dispose)
+        return new GridJSInterop(offset, releaseTab, dispose)
         {
             _context = context,
             _module = module,

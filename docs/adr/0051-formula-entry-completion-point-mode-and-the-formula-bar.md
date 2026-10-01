@@ -80,7 +80,10 @@ focused cell's full value at all times. The same role as Excel's formula bar".
   still the grid's ([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)). The bar
   gives it somewhere else to be seen.
 - **Typing an address into the Name Box** moves the Selection and the Focus there. The Consumer
-  resolves the text to a position and asks the grid to place them (ADR-0050, item 4).
+  resolves the text to a position and asks the grid to place them (ADR-0050, item 4). **A press
+  into the Name Box selects its text**, as Excel's does, so what is typed replaces the address
+  shown *(decided with the user, 2026-10-01: the fifteenth Windows run found ExSheet's caret left
+  after `D10`, and a composition appended to it; ticket 78)*.
 - **Its height is geometry, resolved in C#** with the rest of the Grid Metrics
   ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)), and the rows take
   what it leaves. A Consumer that does not switch it on gets no band.

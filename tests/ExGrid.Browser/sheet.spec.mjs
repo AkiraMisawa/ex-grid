@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
@@ -217,6 +217,114 @@ test('SH-18/DC-11: the Name Box pressed with an edit open commits it, then navig
     await page.keyboard.press('Enter');
     await expect(cell(grid, 'F3')).toHaveText('1');
 });
+
+// A press into the Name Box selects its text, as Excel's does, so what is typed replaces the
+// address shown (ADR-0051, decided with the user 2026-10-01; ticket 78). The fifteenth Windows run
+// (i7) found the caret left after `D10`, and an IME's composition appended to it: `D10かな`. Only
+// the press that gives the Name Box the keyboard selects; one into it while it holds the keyboard
+// is the field's own. Under both Chromes: the built-in input, and ExGrid.MudBlazor's control inside
+// the core's box.
+const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`ticket 78 under the ${chrome} Chrome`, () => {
+        test.beforeEach(async ({ page }) => {
+            if (chrome !== 'builtin') {
+                await openSheet(page, chrome);
+            }
+        });
+
+        test('ticket 78/ADR-0051: a press into the Name Box selects its text, B2 typed replaces it and Enter goes there; a second press places the caret', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+
+            await nameBox(grid).click();
+
+            await expect(nameBox(grid)).toBeFocused();
+            await expect.poll(() => selectionOf(nameBox(grid))).toEqual([0, 3]);
+            await page.keyboard.type('B');
+            await expect(nameBox(grid)).toHaveValue('B');
+            await page.keyboard.type('2');
+            await expect(nameBox(grid)).toHaveValue('B2');
+            await page.keyboard.press('Enter');
+            await expectFocusAt(grid, 'B2');
+            await expect(grid).toBeFocused();
+
+            // A second press, into the Name Box that holds the keyboard, places the caret where it
+            // lands: here past the text's end.
+            await nameBox(grid).click();
+            await expect.poll(() => selectionOf(nameBox(grid))).toEqual([0, 2]);
+            const box = await nameBox(grid).boundingBox();
+            await nameBox(grid).click({ position: { x: box.width - 4, y: box.height / 2 } });
+            await expect.poll(() => selectionOf(nameBox(grid))).toEqual([2, 2]);
+            // Escape still gives the keyboard back, the Focus where it was.
+            await page.keyboard.press('Escape');
+            await expect(grid).toBeFocused();
+            await expectFocusAt(grid, 'B2');
+        });
+
+        test('ticket 78/ADR-0051: the commit a press into the Name Box makes renames it, and what is typed replaces the new name; a Reject still takes the keyboard back', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'F2');
+            await page.keyboard.type('=1+');
+            await expect(editor(grid)).toHaveValue('=1+');
+            await page.keyboard.press('ArrowDown');
+            await expect(editor(grid)).toHaveValue('=1+F3');
+            await expect(nameBox(grid)).toHaveValue('F3');
+
+            // The press selects F3; its commit names the Focus, F2, over that selection.
+            await nameBox(grid).click();
+
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'F2')).toHaveText('1');
+            await expect(nameBox(grid)).toHaveValue('F2');
+            await expect(nameBox(grid)).toBeFocused();
+            await page.keyboard.type('B');
+            await expect(nameBox(grid)).toHaveValue('B');
+            await page.keyboard.type('2');
+            await expect(nameBox(grid)).toHaveValue('B2');
+            await page.keyboard.press('Enter');
+            await expectFocusAt(grid, 'B2');
+
+            // A Formula that cannot be read is Rejected on the press: the keyboard goes back to the
+            // edit, and what is typed lands in the Formula (ADR-0050, fourth round; ADR-0021).
+            await pressCell(grid, 'F3');
+            await page.keyboard.type('=SUM(');
+            await expect(editor(grid)).toHaveValue('=SUM(');
+            await nameBox(grid).click();
+            await expect(editor(grid)).toBeFocused();
+            await typeSteadily(page, editor(grid), '1)');
+            await expect(editor(grid)).toHaveValue('=SUM(1)');
+            await page.keyboard.press('Enter');
+            await expect(cell(grid, 'F3')).toHaveText('1');
+        });
+
+        // On a circuit the Name Box's press is not held among the keys, so the render answering the
+        // row press before it lands after the press and writes its name over the selection.
+        test('ticket 78/ADR-0051: on a 150 ms circuit, a render that renames the Name Box after the press leaves what is typed replacing the name', async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly has no round trip: the row press is answered before the Name Box is pressed');
+            const grid = sheet(page);
+            await pressCell(grid, 'F2');
+            await setRoundTrip(150);
+            // No wait for anything: the press into the Name Box follows the row press as a user's does.
+            await clickCell(grid, 'F8');
+            await nameBox(grid).click();
+            await expect(nameBox(grid)).toHaveValue('F8');
+            // Every round trip has landed — the renames, and the row's hand-back, which leaves the
+            // Name Box its keyboard (ADR-0021).
+            await page.waitForTimeout(600);
+            await expect(nameBox(grid)).toBeFocused();
+
+            await page.keyboard.type('D');
+            await expect(nameBox(grid)).toHaveValue('D');
+            await page.keyboard.type('4');
+            await expect(nameBox(grid)).toHaveValue('D4');
+            await page.keyboard.press('Enter');
+            await expectFocusAt(grid, 'D4');
+            await setRoundTrip(0);
+        });
+    });
+}
 
 // Home and End in Caret move the caret, in the Cell Editor and in the Formula Bar (ADR-0010). On
 // macOS the browser binds them to scrolling the document instead, and PageUp and PageDown to
@@ -620,3 +728,81 @@ test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the exte
     await expectFocusAt(grid, 'A1');
     expect(await count()).toBeLessThanOrEqual(atTop + 20);
 });
+
+// KB-8 (ADR-0012, rewritten 2026-10-01; ticket 77): Escape with nothing left to dismiss releases Tab
+// and keeps DOM focus. The fifteenth Windows run's case i2: an edit opened by a character on D10,
+// Escape, Escape, and the second sent the keyboard to body while D10 still looked selected. Under
+// both Chromes: the Chrome draws the Cell Editor, the core decides the keys (ADR-0010).
+for (const chrome of ['builtin', 'mud']) {
+    test(`KB-8 under the ${chrome} Chrome: a character, Escape, Escape, a character opens an edit in the selected cell`, async ({ page }) => {
+        if (chrome !== 'builtin') {
+            await openSheet(page, chrome);
+        }
+        const grid = sheet(page);
+        await pressCell(grid, 'D10');
+        await page.keyboard.type('k');
+        await expect(editor(grid)).toHaveValue('k');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+
+        // Read once the second Escape's answer has long landed: the keyboard left a round trip
+        // after it on the Server host.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        await expect(grid).toBeFocused();
+        await expectFocusAt(grid, 'D10');
+
+        await page.keyboard.type('x');
+        await expect(editor(grid)).toHaveValue('x');
+        await expect(editor(grid)).toBeFocused();
+        await expect(grid).toHaveAttribute('aria-activedescendant', /-r9c3$/);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'D10')).toHaveText('');
+        await expectFocusAt(grid, 'D10');
+    });
+
+    test(`KB-8 under the ${chrome} Chrome: after Escape and an arrow, or a press, Tab cycles; after Escape alone it leaves the Sheet`, async ({ page }) => {
+        if (chrome !== 'builtin') {
+            await openSheet(page, chrome);
+        }
+        const grid = sheet(page);
+        // Something focusable straight after the Sheet, which the page's own markup holds;
+        // alterPage takes it out as the test ends (ADR-0056).
+        await alterPage(page, () => {
+            const after = document.createElement('button');
+            after.id = 'after-sheet';
+            after.textContent = 'after';
+            document.querySelector('.ex-grid:has(> .ex-formula-bar)').insertAdjacentElement('afterend', after);
+            return () => after.remove();
+        });
+        await pressCell(grid, 'D10');
+
+        // Any other key ends the release: the arrow moves, and Tab cycles again.
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('ArrowDown');
+        await expectFocusAt(grid, 'D11');
+        await page.keyboard.press('Tab');
+        await expectFocusAt(grid, 'E11');
+        await expect(grid).toBeFocused();
+
+        // So does a press on the grid, made once the release has landed.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        await pressCell(grid, 'E12');
+        await page.keyboard.press('Tab');
+        await expectFocusAt(grid, 'F12');
+        await expect(grid).toBeFocused();
+        await page.keyboard.press('ArrowUp');
+        await expectFocusAt(grid, 'F11');
+        await page.keyboard.press('ArrowLeft');
+        await expectFocusAt(grid, 'E11');
+
+        // A Tab typed before the Escape's answer is held and dropped (ADR-0010/0021): wait for it.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        await page.keyboard.press('Tab');
+        await expect(page.locator('#after-sheet')).toBeFocused();
+        await expectFocusAt(grid, 'E11');
+    });
+}

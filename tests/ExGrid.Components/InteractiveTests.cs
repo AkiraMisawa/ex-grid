@@ -224,7 +224,7 @@ public class InteractiveTests : GridTestContext
         Assert.Equal(CellAt(cut, 0, Review).Id, ActiveDescendant(cut));
     }
 
-    [Fact] // ADR-0037/0012 / KB-22: Escape leaves the cell, and only the next one leaves the grid
+    [Fact] // ADR-0037/0012 / KB-22 / KB-8: Escape leaves the cell, and only the next one releases Tab
     public async Task Escape_leaves_the_cell_without_releasing_the_grid()
     {
         var cut = RenderGrid();
@@ -234,11 +234,11 @@ public class InteractiveTests : GridTestContext
         await PressAsync(cut, "Escape");
 
         Assert.Empty(Chosen(cut));
-        Assert.Equal(0, Js.BlurCount);
+        Assert.Equal(0, Js.TabReleases);
         Assert.Equal(CellAt(cut, 0, Review).Id, ActiveDescendant(cut));
 
         await PressAsync(cut, "Escape");
-        Assert.Equal(1, Js.BlurCount);
+        Assert.Equal(1, Js.TabReleases);
     }
 
     [Fact] // ADR-0037 / KB-22: a pointer press leaves — even one on the Interactive cell itself
