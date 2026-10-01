@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
@@ -728,3 +728,81 @@ test('SH-2: the Focus reaches XFD1048576 and the DOM does not grow with the exte
     await expectFocusAt(grid, 'A1');
     expect(await count()).toBeLessThanOrEqual(atTop + 20);
 });
+
+// KB-8 (ADR-0012, rewritten 2026-10-01; ticket 77): Escape with nothing left to dismiss releases Tab
+// and keeps DOM focus. The fifteenth Windows run's case i2: an edit opened by a character on D10,
+// Escape, Escape, and the second sent the keyboard to body while D10 still looked selected. Under
+// both Chromes: the Chrome draws the Cell Editor, the core decides the keys (ADR-0010).
+for (const chrome of ['builtin', 'mud']) {
+    test(`KB-8 under the ${chrome} Chrome: a character, Escape, Escape, a character opens an edit in the selected cell`, async ({ page }) => {
+        if (chrome !== 'builtin') {
+            await openSheet(page, chrome);
+        }
+        const grid = sheet(page);
+        await pressCell(grid, 'D10');
+        await page.keyboard.type('k');
+        await expect(editor(grid)).toHaveValue('k');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+
+        // Read once the second Escape's answer has long landed: the keyboard left a round trip
+        // after it on the Server host.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        await expect(grid).toBeFocused();
+        await expectFocusAt(grid, 'D10');
+
+        await page.keyboard.type('x');
+        await expect(editor(grid)).toHaveValue('x');
+        await expect(editor(grid)).toBeFocused();
+        await expect(grid).toHaveAttribute('aria-activedescendant', /-r9c3$/);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'D10')).toHaveText('');
+        await expectFocusAt(grid, 'D10');
+    });
+
+    test(`KB-8 under the ${chrome} Chrome: after Escape and an arrow, or a press, Tab cycles; after Escape alone it leaves the Sheet`, async ({ page }) => {
+        if (chrome !== 'builtin') {
+            await openSheet(page, chrome);
+        }
+        const grid = sheet(page);
+        // Something focusable straight after the Sheet, which the page's own markup holds;
+        // alterPage takes it out as the test ends (ADR-0056).
+        await alterPage(page, () => {
+            const after = document.createElement('button');
+            after.id = 'after-sheet';
+            after.textContent = 'after';
+            document.querySelector('.ex-grid:has(> .ex-formula-bar)').insertAdjacentElement('afterend', after);
+            return () => after.remove();
+        });
+        await pressCell(grid, 'D10');
+
+        // Any other key ends the release: the arrow moves, and Tab cycles again.
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('ArrowDown');
+        await expectFocusAt(grid, 'D11');
+        await page.keyboard.press('Tab');
+        await expectFocusAt(grid, 'E11');
+        await expect(grid).toBeFocused();
+
+        // So does a press on the grid, made once the release has landed.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        await pressCell(grid, 'E12');
+        await page.keyboard.press('Tab');
+        await expectFocusAt(grid, 'F12');
+        await expect(grid).toBeFocused();
+        await page.keyboard.press('ArrowUp');
+        await expectFocusAt(grid, 'F11');
+        await page.keyboard.press('ArrowLeft');
+        await expectFocusAt(grid, 'E11');
+
+        // A Tab typed before the Escape's answer is held and dropped (ADR-0010/0021): wait for it.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        await page.keyboard.press('Tab');
+        await expect(page.locator('#after-sheet')).toBeFocused();
+        await expectFocusAt(grid, 'E11');
+    });
+}

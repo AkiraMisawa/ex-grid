@@ -299,8 +299,8 @@ public class FilterChromeTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Escape", false, false, false, false, false));
 
         Assert.Empty(cut.FindAll(".ex-popover"));
-        // The grid was not blurred: Escape's Leave only fires with nothing to dismiss.
-        Assert.False(Js.BlurCount > 0);
+        // Tab was not released: Escape's Leave only fires with nothing to dismiss.
+        Assert.False(Js.TabReleases > 0);
     }
 
     [Fact] // Escape works from inside the popover too: the capture listener forwards a
@@ -315,8 +315,8 @@ public class FilterChromeTests : GridTestContext
             fromDescendant: true));
 
         Assert.Empty(cut.FindAll(".ex-popover"));
-        // Reclaimed, not blurred: the way out of the popover leads back to the grid.
-        Assert.False(Js.BlurCount > 0);
+        // Reclaimed, Tab not released: the way out of the popover leads back to the grid.
+        Assert.False(Js.TabReleases > 0);
     }
 
     [Fact] // Clicking past an open popover dismisses it, as menus close everywhere else
