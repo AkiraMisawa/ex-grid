@@ -74,9 +74,27 @@ public class ObjectTests
         const long keyIndex = 4L << 18;
         const long blanks = 5L * count / 8;
         const long held = columns + keyIndex + blanks;
-        // A box for each value would be 24 bytes for each of six values a row: 14.4 MB.
-        Assert.True(allocated < held + (256 * 1024), $"The build allocated {allocated:N0} bytes for {held:N0} bytes of columns.");
+        // The build allocates what the Snapshot holds and little more (measured: 0.2% more). A box
+        // for each value would be 24 bytes for each of six values a row — 14.4 MB more, where this
+        // bound leaves room for a quarter of what is held.
+        Assert.True(allocated < held + (held / 4), $"The build allocated {allocated:N0} bytes for {held:N0} bytes of columns.");
         Assert.Equal(count, snapshot.RowCount);
+
+        // The same records through untyped accessors, which box each value, break the bound: it
+        // tells boxing apart.
+        var boxing = new SnapshotBuilder<Trade>()
+            .Column("Id", SnapshotKind.Integer, t => t.Id)
+            .Column("Desk", SnapshotKind.Text, t => t.Desk)
+            .Column("Notional", SnapshotKind.Decimal, t => t.Notional)
+            .Column("Price", SnapshotKind.Double, t => t.Price)
+            .Column("When", SnapshotKind.Date, t => t.When)
+            .Column("Live", SnapshotKind.Boolean, t => t.Live)
+            .Key("Id");
+        boxing.Build(Trades(5_000));
+        before = GC.GetAllocatedBytesForCurrentThread();
+        boxing.Build(records);
+        var boxed = GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.True(boxed > held + (held / 4), $"The boxing build allocated {boxed:N0} bytes.");
     }
 
     [Fact] // ADR-0063: the declaration is reused, and every build is a Snapshot of its own
