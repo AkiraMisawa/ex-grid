@@ -432,10 +432,18 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   open: `Home` pointed at A10, `End` turned End Mode on and wrote nothing, and Shift+→ pointed at
   `D10:E10`, each closing the list. ExSheet kept them the editor's (`Home` moved the caret to 0;
   `End` and Shift+→ did nothing, and the list stayed). So such a list takes only ↑, ↓, Tab and
-  Escape, as the tenth run found of ← and →. ExSheet has no End Mode; `End` does what Point does with
-  it today. Where Point cannot go — a list of names, or an edit in Caret — these keys stay the
-  editor's, as ← and → do there; Excel was not asked about them in a list of names, where Overwrite's
-  `Home` would commit the Formula. This replaces the third reading taken while building ticket 44.
+  Escape, as the tenth run found of ← and →. Where Point cannot go — a list of names, or an edit in
+  Caret — these keys stay the editor's, as ← and → do there; Excel was not asked about them in a list
+  of names, where Overwrite's `Home` would commit the Formula. This replaces the third reading taken
+  while building ticket 44.
+  - **At a Reference's place, `Home` points at the row's first column, and `End` writes nothing**,
+    with a list open or not *(decided with the user, Q53, while ticket 55 was built)*. Point had
+    moved an outline that stood with `Home` and `End` and started none, so with no outline they were
+    Overwrite's: a commit, which the Sheet refuses for a Formula that ends too early. Excel's `Home`
+    in Enter mode points where a Reference can go (x4) and commits where none can (the tenth run,
+    case 20); its `End` turns End Mode on and writes nothing (x5). ExSheet has no End Mode, so `End`
+    there closes a list and does nothing more. With an outline standing, both still move it, as
+    before. `Home` pointing at the last column instead was rejected for `End`: Excel writes nothing.
 - **After a press on a column header, the arrow keys point too** *(decided with the user, Q52;
   this replaces Q48's refusal)*. Excel, pointing at a whole column of another workbook (`$B:$B`, from
   its heading), went with ↓ to the column's first row of data (`$B$2`), and → from there to the next

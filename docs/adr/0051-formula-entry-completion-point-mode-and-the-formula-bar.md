@@ -273,6 +273,8 @@ not open it again on the text Tab wrote.
 
 *(Widened by Part B of the ninth Windows run, 2026-10-01, decided with the user; ADR-0058.)* Where
 Point can go, `Home`, `End` and the Shift+arrows do the same: they close the list and do what Point
-does with them, as Excel's do in Enter mode. Elsewhere they stay the editor's. A value list opens only
+does with them, as Excel's do in Enter mode. Elsewhere they stay the editor's. Where a Reference can
+go and no outline stands, `Home` starts pointing at the row's first column and `End` writes nothing,
+list or no list (Q53); they had started nothing, and fell to Overwrite's commit. A value list opens only
 while nothing of the argument stands after the caret: with the caret before a value, Excel lists
 nothing.

@@ -88,7 +88,8 @@ Once tickets 55–57 say `Status: done` on `claude/exsheet-ninth-run-b`. As Part
 | b1 | `/sheet` | `=XLOOKUP(1,A2:A4,B2:B4,,1)`, F2, ←←, then Tab | no list after ←←; Tab commits and moves to E10 (Q49) |
 | b2 | `/sheet` | `=XLOOKUP(1,A2:A4,B2:B4,,-1)`, F2, ←, then Tab | no list; Tab commits (Q49, the caret inside a value) |
 | b3 | `/sheet` | `=XLOOKUP(1,A2:A4,B2:B4,,`, then `Home` | the list closes; `A10` is pointed at and written (Q51) |
-| b4 | `/sheet` | as b3, then `End` instead | the list closes; record what is written and pointed at (Q51) |
+| b4 | `/sheet` | as b3, then `End` instead | the list closes; nothing is written, and the edit stays open (Q53) |
+| b4a | `/sheet` | `=SUM(`, then `Home`; Escape; `=SUM(`, then `End` | `=SUM(A10`, A10 pointed at; then nothing written, the edit open (Q53) |
 | b5 | `/sheet` | as b3, then Shift+→ instead | the list closes; `D10:E10` is pointed at and written (Q51) |
 | b6 | `/sheet` | `=Posit`, then `Home` | the list of names: the caret moves to 0; the edit stays open (Q51, unchanged) |
 | b7 | `/pointing` | `=`, a press on PV's header, ↓, ↓ | `=XLOOKUP("R-1", …)`, then `"R-2"`; the dashes on the cell (Q52) |

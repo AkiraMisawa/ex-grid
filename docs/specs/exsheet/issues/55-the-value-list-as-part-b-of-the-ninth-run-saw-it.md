@@ -19,9 +19,13 @@ completion tests.
 - [ ] With a list open over Point (the caret where a Reference can go, the edit not in Caret), `Home`,
       `End` and the four Shift+arrows close the list and do what Point does with them without a list:
       `=XLOOKUP(1,A2:A4,B2:B4,,` then `Home` points at A10; Shift+→ points at `D10:E10`, as Excel's
-      does. `End` does what Point does with it today; say what that is in the comments. The key
+      does. `End` closes the list and writes nothing (Q53, below). The key
       listener's gate learns it as it learns ← and → there (`completionOverPoint`); no listener is
       added and no layout is read (ADR-0021) (SH-36)
+- [ ] At a Reference's place with no outline standing, list or no list, `Home` starts pointing at the
+      row's first column (`=SUM(` then `Home` writes `A10`) and `End` writes nothing and asks for no
+      commit (ADR-0058, Q53, decided 2026-10-01 while this ticket was built). With an outline
+      standing, both move it as before (SH-36)
 - [ ] In a list of names, and with the edit in Caret, `Home`, `End` and the Shift+arrows stay the
       editor's, as today (SH-36)
 - [ ] ↑, ↓, Tab and Escape at an open list, and ← and → over Point, are unchanged (SH-36)
