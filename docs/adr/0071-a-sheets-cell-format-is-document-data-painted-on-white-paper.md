@@ -649,6 +649,16 @@ written. This section says what the run changed, and what it still left to a rea
 - **A code typed into Format Cells is a built-in only when it spells that built-in's code under the
   Sheet's culture.** Under ja-JP, `dd-mmm-yy` is built-in 15 and shows `05-1-26`. `d-mmm-yy` is a code
   of its own and shows `5-1-26`.
+  - **How the Sheet Document keeps the difference** *(ticket 103)*. It stores a Number Format as its
+    invariant code, and an invariant code that spells a built-in means that built-in. A code of its
+    own that spells one is stored with its separators escaped (`d\-mmm\-yy`). Excel reads the escaped
+    code as the same code, and writes such codes itself. Format Cells shows it as the user typed it.
+    The other way was a field that marks a code as its own, at a new document version. It keeps
+    nothing more of Excel's, so the version stays.
+  - The same rule holds under every culture. Under en-GB, `d-mmm-yy` typed into Format Cells shows
+    `5-Jan-26`, not built-in 15's `05-Jan-26`. No run has typed it there.
+  - Format Cells' Custom list and its code box spell each code in the Sheet's culture, so a Custom OK
+    never turns a built-in into a code of its own unasked.
 
 **Ticket 57's model, read from the saved files** (cases 12 to 15).
 - **Each cell records its own sides**, as read. After a paste, C2 still records its thin blue left
@@ -659,6 +669,8 @@ written. This section says what the run changed, and what it still left to a rea
   records differ (the eleventh run's case 24).
   - OK still sets only what the user touched (SH-45). Taking the shown top away clears that edge on
     both sides, as clearing an edge does. That is a reading; no run pressed it.
+  - Where both cells record a line on an outer edge, the dialog shows the one drawn, the upper or
+    left cell's (ticket 102). No run looked.
 - **Inside over whole rows sets every vertical side, A's left and XFD's right included**, and the
   lines between the rows (case 14). Excel records it as a row format: row 3 holds left, right and
   bottom, and row 4 left, right and top.
