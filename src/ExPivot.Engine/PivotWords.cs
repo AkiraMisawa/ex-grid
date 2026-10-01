@@ -6,6 +6,11 @@ namespace ExPivot.Engine;
 /// The words ExPivot paints, by id, with their English (ADR-0059). A Consumer replaces any of
 /// them through a function from id to text, returning null to keep the English. A word with
 /// <c>{0}</c> (and <c>{1}</c>) is a template: the id says what goes in it.
+///
+/// <para>The words of Excel's Japanese edition are bundled: <see cref="Japanese"/> is such a
+/// function, chosen in one line (<c>Label="PivotWords.Japanese"</c>). They never follow the
+/// culture on their own, because a screen whose language changed unasked is the surprise the
+/// family avoids (ADR-0059).</para>
 /// </summary>
 public static class PivotWords
 {
@@ -64,6 +69,27 @@ public static class PivotWords
     {
         ArgumentNullException.ThrowIfNull(id);
         return English.TryGetValue(id, out var word) ? word : null;
+    }
+
+    /// <summary>Every id this class has an English word for — what a Consumer replaces to give
+    /// ExPivot another language.</summary>
+    public static IReadOnlyCollection<string> Ids => English.Keys;
+
+    /// <summary>
+    /// The words of Excel's Japanese edition (ADR-0059): <c>行ラベル</c>, <c>総計</c>,
+    /// <c>合計 / 金額</c>, <c>(空白)</c>, <c>ピボットテーブルのフィールド</c> and every other word
+    /// ExPivot paints, with the ExGrid commands of the report's Context Menu, which ExGrid words
+    /// only in English. A function from id to word, to hand to ExPivot's <c>Label</c> — or to
+    /// <see cref="PivotOptions.Label"/> on a server — in one line. It answers null for an id it
+    /// does not know, which keeps the English.
+    /// </summary>
+    public static Func<string, string?> Japanese { get; } = JapaneseFor;
+
+    /// <summary>The Japanese edition's word for an id, or null for an id it has none for.</summary>
+    public static string? JapaneseFor(string id)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        return JapaneseWords.TryGetValue(id, out var word) ? word : null;
     }
 
     /// <summary>The word for <paramref name="id"/>: the Consumer's through
@@ -202,5 +228,196 @@ public static class PivotWords
         ["remove-named-field"] = "Remove \"{0}\"",
         ["show-field-list"] = "Show Field List",
         ["hide-field-list"] = "Hide Field List",
+
+        // The toolbar above the report and its Layout menu, Excel's Design tab (ADR-0060).
+        ["layout-menu"] = "Layout",
+        ["grand-totals"] = "Grand Totals",
+        ["report-layout"] = "Report Layout",
+        ["subtotals-do-not-show"] = "Do Not Show Subtotals",
+        ["subtotals-at-bottom"] = "Show all Subtotals at Bottom of Group",
+        ["subtotals-at-top"] = "Show all Subtotals at Top of Group",
+        ["grand-totals-off"] = "Off for Rows and Columns",
+        ["grand-totals-on"] = "On for Rows and Columns",
+        ["grand-totals-rows-only"] = "On for Rows Only",
+        ["grand-totals-columns-only"] = "On for Columns Only",
+        ["form-compact"] = "Show in Compact Form",
+        ["form-outline"] = "Show in Outline Form",
+        ["form-tabular"] = "Show in Tabular Form",
+        ["repeat-item-labels"] = "Repeat All Item Labels",
+        ["do-not-repeat-item-labels"] = "Do Not Repeat Item Labels",
+        ["refresh"] = "Refresh",
+        ["field-list-toggle"] = "Field List",
+
+        // Asking the Pivot Source, Defer Layout Update and the caps (ADR-0060/0065).
+        ["loading"] = "Loading…",
+        ["defer-layout-update"] = "Defer Layout Update",
+        ["update"] = "Update",
+        ["refused-too-many-cells"] = "This layout needs more than {0} cells.",
+        ["refused-too-many-rows"] = "This layout needs more than {0} rows.",
+        ["refused-too-many-columns"] = "This layout needs more than {0} columns.",
+        ["aggregation-not-offered"] = "The source does not answer {0}.",
+        ["source-failed"] = "The source could not answer: {0}",
+        ["source-refused"] = "The source refused to answer: {0}",
+        ["data-changed"] = "The data has changed — refresh.",
+
+        // Show Details: the tabs at the report's foot and the dialog (ADR-0058).
+        ["details-title"] = "Details: {0}",
+        ["report-tab"] = "PivotTable",
+        ["sheets"] = "Sheets",
+        ["close-tab"] = "Close {0}",
+        ["close"] = "Close",
+    };
+
+    // The words of Excel's Japanese edition (ADR-0059), for every id above, and for the ExGrid
+    // commands in the report's Context Menu (copy, copy-with-headers), which ExGrid words only
+    // in English. Where Excel shows the words, they are Excel's; where ExPivot paints something
+    // Excel has no counterpart for (a refusal, a tab's close button), they are written in the
+    // same register.
+    private static readonly Dictionary<string, string> JapaneseWords = new(StringComparer.Ordinal)
+    {
+        [RowLabels] = "行ラベル",
+        [Values] = "値",
+        [GrandTotal] = "総計",
+        [ItemTotal] = "{0} 集計",
+        [TotalOf] = "全体の {0}",
+        [ItemValue] = "{0} {1}",
+        [Blank] = "(空白)",
+        [All] = "(すべて)",
+        [MultipleItems] = "(複数のアイテム)",
+        [ValuesPseudoField] = "Σ 値",
+
+        ["aggregation-sum"] = "合計",
+        ["aggregation-count"] = "データの個数",
+        ["aggregation-average"] = "平均",
+        ["aggregation-max"] = "最大",
+        ["aggregation-min"] = "最小",
+        ["aggregation-product"] = "積",
+        ["aggregation-count-numbers"] = "数値の個数",
+        ["aggregation-stddev"] = "標本標準偏差",
+        ["aggregation-stddevp"] = "標準偏差",
+        ["aggregation-var"] = "標本分散",
+        ["aggregation-varp"] = "分散",
+
+        ["caption-sum"] = "合計 / {0}",
+        ["caption-count"] = "データの個数 / {0}",
+        ["caption-average"] = "平均 / {0}",
+        ["caption-max"] = "最大 / {0}",
+        ["caption-min"] = "最小 / {0}",
+        ["caption-product"] = "積 / {0}",
+        ["caption-count-numbers"] = "数値の個数 / {0}",
+        ["caption-stddev"] = "標本標準偏差 / {0}",
+        ["caption-stddevp"] = "標準偏差 / {0}",
+        ["caption-var"] = "標本分散 / {0}",
+        ["caption-varp"] = "分散 / {0}",
+
+        ["show-no-calculation"] = "計算なし",
+        ["show-percent-of-grand-total"] = "総計に対する比率",
+        ["show-percent-of-column-total"] = "列集計に対する比率",
+        ["show-percent-of-row-total"] = "行集計に対する比率",
+
+        ["field-list"] = "ピボットテーブルのフィールド",
+        ["choose-fields"] = "レポートに追加するフィールドを選択してください:",
+        ["drag-fields"] = "次のボックス間でフィールドをドラッグしてください:",
+        ["search-fields"] = "検索",
+        ["area-filters"] = "フィルター",
+        ["area-columns"] = "列",
+        ["area-rows"] = "行",
+        ["area-values"] = "値",
+        ["field-menu"] = "{0} のオプション",
+        ["filtered"] = "フィルター適用",
+        ["drop-here"] = "ここにドロップ",
+        ["move-up"] = "上へ移動",
+        ["move-down"] = "下へ移動",
+        ["move-to-beginning"] = "先頭へ移動",
+        ["move-to-end"] = "末尾へ移動",
+        ["move-to-filters"] = "レポート フィルターに移動",
+        ["move-to-rows"] = "行ラベルに移動",
+        ["move-to-columns"] = "列ラベルに移動",
+        ["move-to-values"] = "値に移動",
+        ["remove-field"] = "フィールドの削除",
+        ["field-settings"] = "フィールドの設定...",
+        ["value-field-settings"] = "値フィールドの設定...",
+        ["sort-ascending"] = "昇順",
+        ["sort-descending"] = "降順",
+        ["filter-items"] = "フィルター...",
+        ["expand-field"] = "フィールド全体の展開",
+        ["collapse-field"] = "フィールド全体の折りたたみ",
+        ["ok"] = "OK",
+        ["cancel"] = "キャンセル",
+        ["select-all"] = "(すべて選択)",
+        ["search-items"] = "検索",
+        ["too-many-items"] = "{0} 個を超えるアイテムがあります。検索して一覧を絞り込んでください。",
+        ["no-items-match"] = "一致するアイテムはありません。",
+        ["custom-name"] = "名前の指定",
+        ["summarize-by"] = "値フィールドの集計",
+        ["show-values-as"] = "計算の種類",
+        ["number-format"] = "表示形式",
+        ["number-format-general"] = "標準",
+        ["sample"] = "サンプル: {0}",
+        ["subtotals"] = "小計",
+        ["subtotals-automatic"] = "自動",
+        ["subtotals-none"] = "なし",
+        ["sort-order"] = "並べ替え",
+        ["sort-label-ascending"] = "ラベルの昇順",
+        ["sort-label-descending"] = "ラベルの降順",
+        ["sort-value-ascending"] = "{0} の昇順",
+        ["sort-value-descending"] = "{0} の降順",
+        ["refused-hides-every-item"] = "少なくとも 1 つのアイテムを選択してください。",
+        ["refused-caption-taken"] = "そのピボットテーブルのフィールド名は既に存在します。",
+        ["refused-caption-empty"] = "名前を入力してください。",
+        ["refused-number-format"] = "この表示形式は使用できません。",
+        ["empty-report"] = "レポートを作成するには、[ピボットテーブルのフィールド] リストからフィールドを選択してください。",
+        ["report-filters"] = "レポート フィルター",
+        ["filter-of"] = "{0} のフィルター",
+
+        ["expand"] = "展開",
+        ["collapse"] = "折りたたみ",
+        ["expand-item"] = "{0} を展開",
+        ["collapse-item"] = "{0} を折りたたむ",
+        ["show-details"] = "詳細の表示",
+        ["sort-smallest-to-largest"] = "昇順",
+        ["sort-largest-to-smallest"] = "降順",
+        ["remove-named-field"] = "\"{0}\" の削除",
+        ["show-field-list"] = "フィールド リストを表示する",
+        ["hide-field-list"] = "フィールド リストを表示しない",
+
+        ["layout-menu"] = "レイアウト",
+        ["grand-totals"] = "総計",
+        ["report-layout"] = "レポートのレイアウト",
+        ["subtotals-do-not-show"] = "小計を表示しない",
+        ["subtotals-at-bottom"] = "すべての小計をグループの末尾に表示する",
+        ["subtotals-at-top"] = "すべての小計をグループの先頭に表示する",
+        ["grand-totals-off"] = "行と列の集計を行わない",
+        ["grand-totals-on"] = "行と列の集計を行う",
+        ["grand-totals-rows-only"] = "行のみ集計を行う",
+        ["grand-totals-columns-only"] = "列のみ集計を行う",
+        ["form-compact"] = "コンパクト形式で表示",
+        ["form-outline"] = "アウトライン形式で表示",
+        ["form-tabular"] = "表形式で表示",
+        ["repeat-item-labels"] = "アイテムのラベルをすべて繰り返す",
+        ["do-not-repeat-item-labels"] = "アイテムのラベルを繰り返さない",
+        ["refresh"] = "更新",
+        ["field-list-toggle"] = "フィールド リスト",
+
+        ["loading"] = "読み込み中...",
+        ["defer-layout-update"] = "レイアウトの更新を保留する",
+        ["update"] = "更新",
+        ["refused-too-many-cells"] = "このレイアウトには {0} 個を超えるセルが必要です。",
+        ["refused-too-many-rows"] = "このレイアウトには {0} を超える行が必要です。",
+        ["refused-too-many-columns"] = "このレイアウトには {0} を超える列が必要です。",
+        ["aggregation-not-offered"] = "ソースは {0} に対応していません。",
+        ["source-failed"] = "ソースから応答を得られませんでした: {0}",
+        ["source-refused"] = "ソースが応答を拒否しました: {0}",
+        ["data-changed"] = "データが変更されました。更新してください。",
+
+        ["details-title"] = "詳細: {0}",
+        ["report-tab"] = "ピボットテーブル",
+        ["sheets"] = "シート",
+        ["close-tab"] = "{0} を閉じる",
+        ["close"] = "閉じる",
+
+        // ExGrid's commands in the report's Context Menu (ExGrid.Chrome.GridCommandIds).
+        ["copy"] = "コピー",
+        ["copy-with-headers"] = "見出し付きでコピー",
     };
 }
