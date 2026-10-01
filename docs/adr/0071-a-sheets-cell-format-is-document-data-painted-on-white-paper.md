@@ -562,6 +562,10 @@ every setting).
 
 Ticket 57 takes the model. Ticket 58 takes the keys' widening and the localised built-ins.
 
+**The Selection's outline over Borders** *(2026-10-01, decided with the user, ticket 49).* Excel's outline
+covers a range's outer lines on all four sides (case 11). ADR-0008's note of this date moves ours out to
+Excel's place, except beside the Headings, a Pinned Column and the header.
+
 ## Readings until the fourteenth Windows run *(2026-10-01)*
 
 Ticket 58 built the widening and the localised built-ins, and ticket 57 built the edge model. Building

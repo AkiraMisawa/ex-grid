@@ -1,6 +1,6 @@
 # 49: Borders on the Sheet, as Excel draws them
 
-Status: needs-info
+Status: ready-for-agent
 
 **What to build:** the Sheet's Borders, drawn through ADR-0050 item 15, as [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) says.
 
@@ -141,3 +141,12 @@ the user's call:
 - **The Selection's shade lies over the lines inside it**, tinting their black, as DC-59 decides
   (lines below the Selection). Excel's shade (`#C7C7C7`) left them `#000000`. They read dark, which
   is what layer 3 asserts.
+
+*(2026-10-01, orchestrator.)* **Case 11 decided with the user: (c).** The outline lies on the gridline and one
+pixel outside the range, as Excel's does. Beside the Headings, a Pinned Column and the header it stays inside, so
+UX-18 holds. ADR-0008's note of this date records it.
+- [ ] Build it, and turn the case-11 `fixme` into a test of all four sides in the open.
+- [ ] Add a test that the outline's sides keep equal widths beside the Headings, a Pinned Column and the header
+      (UX-18).
+
+DC-48 is ticket 86's.
