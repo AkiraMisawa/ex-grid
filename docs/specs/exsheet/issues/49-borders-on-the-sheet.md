@@ -207,3 +207,29 @@ DC-48 is ticket 86's.
   ExGrid.Components 1279 (one skipped), ExSheet.MudBlazor.Tests 38, ExSheet.Components.Tests 583.
 
 Part C (SH-46) is the Windows session's run by hand. The DemoHost shows its cases.
+
+2026-10-01, agent cf-48: **the lines stay on the device pixels wherever the page puts the Sheet.**
+CI (Linux, headed, `chrome-150`, the Server host) read a dotted line on D7's right as 2, 1, 3, 1 and a
+medium dash-dot-dot on D13's right as off pattern, where Excel's are 2, 2, 2, 2 and so on.
+- **The cause.** The text above the Sheet, in CI's fonts, put the grid at a fraction of a device
+  pixel. The rows' layer (`.ex-viewport`) was composited on its own (`will-change: transform`, there
+  since the first virtualisation, with no measurement behind it), so it was rasterised at that
+  fraction, and every line drawn in device pixels blended across two.
+- **Reproduced here.** The Sheet was moved a third of a CSS pixel across and down: every right-edge
+  line failed at 150%.
+- **The fix.** The layer is no longer composited. Painted with its parent, it is snapped to the
+  device pixels as any box is.
+  - Its transform still makes it the stacking context the selection layers rely on (ADR-0008).
+  - The rounding of its offset to a device pixel stays, because it is still needed: without it, 17
+    of 26 lines failed at 150% scrolled.
+- **Scrolling measured the same.** Frame intervals were within 0.2 ms at the median with and without
+  the layer, on `/wide` (slow and flung) and on `/sheet` at 100% and 150%, headless.
+- **The new test.** `sheet-borders.spec.mjs` reads the lines with the Sheet moved by a third of a
+  pixel across and down, at 100% and in `chrome-150`. Thin, thick, double, dotted and medium
+  dash-dot-dot, on a bottom and on a right edge.
+- **Results.** `sheet-borders.spec.mjs` passed 30 of 30 on the Server host in `chrome-150` and 35 of
+  35 on WebAssembly in `chrome`; `selection-look.spec.mjs` passed 15 of 15. Layers 1 and 2:
+  ExGrid.Tests 1001, ExSheet.Engine.Tests 2333, ExGrid.MudBlazor.Tests 168, ExGrid.Components 1293
+  (one skipped), ExSheet.MudBlazor.Tests 43, ExSheet.Components.Tests 592.
+- ADR-0053's note of this date says the viewport is composited; that sentence is now out of date.
+

@@ -8577,11 +8577,13 @@
         // reveal is writing in this same render (ADR-0012): compressed, where the rows stand
         // depends on it and not only on the slice (ADR-0053); otherwise this is the first
         // painted row's own offset, as it always was. Rounded to the nearest device pixel
-        // (--ex-dp, ex-grid.css): compressed, the slice stands at a fraction of one, and the
-        // layer (will-change: transform) is then composited there, resampled, so a cell's line
-        // drawn in device pixels blends across two (DC-59, the eleventh Windows run's case 9 at
-        // 150%). Rows, the selection layers and the editor all stand in this layer, so they move
-        // together; a popover placed from the unrounded offset lies under a device pixel away.
+        // (--ex-dp, ex-grid.css): compressed, the slice stands at a fraction of one, and is
+        // painted there, so a cell's line drawn in device pixels blends across two (DC-59, the
+        // eleventh Windows run's case 9 at 150%; 17 of 26 lines on the Sheet failed without the
+        // rounding). The layer itself is not composited, so it is painted on the device pixels
+        // wherever the page puts the grid (ex-grid.css, .ex-viewport). Rows, the selection layers
+        // and the editor all stand in this layer, so they move together; a popover placed from
+        // the unrounded offset lies under a device pixel away.
         var transform = FormattableString.Invariant(
             $"transform: translateY(round(nearest, {_geometry.PaintedTopPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow, _scrollTopPx)}px, var(--ex-dp, 1px)))");
         // The stylesheet's default is one header tier; tiers and a hidden header

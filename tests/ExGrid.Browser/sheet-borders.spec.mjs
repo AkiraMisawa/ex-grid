@@ -43,40 +43,65 @@ async function reveal(page, address) {
     return target;
 }
 
+/**
+ * Reads a line in `style` on a Sheet cell's `side`, scrolled to it, against case 9's table: which
+ * device pixels across the gridline are dark, and the dash pattern along it.
+ */
+async function expectLine(page, style, side) {
+    // The styles stand on rows 2 to 14: on B's bottom, and on D's right.
+    const target = await reveal(page, `${side === 'bottom' ? 'B' : 'D'}${STYLES.indexOf(style) + 2}`);
+    const box = await target.boundingBox();
+    const { scale, pixel } = await across(page, box, side, 0.5);
+    const want = expected(style, scale);
+    for (const offset of want.light) {
+        const pixels = await along(page, box, side, offset);
+        expect(pixels.filter(isDark).length, `${style} leaves ${offset} clear`).toBe(0);
+    }
+    if (want.dark) {
+        for (const offset of want.dark) expect(isDark(pixel(offset)), `${style} at ${offset} (scale ${scale})`).toBe(true);
+        // Excel's double: two lines with the gridline's pixel white between them, the Paper rather
+        // than the gridline (case 9).
+        if (style === 'Double') expect(sameColour(pixel(-1), WHITE, 4), 'the gridline between a double line\'s two is white').toBe(true);
+        for (const offset of want.dark) {
+            const pixels = await along(page, box, side, offset);
+            expect(pixels.every(isDark), `${style} is solid along ${offset}`).toBe(true);
+        }
+    } else {
+        for (const offset of want.rows) {
+            const lengths = pattern(await along(page, box, side, offset)).slice(0, want.pattern.length);
+            expect(lengths.length, `${style} along ${offset}: runs read`).toBeGreaterThanOrEqual(3);
+            expect(lengths, `${style} along ${offset} (scale ${scale})`).toEqual(want.pattern.slice(0, lengths.length));
+        }
+    }
+}
+
 test.describe('DC-59: lines on the Sheet', () => {
-    for (const [index, style] of STYLES.entries()) {
+    for (const style of STYLES) {
         for (const side of ['bottom', 'right']) {
             test(`DC-59/SH-46: a ${style} line on a Sheet cell's ${side} edge is drawn as Excel draws it, centred on the gridline, at the run's scale (ADR-0071, case 9)`, async ({ page }, testInfo) => {
                 await openCase(page, 'lines');
                 expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
-                // The styles stand on rows 2 to 14: on B's bottom, and on D's right.
-                const target = await reveal(page, `${side === 'bottom' ? 'B' : 'D'}${index + 2}`);
-                const box = await target.boundingBox();
-                const { scale, pixel } = await across(page, box, side, 0.5);
-                const want = expected(style, scale);
-                for (const offset of want.light) {
-                    const pixels = await along(page, box, side, offset);
-                    expect(pixels.filter(isDark).length, `${style} leaves ${offset} clear`).toBe(0);
-                }
-                if (want.dark) {
-                    for (const offset of want.dark) expect(isDark(pixel(offset)), `${style} at ${offset} (scale ${scale})`).toBe(true);
-                    // Excel's double: two lines with the gridline's pixel white between them, the
-                    // Paper rather than the gridline (case 9).
-                    if (style === 'Double') expect(sameColour(pixel(-1), WHITE, 4), 'the gridline between a double line\'s two is white').toBe(true);
-                    for (const offset of want.dark) {
-                        const pixels = await along(page, box, side, offset);
-                        expect(pixels.every(isDark), `${style} is solid along ${offset}`).toBe(true);
-                    }
-                } else {
-                    for (const offset of want.rows) {
-                        const lengths = pattern(await along(page, box, side, offset)).slice(0, want.pattern.length);
-                        expect(lengths.length, `${style} along ${offset}: runs read`).toBeGreaterThanOrEqual(3);
-                        expect(lengths, `${style} along ${offset} (scale ${scale})`).toEqual(want.pattern.slice(0, lengths.length));
-                    }
-                }
+                await expectLine(page, style, side);
             });
         }
     }
+
+    // Where the page puts the Sheet is the page's: a line of text above it in another font puts it
+    // at a fraction of a device pixel. CI's Linux fonts did, at 150% on the Server host, and a dotted
+    // line on a right edge read 2, 1, 3, 1. The lines are still on the device pixels there.
+    test('DC-59: the lines stay on the device pixels wherever the page puts the Sheet, a third of a pixel across and down (ADR-0071, case 9)', async ({ page }) => {
+        await openCase(page, 'lines');
+        // The page's own element around the Sheet, which leaves with the page.
+        await page.locator('.demo-side-by-side').evaluate((el) => {
+            el.style.marginTop = '0.33px';
+            el.style.marginLeft = '0.33px';
+        });
+        for (const style of ['Thin', 'Thick', 'Double', 'Dotted', 'MediumDashDotDot']) {
+            for (const side of ['bottom', 'right']) {
+                await expectLine(page, style, side);
+            }
+        }
+    });
 
     test('DC-59: rows keep their one height where Excel raises them for a medium or a thick line (ADR-0071, ADR-0013, cases 8 and 9)', async ({ page }) => {
         await openCase(page, 'lines');

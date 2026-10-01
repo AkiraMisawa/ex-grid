@@ -392,7 +392,8 @@ nobody had asked for. What that means when writing a test:
   where both cells record one (the twelfth run's case 1); the Selection's outline lying on the
   gridline and a pixel outside the range on all four sides, over the outer lines, with the lines
   inside staying drawn over its shade (case 11, ADR-0008 of 2026-10-01); and a line on column A's
-  left lying under the Row Headings' edge (the twelfth run's case 14). The case pages pin no
+  left lying under the Row Headings' edge (the twelfth run's case 14); and the lines still on the
+  device pixels with the Sheet moved a third of a pixel across and down. The case pages pin no
   column, as the run's workbook did not.
 - `sheet-paper.spec.mjs` — the Paper and the Ink (ADR-0071, SH-39, SH-40, DC-58; ticket 48) on
   `/sheet?case=paper`, under the built-in Chrome and `ExSheet.MudBlazor`'s, with `?scheme=light` and
