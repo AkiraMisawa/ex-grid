@@ -359,6 +359,30 @@ rule applies: a disagreement is fixed to Excel's answer. None of them needed a n
 - **Excel en-GB spells the numbered colour `[Colour10]`**, and refuses `[Color10]` (case 3).
   `[ColorN]` is still refused here. When numbered colours come, the spelling is part of that step.
 
+## Readings until the twelfth Windows run *(2026-10-01)*
+
+`docs/specs/exsheet/verify-on-windows-12.md` asks Excel about each of these, and each is corrected
+here when the answer comes. They are readings, not decisions: the answer is Excel's (ADR-0047's
+rule). Where Excel has not answered, they say what ExSheet does until it has.
+
+- **A paste, Ctrl+D, Ctrl+R and the fill handle keep the line between two cells one line.** Each
+  writes the neighbour's side as well, and the later write wins, as setting an edge does (run 11,
+  case 7). Today they write each cell's own sides only, so the two records of an edge can disagree.
+  Ticket 57 changes that once the run has answered.
+- **When deleting rows or columns brings two edges together, the upper row's line wins (the left
+  column's, for columns).** That is the row that did not move. The core asks the Consumer which line
+  to draw (ADR-0050, item 15), so ExSheet answers by this rule until the run answers.
+- **Insertion** (ticket 55's readings):
+  - A row inserted at row 1 takes nothing, and the Sheet's top line goes.
+  - Of several inserted rows, only the first one's top reads the line above.
+  - An inserted row takes the Font as it takes the Fill.
+  - An inserted column mirrors an inserted row.
+- **Outlines**: one over whole rows sets only top and bottom. One over the whole Sheet sets only the
+  left of column A and the right of column XFD. An inside line over whole columns also shows on the
+  top of row 1 and the bottom of row 1048576.
+- **The two items ticket 51 left** (above): whether a formatting key widens a standard-width
+  column, and whether Excel localises built-ins 15 and 20.
+
 ## Consequences
 
 - **Notes on other ADRs**, each saying what changed:
@@ -375,5 +399,6 @@ rule applies: a disagreement is fixed to Excel's answer. None of them needed a n
 - **The code's names follow the glossary.** `AxisStyle` becomes `AxisFormat`, `SetStyle` becomes
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
-- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done. Tickets 44 to 55 in
-  `docs/specs/exsheet/issues/`; ticket 55 was added by the eleventh run.
+- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done. Tickets 44 to 57 in
+  `docs/specs/exsheet/issues/`. Ticket 55 was added by the eleventh run, 56 by ticket 51's Server
+  fix, and 57 for the twelfth run's answers.
