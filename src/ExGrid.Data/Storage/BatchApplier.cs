@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace ExGrid.Data.Storage;
 
 /// <summary>
@@ -75,11 +73,11 @@ internal static class BatchApplier
         foreach (var raw in batch.RemovedKeys)
         {
             if (!kind.TryNormalize(raw, out var key))
-                throw Refuse(keyName, raw, $"the batch removes the key {Keys.Show(raw)}, which is not of the Record Key's kind, {before.Shape.Key!.Kind}.");
+                throw Refuse(keyName, raw, $"the batch removes the key {{0}}, which is not of the Record Key's kind, {before.Shape.Key!.Kind}.");
             if (!removed.Add(key))
-                throw Refuse(keyName, raw, $"the batch removes the key {Keys.Show(raw)} twice.");
+                throw Refuse(keyName, raw, "the batch removes the key {0} twice.");
             if (!kind.TryFind(key, out var row))
-                throw Refuse(keyName, raw, $"the batch removes the key {Keys.Show(raw)}, which the Snapshot does not hold.");
+                throw Refuse(keyName, raw, "the batch removes the key {0}, which the Snapshot does not hold.");
             leaving.Add(row);
         }
 
@@ -92,13 +90,12 @@ internal static class BatchApplier
             {
                 if (!kind.TryRead(changed, rows[i], out var key))
                     throw new SnapshotException(i + 1L, keyName, "the Record Key of this changed record is Blank.");
-                var shown = kind.Box(key);
                 if (removed.Contains(key))
-                    throw Refuse(keyName, shown, $"the batch both changes and removes the key {Keys.Show(shown)}.");
+                    throw Refuse(keyName, kind.Box(key), "the batch both changes and removes the key {0}.");
                 if (!changedKeys.Add(key))
-                    throw Refuse(keyName, shown, $"the batch changes the key {Keys.Show(shown)} twice.");
+                    throw Refuse(keyName, kind.Box(key), "the batch changes the key {0} twice.");
                 if (!kind.TryFind(key, out var row))
-                    throw Refuse(keyName, shown, $"the batch changes the key {Keys.Show(shown)}, which the Snapshot does not hold.");
+                    throw Refuse(keyName, kind.Box(key), "the batch changes the key {0}, which the Snapshot does not hold.");
                 leaving.Add(row);
                 moves.Add(new Move(before.Segments[row.Slice].PositionOf(row.Offset), rows[i]));
             }
@@ -112,11 +109,10 @@ internal static class BatchApplier
             {
                 if (!kind.TryRead(added, rows[i], out var key))
                     throw new SnapshotException(i + 1L, keyName, "the Record Key of this added record is Blank.");
-                var shown = kind.Box(key);
                 if (!addedKeys.Add(key))
-                    throw Refuse(keyName, shown, $"the batch adds the key {Keys.Show(shown)} twice.");
+                    throw Refuse(keyName, kind.Box(key), "the batch adds the key {0} twice.");
                 if (changedKeys.Contains(key) || (!removed.Contains(key) && kind.TryFind(key, out _)))
-                    throw Refuse(keyName, shown, $"the batch adds the key {Keys.Show(shown)}, which the Snapshot already holds.");
+                    throw Refuse(keyName, kind.Box(key), "the batch adds the key {0}, which the Snapshot already holds.");
             }
         }
         return (leaving, moves);
@@ -264,8 +260,9 @@ internal static class BatchApplier
         return sources.Count - 1;
     }
 
+    /// <summary>A refusal naming the key: <paramref name="reason"/>'s {0} is where the key is shown.</summary>
     private static SnapshotException Refuse(string keyColumn, object key, string reason)
-        => new(null, keyColumn, reason) { Key = key };
+        => new(null, keyColumn, reason.Replace("{0}", Keys.Show(key), StringComparison.Ordinal)) { Key = key };
 
     /// <summary>A changed record: the position it takes, and where the batch holds it.</summary>
     private readonly record struct Move(int Position, SnapshotRow Source);
