@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { painted, runsOf, sameColour } from './pixels.mjs';
+import { painted, runsOf, sameColour, resolvedColour } from './pixels.mjs';
 
 // A per-cell appearance as the browser painted it (ADR-0050 item 15; ADR-0071; DC-58 and DC-59),
 // on /appearance, read in device pixels from a screenshot at the device's own scale. Three grids:
@@ -175,12 +175,20 @@ test.describe('DC-59: lines', () => {
         await expect(grid.locator('.ex-focus')).toHaveCount(1);
         await page.mouse.move(0, 0);
         const box = await lined.boundingBox();
-        let { pixel } = await across(page, box, 'bottom', 0.5);
-        // The Focus outline lies inside its cell, over the line's two pixels there; the pixel past
-        // the gridline is the next cell's, and stays the line's.
-        expect(sameColour(pixel(-1), RED), 'the Focus covers the line in its cell').toBe(false);
-        expect(isDark(pixel(-1))).toBe(true);
-        expect(sameColour(pixel(0), RED)).toBe(true);
+        const read = await across(page, box, 'bottom', 0.5);
+        let { pixel } = read;
+        // The Focus outline lies where Excel's does, on the gridline and a CSS pixel past it
+        // (ADR-0008, 2026-10-01; case 11): over the line's device pixel on the gridline and the one
+        // it reaches into the filled cell below, both the outline's colour. At 100% the line's pixel
+        // above the gridline lies beyond the outline and stays the line's, and the Fill follows the
+        // outline's pixel past the gridline; at 150% the outline's edges fall mid-pixel, so the
+        // Fill is read one device pixel further on.
+        const outline = await grid.locator('.ex-focus').first().evaluate((el) => getComputedStyle(el, '::after').borderTopColor);
+        const ink = await resolvedColour(page, outline);
+        expect(sameColour(pixel(-1), ink), `the Focus covers the line on the gridline (${pixel(-1)} against ${ink})`).toBe(true);
+        expect(sameColour(pixel(0), ink), `the Focus covers the line past the gridline (${pixel(0)} against ${ink})`).toBe(true);
+        if (read.scale === 1) expect(sameColour(pixel(-2), RED), 'the line above the gridline, beyond the outline').toBe(true);
+        expect(sameColour(pixel(Math.ceil(read.scale)), YELLOW), 'the Fill after the outline').toBe(true);
 
         await filled.click({ force: true, modifiers: ['Shift'] });
         await page.waitForFunction(() => [...document.querySelectorAll('#appearance-borders .ex-range')]

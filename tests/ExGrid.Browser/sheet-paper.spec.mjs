@@ -193,9 +193,10 @@ const YELLOW = [255, 255, 0];
 
 for (const [chrome, query] of CHROMES) {
     test(`SH-39 (${chrome} Chrome): a pinned cell that draws a line layer keeps its row gridline beneath it (ADR-0071, ADR-0050 item 15, ticket 90)`, async ({ page }) => {
-        // /sheet pins column A. In case 4, B2 is yellow, and its Fill covers its left gridline, which
-        // A2 holds: A2 paints that cover as a layer (.ex-lined), as it would a line of its own.
-        await openCase(page, '4', 'light', query);
+        // Case 4 with column A pinned (?pin=1: a case's page pins nothing, as the run's workbook did
+        // not). B2 is yellow, and its Fill covers its left gridline, which A2 holds: A2 paints that
+        // cover as a layer (.ex-lined), as it would a line of its own.
+        await openCase(page, '4&pin=1', 'light', query);
         const grid = sheet(page);
         const a2 = cell(grid, 'A2');
         await expect(a2).toHaveClass(/\bex-pinned\b/);

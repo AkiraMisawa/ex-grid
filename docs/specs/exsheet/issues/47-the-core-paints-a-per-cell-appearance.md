@@ -188,3 +188,12 @@ third pixel above the Fill; a right border leaves the number 4px from the cell's
   that class holds, measured 8.281 at weight 600.
 - **Windows' Segoe UI** was not measured at either weight; the bold defaults are the widest measured
   so far, as the regular ones are.
+
+2026-10-01, agent cf-48: `appearance.spec.mjs`'s "the Focus and the Selection are drawn above a line" now
+reads the Focus outline where case 11 puts it (ADR-0008, 2026-10-01): on the gridline and a CSS pixel past
+it.
+- Both the thick red line's pixel on the gridline and the one it reaches into the filled cell are the
+  outline's colour, which shows the outline lies above the line.
+- At 100% the line's pixel above the gridline is still red, beyond the outline. At 150% the outline's edges
+  fall mid-pixel, so that pixel is not read, and the Fill is read one device pixel further on.
+- Passed on both hosts: 33 of 33 in `chrome`, 28 of 28 in `chrome-150`.
