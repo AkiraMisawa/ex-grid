@@ -193,6 +193,21 @@ the grid as one tab stop". Excel is an application; this is one component on som
 page. **Escape releases the grid's DOM focus** — it has no other meaning outside editing,
 and when the Interactive and Overwrite modes arrive it stays the outermost of them.
 
+*(Rewritten 2026-10-01, decided with the user.)* **Escape with nothing left to dismiss releases
+Tab, not DOM focus.** The fifteenth Windows run (`verification/2026-10-01-windows-15/`) saw the cost of
+the blur in ExSheet: an Escape typed twice out of Excel's habit, once to cancel the edit and once more,
+sent the keyboard to `body`, while the cell still looked selected, and the next keys reached nothing.
+Excel's Escape with nothing to cancel does nothing. So the root keeps the keyboard, and the next Tab
+or Shift+Tab is left to the browser, which moves to the next or the previous element of the page:
+a keyboard user still leaves by Escape and Tab, as before, and is never trapped. Any other key after
+the Escape means what it always means, and ends the release: a character opens an edit in the
+selected cell, an arrow moves, and a later Tab cycles inside the selection again. Escape there is a
+change of the keys the gate claims (ADR-0010: a mode change is a different set), so the keys typed
+after it are held until it is answered, as after any mode change. It holds for ExGrid and ExSheet
+alike, since the reason above holds for both. The options set aside: ExSheet ignoring that Escape, as
+Excel does, which brings the trap back and would need another way out (Excel's F6); and keeping the
+blur, which loses the keyboard silently.
+
 An open popover — a column menu or a filter panel — sits **inside** that layering *(recorded
 when dismissal was wired, after the first manual session left a filter panel with no way to
 close it)*: while one is open, Escape closes it and hands the keyboard back to the grid,
