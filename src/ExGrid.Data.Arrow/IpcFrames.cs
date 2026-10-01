@@ -16,8 +16,9 @@ internal readonly record struct IpcMessage(int Start, int End, byte Kind, long R
 /// <para>
 /// Arrow lets a stream end without the marker, by closing. A stream that does is read here as cut
 /// short and refused, because a stream cut between two record batches is otherwise read as whole,
-/// and its totals would be quietly short — what ADR-0063 refuses. Every producer the family reads
-/// from (pyarrow, Polars, DuckDB, Apache.Arrow) writes the marker when its writer is closed.
+/// and its totals would be quietly short — what ADR-0063 refuses. The writers whose streams the
+/// tests hold — pyarrow's (which DuckDB's Python results are written through), Polars' and
+/// Apache.Arrow's — write the marker when they are closed.
 /// </para>
 /// </summary>
 internal static class IpcFrames
