@@ -12,39 +12,51 @@ namespace ExGrid.MudBlazor;
 public static class MudExGridPresentation
 {
     /// <summary>
-    /// Roboto, measured in Chrome on 2026-09-01 at 14px and the 600 weight the grid's
-    /// group and total rows paint (ADR-0016's rule: the boldest weight the grid itself
-    /// paints): a tabular digit is 7.998px, <c>%</c> 10.33px (<c>£</c> 8.279, <c>€</c>
-    /// 7.998), and the widest separator — <c>(</c> — 4.909px. Declared a shade over
-    /// each: overshooting errs toward an early <c>####</c>, the safe direction. Stated
-    /// at 14px; the core scales them to the resolved font size (ADR-0028).
+    /// Roboto, measured in Chrome 154 on 2026-10-01 from the Roboto the demo pages serve, at
+    /// 14px with tabular digits, at every weight the grid paints regular text in: 400 for a
+    /// cell, 500 for the header, 600 for group and total rows. Each class is declared over its
+    /// widest glyph at any of the three, not at the boldest alone: Roboto is a variable face,
+    /// and some glyphs narrow as the weight grows — <c>/</c> is 5.781px at 400 and 5.328 at
+    /// 600 (ticket 77). A glyph's width is the wider of the glyph alone and the average of a
+    /// hundred in a row: <c>//</c> kerns, so a run alone reads <c>/</c> short. The wide
+    /// class's widest is <c>%</c>, 10.344px at 600
+    /// (<c>#</c> 8.625 at 400). Declared a shade over each: overshooting errs toward an early
+    /// <c>####</c>, the safe direction (ADR-0016). Stated at 14px; the core scales them to
+    /// the resolved font size (ADR-0028).
     /// </summary>
     public const double RobotoWidePx = 10.4;
 
-    /// <summary>Roboto's tabular digit, measured at 7.998px.</summary>
-    public const double RobotoDigitPx = 8.0;
+    /// <summary>
+    /// Roboto's digit class: a tabular digit is 8.0px at 600, and <c>£</c>, the widest glyph
+    /// the class holds, 8.281px at 600 (<c>₺</c> 8.188, <c>₫</c> 8.109, <c>¥</c> 7.484). Not
+    /// covered: the currency signs <c>₼</c> <c>₽</c> <c>¤</c> (9.5px to 10.0px) are wider than
+    /// this class and <c>₱</c> <c>₩</c> <c>₦</c> <c>₪</c> (10.406px to 11.891px) than the wide
+    /// class too, and so are capital letters such as <c>M</c> and <c>W</c> (ticket 77).
+    /// </summary>
+    public const double RobotoDigitPx = 8.3;
 
-    /// <summary>Roboto's widest separator, <c>(</c>, measured at 4.909px.</summary>
-    public const double RobotoNarrowPx = 4.95;
+    /// <summary>Roboto's widest separator, <c>/</c>, measured at 5.781px at 400 (<c>)</c>
+    /// 4.906 at 500 and 600).</summary>
+    public const double RobotoNarrowPx = 5.8;
 
     /// <summary>The font size the three Roboto widths were measured at; the core scales
     /// them to the resolved font size (ADR-0028).</summary>
     public const double RobotoMeasuredAtPx = 14;
 
     /// <summary>
-    /// Roboto bold (ADR-0050, item 15: a bold cell is judged by bold widths), measured in Chrome
-    /// on 2026-10-01 at 14px and weight 700 from the Roboto the demo pages serve, as the regular
-    /// widths were: <c>%</c> 10.352px (<c>#</c> 8.292, <c>€</c> 8.036). Declared a shade over, as
-    /// they are.
+    /// Roboto bold (ADR-0050, item 15: a bold cell is judged by bold widths), measured with the
+    /// regular widths, at weight 700: <c>%</c> 10.359px (<c>#</c> 8.297, <c>€</c> 8.047).
+    /// Declared a shade over, as they are.
     /// </summary>
     public const double RobotoBoldWidePx = 10.4;
 
-    /// <summary>Roboto bold's digit class: the tabular digit is 8.036px and <c>£</c>, the widest
-    /// glyph the class holds, 8.323px.</summary>
+    /// <summary>Roboto bold's digit class: the tabular digit is 8.047px and <c>£</c>, the widest
+    /// glyph the class holds, 8.328px.</summary>
     public const double RobotoBoldDigitPx = 8.33;
 
-    /// <summary>Roboto bold's widest separator, <c>)</c>, measured at 4.917px.</summary>
-    public const double RobotoBoldNarrowPx = 4.95;
+    /// <summary>Roboto bold's widest separator, <c>/</c>, measured at 5.203px (<c>)</c>
+    /// 4.922).</summary>
+    public const double RobotoBoldNarrowPx = 5.25;
 
     /// <summary>The widths alone — no density, no hover — for a bare grid.</summary>
     public static GridPresentationDefaults Roboto { get; } =
@@ -112,19 +124,22 @@ public static class MudExGridPresentation
 /// three glyph widths measured for it, in one value — so the font on screen and the
 /// widths in the <c>####</c> arithmetic cannot come from different hands
 /// (ADR-0027/0030). The paper writes <c>--ex-font-family</c> inline from
-/// <see cref="Family"/> and cascades the widths in the same render.
+/// <see cref="Family"/> and cascades the widths in the same render. Each width is the widest
+/// glyph of its class at every weight the grid paints regular text in, not at the boldest
+/// alone: a variable face can narrow a glyph as it gets bolder, as Roboto does <c>/</c>.
 /// </summary>
 /// <param name="Family">The CSS <c>font-family</c> value the paper writes as
 /// <c>--ex-font-family</c>.</param>
 /// <param name="WideWidthPx">The wide class — <c>%</c>, <c>€</c>, <c>−</c>, <c>+</c> and
 /// <c>#</c> — in this font (ADR-0016).</param>
-/// <param name="DigitWidthPx">A tabular digit in this font.</param>
+/// <param name="DigitWidthPx">The digit class in this font: a tabular digit, or the widest
+/// glyph charged as one where that is wider — <c>£</c> in Roboto (ADR-0016).</param>
 /// <param name="NarrowWidthPx">The widest separator in this font.</param>
 /// <param name="MeasuredAtPx">The font size the widths were measured at.</param>
 /// <param name="BoldWideWidthPx">The wide class at the bold weight, or null (ADR-0050, item 15).
 /// Without all three bold widths, a bold cell is charged the core's allowance over the regular
 /// ones (<see cref="CellTextMetrics.BoldWidthAllowance"/>).</param>
-/// <param name="BoldDigitWidthPx">A tabular digit at the bold weight, or null.</param>
+/// <param name="BoldDigitWidthPx">The digit class at the bold weight, or null.</param>
 /// <param name="BoldNarrowWidthPx">The widest separator at the bold weight, or null.</param>
 public sealed record MudExGridFont(
     string Family, double WideWidthPx, double DigitWidthPx, double NarrowWidthPx, double MeasuredAtPx,

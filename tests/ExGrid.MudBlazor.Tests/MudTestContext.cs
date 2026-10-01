@@ -61,12 +61,12 @@ public abstract class MudTestContext : BunitContext
         return rows;
     }
 
-    // A twelve-digit amount in a 112px column: fits at Roboto's 8.0px digit, hashes
+    // A twelve-digit amount in a 116px column: fits at Roboto's 8.3px digit class, hashes
     // at the system default's 9.742px (ADR-0016) — the observable that says whose
     // widths the grid is using.
     internal static GridColumn<Trade>[] Columns() =>
     [
         new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(100)), editable: true),
-        new("Amount", ColumnType.Number, r => r.Amount, width: new ColumnWidthSpec(ColumnWidth.Fixed(112))),
+        new("Amount", ColumnType.Number, r => r.Amount, width: new ColumnWidthSpec(ColumnWidth.Fixed(116))),
     ];
 }
