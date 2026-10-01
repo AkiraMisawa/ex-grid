@@ -7,9 +7,19 @@ namespace ExGrid.DemoPages;
 /// The Sheets <c>/sheet?case=</c> opens in place of the page's own: the set-ups of the eleventh
 /// Windows run's Part A (<c>docs/specs/exsheet/verify-on-windows-11.md</c>), so that its Part C can
 /// put the DemoHost beside Excel's screenshots of the same cells, and the browser suite reads them
-/// too. A case's keys are not pressed here: Part C presses them, as Part A did. <c>paper</c> is not a
-/// run's case: it gathers recorded colours and emphases on the Paper, the ones a row or a column
-/// records among them.
+/// too. A case's keys are not pressed here: Part C presses them, as Part A did. Three are not one
+/// of that run's cases:
+/// <list type="bullet">
+/// <item><c>paper</c> gathers recorded colours and emphases on the Paper, the ones a row or a
+/// column records among them;</item>
+/// <item><c>lines</c> is case 9 twice: Excel's thirteen line styles on the bottoms of B2:B14, and on
+/// the rights of D2:D14;</item>
+/// <item><c>12-1</c> is the twelfth run's case 1: E5's thick red right pasted over B2 while C2
+/// records a thin blue left, so both cells record a line on the edge between them, and the left
+/// cell's is the one shown;</item>
+/// <item><c>12-14</c> is the twelfth run's case 14: an outline set on row 3, which records the left
+/// of A3 as well.</item>
+/// </list>
 /// </summary>
 public static class SheetCases
 {
@@ -17,9 +27,20 @@ public static class SheetCases
     private static readonly CellColour Blue = CellColour.FromRgb(0x0000FF);
     private static readonly CellFill Yellow = CellFill.Solid(CellColour.FromRgb(0xFFFF00));
     private static readonly CellFill LightBlue = CellFill.Solid(CellColour.FromRgb(0x00B0F0));
+    private static readonly BorderLine Thin = new(BorderLineStyle.Thin);
+    private static readonly BorderLine ThickBlack = new(BorderLineStyle.Thick);
+
+    /// <summary>Excel's thirteen line styles, in the order case 9 set them on B2:B14.</summary>
+    public static IReadOnlyList<BorderLineStyle> LineStyles { get; } =
+    [
+        BorderLineStyle.Hair, BorderLineStyle.Thin, BorderLineStyle.Medium, BorderLineStyle.Thick, BorderLineStyle.Double,
+        BorderLineStyle.Dotted, BorderLineStyle.Dashed, BorderLineStyle.DashDot, BorderLineStyle.DashDotDot,
+        BorderLineStyle.MediumDashed, BorderLineStyle.MediumDashDot, BorderLineStyle.MediumDashDotDot, BorderLineStyle.SlantedDashDot,
+    ];
 
     /// <summary>The names <see cref="Document"/> knows, in the order the run numbers them.</summary>
-    public static IReadOnlyList<string> Names { get; } = ["1", "2", "3b", "3c", "4", "5", "6", "16", "17", "18", "paper"];
+    public static IReadOnlyList<string> Names { get; } =
+        ["1", "2", "3b", "3c", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "16", "17", "18", "paper", "lines", "12-1", "12-14"];
 
     /// <summary>
     /// Case <paramref name="name"/>'s Sheet, in <paramref name="culture"/>; null when no case is
@@ -73,6 +94,50 @@ public static class SheetCases
                 break;
             case "6":
                 Format(sheet, new CellFormatChange { Fill = Yellow }, "B2:C2");
+                break;
+            case "7":
+                // The first of the case's two settings; Part C sets C2's left thin blue itself.
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Right = new BorderLine(BorderLineStyle.Thick, Red) } }, "B2");
+                break;
+            case "8":
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = ThickBlack } }, "B2");
+                break;
+            case "9":
+                for (var i = 0; i < LineStyles.Count; i++)
+                    Format(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = new BorderLine(LineStyles[i]) } }, $"B{i + 2}");
+                break;
+            case "lines":
+                for (var i = 0; i < LineStyles.Count; i++)
+                {
+                    Enter(sheet, $"A{i + 2}", LineStyles[i].ToString());
+                    Format(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = new BorderLine(LineStyles[i]) } }, $"B{i + 2}");
+                    Format(sheet, new CellFormatChange { Borders = new BorderChange { Right = new BorderLine(LineStyles[i]) } }, $"D{i + 2}");
+                }
+                break;
+            case "10":
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = ThickBlack } }, "B2");
+                Format(sheet, new CellFormatChange { Fill = Yellow }, "B3");
+                break;
+            case "11":
+                // Every edge of B2:C3, outside and in; Part C selects B2:C3 with keys.
+                Format(sheet, new CellFormatChange { Borders = BorderChange.Outline(Thin) with { InsideHorizontal = Thin, InsideVertical = Thin } }, "B2:C3");
+                break;
+            case "12":
+                // Part C selects row 3 and inserts a row with keys.
+                Format(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Top = Thin, Bottom = ThickBlack } }, "B2");
+                break;
+            case "13":
+            case "14":
+                // Nothing is set up: the case is its keys.
+                break;
+            case "12-1":
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Left = new BorderLine(BorderLineStyle.Thin, Blue) } }, "C2");
+                Enter(sheet, "E5", "1");
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Right = new BorderLine(BorderLineStyle.Thick, Red) } }, "E5");
+                sheet.Do(SheetEdit.Paste(sheet.Copy(CellRange.Parse("E5")).Block!, CellAddress.Parse("B2")));
+                break;
+            case "12-14":
+                Format(sheet, new CellFormatChange { Borders = BorderChange.Outline(Thin) }, "3:3");
                 break;
             case "16":
                 Enter(sheet, "A1", "abc");

@@ -8517,9 +8517,14 @@
         // Placed from the offset the slice is painted at — the browser's, or the one a
         // reveal is writing in this same render (ADR-0012): compressed, where the rows stand
         // depends on it and not only on the slice (ADR-0053); otherwise this is the first
-        // painted row's own offset, as it always was.
+        // painted row's own offset, as it always was. Rounded to the nearest device pixel
+        // (--ex-dp, ex-grid.css): compressed, the slice stands at a fraction of one, and the
+        // layer (will-change: transform) is then composited there, resampled, so a cell's line
+        // drawn in device pixels blends across two (DC-59, the eleventh Windows run's case 9 at
+        // 150%). Rows, the selection layers and the editor all stand in this layer, so they move
+        // together; a popover placed from the unrounded offset lies under a device pixel away.
         var transform = FormattableString.Invariant(
-            $"transform: translateY({_geometry.PaintedTopPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow, _scrollTopPx)}px)");
+            $"transform: translateY(round(nearest, {_geometry.PaintedTopPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow, _scrollTopPx)}px, var(--ex-dp, 1px)))");
         // The stylesheet's default is one header tier; tiers and a hidden header
         // (ADR-0050) both move where the rows begin, so the band's height travels inline.
         return _headerLayout.TierCount == 0 && !HideHeader

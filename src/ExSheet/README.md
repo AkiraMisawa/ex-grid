@@ -249,9 +249,13 @@ the user is told why, and `OnFormatKeyRefused` is raised with the refusal.
 
 ## The Paper and the Ink
 
-A cell's Font and Fill are painted as recorded: its colour, bold, italic, underline and
-strikethrough, and its one solid Fill, on the cells that hold nothing as well when a whole row or
-column records them. A Number Format's colour (`[Red]` and the seven others) is painted in Excel's
+A cell's Font, Fill and Borders are painted as recorded: its colour, bold, italic, underline and
+strikethrough, its one solid Fill, and a line in each of Excel's thirteen styles on each side, on
+the cells that hold nothing as well when a whole row or column records them. A line is drawn as
+Excel draws it, centred on the gridline in the screen's own pixels, a thick one reaching into both
+cells, over the Fills and under the Selection; where both cells record a line on one edge, the
+upper or left cell's is drawn. Every row keeps its one height, where Excel would raise a row for a
+medium or a thick line. A Number Format's colour (`[Red]` and the seven others) is painted in Excel's
 colour for that name, in place of the Font's. A bold number is judged by the bold widths, so one that
 does not fit shows `####` rather than being cut.
 

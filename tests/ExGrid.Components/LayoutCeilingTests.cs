@@ -34,7 +34,7 @@ public class LayoutCeilingTests : GridTestContext
 
     private static double TranslateY(IRenderedComponent<ExGrid<TestRow>> cut)
     {
-        var match = Regex.Match(cut.Find(".ex-viewport").GetAttribute("style")!, @"translateY\((?<px>[-\d.E+]+)px\)");
+        var match = Regex.Match(cut.Find(".ex-viewport").GetAttribute("style")!, @"translateY\(round\(nearest, (?<px>[-\d.E+]+)px, var\(--ex-dp, 1px\)\)\)");
         Assert.True(match.Success);
         return double.Parse(match.Groups["px"].Value, CultureInfo.InvariantCulture);
     }

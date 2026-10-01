@@ -383,6 +383,16 @@ nobody had asked for. What that means when writing a test:
   reads the Focus cell's Cell Format back. The page's
   *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
   the Sheet has heard the move, formats the extended range as one step (ticket 56).
+- `sheet-borders.spec.mjs` — ExSheet's Borders beside Excel's (ADR-0071, DC-59, SH-46; ticket 49)
+  on `/sheet?case=…`, the eleventh and twelfth Windows runs' set-ups, read in device pixels:
+  Excel's thirteen line styles on a bottom and on a right edge, scrolled down the Sheet, at 100%
+  here and at 150% in `chrome-150` (case 9's table, the long dash 8 and 9); rows keeping their one
+  height; a Fill over its four gridlines (case 4), a white Fill taking them away (case 5), two
+  Fills meeting (case 6); a thick line over the Fill below it (case 10); the left cell's line drawn
+  where both cells record one (the twelfth run's case 1); inside the Selection the lines staying
+  drawn and its outline covering the outer ones on its bottom and right (case 11), its top and left
+  left as `fixme` for ADR-0008; and a line on column A's left lying under the Row Headings' edge
+  (the twelfth run's case 14).
 - `sheet-paper.spec.mjs` — the Paper and the Ink (ADR-0071, SH-39, SH-40, DC-58; ticket 48) on
   `/sheet?case=paper`, under the built-in Chrome and `ExSheet.MudBlazor`'s, with `?scheme=light` and
   `?scheme=dark`: the Paper white and the Ink black in both schemes; a Font colour, a Number

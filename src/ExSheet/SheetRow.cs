@@ -71,11 +71,13 @@ public sealed class SheetRow
     }
 
     /// <summary>
-    /// The cell's Font and Fill as the core paints them (ADR-0050 item 15, ADR-0071), for one
+    /// The cell's Font, Fill and Borders as the core paints them (ADR-0050 item 15, ADR-0071), for one
     /// <paramref name="reading"/> of the Sheet's formatting. Within a reading the answer is kept, as
-    /// the cells' text is: a change the engine names retires the row. A change that reaches rows the
-    /// engine does not name — a whole row's or column's Cell Format — starts a new reading, and the
-    /// row is read again (<see cref="SheetAppearance.Lookup"/>).
+    /// the cells' text is: a change the engine names retires the row, and the engine names the row
+    /// across a top or bottom side it changes, since a side is read as the edge shown from both
+    /// cells. A change that reaches rows the engine does not name — a whole row's or column's Cell
+    /// Format, or an insertion or deletion — starts a new reading, and the row is read again
+    /// (<see cref="SheetAppearance.Lookup"/>).
     /// </summary>
     internal global::ExGrid.Cells.CellAppearance AppearanceAt(int column, int reading)
     {
