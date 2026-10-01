@@ -2,6 +2,7 @@ using System.Text;
 using ExGrid.Data;
 using Xunit;
 using static ExGrid.Data.Tests.CsvFixtures;
+using static ExGrid.Data.Tests.Fixtures;
 
 namespace ExGrid.Data.Tests;
 
@@ -55,6 +56,26 @@ public class CsvBatchTests
         Assert.Equal("Row 1, column 'Id': the Record Key is Blank (line 2).", Refusal(keyed, "Id,V\n,1\nb,x\n").Message);
         Assert.Equal("Row 1, column 'V': 'x' is not an integer (line 2).", Refusal(keyed, "Id,V\n,x\n").Message);
         Assert.Equal("Row 2, column 'V': 'x' is not an integer (line 3).", Refusal(keyed, "Id,V\na,1\nb,x\n,1\n").Message);
+    }
+
+    [Theory] // ADR-0063: a Blank early in a column of numbers, dates or Booleans is kept however many values follow it, as the column outgrows the room it began with
+    [InlineData(SnapshotKind.Integer)]
+    [InlineData(SnapshotKind.Decimal)]
+    [InlineData(SnapshotKind.Double)]
+    [InlineData(SnapshotKind.Date)]
+    [InlineData(SnapshotKind.Boolean)]
+    public void An_early_blank_is_kept_however_many_values_follow(SnapshotKind kind)
+    {
+        var value = kind switch { SnapshotKind.Date => "2026-10-01", SnapshotKind.Boolean => "TRUE", _ => "1" };
+        var text = new StringBuilder("A,V\nx,\n");
+        for (var row = 0; row < 1_000; row++)
+            text.Append("x,").Append(value).Append('\n');
+
+        var snapshot = Read(new CsvSchema([new("A", SnapshotKind.Text), new("V", kind)]), text.ToString());
+
+        Assert.Equal(1_001, snapshot.RowCount);
+        Assert.Null(Values(snapshot, "V")[0]);
+        Assert.All(Values(snapshot, "V").Skip(1), Assert.NotNull);
     }
 
     [Fact] // ADR-0063: the first value that cannot be read is found wherever it falls among batches, by its row and its line
