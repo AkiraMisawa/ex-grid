@@ -4,25 +4,24 @@
 @using ExPivot.Components
 @using ExPivot.Engine
 
-<ExPivot TRecord="Sale" Records="_sales" Fields="_fields" @bind-Layout="_layout"
-         OnShowDetails="ShowDetails" ViewportHeight="420" />
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="420" />
 
 @code {
-    private readonly Sale[] _sales = LoadSales();
-    private static readonly PivotField<Sale>[] _fields =
+    private static readonly PivotField<Sale>[] Fields =
     [
         new("Region", PivotFieldType.Text, s => s.Region),
         new("Product", PivotFieldType.Text, s => s.Product),
         new("Date", PivotFieldType.Date, s => s.Date, format: "yyyy-MM"),
         new("Amount", PivotFieldType.Number, s => s.Amount),
     ];
+
+    // Held in a field: a new source is a refresh.
+    private PivotSource _source = PivotSource.From(LoadSales(), Fields);
     private PivotLayout _layout = new()
     {
         Rows = [new PivotFieldPlacement("Region")],
         Values = [new PivotValueField("Amount", PivotAggregation.Sum)],
     };
-
-    private void ShowDetails(PivotDetails<Sale> details) { /* show details.Records */ }
 
     private static Sale[] LoadSales() => Sale.Sample();
 }
