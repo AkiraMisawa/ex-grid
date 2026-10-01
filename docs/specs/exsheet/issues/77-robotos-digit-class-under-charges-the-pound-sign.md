@@ -154,6 +154,9 @@ as a web font to stand in for Linux, so that 600 matches Bold as it does there.
   8.3 and 132.9 at the core's 9.742, so the column still tells whose widths the grid is using.
 - Layers 1 and 2 pass: ExGrid.Tests 871, ExGrid.Components 1248 (one skipped), ExGrid.MudBlazor.Tests
   130, ExSheet.Engine.Tests 2304, ExSheet.Components.Tests 533, ExSheet.MudBlazor.Tests 34.
+- Layer 3, headless on this Mac, `appearance.spec.mjs` and `mud.spec.mjs` (which also matches
+  `format-cells-mud.spec.mjs`), project `chrome`: 49 passed on WebAssembly and 49 passed on Server.
+  DC-58 passes with the 99px column.
 
 ### Left for others
 
