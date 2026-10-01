@@ -717,48 +717,89 @@ fill handle, `--ex-selection-outline`, ExSheet's shape, the column band. *(Since
 right-click was settled by the Context Menu, ADR-0036; the Wrapper seam order by the
 package's start and ADR-0039, 2026-09-24.)*
 
-## ExPivot (2026-09-30)
+## ExPivot and the family's data (2026-10-01)
 
-*(Built on `claude/expivot-mudblazor-wrapper-j25225`. [ADR-0058](adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)
-to [ADR-0062](adr/0062-what-expivot-asks-of-exgrids-core.md) are proposed and not yet decided with
-the user; §29 of the Definition of Done judges ExPivot and never gates ExGrid, and DC-52 in §26 is
-the one core change, which does.)*
+*(Built on `claude/expivot-mudblazor-wrapper-j25225`. Decided with the user in the ExPivot
+grilling, Q1 to Q63: [ADR-0058](adr/0058-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)
+to [ADR-0068](adr/0068-the-demo-pages-call-a-demo-api-server-both-hosts-share.md). §29 and §30 of the
+Definition of Done judge ExPivot and the data packages, and never gate ExGrid. §26's DC-52 to DC-55
+are the core changes, and those do gate it.)*
 
-**What exists.** `ExPivot.Engine`, `ExPivot` and `ExPivot.MudBlazor`, holding everything ADR-0058's
-"first version" column lists; ADR-0062's `OnCellDoubleClick` in the core; `/pivot` on both demo
-hosts, and `/pivot?chrome=mud` dressed by the MudBlazor Wrapper. The spec and its tickets are in
-`docs/specs/expivot/`.
+**What exists.**
+
+- **`ExGrid.Data`, the Snapshot** (ADR-0063):
+  - six kinds, with a Blank in each; text as a dictionary in first-appearance order; Decimal as
+    scaled 64-bit integers per segment;
+  - built from objects through typed accessors, from a CSV under a declared Schema or a suggested
+    one the user confirms, from a `DbDataReader`, and from columns;
+  - loaded in slices, with progress and cancellation;
+  - Change Batches by a Record Key, which share every segment they do not touch.
+- **`ExGrid.Data.Arrow`** (ADR-0064): Arrow's IPC stream and file read into a Snapshot, and a
+  Snapshot written as an uncompressed stream. Codecs are used only when handed in. Its type table
+  covers what `pyarrow`, Polars and DuckDB write.
+- **`ExPivot.Engine` over the Snapshot** (ADR-0059, ADR-0065, ADR-0066):
+  - Leaf Aggregates, with exact sums held as 128-bit integers;
+  - the Pivot Source: `PivotSource.From`, `PivotSource.Fetch`, `PivotJson` and Source Versions;
+  - the Order Key and the date parts;
+  - Change Batches folded live, each leaf held to a fresh aggregation to the last bit.
+- **`ExPivot`**:
+  - asking the source, with generations, cancellation and discarded answers; the caps;
+  - Defer Layout Update; the toolbar and the Layout menu;
+  - Show Details in a tab, in a dialog, or handed to the Consumer;
+  - Excel's Japanese words;
+  - live gathering, the Change Highlight and the Stale Report.
+- **`ExPivot.MudBlazor`** draws every surface, including the toolbar, the Details tabs (in
+  `MudTabs`) and the dialog's content.
+- **ExGrid's Change Highlight** (ADR-0067, DC-53 to DC-55).
+- **The demo API server, `samples/ExGrid.DemoApi`** (ADR-0068): SQLite holding money as integer
+  cents, the trades as Arrow, a Pivot Source answered in SQL, and live changes said over SignalR.
+- **The six pages:** `/pivot`, `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` and
+  `/grid-live`. Each shows the code it runs, read from its own source.
 
 ```sh
-dotnet test ExGrid.slnx                 # all pass: ExGrid 826 + 1068 (1 skipped, as before),
-                                        # ExGrid.MudBlazor 88, ExSheet 1969 + 290,
-                                        # ExPivot.Engine 158, ExPivot 48, ExPivot.MudBlazor 27
-tests/ExGrid.PackageSmoke/check.sh      # passed: ExPivot's three packages in .pivot-feed, none in .feed
-npx playwright test pivot.spec.mjs navigation.spec.mjs   # WebAssembly and Server hosts: all pass
+dotnet test ExGrid.slnx                 # 5,384 pass, 0 failed; 8 skipped: the explicit measurements and ST-1's 10⁶ case
+                                        # ExGrid 838 + 1,095, ExGrid.MudBlazor 91, ExSheet 1,969 + 290,
+                                        # ExGrid.Data 248, ExGrid.Data.Arrow 182, ExPivot.Engine 304,
+                                        # ExPivot 178, ExPivot.MudBlazor 53, the demo API server 136
+tests/ExGrid.PackageSmoke/check.sh      # passed: the data packages and ExPivot's in .pivot-feed, none in .feed
+npx playwright test pivot.spec.mjs pivot-csv.spec.mjs pivot-db.spec.mjs pivot-live.spec.mjs \
+    pivot-risk.spec.mjs grid-live.spec.mjs navigation.spec.mjs   # 80 pass on each host
 ```
 
-**Layer 3 ran here only in part.** It ran on Linux, headed under xvfb, against the container's
-Chromium (Playwright's build 1194), because neither Chrome nor Edge was installed: the targeted
-run AGENTS.md asks for, not the full one, which is CI's. `pivot.spec.mjs` (18 tests) and
-`navigation.spec.mjs` passed on both hosts, and `mud.spec.mjs` on WebAssembly. In
-`sheet.spec.mjs`, *SH-16/SH-18: the Linked Table reads #GETTING_DATA until its first snapshot*
-failed, and fails the same way on the base commit here: the page pushes its first snapshot 1.5 s
-after the Sheet opens, and on this container the Sheet takes longer than that to be ready, so the
-cell already shows the value. It is left to CI's runners, as AGENTS.md says of a failure seen only
-locally.
+**Layer 3 ran here in part, targeted.** It ran on Linux, headed under xvfb, against the container's
+Chromium, because neither Chrome nor Edge is installed here. The specs of the six pages and
+navigation pass on both hosts, under both pivot Chromes, with a clean console. CI's full run has not
+seen this branch: it runs on `main` and on pull requests.
 
-**Found in the browser, and fixed before it was decided.** Under MudBlazor the pane's content
-was taller than the report, so the Rows and Values Areas stood below the pane's edge, and a drag
-that needed a scroll to reach them was cancelled before it began. And a panel opened under an
-entry was only as wide as that entry's Area, half the pane. The pane now keeps its Areas in view
-and lets the list of fields scroll, and a menu or panel drops down at its static position, as wide
-as the pane; ADR-0060 records the revision.
+**Measured, never gated** (`verification/2026-10-01-linux-measure`, a 4-vCPU container; PV-21 and
+DA-17). Over a million trades in a published WebAssembly build:
+
+| Met | Missed |
+|---|---|
+| A collapse, a sort or a form, laid out from the answer held: 28–32 ms | A CSV of a million rows: 14.6 s against 4 s (955 ms on CoreCLR, against about 0.4 s) |
+| 1,000 changes on screen: 43 ms | The page blocked for at most 50 ms: a gesture's worst is about 0.2 s, and a question near the cap holds the page for 1.9 s |
+| A new question for a 50-leaf report: a median of 159–229 ms | A new question near the 200,000-leaf cap: 2.7 s |
+
+DA-17: a million records built from objects in 426 ms on CoreCLR and 3.8 s in the browser; read
+from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
+
+**Found by building the pages, and fixed.**
+
+- **A new `Source` and a new `Layout`, handed in by one render, were refused**: the new source was
+  checked against the layout on screen. On the Server host this killed the circuit when `/pivot-csv`
+  read a second file.
+- **A details tab's records read under the report's headings**, because the report's sticky header
+  painted over them.
+- **A report's exact values took the scale a source wrote them at**, so a SQL source's `75.60` and
+  the bundled source's `75.6` copied differently.
+- **Live changes spread over a million trades almost never reached `/grid-live`'s rows.**
 
 **Not done.**
 
-- **The ADRs are proposed** (ticket 06). Nothing in ExPivot is decided until the user has seen
-  them.
+- **The default cap on leaves is measured, not settled** (ADR-0065). Settling it is the user's
+  choice: a lower default, slicing the work after the answer, or a default per host.
+- **Show Details' dialog cannot give the keyboard back to the report, and Escape in its grid does not
+  close it.** Both wait on the user (Q64 and Q65).
 - **Excel's behaviour was read, not observed.** Every reading is listed in
   `docs/specs/expivot/excel-behaviours.md`, for a run beside Excel on Windows (ticket 07).
-- **PV-21 is not measured** (ticket 08). Nothing is claimed about ExPivot's speed.
-- **Edge, Windows and a real IME** have not run any of it.
+- **Edge, Windows and a real IME have run none of it.**

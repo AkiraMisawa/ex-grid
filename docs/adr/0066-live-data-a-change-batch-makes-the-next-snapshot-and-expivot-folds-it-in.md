@@ -33,7 +33,9 @@ does not start again from a million records.
 - **Leaves come and go with their Items.** An Item that first appears in a batch brings its leaves.
   An Item with no record left takes its leaves away.
 - **Target, observed and never gated:** 1,000 changes to a million records reach the screen within
-  0.2 s in the browser (Definition of Done, observational).
+  0.2 s in the browser (Definition of Done, observational). *Observed 2026-10-01: 43 ms (35–57)
+  from `Apply` to the frame that shows them, in a published WebAssembly build over a million
+  trades, and 6.3 ms on CoreCLR (`verification/2026-10-01-linux-measure`).*
 
 ## A server's source says the data moved on
 

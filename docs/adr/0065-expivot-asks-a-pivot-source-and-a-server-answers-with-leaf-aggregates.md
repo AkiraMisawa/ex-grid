@@ -159,6 +159,16 @@ what cannot be executed:**
   device, and on where the aggregation runs.
   - The default for the leaves is 200,000. It is provisional, and the Definition of Done's
     observational targets record the measurement that settles it.
+  - *Measured 2026-10-01, not yet settled* (`verification/2026-10-01-linux-measure`, a 4-vCPU
+    container, a published WebAssembly build in Chromium 141, a million trades). A question costs
+    0.25 s at 1,350 leaves, 0.36 s at 13,500, 1.2 s at 66,150, and 2.7 s at 197,151, nine times
+    PV-21's 0.3 s. Of that, 1.9 s is one task that holds the page: after the source's last slice,
+    the answer is assembled, its cube made and the report laid out without yielding. A layout past
+    the cap is refused in 0.5 s, because the source stops at the leaf that passes it. On CoreCLR the
+    same question costs about 0.26 s. So the cap keeps a question finite, and does not keep the
+    page responsive below it. Three ways forward are open, and choosing among them is the user's: a
+    lower default in the browser, slicing the work after the answer as the pass is sliced, or a
+    default per host.
 
 ## Refresh
 

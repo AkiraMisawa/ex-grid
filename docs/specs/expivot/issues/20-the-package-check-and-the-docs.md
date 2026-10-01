@@ -1,6 +1,6 @@
 # 20: The package check and the docs
 
-Status: ready-for-agent
+Status: done
 
 **What to build:**
 
