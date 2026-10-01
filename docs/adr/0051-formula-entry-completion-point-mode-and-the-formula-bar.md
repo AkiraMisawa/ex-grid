@@ -230,3 +230,39 @@ ground, unless it follows the Formula's leading `=` directly. It is a look on AD
 layer, not a selection of the field's text. A key typed next follows the Reference, as it always did
 (`=D11+D12`, then `5`, gives `=D11+D125`).
 
+## An edit in the Formula Bar is in Caret unless F2 takes it out *(2026-09-30, decided with the user)*
+
+*(Retitled the same day, after the tenth Windows run. It was "An edit in the Formula Bar never enters
+Overwrite"; see the last bullet.)*
+
+Part B of the eighth Windows run typed `=A1+B1` into the Formula Bar, pressed F2, then `Home`. The
+Formula was committed, and the Focus moved to column A. The edit had opened in Caret, as a press into
+the bar opens it, and F2 had taken it to Overwrite (Excel's Enter mode), where `Home`, the arrows and
+`End` move between cells. F2 goes from Caret to Overwrite wherever no Reference can go, and it did
+not ask which surface the edit is in. Typing that ends Point is a second way into Overwrite, reached
+after F2 has pointed from the bar or a press has pointed. Both are right in the cell, and wrong in
+the bar: Excel's Formula Bar is always in Edit (2026-09-27, item 12, "status Edit"). *(Corrected the
+same day, when ticket 42 was built. This paragraph first gave typing that ends Point as the cause of
+the run's case. It was F2.)*
+
+- **While the edit is in the Formula Bar, typing keeps it in Caret.** Typing that ends Point there
+  returns to Caret, not Overwrite. `Home`, `End`, ← and → move the caret, as they do in Caret
+  anywhere, and Enter, Tab and Escape keep their meanings. Excel's bar stays in Edit while it is typed
+  in (the tenth Windows run, cases 14–16).
+- **An edit that moves from the cell into the bar goes into Caret**, and one that moves back into the
+  cell keeps the mode it has. Excel's cell does not return to Enter mode once it is in Edit (the
+  tenth run, cases 18 and 19).
+- **F2 in the bar does what it does in the cell** *(decided with the user after the tenth Windows run,
+  replacing a decision of the same morning)*. From Caret it points where a Reference can go, and
+  anywhere else it goes to Overwrite, whose `Home` and arrows enter the Formula and move; F2 again
+  returns to Caret. Excel's F2 takes its bar from Edit to Enter and back (cases 17, 23). From Enter,
+  its `Home`, → and ↓ entered the Formula and moved the active cell to A10, E10 and D11 (cases
+  20–22), and where a Reference can go ↓ pointed (case 24).
+  - **So case `7k` was Excel's behaviour, not a defect.** F2 had taken the bar to Overwrite, and
+    `Home` entered the Formula and moved, as Excel's does. The defects the run led to are the two
+    above: typing that ended Point left the bar in Overwrite, and an edit carried into the bar kept
+    it. Excel's bar is in Edit in both.
+  - **What was decided first, and why it went.** Before Excel's F2 in its bar was observed, the user
+    chose (Q46) that F2 there move only between Caret and Point, so that the bar was never in
+    Overwrite and `Home` there never committed. The tenth run showed that Excel's bar does go to
+    Enter, and the user chose Excel's behaviour (Q47).

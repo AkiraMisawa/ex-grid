@@ -1123,9 +1123,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // press itself passes untouched: DOM focus onto the bar is its default, and the bar's focus
     // is what the core answers. Only a field that takes typing — a read-only bar opens nothing —
     // and only one not already holding DOM focus, which a press would not focus again.
-    const opensBarEdit = (event) => {
+    //
+    // With an edit open in the cell the press is held the same way. It moves the edit into the
+    // bar in Caret (ED-29), a change of mode too; and on a circuit the bar's text is a round trip
+    // behind the typing in the cell. A key typed into the bar before the core's answer went into
+    // that older text, and the render of the cell's last input then wrote the cell's text over
+    // it: the keys were gone from the page, while the core held the older text with them, which
+    // Enter would have committed (found on CI, the Server host, 2026-10-01). Held, they are typed
+    // once the answer is in, into the text the answer left.
+    const holdsBarPress = (event) => {
         const target = event.target;
-        return !!core && !replaying && event.button === 0 && (editing === 'none' || answering)
+        return !!core && !replaying && event.button === 0
             && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
             && !target.readOnly && !target.disabled && document.activeElement !== target
             && target.closest('.ex-formula-bar-text') !== null && root.contains(target);
@@ -1244,7 +1252,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
             noteCaretMove(event.target);
         }
-        if (opensBarEdit(event)) {
+        if (holdsBarPress(event)) {
             holdBehindBarPress();
             return;
         }

@@ -1,0 +1,234 @@
+== 1 cell typed: same in 6
+   edit in cell | cell coloured "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1" [A1 #326ac7; B1 #c0353e; C1 #8157b7; D1 #007c20; E1 #b03e84; F1 #b64900; G1 #267392; H1 #326ac7; I1 #c0353e; J1 #8157b7] | bar plain "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1" | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e; C1 (1 in view) #8157b7; D1 (1 in view) #007c20; E1 (1 in view) #b03e84; F1 (1 in view) #b64900; none in view #267392; none in view #326ac7; none in view #c0353e; none in view #8157b7 | dashes: none
+   px: A1 out of view; B1 out of view; C1 out of view; D1 out of view; E1 out of view; F1 out of view; G1 #267392; H1 #326ac7; I1 #c0353e; J1 #8157b7; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb; outline C1 (1 in view): line #8157b7, fill #f2eef7; outline D1 (1 in view): line #007c20, fill #e5f1e8; outline E1 (1 in view): line #b03e84, fill #f7ebf2; outline F1 (1 in view): line #b64900, fill #f7ece5; outline none in view: line #267392, fill #e9f1f4; outline none in view: line -, fill -; outline none in view: line -, fill -; outline none in view: line -, fill -
+== 1 bar typed: same in 6
+   edit in bar | cell plain "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1" | bar coloured "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1" [A1 #326ac7; B1 #c0353e; C1 #8157b7; D1 #007c20; E1 #b03e84; F1 #b64900; G1 #267392; H1 #326ac7; I1 #c0353e; J1 #8157b7] | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e; C1 (1 in view) #8157b7; D1 (1 in view) #007c20; E1 (1 in view) #b03e84; F1 (1 in view) #b64900; none in view #267392; none in view #326ac7; none in view #c0353e; none in view #8157b7 | dashes: none
+   px: A1 #326ac7; B1 #c0353e; C1 #8157b7; D1 #007c20; E1 #b03e84; F1 #b64900; G1 #267392; H1 #326ac7; I1 #c0353e; J1 #8157b7; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb; outline C1 (1 in view): line #8157b7, fill #f2eef7; outline D1 (1 in view): line #007c20, fill #e5f1e8; outline E1 (1 in view): line #b03e84, fill #f7ebf2; outline F1 (1 in view): line #b64900, fill #f7ece5; outline none in view: line #267392, fill #e9f1f4; outline none in view: line -, fill -; outline none in view: line -, fill -; outline none in view: line -, fill -
+== 2 cell typed: same in 6
+   edit in cell | cell coloured "=A1+A1" [A1 #326ac7; A1 #326ac7] | bar plain "=A1+A1" | outlines: A1 (1 in view) #326ac7; A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline A1 (1 in view): line #326ac7, fill #d7e3f4
+== 2 bar typed: same in 6
+   edit in bar | cell plain "=A1+A1" | bar coloured "=A1+A1" [A1 #326ac7; A1 #326ac7] | outlines: A1 (1 in view) #326ac7; A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline A1 (1 in view): line #326ac7, fill #d7e3f4
+== 3 cell typed: same in 6
+   edit in cell | cell coloured "=A1+$A$1" [A1 #326ac7; $A$1 #326ac7] | bar plain "=A1+$A$1" | outlines: A1 (1 in view) #326ac7; A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; $A$1 #326ac7; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline A1 (1 in view): line #326ac7, fill #d7e3f4
+== 3 bar typed: same in 6
+   edit in bar | cell plain "=A1+$A$1" | bar coloured "=A1+$A$1" [A1 #326ac7; $A$1 #326ac7] | outlines: A1 (1 in view) #326ac7; A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; $A$1 #326ac7; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline A1 (1 in view): line #326ac7, fill #d7e3f4
+== 4 cell typed: same in 6
+   edit in cell | cell coloured "=A1+B1+A1" [A1 #326ac7; B1 #c0353e; A1 #326ac7] | bar plain "=A1+B1+A1" | outlines: A1 (1 in view) #326ac7; A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 4 bar typed: same in 6
+   edit in bar | cell plain "=A1+B1+A1" | bar coloured "=A1+B1+A1" [A1 #326ac7; B1 #c0353e; A1 #326ac7] | outlines: A1 (1 in view) #326ac7; A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline A1 (1 in view): line #326ac7, fill #d7e3f4; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 5 cell typed: same in 6
+   edit in cell | cell coloured "=B2:A1" [B2:A1 #326ac7] | bar plain "=B2:A1" | outlines: A1:B2 (4 in view) #326ac7; A1:B2 (4 in view) #326ac7 | dashes: none
+   px: B2:A1 #326ac7; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9
+== 5 bar typed: same in 6
+   edit in bar | cell plain "=B2:A1" | bar coloured "=B2:A1" [B2:A1 #326ac7] | outlines: A1:B2 (4 in view) #326ac7; A1:B2 (4 in view) #326ac7 | dashes: none
+   px: B2:A1 #326ac7; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9
+== 6 cell typed: same in 6
+   edit in cell | cell coloured "=A1:B2+B2" [A1:B2 #326ac7; B2 #c0353e] | bar plain "=A1:B2+B2" | outlines: A1:B2 (4 in view) #326ac7; A1:B2 (4 in view) #326ac7; B2 (1 in view) #c0353e | dashes: none
+   px: A1:B2 #326ac7; B2 #c0353e; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9; outline B2 (1 in view): line #c0353e, fill #e5dde6
+== 6 bar typed: same in 6
+   edit in bar | cell plain "=A1:B2+B2" | bar coloured "=A1:B2+B2" [A1:B2 #326ac7; B2 #c0353e] | outlines: A1:B2 (4 in view) #326ac7; A1:B2 (4 in view) #326ac7; B2 (1 in view) #c0353e | dashes: none
+   px: A1:B2 #326ac7; B2 #c0353e; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9; outline A1:B2 (4 in view): line #326ac7, fill #eaf0f9; outline B2 (1 in view): line #c0353e, fill #e5dde6
+== 7 cell typed: same in 6
+   edit in cell | cell coloured "=A1+B1" [A1 #326ac7; B1 #c0353e] | bar plain "=A1+B1" | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 7 cell after-F2: same in 6
+   edit in cell | cell coloured "=A1+B1" [A1 #326ac7; B1 #c0353e] | bar plain "=A1+B1" | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 7 cell after-deletion: same in 6
+   edit in cell | cell coloured "=B1" [B1 #326ac7] | bar plain "=B1" | outlines: B1 (1 in view) #326ac7 | dashes: none
+   px: B1 #326ac7; outline B1 (1 in view): line #326ac7, fill #eaf0f9
+== 7 bar typed: same in 6
+   edit in bar | cell plain "=A1+B1" | bar coloured "=A1+B1" [A1 #326ac7; B1 #c0353e] | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 7 bar after-F2: same in 6
+   edit in bar | cell plain "=A1+B1" | bar coloured "=A1+B1" [A1 #326ac7; B1 #c0353e] | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 7 bar after-deletion: same in 6
+   no edit (div.ex-grid) | bar plain "" | outlines: none | dashes: none
+   px: 
+== 8 cell typed: same in 6
+   edit in cell | cell coloured "=Sheet1!A1" [Sheet1!A1 #326ac7] | bar plain "=Sheet1!A1" | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: Sheet1!A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 8 bar typed: same in 6
+   edit in bar | cell plain "=Sheet1!A1" | bar coloured "=Sheet1!A1" [Sheet1!A1 #326ac7] | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: Sheet1!A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 9 - -: same in 6
+   excluded: Part A adds a second sheet, Sheet2, and activates Sheet1. /sheet holds one Sheet, and ExSheet has no second sheet to add (ADR-0046: a Reference qualified with another name names no cells).
+   px: 
+== 10a cell typed: same in 6
+   edit in cell | cell coloured "=SUM(A:A)" [A:A #326ac7] | bar plain "=SUM(A:A)" | outlines: A1:A13 (13 in view) #326ac7 | dashes: none
+   px: A:A #326ac7; outline A1:A13 (13 in view): line #326ac7, fill #eaf0f9
+== 10a bar typed: same in 6
+   edit in bar | cell plain "=SUM(A:A)" | bar coloured "=SUM(A:A)" [A:A #326ac7] | outlines: A1:A13 (13 in view) #326ac7 | dashes: none
+   px: A:A #326ac7; outline A1:A13 (13 in view): line #326ac7, fill #eaf0f9
+== 10b cell typed: same in 6
+   edit in cell | cell coloured "=SUM(1:1)" [1:1 #326ac7] | bar plain "=SUM(1:1)" | outlines: A1:F1 (6 in view) #326ac7; A1:F1 (6 in view) #326ac7 | dashes: none
+   px: 1:1 #326ac7; outline A1:F1 (6 in view): line #326ac7, fill #eaf0f9; outline A1:F1 (6 in view): line #326ac7, fill #eaf0f9
+== 10b bar typed: same in 6
+   edit in bar | cell plain "=SUM(1:1)" | bar coloured "=SUM(1:1)" [1:1 #326ac7] | outlines: A1:F1 (6 in view) #326ac7; A1:F1 (6 in view) #326ac7 | dashes: none
+   px: 1:1 #326ac7; outline A1:F1 (6 in view): line #326ac7, fill #eaf0f9; outline A1:F1 (6 in view): line #326ac7, fill #eaf0f9
+== 11 cell typed: same in 6
+   edit in cell | cell coloured "=SUM(Positions[PV])" [Positions[PV] #326ac7] | bar plain "=SUM(Positions[PV])" | outlines: none | dashes: none | positions grid: PV #326ac7
+   px: Positions[PV] #326ac7; outline PV: line #326ac7, fill #eaf0f9
+== 11 bar typed: same in 6
+   edit in bar | cell plain "=SUM(Positions[PV])" | bar coloured "=SUM(Positions[PV])" [Positions[PV] #326ac7] | outlines: none | dashes: none | positions grid: PV #326ac7
+   px: Positions[PV] #326ac7; outline PV: line #326ac7, fill #eaf0f9
+== 12 cell typed: same in 6
+   edit in cell | cell coloured "=SUM(Positions[PV])+SUM(Positions[Id])" [Positions[PV] #326ac7; Positions[Id] #c0353e] | bar plain "=SUM(Positions[PV])+SUM(Positions[Id])" | outlines: none | dashes: none | positions grid: PV #326ac7; Id #c0353e
+   px: Positions[PV] out of view; Positions[Id] #c0353e; outline PV: line #326ac7, fill #eaf0f9; outline Id: line #c0353e, fill #f8eaeb
+== 12 bar typed: same in 6
+   edit in bar | cell plain "=SUM(Positions[PV])+SUM(Positions[Id])" | bar coloured "=SUM(Positions[PV])+SUM(Positions[Id])" [Positions[PV] #326ac7; Positions[Id] #c0353e] | outlines: none | dashes: none | positions grid: PV #326ac7; Id #c0353e
+   px: Positions[PV] #326ac7; Positions[Id] #c0353e; outline PV: line #326ac7, fill #eaf0f9; outline Id: line #c0353e, fill #f8eaeb
+== 13 cell typed: same in 6
+   edit in cell | cell coloured "=SUM(A1," [A1 #326ac7] | bar plain "=SUM(A1," | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 13 bar typed: same in 6
+   edit in bar | cell plain "=SUM(A1," | bar coloured "=SUM(A1," [A1 #326ac7] | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 14 cell typed: same in 6
+   edit in cell | cell coloured "=A1+" [A1 #326ac7] | bar plain "=A1+" | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 14 bar typed: same in 6
+   edit in bar | cell plain "=A1+" | bar coloured "=A1+" [A1 #326ac7] | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 15 cell typed: same in 6
+   edit in cell | cell coloured "=\"A1\"&B1" [B1 #326ac7] | bar plain "=\"A1\"&B1" | outlines: B1 (1 in view) #326ac7 | dashes: none
+   px: B1 #326ac7; outline B1 (1 in view): line #326ac7, fill #eaf0f9
+== 15 bar typed: same in 6
+   edit in bar | cell plain "=\"A1\"&B1" | bar coloured "=\"A1\"&B1" [B1 #326ac7] | outlines: B1 (1 in view) #326ac7 | dashes: none
+   px: B1 #326ac7; outline B1 (1 in view): line #326ac7, fill #eaf0f9
+== 16 cell typed: same in 6
+   edit in cell | cell coloured "=LOG10(A1)" [A1 #326ac7] | bar plain "=LOG10(A1)" | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 16 bar typed: same in 6
+   edit in bar | cell plain "=LOG10(A1)" | bar coloured "=LOG10(A1)" [A1 #326ac7] | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 17 cell typed: same in 6
+   edit in cell | cell coloured "=a1" [a1 #326ac7] | bar plain "=a1" | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: a1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 17 bar typed: same in 6
+   edit in bar | cell plain "=a1" | bar coloured "=a1" [a1 #326ac7] | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: a1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 18 cell typed: same in 6
+   edit in cell | cell coloured "A1" [no Reference] | bar plain "A1" | outlines: none | dashes: none
+   px: 
+== 18 bar typed: same in 6
+   edit in bar | cell plain "A1" | bar coloured "A1" [no Reference] | outlines: none | dashes: none
+   px: 
+== 19 cell pointing: same in 6
+   edit in cell | cell coloured "=D11" [D11 #326ac7] | bar plain "=D11" | outlines: D11 (1 in view) #326ac7 | dashes: D11 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #326ac7; outline D11 (1 in view): line #326ac7, fill #eaf0f9; dashes D11 (1 in view): #000000 x16, changed in 300 ms 0
+== 19 bar pointing: same in 6
+   edit in bar | cell plain "=" | bar coloured "=" [no Reference] | outlines: none | dashes: none
+   px: 
+== 20 cell first-pointing: same in 6
+   edit in cell | cell coloured "=D11" [D11 #326ac7] | bar plain "=D11" | outlines: D11 (1 in view) #326ac7 | dashes: D11 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #326ac7; outline D11 (1 in view): line #326ac7, fill #eaf0f9; dashes D11 (1 in view): #000000 x16, changed in 300 ms 0
+== 20 cell second-pointing: same in 6
+   edit in cell | cell coloured "=D11+D11" [D11 #326ac7; D11 #326ac7 fill #1b3a6d on #c6c6c6] | bar plain "=D11+D11" | outlines: D11 (1 in view) #326ac7; D11 (1 in view) #326ac7 | dashes: D11 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #326ac7; D11 #1c3a6d on #c6c6c6; outline D11 (1 in view): line #326ac7, fill #d7e3f4; outline D11 (1 in view): line #326ac7, fill #d7e3f4; dashes D11 (1 in view): #000000 x16, changed in 300 ms 0
+== 20 bar first-pointing: same in 6
+   edit in bar | cell plain "=" | bar coloured "=" [no Reference] | outlines: none | dashes: none
+   px: 
+== 20 bar second-pointing: same in 6
+   edit in bar | cell plain "=+" | bar coloured "=+" [no Reference] | outlines: none | dashes: none
+   px: 
+== 20x cell first-pointing: same in 6
+   edit in cell | cell coloured "=D11" [D11 #326ac7] | bar plain "=D11" | outlines: D11 (1 in view) #326ac7 | dashes: D11 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #326ac7; outline D11 (1 in view): line #326ac7, fill #eaf0f9; dashes D11 (1 in view): #000000 x16, changed in 300 ms 0
+== 20x cell second-pointing: same in 6
+   edit in cell | cell coloured "=D11+D12" [D11 #326ac7; D12 #c0353e fill #6a1d22 on #c6c6c6] | bar plain "=D11+D12" | outlines: D11 (1 in view) #326ac7; D12 (1 in view) #c0353e | dashes: D12 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #326ac7; D12 #6a1d22 on #c6c6c6; outline D11 (1 in view): line #326ac7, fill #eaf0f9; outline D12 (1 in view): line #c0353e, fill #f8eaeb; dashes D12 (1 in view): #000000 x16, changed in 300 ms 0
+== 20x bar first-pointing: same in 6
+   edit in bar | cell plain "=" | bar coloured "=" [no Reference] | outlines: none | dashes: none
+   px: 
+== 20x bar second-pointing: same in 6
+   edit in bar | cell plain "=+" | bar coloured "=+" [no Reference] | outlines: none | dashes: none
+   px: 
+== 21 div.ex-grid selected: same in 6
+   no edit (div.ex-grid) | bar plain "=A1+B1" | outlines: none | dashes: none
+   px: 
+== 21 cell F2: same in 6
+   edit in cell | cell coloured "=A1+B1" [A1 #326ac7; B1 #c0353e] | bar plain "=A1+B1" | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 21 cell double-click: same in 6
+   edit in cell | cell coloured "=A1+B1" [A1 #326ac7; B1 #c0353e] | bar plain "=A1+B1" | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 21 bar formula-bar-click: same in 6
+   edit in bar | cell plain "=A1+B1" | bar coloured "=A1+B1" [A1 #326ac7; B1 #c0353e] | outlines: A1 (1 in view) #326ac7; B1 (1 in view) #c0353e | dashes: none
+   px: A1 #326ac7; B1 #c0353e; outline A1 (1 in view): line #326ac7, fill #eaf0f9; outline B1 (1 in view): line #c0353e, fill #f8eaeb
+== 22 cell typed: same in 6
+   edit in cell | cell coloured "=D10" [D10 #326ac7] | bar plain "=D10" | outlines: D10 (1 in view) #326ac7 | dashes: none
+   px: D10 #326ac7; outline D10 (1 in view): line #ffffff, fill #ffffff
+== 22 bar typed: same in 6
+   edit in bar | cell plain "=D10" | bar coloured "=D10" [D10 #326ac7] | outlines: D10 (1 in view) #326ac7 | dashes: none
+   px: D10 #326ac7; outline D10 (1 in view): line #ffffff, fill #ffffff
+== 23 - -: same in 6
+   excluded: Part A sets the sheet's zoom to 400%. /sheet has no zoom of its own; the browser's page zoom scales the whole page, which is not what Excel's sheet zoom does.
+   px: 
+== 24 cell typed: same in 6
+   edit in cell | cell coloured "+A1" [A1 #326ac7] | bar plain "+A1" | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 24 bar typed: same in 6
+   edit in bar | cell plain "+A1" | bar coloured "+A1" [A1 #326ac7] | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 25 cell typed: same in 6
+   edit in cell | cell coloured "-B2" [B2 #326ac7] | bar plain "-B2" | outlines: B2 (1 in view) #326ac7 | dashes: none
+   px: B2 #326ac7; outline B2 (1 in view): line #326ac7, fill #eaf0f9
+== 25 bar typed: same in 6
+   edit in bar | cell plain "-B2" | bar coloured "-B2" [B2 #326ac7] | outlines: B2 (1 in view) #326ac7 | dashes: none
+   px: B2 #326ac7; outline B2 (1 in view): line #326ac7, fill #eaf0f9
+== 26 cell typed: same in 6
+   edit in cell | cell coloured "=SUM(A1:" [A1 #326ac7] | bar plain "=SUM(A1:" | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 26 bar typed: same in 6
+   edit in bar | cell plain "=SUM(A1:" | bar coloured "=SUM(A1:" [A1 #326ac7] | outlines: A1 (1 in view) #326ac7 | dashes: none
+   px: A1 #326ac7; outline A1 (1 in view): line #326ac7, fill #eaf0f9
+== 27 cell typed: same in 6
+   edit in cell | cell coloured "=SUM(Nope[PV]" [no Reference] | bar plain "=SUM(Nope[PV]" | outlines: none | dashes: none
+   px: 
+== 27 bar typed: same in 6
+   edit in bar | cell plain "=SUM(Nope[PV]" | bar coloured "=SUM(Nope[PV]" [no Reference] | outlines: none | dashes: none
+   px: 
+== 28 cell typed: same in 6
+   edit in cell | cell coloured "=SUM(Positions[Nope]" [no Reference] | bar plain "=SUM(Positions[Nope]" | outlines: none | dashes: none
+   px: 
+== 28 bar typed: same in 6
+   edit in bar | cell plain "=SUM(Positions[Nope]" | bar coloured "=SUM(Positions[Nope]" [no Reference] | outlines: none | dashes: none
+   px: 
+== 29 cell pointing: same in 6
+   edit in cell | cell coloured "=SUM(D11" [D11 #326ac7 fill #1b3a6d on #c6c6c6] | bar plain "=SUM(D11" | outlines: D11 (1 in view) #326ac7 | dashes: D11 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #1c3a6d on #c6c6c6; outline D11 (1 in view): line #326ac7, fill #eaf0f9; dashes D11 (1 in view): #000000 x16, changed in 300 ms 0
+== 29 bar pointing: same in 6
+   edit in bar | cell plain "=SUM(" | bar coloured "=SUM(" [no Reference] | outlines: none | dashes: none
+   px: 
+== 30 cell pointing: same in 6
+   edit in cell | cell coloured "=1+D11" [D11 #326ac7 fill #1b3a6d on #c6c6c6] | bar plain "=1+D11" | outlines: D11 (1 in view) #326ac7 | dashes: D11 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #1c3a6d on #c6c6c6; outline D11 (1 in view): line #326ac7, fill #eaf0f9; dashes D11 (1 in view): #000000 x16, changed in 300 ms 0
+== 30 bar pointing: same in 6
+   edit in bar | cell plain "=1+" | bar coloured "=1+" [no Reference] | outlines: none | dashes: none
+   px: 
+== 31 cell pointing: same in 6
+   edit in cell | cell coloured "=D12" [D12 #326ac7] | bar plain "=D12" | outlines: D12 (1 in view) #326ac7 | dashes: D12 (1 in view) dashed 2px #000000 offset -4px
+   px: D12 #326ac7; outline D12 (1 in view): line #326ac7, fill #eaf0f9; dashes D12 (1 in view): #000000 x16, changed in 300 ms 0
+== 31 bar pointing: same in 6
+   edit in bar | cell plain "=" | bar coloured "=" [no Reference] | outlines: none | dashes: none
+   px: 
+== 32 cell pointing: same in 6
+   edit in cell | cell coloured "=D11+D12" [D11 #326ac7; D12 #c0353e fill #6a1d22 on #c6c6c6] | bar plain "=D11+D12" | outlines: D11 (1 in view) #326ac7; D12 (1 in view) #c0353e | dashes: D12 (1 in view) dashed 2px #000000 offset -4px
+   px: D11 #326ac7; D12 #6a1d22 on #c6c6c6; outline D11 (1 in view): line #326ac7, fill #eaf0f9; outline D12 (1 in view): line #c0353e, fill #f8eaeb; dashes D12 (1 in view): #000000 x16, changed in 300 ms 0
+== 32 cell after-5: same in 6
+   edit in cell | cell coloured "=D11+D125" [D11 #326ac7; D125 #c0353e] | bar plain "=D11+D125" | outlines: D11 (1 in view) #326ac7 | dashes: none
+   px: D11 #326ac7; D125 #c0353e; outline D11 (1 in view): line #326ac7, fill #eaf0f9
+== 32 bar pointing: same in 6
+   edit in bar | cell plain "=D11+" | bar coloured "=D11+" [D11 #326ac7] | outlines: D11 (1 in view) #326ac7 | dashes: none
+   px: D11 #326ac7; outline D11 (1 in view): line #326ac7, fill #eaf0f9
+== 32 bar after-5: same in 6
+   edit in bar | cell plain "=D11+5" | bar coloured "=D11+5" [D11 #326ac7] | outlines: D11 (1 in view) #326ac7 | dashes: none
+   px: D11 #326ac7; outline D11 (1 in view): line #326ac7, fill #eaf0f9
