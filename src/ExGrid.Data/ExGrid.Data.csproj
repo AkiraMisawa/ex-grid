@@ -3,7 +3,7 @@
   <PropertyGroup>
     <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
     <TargetFramework>net10.0</TargetFramework>
-    <Description>The Ex family's immutable data: a Snapshot of tabular data held column by column — text as a dictionary, money as exact scaled integers — built from objects or from columns, and moved on by Change Batches keyed by a Record Key. No dependency.</Description>
+    <Description>The Ex family's immutable data: a Snapshot of tabular data held column by column — text as a dictionary, money as exact scaled integers — built from objects, a CSV read under a declared Schema, a DbDataReader or columns, and moved on by Change Batches keyed by a Record Key. No dependency.</Description>
     <PackageTags>snapshot;columnar;immutable;change-batch;pivot;excel</PackageTags>
     <!-- Trimmable (DA-8): a browser application is trimmed member by member, so one that never asks
          for CsvEncoding.ShiftJis — the only member that refers to the code pages — publishes without
