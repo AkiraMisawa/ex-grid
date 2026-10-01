@@ -155,7 +155,9 @@ public sealed partial class Sheet
         ShiftColumnWidths(edit, formatInserted);
         RebuildDependencies();
         var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;
-        var change = SheetChange.Merge([Diff(before, recalculated, shownBefore), new SheetChange([], [], [], WidthsChangedSince(widthsBefore))]);
+        // Rows and columns moved: two cells' sides meet on a new edge, from cells that may hold nothing.
+        var change = SheetChange.Merge([Diff(before, recalculated, shownBefore), new SheetChange([], [], [], WidthsChangedSince(widthsBefore))])
+            .ReformattingUnnamedRows();
         return new StructuralOutcome(change, dropped, rewritten, rowsBefore, columnsBefore, widthsBefore);
     }
 }

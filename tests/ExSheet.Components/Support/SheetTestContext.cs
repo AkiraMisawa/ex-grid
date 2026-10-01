@@ -58,6 +58,27 @@ public abstract class SheetTestContext : BunitContext
         });
     }
 
+    /// <summary>
+    /// Renders an ExSheet under a Wrapper's cascaded presentation (ADR-0030): the glyph widths the
+    /// grid inside resolves its Cell Metrics from, connected and interactive as <see cref="RenderSheet"/>
+    /// renders one.
+    /// </summary>
+    internal IRenderedComponent<SheetComponent> RenderSheetUnder(
+        ExGrid.GridPresentationDefaults presentation, Action<ComponentParameterCollectionBuilder<SheetComponent>>? parameters = null)
+    {
+        Interactive();
+        var host = Render<CascadingValue<ExGrid.GridPresentationDefaults>>(ps => ps
+            .Add(c => c.Value, presentation)
+            .AddChildContent<SheetComponent>(sheet =>
+            {
+                sheet.Add(s => s.ViewportHeight, (ViewportSize)400)
+                     .Add(s => s.ViewportWidth, (ViewportSize)700)
+                     .Add(s => s.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+                parameters?.Invoke(sheet);
+            }));
+        return host.FindComponent<SheetComponent>();
+    }
+
     /// <summary>Renders a Consumer's page holding an ExSheet, connected and interactive as <see cref="RenderSheet"/> renders one.</summary>
     internal IRenderedComponent<TPage> RenderPage<TPage>() where TPage : IComponent
     {

@@ -28,7 +28,7 @@
         PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
         OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"
         CellType="SheetColumns.CellType" CellAlign="SheetColumns.CellAlign" EditorTextOf="SheetColumns.EditorText"
-        PaintedText="SheetColumns.PaintedText"
+        PaintedText="SheetColumns.PaintedText" CellAppearance="_cellAppearance"
         HeaderClickSelects="true" HideHeader="!ShowColumnHeadings"
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
         DataEdge="_dataEdge"
@@ -118,6 +118,11 @@
 
     private ExGrid<SheetRow>? _grid;
     private SheetColumnList _columns = SheetColumnList.Default;
+    // Each cell's Font and Fill (ADR-0050 item 15, ADR-0063), read once per row for each reading of
+    // the Sheet's formatting. A change that may reformat rows the engine does not name starts a new
+    // reading, and the grid asks every painted row again (SheetAppearance.Lookup).
+    private int _formatReading;
+    private CellAppearanceOf<SheetRow> _cellAppearance = SheetAppearance.Lookup(0);
     // A resize of several whole columns the grid is still reporting, one column at a time: the
     // step that began it, and the columns not yet reported (ADR-0016, FN-12c).
     private (SheetStep First, HashSet<int> Pending)? _resizing;
@@ -1380,6 +1385,10 @@
         var sheet = CurrentSheet;
         foreach (var change in changes) _edges.Update(sheet, change);
         if (byUser) ClearNotice();
+        // A whole row's or column's Cell Format reaches cells that hold nothing, whether it was set
+        // or moved by an insertion or deletion: the engine does not name their rows, so every painted
+        // row is read again, and the grid repaints those whose look changed.
+        if (changes.Any(change => change.ReformatsUnnamedRows)) _cellAppearance = SheetAppearance.Lookup(++_formatReading);
         // The widths the Sheet records follow the change, its undo and redo included (ADR-0046).
         var widths = changes.SelectMany(change => change.Columns).Distinct().ToList();
         if (widths.Count > 0) _columns = _columns.Refreshed(sheet, widths, CellMetrics);

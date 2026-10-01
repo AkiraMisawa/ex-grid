@@ -28,6 +28,21 @@ public static class DemoChrome
             nameof(name)),
     };
 
+    /// <summary>
+    /// Whether <paramref name="scheme"/>, a page's <c>?scheme=</c>, asks for the dark scheme: absent or
+    /// <c>light</c> is the light one, <c>dark</c> the dark one (<see cref="DemoChromeAssets"/>), and
+    /// anything else is refused by name, as a mistyped Chrome is.
+    /// </summary>
+    /// <exception cref="ArgumentException">The scheme is neither.</exception>
+    public static bool IsDark(string? scheme) => scheme switch
+    {
+        null or "light" => false,
+        "dark" => true,
+        _ => throw new ArgumentException(
+            $"Unknown scheme '{scheme}': this page runs with ?scheme=light (the default) or ?scheme=dark.",
+            nameof(scheme)),
+    };
+
     /// <summary>The Chrome <paramref name="name"/> asks for on a page of Sheets: null for the core's
     /// own, which is ExSheet's built-in Format Cells too, and <see cref="MudSheetChrome.Default"/> for
     /// <c>mud</c> — ExGrid.MudBlazor's Chrome in the grid's seams and Format Cells as a MudDialog
