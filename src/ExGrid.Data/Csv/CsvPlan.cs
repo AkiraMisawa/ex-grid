@@ -136,6 +136,8 @@ internal sealed class CsvPlan
                 throw Wrong($"Column '{column.Name}' declares an empty date format.");
             if (!DateFormat.IsValid(format, culture, out var why))
                 throw Wrong($"Column '{column.Name}' declares the date format '{format}', which .NET cannot read: {why}");
+            if (DateFormat.TakenFromToday(format, culture) is { } today)
+                throw Wrong($"Column '{column.Name}' declares the date format '{format}': {today}.");
         }
     }
 

@@ -82,7 +82,10 @@ public sealed record CsvColumn(string Name, SnapshotKind Kind)
     /// The exact formats a Date column reads, tried in order, in .NET's custom format strings
     /// (<c>yyyy-MM-dd</c>, <c>dd.MM.yyyy HH:mm</c>); <see cref="IsoDateFormats"/> when
     /// <see langword="null"/>. A value with an offset (<c>zzz</c>, <c>K</c>) is held as the clock it
-    /// shows, with its offset dropped (ADR-0063).
+    /// shows, with its offset dropped (ADR-0063), and so is one marked UTC (<c>Z</c>, <c>GMT</c>),
+    /// wherever it is read. A format without a date reads a time on the first day; one that would take
+    /// part of a date from the day it is read — a month or a day without a year, an offset without a
+    /// date — is refused.
     /// </summary>
     public IReadOnlyList<string>? DateFormats { get; init; }
 

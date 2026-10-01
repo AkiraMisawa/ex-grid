@@ -448,8 +448,8 @@ internal static class CsvSuggester
             {
                 var scratch = new byte[bytes[i].Length + 1];
                 all = NumberText.Normalize(bytes[i], Readings[r], scratch, out var written)
-                    ? double.TryParse(scratch.AsSpan(0, written), NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number)
-                    : double.TryParse(bytes[i], NumberStyles.Float, CultureInfo.InvariantCulture, out var symbol) && !double.IsFinite(symbol);
+                    ? double.TryParse(scratch.AsSpan(0, written), NumberText.DoubleStyle, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number)
+                    : double.TryParse(bytes[i], NumberText.DoubleStyle, CultureInfo.InvariantCulture, out var symbol) && !double.IsFinite(symbol);
             }
             if (all)
                 return new Proposal(SnapshotKind.Double) { Point = r == 0 ? null : "," };

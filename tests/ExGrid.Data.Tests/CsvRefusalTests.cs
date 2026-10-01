@@ -88,6 +88,20 @@ public class CsvRefusalTests
         Assert.Equal("Row 1, column 'V': '1,5' is not a number (line 2).", Refusal(schema, "V\n\"1,5\"\n").Message);
     }
 
+    [Fact] // ADR-0063: only the spaces around a number are set aside; a tab or a line break in one is no number, in every reading
+    public void A_number_with_a_tab_or_a_line_break_is_refused()
+    {
+        foreach (var kind in new[] { SnapshotKind.Double, SnapshotKind.Decimal, SnapshotKind.Integer })
+        {
+            var plain = new CsvSchema([new("V", kind)]);
+            var german = new CsvSchema([new("V", kind) { DecimalPoint = ",", ThousandsSeparator = "." }]) { Separator = CsvSeparator.Semicolon };
+
+            Assert.Equal(1, Refusal(plain, "V\n1\t\n").Row);
+            Assert.Equal(1, Refusal(plain, "V\n\"1\n\"\n").Row);
+            Assert.Equal(1, Refusal(german, "V\n\t1\n").Row);
+        }
+    }
+
     [Fact] // ADR-0063: a record with too many fields is refused
     public void A_record_with_too_many_fields_is_refused()
     {

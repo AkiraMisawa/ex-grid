@@ -89,8 +89,12 @@ internal sealed class DateFormat
         return true;
     }
 
-    /// <summary>Reads decoded text; a value with an offset is held as the clock it shows. A format
-    /// without a date reads a time on the first day, never on the day it happens to be read.</summary>
+    /// <summary>
+    /// Reads decoded text; a value with an offset is held as the clock it shows. A format without a
+    /// date reads a time on the first day, never on the day it happens to be read. A format with
+    /// <c>Z</c> or <c>GMT</c>, which .NET reads as UTC and would turn into the clock of the machine
+    /// reading it, is held as the clock it shows too: adjusting a UTC value to UTC moves it by nothing.
+    /// </summary>
     public bool TryRead(ReadOnlySpan<char> s, out long ticks)
     {
         if (offset)
@@ -101,13 +105,33 @@ internal sealed class DateFormat
                 return true;
             }
         }
-        else if (DateTime.TryParseExact(s, format, culture, DateTimeStyles.NoCurrentDateDefault, out var date))
+        else if (DateTime.TryParseExact(s, format, culture, DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AdjustToUniversal, out var date))
         {
             ticks = date.Ticks;
             return true;
         }
         ticks = 0;
         return false;
+    }
+
+    /// <summary>
+    /// Why a date read under <paramref name="format"/> would take part of its value from the day it is
+    /// read — .NET gives a month or a day without a year the current year, and an offset without a
+    /// date the current date — or <see langword="null"/> when nothing is taken from it. It is told by
+    /// what the format writes, so standard formats, quoted text and escapes are seen as .NET sees them.
+    /// </summary>
+    public static string? TakenFromToday(string format, CultureInfo culture)
+    {
+        var shown = Write(2001, 2, 3);
+        if (shown != Write(2002, 2, 3))
+            return null;
+        if (shown != Write(2001, 3, 4))
+            return "it has a month or a day but no year, so a date read under it would take the year it is read in";
+        return HasOffset(format)
+            ? "it has an offset but no date, so a date read under it would take the day it is read on"
+            : null;
+
+        string Write(int year, int month, int day) => new DateTime(year, month, day, 4, 5, 6, 7).ToString(format, culture);
     }
 
     /// <summary>Whether .NET can read <paramref name="format"/> at all; it throws for one it cannot.</summary>

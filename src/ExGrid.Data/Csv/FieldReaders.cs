@@ -177,7 +177,7 @@ internal sealed class DoubleFieldReader(CsvColumn column, IReadOnlyList<string> 
         double number;
         if (reading.Plain)
         {
-            if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out number))
+            if (!double.TryParse(value, NumberText.DoubleStyle, CultureInfo.InvariantCulture, out number))
                 throw Context.Refuse(Name, $"{Show(field)} is not a number");
         }
         else
@@ -186,10 +186,10 @@ internal sealed class DoubleFieldReader(CsvColumn column, IReadOnlyList<string> 
                 scratch = new byte[(value.Length + 1) * 2];
             if (NumberText.Normalize(value, reading, scratch, out var written))
             {
-                if (!double.TryParse(scratch.AsSpan(0, written), NumberStyles.Float, CultureInfo.InvariantCulture, out number))
+                if (!double.TryParse(scratch.AsSpan(0, written), NumberText.DoubleStyle, CultureInfo.InvariantCulture, out number))
                     throw Context.Refuse(Name, $"{Show(field)} is not a number");
             }
-            else if (!(double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out number) && !double.IsFinite(number)))
+            else if (!(double.TryParse(value, NumberText.DoubleStyle, CultureInfo.InvariantCulture, out number) && !double.IsFinite(number)))
             {
                 // Only NaN and Infinity are read past the column's separators.
                 throw Context.Refuse(Name, $"{Show(field)} is not a number");

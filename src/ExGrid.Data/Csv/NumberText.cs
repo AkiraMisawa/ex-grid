@@ -117,6 +117,11 @@ internal ref struct ParsedNumber
 /// </summary>
 internal static class NumberText
 {
+    /// <summary>How a Double's text is parsed once its separators are the invariant culture's: a sign,
+    /// a decimal point and an exponent, and no white space — the spaces around a value are set aside
+    /// before, and a tab or a line break in it is no number.</summary>
+    public const NumberStyles DoubleStyle = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent;
+
     private const int MaxGroups = 32;
 
     /// <summary>Reads <paramref name="s"/>, already trimmed, as a fixed-point number.</summary>
