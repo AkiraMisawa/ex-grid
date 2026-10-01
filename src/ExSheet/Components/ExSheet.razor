@@ -37,6 +37,13 @@
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" />
+@* Format Cells in a frame of the Chrome's own (ADR-0063, ADR-0010's note of 2026-09-30): beside the
+   grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
+   stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
+@if (_formatCellsFrame is { } formatCellsFrame)
+{
+    @formatCellsFrame
+}
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -88,6 +95,16 @@
     private readonly EventCallback _redo;
     private readonly EventCallback<bool> _editingChanged;
     private readonly EventCallback<EditDiscardReason> _editDiscarded;
+    private readonly Action<FormatCellsTab> _formatCellsTabShown;
+    private readonly Func<Task> _returnKeyboard;
+    private readonly Func<Task> _formatCellsFromMenu;
+
+    // Format Cells (ADR-0063): the tab it reopens on, this Sheet's own and Number at first (case
+    // 22); the context while it is open; and the fragment of a Chrome that draws it in a frame of
+    // its own, rendered beside the grid.
+    private FormatCellsTab _formatCellsTab = FormatCellsTab.Number;
+    private FormatCellsContext? _formatCells;
+    private RenderFragment? _formatCellsFrame;
 
     private ExGrid<SheetRow>? _grid;
     private SheetColumnList _columns = SheetColumnList.Default;
@@ -163,6 +180,9 @@
         _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
         {
             _selection = selection;
+            // Format Cells shows the Selection it opened over and sets what OK names on the
+            // Selection: a Selection moved under it, by the Name Box or a Consumer, ends it.
+            if (_formatCells is not null) _ = InvokeAsync(EndFormatCellsAsync);
             // A selection change is the user's own action, and clears the notice — except the
             // move that completes the commit gesture whose refusal the notice reports.
             if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
@@ -197,6 +217,11 @@
             OnEditDiscarded(reason);
             return Task.CompletedTask;
         }));
+        // Format Cells (ADR-0063): the tab each opening reopens on, and the core's focus function a
+        // Chrome whose frame lies outside the grid calls on closing (ADR-0021's note of 2026-09-30).
+        _formatCellsTabShown = tab => _formatCellsTab = tab;
+        _returnKeyboard = () => _grid?.ReturnKeyboardAsync() ?? Task.CompletedTask;
+        _formatCellsFromMenu = OpenFormatCellsByUserAsync;
     }
 
     /// <summary>
@@ -289,7 +314,11 @@
     /// </summary>
     [Parameter] public bool AllowCopyWithHeaders { get; set; }
 
-    /// <summary>The grid's Chrome, passed to ExGrid as is (ADR-0010).</summary>
+    /// <summary>
+    /// The grid's Chrome, passed to ExGrid as is (ADR-0010). A Chrome that is also an
+    /// <see cref="ISheetChrome"/> may draw Format Cells in a frame of its own (ADR-0063); otherwise
+    /// the built-in Format Cells stands in the grid's popover frame.
+    /// </summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
 
     /// <summary>
@@ -305,8 +334,9 @@
     /// or opened with F2 or a double click, until the edit is committed, cancelled or discarded.
     /// A commit the Sheet rejects — a Formula it cannot read — leaves it open (ADR-0034). While it
     /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
-    /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/> and
-    /// <see cref="SetAlignmentAsync"/> are refused by name (ADR-0048, ADR-0063).
+    /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/>,
+    /// <see cref="SetAlignmentAsync"/> and <see cref="OpenFormatCellsAsync"/> are refused by name
+    /// (ADR-0048, ADR-0063).
     /// <see cref="CellFormatAt"/> is a read, and answers. ExSheet learns it from its grid
     /// (ADR-0050 section 6).
     /// </summary>
@@ -469,6 +499,110 @@
     /// committed, the cell is as it was.
     /// </summary>
     public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
+
+    /// <summary>
+    /// Opens Format Cells over the Selection, from the Consumer's own button (ADR-0063). It opens on
+    /// the Focus cell's Cell Format, with the parts that differ across the Selection shown as Excel
+    /// shows them, and on the tab shown last in this Sheet — Number the first time. OK sets the
+    /// parts the user touched as one undo step, as <see cref="SetCellFormatAsync"/> does, and Cancel
+    /// or Escape sets nothing. A Chrome that is an <see cref="ISheetChrome"/> may draw it in a frame
+    /// of its own; otherwise it is a popover inside the Sheet's box (ADR-0050 item 16). Opening it
+    /// again while it stands opens it afresh. Answers false when nothing is selected.
+    /// </summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing opened.</exception>
+    public Task<bool> OpenFormatCellsAsync() => OnDispatcherAsync(() =>
+    {
+        RefuseWhileEditing();
+        return ShowFormatCellsAsync();
+    });
+
+    // The Context Menu's "Format Cells…" (ADR-0036, ADR-0063). The menu stands only while no edit is
+    // open; one opened in between is refused in words rather than thrown into the menu's handler.
+    private async Task OpenFormatCellsByUserAsync()
+    {
+        if (IsEditing)
+        {
+            Tell(SheetWords.EditIsOpen);
+            StateHasChanged();
+            return;
+        }
+        await ShowFormatCellsAsync();
+    }
+
+    private async Task<bool> ShowFormatCellsAsync()
+    {
+        if (_selection.IsEmpty || _grid is not { } grid) return false;
+        var focus = _selection.Focus;
+        var draft = FormatCellsDraft.Open(CurrentSheet, new CellAddress(focus.Row, focus.Column), [.. _selection.Ranges.Select(SheetFormulaAids.RangeOf)]);
+        FormatCellsContext? context = null;
+        context = new FormatCellsContext(draft, _formatCellsTab, _formatCellsTabShown,
+            () => OkFormatCellsAsync(context!), () => CancelFormatCells(context!), _returnKeyboard);
+        ClearNotice();
+        if ((Chrome as ISheetChrome)?.FormatCells(context) is { } frame)
+        {
+            // The frame is the Chrome's (ADR-0063): a built-in one standing from an earlier opening goes.
+            if (_formatCells is not null && _formatCellsFrame is null) await grid.ClosePopoverAsync();
+            _formatCells = context;
+            _formatCellsFrame = frame;
+            StateHasChanged();
+            return true;
+        }
+        _formatCells = context;
+        _formatCellsFrame = null;
+        StateHasChanged();
+        if (await grid.OpenPopoverAsync(popover => BuiltInFormatCells(context, popover), SheetWords.FormatCellsTitle)) return true;
+        _formatCells = null;
+        return false;
+    }
+
+    // The built-in Chrome's Format Cells, in the grid's popover frame (ADR-0050 item 16).
+    private static RenderFragment BuiltInFormatCells(FormatCellsContext context, GridPopoverContext popover) =>
+        @<FormatCellsPanel FormatCells="context" Popover="popover" />;
+
+    /// <summary>
+    /// Format Cells' OK (ADR-0063, SH-45): the parts the user touched, set on the Selection as one
+    /// undo step, and Format Cells ends. With nothing touched nothing is set and no step recorded. A
+    /// draft holding a refusal — a Custom code the engine does not read, text that is not a colour —
+    /// sets nothing and leaves Format Cells open, for the Chrome to show why.
+    /// </summary>
+    private async Task<bool> OkFormatCellsAsync(FormatCellsContext context)
+    {
+        if (!ReferenceEquals(context, _formatCells)) return true;
+        if (context.Draft.Refusal is not null) return false;
+        var change = context.Draft.Change;
+        if (!change.IsEmpty)
+        {
+            try
+            {
+                RefuseWhileEditing();
+                await FormatSelectionAsync(change);
+            }
+            catch (SheetRefusedException refused)
+            {
+                Tell(SheetWords.Refused(refused.Refusal));
+            }
+        }
+        await EndFormatCellsAsync();
+        return true;
+    }
+
+    // Cancel sets nothing (ADR-0063).
+    private void CancelFormatCells(FormatCellsContext context)
+    {
+        if (ReferenceEquals(context, _formatCells)) _ = InvokeAsync(EndFormatCellsAsync);
+    }
+
+    // Ends Format Cells in whichever frame it stands: the Chrome's fragment is no longer rendered,
+    // and the grid's popover closes and gives the keyboard back to the root (ADR-0039).
+    private async Task EndFormatCellsAsync()
+    {
+        if (_formatCells is null) return;
+        var ownFrame = _formatCellsFrame is not null;
+        _formatCells = null;
+        _formatCellsFrame = null;
+        if (ownFrame) StateHasChanged();
+        else if (_grid is { } grid) await grid.ClosePopoverAsync();
+    }
 
     // Undo or redo from the grid's own keys (ADR-0050 item 8). The grid forwards them only while
     // no edit is open, but ExSheet hears an edit end a render late when a parameter change
@@ -694,7 +828,7 @@
 
     /// <summary>
     /// ExSheet's Context Menu commands (ADR-0036): inserting and deleting the rows or columns the
-    /// Selection spans. Rows and columns are places, so the Row Sequence Version does not move
+    /// Selection spans, and Format Cells (ADR-0063). Rows and columns are places, so the Row Sequence Version does not move
     /// and the Selection stays where it was (ADR-0046); each command is one step on the undo
     /// stack (ADR-0048). A Selection of several ranges has no one span to act on, so the
     /// commands are unavailable for it rather than guessing one.
@@ -710,6 +844,8 @@
             new(SheetCommandIds.DeleteRows, enabled, () => StructureAsync(SheetEdit.DeleteRows(r.TopRow, r.RowCount))),
             new(SheetCommandIds.InsertColumns, enabled, () => StructureAsync(SheetEdit.InsertColumns(r.LeftColumn, r.ColumnCount))),
             new(SheetCommandIds.DeleteColumns, enabled, () => StructureAsync(SheetEdit.DeleteColumns(r.LeftColumn, r.ColumnCount))),
+            // Format Cells acts on every range of the Selection, so it stands for several as for one.
+            new(SheetCommandIds.FormatCells, context.Selection.Count > 0, _formatCellsFromMenu),
         ];
     }
 

@@ -959,11 +959,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             held.push(k);
             if (!answering) {
                 if (sentinel) {
-                    // A column's popover wraps back to its commands; the find panel, which
-                    // has none, to its own contents (ADR-0044/0055).
+                    // A column's popover wraps back to its commands; the find panel and a
+                    // Consumer's popover, which have none, to their own contents
+                    // (ADR-0044/0055; ADR-0050 item 16).
                     const into = popoverOf(event.target)?.querySelector('.ex-popover-commands')
                         ? '.ex-popover-commands'
-                        : '.ex-popover-find-body';
+                        : '.ex-popover-body';
                     awaitingMove = { from: event.target, into };
                 }
                 startHold();

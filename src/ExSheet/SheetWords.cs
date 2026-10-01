@@ -66,6 +66,8 @@ internal static class SheetWords
         _ => "Nothing was copied.",
     };
 
+    internal static string FormatCellsTitle => "Format Cells";
+
     internal static string NothingToUndo => "There is nothing to undo.";
 
     internal static string NothingToRedo => "There is nothing to redo.";

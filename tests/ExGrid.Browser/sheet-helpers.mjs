@@ -159,7 +159,7 @@ export async function typeSteadily(page, field, text) {
  * among them.
  */
 export function sheetCommands(page) {
-    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-insert-row'].map((id) => page.locator(id));
+    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
 }
 
 /** Every command that changes the Sheet is greyed out: an edit is open. */

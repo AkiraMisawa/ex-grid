@@ -12,7 +12,8 @@ computes, ExGrid paints, selects, navigates and reports.
 ## Requirements
 
 - **.NET 10 or newer.** The package targets `net10.0`.
-- ExGrid's stylesheet and script, as for any ExGrid.
+- ExGrid's stylesheet and script, as for any ExGrid, and ExSheet's own stylesheet,
+  `_content/ExSheet/ex-sheet.css`, which the built-in Format Cells is drawn with.
 
 ## Showing a Sheet
 
@@ -147,6 +148,25 @@ application can grey out its own buttons:
 
 A Linked Table's declaration and snapshots are data arriving, not commands, and are taken while an
 edit is open.
+
+## Format Cells
+
+Format Cells sets a Cell Format as Excel's dialog does (ADR-0063): five tabs — Number, Alignment,
+Font, Border and Fill — in Excel's order, opened on the Focus cell's Cell Format, with what differs
+across the selection shown as Excel shows it. OK sets only the parts the user touched, as one undo
+step; Cancel and Escape set nothing. It opens from the Context Menu's "Format Cells…" and from your
+own button, and is refused while an edit is open:
+
+```razor
+<ExSheet @ref="_sheet" EditingChanged="open => _editing = open" />
+<button disabled="@_editing" @onclick="() => _sheet!.OpenFormatCellsAsync()">Format Cells…</button>
+```
+
+Under the built-in Chrome it is a popover inside the Sheet's box, which scrolls when the box is
+small. A Chrome that implements `ISheetChrome` draws it in a frame of its own — a page-level
+dialog — from a `FormatCellsContext`: what ExSheet offers is in `FormatCellsOffer`, and the
+context's `FormatCellsDraft` holds what the dialog opens on and what OK sets, so every Chrome sets
+the same parts. Such a Chrome calls the context's `ReturnKeyboard` once its frame has closed.
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any
