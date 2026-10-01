@@ -359,7 +359,9 @@ Ticket 44 measured the candidates. Its comment holds the tables. The result file
   passes there on both hosts.
   - CDP's emulation, which the earlier measurement used, blurs borders and 1-px tiles at 1.5. No
     user has that display.
-  - Windows and a browser zoomed to 150% are still owed, in the eleventh run's Part C.
+  - Windows and a browser zoomed to 150% are still owed, in the eleventh run's Part C. *(Answered
+    2026-10-02: "What Part C of the eleventh Windows run found", below. Lines are exact at a display
+    scale of 150%; a vertical gridline, and every line at a browser zoom between the steps, are not.)*
 - **A Fill and a border on the same cell** cost +0.1 to +0.2 ms over the border alone with one Fill
   colour, +1.5 to +2.6 with 16, and +2.6 to +5.6 with 256 Fills over 256 lines.
 - **A Fill covers all four of its gridlines, beneath any line.**
@@ -702,6 +704,60 @@ written. This section says what the run changed, and what it still left to a rea
   Excel about Cell Format can ask about Ctrl+I, Ctrl+U and the Font tab.
 
 Tickets 99 to 103 build these answers.
+
+## What Part C of the eleventh Windows run found *(2026-10-02)*
+
+The run was made at c09c759, which is 523c0b9 with the procedure added. Its record is
+`verification/2026-10-02-windows-excel-11c/beside-excel.md`. It put ExSheet beside Part A's Excel, case
+by case, under Chrome and Edge, on both hosts, at a display scale of 150%.
+
+**What reads as Excel.** 16 of the 23 cases, and the browsers and hosts agree. Under the dark scheme the
+Paper and everything on it read pixel for pixel as under the light scheme (SH-39).
+
+**What was already answered.**
+- **Deliberate, as recorded above.** Rows keep one height (cases 8, 9 and 12x). Format Cells has no
+  Protection tab and no diagonal edges (case 22).
+- **The long dash is 9 at 100%** (case 9). The fourteenth run answered it, and ticket 99 built it.
+- **Format Cells over C2 showed C2's own left**, not B2's line on that edge. The fourteenth run's case 13
+  answered it, and ticket 102 built it.
+- **Escape with no edit open sent the keyboard to the page.** ADR-0012's rewrite of 2026-10-01 (PR #43)
+  answered it; the run's commit was older.
+
+**What is owed: device pixels at every scale.**
+- **At a display scale of 150% and a browser zoom of 100%** (`devicePixelRatio` 1.5), every line reads
+  as Excel's.
+- **A vertical gridline does not.** It is one CSS pixel over a column edge that lies on half a device
+  pixel (a column is 99 CSS px), so it shows as two device pixels, `#F0F0F0` and `#E0E0E0`. Excel's is one
+  pixel of `#E0E0E0`. A horizontal gridline is one pixel, because rows lie on device pixels (ADR-0053).
+- **At a browser zoom of 150% on that display** (`devicePixelRatio` 2.25), the device pixel is taken from
+  the nearest step below, 2. So:
+  - a gridline is two device pixels, and thin covers one of them;
+  - thick is not centred on the gridline;
+  - the dashes grow to 10 or 11.
+  - The same holds at any resolution between two steps.
+- **Exactness at every scale needs two things this ADR does not decide.** Column edges must lie on
+  device pixels, and the device pixel must be known at every resolution. The second is either many
+  `resolution` steps or a script that reports `devicePixelRatio`, which ADR-0021 would have to admit. The
+  next PR takes it.
+
+**Left to the next PR.** These are new, or belong to something other than a Cell Format.
+- **Ctrl+Shift+= inserts no row** (case 12). Excel inserts one. ExSheet does not claim the key, so the
+  browser zooms the page (ADR-0050, item 14). Claiming it takes the browser's zoom key, which is a
+  decision. The Context Menu's insert reads as Excel (case 12x).
+- **`####` is six `#` where Excel shows nine** at the same column width (case 3c).
+- **The Selection over lines** (case 11).
+  - Excel's outline is 2 device px of `#217346` with a white line inside. ExSheet's is 2 CSS px in the
+    Ink, or in the palette's primary under `ExSheet.MudBlazor`.
+  - Excel's shade is `#C7C7C7`, and its lines lie above the shade. ExSheet's lines lie below the
+    Selection (DC-59), so its shade tints them.
+  - Matching it is a decision about DC-59 and the Selection's tokens on the Paper.
+- **Format Cells' Font tab has no *Normal font* box** (case 24).
+- Seen beside the readings:
+  - the Row Headings' edge is `#C6C6C6` (Excel: `#ABABAB`);
+  - `#DIV/0!` has no error triangle;
+  - ExSheet's cells are larger than Excel's;
+  - `ExSheet.MudBlazor`'s Format Cells hides Font and Fill behind its scrolling tab strip when it opens
+    on Border.
 
 ## Consequences
 
