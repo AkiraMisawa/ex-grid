@@ -680,8 +680,8 @@ _Avoid_: background, shading, highlight
 
 **Border**:
 A line on one side of a cell — top, bottom, left or right — in one of Excel's line styles and a
-colour. Each cell records its own four sides, as Excel's files do, so the line between two cells
-can be recorded on both; which one is drawn is Excel's rule. No diagonals ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+colour. Each cell records its own four sides, as Excel's files do, but the line between two cells is
+one line: setting it from either cell sets it for both, and the later setting wins. No diagonals ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: gridline (the Sheet's own faint lines, which are not recorded), outline (that is a
 **Reference Outline**), frame
 

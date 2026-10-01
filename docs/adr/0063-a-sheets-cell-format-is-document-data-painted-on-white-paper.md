@@ -255,6 +255,8 @@ buttons.
 `docs/specs/exsheet/verify-on-windows-11.md` asks Excel about each of these. Each is corrected here
 when the answer comes.
 
+*(Answered by the eleventh Windows run, 2026-10-01. The next section says what each answer settled.)*
+
 - Does a Number Format's colour win over the Font colour? Which RGB is each of the eight names?
 - Where no section of the Number Format shows the Value (General, text in a format without a text
   section, a boolean, an Error Value), is there no colour? Does a `####` keep its section's colour?
@@ -273,6 +275,77 @@ when the answer comes.
   uniform along its length. Whole rows mirror this.
 - Does a page receive Ctrl+1 to Ctrl+5 in Chrome and in Edge? This is part B, in the browser.
 
+## What the eleventh Windows run settled *(2026-10-01)*
+
+The run was made at 76d3866, with Microsoft 365 and the Office theme. Its records are
+`verification/2026-10-01-windows-excel-11/cell-format.md` and
+`verification/2026-10-01-windows-browser-11/keys.md`. Each answer below is Excel's, and ADR-0047's
+rule applies: a disagreement is fixed to Excel's answer. None of them needed a new decision.
+
+- **These readings held**, and are no longer readings:
+  - A Number Format's colour wins over the Font colour. The eight names are the legacy palette.
+  - No section that shows the Value means no colour, and a `####` keeps its section's colour.
+  - A Fill covers the gridlines at its cell's edges.
+  - A thick line is centred, takes a pixel into each cell, and lies above Fills and below the
+    Selection.
+  - Each range gets its own outline.
+  - The toggles follow the Focus cell.
+  - Format Cells' OK sets only what was touched.
+  - A page receives Ctrl+1 to Ctrl+5, Ctrl+B, Ctrl+I and Ctrl+U in Chrome and Edge before the
+    browser, and never receives Ctrl+Tab or Ctrl+PageDown.
+- **The line between two cells is one line** (cases 7 and 13).
+  - Setting B2's right edge makes C2's left edge read the same, and the later setting wins, from
+    either side.
+  - Clearing a range's borders clears the same edges read from the cells outside it.
+  - So ExSheet writes both cells' sides whenever it sets or clears an edge. Each cell still records
+    its own four sides (`CONTEXT.md`, Border), and the two records never disagree. Ticket 45's
+    reading ("the cell's own side only") is corrected by ticket 55.
+- **An inserted row takes the Fill of the row above, and not its Borders** (case 12). The new row's
+  top edge is the edge it shares with the row above, so it reads that row's bottom line. Nothing
+  else was repeated. Ticket 45 copied Borders, and ticket 55 corrects it. The Font is read as
+  copied, like the Fill; that is not yet observed.
+- **An outline over whole columns sets only their left and right edges** (case 15). Neither the top
+  of row 1 nor the bottom of row 1048576 is set. Whole rows are read as the mirror: top and bottom
+  only. Ticket 45's reading differed, and ticket 55 corrects it.
+- **The formatting keys are read by the character they type, not by key position** (case 19).
+  - On a UK layout, `#` needs no Shift, and Ctrl+`#` applies the date format.
+  - So ExSheet matches the key's character (`KeyboardEvent.key`) with Ctrl, and whichever Shift the
+    layout needs.
+  - The run's Japanese layout ran over the 101-key arrangement, so it could not tell the two ways
+    apart.
+- **What the keys apply** (cases 18 and 20). Under en-GB, en-US and ja-JP:
+  - `~`: General. `!`: `#,##0.00`. `%`: `0%`. `^`: `0.00E+00`. `#`: `d-mmm-yy`, the same in all
+    three.
+  - `@`: `h:mm`, and `h:mm AM/PM` under en-US.
+  - `$`: Excel's built-in currency format, localised by the culture. Under en-GB it is
+    `£#,##0.00;[Red]-£#,##0.00`. Under ja-JP it is `¥#,##0;[Red]-¥#,##0`, with no decimals.
+    Under en-US it is `$#,##0.00_);[Red]($#,##0.00)`.
+  - ExSheet records the currency key's format as a culture-localised built-in, as it already records
+    Excel's built-in short date.
+- **Format Cells** (cases 22, 24 and 26).
+  - The tabs are in Excel's order. A fresh Excel opens on Number, and Ctrl+1 then reopens on the
+    last tab shown.
+  - The Border tab lists its line styles in two columns. It offers None, Outline and Inside, and
+    Inside is disabled for one cell.
+  - Parts that differ across the Selection are shown as Excel shows them. The Font style is empty, a
+    differing Fill shows No Colour, and a differing inside edge is a grey dotted line.
+  - Ticket 52 takes these.
+- **The palette** (case 23) is the Office theme's 60 colours and the 10 standard colours.
+  - A swatch is recorded as the RGB value Excel names it with in the Fill tab, not as the colour
+    sampled from the screen.
+  - 38 of the 50 tints are drawn 1–3 away from their named value. That is Excel's rendering, and
+    recording the named value is what Excel would report.
+
+### Where ExSheet stays unlike Excel *(follows from decisions above)*
+
+- **Excel raises a row's height for a medium or a thick line** (cases 8 and 9). A Sheet's rows keep
+  their one height (ADR-0046), so the line takes its pixels from the rows it lies across.
+- **Ctrl+1 during an edit opens a Format Cells with a Font tab alone in Excel**, for the selected
+  characters (case 21). ExSheet has no rich text. Ctrl+1 changes nothing there and says why, as the
+  other formatting keys do.
+- **Excel en-GB spells the numbered colour `[Colour10]`**, and refuses `[Color10]` (case 3).
+  `[ColorN]` is still refused here. When numbered colours come, the spelling is part of that step.
+
 ## Consequences
 
 - **Notes on other ADRs**, each saying what changed:
@@ -289,5 +362,5 @@ when the answer comes.
 - **The code's names follow the glossary.** `AxisStyle` becomes `AxisFormat`, `SetStyle` becomes
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
-- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done. Tickets 44 to 54 in
-  `docs/specs/exsheet/issues/`.
+- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done. Tickets 44 to 55 in
+  `docs/specs/exsheet/issues/`; ticket 55 was added by the eleventh run.

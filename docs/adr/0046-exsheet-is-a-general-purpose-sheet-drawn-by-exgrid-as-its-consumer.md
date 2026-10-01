@@ -157,6 +157,9 @@ Sheet has to rewrite the References to it in the other.
   qualified with it resolves; any other qualifier is `#REF!` until there are several Sheets.
 - **An inserted row takes the formatting of the row above it, and an inserted column that of the
   column to its left**, as Excel's default does. Entries are never copied.
+  *(2026-10-01: Borders are the exception. Excel gives an inserted row the Fill of the row above and
+  not its Borders, as the eleventh Windows run observed
+  ([ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).)*
 - **`ExSheet.Engine` is not published by the release workflow** while ExSheet is outside the
   release (Definition of Done §2). The package smoke check still packs it, on its own feed.
 

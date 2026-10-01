@@ -1,7 +1,8 @@
 # What to verify on Windows, eleventh run
 
-Status: ready-for-human. **Parts A and B can run now. Part C waits until tickets 48, 49 and 51 are
-done.**
+Status: ready-for-human. **Parts A and B were run on 2026-10-01 at 76d3866**
+(`verification/2026-10-01-windows-excel-11/`, `verification/2026-10-01-windows-browser-11/`; what they
+settled is in ADR-0063). **Part C waits until tickets 48, 49 and 51 are done.**
 
 This is for the Claude Code session on the Windows desktop of the earlier runs (Excel, Chrome, Edge,
 WSL2 with nix).
