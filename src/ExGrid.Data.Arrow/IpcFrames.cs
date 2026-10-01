@@ -43,27 +43,39 @@ internal static class IpcFrames
         => new("The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.");
 
     /// <summary>
-    /// Checks <paramref name="head"/> — a stream's first eight bytes, or all it has — before Arrow reads
-    /// it: the length of the schema's metadata, after the continuation marker or without it, must be
-    /// one a schema can have.
+    /// The length of a stream's first message — its framing and its metadata, the schema's — read
+    /// from <paramref name="head"/>, the stream's first eight bytes or all it has, before Arrow reads
+    /// it. The metadata's length must be one a schema can have.
     /// </summary>
     /// <exception cref="SnapshotException">The stream is empty, ends at once, or is not Arrow.</exception>
-    public static void CheckStart(ReadOnlySpan<byte> head)
+    public static int FirstMessageLength(ReadOnlySpan<byte> head)
     {
         if (head.IsEmpty)
             throw Empty();
         if (head.Length < 4)
             throw NotArrow();
+        var framing = 4;
         var length = BinaryPrimitives.ReadInt32LittleEndian(head);
         if (length == Continuation)
         {
             if (head.Length < 8)
                 throw NotArrow();
             length = BinaryPrimitives.ReadInt32LittleEndian(head[4..]);
+            framing = 8;
         }
         if (length == 0)
             throw Empty();
         if (length is < 0 or > MaxSchemaLength)
+            throw NotArrow();
+        return framing + length;
+    }
+
+    /// <summary>Checks that <paramref name="message"/>, a stream's first message whole, is a schema.</summary>
+    /// <exception cref="SnapshotException">It is not.</exception>
+    public static void CheckSchema(ReadOnlySpan<byte> message)
+    {
+        var framing = BinaryPrimitives.ReadInt32LittleEndian(message) == Continuation ? 8 : 4;
+        if (!TryReadMessage(message[framing..], out var kind, out _, out _) || kind != SchemaMessage)
             throw NotArrow();
     }
 
@@ -84,7 +96,7 @@ internal static class IpcFrames
     /// ends before its marker.</exception>
     public static List<IpcMessage> Messages(ReadOnlySpan<byte> stream)
     {
-        CheckStart(stream[..Math.Min(8, stream.Length)]);
+        FirstMessageLength(stream[..Math.Min(8, stream.Length)]);
         var messages = new List<IpcMessage>();
         var position = 0;
         while (true)
@@ -107,7 +119,7 @@ internal static class IpcFrames
             if (length < 0 || (first && length > MaxSchemaLength))
                 throw NotArrow();
             if (length > stream.Length - position)
-                throw first ? NotArrow() : CutShort();
+                throw CutShort();
             if (!TryReadMessage(stream.Slice(position, length), out var kind, out var bodyLength, out var rows)
                 || (first && kind != SchemaMessage))
             {
