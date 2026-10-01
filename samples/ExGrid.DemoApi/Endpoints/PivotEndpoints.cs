@@ -64,7 +64,8 @@ internal static class PivotEndpoints
         if (store.State != TradeStoreState.Ready)
             return ApiResults.NotReady(store, request.HttpContext.Response);
         string document;
-        using (var body = new StreamReader(request.Body, Encoding.UTF8))
+        // The body is the server's to close, not the reader's.
+        using (var body = new StreamReader(request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true))
             document = await body.ReadToEndAsync(cancellationToken);
         TQuestion question;
         try

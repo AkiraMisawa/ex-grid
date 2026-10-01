@@ -65,6 +65,12 @@ internal static class TradePivotSql
     /// engine's are for text, dates and Booleans (ADR-0059). Money is summed as integer cents,
     /// exactly; <c>AVG</c> is never asked, since it answers in floating point, and ExPivot computes
     /// an Average from the sum and the count.
+    /// <para>
+    /// <c>MaxLeaves</c> is not a <c>LIMIT</c>: two groups may fold into one leaf, so a <c>LIMIT</c>
+    /// on groups could refuse a question that fits. The source stops reading at the leaf past the
+    /// cap instead, which costs what <c>LIMIT max + 1</c> would: SQLite sorts before the first group
+    /// comes back, and reads no further than the groups taken.
+    /// </para>
     /// </summary>
     public static (string Sql, SqlParameters Parameters) Aggregate(
         PivotQuery query, IReadOnlyList<TradePivotField> axis, IReadOnlyList<TradePivotField> values)
