@@ -164,8 +164,8 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
             return columns;
         if (facts.TryGetValue(SnapshotArrowMetadata.Version, out var version))
         {
-            if (!long.TryParse(version, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number))
-                throw new SnapshotException($"The Arrow stream's {SnapshotArrowMetadata.Version} metadata '{version}' is not a version: a version is a whole number.");
+            if (!long.TryParse(version, NumberStyles.None, CultureInfo.InvariantCulture, out var number))
+                throw new SnapshotException($"The Arrow stream's {SnapshotArrowMetadata.Version} metadata '{version}' is not a version: a version is a whole number, 0 or more.");
             builder.Version = number;
         }
         if (facts.TryGetValue(SnapshotArrowMetadata.RecordKey, out var key))

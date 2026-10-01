@@ -20,7 +20,12 @@ internal static class ArrowTypeNames
         Time32Type time => $"time32[{Unit(time.Unit)}]",
         Time64Type time => $"time64[{Unit(time.Unit)}]",
         DurationType duration => $"duration[{Unit(duration.Unit)}]",
-        IntervalType interval => $"interval[{interval.Unit}]",
+        IntervalType interval => interval.Unit switch
+        {
+            IntervalUnit.YearMonth => "month_interval",
+            IntervalUnit.DayTime => "day_time_interval",
+            _ => "month_day_nano_interval",
+        },
         FixedSizeBinaryType binary => Invariant($"fixed_size_binary[{binary.ByteWidth}]"),
         FixedSizeListType list => Invariant($"fixed_size_list<{Of(list.ValueDataType)}>[{list.ListSize}]"),
         LargeListType list => $"large_list<{Of(list.ValueDataType)}>",

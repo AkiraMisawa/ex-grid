@@ -84,7 +84,7 @@ internal abstract class ColumnReader(ColumnBuilder column)
             case ArrowTypeId.Boolean:
                 return new BooleanReader(builder.Boolean(name, caption));
             default:
-                throw new SnapshotException(null, name, $"the Arrow type {ArrowTypeNames.Of(type)} is not one a Snapshot reads.");
+                throw new SnapshotException(null, name, $"the Arrow type {ArrowTypeNames.Of(type)} is not one a Snapshot reads{Hint(type)}.");
         }
     }
 
@@ -127,6 +127,14 @@ internal abstract class ColumnReader(ColumnBuilder column)
             throw Malformed("its value buffer holds fewer values than its rows");
         return all.Slice((int)first, (int)count);
     }
+
+    /// <summary>What a producer can write instead, for a type that holds what a Snapshot reads in
+    /// another form: text held as views is text a producer can write as <c>utf8</c>.</summary>
+    private static string Hint(IArrowType type)
+        => type.TypeId == ArrowTypeId.StringView
+            || (type is DictionaryType { ValueType.TypeId: ArrowTypeId.StringView })
+            ? "; write the text as utf8 or large_utf8, or a dictionary of either"
+            : string.Empty;
 
     private static bool IsIndex(ArrowTypeId type) => type is ArrowTypeId.Int8 or ArrowTypeId.Int16 or ArrowTypeId.Int32 or ArrowTypeId.Int64
         or ArrowTypeId.UInt8 or ArrowTypeId.UInt16 or ArrowTypeId.UInt32 or ArrowTypeId.UInt64;
@@ -304,8 +312,9 @@ internal sealed class DictionaryReader(TextColumnBuilder text, ArrowTypeId index
         var at = dictionary.Offset + k;
         string? value = null;
         var validity = dictionary.Buffers.Length > 0 ? dictionary.Buffers[0] : ArrowBuffer.Empty;
-        var isNull = dictionary.NullCount != 0 && !validity.IsEmpty
-            && (validity.Length * 8L <= at || !Bitmaps.GetByte(validity.Span, at));
+        if (dictionary.NullCount != 0 && !validity.IsEmpty && validity.Length * 8L <= at)
+            throw Malformed("its dictionary's validity bitmap is shorter than its entries");
+        var isNull = dictionary.NullCount != 0 && !validity.IsEmpty && !Bitmaps.GetByte(validity.Span, at);
         if (!isNull)
         {
             long from, to;
