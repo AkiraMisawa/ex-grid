@@ -82,6 +82,27 @@ two gaps in what a Consumer can do with a grid's keyboard.
 - **Escape inside a details tab's grid is unchanged.** A tab is a sheet of its own, as Excel's are,
   and Escape does not close a sheet.
 
+## Refined while building it
+
+*(2026-10-01, when ticket 21 built it.)*
+
+- **A details tab selected next takes the keyboard on its tab**, as a newly opened tab does, not in
+  its records. Its records grid is mounted by the same render that selects the tab, so it is not yet
+  attached when the keyboard has to go somewhere, and `ReturnKeyboardAsync()` does nothing before
+  attach.
+- **When a tab that was not selected closes, the keyboard goes to the sheet that is**: the report's
+  grid when the report's tab is selected. The control that held the keyboard, the closed tab's
+  button, went with it.
+- **A held Escape is one press in every grid.** The first build raised `OnLeave` once per press, as
+  decided, but a grid without `OnLeave` still answered each repeat. Holding Escape to close the
+  dialog handed the report the keyboard, and the next repeat released it. Every Escape layer now
+  answers the press and not its repeats
+  ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md), refined the same day). This is the
+  one change here to a grid that declares nothing, and it is a fix: a repeat also cancelled a
+  half-typed Formula under its closing list.
+- **The capture-phase listener passes on whether a key is a repeat** (ADR-0021, note of the same
+  day). It adds no listener, and only the browser knows a repeat from a press.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the

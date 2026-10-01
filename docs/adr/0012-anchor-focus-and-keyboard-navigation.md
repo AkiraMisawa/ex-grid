@@ -214,6 +214,13 @@ Escape is the grid's
 Escape. MudBlazor keeps focus on its control, inside the popover, so the contents now report
 the popup, and while it is open the gate leaves a descendant's Escape to it.)*)*
 
+*(Refined 2026-10-01, building
+[ADR-0069](./0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md).)* **A held Escape is
+one press.** The press peels its one layer, and the browser's repeats of it dismiss nothing more. A
+held key's repeats used to peel a layer each: holding Escape closed a Formula Entry's list and then
+cancelled the edit under it, losing what was typed, and closing ExPivot's details dialog with
+Escape handed the report the keyboard only for a repeat to release it again.
+
 *(The Interactive layer arrived with
 [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md), and
 sits between the two: a popover closes first, then an Interactive cell is left — the grid

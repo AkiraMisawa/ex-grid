@@ -225,7 +225,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(focus, ActiveDescendant(cut));
     }
 
-    [Fact] // ADR-0069/0012 (DC-57, DC-1): without OnLeave, Escape with nothing left to dismiss releases the DOM focus as before — once a press, as every Escape acts (ADR-0012, refined 2026-10-01)
+    [Fact] // ADR-0069/0012 (DC-57, DC-1, KB-44): without OnLeave, Escape with nothing left to dismiss releases the DOM focus as before — once a press, as every Escape acts (ADR-0012, refined 2026-10-01)
     public async Task Without_on_leave_escape_releases_the_focus_as_before()
     {
         var cut = RenderGrid();
@@ -237,7 +237,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(1, Js.BlurCount);
     }
 
-    [Fact] // ADR-0012 (refined 2026-10-01): a held Escape is one press — the press closes the popover, and its repeats release nothing
+    [Fact] // ADR-0012 (KB-44, refined 2026-10-01): a held Escape is one press — the press closes the popover, and its repeats release nothing
     public async Task A_held_escape_closes_a_popover_and_its_repeats_release_nothing()
     {
         var cut = RenderGrid();
@@ -253,7 +253,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.BlurCount);
     }
 
-    [Fact] // ADR-0012/0051 (refined 2026-10-01): a held Escape is one press — the press closes a Formula Entry's list, and its repeats leave the edit standing
+    [Fact] // ADR-0012/0051 (KB-44, refined 2026-10-01): a held Escape is one press — the press closes a Formula Entry's list, and its repeats leave the edit standing
     public async Task A_held_escape_closes_a_formula_entrys_list_and_its_repeats_leave_the_edit()
     {
         var cut = RenderGrid(complete: (text, caret) => ValueTask.FromResult<EditorCompletion?>(
