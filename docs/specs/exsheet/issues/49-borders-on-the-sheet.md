@@ -233,3 +233,9 @@ medium dash-dot-dot on D13's right as off pattern, where Excel's are 2, 2, 2, 2 
   (one skipped), ExSheet.MudBlazor.Tests 43, ExSheet.Components.Tests 592.
 - ADR-0053's note of this date says the viewport is composited; that sentence is now out of date.
 
+2026-10-01, agent cf-48: two tests knocked on by case 11, both fixed.
+- **Ticket 47's test of the Focus over a line** read the outline inside the cell. It now reads it on the
+  gridline and the pixel past it (ticket 47's comment).
+- **Ticket 90's pinned-cell test** read case 4's A2 as a pinned cell. Case pages stopped pinning column A
+  with case 11. `/sheet` gains `?pin=N`, and that test opens `?case=4&pin=1`. Part C's pages still pin
+  nothing.

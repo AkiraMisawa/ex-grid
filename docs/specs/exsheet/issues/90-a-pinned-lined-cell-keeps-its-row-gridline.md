@@ -73,3 +73,8 @@ ExGrid.MudBlazor does. Their ground is opaque, and the row's rule is painted on 
 them; no core rule paints it on a pinned cell. This was read from the stylesheets, not observed in a
 browser. ExSheet worked around it for the Sheet in ticket 48. The core could name `--ex-row-rule` on
 `.ex-pinned` itself, which would change ExGrid's look under MudBlazor, so it is left for a decision.
+
+2026-10-01, agent cf-48: ticket 49's case 11 made `/sheet?case=…` pin nothing, as the run's workbook had no
+frozen panes, so case 4's A2 was no longer a pinned cell.
+- `/sheet` takes `?pin=N` now, and the test opens `?case=4&pin=1`.
+- `sheet-paper.spec.mjs` passed 17 of 17 on both hosts in `chrome`.
