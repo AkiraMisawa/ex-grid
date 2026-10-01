@@ -108,6 +108,11 @@ internal abstract class FieldReader
         return false;
     }
 
+    /// <summary>A field's content without the ASCII spaces around it, which the kinds other than Text
+    /// set aside; <paramref name="content"/> is not empty.</summary>
+    protected static ReadOnlySpan<byte> Trimmed(ReadOnlySpan<byte> content)
+        => content[0] != (byte)' ' && content[^1] != (byte)' ' ? content : CsvText.Trim(content);
+
     /// <summary>The refusal of a Blank where the Record Key is read.</summary>
     protected SnapshotException BlankKey(int row) => Context.Refuse(row, Name, "the Record Key is Blank");
 
@@ -214,6 +219,7 @@ internal sealed class DecimalFieldReader(CsvColumn column, IReadOnlyList<string>
         var width = records.Width;
         var batch = Room(ref values, rows);
         var batchScales = Room(ref scales, rows);
+        var shortcut = reading.Short;
         for (var r = 0; r < rows; r++)
         {
             var content = Content(records, (r * width) + field);
@@ -222,10 +228,17 @@ internal sealed class DecimalFieldReader(CsvColumn column, IReadOnlyList<string>
                 batchScales[r] = DecimalColumnBuilder.BlankRow;
                 continue;
             }
-            var status = NumberText.Parse(CsvText.Trim(content), reading, out var number);
+            var value = Trimmed(content);
+            if (shortcut && NumberText.TryParseShort(value, reading, out var scaled, out var scale, out _))
+            {
+                batch[r] = scaled;
+                batchScales[r] = (byte)scale;
+                continue;
+            }
+            var status = NumberText.Parse(value, reading, out var number);
             if (status == NumberStatus.Ok)
             {
-                if (number.Scale <= 28 && number.TryLong(out var scaled))
+                if (number.Scale <= 28 && number.TryLong(out scaled))
                 {
                     batch[r] = scaled;
                     batchScales[r] = (byte)number.Scale;
@@ -261,6 +274,7 @@ internal sealed class IntegerFieldReader(CsvColumn column, IReadOnlyList<string>
         var width = records.Width;
         var batch = Room(ref values, rows);
         var blankBits = ClearBlanks(rows);
+        var shortcut = reading.Short;
         for (var r = 0; r < rows; r++)
         {
             var content = Content(records, (r * width) + field);
@@ -275,7 +289,13 @@ internal sealed class IntegerFieldReader(CsvColumn column, IReadOnlyList<string>
                 batch[r] = 0;
                 continue;
             }
-            var status = NumberText.Parse(CsvText.Trim(content), reading, out var number);
+            var value = Trimmed(content);
+            if (shortcut && NumberText.TryParseShort(value, reading, out var read, out _, out var hasPoint) && !hasPoint)
+            {
+                batch[r] = read;
+                continue;
+            }
+            var status = NumberText.Parse(value, reading, out var number);
             if (status != NumberStatus.NotANumber && !number.HasPoint)
             {
                 if (status == NumberStatus.Ok && number.TryLong(out var integer))

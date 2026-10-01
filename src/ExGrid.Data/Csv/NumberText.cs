@@ -27,7 +27,23 @@ internal sealed class NumberReading
                 Plus = CsvText.Encode(encoding, format.PositiveSign);
         }
         Plain = Point is [(byte)'.'] && Thousands is null && Minus is null && Plus is null;
+        Short = Point.Length == 1 && (Thousands is null || (Thousands.Length == 1 && GroupSizes is [3])) && Minus is null && Plus is null;
+        ShortPoint = Point.Length == 1 ? Point[0] : -1;
+        ShortThousands = Thousands is [var separator] ? separator : -1;
     }
+
+    /// <summary>
+    /// Whether <see cref="NumberText.TryParseShort"/> may read this column's numbers: a decimal point
+    /// of one byte, a thousands separator of one byte grouping by three or none, and the signs a
+    /// hyphen-minus and a plus.
+    /// </summary>
+    public bool Short { get; }
+
+    /// <summary>The decimal point's one byte, or -1.</summary>
+    public int ShortPoint { get; }
+
+    /// <summary>The thousands separator's one byte, or -1 for none.</summary>
+    public int ShortThousands { get; }
 
     /// <summary>The decimal point, as declared or given by the culture.</summary>
     public string PointText { get; }
@@ -123,6 +139,106 @@ internal static class NumberText
     public const NumberStyles DoubleStyle = NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint | NumberStyles.AllowExponent;
 
     private const int MaxGroups = 32;
+
+    /// <summary>The digits a long holds whatever they are.</summary>
+    private const int ShortDigits = 18;
+
+    /// <summary>
+    /// Reads <paramref name="s"/>, already trimmed, as <see cref="Parse"/> does, for a number written
+    /// the common way: a sign, at most eighteen digits grouped by threes or not grouped, and the decimal
+    /// point followed by digits, under a reading that is <see cref="NumberReading.Short"/>. It is a
+    /// shortcut, with nothing to allocate and nothing to call (ticket 07): false when the text is
+    /// anything else, which <see cref="Parse"/> then reads — or refuses — in full. When true, the
+    /// number is <paramref name="value"/> × 10^-<paramref name="scale"/>, the scale counting no
+    /// trailing zero, exactly as <see cref="Parse"/> gives it.
+    /// </summary>
+    public static bool TryParseShort(ReadOnlySpan<byte> s, NumberReading reading, out long value, out int scale, out bool hasPoint)
+    {
+        value = 0;
+        scale = 0;
+        hasPoint = false;
+        var length = s.Length;
+        if (length == 0)
+            return false;
+        var i = 0;
+        var negative = false;
+        if (s[0] == (byte)'-')
+        {
+            negative = true;
+            i = 1;
+        }
+        else if (s[0] == (byte)'+')
+        {
+            i = 1;
+        }
+
+        // The integer part. Grouped, the leftmost group holds one to three digits and every other three.
+        var thousands = reading.ShortThousands;
+        ulong magnitude = 0;
+        var digits = 0;
+        var integerDigits = 0;
+        var group = 0;
+        var groups = 0;
+        while (i < length)
+        {
+            var b = s[i];
+            var digit = (uint)(b - (byte)'0');
+            if (digit <= 9)
+            {
+                magnitude = (magnitude * 10) + digit;
+                digits++;
+                integerDigits++;
+                group++;
+                i++;
+                continue;
+            }
+            if (b != thousands)
+                break;
+            if (group == 0 || (groups == 0 ? group > 3 : group != 3))
+                return false;
+            groups++;
+            group = 0;
+            i++;
+        }
+        if (groups > 0 && group != 3)
+            return false;
+
+        // The decimal places; zeros are held back until a digit follows, so trailing ones are not places.
+        var places = 0;
+        if (i < length && s[i] == reading.ShortPoint)
+        {
+            hasPoint = true;
+            i++;
+            var zeros = 0;
+            for (; i < length; i++)
+            {
+                var digit = (uint)(s[i] - (byte)'0');
+                if (digit > 9)
+                    break;
+                if (digit == 0)
+                {
+                    zeros++;
+                    continue;
+                }
+                for (; zeros > 0; zeros--)
+                {
+                    magnitude *= 10;
+                    digits++;
+                    places++;
+                }
+                magnitude = (magnitude * 10) + digit;
+                digits++;
+                places++;
+            }
+            if (zeros > 0 && integerDigits + places == 0)
+                integerDigits = 1; // ".00" is zero, written with digits
+        }
+        if (i != length || integerDigits + places == 0 || digits > ShortDigits)
+            return false;
+        value = negative ? -(long)magnitude : (long)magnitude;
+        scale = places;
+        return true;
+    }
 
     /// <summary>Reads <paramref name="s"/>, already trimmed, as a fixed-point number.</summary>
     public static NumberStatus Parse(ReadOnlySpan<byte> s, NumberReading reading, out ParsedNumber number)
