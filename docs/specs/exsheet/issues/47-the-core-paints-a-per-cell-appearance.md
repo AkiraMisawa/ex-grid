@@ -155,7 +155,7 @@ third pixel above the Fill; a right border leaves the number 4px from the cell's
 
 ### Tests
 
-- Layer 1: `BoldWidthTests` (12). Layer 2: `CellAppearanceTests` (26): markup, the generated rules,
+- Layer 1: `BoldWidthTests` (11 tests, 14 cases). Layer 2: `CellAppearanceTests` (25): markup, the generated rules,
   render counts (a held lookup renders nothing again; a new instance with the same lines repaints no
   neighbour; a moved line repaints the rows either side of its edge and no other; a new lookup
   answering the same repaints nothing), the bold `####`, the bold metrics handed to painted text and
