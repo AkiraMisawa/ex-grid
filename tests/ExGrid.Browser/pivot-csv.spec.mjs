@@ -40,10 +40,12 @@ const EXPORT_HEADER = 'Id,Account,Region,Desk,Book,Product,Currency,Trade date,N
 const REGIONS = ['Americas', 'EMEA', 'APAC'];
 const DESKS = ['Rates', 'Credit', 'FX', 'Equities'];
 const two = (n) => String(n).padStart(2, '0');
+// One formatter for every record: toLocaleString makes one per call, thirty seconds a million.
+const money = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 });
 
 /** Record `i` of a trade export the test writes, with `quantity` as written if it is given. */
 function exportRecord(i, quantity = String(1 + (i % 49))) {
-    const notional = ((1 + (i % 499)) * 10_000).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const notional = money.format((1 + (i % 499)) * 10_000);
     return [
         `T${i}`, String(1000 + (i % 9000)).padStart(6, '0'), REGIONS[i % 3], DESKS[i % 4], 'LDN-RATES-01', 'Swap', 'EUR',
         `2026-${two(1 + (i % 9))}-${two(1 + (i % 28))}`, `"${notional}"`, ((i % 2000) - 1000.75).toFixed(2), quantity,
