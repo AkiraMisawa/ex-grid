@@ -117,28 +117,35 @@ internal sealed class PartColumns
     /// are never a number.</summary>
     public void Add(int cell, object? value)
     {
-        if (value is null)
-            return;
-        ref var counts = ref Counts[cell];
-        counts.Values++;
         switch (value)
         {
-            case decimal m: AddExact(cell, ref counts, m); break;
-            case int i: AddExact(cell, ref counts, i); break;
-            case long l: AddExact(cell, ref counts, l); break;
-            case short s: AddExact(cell, ref counts, s); break;
-            case byte b: AddExact(cell, ref counts, b); break;
-            case sbyte s: AddExact(cell, ref counts, s); break;
-            case uint u: AddExact(cell, ref counts, u); break;
-            case ulong u: AddExact(cell, ref counts, u); break;
-            case ushort u: AddExact(cell, ref counts, u); break;
-            case double d: AddDouble(cell, ref counts, d); break;
-            case float f: AddDouble(cell, ref counts, f); break;
+            case null: return;
+            case decimal m: AddExact(cell, m); return;
+            case int i: AddExact(cell, i); return;
+            case long l: AddExact(cell, l); return;
+            case short s: AddExact(cell, s); return;
+            case byte b: AddExact(cell, b); return;
+            case sbyte s: AddExact(cell, s); return;
+            case uint u: AddExact(cell, u); return;
+            case ulong u: AddExact(cell, u); return;
+            case ushort u: AddExact(cell, u); return;
+            case double d: AddDouble(cell, d); return;
+            case float f: AddDouble(cell, f); return;
+            default: AddOther(cell); return;
         }
     }
 
-    private void AddExact(int cell, ref CountsPart counts, decimal value)
+    // The three typed ways in, which a reader of typed columns calls without boxing a value.
+
+    /// <summary>Folds in a value that is neither Blank nor a number — text, a Boolean, a date:
+    /// counted, never a number.</summary>
+    public void AddOther(int cell) => Counts[cell].Values++;
+
+    /// <summary>Folds in an exact number: an integral or <c>decimal</c> value.</summary>
+    public void AddExact(int cell, decimal value)
     {
+        ref var counts = ref Counts[cell];
+        counts.Values++;
         // Once a non-finite number is in, every numeric Aggregation is #NUM! and no part is read.
         if (!counts.NonFinite)
         {
@@ -155,8 +162,11 @@ internal sealed class PartColumns
         counts.Numbers++;
     }
 
-    private void AddDouble(int cell, ref CountsPart counts, double value)
+    /// <summary>Folds in a <c>double</c>: not exact, and <c>#NUM!</c> when it is not finite.</summary>
+    public void AddDouble(int cell, double value)
     {
+        ref var counts = ref Counts[cell];
+        counts.Values++;
         if (!double.IsFinite(value))
         {
             counts.NonFinite = true;
