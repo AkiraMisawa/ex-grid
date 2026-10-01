@@ -1,6 +1,6 @@
 # 07: A faster CSV read
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** reading a CSV under a Schema faster, keeping every rule of ADR-0063. Nothing is
 guessed, and a value that cannot be read is refused by its row and column. PV-21 asks for a million
