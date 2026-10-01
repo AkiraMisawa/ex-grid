@@ -137,7 +137,8 @@ public sealed partial class Sheet
     /// and every character of a number's text is charged one digit width, so a column holds
     /// <c>⌊width⌋</c> characters. A component converts from its resolved pixel width as
     /// <c>(columnPx − 2 × cellPaddingPx) / digitWidthPx</c>, the inverse of how ExSheet sizes its
-    /// default column.
+    /// default column; ExSheet's asks at that width and one character past it, and paints the
+    /// widest text its grid's estimate holds, each glyph charged its own width (ticket 91).
     /// <list type="bullet">
     /// <item>A number in General is fitted as Excel's General fits it: decimals rounded to the
     /// width, scientific notation where the integer part does not fit or has twelve or more

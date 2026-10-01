@@ -10,9 +10,10 @@ namespace ExSheet.Components.Tests;
 
 /// <summary>
 /// General fitted to its column, painted through ExGrid's painted text (SH-20, DC-35; ADR-0047
-/// second and third rounds, ADR-0050 item 11): the grid hands the column's content width, ExSheet
-/// converts it to characters with the grid's digit width and paints the engine's fitted text,
-/// and the value's own text stays the accessible name and the copy.
+/// second and third rounds, ADR-0050 item 11): the grid hands the column's content width and its
+/// Cell Metrics, ExSheet paints the widest of the engine's fitted texts those metrics charge within
+/// it, each glyph at its own width (ticket 91), and the value's own text stays the accessible name
+/// and the copy.
 /// </summary>
 public class PaintedTextTests : SheetTestContext
 {
@@ -79,6 +80,54 @@ public class PaintedTextTests : SheetTestContext
         await ResizeAsync(cut, "A", Math.Ceiling(11 * metrics.DigitWidthPx + 2 * metrics.CellHorizontalPaddingPx));
 
         Assert.Equal("0.333333333", CellText(cut, "A1"));
+    }
+
+    private static readonly global::ExGrid.Columns.CellTextMetrics Metrics = GridMetrics.Resolve(GridDensity.Compact).CellMetrics;
+
+    private static double ColumnPxFor(double contentPx) => contentPx + 2 * Metrics.CellHorizontalPaddingPx;
+
+    [Fact] // ADR-0047, ADR-0016 (ticket 91): a decimal point narrower than a digit leaves room for one more digit, as Excel fits General to what it paints
+    public async Task A_narrow_decimal_point_leaves_room_for_one_more_digit()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "=1/3"))));
+        var content = Metrics.TextWidthPx("0.3333333");
+        // Eight digits fit, so a digit a character showed eight characters: 0.333333.
+        Assert.Equal(8, Math.Floor(content / Metrics.DigitWidthPx));
+
+        await ResizeAsync(cut, "A", ColumnPxFor(content));
+
+        Assert.Equal("0.3333333", CellText(cut, "A1"));
+    }
+
+    [Fact] // ADR-0047, ADR-0016 (ticket 91): an exponent's wide + takes a character away, so the cell shows a shorter form rather than ####
+    public async Task An_exponents_plus_takes_a_character_away_rather_than_hashing()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(("A1", "=123456789*1"))));
+        // Eight digits fit, and 1.23E+08 is eight characters, but its + is wider than a digit.
+        var content = (8 * Metrics.DigitWidthPx + Metrics.TextWidthPx("1.23E+08")) / 2;
+        Assert.Equal(8, Math.Floor(content / Metrics.DigitWidthPx));
+
+        await ResizeAsync(cut, "A", ColumnPxFor(content));
+
+        Assert.Equal("1.2E+08", CellText(cut, "A1"));
+    }
+
+    [Fact] // ADR-0050 item 15, ADR-0016 (ticket 91): a bold cell is fitted with the bold widths it is painted in
+    public async Task A_bold_cell_is_fitted_with_the_bold_widths()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A1"), "=123456789*1");
+        sheet.Enter(CellAddress.Parse("A2"), "=123456789*1");
+        sheet.SetCellFormat([CellRange.Parse("A2")], new CellFormatChange { Bold = true });
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        var regular = Metrics.TextWidthPx("1.23E+08");
+        var bold = Metrics.Bold.TextWidthPx("1.23E+08");
+        Assert.True(bold > regular);
+
+        await ResizeAsync(cut, "A", ColumnPxFor((regular + bold) / 2));
+
+        Assert.Equal("1.23E+08", CellText(cut, "A1"));
+        Assert.Equal("1.2E+08", CellText(cut, "A2"));
     }
 
     [Fact] // ADR-0047 third round, ADR-0005: the copy carries the Value unfitted

@@ -41,9 +41,8 @@ public class FormatWideningTests : SheetTestContext
         return grid.InvokeAsync(() => grid.Instance.OnColumnWidthChanged.InvokeAsync(new ColumnWidthChange(column, widthPx)));
     }
 
-    /// <summary>The width in pixels a column is widened to for <paramref name="text"/>: the characters it needs, or the grid's estimate of the text, whichever is wider.</summary>
-    private static double WidenedFor(string text) =>
-        Math.Ceiling(Math.Max(SheetColumns.PxOf(text.Length, Metrics), Metrics.EstimatePx(text)));
+    /// <summary>The width in pixels a column is widened to for <paramref name="text"/>: the grid's estimate of the text, each glyph at its own width, not floored at a digit a character (ticket 91).</summary>
+    private static double WidenedFor(string text) => Math.Ceiling(Metrics.EstimatePx(text));
 
     // ---- Case 17: which keys widen a column at the default width ----
 
@@ -262,6 +261,39 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(time, CellText(cut, "A2"));
         Assert.Equal(dateCode, FormatAt(cut, "A1").NumberFormat.Code);
         Assert.Equal(timeCode, FormatAt(cut, "A2").NumberFormat.Code);
+    }
+
+    [Fact] // ADR-0071 cases 17 and 19, ADR-0016 (ticket 91): under en-GB the date key widens to what 05-Jan-26's glyphs need, not to nine digits
+    public async Task Under_en_gb_the_date_keys_text_widens_to_what_its_glyphs_need()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB", ("A1", "=46027"))));
+        await GoToAsync(cut, "A1");
+
+        await PressAsync(cut, "#", ctrl: true, shift: true);
+
+        // Excel fitted it at its standard 8.09 (the twelfth run, case 19). The core's widths cover
+        // DejaVu Sans Bold at 600, so its estimate is still past the default 99px, but it widens to
+        // that estimate (102px), short of the 104 nine digits took.
+        Assert.Equal("05-Jan-26", CellText(cut, "A1"));
+        Assert.Equal(WidenedFor("05-Jan-26"), WidthOf(cut, 0), 6);
+        Assert.True(WidthOf(cut, 0) < Math.Ceiling(SheetColumns.PxOf("05-Jan-26".Length, Metrics)));
+    }
+
+    [Fact] // ADR-0050 item 15, ADR-0016 (ticket 91): a bold number widens its column by the bold widths it is painted in
+    public async Task A_bold_number_widens_by_the_bold_widths()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-GB"));
+        sheet.Enter(CellAddress.Parse("A1"), "1234567.5");
+        sheet.Enter(CellAddress.Parse("B1"), "1234567.5");
+        sheet.SetCellFormat([CellRange.Parse("B1")], new CellFormatChange { Bold = true });
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        Assert.True(Math.Ceiling(Metrics.Bold.EstimatePx("123456750%")) > WidenedFor("123456750%"));
+
+        await GoToAsync(cut, "A1:B1");
+        await PressAsync(cut, "%", ctrl: true, shift: true);
+
+        Assert.Equal(WidenedFor("123456750%"), WidthOf(cut, 0), 6);
+        Assert.Equal(Math.Ceiling(Metrics.Bold.EstimatePx("123456750%")), WidthOf(cut, 1), 6);
     }
 
     [Fact] // ADR-0071 case 19, ADR-0016 (ticket 83): under en-US the date key's 5-Jan-26 and the time key's 9:05 AM fit the default width, which stays, as Excel's did
