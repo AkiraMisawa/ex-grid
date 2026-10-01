@@ -90,6 +90,10 @@ public sealed class SheetRow
         return appearance;
     }
 
+    /// <summary>The cell's Font and Fill as the Cell Editor takes them: the Font's own colour, never a Number Format's (ticket 88).</summary>
+    internal global::ExGrid.Cells.CellAppearance EditorAppearanceAt(int column) =>
+        SheetAppearance.Of(_sheet, new CellAddress(Index, column), numberFormatColour: null);
+
     /// <summary>The cell's Entry as the Cell Editor opens on it (ADR-0051).</summary>
     internal string EntryTextAt(int column) => _sheet.GetEntryText(new CellAddress(Index, column));
 

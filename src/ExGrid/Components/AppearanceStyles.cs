@@ -34,6 +34,8 @@ internal sealed class AppearanceStyles
     private readonly Dictionary<PartKey, string> _parts = [];
     private readonly Dictionary<CellKey, string?> _cells = [];
     private readonly Dictionary<(string Base, string Appearance), string> _joined = new(ByReference.Instance);
+    private readonly Dictionary<(FontKey Font, int Fill), string?> _editors = [];
+    private readonly HashSet<string> _editorRules = [];
     private readonly StringBuilder _rules = new();
     private string _css = "";
 
@@ -83,6 +85,60 @@ internal sealed class AppearanceStyles
         return composed;
     }
 
+    /// <summary>
+    /// The Cell Editor's appearance half over a cell that looks like <paramref name="own"/>
+    /// (ADR-0050, item 15), interned: the cell's own Font and Fill classes, or null for neither. The
+    /// first time an editor names one, the class gains a rule for the editor's surfaces — its field,
+    /// the box a Chrome's control stands in, and the coloured text beneath them (ADR-0057) — through
+    /// the editor's own tokens: the Fill is <c>--ex-editor-background</c>, the Font's colour
+    /// <c>--ex-editor-color</c>. A field that turns see-through over the coloured text therefore
+    /// stays so, and the text is read on the Fill. Paint only: the box and its padding are the
+    /// cell's, as before. The Borders stay the cell's.
+    /// </summary>
+    public string? EditorClassFor(in CellAppearance own)
+    {
+        var font = new FontKey(own.FontColour?.Rgb ?? -1, own.Bold, own.Italic, own.Underline, own.Strikethrough);
+        var key = (font, own.Fill?.Rgb ?? -1);
+        if (_editors.TryGetValue(key, out var cached))
+            return cached;
+
+        string? fontClass = null;
+        if (font.Rgb >= 0 || font.Bold || font.Italic || font.Underline || font.Strikethrough)
+        {
+            fontClass = FontClass(font);
+            if (_editorRules.Add(fontClass))
+            {
+                // The field and the coloured text take the Font as the cell's text does. A Chrome's
+                // control and the coloured text it places stand in the box, and inherit its colour
+                // and weight; a decoration reaches neither a control nor an absolutely placed layer,
+                // so they are named too. No child combinator: the text is a <style>'s, which a
+                // prerender would write with the '>' escaped.
+                _rules.Append(".ex-viewport .ex-editor.").Append(fontClass)
+                    .Append(",.ex-viewport .ex-editor.").Append(fontClass).Append(" :is(input,textarea,.ex-reference-text)")
+                    .Append(",.ex-viewport .ex-reference-text-cell.").Append(fontClass).Append('{');
+                AppendFont(font, "--ex-editor-color");
+                _rules.Append("}\n");
+                Version++;
+            }
+        }
+        string? fillClass = null;
+        if (key.Item2 >= 0)
+        {
+            fillClass = FillClass(key.Item2);
+            if (_editorRules.Add(fillClass))
+            {
+                _rules.Append(".ex-viewport .ex-editor.").Append(fillClass)
+                    .Append(",.ex-viewport .ex-reference-text-cell.").Append(fillClass)
+                    .Append("{--ex-editor-background:#").Append(Hex(key.Item2)).Append("}\n");
+                Version++;
+            }
+        }
+
+        var composed = fontClass is null ? fillClass : fillClass is null ? fontClass : string.Concat(fontClass, " ", fillClass);
+        _editors[key] = composed;
+        return composed;
+    }
+
     /// <summary>The whole class attribute of a cell: its base classes and its appearance's,
     /// interned per pair (P5). Both halves are interned strings, so the pair is compared by
     /// reference.</summary>
@@ -122,8 +178,17 @@ internal sealed class AppearanceStyles
         // A Stale or Error Cell State keeps its own look: the state is never the one that
         // disappears (ADR-0006). Over a tone the Font wins, being the cell's own.
         _rules.Append(".ex-cell:not(.ex-state-stale, .ex-state-error).").Append(name).Append('{');
+        AppendFont(font, "color");
+        _rules.Append("}\n");
+        Version++;
+        return name;
+    }
+
+    /// <summary>A Font's declarations, its colour as <paramref name="colour"/>.</summary>
+    private void AppendFont(FontKey font, string colour)
+    {
         if (font.Rgb >= 0)
-            _rules.Append("color:#").Append(Hex(font.Rgb)).Append(';');
+            _rules.Append(colour).Append(":#").Append(Hex(font.Rgb)).Append(';');
         if (font.Bold)
             _rules.Append("font-weight:700;");
         if (font.Italic)
@@ -134,9 +199,6 @@ internal sealed class AppearanceStyles
                 .Append(font.Underline && font.Strikethrough ? "underline line-through" : font.Underline ? "underline" : "line-through")
                 .Append(';');
         }
-        _rules.Append("}\n");
-        Version++;
-        return name;
     }
 
     private string FillClass(int rgb)

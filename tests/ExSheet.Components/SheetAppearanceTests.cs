@@ -256,4 +256,36 @@ public class SheetAppearanceTests : SheetTestContext
         Assert.Equal("0.33333333", CellText(cut, "A1"));
         Assert.Equal("0.3333333", CellText(cut, "A2"));
     }
+
+    [Fact] // ADR-0050 item 15, ADR-0071 (ticket 88): the Cell Editor keeps the cell's Fill and Font, in the Font's own colour, since it shows the Entry and not the formatted Value
+    public async Task The_cell_editor_keeps_the_fill_and_the_font_in_the_fonts_own_colour()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
+            sheet => Format(sheet, "B1", new CellFormatChange { NumberFormat = NumberFormat.Parse("0;[Red]-0"), FontColour = Blue, Bold = true, Fill = Yellow }),
+            ("B1", "-5"))));
+        // The cell paints its formatted Value in the Number Format's red.
+        Assert.Contains("ex-font-ff0000b", Classes(cut, "B1"));
+
+        await GoToAsync(cut, "B1");
+        await PressAsync(cut, "F2");
+
+        var editor = cut.Find(".ex-viewport input.ex-editor");
+        Assert.Equal("-5", editor.GetAttribute("value"));
+        Assert.Equal(["ex-editor", "ex-font-0000ffb", "ex-fill-ffff00"], editor.ClassList);
+        // The coloured text beneath it (ADR-0057) is read on the same Fill, in the same Font.
+        Assert.Equal(["ex-reference-text", "ex-reference-text-cell", "ex-font-0000ffb", "ex-fill-ffff00"],
+            cut.Find(".ex-viewport .ex-reference-text-cell").ClassList);
+    }
+
+    [Fact] // ADR-0050 item 15, ADR-0071 (ticket 88): an Automatic Font is the Ink in the editor too, and a column's Fill is the ground of a cell that holds nothing
+    public async Task The_cell_editor_over_an_empty_cell_takes_its_columns_fill()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
+            sheet => Format(sheet, "C:C", new CellFormatChange { Fill = Yellow }))));
+
+        await GoToAsync(cut, "C4");
+        await PressAsync(cut, "x");
+
+        Assert.Equal(["ex-editor", "ex-fill-ffff00"], cut.Find(".ex-viewport input.ex-editor").ClassList);
+    }
 }

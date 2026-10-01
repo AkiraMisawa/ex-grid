@@ -214,3 +214,98 @@ for (const [chrome, query] of CHROMES) {
         expect(sameColour(region.at(middle, box.y + box.height / 2 - 2), WHITE, 2), 'the Paper inside A2').toBe(true);
     });
 }
+
+// The Cell Editor keeps the edited cell's Fill and Font (ticket 88; ADR-0050 item 15, ADR-0071): its
+// field and the coloured text beneath it (ADR-0057) are read in the cell's Font, on its Fill, in the
+// Font's own colour — the editor shows the Entry, not the formatted Value — and the box stays the
+// cell's. Under the MudBlazor Chrome the field is the Wrapper's control in the core's box.
+
+/** The look a surface is drawn in: its colour, weight, slant and decoration, as the cascade resolved them. */
+async function lookOf(locator) {
+    const look = await locator.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { color: style.color, weight: style.fontWeight, style: style.fontStyle, decoration: style.textDecorationLine };
+    });
+    return { ...look, color: await resolvedColour(locator.page(), look.color) };
+}
+
+/** The open Cell Editor's box: the core's input, or the box a Chrome's control stands in. */
+const editorBox = (grid) => grid.locator('.ex-viewport .ex-editor').first();
+
+/** The coloured text beneath the Cell Editor's field. */
+const editorLayer = (grid) => grid.locator('.ex-viewport .ex-reference-text').first();
+
+for (const [chrome, query] of CHROMES) {
+    for (const scheme of SCHEMES) {
+        test(`DC-58/SH-39 (${chrome} Chrome, ${scheme} scheme): the Cell Editor keeps the edited cell's Font, in the Font's own colour, and its box (ADR-0050 item 15, ADR-0071, ticket 88)`, async ({ page }) => {
+            await openCase(page, 'paper', scheme, query);
+            const grid = sheet(page);
+            const normal = { weight: '400', style: 'normal', decoration: 'none' };
+            const cases = [
+                ['A1', { ...normal, color: [255, 0, 0] }, 'a Font colour, in the Pinned Column'],
+                ['B1', { ...normal, color: [0, 0, 255] }, '-5 in 0;[Red]-0 over a blue Font: the Entry, in the Font\'s blue'],
+                ['C1', { ...normal, color: BLACK, weight: '700' }, 'bold'],
+                ['D1', { ...normal, color: BLACK, style: 'italic' }, 'italic'],
+                ['A2', { ...normal, color: BLACK, decoration: 'underline' }, 'underline'],
+                ['B2', { ...normal, color: BLACK, decoration: 'line-through' }, 'strikethrough'],
+            ];
+            for (const [address, look, what] of cases) {
+                await pressCell(grid, address);
+                const rowOf = () => cell(grid, address).locator('xpath=..').boundingBox();
+                const row = await rowOf();
+                const cellBox = await cell(grid, address).boundingBox();
+                await page.keyboard.press('F2');
+                await expect(editor(grid)).toBeFocused();
+                await page.mouse.move(0, 0);
+
+                for (const [name, surface] of [['field', editor(grid)], ['coloured text', editorLayer(grid)]]) {
+                    expect(await lookOf(surface), `${address} (${what}): the ${name}`).toEqual(look);
+                }
+                // On the Paper, as the cell is.
+                expect(sameColour(await groundOf(page, editorBox(grid)), WHITE, 2), `${address}: the editor's ground`).toBe(true);
+                // No geometry moves: the box is the cell's, and the row keeps its height.
+                const box = await editorBox(grid).boundingBox();
+                for (const side of ['x', 'y', 'width', 'height']) {
+                    expect(Math.abs(box[side] - cellBox[side]), `${address}: the editor's ${side}`).toBeLessThanOrEqual(0.5);
+                }
+                expect((await rowOf()).height, `${address}: the row's height`).toBe(row.height);
+                await page.keyboard.press('Escape');
+                await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
+            }
+        });
+    }
+
+    test(`DC-58/SH-39 (${chrome} Chrome): the Cell Editor keeps a Fill as its ground, and ADR-0057's coloured References read over it (ADR-0050 item 15, ADR-0071, ticket 88)`, async ({ page }) => {
+        await openCase(page, 'paper', 'light', query);
+        const grid = sheet(page);
+        // C3 records a yellow Fill and an Automatic Font.
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('x');
+        await expect(editor(grid)).toHaveValue('x');
+        await page.mouse.move(0, 0);
+        expect(sameColour(await groundOf(page, editorBox(grid)), [255, 255, 0], 2), 'the Fill is the editor\'s ground').toBe(true);
+        expect((await lookOf(editor(grid))).color, 'the Ink').toEqual(BLACK);
+
+        // A Formula: the field turns see-through over the coloured text, which is read on the Fill.
+        await page.keyboard.press('Escape');
+        await page.keyboard.type('=A1+B1');
+        await expect(editor(grid)).toHaveValue('=A1+B1');
+        await expect(editor(grid)).toHaveClass(/\bex-reference-text-shown\b/);
+        await page.mouse.move(0, 0);
+        const layer = editorLayer(grid);
+        expect((await lookOf(layer.locator('.ex-reference-1'))).color).toEqual([0x32, 0x6a, 0xc7]);
+        expect((await lookOf(layer.locator('.ex-reference-2'))).color).toEqual([0xc0, 0x35, 0x3e]);
+        const box = await editorBox(grid).boundingBox();
+        expect(sameColour(await groundOf(page, editorBox(grid)), [255, 255, 0], 2), 'still on the Fill').toBe(true);
+        // As painted: each Reference's colour is on the screen inside the editor, over the yellow.
+        const region = await painted(page, box);
+        const pixels = [];
+        for (let y = box.y + 1; y < box.y + box.height - 1; y += 1 / region.scale) {
+            pixels.push(...region.across(y, box.x, box.x + box.width - 1));
+        }
+        for (const [name, colour] of [['the first Reference', [0x32, 0x6a, 0xc7]], ['the second Reference', [0xc0, 0x35, 0x3e]]]) {
+            expect(pixels.filter((pixel) => sameColour(pixel, colour, 40)).length, `${name}, painted over the Fill`).toBeGreaterThanOrEqual(3);
+        }
+        await page.keyboard.press('Escape');
+    });
+}

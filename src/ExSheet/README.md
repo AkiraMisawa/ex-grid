@@ -253,7 +253,8 @@ A cell's Font and Fill are painted as recorded: its colour, bold, italic, underl
 strikethrough, and its one solid Fill, on the cells that hold nothing as well when a whole row or
 column records them. A Number Format's colour (`[Red]` and the seven others) is painted in Excel's
 colour for that name, in place of the Font's. A bold number is judged by the bold widths, so one that
-does not fit shows `####` rather than being cut.
+does not fit shows `####` rather than being cut. A cell keeps its Fill and Font while it is edited,
+with the Font's own colour, since the editor shows the Entry and not the formatted Value.
 
 The ground the cells lie on is the **Paper**, Excel's white, and text whose Font colour is
 Automatic is the **Ink**, Excel's black — in every colour scheme, as Excel's cells stay white under
