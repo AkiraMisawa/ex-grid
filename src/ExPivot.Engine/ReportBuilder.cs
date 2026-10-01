@@ -527,9 +527,10 @@ internal sealed class ReportBuilder
         if (placement.Sort.ByValue is { } vf)
         {
             // By a Value Field's value at each Item's total across the other axis, as shown;
-            // blank and error values last, ties by label ascending (ADR-0059).
+            // blank and error values last, ties by label ascending (ADR-0059). The Order Key does
+            // not touch a sort by value.
             var other = rows ? _cube.ColumnRoot : _cube.RowRoot;
-            var byLabel = new ItemOrder(meta, _labels, _culture, descending: false);
+            var byLabel = new ItemOrder(meta, _labels, _culture, descending: false, byKey: false);
             var keys = new Dictionary<AxisNode, double?>(children.Count);
             foreach (var child in children)
             {
@@ -550,6 +551,7 @@ internal sealed class ReportBuilder
             return children;
         }
         var order = new ItemOrder(meta, _labels, _culture, descending);
+        order.Prepare(children.Select(child => child.Item!));
         children.Sort((a, b) => order.Compare(a.Item, b.Item));
         return children;
     }

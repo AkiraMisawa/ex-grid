@@ -146,7 +146,9 @@ public static class PivotEngine
         var hidden = placement.HiddenItems.Select(ItemKey.FromPublic).ToHashSet();
         var order = new ItemOrder(meta, labels, resolved.Culture,
             placement.Sort.Direction == PivotSortDirection.Descending && placement.Sort.ByValue is null);
-        return items
+        var listed = items.ToArray();
+        order.Prepare(listed);
+        return listed
             .OrderBy(item => item, order)
             .Select(item => new PivotItemInfo(item.PublicKey, labels.Of(item, meta), hidden.Contains(item.Key)))
             .ToArray();

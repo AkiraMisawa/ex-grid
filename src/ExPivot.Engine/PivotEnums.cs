@@ -3,8 +3,9 @@ namespace ExPivot.Engine;
 /// <summary>
 /// The type a Consumer declares for a Pivot Field (ADR-0059). It decides the defaults only —
 /// where a ticked field goes, which Aggregation a new Value Field takes, and how an Item is
-/// labelled. The kind of each Item comes from its value, so a field whose values are not all
-/// of the declared type is still pivoted as its values are.
+/// labelled. The kind of each Item comes from the data: over a Snapshot, from its column's kind
+/// (ADR-0063); read through an untyped accessor, from each value, so a field whose values are not
+/// all of the declared type is still pivoted as its values are.
 /// </summary>
 public enum PivotFieldType
 {

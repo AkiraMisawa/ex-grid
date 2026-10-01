@@ -25,6 +25,9 @@ internal sealed class ItemLabels(PivotOptions options)
     private string Compute(ItemRef item, FieldMeta meta)
     {
         var culture = options.Culture;
+        // A date part is labelled as Excel labels it, in the report's words: 2026, Qtr3, Sep.
+        if (meta.DatePart is { } part && item.Key.Kind == PivotItemKind.Number && PivotDateWords.Takes(part, item.Key.Number))
+            return PivotDateWords.Label(part, (int)item.Key.Number, options);
         switch (item.Key.Kind)
         {
             case PivotItemKind.Blank:
@@ -49,14 +52,67 @@ internal sealed class ItemLabels(PivotOptions options)
 
 /// <summary>
 /// The label order of a field's Items (ADR-0059): the declared Items first, in their declared
-/// order; then numbers, dates, text, Booleans, <c>#NUM!</c>, each in its own order — text by the
-/// culture's comparison ignoring case, ties broken ordinally so the order is total; and
-/// <c>(blank)</c> last in both directions.
+/// order; then, when the field has an Order Key, the Items it keys, by key, ties by label, and
+/// after them the Items it gives no key; then numbers, dates, text, Booleans, <c>#NUM!</c>, each in
+/// its own order — text by the culture's comparison ignoring case, ties broken ordinally so the
+/// order is total; and <c>(blank)</c> last in both directions. Descending reverses the whole order
+/// but <c>(blank)</c>.
+/// <para>
+/// The Order Key is read only when <paramref name="byKey"/>: a sort by a Value Field breaks its ties
+/// by label, and never by key. <see cref="Prepare"/> calls it, once per Item, before a sort.
+/// </para>
 /// </summary>
-internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo culture, bool descending)
+internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo culture, bool descending, bool byKey = true)
     : IComparer<ItemRef>
 {
     private readonly CompareInfo _compare = culture.CompareInfo;
+
+    /// <summary>
+    /// Computes the Order Key of each of <paramref name="items"/> that has none yet — once per Item —
+    /// and holds the keys to one type. A key function that throws is refused, naming the field and
+    /// the value: an order that quietly fell back to the labels would be the plausible wrong answer
+    /// (ADR-0059).
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The Order Key failed on an Item, or gave two
+    /// Items keys of two types.</exception>
+    public void Prepare(IEnumerable<ItemRef> items)
+    {
+        if (!byKey || meta.OrderKey is not { } orderKey)
+            return;
+        ItemRef? first = null;
+        foreach (var item in items)
+        {
+            if (!item.HasOrderKey)
+            {
+                IComparable? key = null;
+                if (item.Key.Kind is not (PivotItemKind.Blank or PivotItemKind.Error) && item.FirstValue is { } value)
+                {
+                    try
+                    {
+                        key = orderKey(value);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new InvalidOperationException(
+                            $"The Order Key of {meta.Info.Caption} failed on '{labels.Of(item, meta)}'.", e);
+                    }
+                }
+                item.SetOrderKey(key);
+            }
+            if (item.OrderKey is null)
+                continue;
+            if (first is null)
+            {
+                first = item;
+            }
+            else if (item.OrderKey.GetType() != first.OrderKey!.GetType())
+            {
+                throw new InvalidOperationException(
+                    $"The Order Key of {meta.Info.Caption} gave '{labels.Of(first, meta)}' a key of type {first.OrderKey.GetType().Name} "
+                    + $"and '{labels.Of(item, meta)}' one of type {item.OrderKey.GetType().Name}; a field's keys are of one type.");
+            }
+        }
+    }
 
     public int Compare(ItemRef? x, ItemRef? y)
     {
@@ -78,6 +134,22 @@ internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo c
         var yDeclared = meta.DeclaredOrder.TryGetValue(y.Key, out var yAt);
         if (xDeclared || yDeclared)
             return xDeclared && yDeclared ? xAt.CompareTo(yAt) : xDeclared ? -1 : 1;
+        if (byKey && meta.OrderKey is not null)
+        {
+            // Keyed Items first, by key; the Items with no key after them; ties by label.
+            var xKey = x.HasOrderKey ? x.OrderKey : null;
+            var yKey = y.HasOrderKey ? y.OrderKey : null;
+            if (xKey is not null && yKey is not null)
+            {
+                var byKeys = xKey.CompareTo(yKey);
+                if (byKeys != 0)
+                    return byKeys;
+            }
+            else if (xKey is not null || yKey is not null)
+            {
+                return xKey is not null ? -1 : 1;
+            }
+        }
         if (x.Key.Kind != y.Key.Kind)
             return x.Key.Kind.CompareTo(y.Key.Kind);
         switch (x.Key.Kind)
