@@ -31,6 +31,7 @@ public static class MudPivotIcons
             PivotCommandIds.CollapseField or PivotCommandIds.Collapse => Icons.Material.Filled.UnfoldLess,
             PivotCommandIds.ShowDetails => Icons.Material.Filled.ManageSearch,
             PivotCommandIds.ShowFieldList or PivotCommandIds.HideFieldList => Icons.Material.Filled.ViewSidebar,
+            PivotCommandIds.Retry => Icons.Material.Filled.Refresh,
             _ => null,
         };
     }

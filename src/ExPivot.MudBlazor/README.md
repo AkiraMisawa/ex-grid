@@ -4,9 +4,10 @@
 MudBlazor application:
 
 - **`MudPivotChrome`** draws the PivotTable Fields pane with its Defer Layout Update, each
-  field's menu and the toolbar's Layout menu, Filter…, Field Settings…, Value Field Settings… and
-  the report filter band with MudBlazor's own controls: checkboxes, text fields, selects, radio
-  groups, buttons and Material icons. It also dresses the report's grid with `ExGrid.MudBlazor`'s
+  field's menu and the toolbar's Layout menu, Filter…, Field Settings…, Value Field Settings…,
+  the report filter band, and the Stale Report's notice — a warning `MudAlert` with a Retry
+  button — with MudBlazor's own controls: checkboxes, text fields, selects, radio groups, buttons
+  and Material icons. It also dresses the report's grid with `ExGrid.MudBlazor`'s
   `MudGridChrome`, so you set one parameter for both. The toolbar and Show Details' tabs and
   dialog are still ExPivot's own markup inside the paper, holding the Mud band and grids.
 - **`mud-ex-pivot.css`** maps ExPivot's Visual Tokens onto MudBlazor's palette variables and

@@ -1,0 +1,13 @@
+@* The built-in Stale Report's notice (ADR-0066), inside ExPivot's live region under the toolbar:
+   the sentence — what happened, and the time of the data shown — and Retry, which asks the source
+   again. The region is ExPivot's, so this adds no role of its own. *@
+<div class="ex-pivot-stale-notice">
+    <span class="ex-pivot-stale-message">@Context.Message</span>
+    <button type="button" class="ex-pivot-retry" disabled="@(!Context.Retry.Enabled)"
+            @onclick="Context.Retry.Invoke">@Context.Retry.Label</button>
+</div>
+
+@code {
+    /// <summary>What to say and whom to call back (ADR-0066).</summary>
+    [Parameter, EditorRequired] public PivotStaleReportContext Context { get; set; } = default!;
+}

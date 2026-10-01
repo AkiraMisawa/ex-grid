@@ -84,6 +84,33 @@
 .ex-pivot-toolbar-button[aria-pressed="true"] { border-color: var(--ex-pivot-accent-color, Highlight); }
 .ex-pivot-refusal-notice { padding: 0 0 6px; }
 
+/* The Stale Report's notice, under the toolbar (ADR-0066): the report stays on the last version it
+   could compute, and this says what happened and as of when, with Retry. Its live region, which
+   ExPivot keeps on the page, takes no room while it is empty. */
+.ex-pivot-stale-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    margin: 0 0 6px;
+    padding: 4px 8px;
+    color: var(--ex-pivot-stale-color, CanvasText);
+    background: var(--ex-pivot-stale-background, Canvas);
+    border: 1px solid var(--ex-pivot-stale-border-color, GrayText);
+    border-left-width: 4px;
+}
+.ex-pivot-stale-message { flex: 1 1 auto; min-width: 0; }
+.ex-pivot-retry {
+    flex: none;
+    font: inherit;
+    padding: 1px 10px;
+    cursor: pointer;
+    color: var(--ex-pivot-entry-color, ButtonText);
+    background: var(--ex-pivot-entry-background, ButtonFace);
+    border: 1px solid var(--ex-pivot-entry-border-color, ButtonBorder);
+}
+.ex-pivot-retry:disabled { cursor: default; color: var(--ex-pivot-muted-color, GrayText); }
+
 /* The tabs at the report's foot, where Excel's sheet tabs are (ADR-0058). */
 .ex-pivot-tabs {
     display: flex;

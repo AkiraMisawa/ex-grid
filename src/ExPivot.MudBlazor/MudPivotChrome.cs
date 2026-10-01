@@ -7,9 +7,9 @@ namespace ExPivot.MudBlazor;
 
 /// <summary>
 /// ExPivot's Chrome under MudBlazor (ADR-0061): the PivotTable Fields pane, a placed field's menu,
-/// Filter…, Field Settings…, Value Field Settings… and the report filter band drawn with
-/// MudBlazor's own controls, and the report grid dressed by <see cref="MudGridChrome"/> — so one
-/// parameter dresses both.
+/// Filter…, Field Settings…, Value Field Settings…, the report filter band and the Stale Report's
+/// notice drawn with MudBlazor's own controls, and the report grid dressed by
+/// <see cref="MudGridChrome"/> — so one parameter dresses both.
 ///
 /// <para>It draws what ExPivot hands it and calls back. Which commands there are, what a drop
 /// means, the drafts, and where a menu or panel opens and what closes it are ExPivot's; swapping
@@ -64,6 +64,10 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <summary>Value Field Settings… (<see cref="MudPivotValueFieldSettings"/>).</summary>
     public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsContext context)
         => View<MudPivotValueFieldSettings, PivotValueFieldSettingsContext>(context);
+
+    /// <summary>The Stale Report's notice (<see cref="MudPivotStaleReport"/>): a warning
+    /// <c>MudAlert</c> with a Retry <c>MudButton</c> (ADR-0066).</summary>
+    public RenderFragment? StaleReport(PivotStaleReportContext context) => View<MudPivotStaleReport, PivotStaleReportContext>(context);
 
     /// <summary>A command's icon: <see cref="Icon"/> first, then ExPivot's Material icons; null
     /// leaves the grid's own commands to the grid Wrapper's.</summary>

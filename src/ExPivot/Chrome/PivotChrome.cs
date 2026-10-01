@@ -6,10 +6,10 @@ namespace ExPivot.Chrome;
 
 /// <summary>
 /// ExPivot's Chrome (ADR-0060): what draws the Field List, the toolbar above the report with its
-/// report filter band, a menu — a placed field's, and the Layout menu — the three panels, and
-/// Show Details' tabs and dialog. Each member returns the content to draw, or null for ExPivot's
-/// built-in plain markup. It renders and calls back; the rules, the state and the frames are
-/// ExPivot's, so swapping it changes no behaviour.
+/// report filter band, a menu — a placed field's, and the Layout menu — the three panels, Show
+/// Details' tabs and dialog, and the Stale Report's notice. Each member returns the content to
+/// draw, or null for ExPivot's built-in plain markup. It renders and calls back; the rules, the
+/// state and the frames are ExPivot's, so swapping it changes no behaviour.
 /// </summary>
 public interface IPivotChrome
 {
@@ -57,7 +57,43 @@ public interface IPivotChrome
     /// <summary>The content of Show Details' dialog, inside ExPivot's frame — which is a dialog
     /// named by the cell, takes the keyboard and closes on Escape (ADR-0058).</summary>
     RenderFragment? DetailsDialog(PivotDetailsDialogContext context) => null;
+
+    /// <summary>
+    /// The Stale Report's notice (ADR-0066), under the toolbar, inside ExPivot's frame — a polite
+    /// live region, so the notice is announced without interrupting the reader; the content adds
+    /// no live region of its own. Asked only while the report is stale: the newest data could not
+    /// be shown, the report stays on the last version it could compute, and the notice says what
+    /// happened and as of when, and offers Retry. A refused layout is not a Stale Report: the
+    /// toolbar says that one (<see cref="PivotToolbarContext.Refusal"/>).
+    /// </summary>
+    RenderFragment? StaleReport(PivotStaleReportContext context) => null;
 }
+
+/// <summary>
+/// The Stale Report's notice (ADR-0066): the newest data cannot be shown — the new answer broke a
+/// cap, or the source refused or failed — so the report stays on the last version it could
+/// compute, and says what happened and as of when. Retry asks the source again; the notice goes
+/// when an answer is laid out. Its words are ExPivot's, by id: <c>stale-report</c> frames the
+/// sentence, <c>retry</c> names the command.
+/// </summary>
+/// <param name="Message">The whole sentence: "Showing the data as of 14:32:05: the newest data
+/// needs more than 200,000 cells."</param>
+/// <param name="Reason">What happened, as the sentence ends: "the newest data needs more than
+/// 200,000 cells."</param>
+/// <param name="AsOf">When the answer the report on screen was laid out from arrived, in the
+/// clock's local time zone.</param>
+/// <param name="AsOfText"><paramref name="AsOf"/> as the sentence writes it, in the report's
+/// culture: the time, and the date too when it is not today's.</param>
+/// <param name="Retry">Asks the source again for the report's layout; not available while that
+/// question is out.</param>
+/// <param name="Word">ExPivot's words, by id.</param>
+public sealed record PivotStaleReportContext(
+    string Message,
+    string Reason,
+    DateTimeOffset AsOf,
+    string AsOfText,
+    PivotCommand Retry,
+    Func<string, string> Word);
 
 /// <summary>What is being dragged in the Field List (ADR-0060): a declared field from the list
 /// of fields, or a placed entry of an Area.</summary>
@@ -390,7 +426,9 @@ public sealed record PivotReportFilterView(
 /// whether the pane is shown, and invoking it shows or hides it.</param>
 /// <param name="Refusal">What the report could not do with the last change, in words — a layout
 /// refused by name ("This layout needs more than 200,000 cells."), or the source's failure — or
-/// null. The report stays as it was, and this says why where the user sees it.</param>
+/// null. The report stays as it was, and this says why where the user sees it, as an alert: it
+/// answers what the user just did. Data that could not be shown is not said here but in the Stale
+/// Report's notice under the toolbar (<see cref="IPivotChrome.StaleReport"/>).</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotToolbarContext(
     RenderFragment? ReportFilters,

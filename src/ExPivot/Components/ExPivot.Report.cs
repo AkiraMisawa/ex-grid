@@ -376,7 +376,13 @@ public partial class ExPivot
             builder.AddComponentParameter(20, nameof(ExGrid<PivotReportRow>.Chrome), chrome);
         if (SelectionChanged.HasDelegate)
             builder.AddComponentParameter(21, nameof(ExGrid<PivotReportRow>.SelectionChanged), SelectionChanged);
-        builder.AddComponentReferenceCapture(22, grid => _grid = (ExGrid<PivotReportRow>)grid);
+        // The Change Highlight (ADR-0066/0067): ExPivot says when a cell's painted value changed
+        // with the data, through a delegate that is new for each data version and null while
+        // nothing can be marked; the grid marks the cell for the duration, on ExPivot's clock.
+        builder.AddComponentParameter(22, nameof(ExGrid<PivotReportRow>.CellChangedAt), _cellChangedAt);
+        builder.AddComponentParameter(23, nameof(ExGrid<PivotReportRow>.ChangeHighlightDuration), ChangeHighlightDuration);
+        builder.AddComponentParameter(24, nameof(ExGrid<PivotReportRow>.Clock), _time);
+        builder.AddComponentReferenceCapture(25, grid => _grid = (ExGrid<PivotReportRow>)grid);
         builder.CloseComponent();
     }
 

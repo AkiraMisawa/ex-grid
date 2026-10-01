@@ -99,6 +99,9 @@ public static class PivotCommandIds
     /// <summary>The toolbar's Refresh: Excel's, offered when the source can be refreshed (ADR-0065).</summary>
     public const string Refresh = "refresh";
 
+    /// <summary>The Stale Report's Retry: asks the source again for the report (ADR-0066).</summary>
+    public const string Retry = "retry";
+
     /// <summary>The toolbar's toggle that shows and hides the Field List (ADR-0060).</summary>
     public const string FieldListToggle = "field-list-toggle";
 

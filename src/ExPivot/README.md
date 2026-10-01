@@ -74,10 +74,19 @@ Link both stylesheets in your host page:
   the cell and pages its records under the report's Source Version.
 - **Caps** (`PivotCaps`) refuse, by name, a layout whose report is too large to read: 200,000
   leaves and Excel's 1,048,576 rows and 16,384 columns by default.
+- **Live data.** ExPivot listens to the source's `Changed` — a server's source raises it when you
+  call `NotifyChanged`, however you learn of the change (SignalR, polling, a message bus) — and
+  asks again for the whole answer. Changes are gathered and the report is redrawn at most every
+  `RedrawInterval` (250 ms; zero redraws on every change). A change of values keeps the Selection
+  and any open menu or panel. A value cell whose shown text changed is marked for
+  `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse marks nothing. When
+  the newest data cannot be shown — it breaks a cap, or the source fails — the report stays as it
+  was, and a notice under the toolbar says what happened and as of when, with Retry. `Clock`
+  takes a `TimeProvider` for tests.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the toolbar.
 - **Label** replaces any word by its id. `Label="PivotWords.Japanese"` speaks the words of
   Excel's Japanese edition; the culture alone changes no word.
-- **PivotChrome** draws the Field List, the toolbar, the menus, the panels and Show Details' tabs
-  and dialog in another design system; **Chrome** is the report grid's. For MudBlazor, use
-  `ExPivot.MudBlazor`.
+- **PivotChrome** draws the Field List, the toolbar, the menus, the panels, Show Details' tabs
+  and dialog, and the Stale Report's notice in another design system; **Chrome** is the report
+  grid's. For MudBlazor, use `ExPivot.MudBlazor`.

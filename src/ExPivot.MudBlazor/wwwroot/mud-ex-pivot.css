@@ -39,6 +39,11 @@
     --ex-pivot-tab-background: var(--mud-palette-background-gray);
     --ex-pivot-tab-selected-background: var(--mud-palette-surface);
     --ex-pivot-dialog-backdrop: var(--mud-palette-overlay-dark);
+    /* The Stale Report's notice (ADR-0066), as ExPivot's markup draws it when a Consumer keeps
+       the built-in notice under the paper; MudPivotChrome draws it as a MudAlert instead. */
+    --ex-pivot-stale-color: var(--mud-palette-text-primary);
+    --ex-pivot-stale-background: var(--mud-palette-surface);
+    --ex-pivot-stale-border-color: var(--mud-palette-warning);
     /* The pane's type. The report's is the grid's own, which is metrics-bearing and the paper's
        (ADR-0027/0030); this one sizes nothing ExPivot computes. */
     --ex-pivot-font-size: var(--mud-typography-body2-size, 0.875rem);
@@ -187,6 +192,18 @@
     gap: 4px;
     flex-shrink: 0;
 }
+
+/* The Stale Report's notice under the toolbar (ADR-0066): a MudAlert whose sentence and Retry
+   share a line while they fit, Retry wrapping under the sentence when they do not. */
+.mud-ex-pivot-stale-notice { margin: 0 0 8px; }
+.mud-ex-pivot-stale-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+}
+.mud-ex-pivot-stale-message { flex: 1 1 auto; min-width: 0; }
+.mud-ex-pivot-retry { flex: none; text-transform: none; }
 
 /* The report filter band, above the report: the wrapper around each button is positioned, so
    ExPivot's Filter… frame opens under it (ADR-0060). */
