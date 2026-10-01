@@ -209,6 +209,12 @@ every font. It errs towards `####`, never towards a cut number.
         lands on nothing, and the core takes the keyboard back.
       - No script is involved. A Chrome that owns its frame is responsible for leaving the keyboard
         where the core will take it back.
+      - The hand-back waits until the browser has drawn the dialog's removal: the frame closes the
+        dialog, re-renders, and calls the core's focus function from its `OnAfterRenderAsync`. On a
+        circuit, an earlier call reached the browser before the removal and was declined, which
+        left the keyboard on `body` (found on the Server host by ticket 53's follow-up).
+      - A dropdown in the dialog keeps Escape while its list is open, so the first Escape closes only
+        the list, as in Excel.
   - **Tabs switch as in ARIA's tabs pattern**, with the arrow keys on the tab list. Excel's Ctrl+Tab
     and Ctrl+PageDown are reserved by Chrome for its own tabs, so a page never receives them.
 - **A Consumer with its own dialog substitutes its own Chrome**, as with the filter panel
