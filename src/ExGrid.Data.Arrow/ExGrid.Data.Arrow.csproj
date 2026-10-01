@@ -5,6 +5,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Description>A Snapshot of ExGrid.Data as Apache Arrow: read from Arrow's IPC stream or file format (Feather 2), as pyarrow, DuckDB and Polars write them, and written as an uncompressed IPC stream with the Snapshot's captions, Record Key and version. Ships at the same version as ExGrid.Data and depends on exactly that version.</Description>
     <PackageTags>snapshot;columnar;arrow;apache-arrow;ipc;feather;pivot;excel</PackageTags>
+    <!-- Trimmable, as ExGrid.Data is (ADR-0063): a browser application that only reads Snapshots
+         publishes without the writer, and one that only writes without the reader. Untrimmable, the
+         package would be kept whole under Blazor's default partial trimming. It also turns the trim
+         analysers on, so the build says when code stops being trim-safe. -->
+    <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
   <ItemGroup>
