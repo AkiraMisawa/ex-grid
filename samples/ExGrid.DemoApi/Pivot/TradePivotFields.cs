@@ -155,9 +155,10 @@ internal static class TradePivotFields
     /// What the source answers (ADR-0065). SQLite's <c>COUNT</c>, <c>SUM</c> over integer cents,
     /// <c>MIN</c> and <c>MAX</c> are exact, so Count, Count Numbers, Sum, Min and Max are offered,
     /// and Average, which ExPivot computes from the sum and the count. Product and the four
-    /// variances are not: SQLite has no exact product, and its arithmetic for a running variance
-    /// is not the engine's, so Value Field Settings… offers them disabled, with the reason. It can
-    /// be refreshed: the data moves on while live updates run.
+    /// variances are not: SQLite has no aggregate for either, and the engine's are doubles
+    /// accumulated record by record, whose last bits depend on an order a <c>GROUP BY</c> does not
+    /// keep. A source is never obliged to approximate, so Value Field Settings… offers them
+    /// disabled, with the reason. It can be refreshed: the data moves on while live updates run.
     /// </summary>
     public static readonly PivotSourceFeatures Features = new(
         [
