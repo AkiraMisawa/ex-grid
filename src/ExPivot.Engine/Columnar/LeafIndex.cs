@@ -243,6 +243,7 @@ internal sealed class LeafIndex
         if (_levels.Length == 0)
             return;
         var total = 0;
+        var exact = 0;
         for (var level = 0; level < _levels.Length; level++)
         {
             var needed = BitsFor(_levels[level].Count);
@@ -250,6 +251,15 @@ internal sealed class LeafIndex
             // Item at a time re-keys only as often as it doubles.
             _bits[level] = needed > _bits[level] && _bits[level] > 0 ? needed + 1 : Math.Max(_bits[level], needed);
             total += _bits[level];
+            exact += needed;
+        }
+        // Room that would push a key past the direct table is given back: indexing directly is
+        // worth re-keying again should a level grow.
+        if (total > DirectBits && exact <= DirectBits)
+        {
+            for (var level = 0; level < _levels.Length; level++)
+                _bits[level] = BitsFor(_levels[level].Count);
+            total = exact;
         }
         _direct = null;
         _hashed = null;

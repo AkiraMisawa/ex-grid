@@ -27,6 +27,13 @@ namespace ExPivot.Engine;
 /// </summary>
 internal sealed class ValueAccumulator
 {
+    // A leaf's open run: its count and sum side by side, so that a row touches one cache line.
+    private struct Run
+    {
+        public long Sum;
+        public int Count;
+    }
+
     private const int NoRun = int.MinValue;
 
     private readonly FieldBinding _binding;
@@ -36,16 +43,14 @@ internal sealed class ValueAccumulator
     private readonly bool _extremes;
     private readonly bool _perRow;
 
-    // The open run of each leaf an exact column has touched: its numbers, sum, and extremes, at
-    // _runScale; and the leaves with an open run.
-    private long[] _runSum = [];
+    // Each leaf's open run of an exact column's numbers: how many, their sum and their extremes, at
+    // _runScale. A leaf with no number in the run has a count of 0.
+    private Run[] _runs = [];
     private long[] _runMin = [];
     private long[] _runMax = [];
-    private int[] _runCount = [];
-    private int[] _touched = [];
-    private int _touchedCount;
     private int _runScale = NoRun;
     private int _sliceScale;
+    private int _leafCount;
 
     // Each leaf's exact sum: an integer at a power of ten, while the sum is exact.
     private Int128[] _wide = [];
@@ -97,14 +102,13 @@ internal sealed class ValueAccumulator
     public void EnsureCapacity(int leaves)
     {
         Columns.EnsureCapacity(leaves);
-        if (!_exact || _runCount.Length >= Columns.Capacity)
+        _leafCount = Math.Max(_leafCount, leaves);
+        if (!_exact || _runs.Length >= Columns.Capacity)
             return;
         var size = Columns.Capacity;
-        Array.Resize(ref _runCount, size);
-        Array.Resize(ref _touched, size);
+        Array.Resize(ref _runs, size);
         if (_sum)
         {
-            Array.Resize(ref _runSum, size);
             Array.Resize(ref _wide, size);
             Array.Resize(ref _wideScale, size);
         }
@@ -116,50 +120,71 @@ internal sealed class ValueAccumulator
     }
 
     /// <summary>Starts reading a slice: an exact column's runs go on across slices of one scale, and
-    /// are folded when the scale changes.</summary>
+    /// every open run is folded when the scale changes.</summary>
     public void BeginSegment(in SnapshotSlice slice)
     {
-        if (!_exact)
-            return;
-        _sliceScale = _single!.Value.Role == ValueRole.Integer ? 0 : slice.Decimals((DecimalColumn)_single.Value.Column).Scale;
-        if (_sliceScale != _runScale)
-        {
+        if (ScaleChanges(slice))
             Flush();
-            _runScale = _sliceScale;
-        }
+        _runScale = _sliceScale;
     }
 
-    /// <summary>Folds every open run into its leaf: at the end of a pass, or of a leaf's recompute.</summary>
+    /// <summary>Starts reading a slice for one leaf's recompute: only that leaf has a run open.</summary>
+    public void BeginSegment(in SnapshotSlice slice, int leaf)
+    {
+        if (ScaleChanges(slice))
+            Flush(leaf);
+        _runScale = _sliceScale;
+    }
+
+    private bool ScaleChanges(in SnapshotSlice slice)
+    {
+        if (!_exact)
+            return false;
+        _sliceScale = _single!.Value.Role == ValueRole.Integer ? 0 : slice.Decimals((DecimalColumn)_single.Value.Column).Scale;
+        return _sliceScale != _runScale;
+    }
+
+    /// <summary>Folds every open run into its leaf: when the scale changes, and at the end of a pass.
+    /// Runs span every slice of one scale, so this is rare, and it looks at every leaf.</summary>
     public void Flush()
     {
         if (!_exact)
             return;
-        var touched = _touched;
-        for (var t = 0; t < _touchedCount; t++)
+        for (var leaf = 0; leaf < _leafCount; leaf++)
         {
-            var leaf = touched[t];
-            var numbers = _runCount[leaf];
-            var first = Columns.Counts[leaf].Numbers == 0;
-            Columns.CountNumbers(leaf, numbers);
-            if (_sum)
-            {
-                AddToSum(leaf, _runSum[leaf], _runScale);
-                _runSum[leaf] = 0;
-            }
-            if (_extremes)
-                Columns.FoldExtremes(leaf, Exactly.ToDecimal(_runMin[leaf], _runScale), Exactly.ToDecimal(_runMax[leaf], _runScale), first);
-            _runCount[leaf] = 0;
+            if (_runs[leaf].Count != 0)
+                Flush(leaf);
         }
-        _touchedCount = 0;
     }
 
-    /// <summary>A leaf back to no value at all, before it is recomputed from its rows; its open run
-    /// is folded first, so that no other leaf's is lost.</summary>
+    /// <summary>Folds one leaf's open run into it.</summary>
+    public void Flush(int leaf)
+    {
+        if (!_exact)
+            return;
+        ref var run = ref _runs[leaf];
+        var numbers = run.Count;
+        if (numbers == 0)
+            return;
+        var first = Columns.Counts[leaf].Numbers == 0;
+        Columns.CountNumbers(leaf, numbers);
+        if (_sum)
+        {
+            AddToSum(leaf, run.Sum, _runScale);
+        }
+        if (_extremes)
+            Columns.FoldExtremes(leaf, Exactly.ToDecimal(_runMin[leaf], _runScale), Exactly.ToDecimal(_runMax[leaf], _runScale), first);
+        run = default;
+    }
+
+    /// <summary>A leaf back to no value at all, before it is recomputed from its rows.</summary>
     public void Reset(int leaf)
     {
-        Flush();
         Columns.ResetCell(leaf);
-        if (_exact && _sum)
+        if (!_exact)
+            return;
+        _runs[leaf] = default;
+        if (_sum)
         {
             _wide[leaf] = 0;
             _wideScale[leaf] = 0;
@@ -210,7 +235,7 @@ internal sealed class ValueAccumulator
     /// Takes a removed record's value out of its leaf by subtraction (ADR-0066) when
     /// <see cref="Subtracts"/>: false, and nothing changed, when it cannot be — the leaf is then
     /// recomputed. <paramref name="slice"/> is the slice of the Snapshot the record was removed
-    /// from. Called with every run folded (<see cref="Flush"/>).
+    /// from. Called with every run folded (<see cref="Flush()"/>).
     /// </summary>
     public bool TrySubtract(int leaf, in SnapshotSlice slice, int offset)
     {
@@ -360,32 +385,28 @@ internal sealed class ValueAccumulator
 
     private void AccumulateScaled(ReadOnlySpan<long> values, ReadOnlySpan<ulong> blanks, int from, ReadOnlySpan<int> leaves)
     {
-        var runCount = _runCount;
-        var touched = _touched;
+        var runs = _runs;
         if (!_sum && !_extremes && !_perRow)
         {
             for (var i = 0; i < leaves.Length; i++)
             {
                 var leaf = leaves[i];
-                if (leaf < 0 || Exactly.IsSet(blanks, from + i))
-                    continue;
-                if (runCount[leaf]++ == 0)
-                    touched[_touchedCount++] = leaf;
+                if (leaf >= 0 && !Exactly.IsSet(blanks, from + i))
+                    runs[leaf].Count++;
             }
             return;
         }
         if (_sum && !_extremes && !_perRow)
         {
-            var runSum = _runSum;
             for (var i = 0; i < leaves.Length; i++)
             {
                 var leaf = leaves[i];
                 if (leaf < 0 || Exactly.IsSet(blanks, from + i))
                     continue;
-                if (runCount[leaf]++ == 0)
-                    touched[_touchedCount++] = leaf;
+                ref var run = ref runs[leaf];
+                run.Count++;
                 var value = values[from + i];
-                var sum = runSum[leaf];
+                var sum = run.Sum;
                 var next = sum + value;
                 if (((sum ^ next) & (value ^ next)) < 0)
                 {
@@ -394,7 +415,7 @@ internal sealed class ValueAccumulator
                     AddToSum(leaf, sum, _runScale);
                     next = value;
                 }
-                runSum[leaf] = next;
+                run.Sum = next;
             }
             return;
         }
@@ -404,19 +425,18 @@ internal sealed class ValueAccumulator
             if (leaf < 0 || Exactly.IsSet(blanks, from + i))
                 continue;
             var value = values[from + i];
-            var before = runCount[leaf]++;
-            if (before == 0)
-                touched[_touchedCount++] = leaf;
+            ref var run = ref runs[leaf];
+            var before = run.Count++;
             if (_sum)
             {
-                var sum = _runSum[leaf];
+                var sum = run.Sum;
                 var next = sum + value;
                 if (((sum ^ next) & (value ^ next)) < 0)
                 {
                     AddToSum(leaf, sum, _runScale);
                     next = value;
                 }
-                _runSum[leaf] = next;
+                run.Sum = next;
             }
             if (_extremes)
             {

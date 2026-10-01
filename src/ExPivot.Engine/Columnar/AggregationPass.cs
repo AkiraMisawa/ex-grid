@@ -435,13 +435,13 @@ internal sealed class AggregationPass
                 if (s != current)
                 {
                     slice = _snapshot.Slice(s);
-                    values.BeginSegment(slice);
+                    values.BeginSegment(slice, leaf);
                     current = s;
                 }
                 values.Accumulate(slice, number - _sliceBase[s], one);
                 RecomputedRows++;
             }
-            values.Flush();
+            values.Flush(leaf);
         }
     }
 

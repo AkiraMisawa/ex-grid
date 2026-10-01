@@ -152,7 +152,10 @@ public class Measurements
                          ("270 dates: TradeDate in Columns", MainLayout("TradeDate")),
                      })
             {
-                var leaves = Ask(PivotSource.From(snapshot, fields.Fields, Whole), query).LeafCount;
+                // Warm: the runtime's tiers have compiled the pass's loops fully before it is timed.
+                var leaves = 0;
+                for (var warm = 0; warm < 5; warm++)
+                    leaves = Ask(PivotSource.From(snapshot, fields.Fields, Whole), query).LeafCount;
                 var times = Enumerable.Range(0, 7).Select(_ => Time(() => Ask(PivotSource.From(snapshot, fields.Fields, Whole), query))).ToArray();
                 Report($"{name}{(keyed ? " (keyed: rows kept)" : "")}", times, $"{leaves:N0} leaves");
             }
@@ -163,7 +166,8 @@ public class Measurements
         var decimals = Trades.Value.Select((t, i) => i % 65_536 == 0 ? t with { Notional = 0.00000000000000000001m, Pnl = 0.00000000000000000001m } : t).ToArray();
         var held = Fields(keyed: false);
         var heldAsDecimals = held.Build(decimals);
-        Ask(PivotSource.From(heldAsDecimals, held.Fields, Whole), MainLayout("Product"));
+        for (var warm = 0; warm < 5; warm++)
+            Ask(PivotSource.From(heldAsDecimals, held.Fields, Whole), MainLayout("Product"));
         Report("main, money held as decimal (no 64-bit scale)", [.. Enumerable.Range(0, 7).Select(_ => Time(() => Ask(PivotSource.From(heldAsDecimals, held.Fields, Whole), MainLayout("Product"))))]);
 
         // The records' own accessors: read into a Snapshot on the first question, boxing each value.
