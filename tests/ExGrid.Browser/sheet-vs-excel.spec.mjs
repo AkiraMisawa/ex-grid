@@ -740,14 +740,37 @@ test('item 25: a long text is cut with an ellipsis, by decision; Excel lets it r
     expect(overflow).toEqual({ ellipsis: 'ellipsis', clipped: true });
 });
 
-test('item 26: a number too wide for its column shows #### (ADR-0016)', async ({ page }) => {
-    // Excel, at width 4: 123456 in General, 12345 as 0.00 and a date all showed ####. /sheet
-    // cannot narrow a column (ExSheet declares no OnColumnWidthChanged), so the number here is
-    // wider than the default column instead; a date that wide cannot be typed, and is not asked.
-    await enter(page, 'E1', '123456789012');
-    await click(page, 'E1');
+test('item 26: a number or a date too wide for a column the user sized shows #### (ADR-0016, SH-26)', async ({ page }) => {
+    // Excel, at width 4: 123456 in General, 12345 as 0.00 and a date all showed ####. The item's
+    // point is ####, not the format, so the column is sized first, by its grip, as a user sizes it:
+    // a column the user sized is never widened, by an entry (SH-26) or by a Number Format (ADR-0071,
+    // "Readings until the fourteenth Windows run": Format Cells' OK and SetCellFormatAsync widen as
+    // a formatting key does, and only a column the user has not sized). This item used to type a
+    // number wider than the default column and format it with the page's #,##0.00. Since ticket 58
+    // that format widens the column, as the reading says, and the number shows; it was not ####.
+    // Half the default width is about Excel's four characters. The page's format is #,##0.00, where
+    // Excel's case used 0.00; neither fits.
+    const header = sheet(page).locator('.ex-header-cell', { hasText: /^E$/ });
+    const before = await header.boundingBox();
+    const grip = await header.locator('.ex-resize-grip').boundingBox();
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + grip.width / 2 - before.width / 2, grip.y + grip.height / 2, { steps: 6 });
+    await page.mouse.up();
+    await expect.poll(async () => Math.round(before.width - (await header.boundingBox()).width)).toBeGreaterThanOrEqual(Math.round(before.width / 2) - 2);
+    const sized = (await header.boundingBox()).width;
+
+    await enter(page, 'E1', '123456');
+    await enter(page, 'E2', '12345');
+    await click(page, 'E2');
     await page.locator('#sheet-money').click();
+    await enter(page, 'E3', '9/26/2026');
     await expect(cell(page, 'E1')).toHaveText(/^#+$/);
+    await expect(cell(page, 'E2')).toHaveText(/^#+$/);
+    await expect(cell(page, 'E3')).toHaveText(/^#+$/);
+    // Nothing widened the column: the entries and the format left it where the user put it.
+    expect((await header.boundingBox()).width).toBeCloseTo(sized, 0);
+    expect(await entryOf(page, 'E2')).toBe('12345');
 });
 
 test('item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047)', async ({ page }) => {
