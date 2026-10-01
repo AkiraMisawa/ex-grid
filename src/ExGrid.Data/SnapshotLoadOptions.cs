@@ -16,8 +16,8 @@ public sealed class SnapshotLoadOptions
     public TimeSpan SliceBudget { get; init; } = TimeSpan.FromMilliseconds(30);
 
     /// <summary>
-    /// What the load awaits between slices. By default it is <see cref="Task.Yield"/>; in a browser
-    /// it is a delay of 1 ms, which lets the page paint before the next slice.
+    /// What the load awaits between slices. By default it is <see cref="Task.Yield"/>, in a browser
+    /// too, where it gives the page a turn of its event loop to paint in before the next slice.
     /// </summary>
     public Func<ValueTask>? Yield { get; init; }
 }

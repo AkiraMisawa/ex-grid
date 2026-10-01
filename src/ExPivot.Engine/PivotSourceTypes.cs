@@ -172,8 +172,9 @@ public sealed record PivotSlicing
         init => _timeProvider = value ?? throw new ArgumentNullException(nameof(TimeProvider));
     }
 
-    /// <summary>What runs between two slices; null for the platform's own: <c>Task.Delay(1)</c> in
-    /// a browser, so that it can paint, and <c>Task.Yield()</c> elsewhere.</summary>
+    /// <summary>What runs between two slices; null for the platform's own: a yield that captures no
+    /// caller's context, which in a browser is a turn of the page's event loop, in which it
+    /// paints.</summary>
     public Func<CancellationToken, ValueTask>? Yield { get; init; }
 
     /// <summary>Told how many rows each step of a question read — for layer 1, which holds a
@@ -195,8 +196,9 @@ public sealed record PivotSlicing
 
     /// <summary>
     /// Yields the thread as a slice ends: <see cref="Yield"/> when it is set, otherwise the
-    /// platform's — <c>Task.Delay(1)</c> in a browser, so that it can paint, and <c>Task.Yield()</c>
-    /// elsewhere — capturing no caller's context. Work that goes on after a piece of sliced work
+    /// platform's, capturing no caller's context. In a browser that is a turn of the page's event
+    /// loop, in which it paints: one frame a slice, at under a millisecond a yield, where a delay
+    /// of 1 ms cost 4.3–4.4 ms (ExGrid.Data's ticket 07 measured both). Work that goes on after a piece of sliced work
     /// has yielded takes a slice of its own with it (ExPivot does, between making the cube and
     /// laying out the report).
     /// </summary>
@@ -206,11 +208,7 @@ public sealed record PivotSlicing
 
     // The bundled source captures no caller's context: its slices go on wherever the runtime puts
     // them, so a caller that blocks on a question — on a UI thread, say — never waits on itself.
+    // The caller looks at its token once the yield returns, as it always has outside a browser.
     private static async ValueTask PlatformYield(CancellationToken cancellationToken)
-    {
-        if (OperatingSystem.IsBrowser())
-            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
-        else
-            await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
-    }
+        => await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
 }

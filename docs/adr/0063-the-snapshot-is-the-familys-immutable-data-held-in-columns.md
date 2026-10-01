@@ -183,6 +183,33 @@ they hold for every reader.**
   time is Date". A `TimeSpan` is refused unless declared, because it is a duration as often as a
   time of day.
 
+*(2026-10-01, when the CSV read was made faster — ExGrid.Data's ticket 07,
+`verification/2026-10-01-linux-measure-csv`.)*
+
+- **A million-row CSV now reads in 4.0 s in a published WebAssembly build, from 12.9 s, and in 491 ms
+  on CoreCLR, from 692.** Both were measured on the same machine.
+  - None of this section's rules moved.
+  - The refusals' words, rows and columns are the same, and tests hold the shortcuts to the full
+    parsers.
+  - In the browser the cost was calls, not arithmetic: a call costs 16–24 ns in the interpreter
+    against 1–2 on CoreCLR. So the read was rebuilt around fewer calls:
+    - separators found sixteen bytes at a time;
+    - a batch of records cut first, then read a column at a time;
+    - values appended a batch at a time;
+    - texts told apart by their bytes;
+    - the stream read 4 MiB at a time, where each read in a browser is a call into JavaScript.
+- **A text column's lookup by text is built when it is first asked for**, not at the end of the
+  load. The first `TryGetCode`, or the first Change Batch of a Snapshot read from a CSV, pays for
+  it once: 74 ms on CoreCLR, and 0.23–0.28 s in a browser, for a million distinct Ids. A CSV is
+  mostly read and pivoted, never batched, and the load is spared it.
+- **A slice yields with `Task.Yield()` in a browser too**, not with a delay of 1 ms. The delay was
+  chosen so that the page could paint, and was never measured against the yield. Measured, the
+  yield paints a frame a slice at 0.4–0.6 ms, against the delay's two frames at 4.3–4.4 ms, which
+  is about 0.4 s of a million-row read. ExPivot's slices yield the same way (ADR-0065).
+- **A crash this found is fixed.** A column of numbers, dates or Booleans with a Blank in its first
+  256 rows, followed by enough rows to grow its array, failed with an
+  `ArgumentOutOfRangeException` rather than loading.
+
 ## One package, family-wide, adopted one product at a time
 
 - **`ExGrid.Data` has no dependency outside the framework.** It carries the family's published

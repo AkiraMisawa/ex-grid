@@ -47,10 +47,10 @@ internal sealed class Pacer
 
     public void Report(SnapshotProgress state) => progress?.Report(state);
 
-    /// <summary>A browser gets a delay of 1 ms, which lets it paint; elsewhere the load lets other
-    /// work run and carries on.</summary>
-    internal static ValueTask DefaultYield()
-        => OperatingSystem.IsBrowser() ? new ValueTask(Task.Delay(1)) : YieldOnce();
+    /// <summary>The load lets other work run and carries on. In a browser that is a turn of the
+    /// page's event loop, in which it paints: one frame a slice, at 0.4–0.6 ms a yield, where a
+    /// delay of 1 ms painted two at 4.3–4.4 ms (ExGrid.Data's ticket 07 measured both).</summary>
+    internal static ValueTask DefaultYield() => YieldOnce();
 
     private static async ValueTask YieldOnce() => await Task.Yield();
 }

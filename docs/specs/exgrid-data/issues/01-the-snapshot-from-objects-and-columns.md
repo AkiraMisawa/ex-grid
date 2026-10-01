@@ -59,7 +59,9 @@ Built, 2026-10-01, with ticket 04.
   (cancellation, progress with rows and bytes, a yield when the slice is spent); `BuildAsync`
   indexes the Record Key in slices. A refused load builds nothing, and a builder builds once.
 - **Slices**: `SnapshotLoadOptions.SliceBudget` (30 ms by default) and `Yield` (by default
-  `Task.Yield()`, and `Task.Delay(1)` in a browser).
+  `Task.Yield()`, and `Task.Delay(1)` in a browser — *changed 2026-10-01 to `Task.Yield()` there
+  too*: ticket 07 measured it painting a frame a slice at 0.4–0.6 ms a yield, against the delay's
+  4.3–4.4 ms, about 0.4 s of a million-row CSV read).
 - **Package check**: `ExGrid.Data` is packed into the ExPivot feed, read back as declaring no
   dependency, refused in the release feed, and restored by the smoke application, which compiles
   its README's examples. Run here step by step and green.
