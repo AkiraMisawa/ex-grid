@@ -8,7 +8,7 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
 | File | What it is |
 |---|---|
 | `corpus.json` | The 3,015 strings ExSheet's built-in formats paint: Number and Currency in each negative style at 0 and 2 places, Percentage, Scientific, General, each culture's built-in currency, and the Date and Time types, under 24 cultures, for amounts, fractions, every month and times either side of noon |
-| `measure.mjs` | Measures one face in Chrome: every corpus string, and every glyph the corpus holds plus the Latin letters, at 14px and 12px, weights 400, 500, 600 and 700, tabular digits |
+| `measure.mjs` | Measures one face in Chrome: every corpus string, and every glyph the corpus holds, the Latin letters and every glyph `CellTextMetrics` names in a class, at 14px and 12px, weights 400, 500, 600 and 700, tabular digits |
 | `<face>.<platform>.json` | One face as `measure.mjs` measured it, on one platform |
 | `GlyphWidthRecord.cs` | Reads a record; compiled into the test projects below |
 

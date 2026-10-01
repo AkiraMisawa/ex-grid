@@ -58,7 +58,9 @@ const { css, family } = faces[face]();
 
 const corpus = JSON.parse(fs.readFileSync(path.join(here, 'corpus.json'), 'utf8'));
 const latin = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'];
-const glyphs = [...new Set([...corpus.flatMap((s) => [...s]), ...latin])]
+// Every glyph CellTextMetrics names in a class, so each claim it makes is measured in every face.
+const classed = [...'%€\u2212+#', ...'.,()/: ', ...'0123456789$£¥\u20B9\u20BA\u20ABE-\'\u2019\u00A0\u202F\u200E\u200F\u061C'];
+const glyphs = [...new Set([...corpus.flatMap((s) => [...s]), ...latin, ...classed])]
   .sort((a, b) => a.codePointAt(0) - b.codePointAt(0));
 
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'glyph-widths-'));

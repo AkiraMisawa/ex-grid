@@ -245,12 +245,13 @@ public readonly record struct CellTextMetrics
     };
 
     /// <summary>
-    /// The digit class: the digits, and every glyph a built-in Number Format emits that was
-    /// measured at a digit's width or under in each face the grid's widths come from (ticket 83)
-    /// — the currency signs drawn on a digit's advance, the exponent's <c>E</c>, the hyphen-minus,
-    /// the apostrophes and spaces cultures group digits with, and the zero-width direction marks
-    /// a right-to-left culture puts before a sign. Listing a glyph here is a claim about every
-    /// face, so a glyph joins only once it is measured in each.
+    /// The digit class: the digits, and the glyphs number formats put among them that were
+    /// measured at a digit's width or under in each face the grid's widths come from (ticket 83;
+    /// <c>tests/GlyphWidths</c> measures every glyph listed here) — the currency signs drawn on a
+    /// digit's advance, the exponent's <c>E</c>, the hyphen-minus, the apostrophes and spaces
+    /// cultures group digits with, and the zero-width direction marks a right-to-left culture puts
+    /// before a sign. Listing a glyph here is a claim about every face, so a glyph joins only once
+    /// it is measured in each.
     /// </summary>
     private static bool IsDigitClass(int c) =>
         c is (>= '0' and <= '9')
