@@ -35,7 +35,7 @@ public class SheetDisplayTests : SheetTestContext
         // General is fitted to the column instead (ADR-0047 second round; PaintedTextTests).
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         sheet.Enter(CellAddress.Parse("A1"), "123456789012345");
-        sheet.SetFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0"));
+        sheet.SetNumberFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0"));
         var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
 
         var cell = Cell(cut, "A1");
@@ -200,7 +200,7 @@ public class SheetDisplayTests : SheetTestContext
         var run = Assert.Single(raised!.Columns);
         Assert.Equal((1, 2), (run.First, run.Last));
         Assert.Empty(raised.Rows);
-        Assert.All(raised.Cells, c => Assert.Null(c.Format));
+        Assert.All(raised.Cells, c => Assert.Null(c.NumberFormat));
         Assert.Equal("2.00", CellText(cut, "B3"));
         Assert.Equal("4", CellText(cut, "D3"));
         // One step, and undoing it puts the column back as it was.

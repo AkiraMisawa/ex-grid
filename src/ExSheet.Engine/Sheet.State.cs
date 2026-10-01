@@ -1,51 +1,81 @@
 namespace ExSheet.Engine;
 
 /// <summary>
-/// What one cell holds and shows, compared before and after an operation. Its format and
-/// alignment are the cell's own; <see langword="null"/> takes the row's or the column's (ADR-0047).
+/// What one cell holds and shows, compared before and after an operation. The parts of its Cell
+/// Format are the cell's own; <see langword="null"/> takes the row's or the column's (ADR-0047,
+/// ADR-0063).
 /// </summary>
-internal readonly record struct CellState(Entry? Entry, Value? Value, NumberFormat? Format, HorizontalAlignment? Alignment)
+internal readonly record struct CellState(
+    Entry? Entry,
+    Value? Value,
+    NumberFormat? NumberFormat,
+    HorizontalAlignment? Alignment,
+    CellFont? Font,
+    CellFill? Fill,
+    CellBorders? Borders)
 {
-    public static CellState Blank { get; } = new(null, null, null, null);
+    public static CellState Blank { get; } = new(null, null, null, null, null, null, null);
 
-    /// <summary>The same cell as recorded: Entry and formatting, the Value left out.</summary>
+    /// <summary>The same cell as recorded: Entry and Cell Format, the Value left out.</summary>
     public CellState Recorded => this with { Value = null };
 
-    public bool SameRecord(CellState other) =>
-        Equals(Entry, other.Entry) && Equals(Format, other.Format) && Alignment == other.Alignment;
+    public bool SameRecord(CellState other) => Recorded == other.Recorded;
+
+    /// <summary>The Cell Format the state shows, where it records nothing of a part, the part's default.</summary>
+    public CellFormat CellFormat => new(
+        NumberFormat ?? Engine.NumberFormat.General,
+        Alignment ?? HorizontalAlignment.General,
+        Font ?? CellFont.Default,
+        Fill ?? CellFill.None,
+        Borders ?? CellBorders.None);
 }
 
 public sealed partial class Sheet
 {
     /// <summary>Every held cell's state, keyed by address.</summary>
-    private Dictionary<CellAddress, CellState> Snapshot() =>
-        _cells.Values.ToDictionary(c => c.Address, c => new CellState(c.Entry, c.Value, c.Format, c.Alignment));
+    private Dictionary<CellAddress, CellState> Snapshot() => _cells.Values.ToDictionary(c => c.Address, State);
 
-    private CellState StateOf(CellAddress address) =>
-        _cells.TryGetValue(address, out var c) ? new CellState(c.Entry, c.Value, c.Format, c.Alignment) : CellState.Blank;
+    private CellState StateOf(CellAddress address) => _cells.TryGetValue(address, out var c) ? State(c) : CellState.Blank;
+
+    private static CellState State(Cell c) => new(c.Entry, c.Value, c.NumberFormat, c.Alignment, c.Font, c.Fill, c.Borders);
 
     /// <summary>
-    /// The cell as a copy or a fill carries it: its Entry, and the format and alignment it shows
-    /// from whichever level sets them, as Excel's paste brings the source's formatting (ADR-0047).
+    /// The cell as a copy or a fill carries it: its Entry, and every part of the Cell Format it
+    /// shows, from whichever level records it, as Excel's paste brings the source's formatting
+    /// (ADR-0047, ADR-0063).
     /// </summary>
-    private CellState ShownState(CellAddress address) =>
-        StateOf(address).Recorded with { Format = GetFormat(address), Alignment = GetAlignment(address) };
+    private CellState ShownState(CellAddress address)
+    {
+        var shown = GetCellFormat(address);
+        return StateOf(address).Recorded with
+        {
+            NumberFormat = shown.NumberFormat,
+            Alignment = shown.Alignment,
+            Font = shown.Font,
+            Fill = shown.Fill,
+            Borders = shown.Borders,
+        };
+    }
 
     /// <summary>
-    /// States about to be written whole, each cell's format and alignment kept only where they
-    /// differ from what its row or column gives it, so a pasted cell records nothing it would take
+    /// States about to be written whole, each part of each cell's Cell Format kept only where it
+    /// differs from what its row or column gives it, so a pasted cell records nothing it would take
     /// anyway.
     /// </summary>
     internal List<(CellAddress Address, CellState State)> Settle(IEnumerable<(CellAddress Address, CellState State)> states) =>
-        [.. states.Select(p => (p.Address, p.State with
-        {
-            Format = p.State.Format is { } f && f.Equals(InheritedFormat(p.Address)) ? null : p.State.Format,
-            Alignment = p.State.Alignment is { } a && a == InheritedAlignment(p.Address) ? null : p.State.Alignment,
-        }))];
+        [.. states.Select(p => (p.Address, Settled(p.State, Inherited(p.Address))))];
 
-    /// <summary>The format and alignment every held cell shows, keyed by address.</summary>
-    private Dictionary<CellAddress, (NumberFormat Format, HorizontalAlignment Alignment)> ShownSnapshot() =>
-        _cells.Keys.ToDictionary(a => a, a => (GetFormat(a), GetAlignment(a)));
+    private static CellState Settled(CellState state, CellFormat inherited) => state with
+    {
+        NumberFormat = state.NumberFormat is { } f && f.Equals(inherited.NumberFormat) ? null : state.NumberFormat,
+        Alignment = state.Alignment is { } a && a == inherited.Alignment ? null : state.Alignment,
+        Font = state.Font is { } font && font == inherited.Font ? null : state.Font,
+        Fill = state.Fill is { } fill && fill == inherited.Fill ? null : state.Fill,
+        Borders = state.Borders is { } borders && borders == inherited.Borders ? null : state.Borders,
+    };
+
+    /// <summary>The Cell Format every held cell shows, keyed by address.</summary>
+    private Dictionary<CellAddress, CellFormat> ShownSnapshot() => _cells.Keys.ToDictionary(a => a, GetCellFormat);
 
     /// <summary>
     /// The change between <paramref name="before"/> and now, address by address: a Value that
@@ -54,7 +84,7 @@ public sealed partial class Sheet
     private SheetChange Diff(
         Dictionary<CellAddress, CellState> before,
         IEnumerable<CellAddress> recalculated,
-        Dictionary<CellAddress, (NumberFormat Format, HorizontalAlignment Alignment)>? shownBefore = null)
+        Dictionary<CellAddress, CellFormat>? shownBefore = null)
     {
         var valueChanges = new List<CellAddress>();
         var rows = new SortedSet<int>();
@@ -63,7 +93,7 @@ public sealed partial class Sheet
             var now = StateOf(address);
             if (!Nullable.Equals(old.Value, now.Value)) valueChanges.Add(address);
             var shown = shownBefore is null
-                || (shownBefore.TryGetValue(address, out var was) ? was : (NumberFormat.General, HorizontalAlignment.General)) == (GetFormat(address), GetAlignment(address));
+                || (shownBefore.TryGetValue(address, out var was) ? was : CellFormat.Default) == GetCellFormat(address);
             if (!Nullable.Equals(old.Value, now.Value) || !old.SameRecord(now) || !shown) rows.Add(address.Row);
         }
         foreach (var (address, old) in before) Compare(address, old);

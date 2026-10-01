@@ -12,8 +12,9 @@ cell from its **Entry**:
   recalculation; a circular reference is `#CIRC!` in every cell of the cycle and every cell that
   depends on it
 
-The **Sheet Document** is the Sheet's serialisable form (version 5, which also reads versions 1
-to 4), with the formats set on its columns, rows and cells and the widths recorded on its columns. It holds Entries and never Values, so
+The **Sheet Document** is the Sheet's serialisable form (version 7, which also reads versions 1
+to 6), with the Cell Formats recorded on its columns, rows and cells — Number Format, Alignment,
+Font, Fill and Borders — and the widths recorded on its columns. It holds Entries and never Values, so
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
 
@@ -160,16 +161,21 @@ step.Undo();                                         // Entries, formats and Ref
   undo) changed. A version 4 document recorded only widths the user set, and they open as the
   user's; a version 5 document's custom widths open as the user's and its others as widened by
   entry.
-- **Formats** are set at three levels, cell over row over column, as in Excel.
-  `SheetEdit.SetFormat(range, format)` and `SheetEdit.SetAlignment(range, alignment)` record
-  whole columns (`CellRange.Parse("B:D")`) and whole rows (`"2:4"`) as one entry each, and the
-  whole Sheet (`"A:XFD"`) as one run; a cell inside that set its own format takes the new one,
-  as Excel's do. Any other range sets its cells. `Sheet.GetFormat` and `Sheet.GetAlignment`
-  answer what takes effect; `GetRowFormat`, `GetColumnFormat` and their alignment counterparts
-  what a level sets. The per-cell forms taking addresses keep working.
-  `SheetEdit.SetStyle(ranges, format, alignment)` sets a number format, an alignment or both on
-  several ranges — a selection of several rectangles, whole columns and rows among them — as one
-  step; there `null` leaves a property as it is, and `NumberFormat.General` sets General.
+- **A Cell Format** — Number Format, Alignment, Font, Fill and Borders — is recorded at three
+  levels, cell over row over column, as in Excel. `SheetEdit.SetNumberFormat(range, format)` and
+  `SheetEdit.SetAlignment(range, alignment)` record whole columns (`CellRange.Parse("B:D")`) and
+  whole rows (`"2:4"`) as one entry each, and the whole Sheet (`"A:XFD"`) as one run; a cell
+  inside that records its own Number Format takes the new one, as Excel's do. Any other range
+  sets its cells. `SheetEdit.SetCellFormat(ranges, change)` sets the parts a `CellFormatChange`
+  names on several ranges — a selection of several rectangles, whole columns and rows among them
+  — as one step; every part it does not name stays as each cell has it, each Font emphasis on its
+  own, and its `BorderChange` (outline, inside, each edge, none) is relative to each range, so
+  each range gets its own outline. A side is written on the range's own cells only, never on the
+  neighbour's. `Sheet.GetCellFormat` answers what a cell shows, and `GetNumberFormat`,
+  `GetAlignment`, `GetFont`, `GetFill` and `GetBorders` one part of it; `GetRowNumberFormat`,
+  `GetColumnNumberFormat` and their alignment counterparts what a level records. A colour
+  (`CellColour`) is Automatic or RGB; a Fill is RGB or none; a Border is one of Excel's thirteen
+  line styles and a colour. The per-cell forms taking addresses keep working.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each

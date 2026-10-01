@@ -8,26 +8,32 @@ namespace ExSheet.Engine;
 /// The serialisable form of a Sheet (CONTEXT.md, ADR-0048). It records the Sheet's culture, its
 /// name (ADR-0046), the Linked Tables declared on it — each one's name and column names, never its
 /// rows (ADR-0049) — its Entries — constants already parsed, Formulas in invariant syntax — the
-/// formats set on its columns, rows and cells (ADR-0047) and the widths set on its columns
-/// (ADR-0046), and never a Value: opening one
+/// Cell Formats recorded on its columns, rows and cells (ADR-0047, ADR-0063) and the widths set on
+/// its columns (ADR-0046), and never a Value: opening one
 /// computes every Value again. The Consumer persists it; ExSheet never does.
 /// </summary>
 /// <remarks>
 /// The document is a format with a version. A reader meeting a version it does not know refuses
 /// the document rather than guess at it (ADR-0048); so does a reader meeting anything it does not
-/// understand. This engine writes version 6 and reads versions 1 to 6: version 1 recorded no
+/// understand. This engine writes version 7 and reads versions 1 to 7: version 1 recorded no
 /// name and no Linked Table, and a Sheet opened from one is named <see cref="Sheet.DefaultName"/>
 /// and declares none; versions 1 and 2 recorded formats on cells only, where General meant the
 /// cell set nothing; versions 1 to 3 recorded no column width, and every column of a Sheet
 /// opened from one is at the default width; version 4 recorded widths without saying whether the
 /// user set them, and each is read as one the user set, which is what version 4 meant; version 5
 /// said whether each was custom, and a custom one is read as the user's and any other as widened
-/// by entry, which is what version 5 meant by them (ADR-0046, 2026-09-28).
+/// by entry, which is what version 5 meant by them (ADR-0046, 2026-09-28); versions 1 to 6
+/// recorded no Font, Fill or Borders, and a Sheet opened from one has none (ADR-0063, ADR-0048).
 /// </remarks>
 public sealed class SheetDocument
 {
+    // Version 7 is also taken on claude/exsheet-pointing-scope, for a Linked Table's key. The two
+    // are different formats under one number, so this one's number is fixed when the branches
+    // merge (ADR-0048, "The Sheet Document records Cell Format whole"). Every "version >= 7" below
+    // moves with it.
+
     /// <summary>The version this engine writes.</summary>
-    public const int CurrentVersion = 6;
+    public const int CurrentVersion = 7;
 
     /// <summary>The oldest version this engine reads.</summary>
     public const int OldestReadableVersion = 1;
@@ -60,16 +66,16 @@ public sealed class SheetDocument
     public IReadOnlyList<SheetDocumentCell> Cells { get; }
 
     /// <summary>
-    /// The formats set on whole columns, in column order, adjacent columns set alike as one run
-    /// (ADR-0047). Empty for a document read from version 1 or 2.
+    /// The Cell Formats recorded on whole columns, in column order, adjacent columns recorded alike
+    /// as one run (ADR-0047, ADR-0063). Empty for a document read from version 1 or 2.
     /// </summary>
-    public IReadOnlyList<SheetDocumentAxisStyle> Columns { get; init; } = [];
+    public IReadOnlyList<SheetDocumentAxisFormat> Columns { get; init; } = [];
 
     /// <summary>
-    /// The formats set on whole rows, in row order, adjacent rows set alike as one run (ADR-0047).
-    /// Empty for a document read from version 1 or 2.
+    /// The Cell Formats recorded on whole rows, in row order, adjacent rows recorded alike as one
+    /// run (ADR-0047, ADR-0063). Empty for a document read from version 1 or 2.
     /// </summary>
-    public IReadOnlyList<SheetDocumentAxisStyle> Rows { get; init; } = [];
+    public IReadOnlyList<SheetDocumentAxisFormat> Rows { get; init; } = [];
 
     /// <summary>
     /// The widths recorded on columns, in characters, and the kind of each, in column order,
@@ -141,7 +147,7 @@ public sealed class SheetDocument
                         }
                     }
                 }
-                WriteStyle(json, cell.Format, cell.Alignment);
+                WriteCellFormat(json, cell.NumberFormat, cell.Alignment, cell.Font, cell.Fill, cell.Borders);
                 json.WriteEndObject();
             }
             json.WriteEndArray();
@@ -150,7 +156,7 @@ public sealed class SheetDocument
         return Encoding.UTF8.GetString(buffer.ToArray());
     }
 
-    private static void WriteAxis(Utf8JsonWriter json, string name, IReadOnlyList<SheetDocumentAxisStyle> runs, Func<SheetDocumentAxisStyle, string> at)
+    private static void WriteAxis(Utf8JsonWriter json, string name, IReadOnlyList<SheetDocumentAxisFormat> runs, Func<SheetDocumentAxisFormat, string> at)
     {
         if (runs.Count == 0) return;
         json.WriteStartArray(name);
@@ -158,17 +164,56 @@ public sealed class SheetDocument
         {
             json.WriteStartObject();
             json.WriteString("at", at(run));
-            WriteStyle(json, run.Format, run.Alignment);
+            WriteCellFormat(json, run.NumberFormat, run.Alignment, run.Font, run.Fill, run.Borders);
             json.WriteEndObject();
         }
         json.WriteEndArray();
     }
 
-    private static void WriteStyle(Utf8JsonWriter json, NumberFormat? format, HorizontalAlignment? alignment)
+    /// <summary>
+    /// The parts of a Cell Format a cell, row or column records, each only where it records one:
+    /// <c>"format"</c>, <c>"align"</c>, <c>"font"</c> (an object holding only what differs from the
+    /// default Font: <c>"color"</c>, <c>"bold"</c>, <c>"italic"</c>, <c>"underline"</c>,
+    /// <c>"strikethrough"</c>), <c>"fill"</c> (<c>"none"</c> or <c>"#RRGGBB"</c>) and
+    /// <c>"borders"</c> (an object holding each side that has a line, as <c>"style"</c> in
+    /// Excel's file's name for it and <c>"color"</c>). An Automatic colour is not written.
+    /// </summary>
+    private static void WriteCellFormat(Utf8JsonWriter json, NumberFormat? format, HorizontalAlignment? alignment, CellFont? font, CellFill? fill, CellBorders? borders)
     {
         if (format is not null) json.WriteString("format", format.Code);
         if (alignment is { } a) json.WriteString("align", AlignmentName(a));
+        if (font is { } f)
+        {
+            json.WriteStartObject("font");
+            if (!f.Colour.IsAutomatic) json.WriteString("color", ColourText(f.Colour));
+            if (f.Bold) json.WriteBoolean("bold", true);
+            if (f.Italic) json.WriteBoolean("italic", true);
+            if (f.Underline) json.WriteBoolean("underline", true);
+            if (f.Strikethrough) json.WriteBoolean("strikethrough", true);
+            json.WriteEndObject();
+        }
+        if (fill is { } solid) json.WriteString("fill", solid.Colour is { } colour ? ColourText(colour) : "none");
+        if (borders is { } b)
+        {
+            json.WriteStartObject("borders");
+            WriteSide(json, "top", b.Top);
+            WriteSide(json, "bottom", b.Bottom);
+            WriteSide(json, "left", b.Left);
+            WriteSide(json, "right", b.Right);
+            json.WriteEndObject();
+        }
     }
+
+    private static void WriteSide(Utf8JsonWriter json, string side, BorderLine line)
+    {
+        if (line.IsNone) return;
+        json.WriteStartObject(side);
+        json.WriteString("style", LineStyleName(line.Style));
+        if (!line.Colour.IsAutomatic) json.WriteString("color", ColourText(line.Colour));
+        json.WriteEndObject();
+    }
+
+    private static string ColourText(CellColour colour) => "#" + colour.Rgb.ToString("X6", CultureInfo.InvariantCulture);
 
     /// <summary>Reads a document written by <see cref="ToJson"/>.</summary>
     /// <exception cref="SheetDocumentException">
@@ -209,8 +254,8 @@ public sealed class SheetDocument
             var tables = new List<SheetDocumentTable>();
             var cells = new List<SheetDocumentCell>();
             var seen = new HashSet<CellAddress>();
-            var columns = new List<SheetDocumentAxisStyle>();
-            var rows = new List<SheetDocumentAxisStyle>();
+            var columns = new List<SheetDocumentAxisFormat>();
+            var rows = new List<SheetDocumentAxisFormat>();
             var widths = new List<SheetDocumentColumnWidth>();
             foreach (var property in root.EnumerateObject())
             {
@@ -239,10 +284,10 @@ public sealed class SheetDocument
                         break;
                     case "columns" when number >= 3:
                         // The whole Sheet is recorded as whole columns (A:XFD), so a column run may span every row and every column.
-                        columns = ReadAxis(property.Value, "column", text => CellRange.TryParse(text, out var r) && r.IsWholeColumns ? (r.First.Column, r.Last.Column) : null);
+                        columns = ReadAxis(property.Value, "column", number, text => CellRange.TryParse(text, out var r) && r.IsWholeColumns ? (r.First.Column, r.Last.Column) : null);
                         break;
                     case "rows" when number >= 3:
-                        rows = ReadAxis(property.Value, "row", text => CellRange.TryParse(text, out var r) && r.IsWholeRows && !r.IsWholeColumns ? (r.First.Row, r.Last.Row) : null);
+                        rows = ReadAxis(property.Value, "row", number, text => CellRange.TryParse(text, out var r) && r.IsWholeRows && !r.IsWholeColumns ? (r.First.Row, r.Last.Row) : null);
                         break;
                     case "columnWidths" when number >= 4:
                         widths = ReadWidths(property.Value, number);
@@ -280,16 +325,19 @@ public sealed class SheetDocument
         }
     }
 
-    private static List<SheetDocumentAxisStyle> ReadAxis(JsonElement array, string what, Func<string?, (int First, int Last)?> parse)
+    private static List<SheetDocumentAxisFormat> ReadAxis(JsonElement array, string what, int version, Func<string?, (int First, int Last)?> parse)
     {
         if (array.ValueKind != JsonValueKind.Array) throw new SheetDocumentException($"The {what} formats are not an array.");
-        var runs = new List<SheetDocumentAxisStyle>();
+        var runs = new List<SheetDocumentAxisFormat>();
         foreach (var element in array.EnumerateArray())
         {
             if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException($"A {what} format is not a JSON object.");
             (int First, int Last)? at = null;
             NumberFormat? format = null;
             HorizontalAlignment? alignment = null;
+            CellFont? font = null;
+            CellFill? fill = null;
+            CellBorders? borders = null;
             foreach (var property in element.EnumerateObject())
             {
                 switch (property.Name)
@@ -304,14 +352,23 @@ public sealed class SheetDocument
                     case "align":
                         alignment = ReadAlignment(property.Value, allowGeneral: true);
                         break;
+                    case "font" when version >= 7:
+                        font = ReadFont(property.Value);
+                        break;
+                    case "fill" when version >= 7:
+                        fill = ReadFill(property.Value);
+                        break;
+                    case "borders" when version >= 7:
+                        borders = ReadBorders(property.Value);
+                        break;
                     default:
-                        throw new SheetDocumentException($"'{property.Name}' is not part of a {what} format.");
+                        throw new SheetDocumentException($"'{property.Name}' is not part of a version {version} {what} format.");
                 }
             }
             if (at is not { } span) throw new SheetDocumentException($"A {what} format says no {what}.");
-            if (format is null && alignment is null) throw new SheetDocumentException($"The {what} format at {span.First} sets nothing.");
+            if (format is null && alignment is null && font is null && fill is null && borders is null) throw new SheetDocumentException($"The {what} format at {span.First} sets nothing.");
             if (runs.Any(r => r.First <= span.Last && span.First <= r.Last)) throw new SheetDocumentException($"A {what} is formatted twice.");
-            runs.Add(new SheetDocumentAxisStyle(span.First, span.Last, format, alignment));
+            runs.Add(new SheetDocumentAxisFormat(span.First, span.Last, format, alignment, font, fill, borders));
         }
         runs.Sort((a, b) => a.First.CompareTo(b.First));
         return runs;
@@ -385,6 +442,123 @@ public sealed class SheetDocument
             ? parsed
             : throw new SheetDocumentException($"'{value}' is not a number format this version reads.");
 
+    /// <summary>
+    /// A colour as version 7 records it: <c>"automatic"</c> or <c>"#RRGGBB"</c>. Any other kind —
+    /// an <c>.xlsx</c> theme colour, a colour's name — is refused by name, never guessed at
+    /// (ADR-0048, 2026-09-30).
+    /// </summary>
+    private static CellColour ReadColour(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            var text = value.GetString();
+            if (text == "automatic") return CellColour.Automatic;
+            if (CellColour.FromHex(text) is { } rgb) return rgb;
+        }
+        throw new SheetDocumentException($"'{value}' is not a colour a Sheet Document records: a colour is \"automatic\" or \"#RRGGBB\", and no other kind is read.");
+    }
+
+    private static CellFont ReadFont(JsonElement value)
+    {
+        if (value.ValueKind != JsonValueKind.Object) throw new SheetDocumentException($"'{value}' is not a Font.");
+        var font = CellFont.Default;
+        foreach (var property in value.EnumerateObject())
+        {
+            font = property.Name switch
+            {
+                "color" => font with { Colour = ReadColour(property.Value) },
+                "bold" => font with { Bold = ReadEmphasis(property) },
+                "italic" => font with { Italic = ReadEmphasis(property) },
+                "underline" => font with { Underline = ReadEmphasis(property) },
+                "strikethrough" => font with { Strikethrough = ReadEmphasis(property) },
+                _ => throw new SheetDocumentException($"'{property.Name}' is not part of a Font: its colour, bold, italic, a single underline and strikethrough."),
+            };
+        }
+        return font;
+
+        static bool ReadEmphasis(JsonProperty property) =>
+            property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? property.Value.GetBoolean()
+                : throw new SheetDocumentException($"'{property.Value}' does not say whether a Font is {property.Name}.");
+    }
+
+    private static CellFill ReadFill(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            var text = value.GetString();
+            if (text == "none") return CellFill.None;
+            if (CellColour.FromHex(text) is { } rgb) return CellFill.Solid(rgb);
+        }
+        throw new SheetDocumentException($"'{value}' is not a Fill a Sheet Document records: a Fill is \"none\" or \"#RRGGBB\", and no other kind of colour is read.");
+    }
+
+    private static CellBorders ReadBorders(JsonElement value)
+    {
+        if (value.ValueKind != JsonValueKind.Object) throw new SheetDocumentException($"'{value}' is not a cell's Borders.");
+        var borders = CellBorders.None;
+        foreach (var property in value.EnumerateObject())
+        {
+            borders = property.Name switch
+            {
+                "top" => borders with { Top = ReadSide(property) },
+                "bottom" => borders with { Bottom = ReadSide(property) },
+                "left" => borders with { Left = ReadSide(property) },
+                "right" => borders with { Right = ReadSide(property) },
+                _ => throw new SheetDocumentException($"'{property.Name}' is not a side of a cell: top, bottom, left or right."),
+            };
+        }
+        return borders;
+    }
+
+    private static BorderLine ReadSide(JsonProperty side)
+    {
+        if (side.Value.ValueKind != JsonValueKind.Object) throw new SheetDocumentException($"'{side.Value}' is not the line on a cell's {side.Name} side.");
+        BorderLineStyle? style = null;
+        var colour = CellColour.Automatic;
+        foreach (var property in side.Value.EnumerateObject())
+        {
+            switch (property.Name)
+            {
+                case "style":
+                    style = property.Value.ValueKind == JsonValueKind.String && LineStyleOf(property.Value.GetString()!) is { } named
+                        ? named
+                        : throw new SheetDocumentException($"'{property.Value}' is not one of Excel's thirteen line styles.");
+                    break;
+                case "color":
+                    colour = ReadColour(property.Value);
+                    break;
+                default:
+                    throw new SheetDocumentException($"'{property.Name}' is not part of a Border: its line style and its colour.");
+            }
+        }
+        if (style is not { } recorded) throw new SheetDocumentException($"The line on a cell's {side.Name} side says no line style.");
+        return new BorderLine(recorded, colour);
+    }
+
+    /// <summary>The names Excel's own file gives the thirteen line styles (<c>ST_BorderStyle</c>).</summary>
+    private static readonly (BorderLineStyle Style, string Name)[] LineStyleNames =
+    [
+        (BorderLineStyle.Hair, "hair"),
+        (BorderLineStyle.Thin, "thin"),
+        (BorderLineStyle.Medium, "medium"),
+        (BorderLineStyle.Thick, "thick"),
+        (BorderLineStyle.Double, "double"),
+        (BorderLineStyle.Dotted, "dotted"),
+        (BorderLineStyle.Dashed, "dashed"),
+        (BorderLineStyle.DashDot, "dashDot"),
+        (BorderLineStyle.DashDotDot, "dashDotDot"),
+        (BorderLineStyle.MediumDashed, "mediumDashed"),
+        (BorderLineStyle.MediumDashDot, "mediumDashDot"),
+        (BorderLineStyle.MediumDashDotDot, "mediumDashDotDot"),
+        (BorderLineStyle.SlantedDashDot, "slantDashDot"),
+    ];
+
+    private static string LineStyleName(BorderLineStyle style) => LineStyleNames.First(n => n.Style == style).Name;
+
+    private static BorderLineStyle? LineStyleOf(string name) =>
+        LineStyleNames.FirstOrDefault(n => string.Equals(n.Name, name, StringComparison.Ordinal)) is { Name: not null } found ? found.Style : null;
+
     private static HorizontalAlignment ReadAlignment(JsonElement value, bool allowGeneral) =>
         value.ValueKind == JsonValueKind.String ? value.GetString() switch
         {
@@ -429,6 +603,9 @@ public sealed class SheetDocument
         Entry? entry = null;
         NumberFormat? format = null;
         HorizontalAlignment? alignment = null;
+        CellFont? font = null;
+        CellFill? fill = null;
+        CellBorders? borders = null;
         foreach (var property in element.EnumerateObject())
         {
             var value = property.Value;
@@ -480,13 +657,22 @@ public sealed class SheetDocument
                 case "align":
                     alignment = ReadAlignment(value, allowGeneral: version >= 3);
                     break;
+                case "font" when version >= 7:
+                    font = ReadFont(value);
+                    break;
+                case "fill" when version >= 7:
+                    fill = ReadFill(value);
+                    break;
+                case "borders" when version >= 7:
+                    borders = ReadBorders(value);
+                    break;
                 default:
                     throw new SheetDocumentException($"'{property.Name}' is not part of a version {version} cell.");
             }
         }
         if (address is null) throw new SheetDocumentException("A cell has no address.");
-        if (entry is null && format is null && alignment is null) throw new SheetDocumentException($"The cell {address} holds nothing.");
-        return new SheetDocumentCell(address.Value, entry, format, alignment);
+        if (entry is null && format is null && alignment is null && font is null && fill is null && borders is null) throw new SheetDocumentException($"The cell {address} holds nothing.");
+        return new SheetDocumentCell(address.Value, entry, format, alignment, font, fill, borders);
     }
 
     private static string AlignmentName(HorizontalAlignment alignment) => alignment switch
@@ -501,22 +687,33 @@ public sealed class SheetDocument
         existing is null ? entry : throw new SheetDocumentException("A cell holds more than one Entry.");
 }
 
-/// <summary>One cell of a Sheet Document: where it is, its Entry and its formatting. Never its Value (ADR-0048).</summary>
+/// <summary>One cell of a Sheet Document: where it is, its Entry and its own Cell Format. Never its Value (ADR-0048).</summary>
 /// <param name="Address">Where the cell is.</param>
-/// <param name="Entry">What the user put into it; <see langword="null"/> for a cell that holds only formatting.</param>
-/// <param name="Format">The number format the cell sets itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
-/// <param name="Alignment">The horizontal alignment the cell sets itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
-public sealed record SheetDocumentCell(CellAddress Address, Entry? Entry, NumberFormat? Format, HorizontalAlignment? Alignment);
+/// <param name="Entry">What the user put into it; <see langword="null"/> for a cell that holds only a Cell Format.</param>
+/// <param name="NumberFormat">The Number Format the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
+/// <param name="Alignment">The horizontal alignment the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
+/// <param name="Font">The Font the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0063).</param>
+/// <param name="Fill">The Fill the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0063).</param>
+/// <param name="Borders">The four sides the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0063).</param>
+public sealed record SheetDocumentCell(CellAddress Address, Entry? Entry, NumberFormat? NumberFormat, HorizontalAlignment? Alignment, CellFont? Font, CellFill? Fill, CellBorders? Borders);
 
 /// <summary>
-/// A format set on whole columns or whole rows, as a Sheet Document records it: one entry for a
-/// run of adjacent columns (rows) set alike, never one per cell (ADR-0047).
+/// A Cell Format recorded on whole columns or whole rows, as a Sheet Document records it: one
+/// entry for a run of adjacent columns (rows) recorded alike, never one per cell (ADR-0047,
+/// ADR-0063).
 /// </summary>
 /// <param name="First">The first column (row) of the run, from 0.</param>
 /// <param name="Last">The last column (row) of the run.</param>
-/// <param name="Format">The number format set on them, or <see langword="null"/>.</param>
-/// <param name="Alignment">The horizontal alignment set on them, or <see langword="null"/>.</param>
-public sealed record SheetDocumentAxisStyle(int First, int Last, NumberFormat? Format, HorizontalAlignment? Alignment);
+/// <param name="NumberFormat">The Number Format recorded on them, or <see langword="null"/>.</param>
+/// <param name="Alignment">The horizontal alignment recorded on them, or <see langword="null"/>.</param>
+/// <param name="Font">The Font recorded on them, or <see langword="null"/>.</param>
+/// <param name="Fill">The Fill recorded on them, or <see langword="null"/>.</param>
+/// <param name="Borders">The four sides recorded on them, or <see langword="null"/>.</param>
+public sealed record SheetDocumentAxisFormat(int First, int Last, NumberFormat? NumberFormat, HorizontalAlignment? Alignment, CellFont? Font, CellFill? Fill, CellBorders? Borders)
+{
+    /// <summary>The level each row (column) of the run records.</summary>
+    internal AxisFormat Level => new(NumberFormat, Alignment, Font, Fill, Borders);
+}
 
 /// <summary>
 /// A width recorded on columns, as a Sheet Document records it: one entry for a run of adjacent

@@ -21,15 +21,15 @@ public class FormatLevelTests
     {
         var sheet = NewSheet();
 
-        sheet.SetFormat(CellRange.Parse("B:B"), TwoPlaces);
+        sheet.SetNumberFormat(CellRange.Parse("B:B"), TwoPlaces);
 
         var document = sheet.ToDocument();
         Assert.Empty(document.Cells);
         var column = Assert.Single(document.Columns);
-        Assert.Equal((1, 1, TwoPlaces), (column.First, column.Last, column.Format));
-        Assert.Equal(TwoPlaces, sheet.GetColumnFormat(1));
-        Assert.Equal(TwoPlaces, sheet.GetFormat(At("B1048576")));
-        Assert.Equal(NumberFormat.General, sheet.GetFormat(At("C1")));
+        Assert.Equal((1, 1, TwoPlaces), (column.First, column.Last, column.NumberFormat));
+        Assert.Equal(TwoPlaces, sheet.GetColumnNumberFormat(1));
+        Assert.Equal(TwoPlaces, sheet.GetNumberFormat(At("B1048576")));
+        Assert.Equal(NumberFormat.General, sheet.GetNumberFormat(At("C1")));
     }
 
     [Fact] // ADR-0047 (SH-21): the whole Sheet is whole columns, one run in the document
@@ -37,7 +37,7 @@ public class FormatLevelTests
     {
         var sheet = NewSheet();
 
-        sheet.SetFormat(CellRange.Parse("A:XFD"), TwoPlaces);
+        sheet.SetNumberFormat(CellRange.Parse("A:XFD"), TwoPlaces);
 
         var run = Assert.Single(sheet.ToDocument().Columns);
         Assert.Equal((0, Sheet.ColumnCount - 1), (run.First, run.Last));
@@ -48,12 +48,12 @@ public class FormatLevelTests
     public void A_whole_sheet_format_round_trips_through_the_document()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(CellRange.Parse("A:XFD"), TwoPlaces);
+        sheet.SetNumberFormat(CellRange.Parse("A:XFD"), TwoPlaces);
 
         var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
 
-        Assert.Equal(TwoPlaces, reopened.GetFormat(At("A1")));
-        Assert.Equal(TwoPlaces, reopened.GetFormat(At("XFD1048576")));
+        Assert.Equal(TwoPlaces, reopened.GetNumberFormat(At("A1")));
+        Assert.Equal(TwoPlaces, reopened.GetNumberFormat(At("XFD1048576")));
         Assert.Equal(sheet.ToDocument().ToJson(), reopened.ToDocument().ToJson());
     }
 
@@ -61,26 +61,26 @@ public class FormatLevelTests
     public void Cell_over_row_over_column()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(CellRange.Parse("B:B"), TwoPlaces);
-        sheet.SetFormat(CellRange.Parse("3:3"), Percent);
-        sheet.SetFormat(At("B4"), NumberFormat.Parse("#,##0"));
+        sheet.SetNumberFormat(CellRange.Parse("B:B"), TwoPlaces);
+        sheet.SetNumberFormat(CellRange.Parse("3:3"), Percent);
+        sheet.SetNumberFormat(At("B4"), NumberFormat.Parse("#,##0"));
 
-        Assert.Equal(Percent, sheet.GetFormat(At("B3")));
-        Assert.Equal(TwoPlaces, sheet.GetFormat(At("B2")));
-        Assert.Equal("#,##0", sheet.GetFormat(At("B4")).Code);
-        Assert.Equal(Percent, sheet.GetFormat(At("Z3")));
-        Assert.Equal(Percent, sheet.GetRowFormat(2));
-        Assert.Null(sheet.GetRowFormat(3));
+        Assert.Equal(Percent, sheet.GetNumberFormat(At("B3")));
+        Assert.Equal(TwoPlaces, sheet.GetNumberFormat(At("B2")));
+        Assert.Equal("#,##0", sheet.GetNumberFormat(At("B4")).Code);
+        Assert.Equal(Percent, sheet.GetNumberFormat(At("Z3")));
+        Assert.Equal(Percent, sheet.GetRowNumberFormat(2));
+        Assert.Null(sheet.GetRowNumberFormat(3));
     }
 
     [Fact] // ADR-0047: a cell records only what differs from what its row or column gives it
     public void A_cell_records_only_what_it_would_not_take_anyway()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(CellRange.Parse("B:B"), TwoPlaces);
+        sheet.SetNumberFormat(CellRange.Parse("B:B"), TwoPlaces);
 
-        sheet.SetFormat(At("B2"), TwoPlaces);
-        sheet.SetFormat(At("C2"), NumberFormat.General);
+        sheet.SetNumberFormat(At("B2"), TwoPlaces);
+        sheet.SetNumberFormat(At("C2"), NumberFormat.General);
 
         Assert.Empty(sheet.ToDocument().Cells);
     }
@@ -93,7 +93,7 @@ public class FormatLevelTests
         sheet.Enter("B9", "2");
         sheet.Enter("C5", "3");
 
-        var change = sheet.SetFormat(CellRange.Parse("B:B"), TwoPlaces);
+        var change = sheet.SetNumberFormat(CellRange.Parse("B:B"), TwoPlaces);
 
         Assert.Equal([1, 8], change.Rows);
         Assert.Empty(change.ValueChanges);
@@ -109,12 +109,12 @@ public class FormatLevelTests
         var sheet = NewSheet();
         sheet.Enter("B2", "0.5");
         sheet.Enter("B3", "0.25");
-        sheet.SetFormat(At("B2"), Percent);
-        sheet.SetFormat(CellRange.Parse("3:3"), NumberFormat.Parse("#,##0"));
+        sheet.SetNumberFormat(At("B2"), Percent);
+        sheet.SetNumberFormat(CellRange.Parse("3:3"), NumberFormat.Parse("#,##0"));
         sheet.SetAlignment(CellRange.Parse("C:C"), HorizontalAlignment.Center);
         var before = sheet.ToDocument().ToJson();
 
-        var step = sheet.Do(SheetEdit.SetFormat(CellRange.Parse(range), TwoPlaces));
+        var step = sheet.Do(SheetEdit.SetNumberFormat(CellRange.Parse(range), TwoPlaces));
         var after = sheet.ToDocument().ToJson();
         Assert.NotEqual(before, after);
 
@@ -149,9 +149,9 @@ public class FormatLevelTests
     public void Structure_moves_levels_and_undo_restores_them(string edit)
     {
         var sheet = NewSheet();
-        sheet.SetFormat(CellRange.Parse("2:3"), Percent);
-        sheet.SetFormat(CellRange.Parse("5:5"), TwoPlaces);
-        sheet.SetFormat(CellRange.Parse("B:C"), Percent);
+        sheet.SetNumberFormat(CellRange.Parse("2:3"), Percent);
+        sheet.SetNumberFormat(CellRange.Parse("5:5"), TwoPlaces);
+        sheet.SetNumberFormat(CellRange.Parse("B:C"), Percent);
         sheet.SetAlignment(CellRange.Parse("E:E"), HorizontalAlignment.Center);
         sheet.Enter("E5", "1");
         var before = sheet.ToDocument().ToJson();
@@ -168,25 +168,25 @@ public class FormatLevelTests
         {
             case "insertRows":
                 // Rows 4 and 5 are new and take row 3's format; row 5's moved to row 7.
-                Assert.Equal(Percent, sheet.GetRowFormat(3));
-                Assert.Equal(Percent, sheet.GetRowFormat(4));
-                Assert.Equal(TwoPlaces, sheet.GetRowFormat(6));
-                Assert.Null(sheet.GetRowFormat(5));
+                Assert.Equal(Percent, sheet.GetRowNumberFormat(3));
+                Assert.Equal(Percent, sheet.GetRowNumberFormat(4));
+                Assert.Equal(TwoPlaces, sheet.GetRowNumberFormat(6));
+                Assert.Null(sheet.GetRowNumberFormat(5));
                 break;
             case "deleteRows":
                 // Row 2 survives, row 3 goes with row 4, row 5 moves to row 3.
-                Assert.Equal(Percent, sheet.GetRowFormat(1));
-                Assert.Equal(TwoPlaces, sheet.GetRowFormat(2));
-                Assert.Null(sheet.GetRowFormat(4));
+                Assert.Equal(Percent, sheet.GetRowNumberFormat(1));
+                Assert.Equal(TwoPlaces, sheet.GetRowNumberFormat(2));
+                Assert.Null(sheet.GetRowNumberFormat(4));
                 break;
             case "insertColumns":
-                Assert.Equal(Percent, sheet.GetColumnFormat(2));
-                Assert.Equal(Percent, sheet.GetColumnFormat(3));
+                Assert.Equal(Percent, sheet.GetColumnNumberFormat(2));
+                Assert.Equal(Percent, sheet.GetColumnNumberFormat(3));
                 Assert.Equal(HorizontalAlignment.Center, sheet.GetColumnAlignment(6));
                 Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(At("G5")));
                 break;
             default:
-                Assert.Null(sheet.GetColumnFormat(1));
+                Assert.Null(sheet.GetColumnNumberFormat(1));
                 Assert.Equal(HorizontalAlignment.Center, sheet.GetColumnAlignment(2));
                 break;
         }
@@ -199,7 +199,7 @@ public class FormatLevelTests
     public void A_row_format_pushed_off_the_edge_comes_back_on_undo()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(CellRange.WholeRows(Sheet.RowCount - 1, Sheet.RowCount - 1), Percent);
+        sheet.SetNumberFormat(CellRange.WholeRows(Sheet.RowCount - 1, Sheet.RowCount - 1), Percent);
         var before = sheet.ToDocument().ToJson();
 
         var step = sheet.Do(SheetEdit.InsertRows(0));
@@ -213,15 +213,15 @@ public class FormatLevelTests
     public void Per_cell_commands_set_the_cell()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(CellRange.Parse("3:3"), Percent);
+        sheet.SetNumberFormat(CellRange.Parse("3:3"), Percent);
 
-        sheet.SetFormat([At("B3")], TwoPlaces);
+        sheet.SetNumberFormat([At("B3")], TwoPlaces);
         sheet.SetAlignment(At("B3"), HorizontalAlignment.Left);
 
-        Assert.Equal(TwoPlaces, sheet.GetFormat(At("B3")));
-        Assert.Equal(Percent, sheet.GetFormat(At("C3")));
+        Assert.Equal(TwoPlaces, sheet.GetNumberFormat(At("B3")));
+        Assert.Equal(Percent, sheet.GetNumberFormat(At("C3")));
         var cell = Assert.Single(sheet.ToDocument().Cells);
-        Assert.Equal((TwoPlaces, (HorizontalAlignment?)HorizontalAlignment.Left), (cell.Format, cell.Alignment));
+        Assert.Equal((TwoPlaces, (HorizontalAlignment?)HorizontalAlignment.Left), (cell.NumberFormat, cell.Alignment));
     }
 
     [Fact] // ADR-0047/0048: the format a Formula takes at entry is part of the entry's step, and undoing it puts General back
@@ -233,11 +233,11 @@ public class FormatLevelTests
 
         var step = sheet.Do(SheetEdit.Enter(At("B1"), "=A1+1"));
 
-        Assert.True(sheet.GetFormat(At("B1")).IsDate);
+        Assert.True(sheet.GetNumberFormat(At("B1")).IsDate);
         Assert.Contains(0, step.Change.Rows);
         step.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
-        Assert.True(sheet.GetFormat(At("B1")).IsGeneral);
+        Assert.True(sheet.GetNumberFormat(At("B1")).IsGeneral);
     }
 
     [Theory] // ADR-0047: whole columns and rows are written as Excel writes them

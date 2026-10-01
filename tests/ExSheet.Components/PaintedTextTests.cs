@@ -63,7 +63,7 @@ public class PaintedTextTests : SheetTestContext
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         sheet.Enter(CellAddress.Parse("A1"), "=1/3");
-        sheet.SetFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0.0000000000"));
+        sheet.SetNumberFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0.0000000000"));
         var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
 
         Assert.Matches("^#+$", CellText(cut, "A1"));

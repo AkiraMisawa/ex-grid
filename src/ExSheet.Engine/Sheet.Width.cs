@@ -158,7 +158,7 @@ public sealed partial class Sheet
         {
             return new CellDisplay("", Resolve(GetAlignment(address), null), false, false);
         }
-        var (text, cannotShow) = GetFormat(address).Format(value, Culture, characters);
+        var (text, cannotShow) = GetNumberFormat(address).Format(value, Culture, characters);
         return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow);
     }
 
@@ -191,7 +191,7 @@ public sealed partial class Sheet
         var shown = entry.IsFormula ? cell.Value : entry.Constant;
         if (shown is not { Kind: ValueKind.Number } constant) return null;
         var number = constant.Number;
-        var format = GetFormat(address);
+        var format = GetNumberFormat(address);
         if (!format.ShowsNumbersAsGeneral)
         {
             var (text, cannotShow) = format.Format(constant, Culture);

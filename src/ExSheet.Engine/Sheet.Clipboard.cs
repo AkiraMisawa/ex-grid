@@ -40,7 +40,7 @@ public sealed partial class Sheet
                 var display = GetDisplay(address);
                 // What a cell that cannot be shown holds is its Value, never the #### it paints (ADR-0016).
                 text.Append(QuoteForTsv(display.CannotShow ? raw : display.Text));
-                AppendCell(html, value, raw, GetFormat(address));
+                AppendCell(html, value, raw, GetNumberFormat(address));
             }
             text.Append("\r\n");
             html.Append("</tr>");
@@ -112,8 +112,8 @@ public sealed partial class Sheet
 
     /// <summary>
     /// The states a block pasted at <paramref name="origin"/> writes: each cell's Entry with its
-    /// relative References shifted by the distance from the block's source, its format and its
-    /// alignment; a blank cell of the block clears the cell it lands on, as Excel's paste does.
+    /// relative References shifted by the distance from the block's source, and its Cell Format; a
+    /// blank cell of the block clears the cell it lands on, as Excel's paste does.
     /// </summary>
     internal static IEnumerable<(CellAddress Address, CellState State)> Place(SheetBlock block, CellAddress origin)
     {

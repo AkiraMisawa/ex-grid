@@ -1,9 +1,10 @@
 namespace ExSheet.Engine;
 
 /// <summary>
-/// A rectangle of cells copied inside ExSheet: each cell's Entry, number format and alignment as
-/// they were at the copy, and where they came from (ADR-0048). Pasting it writes the Entries with
-/// their relative References shifted by the distance pasted, as Excel does. Immutable.
+/// A rectangle of cells copied inside ExSheet: each cell's Entry and the Cell Format it showed, as
+/// they were at the copy, and where they came from (ADR-0048, ADR-0063). Pasting it writes the
+/// Entries with their relative References shifted by the distance pasted, as Excel does, and the
+/// Cell Formats with them. Immutable.
 /// </summary>
 public sealed class SheetBlock
 {
@@ -27,11 +28,8 @@ public sealed class SheetBlock
     /// <summary>The Entry at a position inside the block, as copied; <see langword="null"/> for a blank cell.</summary>
     public Entry? EntryAt(int row, int column) => At(row, column).Entry;
 
-    /// <summary>The number format at a position inside the block.</summary>
-    public NumberFormat FormatAt(int row, int column) => At(row, column).Format ?? NumberFormat.General;
-
-    /// <summary>The alignment at a position inside the block.</summary>
-    public HorizontalAlignment AlignmentAt(int row, int column) => At(row, column).Alignment ?? HorizontalAlignment.General;
+    /// <summary>The Cell Format at a position inside the block: what the cell showed at the copy, from whichever level recorded it.</summary>
+    public CellFormat CellFormatAt(int row, int column) => At(row, column).CellFormat;
 
     internal CellState At(int row, int column)
     {

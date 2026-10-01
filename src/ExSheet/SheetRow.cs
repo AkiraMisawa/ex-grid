@@ -58,7 +58,7 @@ public sealed class SheetRow
         if (_painted.TryGetValue(column, out var cached) && cached.Characters == whole) return cached.Text;
         var address = new CellAddress(Index, column);
         string? painted = null;
-        if (_sheet.GetFormat(address).IsGeneral)
+        if (_sheet.GetNumberFormat(address).IsGeneral)
         {
             var display = _sheet.GetDisplay(address, whole);
             var text = display.CannotShow ? SheetCellText.Unshowable : display.Text;

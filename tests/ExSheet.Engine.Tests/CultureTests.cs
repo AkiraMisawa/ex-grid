@@ -33,7 +33,7 @@ public class CultureTests
         sheet.Enter(a1, "2026/9/26");
 
         Assert.Equal(Serial(2026, 9, 26), sheet.GetValue(a1)!.Value.Number);
-        Assert.True(sheet.GetFormat(a1).IsDate);
+        Assert.True(sheet.GetNumberFormat(a1).IsDate);
         Assert.True(sheet.GetDisplay(a1).IsNumber);
     }
 
@@ -50,7 +50,7 @@ public class CultureTests
         sheet.Enter(a1, typed);
 
         Assert.Equal(Serial(DateTime.Today.Year, 9, 26), sheet.GetValue(a1)!.Value.Number);
-        Assert.Equal("d-mmm", sheet.GetFormat(a1).Code);
+        Assert.Equal("d-mmm", sheet.GetNumberFormat(a1).Code);
     }
 
     [Fact] // ADR-0047: a typed date records Excel's built-in short date, which shows in each culture's own pattern
@@ -61,7 +61,7 @@ public class CultureTests
             var sheet = In(culture);
             var a1 = CellAddress.Parse("A1");
             sheet.Enter(a1, "=46291");
-            sheet.SetFormat(a1, NumberFormat.Parse("m/d/yyyy"));
+            sheet.SetNumberFormat(a1, NumberFormat.Parse("m/d/yyyy"));
             return sheet.GetDisplay(a1).Text;
         });
 

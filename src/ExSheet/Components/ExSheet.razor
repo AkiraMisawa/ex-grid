@@ -1017,7 +1017,7 @@
     {
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
-        await PerformAsync(SheetEdit.SetStyle(ranges.Select(SheetFormulaAids.RangeOf).ToList(), format, alignment));
+        await PerformAsync(SheetEdit.SetCellFormat(ranges.Select(SheetFormulaAids.RangeOf).ToList(), new CellFormatChange { NumberFormat = format, Alignment = alignment }));
         return true;
     }
 

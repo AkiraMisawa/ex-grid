@@ -22,13 +22,13 @@ public sealed partial class Sheet
         return edit.Check(this);
     }
 
-    /// <summary>What each of <paramref name="addresses"/> records: Entry and formatting, never a Value.</summary>
+    /// <summary>What each of <paramref name="addresses"/> records: Entry and Cell Format, never a Value.</summary>
     internal List<(CellAddress Address, CellState State)> Record(IEnumerable<CellAddress> addresses) =>
         [.. addresses.Select(a => (a, StateOf(a).Recorded))];
 
     /// <summary>
-    /// Puts cells back to what they recorded — Entry, number format and alignment — as one change
-    /// with one recalculation.
+    /// Puts cells back to what they recorded — Entry and every part of the Cell Format — as one
+    /// change with one recalculation.
     /// </summary>
     internal SheetChange Restore(IEnumerable<(CellAddress Address, CellState State)> states)
     {
@@ -38,9 +38,13 @@ public sealed partial class Sheet
         {
             var existing = _cells.TryGetValue(address, out var cell);
             cell ??= new Cell(address);
-            if (Equals(cell.Format, state.Format) && cell.Alignment == state.Alignment) continue;
-            cell.Format = state.Format;
+            if (Equals(cell.NumberFormat, state.NumberFormat) && cell.Alignment == state.Alignment
+                && cell.Font == state.Font && cell.Fill == state.Fill && cell.Borders == state.Borders) continue;
+            cell.NumberFormat = state.NumberFormat;
             cell.Alignment = state.Alignment;
+            cell.Font = state.Font;
+            cell.Fill = state.Fill;
+            cell.Borders = state.Borders;
             rows.Add(address.Row);
             if (!existing) _cells[address] = cell;
             else if (cell.IsEmpty && cell.Value is null) _cells.Remove(address);
@@ -63,8 +67,8 @@ public sealed partial class Sheet
         var shownBefore = ShownSnapshot();
         var widthsBefore = ColumnWidthsNow();
         var recalculated = new List<CellAddress>(Restructure(edit.Inverse, formatInserted: false).Change.Recalculated);
-        _rowStyles = new Dictionary<int, AxisStyle>(outcome.RowsBefore);
-        _columnStyles = new Dictionary<int, AxisStyle>(outcome.ColumnsBefore);
+        _rowFormats = new Dictionary<int, AxisFormat>(outcome.RowsBefore);
+        _columnFormats = new Dictionary<int, AxisFormat>(outcome.ColumnsBefore);
         _columnWidths = new Dictionary<int, SheetColumnWidth>(outcome.WidthsBefore);
         var states = new List<(CellAddress, CellState)>();
         foreach (var (address, entry) in outcome.Rewritten) states.Add((address, StateOf(address).Recorded with { Entry = entry }));
