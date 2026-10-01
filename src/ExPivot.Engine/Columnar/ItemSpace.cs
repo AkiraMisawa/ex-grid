@@ -40,6 +40,8 @@ internal sealed class ItemSpace
     // Numbers, by the double's bits; dates by their ticks; date parts by the part's number.
     private LongIntMap? _numbers;
     private LongIntMap? _dates;
+    private long[]? _dayTicks;
+    private int[]? _dayItems;
     private int[]? _parts;
     private int _blank = -1;
     private int _error = -1;
@@ -273,37 +275,30 @@ internal sealed class ItemSpace
             {
                 var ticks = slice.Ticks((DateColumn)bound.Column);
                 var blankBits = slice.Blanks(bound.Column);
-                if (_binding.Part is { } part)
+                // A date column holds few distinct clock values, each many times: a row's Item is
+                // looked up in a small cache by its day before the clock value is hashed, or its
+                // part computed from the calendar.
+                _dayTicks ??= NewDayCache();
+                _dayItems ??= new int[DayCacheSize];
+                var dayTicks = _dayTicks;
+                var dayItems = _dayItems;
+                for (var i = 0; i < items.Length; i++)
                 {
-                    for (var i = 0; i < items.Length; i++)
+                    var o = from + i;
+                    if (Exactly.IsSet(blankBits, o))
                     {
-                        var o = from + i;
-                        if (Exactly.IsSet(blankBits, o))
-                        {
-                            if (blanks)
-                                items[i] = Blank();
-                        }
-                        else
-                        {
-                            items[i] = Part(PivotDateWords.Of(part, new DateTime(ticks[o])));
-                        }
+                        if (blanks)
+                            items[i] = Blank();
+                        continue;
                     }
-                }
-                else
-                {
-                    for (var i = 0; i < items.Length; i++)
+                    var value = ticks[o];
+                    var slot = (int)((ulong)(value / TimeSpan.TicksPerDay) & (DayCacheSize - 1));
+                    if (dayTicks[slot] != value)
                     {
-                        var o = from + i;
-                        if (Exactly.IsSet(blankBits, o))
-                        {
-                            if (blanks)
-                                items[i] = Blank();
-                        }
-                        else
-                        {
-                            items[i] = Date(ticks[o]);
-                        }
+                        dayItems[slot] = _binding.Part is { } part ? Part(PivotDateWords.Of(part, new DateTime(value))) : Date(value);
+                        dayTicks[slot] = value;
                     }
+                    items[i] = dayItems[slot];
                 }
                 return;
             }
@@ -386,6 +381,16 @@ internal sealed class ItemSpace
         if (added)
             Add(ItemKey.OfNumber(value));
         return item;
+    }
+
+    private const int DayCacheSize = 1024;
+
+    // No clock value is negative, so a slot holding one is empty.
+    private static long[] NewDayCache()
+    {
+        var cache = new long[DayCacheSize];
+        cache.AsSpan().Fill(-1);
+        return cache;
     }
 
     private int Date(long ticks)

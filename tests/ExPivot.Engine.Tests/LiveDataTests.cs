@@ -275,24 +275,27 @@ public class LiveDataTests
         Assert.Equal(["East", "West"], Sums(answered).Keys);
     }
 
-    [Fact] // ADR-0066: subtraction is the fresh pass's arithmetic only where no step can round; beyond that the leaf is recomputed from its rows
-    public async Task Exact_sums_that_could_round_are_recomputed()
+    [Fact] // ADR-0059/0066: an exact sum is an integer, the same in any order; one no decimal holds is Excel's double, never a decimal rounded quietly
+    public async Task An_exact_sum_is_the_same_in_any_order_and_never_rounded_quietly()
     {
         var fields = Declarations();
-        // 8×10^18 holds nine of the batch's eighteen places in decimal's 96 bits, and 10^18 holds
-        // ten: taking 7×10^18 back out of the first sum is not the sum of what is left.
         var source = PivotSource.From([Row(1, "East", 1_000_000_000_000_000_000m), Row(2, "East", 7_000_000_000_000_000_000m)], fields);
         var query = new PivotQuery(rows: [F("Desk")], values: [V("Amount", PivotParts.Sum)]);
-        await source.AggregateAsync(query, Ct);
+        var exact = await source.AggregateAsync(query, Ct);
+
+        // 8,000,000,000,000,000,000.555555555555555555 is 37 digits: a decimal holds 28 or 29 of
+        // them, so the sum is the double Excel would hold, and says so.
         source.Apply(fields.Batch(added: [Row(3, "East", 0.555555555555555555m)]));
-        var subtracted = await source.AggregateAsync(query, Ct);
-        Assert.Equal(8_000_000_000_000_000_000.555555556m, Sums(subtracted)["East"]);
+        var wide = await source.AggregateAsync(query, Ct);
+        SameLeaves(await PivotSource.From(source.Snapshot, fields.Fields).AggregateAsync(query, Ct), wide, "added");
+        // Taken back out, the sum is exact again: integer arithmetic lost nothing on the way.
+        source.Apply(fields.Batch(removedKeys: [3L]));
+        var back = await source.AggregateAsync(query, Ct);
+        SameLeaves(await PivotSource.From(source.Snapshot, fields.Fields).AggregateAsync(query, Ct), back, "removed");
 
-        source.Apply(fields.Batch(removedKeys: [2L]));
-        var answer = await source.AggregateAsync(query, Ct);
-
-        SameLeaves(await PivotSource.From(source.Snapshot, fields.Fields).AggregateAsync(query, Ct), answer, "removed");
-        Assert.Equal(1_000_000_000_000_000_000.5555555556m, Sums(answer)["East"]);
+        Assert.Equal(PivotNumber.Exact(8_000_000_000_000_000_000m), exact.Values[0].SumAt(0));
+        Assert.Equal(PivotNumber.Double(8e18), wide.Values[0].SumAt(0));
+        Assert.Equal(PivotNumber.Exact(8_000_000_000_000_000_000m), back.Values[0].SumAt(0));
     }
 
     // ---- The data -------------------------------------------------------------------------------

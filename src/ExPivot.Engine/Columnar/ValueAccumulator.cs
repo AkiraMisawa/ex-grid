@@ -6,37 +6,52 @@ namespace ExPivot.Engine;
 /// One field in Values, accumulated over a Snapshot's slices into the parts asked for, at each
 /// leaf (ADR-0059/0065: only the parts asked for are accumulated; counts always).
 /// <list type="bullet">
-/// <item><b>Integer and Decimal</b> are summed exactly with no <c>decimal</c> arithmetic per row: a
-/// 64-bit sum per leaf at the segment's scale — each segment of a Decimal column has its own —
-/// folded into the leaf's <c>decimal</c> at the segment's end (a run that would leave 64 bits is
-/// folded early). The extremes are kept likewise. A segment that holds <c>decimal</c>s because a
-/// value did not fit 64 bits is summed per row in <c>decimal</c>.</item>
+/// <item><b>Integer and Decimal</b> are summed exactly with no <c>decimal</c> arithmetic per row. A
+/// slice holds its values as 64-bit integers at a scale of its own (ADR-0063); each leaf sums a
+/// <b>run</b> of them in 64 bits, across slices of one scale, and a run is folded into the leaf's
+/// exact sum — a 128-bit integer at a power of ten — when the scale changes, when 64 bits would
+/// not hold it, and at the pass's end. Integer arithmetic is exact, so the order the numbers are
+/// added and taken away in cannot change a sum (ADR-0066), and the finished sum is a
+/// <c>decimal</c> without trailing zeros. A slice that holds <c>decimal</c>s, because a value did
+/// not fit 64 bits at one scale, is summed per row into the same 128 bits. Past 128 bits, the sum
+/// is Excel's <c>double</c> from then on; one no decimal holds is a <c>double</c> when finished.
+/// The extremes are kept a run at a time likewise.</item>
 /// <item><b>Double</b> is summed per row with Neumaier's compensation, as the first engine did.</item>
 /// <item><b>Text, Date and Boolean</b> are counted and are never a number: Sum is 0, as ADR-0059's
 /// table says.</item>
 /// <item>A field read through an untyped accessor whose values are of several kinds is folded per
 /// row in the data's order, each value by its own kind.</item>
 /// </list>
-/// Every leaf's parts depend only on its own rows, in slice and offset order, and on the segments
-/// they lie in — so recomputing one leaf over its rows gives, bit for bit, what a fresh pass gives.
+/// Every leaf's parts depend only on its own rows, in slice and offset order — so recomputing one
+/// leaf over its rows gives, bit for bit, what a fresh pass gives.
 /// </summary>
 internal sealed class ValueAccumulator
 {
+    private const int NoRun = int.MinValue;
+
     private readonly FieldBinding _binding;
     private readonly BoundColumn? _single;
     private readonly bool _exact;
     private readonly bool _sum;
     private readonly bool _extremes;
     private readonly bool _perRow;
-    private long[] _segSum = [];
-    private long[] _segMin = [];
-    private long[] _segMax = [];
-    private int[] _segCount = [];
+
+    // The open run of each leaf an exact column has touched: its numbers, sum, and extremes, at
+    // _runScale; and the leaves with an open run.
+    private long[] _runSum = [];
+    private long[] _runMin = [];
+    private long[] _runMax = [];
+    private int[] _runCount = [];
     private int[] _touched = [];
     private int _touchedCount;
-    private int _scale;
+    private int _runScale = NoRun;
+    private int _sliceScale;
+
+    // Each leaf's exact sum: an integer at a power of ten, while the sum is exact.
+    private Int128[] _wide = [];
+    private byte[] _wideScale = [];
+
     private byte[] _kindOf = [];
-    private readonly List<(double Magnitude, int Scale)?> _sliceBounds = [];
 
     public ValueAccumulator(FieldBinding binding, PivotParts parts, int capacity)
     {
@@ -56,7 +71,8 @@ internal sealed class ValueAccumulator
     public PivotParts Parts { get; }
 
     /// <summary>The parts at each leaf, as accumulated so far: not finished, so that more rows can
-    /// be folded in (<see cref="Finished"/> makes the answer's copy).</summary>
+    /// be folded in (<see cref="Finished"/> makes the answer's copy). An exact sum is kept apart,
+    /// as an integer, until it is finished.</summary>
     public PartColumns Columns { get; }
 
     /// <summary>
@@ -74,34 +90,47 @@ internal sealed class ValueAccumulator
             }
             : _single is not null; // a date part in Values is counted, and counts subtract
 
+    /// <summary>Whether the field's sum is asked for and kept exactly, as an integer: an Integer or
+    /// Decimal column's.</summary>
+    public bool SumsExactly => _exact && _sum;
+
     public void EnsureCapacity(int leaves)
     {
         Columns.EnsureCapacity(leaves);
-        if (!_exact || _segCount.Length >= Columns.Capacity)
+        if (!_exact || _runCount.Length >= Columns.Capacity)
             return;
         var size = Columns.Capacity;
-        Array.Resize(ref _segCount, size);
+        Array.Resize(ref _runCount, size);
         Array.Resize(ref _touched, size);
         if (_sum)
-            Array.Resize(ref _segSum, size);
+        {
+            Array.Resize(ref _runSum, size);
+            Array.Resize(ref _wide, size);
+            Array.Resize(ref _wideScale, size);
+        }
         if (_extremes)
         {
-            Array.Resize(ref _segMin, size);
-            Array.Resize(ref _segMax, size);
+            Array.Resize(ref _runMin, size);
+            Array.Resize(ref _runMax, size);
         }
     }
 
-    /// <summary>Starts a slice: an exact column's values are summed at this segment's scale.</summary>
+    /// <summary>Starts reading a slice: an exact column's runs go on across slices of one scale, and
+    /// are folded when the scale changes.</summary>
     public void BeginSegment(in SnapshotSlice slice)
     {
         if (!_exact)
             return;
-        _scale = _single!.Value.Role == ValueRole.Integer ? 0 : slice.Decimals((DecimalColumn)_single.Value.Column).Scale;
+        _sliceScale = _single!.Value.Role == ValueRole.Integer ? 0 : slice.Decimals((DecimalColumn)_single.Value.Column).Scale;
+        if (_sliceScale != _runScale)
+        {
+            Flush();
+            _runScale = _sliceScale;
+        }
     }
 
-    /// <summary>Ends a slice: the 64-bit sums and extremes of the leaves it touched are folded into
-    /// their exact parts.</summary>
-    public void EndSegment()
+    /// <summary>Folds every open run into its leaf: at the end of a pass, or of a leaf's recompute.</summary>
+    public void Flush()
     {
         if (!_exact)
             return;
@@ -109,18 +138,32 @@ internal sealed class ValueAccumulator
         for (var t = 0; t < _touchedCount; t++)
         {
             var leaf = touched[t];
-            var numbers = _segCount[leaf];
-            Columns.FoldExact(
-                leaf,
-                numbers,
-                _sum ? Exactly.ToDecimal(_segSum[leaf], _scale) : 0m,
-                _extremes ? Exactly.ToDecimal(_segMin[leaf], _scale) : 0m,
-                _extremes ? Exactly.ToDecimal(_segMax[leaf], _scale) : 0m);
-            _segCount[leaf] = 0;
+            var numbers = _runCount[leaf];
+            var first = Columns.Counts[leaf].Numbers == 0;
+            Columns.CountNumbers(leaf, numbers);
             if (_sum)
-                _segSum[leaf] = 0;
+            {
+                AddToSum(leaf, _runSum[leaf], _runScale);
+                _runSum[leaf] = 0;
+            }
+            if (_extremes)
+                Columns.FoldExtremes(leaf, Exactly.ToDecimal(_runMin[leaf], _runScale), Exactly.ToDecimal(_runMax[leaf], _runScale), first);
+            _runCount[leaf] = 0;
         }
         _touchedCount = 0;
+    }
+
+    /// <summary>A leaf back to no value at all, before it is recomputed from its rows; its open run
+    /// is folded first, so that no other leaf's is lost.</summary>
+    public void Reset(int leaf)
+    {
+        Flush();
+        Columns.ResetCell(leaf);
+        if (_exact && _sum)
+        {
+            _wide[leaf] = 0;
+            _wideScale[leaf] = 0;
+        }
     }
 
     /// <summary>Folds rows [<paramref name="from"/>, +<c>leaves.Length</c>) of the current slice into
@@ -166,7 +209,8 @@ internal sealed class ValueAccumulator
     /// <summary>
     /// Takes a removed record's value out of its leaf by subtraction (ADR-0066) when
     /// <see cref="Subtracts"/>: false, and nothing changed, when it cannot be — the leaf is then
-    /// recomputed. <paramref name="slice"/> is the slice of the Snapshot the record was removed from.
+    /// recomputed. <paramref name="slice"/> is the slice of the Snapshot the record was removed
+    /// from. Called with every run folded (<see cref="Flush"/>).
     /// </summary>
     public bool TrySubtract(int leaf, in SnapshotSlice slice, int offset)
     {
@@ -178,13 +222,21 @@ internal sealed class ValueAccumulator
         switch (_binding.Part is null ? single.Role : ValueRole.Date)
         {
             case ValueRole.Exact:
-            {
-                var values = slice.Decimals((DecimalColumn)single.Column);
-                // A segment of decimals may hold 28 digits, whose sums decimal rounds: recomputed.
-                return values.Scale >= 0 && Columns.TrySubtractExact(leaf, Exactly.ToDecimal(values.Scaled[offset], values.Scale));
-            }
             case ValueRole.Integer:
-                return Columns.TrySubtractExact(leaf, slice.Integers((IntegerColumn)single.Column)[offset]);
+            {
+                if (_sum)
+                {
+                    if (Columns.IsInexactSum(leaf))
+                        return false;
+                    var (value, scale) = WideAt(single, slice, offset);
+                    if (!Exactly.TryAdd(_wide[leaf], _wideScale[leaf], -value, scale, out var sum, out var sumScale))
+                        return false;
+                    _wide[leaf] = sum;
+                    _wideScale[leaf] = (byte)sumScale;
+                }
+                Columns.CountNumbers(leaf, -1);
+                return true;
+            }
             case ValueRole.Text:
                 if (slice.Codes((TextColumn)single.Column)[offset] >= 0)
                     Columns.Counts[leaf].Values--;
@@ -195,87 +247,57 @@ internal sealed class ValueAccumulator
         }
     }
 
-    /// <summary>
-    /// The most numbers a leaf may hold for its exact sum to come out the same in any order — so
-    /// that a sum brought up to date by subtraction equals the sum a fresh pass makes, to the last
-    /// bit (ADR-0066). A <c>decimal</c> holds 96 bits: a sum of up to n numbers, each at most M in
-    /// magnitude with at most S places, is exact at every step, in any order, while n·M·10^S stays
-    /// below 2^96 — and beyond that a step may round, differently on each path. M and S are taken
-    /// over every value the column stores in <paramref name="snapshot"/>; for money (millions,
-    /// two places) the limit is far beyond any leaf. <see cref="long.MaxValue"/> for a field whose
-    /// sum is not exact or not asked for.
-    /// </summary>
-    public long ExactRowsLimit(Snapshot snapshot)
-    {
-        if (!_exact || !_sum)
-            return long.MaxValue;
-        var magnitude = 0.0;
-        var scale = 0;
-        for (var s = 0; s < snapshot.SliceCount; s++)
-        {
-            var (m, places) = SliceBound(snapshot, s);
-            magnitude = Math.Max(magnitude, m);
-            scale = Math.Max(scale, places);
-        }
-        if (magnitude == 0)
-            return long.MaxValue;
-        // 2^95, one bit of room for the double arithmetic of the bound itself.
-        var limit = Math.Floor(Math.ScaleB(1.0, 95) / (magnitude * Math.Pow(10, scale)));
-        return limit >= long.MaxValue ? long.MaxValue : (long)limit;
-    }
-
-    // The largest magnitude and the most places among one slice's stored values, made once per
-    // slice: a slice's values never change while the pass holds it.
-    private (double Magnitude, int Scale) SliceBound(Snapshot snapshot, int index)
-    {
-        while (_sliceBounds.Count <= index)
-            _sliceBounds.Add(null);
-        if (_sliceBounds[index] is { } known)
-            return known;
-        var slice = snapshot.Slice(index);
-        var magnitude = 0.0;
-        var scale = 0;
-        if (_single!.Value.Role == ValueRole.Integer)
-        {
-            foreach (var value in slice.Integers((IntegerColumn)_single.Value.Column))
-                magnitude = Math.Max(magnitude, Math.Abs((double)value));
-        }
-        else
-        {
-            var values = slice.Decimals((DecimalColumn)_single.Value.Column);
-            if (values.Scale >= 0)
-            {
-                foreach (var value in values.Scaled)
-                    magnitude = Math.Max(magnitude, Math.Abs((double)value));
-                magnitude /= Math.Pow(10, values.Scale);
-                scale = values.Scale;
-            }
-            else
-            {
-                foreach (var value in values.Exact)
-                {
-                    magnitude = Math.Max(magnitude, Math.Abs((double)value));
-                    scale = Math.Max(scale, value.Scale);
-                }
-            }
-        }
-        // A double rounds; a bound rounded up by a part in 2^40 still bounds.
-        var bound = (magnitude * (1 + Math.ScaleB(1.0, -40)), scale);
-        _sliceBounds[index] = bound;
-        return bound;
-    }
-
-    /// <summary>The finished parts of the leaves <paramref name="order"/> names, in that order: a
-    /// <c>double</c> sum takes its compensation in, and an exact part is written without trailing
-    /// zeros. The accumulation itself is left as it was, to fold more rows into.</summary>
+    /// <summary>The finished parts of the leaves <paramref name="order"/> names, in that order: an
+    /// exact sum as a <c>decimal</c> without trailing zeros (a <c>double</c> where no decimal holds
+    /// it), a <c>double</c> sum with its compensation taken in. The accumulation itself is left as
+    /// it was, to fold more rows into.</summary>
     public PartColumns Finished(ReadOnlySpan<int> order)
     {
         var finished = new PartColumns(Parts, Math.Max(16, order.Length));
         for (var n = 0; n < order.Length; n++)
-            finished.CopyCell(n, Columns, order[n]);
+        {
+            var leaf = order[n];
+            finished.CopyCell(n, Columns, leaf);
+            if (_exact && _sum && !Columns.IsInexactSum(leaf))
+            {
+                if (Exactly.TryToDecimal(_wide[leaf], _wideScale[leaf], out var exact))
+                    finished.Sums![n] = new SumPart { Exact = exact };
+                else
+                    finished.ToInexactSum(n, Exactly.ToDouble(_wide[leaf], _wideScale[leaf]));
+            }
+        }
         finished.Finish(order.Length);
         finished.Canonicalize(order.Length);
         return finished;
+    }
+
+    // ---- The exact sum ---------------------------------------------------------------------------
+
+    // Adds value × 10^-scale to a leaf's exact sum; past 128 bits, the sum is a double from then on.
+    private void AddToSum(int leaf, Int128 value, int scale)
+    {
+        if (Columns.IsInexactSum(leaf))
+        {
+            Columns.AddInexactSum(leaf, Exactly.ToDouble(value, scale));
+            return;
+        }
+        if (Exactly.TryAdd(_wide[leaf], _wideScale[leaf], value, scale, out var sum, out var sumScale))
+        {
+            _wide[leaf] = sum;
+            _wideScale[leaf] = (byte)sumScale;
+            return;
+        }
+        // Money stays exact until it cannot: then double, Excel's own arithmetic (ADR-0059).
+        Columns.ToInexactSum(leaf, Exactly.ToDouble(_wide[leaf], _wideScale[leaf]));
+        Columns.AddInexactSum(leaf, Exactly.ToDouble(value, scale));
+    }
+
+    private static (Int128 Value, int Scale) WideAt(BoundColumn column, in SnapshotSlice slice, int offset)
+    {
+        if (column.Role == ValueRole.Integer)
+            return (slice.Integers((IntegerColumn)column.Column)[offset], 0);
+        var values = slice.Decimals((DecimalColumn)column.Column);
+        return values.Scale >= 0 ? (values.Scaled[offset], values.Scale) : Exactly.Wide(values.Exact[offset]);
     }
 
     // ---- The loops ----------------------------------------------------------------------------
@@ -312,19 +334,33 @@ internal sealed class ValueAccumulator
         }
     }
 
+    // A slice held as decimals, one at a time into each leaf's exact parts; no run is open here,
+    // since the slice's scale is not a run's.
     private void AccumulateDecimals(ReadOnlySpan<decimal> values, ReadOnlySpan<ulong> blanks, int from, ReadOnlySpan<int> leaves)
     {
         for (var i = 0; i < leaves.Length; i++)
         {
             var leaf = leaves[i];
-            if (leaf >= 0 && !Exactly.IsSet(blanks, from + i))
-                Columns.AddExact(leaf, values[from + i]);
+            if (leaf < 0 || Exactly.IsSet(blanks, from + i))
+                continue;
+            var value = values[from + i];
+            var first = Columns.Counts[leaf].Numbers == 0;
+            if (_sum)
+            {
+                var (wide, scale) = Exactly.Wide(value);
+                AddToSum(leaf, wide, scale);
+            }
+            if (_extremes)
+                Columns.FoldExtremes(leaf, value, value, first);
+            if (_perRow)
+                Columns.AddInexactParts(leaf, (double)value, Columns.Counts[leaf].Numbers + 1);
+            Columns.CountNumbers(leaf, 1);
         }
     }
 
     private void AccumulateScaled(ReadOnlySpan<long> values, ReadOnlySpan<ulong> blanks, int from, ReadOnlySpan<int> leaves)
     {
-        var segCount = _segCount;
+        var runCount = _runCount;
         var touched = _touched;
         if (!_sum && !_extremes && !_perRow)
         {
@@ -333,31 +369,32 @@ internal sealed class ValueAccumulator
                 var leaf = leaves[i];
                 if (leaf < 0 || Exactly.IsSet(blanks, from + i))
                     continue;
-                if (segCount[leaf]++ == 0)
+                if (runCount[leaf]++ == 0)
                     touched[_touchedCount++] = leaf;
             }
             return;
         }
         if (_sum && !_extremes && !_perRow)
         {
-            var segSum = _segSum;
+            var runSum = _runSum;
             for (var i = 0; i < leaves.Length; i++)
             {
                 var leaf = leaves[i];
                 if (leaf < 0 || Exactly.IsSet(blanks, from + i))
                     continue;
-                if (segCount[leaf]++ == 0)
+                if (runCount[leaf]++ == 0)
                     touched[_touchedCount++] = leaf;
                 var value = values[from + i];
-                var sum = segSum[leaf];
+                var sum = runSum[leaf];
                 var next = sum + value;
                 if (((sum ^ next) & (value ^ next)) < 0)
                 {
-                    // The run would leave 64 bits: fold it into the exact sum, and start again.
-                    Columns.AddToExactSum(leaf, Exactly.ToDecimal(sum, _scale));
+                    // The run's sum would leave 64 bits: it is folded into the exact sum, and the
+                    // run's sum starts again.
+                    AddToSum(leaf, sum, _runScale);
                     next = value;
                 }
-                segSum[leaf] = next;
+                runSum[leaf] = next;
             }
             return;
         }
@@ -367,40 +404,40 @@ internal sealed class ValueAccumulator
             if (leaf < 0 || Exactly.IsSet(blanks, from + i))
                 continue;
             var value = values[from + i];
-            var before = segCount[leaf]++;
+            var before = runCount[leaf]++;
             if (before == 0)
                 touched[_touchedCount++] = leaf;
             if (_sum)
             {
-                var sum = _segSum[leaf];
+                var sum = _runSum[leaf];
                 var next = sum + value;
                 if (((sum ^ next) & (value ^ next)) < 0)
                 {
-                    Columns.AddToExactSum(leaf, Exactly.ToDecimal(sum, _scale));
+                    AddToSum(leaf, sum, _runScale);
                     next = value;
                 }
-                _segSum[leaf] = next;
+                _runSum[leaf] = next;
             }
             if (_extremes)
             {
                 if (before == 0)
                 {
-                    _segMin[leaf] = value;
-                    _segMax[leaf] = value;
+                    _runMin[leaf] = value;
+                    _runMax[leaf] = value;
                 }
                 else
                 {
-                    if (value < _segMin[leaf])
-                        _segMin[leaf] = value;
-                    if (value > _segMax[leaf])
-                        _segMax[leaf] = value;
+                    if (value < _runMin[leaf])
+                        _runMin[leaf] = value;
+                    if (value > _runMax[leaf])
+                        _runMax[leaf] = value;
                 }
             }
             if (_perRow)
             {
                 // The product and the running variance take each number as the decimal of it
-                // converts, counting the numbers folded before this segment.
-                var number = Exactly.ToDouble(value, _scale);
+                // converts, counting the numbers folded before this run.
+                var number = Exactly.ToDouble(value, _runScale);
                 var count = Columns.Counts[leaf].Numbers + before + 1;
                 Columns.AddInexactParts(leaf, number, count);
             }

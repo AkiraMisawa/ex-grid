@@ -169,49 +169,48 @@ internal sealed class PartColumns
         }
     }
 
-    // ---- Exact numbers a segment at a time -------------------------------------------------------
+    // ---- Exact numbers a run at a time ----------------------------------------------------------
+    //
+    // An exact column's numbers are counted and their extremes kept a run of rows at a time, and
+    // their sum is a 128-bit integer the reader keeps (ValueAccumulator); these take what a run
+    // folds in.
 
-    /// <summary>
-    /// Folds a segment's exact numbers at a cell into it (ADR-0059/0063): <paramref name="numbers"/>
-    /// of them, summing to <paramref name="sum"/>, the smallest <paramref name="min"/> and the
-    /// largest <paramref name="max"/>. The sum stays exact until it cannot: then it is a
-    /// <c>double</c>, Excel's own arithmetic. Only the parts this holds are folded.
-    /// </summary>
-    public void FoldExact(int cell, int numbers, decimal sum, decimal min, decimal max)
+    /// <summary>Counts <paramref name="numbers"/> exact numbers into a cell, each a value that is not
+    /// Blank.</summary>
+    public void CountNumbers(int cell, int numbers)
     {
         ref var counts = ref Counts[cell];
-        var first = counts.Numbers == 0;
         counts.Values += numbers;
         counts.Numbers += numbers;
-        if (Sums is not null)
-            AddToExactSum(ref Sums[cell], sum);
-        if (Extremes is not null)
+    }
+
+    /// <summary>Folds a run's smallest and largest exact numbers into a cell's extremes;
+    /// <paramref name="first"/> when the cell held no number before the run.</summary>
+    public void FoldExtremes(int cell, decimal min, decimal max, bool first)
+    {
+        ref var extremes = ref Extremes![cell];
+        if (first)
         {
-            ref var extremes = ref Extremes[cell];
-            if (first)
-            {
+            extremes.ExactMin = min;
+            extremes.ExactMax = max;
+        }
+        else if (extremes.Inexact)
+        {
+            AddToDoubleExtremes(ref extremes, (double)min);
+            AddToDoubleExtremes(ref extremes, (double)max);
+        }
+        else
+        {
+            if (min < extremes.ExactMin)
                 extremes.ExactMin = min;
+            if (max > extremes.ExactMax)
                 extremes.ExactMax = max;
-            }
-            else if (extremes.Inexact)
-            {
-                AddToDoubleExtremes(ref extremes, (double)min);
-                AddToDoubleExtremes(ref extremes, (double)max);
-            }
-            else
-            {
-                if (min < extremes.ExactMin)
-                    extremes.ExactMin = min;
-                if (max > extremes.ExactMax)
-                    extremes.ExactMax = max;
-            }
         }
     }
 
     /// <summary>Folds one exact number into the parts kept in <c>double</c> — the product and the
     /// running variance — as the <c>double</c> it converts to; <paramref name="count"/> is the
-    /// cell's numbers with this one. The counts and the exact parts are folded a segment at a time
-    /// (<see cref="FoldExact"/>).</summary>
+    /// cell's numbers with this one.</summary>
     public void AddInexactParts(int cell, double value, long count)
     {
         if (Products is not null)
@@ -220,57 +219,22 @@ internal sealed class PartColumns
             AddToVariance(ref Variances[cell], value, count);
     }
 
-    /// <summary>Adds part of a segment's exact sum at a cell, without counting anything — the sum
-    /// of a run that would have passed a 64-bit integer.</summary>
-    public void AddToExactSum(int cell, decimal partial) => AddToExactSum(ref Sums![cell], partial);
+    /// <summary>Whether a cell's sum has left exactness for Excel's <c>double</c>.</summary>
+    public bool IsInexactSum(int cell) => Sums![cell].Inexact;
 
-    /// <summary>
-    /// Takes one exact number back out of a cell — a Change Batch removed its record (ADR-0066).
-    /// Only a cell whose parts are the counts and an exact sum can be: false, and nothing changed,
-    /// when the sum is a <c>double</c> or would leave <c>decimal</c>'s range, or the cell carries
-    /// any other part; the cell is then recomputed from its records.
-    /// </summary>
-    public bool TrySubtractExact(int cell, decimal value)
+    /// <summary>A cell's sum leaves exactness for Excel's <c>double</c>, starting from
+    /// <paramref name="start"/> — the exact sum it had, converted.</summary>
+    public void ToInexactSum(int cell, double start)
     {
-        if (Extremes is not null || Products is not null || Variances is not null)
-            return false;
-        if (Sums is not null)
-        {
-            ref var sum = ref Sums[cell];
-            if (sum.Inexact)
-                return false;
-            try
-            {
-                sum.Exact -= value;
-            }
-            catch (OverflowException)
-            {
-                return false;
-            }
-        }
-        ref var counts = ref Counts[cell];
-        counts.Values--;
-        counts.Numbers--;
-        return true;
+        ref var sum = ref Sums![cell];
+        sum.Inexact = true;
+        sum.Exact = 0;
+        sum.Double = start;
+        sum.Compensation = 0;
     }
 
-    private static void AddToExactSum(ref SumPart sum, decimal partial)
-    {
-        if (sum.Inexact)
-        {
-            Neumaier(ref sum, (double)partial);
-            return;
-        }
-        try
-        {
-            sum.Exact += partial;
-        }
-        catch (OverflowException)
-        {
-            ToDouble(ref sum);
-            Neumaier(ref sum, (double)partial);
-        }
-    }
+    /// <summary>Adds to a cell's <c>double</c> sum, compensated.</summary>
+    public void AddInexactSum(int cell, double value) => Neumaier(ref Sums![cell], value);
 
     // ---- One record's value ------------------------------------------------------------------
 

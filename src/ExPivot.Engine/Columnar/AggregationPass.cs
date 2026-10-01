@@ -51,6 +51,9 @@ internal sealed class AggregationPass
     private int[] _first = [];
     private int[] _last = [];
 
+    // While a batch is folded in, the leaves its rows went to.
+    private HashSet<int>? _added;
+
     public AggregationPass(Snapshot snapshot, IReadOnlyDictionary<string, FieldBinding> bindings, PivotQuery query, bool keepRows, Action<long>? rowsRead)
     {
         _snapshot = snapshot;
@@ -103,14 +106,11 @@ internal sealed class AggregationPass
         return true;
     }
 
-    /// <summary>Ends the pass: the last slice's exact parts are folded.</summary>
+    /// <summary>Ends the pass: every open run of exact numbers is folded.</summary>
     public void Complete()
     {
-        if (_slice >= 0)
-        {
-            foreach (var values in _values)
-                values.EndSegment();
-        }
+        foreach (var values in _values)
+            values.Flush();
         _slice = -1;
     }
 
@@ -167,11 +167,6 @@ internal sealed class AggregationPass
 
     private void Enter(int slice)
     {
-        if (_slice >= 0)
-        {
-            foreach (var values in _values)
-                values.EndSegment();
-        }
         _sliceStart = _slice < 0 ? 0 : _sliceEnd;
         _slice = slice;
         var read = _snapshot.Slice(slice);
@@ -223,6 +218,14 @@ internal sealed class AggregationPass
             }
             if (_keepRows)
                 Keep(_sliceBase[slice.Index] + at, leaves);
+            if (_added is { } added)
+            {
+                foreach (var leaf in leaves)
+                {
+                    if (leaf >= 0)
+                        added.Add(leaf);
+                }
+            }
             done += n;
         }
         return true;
@@ -301,15 +304,16 @@ internal sealed class AggregationPass
     /// batch compacted the Snapshot, so rows moved, or the answer would now pass the cap on leaves
     /// — and the pass is then dropped and the question asked afresh.
     /// <list type="number">
-    /// <item>Each removed row, read in Before, leaves its leaf: the records and the exact parts by
-    /// subtraction; a leaf whose other parts it touched is marked for recomputing. The codes it
-    /// carried are counted out, so a spelling can leave.</item>
+    /// <item>Each removed row, read in Before, leaves its leaf: the records, the counts and an
+    /// Integer or Decimal sum by subtraction — an integer's, which is exact in any order; a leaf
+    /// whose other parts it touched is marked for recomputing. The codes it carried are counted
+    /// out, so a spelling can leave.</item>
     /// <item>The batch's slices — every row the batch brought is in them, at the end of the slice
     /// order — are read as the pass reads any slice: Items that appear bring their leaves, and
     /// the parts of a leaf gain the new rows as a fresh pass would gain them, last.</item>
     /// <item>The marked leaves are recomputed from their rows, in slice order, as a fresh pass
-    /// computes them. A leaf left with no record leaves the answer, and so do Items no leaf
-    /// carries.</item>
+    /// computes them — every step of a <c>double</c> counts. A leaf left with no record leaves the
+    /// answer, and so do Items no leaf carries.</item>
     /// </list>
     /// </summary>
     public bool Fold(SnapshotChange change)
@@ -323,12 +327,8 @@ internal sealed class AggregationPass
         var before = change.Before;
         var after = change.After;
         var marked = new HashSet<int>[_values.Length];
-        var subtracted = new HashSet<int>[_values.Length];
         for (var v = 0; v < _values.Length; v++)
-        {
             marked[v] = [];
-            subtracted[v] = [];
-        }
         RecomputedRows = 0;
 
         // 1. What the batch removed, read in Before.
@@ -347,11 +347,7 @@ internal sealed class AggregationPass
             _leaves.Records[leaf]--;
             for (var v = 0; v < _values.Length; v++)
             {
-                if (marked[v].Contains(leaf))
-                    continue;
-                if (_values[v].TrySubtract(leaf, slice, row.Offset))
-                    subtracted[v].Add(leaf);
-                else
+                if (!marked[v].Contains(leaf) && !_values[v].TrySubtract(leaf, slice, row.Offset))
                     marked[v].Add(leaf);
             }
         }
@@ -364,51 +360,68 @@ internal sealed class AggregationPass
             filter.Refresh(after);
         // A leaf that would pass the cap — empty leaves a batch left behind count too, until the
         // question is asked afresh — drops the pass, and the question is asked again.
-        for (var s = before.SliceCount; s < after.SliceCount; s++)
+        var added = _added = [];
+        try
         {
-            Enter(s);
-            var slice = after.Slice(s);
-            if (!Read(slice, 0, slice.Length))
-                return false;
+            for (var s = before.SliceCount; s < after.SliceCount; s++)
+            {
+                Enter(s);
+                var slice = after.Slice(s);
+                if (!Read(slice, 0, slice.Length))
+                    return false;
+            }
+            Complete();
         }
-        Complete();
+        finally
+        {
+            _added = null;
+        }
 
-        // 3. The leaves whose parts cannot be subtracted, from their rows — and the exact sums that
-        // were, wherever a step of some order of the sum could have rounded: subtraction is then
-        // not the fresh pass's arithmetic, and only the leaf's rows are.
+        // 3. The leaves whose parts cannot be subtracted, from their rows. An exact sum is an
+        // integer, which subtraction and addition keep exactly; one past 128 bits is a double,
+        // whose every step counts, and a leaf whose sum is one is recomputed whenever it is touched.
         for (var v = 0; v < _values.Length; v++)
         {
             var values = _values[v];
-            if (subtracted[v].Count > 0)
+            if (values.SumsExactly)
             {
-                var limit = values.ExactRowsLimit(after);
-                if (limit != long.MaxValue)
+                foreach (var leaf in added)
                 {
-                    foreach (var leaf in subtracted[v])
-                    {
-                        // The most numbers the leaf held on either side of the batch.
-                        if (values.Columns.Counts[leaf].Numbers + change.Removed.Count > limit)
-                            marked[v].Add(leaf);
-                    }
+                    if (values.Columns.IsInexactSum(leaf))
+                        marked[v].Add(leaf);
                 }
             }
-            if (marked[v].Count > 0)
-                Recompute(values, marked[v]);
+            if (marked[v].Count == 0)
+                continue;
+            // A pass that kept no rows' leaves cannot find a leaf's rows: it is asked afresh.
+            if (!_keepRows)
+                return false;
+            Recompute(values, marked[v]);
         }
         return true;
     }
 
     // A field's marked leaves, from nothing, over the rows each holds, in slice order — the
     // operations a fresh pass performs on that leaf, in the same order, so the parts come out the
-    // same to the last bit.
+    // same to the last bit. A few leaves are read row by row along their chains; when the marked
+    // leaves hold a good part of the rows, which scattered reads would cost more than a sweep, the
+    // column is swept in order instead, every other leaf's rows passed over.
     private void Recompute(ValueAccumulator values, HashSet<int> leaves)
     {
+        long rows = 0;
+        foreach (var leaf in leaves)
+            rows += _leaves.Records[leaf];
+        if (rows * SweepFraction > _numbered)
+        {
+            Sweep(values, leaves);
+            return;
+        }
         if (_next is null)
             MakeChains();
         Span<int> one = stackalloc int[1];
         foreach (var leaf in leaves)
         {
-            values.Columns.ResetCell(leaf);
+            values.Reset(leaf);
             one[0] = leaf;
             var s = 0;
             var current = -1;
@@ -421,8 +434,6 @@ internal sealed class AggregationPass
                     s++;
                 if (s != current)
                 {
-                    if (current >= 0)
-                        values.EndSegment();
                     slice = _snapshot.Slice(s);
                     values.BeginSegment(slice);
                     current = s;
@@ -430,9 +441,50 @@ internal sealed class AggregationPass
                 values.Accumulate(slice, number - _sliceBase[s], one);
                 RecomputedRows++;
             }
-            if (current >= 0)
-                values.EndSegment();
+            values.Flush();
         }
+    }
+
+    /// <summary>Marked leaves holding more than one row in this many are recomputed by a sweep.</summary>
+    private const int SweepFraction = 16;
+
+    private void Sweep(ValueAccumulator values, HashSet<int> leaves)
+    {
+        var marked = new bool[_leaves.Count];
+        foreach (var leaf in leaves)
+        {
+            values.Reset(leaf);
+            marked[leaf] = true;
+        }
+        var masked = _leafBuffer;
+        for (var s = 0; s < _sliceBase.Count; s++)
+        {
+            var slice = _snapshot.Slice(s);
+            values.BeginSegment(slice);
+            var first = _sliceBase[s];
+            for (var at = 0; at < slice.Length; at += Chunk)
+            {
+                var n = Math.Min(Chunk, slice.Length - at);
+                var any = false;
+                for (var i = 0; i < n; i++)
+                {
+                    var leaf = _leafOf[first + at + i];
+                    if (leaf >= 0 && marked[leaf])
+                    {
+                        masked[i] = leaf;
+                        any = true;
+                        RecomputedRows++;
+                    }
+                    else
+                    {
+                        masked[i] = -1;
+                    }
+                }
+                if (any)
+                    values.Accumulate(slice, at, masked.AsSpan(0, n));
+            }
+        }
+        values.Flush();
     }
 
     // Chains every leaf's rows, in slice order, from the leaves the rows were kept with.
