@@ -62,7 +62,15 @@
        border, which would add to the box (ADR-0028/0029). */
     background-image: linear-gradient(to top, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
 }
-.ex-viewport { position: absolute; top: var(--ex-header-height); left: 0; right: 0; will-change: transform; }
+/* The rows' layer. Its transform (inline, ADR-0053) makes it a stacking context, which the
+   selection layers inside it rely on (ADR-0008). It is not composited on its own: as a layer
+   (will-change: transform) it was rasterised at the fraction of a device pixel where the page
+   happened to put the grid, and every line a cell draws in device pixels blended across two (a
+   Sheet's dotted Border read 2, 1, 3, 1 where Excel's is 2, 2, 2, 2; CI, Linux, 150%, ticket 49).
+   Painted with its parent, it is snapped to the device pixels as any box is. Scrolling measured
+   the same either way: frame intervals on /wide and /sheet, slow and flung, at 100% and 150%,
+   headless, within 0.2 ms of each other at the median. */
+.ex-viewport { position: absolute; top: var(--ex-header-height); left: 0; right: 0; }
 /* pointer-events is inherited, so this one declaration makes every cell, spacer and
    Placeholder bar transparent to the mouse and leaves .ex-viewport as the target of every
    event in the body. The grid then reads the cell from the event's own offsets and its
