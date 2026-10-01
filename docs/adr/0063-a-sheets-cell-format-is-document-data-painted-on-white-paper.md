@@ -73,7 +73,8 @@ regular ones: Chrome at 14px, tabular digits, weight 700.
 - system-ui on macOS measured 14.35 / 9.25 / 5.852 (wide / digit / narrow). DejaVu Sans Bold, which
   Linux paints for both 600 and 700, measured 14.028 / 9.742 / 6.398.
 - The defaults take the wider of the two in each class: 14.35 / 9.742 / 6.398.
-- `ExGrid.MudBlazor` supplies Roboto's widths at 700: 10.4 / 8.33 / 4.95.
+- `ExGrid.MudBlazor` supplies Roboto's widths at 700: 10.4 / 8.33 / 5.25. *(4.95 at first; ticket 77
+  found `/` wider, ADR-0016.)*
 - Segoe UI on Windows is not measured.
 
 **A Consumer that supplies metrics without bold widths has bold charged at the regular widths plus
