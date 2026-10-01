@@ -67,10 +67,38 @@ report.Rows[0].ValueAt(0)!.Text;             // 100
 report.Rows[^1].ValueAt(2)!.Text;            // 220 — the grand total
 ```
 
-`PivotEngine.Aggregate` makes the pass over the records and returns a `PivotCube`;
-`PivotEngine.Report` lays a cube out. A layout that changes only how the result is laid out —
-collapsing an Item, sorting, the form, the totals, an Aggregation, a format — is laid out from
-the same cube (`PivotCube.Holds`), with no pass over the records.
+`PivotEngine.Aggregate` asks the bundled Pivot Source (below) for the layout's Leaf Aggregates and
+returns a `PivotCube`; `PivotEngine.Report` lays a cube out. A layout that changes only how the
+result is laid out — collapsing an Item, sorting, the form, the totals, a format, or an Aggregation
+whose parts the cube holds (Sum and Average share one) — is laid out from the same cube
+(`PivotCube.Holds`), with no pass over the records.
+
+## Asking a Pivot Source
+
+A report is computed from the **Leaf Aggregates** a **Pivot Source** answers with (ADR-0065): for
+every combination of the row and column fields' Items that has records, the parts each Value
+Field's Aggregation is computed from — counts, an exact or `double` sum, the extremes, the product,
+the running variance, and only the parts that are asked for. Every subtotal and grand total is
+merged from the leaves' parts, which combine exactly.
+
+```csharp
+var source = PivotSource.From(sales, fields);           // the reference, over records in memory
+var query = PivotQuery.For(layout);                      // what the layout asks; MaxLeaves caps it
+var answer = await source.AggregateAsync(query, ct);    // or a refusal: "this layout needs more than 200,000 cells"
+var cube = PivotEngine.Cube(query, answer, source.Fields);
+var report = PivotEngine.Report(cube, layout);
+```
+
+- **`PivotSource.From(records, fields)`** works in slices and yields between them, so a browser
+  keeps painting; a cancelled question stops at the next slice.
+- **`PivotSource.Fetch(fields, features, aggregate, items, details)`** carries the Consumer's own
+  transport to a server, which answers the same questions — from the same engine, or from SQL,
+  building its answer with `PivotAnswerBuilder` — and is held to `From`'s answers.
+- **Every answer carries its Source Version.** A field's Items (`ItemsAsync`) and the records behind
+  a cell (`DetailsAsync`, `PivotReport.DetailsQuery`) are asked for under it, and a source that can
+  no longer answer under it refuses, rather than show records that do not add up.
+- **`PivotJson`** writes every question and every answer as versioned JSON and reads it back:
+  decimals exactly, doubles to the last bit, and the leaves column by column.
 
 ## The layout's rules and its saved form
 
