@@ -1,4 +1,4 @@
-# What to verify on Windows, twelfth run
+# What to verify on Windows, thirteenth run
 
 Status: ready-for-human — **Part A is Excel only and needs no build**; **Part B once tickets 55–58 are
 done.**
@@ -9,7 +9,9 @@ first: their method and tools apply unchanged, and Part B of the ninth run
 (`verification/2026-10-01-windows-9/`) is the model for Part B here. **Decide nothing. Record
 everything.** Do not change any ADR, `CONTEXT.md` or `docs/definition-of-done.md`.
 
-*(Numbered twelfth: `verify-on-windows-11.md` is the Cell Format's, on `claude/exsheet-cell-format`.)*
+*(Numbered thirteenth: `verify-on-windows-11.md` and `verify-on-windows-12.md` are the Cell Format's, on
+`claude/exsheet-cell-format`. This file was written as the twelfth and renamed on 2026-10-01, when
+the run had begun at 6ebc186 with its cases unchanged.)*
 
 Part B of the ninth run left three questions to Excel
 ([ADR-0058](../../adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md), "What Part B of
@@ -18,7 +20,7 @@ the ninth Windows run settled"), and decided three changes that Part B here type
 ## Setup
 
 - Fetch **`claude/exsheet-ninth-run-b`**. This procedure lives there until that branch is merged.
-  Branch **`claude/exsheet-windows-verify-12`** from its tip, and record the tip as the verified
+  Branch **`claude/exsheet-windows-verify-13`** from its tip, and record the tip as the verified
   commit. If the tip moves during the run, do not merge it in.
 - **The user has authorised this run in advance**: real keys and mouse to Excel, and, for Part B, to
   the browsers. **Do not stop to ask.** Say "starting" before the first input and "finished" after the
@@ -27,7 +29,7 @@ the ninth Windows run settled"), and decided three changes that Part B here type
   an Excel of the script's own per case, real keys, the real mouse, pictures, UI Automation for the
   Formula Bar's text and selection, the status bar's mode and any popup list. Where UI Automation
   gives a list no rows, read them from the picture, as that run did. Write this run's script as
-  `verification/<date>-windows-12/excel/ask-excel.ps1`.
+  `verification/<date>-windows-13/excel/ask-excel.ps1`.
 - The Japanese IME off, English (UK) for Excel's window. Excel's keyboard check compares case and
   all. Record the Excel version, the Office Theme, Windows' mode and the display scale.
 
@@ -105,8 +107,8 @@ Behind 150 ms, wait for the positions grid to wear `ex-pointed-at` before any pr
 
 ## Finishing
 
-Commit everything to `claude/exsheet-windows-verify-12` and push. The results go to
-`verification/<date>-windows-12/`: the scripts, the `.jsonl`, the records, `excel/shots/` and the
+Commit everything to `claude/exsheet-windows-verify-13` and push. The results go to
+`verification/<date>-windows-13/`: the scripts, the `.jsonl`, the records, `excel/shots/` and the
 page's pictures, and one report with a row per case: what was read, and, for Part B, whether it
 matches the reading in the table. The last message lists every difference, each with the ADR
 paragraph or ticket it belongs to. It proposes nothing on the user's behalf.

@@ -425,13 +425,13 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   the Formula and moved to the next cell. ExSheet listed the five values, and Tab replaced the `1`.
   The value list now opens only while nothing of the argument stands after the caret. With the caret
   inside a value (`,,-|1)`), which Excel was not asked, nothing is listed either, until Excel is
-  observed (`verify-on-windows-12.md`). Tab with no list open does what it does anywhere else in the
+  observed (`verify-on-windows-13.md`). Tab with no list open does what it does anywhere else in the
   edit. This replaces the first reading taken while building ticket 44.
 - **`A` at `match_mode` lists every value in Excel**, `0 - Exact match` selected, with a tip that
   describes the selected value; `4` lists nothing. ExSheet lists the functions `A` begins (`AVERAGE`),
   as it does after any letter. One case does not give Excel's rule, so **nothing changes until Excel
   is asked more** *(decided with the user, Q50)*: `A1`, `1+`, another letter, and the same at
-  `search_mode` (`verify-on-windows-12.md`). The second reading taken while building ticket 44 holds
+  `search_mode` (`verify-on-windows-13.md`). The second reading taken while building ticket 44 holds
   for `4` and waits for the rest.
 - **With a list open over Point, `Home`, `End` and the Shift+arrows close it and do what Point does
   with them** *(decided with the user, Q51)*. Excel, in Enter mode after `,,` with the value list
@@ -461,7 +461,7 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   - **← and → point at the next column the table has, as a column**: `T[<that column>]` is written
     and its body is dashed, passing over the grid's columns the table does not have. Excel was not
     asked → straight from a heading; from its heading cell, which is a row of the Table, it would
-    reach the next column's heading. `verify-on-windows-12.md` asks.
+    reach the next column's heading. `verify-on-windows-13.md` asks.
     - **The column reached is scrolled into view across, and only across** *(decided with the user,
       2026-10-01, when ticket 56 was built without it)*. A grid narrower than its columns could
       otherwise dash a column the reader cannot see, and Excel always brings what it points at into
@@ -493,5 +493,5 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   which column is read is shown and which Reference reads it is not, as ADR-0057 leaves; the
   completion cases of the tenth run, typed into ExSheet, gave Excel's answers.
 
-Tickets 55 to 58 in `docs/specs/exsheet/issues/` build these. `docs/specs/exsheet/verify-on-windows-12.md`
+Tickets 55 to 58 in `docs/specs/exsheet/issues/` build these. `docs/specs/exsheet/verify-on-windows-13.md`
 asks Excel what is left to it and types the changes into ExSheet.
