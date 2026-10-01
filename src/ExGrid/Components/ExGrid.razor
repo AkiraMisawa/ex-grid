@@ -4560,7 +4560,10 @@
         await command.Invoke();
         // Only the popover the command ran from closes, and the keyboard goes back to the
         // root (ADR-0039/0044): a command that took its time may find another popover
-        // opened meanwhile, which is not its to close.
+        // opened meanwhile, which is not its to close. A command that handed the keyboard to a
+        // frame of the Consumer's own (HandKeyboardToFrameAsync) is handed back to the root
+        // too: there the keys typed until the frame takes it are held for the frame, where on
+        // nothing no grid would hear them (ADR-0050 item 16, 2026-10-01).
         if (_popoverFocusRequest == opening)
             ClosePopoverAndReturnFocus();
     }

@@ -622,4 +622,40 @@ public class FormatCellsTests : SheetTestContext
         await chrome.Context.ReturnKeyboard();
         Assert.Equal(reclaims + 1, ReclaimCount);
     }
+
+    // ---- Keys typed while Format Cells opens (ticket 93; ADR-0050 item 16 and ADR-0039, notes of 2026-10-01) ----
+
+    [Fact] // ADR-0050 item 16, 2026-10-01: a frame of the Chrome's own — from the Consumer's call, Ctrl+1 or the Context Menu — tells the grid the keyboard is going to it
+    public async Task A_frame_of_the_chromes_own_is_handed_the_keyboard_however_it_opens()
+    {
+        var chrome = new OwnFrameChrome();
+        var cut = RenderSheet(ps => ps.Add(s => s.Chrome, chrome));
+        await GoToAsync(cut, "B2");
+
+        Assert.True(await cut.Instance.OpenFormatCellsAsync());
+        Assert.Equal(["frame"], HandOffs);
+        await cut.InvokeAsync(chrome.Context!.Cancel);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
+
+        await PressAsync(cut, "1", ctrl: true);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".own-frame")));
+        Assert.Equal(["frame", "frame"], HandOffs);
+        await cut.InvokeAsync(chrome.Context!.Cancel);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".own-frame")));
+
+        await SecondaryClickAsync(cut, "B2");
+        await cut.FindAll("[role=menu] button[role=menuitem]").Single(b => b.TextContent == "Format Cells…").ClickAsync(new MouseEventArgs());
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".own-frame")));
+        Assert.Equal(["frame", "frame", "frame"], HandOffs);
+    }
+
+    [Fact] // ADR-0039, 2026-10-01: under the built-in Chrome the grid hands the keyboard to its own popover, and no frame is told of
+    public async Task The_built_in_format_cells_is_handed_the_keyboard_as_the_grids_popover()
+    {
+        var cut = RenderSheet();
+
+        await OpenAsync(cut, "B2");
+
+        Assert.Equal(["popover"], HandOffs);
+    }
 }

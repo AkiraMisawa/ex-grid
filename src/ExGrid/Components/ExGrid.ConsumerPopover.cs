@@ -1,6 +1,7 @@
 using System.Globalization;
 using ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 
 namespace ExGrid.Components;
 
@@ -81,6 +82,47 @@ public partial class ExGrid<TRow>
     /// </summary>
     public Task ReturnKeyboardAsync() => InvokeAsync(() => ReclaimFocusAsync());
 
+    /// <summary>
+    /// The keyboard is going to a frame of the Consumer's own, outside the grid (ADR-0050 item 16
+    /// and ADR-0039, notes of 2026-10-01): a dialog the Consumer is opening, whose control will
+    /// take DOM focus once it is drawn — a round trip or more later on a circuit. Called as the
+    /// Consumer opens it: from a command of the grid's menus, a declared key, or its own code.
+    ///
+    /// <para>Until DOM focus has left the grid's root, the keys typed on the root or on the menu the
+    /// command ran from are held, in order, and then handed to the element that took focus, as
+    /// the keydown each would have been; a Tab, which only the browser can act on, is dropped with
+    /// every key after it (ADR-0010). The keys are never the grid's: a digit gated against the
+    /// root would open an edit behind the frame. If DOM focus does not leave the root within the
+    /// hold's fallback, or goes to another grid, the held keys are dropped. A command's menu still
+    /// hands the keyboard back to the root as it closes, so that the keys typed meanwhile land
+    /// where they are held, not on nothing, where no grid hears them.</para>
+    ///
+    /// <para>A popover the Consumer opens in the grid's own frame (<see cref="OpenPopoverAsync"/>)
+    /// needs no call: the grid hands the keyboard to it itself.</para>
+    /// </summary>
+    public Task HandKeyboardToFrameAsync()
+        => InvokeAsync(async () =>
+        {
+            if (_disposed)
+                return;
+            await HandOffAsync("frame");
+        });
+
+    /// <summary>Tells the key gate where the keyboard is going (ADR-0039, 2026-10-01): sent before
+    /// the key's answer and before the render that closes the menu a command ran from.</summary>
+    private async Task HandOffAsync(string to)
+    {
+        if (_disposed || _scrollHandle is null)
+            return;
+        try
+        {
+            await _scrollHandle.InvokeVoidAsync("handOff", to);
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
+
     private bool OpenConsumerPopover(RenderFragment<GridPopoverContext> content, string label)
     {
         if (_disposed || _editMode != EditMode.None)
@@ -93,6 +135,9 @@ public partial class ExGrid<TRow>
         _consumerFocusRequest++;
         _consumerFocusLastRequest = 0;
         _consumerContentsHeld = false;
+        // The keys typed until the contents hold the keyboard are theirs (ADR-0039, 2026-10-01):
+        // told before the render that draws them, and before the answer to a key that opened them.
+        _ = HandOffAsync("popover");
         _suppressRender = false;
         StateHasChanged();
         return true;

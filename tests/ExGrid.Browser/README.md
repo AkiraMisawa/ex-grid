@@ -413,6 +413,12 @@ nobody had asked for. What that means when writing a test:
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid
   holds and stand when the move's notification lands (ticket 56).
+- `format-cells-keys.spec.mjs` — keys typed while Format Cells opens (ticket 93; ADR-0050 item 16
+  and ADR-0039, notes of 2026-10-01), under both Chromes, at an 80 ms round trip on the Server host:
+  a digit typed straight after a press on "Format Cells…", a press and a round trip, Enter on the
+  item and Ctrl+1 is Format Cells' or dropped, never an edit behind it; End typed straight after
+  Enter or Ctrl+1 reaches its tabs, in order behind the digit; and on `/sheets` the keys held for
+  one Sheet are never the other's, which types as ever afterwards (ADR-0018).
 - `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0071, SH-45;
   ticket 53) on `/sheet?chrome=mud` and `/sheets?chrome=mud`: a MudDialog at page level, nothing
   of it inside the grid, opened from the Context Menu, the page's button and Ctrl+1 with the

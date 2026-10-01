@@ -606,12 +606,16 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys\) \{"), script.Text);
         Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
         Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
-        // Consulted in the editing branch only — with no edit open they are among the taken keys —
-        // and answered as the core's, which changes no mode and holds no key after it.
+        // With no edit open they are among the taken keys, and only a taken one is asked about: the
+        // Consumer answers it, and may open a popover or a frame of its own (Format Cells' Ctrl+1),
+        // so the keys after it are held until that answer, and then until the keyboard has arrived
+        // where the answer sent it (ADR-0050 item 16 and ADR-0039, 2026-10-01). While an edit is
+        // open it is answered as the core's, which changes no mode and holds no key after it.
         var noEditReturns = gate.Value.IndexOf("return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';", StringComparison.Ordinal);
-        var declaredAt = gate.Value.IndexOf("declared.has(canonical)", StringComparison.Ordinal);
-        Assert.True(noEditReturns > 0 && declaredAt > noEditReturns, "the declared keys are consulted outside the editing branch");
-        Assert.Matches(new Regex(@"if \(declared\.has\(canonical\)\) \{\s*return 'core';\s*\}"), gate.Value);
+        var takenAt = gate.Value.IndexOf("if (!taken.has(canonical))", StringComparison.Ordinal);
+        var heldAt = gate.Value.IndexOf("if (declared.has(canonical)) {\n                return 'mode';", StringComparison.Ordinal);
+        Assert.True(takenAt > 0 && heldAt > takenAt && heldAt < noEditReturns, "a declared key with no edit open is not held behind until it is answered");
+        Assert.Matches(new Regex(@"if \(declared\.has\(canonical\)\) \{\s*return 'core';\s*\}"), gate.Value[noEditReturns..]);
         // The module names no formatting key of its own: they reach it only in C#'s list.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[bBiIuU2-5~!@#$%^&_]'"), script.Text);
     }

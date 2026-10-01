@@ -1,6 +1,6 @@
 # 93: Keys typed while a Consumer's own frame opens do not reach the grid
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the gap ADR-0039's note of 2026-10-01 leaves open, found by the fix for PR #42's CI.
 - On the Server host, choosing the Context Menu's "Format Cells…" returns the keyboard to the grid's root after
@@ -11,13 +11,13 @@ Status: ready-for-agent
 
 **Blocked by:** None (can start immediately)
 
-- [ ] **Show it first,** on the Server host with an injected round trip, as the CI fix did at 80 ms.
-- [ ] **Keys typed in the gap reach the frame, in order, or are refused by name.** They are never the grid's.
+- [x] **Show it first,** on the Server host with an injected round trip, as the CI fix did at 80 ms.
+- [x] **Keys typed in the gap reach the frame, in order, or are refused by name.** They are never the grid's.
       - For example, a command can tell the core that the Consumer is opening a frame of its own (ADR-0050
         item 16), so the core holds the keys for it instead of handing the keyboard to its root.
       - If that needs a new declaration, stop and report it as a proposal.
-- [ ] **The built-in Chrome's popover** gets the same guarantee, if it has the same gap.
-- [ ] **Layer 2** stages the circuit's order. **Layer 3** on the Server host. CI runs it.
+- [x] **The built-in Chrome's popover** gets the same guarantee, if it has the same gap.
+- [x] **Layer 2** stages the circuit's order. **Layer 3** on the Server host. CI runs it.
 
 ## Comments
 
@@ -68,3 +68,50 @@ note of this date record it.
 - The built-in popover's hold waits for the popover and replays the keys to it. Ctrl+1 is held as
   Alt+Down is, and a click on a menu item starts the hold.
 - Ship the click hold only together with P1.
+
+*(2026-10-01, agent cf-53, built.)* The decision built: P1 together with A.
+- **The key gate is told where the keyboard is going** (`handOff` on the module's handle, C# to
+  the gate, ahead of the key's answer and of the render that closes the menu). It is told
+  `popover` when the core opens a Consumer's popover, and `frame` by the new
+  `ExGrid.HandKeyboardToFrameAsync()`.
+  - While a hand-off stands, the keys typed on the root or the menu are held until the keyboard
+    has arrived: a control of the popover, or an element outside the root that is not `body` and
+    not another grid.
+  - They are then replayed to it, in order, through the existing replay.
+  - A frame's element takes every key but Tab. A tab of ARIA's tabs pattern takes its arrows,
+    Home and End.
+  - If the keyboard never arrives within the fallback, or goes to another grid, the held keys
+    are dropped and never gated against the grid.
+- **Ctrl+1 is held as Alt+Down is.** With no edit open, a declared key is gated `mode`, so the
+  keys after it wait for its answer, then for the hand-off it announced. A press on an enabled
+  menu item starts the hold, as Enter on it does.
+- **ExSheet calls `HandKeyboardToFrameAsync()`** whenever Format Cells opens in a frame of the
+  Chrome's own: from the menu command, Ctrl+1 and `OpenFormatCellsAsync`. ExSheet.MudBlazor is
+  unchanged: its frame's element already holds keys for its tabs (`KeysOnTheirWay`).
+- **One departure from the note, reported to the orchestrator.** The note says a command that
+  hands the keyboard to a frame "does not return the keyboard to its root". It still does.
+  - Without the hand-back, the keys typed after the menu closes land on `body`. Only a `document`
+    key listener hears them there, and that would be a new entry on ADR-0021's allowlist: the
+    key listener is the root's, never the document's, and a structural test holds the module to
+    that.
+  - With the hand-back, those keys land on the root, where the hand-off's hold takes them for the
+    frame. They still never reach the grid.
+  - The built-in popover's keys typed on `body` (a press, then a round trip) are still lost. That
+    is "dropped", and not the grid's.
+- **Layer 2.**
+  - `ConsumerPopoverTests` (3 new): the popover tells the gate; a command that hands the
+    keyboard to a frame tells it while its menu still stands; a command that opens nothing still
+    hands the keyboard back.
+  - `FormatCellsTests` (2 new): every way of opening tells the gate `frame` under a Chrome's own
+    frame, and `popover` under the built-in Chrome.
+  - `MudFormatCellsTests` (1 new).
+  - The gate's structural test now reads a declared key with no edit open as held until
+    answered, as the note decides.
+- **Layer 3: `format-cells-keys.spec.mjs`, 14 tests** — the table's four rows, End typed straight
+  after, and two Sheets, under both Chromes.
+  - At 80 ms on the Server host all 14 pass. Against the code before this change, 11 of them
+    fail: every row the table showed the gap in.
+  - With `format-cells.spec.mjs`, `format-cells-mud.spec.mjs`, `format-keys.spec.mjs` and
+    `popovers.spec.mjs`: 99 of 99 on Server and 99 of 99 on WebAssembly, in Chrome. The Sheet's
+    menu commands on Server: 5 of 5.
+
