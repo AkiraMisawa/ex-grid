@@ -456,6 +456,13 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
     and its body is dashed, passing over the grid's columns the table does not have. Excel was not
     asked → straight from a heading; from its heading cell, which is a row of the Table, it would
     reach the next column's heading. `verify-on-windows-12.md` asks.
+    - **The column reached is scrolled into view across, and only across** *(decided with the user,
+      2026-10-01, when ticket 56 was built without it)*. A grid narrower than its columns could
+      otherwise dash a column the reader cannot see, and Excel always brings what it points at into
+      view. The vertical offset stays where it is: the column's body is what is dashed, and no row of
+      it is the one pointed at. A column already whole in view, or pinned, does not move the grid.
+      The column's place comes from the grid's own column widths, so nothing is measured; only the
+      scroll offset is set (ADR-0021).
   - **↑ is at an edge**: nothing moves and nothing is told, as at any edge.
   - Shift+arrow and Ctrl+arrow are refused as they are from a cell.
 - **Ctrl+Shift+↓ in Excel points at the range to the edge of the data** (`$B$3:$B$4`), so the
@@ -480,5 +487,5 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   which column is read is shown and which Reference reads it is not, as ADR-0057 leaves; the
   completion cases of the tenth run, typed into ExSheet, gave Excel's answers.
 
-Tickets 55 to 57 in `docs/specs/exsheet/issues/` build these. `docs/specs/exsheet/verify-on-windows-12.md`
+Tickets 55 to 58 in `docs/specs/exsheet/issues/` build these. `docs/specs/exsheet/verify-on-windows-12.md`
 asks Excel what is left to it and types the changes into ExSheet.
