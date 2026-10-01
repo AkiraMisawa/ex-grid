@@ -19,6 +19,9 @@ ADR-0080 decided beyond it is added.
 - [ ] The field is the grid's one tab stop on a grid that edits: `tabindex="0"` on the field, `-1` on
       the root. A display-only grid keeps `tabindex="0"` on the root. A Prerendered grid has neither,
       and no field (ADR-0033, A11Y-4, A11Y-20)
+- [ ] The header's ▾ buttons carry `tabindex="-1"` on every grid, under both Chromes (decided with
+      the user, 2026-10-02, ADR-0080): a Tab into the grid reaches the field, or the root, first, and
+      the next Tab leaves the grid. A press and Alt+↓ still open the column's popover
 - [ ] `aria-activedescendant` is carried by the element that holds the keyboard: the field on a grid
       that edits, the root otherwise, never both. Every rule ADR-0033 and ADR-0037 give it holds (cleared
       while the Focus is not painted, the chosen action's button while Interactive). A11Y-21: over CDP,

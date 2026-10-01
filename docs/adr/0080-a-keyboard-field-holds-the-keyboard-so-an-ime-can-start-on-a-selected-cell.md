@@ -74,6 +74,15 @@ display-only grid has none, and keeps the keyboard on its root, as before.
   field, Shift+Tab is the browser's sequential navigation from the field's place in the markup, and
   with the root as the tab stop the element right before the field is the root itself. It would take
   focus, pass it straight back to the field, and trap the user.
+- **The header's ▾ buttons are not tab stops** *(decided with the user the same day, found while
+  building)*. The field stands in the Viewport, after the header in the markup, so a Tab into a grid
+  that edits reached every column's ▾ before the field: as many Tabs as columns before the first cell.
+  The root, their ancestor, had come first before. The ▾ buttons now carry `tabindex="-1"` on every
+  grid, as the action buttons have since ADR-0037 ("a grid button is only ever pressed, never
+  focused" by Tab). A press still opens the column's popover, and so does Alt+↓ from the Focus cell
+  (ADR-0044, FL-12), so the keyboard loses nothing. Excel's filter buttons are not reached by Tab
+  either. The options set aside: accepting the order, and standing the field before the header,
+  which would take the field's box out of the Cell Editor's arithmetic.
 - **Focus that lands on the root itself** — a press on a part of it that takes no focus of its own,
   the scroller's hand-on (ADR-0033) — is passed on to the field at once, in script, before the next
   key. The core's hand-back of the keyboard (ADR-0021's notes, `reclaimFocus`) puts it in the field.
