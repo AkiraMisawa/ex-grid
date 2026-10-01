@@ -59,6 +59,16 @@
     /// <summary>Raised when a dialog provider draws the dialog.</summary>
     [Parameter] public Action? Drawn { get; set; }
 
+    /// <summary>
+    /// Called once the tabs hold the keyboard, with where the keys typed before then go: each is
+    /// handed on as if pressed on the tab shown, and the answer is false for one that ends the
+    /// handing on.
+    /// </summary>
+    [Parameter] public Func<Func<KeyboardEventArgs, Task<bool>>, Task>? KeysArrive { get; set; }
+
+    private MudFormatCellsTabs? _tabs;
+    private Func<Task>? _tabsHoldTheKeyboard;
+
     private FormatCellsDraft Draft => Context.Draft;
 
     /// <inheritdoc />
@@ -66,6 +76,7 @@
     {
         Drawn?.Invoke();
         _showTab = EventCallback.Factory.Create<int>(this, ShowTab);
+        _tabsHoldTheKeyboard = () => KeysArrive?.Invoke(HandHeldKeyAsync) ?? Task.CompletedTask;
         for (var i = 0; i < FormatCellsOffer.Tabs.Count; i++)
         {
             if (FormatCellsOffer.Tabs[i] == Context.Tab) _tab = i;
@@ -97,6 +108,8 @@
         builder.AddComponentParameter(4, nameof(MudFormatCellsTabs.Elevation), 0);
         builder.AddComponentParameter(5, nameof(MudFormatCellsTabs.KeepPanelsAlive), false);
         builder.AddComponentParameter(6, nameof(MudFormatCellsTabs.ChildContent), TabPanels);
+        builder.AddComponentParameter(7, nameof(MudFormatCellsTabs.Focused), _tabsHoldTheKeyboard);
+        builder.AddComponentReferenceCapture(8, tabs => _tabs = (MudFormatCellsTabs)tabs);
         builder.CloseComponent();
     };
 
@@ -128,6 +141,28 @@
     }
 
     private void Cancel() => Dialog?.Cancel();
+
+    // A key typed before the tabs held the keyboard, now theirs, as it would have acted on the tab
+    // shown: the arrows, Home and End move between the tabs, and Escape is MudBlazor's Cancel. Tab
+    // is the browser's to act on, and cannot be reproduced without script (ADR-0021): it is dropped
+    // with every key after it, as the core drops a held Tab (ADR-0010). Any other key means nothing
+    // on a tab.
+    private async Task<bool> HandHeldKeyAsync(KeyboardEventArgs key)
+    {
+        switch (key.Key)
+        {
+            case "Escape":
+                Cancel();
+                return false;
+            case "Tab":
+                return false;
+            case "ArrowLeft" or "ArrowRight" or "Home" or "End":
+                if (_tabs is { } tabs) await tabs.KeyAsync(key);
+                return true;
+            default:
+                return true;
+        }
+    }
 
     // ---- Number ----
 

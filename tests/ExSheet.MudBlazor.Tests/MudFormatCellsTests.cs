@@ -112,6 +112,32 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal("Fill", SelectedTab(page).TextContent.Trim()));
     }
 
+    [Fact] // ADR-0071 / ADR-0010 / SH-45: a key typed while the keyboard waits on the frame's own element is the tab's — End shows Fill
+    public async Task A_key_typed_on_the_way_is_the_tabs()
+    {
+        var page = RenderPage();
+        await OpenAsync(page, "B2");
+
+        await page.Find(".mud-ex-sheet-format-cells-leaving").KeyDownAsync(new KeyboardEventArgs { Key = "End" });
+
+        page.WaitForAssertion(() => Assert.Equal("Fill", SelectedTab(page).TextContent.Trim()));
+    }
+
+    [Fact] // ADR-0071 / ADR-0010 / SH-45: Escape typed on the way is a Cancel, and the keyboard is handed back
+    public async Task Escape_typed_on_the_way_is_a_cancel()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ChooseAsync(page, "Percentage");
+        var reclaims = ReclaimCount;
+
+        await page.Find(".mud-ex-sheet-format-cells-leaving").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
+        Assert.False(IsOpen(page));
+        Assert.Equal("General", FormatAt(page, "B2").NumberFormat.Code);
+    }
+
     [Fact] // ADR-0071 / SH-45 / ADR-0018: two arrows typed together on a circuit — the second pressed on the tab the keyboard has not yet left — move two tabs
     public async Task Two_arrows_typed_together_move_two_tabs()
     {

@@ -122,3 +122,26 @@ What the eleventh run found, for this ticket (ADR-0071, "What the eleventh Windo
     nothing, so the edge differs and is drawn so. Under ticket 55's one shared line, A2's top
     records the same thick line, and the edge then reads as one thick line, unlike Excel's
     dialog. The tests here use A1:A3, which differs under either reading.
+
+*(2026-10-01, agent cf-53, after CI on PR #42.)* `format-cells.spec.mjs` "Tab and Shift+Tab wrap
+inside Format Cells" failed on the Server host in Edge. It is a core ordering defect on a circuit,
+in the Consumer's popover (ADR-0039, ADR-0050 item 16), and not Edge's: on Chrome with an 80 ms
+round trip it failed three runs in four.
+- The menu's "Format Cells…", run by a press, closes the menu that held the keyboard. The popover
+  is drawn in its place, and its contents take the keyboard a round trip later.
+- Meanwhile DOM focus is on nothing. Shift+Tab there lands on the popover's trailing sentinel, from
+  behind. The core read that as Tab off the last control and wrapped to the first, Number, not
+  Cancel.
+- The core now records whether the contents have held the keyboard since the opening (a focus-in
+  on the popover's body). Until they have, a sentinel was entered from outside and asks for the
+  near end: the trailing one for the last control, the leading one for the first. Once they have
+  held it, the sentinels wrap as before. No script is added.
+- Layer 2: `ConsumerPopoverTests` has a new test, and the wrap test now has the contents take the
+  keyboard first, as they do.
+- Layer 3: Shift+Tab straight after the press reached Cancel five runs in five at 80 ms. Both
+  Format Cells specs passed three times over on the Server host in Chrome, and once on
+  WebAssembly. Edge is not installed on the Mac this ran on, so Edge is CI's.
+- **Left open, also the core's.** A Tab or Shift+Tab held by the core's own hold is still dropped
+  with the keys behind it (ADR-0010). Before the contents hold the keyboard, only one that reaches a
+  sentinel enters as the user meant.
+

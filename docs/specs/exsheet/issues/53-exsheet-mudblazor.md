@@ -101,3 +101,24 @@ arrival on a circuit.
 - Closings that ExSheet starts itself (the Selection moved under Format Cells, a new opening) still
   hand back after a yield only. No user gesture reaches them while the modal dialog stands.
 
+*(2026-10-01, agent cf-53, after CI on PR #42.)* `format-cells-mud.spec.mjs` "each Sheet's Format
+Cells is its own" failed on the Server host, in Chrome and in Edge. End was typed as the dialog
+appeared, and Fill was never shown.
+- On a circuit the dialog is drawn, and its tabs take the keyboard, round trips after the press
+  that opens it. Meanwhile the keyboard waits on the frame's own element, and a key typed there
+  was lost. At an 80 ms round trip the End never reached the tabs.
+- That element is the frame's, so Blazor's `@onkeydown` hears the keys typed on it, with no
+  script. They are held, in order (`KeysOnTheirWay`), and handed to the tab shown once the tabs
+  hold the keyboard, as if pressed there:
+  - the arrows, Home and End move between the tabs;
+  - Escape is a Cancel;
+  - a Tab is dropped with every key after it, as the core drops a held Tab (ADR-0010).
+- Their defaults on that element are prevented, so an End there no longer scrolls the page.
+- Layer 2: `ExSheet.MudBlazor.Tests` has 42 tests (the hold, and End and Escape typed on the way).
+- Layer 3: End straight after the press showed Fill five runs in five at 80 ms. Both Format Cells
+  specs passed three times over on the Server host in Chrome, and once on WebAssembly. Edge is
+  CI's.
+- **Left open.** A key typed after the menu's command and before the frame's element holds the
+  keyboard still goes to the grid. The core hands the keyboard back to the root after the command,
+  and does not know that ExSheet is opening a dialog outside it.
+
