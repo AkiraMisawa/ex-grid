@@ -560,7 +560,7 @@
                            "clear-filter" command above it (ADR-0044), so the actions are OK and
                            Cancel. OK shows it is unavailable while nothing is ticked among the
                            values the list shows; Enter is not gated on it, and what it submits is
-                           refused on the same rule (ticket 81). *@
+                           refused on the same rule (ticket 76). *@
                         <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
@@ -5186,7 +5186,7 @@
     /// replaced or removed in the whole Filter, columns combined with AND, and the
     /// Consumer notified — the grid never evaluates any of it. An <c>In</c> with no values
     /// is refused here, whichever panel handed it over, and the panel stands: the engine
-    /// would refuse it inside this very handler (ADR-0023, ticket 81).</summary>
+    /// would refuse it inside this very handler (ADR-0023, ticket 76).</summary>
     private async Task ApplyFilterSpecAsync(string column, FilterSpec? spec)
     {
         if (!FilterPanelChoices.CanApply(spec))
@@ -6042,7 +6042,7 @@
                 // Escape peels the outermost layer first: an open popover closes and
                 // the grid keeps the keyboard — one press, one dismissal. Only with
                 // nothing left to dismiss is it the way out of Enter/Tab cycling
-                // (ADR-0012), releasing the grid's DOM focus.
+                // (ADR-0012), releasing Tab while the root keeps DOM focus.
                 if (AnyPopoverOpen)
                 {
                     // The keyboard comes back after the render that removes the popover,
@@ -6082,7 +6082,7 @@
                     StateHasChanged();
                     return;
                 }
-                await LeaveAsync();
+                await ReleaseTabAsync();
                 return;
             case GridKeyKind.Engage:
                 // With no Focus, Space is a first key like any other: it only places the
@@ -6972,7 +6972,7 @@
         {
             case "Escape":
                 // Cancel discards: the uncommitted text was the grid's and dies with
-                // the editor (ADR-0007). Esc never blurs the grid from here.
+                // the editor (ADR-0007). Esc never releases Tab from here.
                 await EndEditingAsync();
                 StateHasChanged();
                 return;
@@ -7778,13 +7778,22 @@
         }
     }
 
-    private async Task LeaveAsync()
+    /// <summary>
+    /// Escape's way out of Enter/Tab cycling (ADR-0012, rewritten 2026-10-01): the gate stops
+    /// claiming the next Tab or Shift+Tab, so the browser moves on to the page's next or previous
+    /// element, and the root keeps DOM focus meanwhile. Any other key, or a press on the grid,
+    /// ends the release and means what it always means. The release is the gate's bookkeeping, as
+    /// an Inner Popup's Escape is: the core keeps none, since every key after it is answered
+    /// exactly as before. Told before this Escape's answer, so the keys held behind it are
+    /// replayed against it (ADR-0010).
+    /// </summary>
+    private async Task ReleaseTabAsync()
     {
         if (_scrollHandle is null || _disposed)
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("blur");
+            await _scrollHandle.InvokeVoidAsync("releaseTab");
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

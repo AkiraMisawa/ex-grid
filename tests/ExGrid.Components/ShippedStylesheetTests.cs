@@ -466,6 +466,47 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script.Text, @"staleField = field;"));
     }
 
+    [Fact] // ADR-0051 (2026-10-01) / ADR-0021 / ticket 78: the press that gives the Name Box the keyboard selects its whole text, at its release, in the listeners already attached; no focus moved, nothing measured
+    public void ADR0051_the_press_that_gives_the_name_box_the_keyboard_selects_its_text()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        string Body(string name)
+        {
+            var match = Regex.Match(script, @"const " + name + @" = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+            Assert.True(match.Success, $"{name} is not in the module");
+            return match.Value;
+        }
+
+        // This grid's own Name Box, the built-in input or a Chrome's control inside the core's box,
+        // never one of a grid nested in a cell, and only while it takes typing.
+        Assert.Matches(new Regex(@"const ownNameBox = \(element\) => \(element instanceof HTMLInputElement && root !== null\s*&& element\.closest\('\.ex-name-box'\)\?\.closest\('\.ex-grid'\) === root && !element\.readOnly && !element\.disabled\s*\? element : null\);"),
+            script);
+        // The press is noted only when it gives the Name Box the keyboard: a press into it while it
+        // holds DOM focus is the field's own, and places the caret or drags a selection. Any press
+        // takes the first key's mark off.
+        Assert.Matches(new Regex(@"const nameBox = event\.button === 0 && !replaying \? ownNameBox\(event\.target\) : null;\s*nameBoxPressed = nameBox !== document\.activeElement \? nameBox : null;\s*nameBoxSelected = null;"),
+            Body("onPress"));
+        // Its release selects the whole text, once the browser has given the field the keyboard,
+        // and takes the release's default, which would put the caret back where the press landed.
+        Assert.Matches(new Regex(@"const nameBox = nameBoxPressed;\s*nameBoxPressed = null;\s*if \(nameBox !== null && event\.button === 0 && !replaying && document\.activeElement === nameBox\) \{\s*event\.preventDefault\(\);\s*nameBox\.select\(\);\s*nameBoxSelected = nameBox;\s*\}"),
+            Body("onRelease"));
+        // A render that renames it before the first key writes over the selection: that key, an
+        // IME's first composing key included, selects the whole name again. Any key takes the mark
+        // off, and so does an input that came without a key.
+        var key = Body("onKeyDown");
+        Assert.Matches(new Regex(@"if \(nameBoxSelected !== null\) \{\s*if \(event\.target === nameBoxSelected\) \{\s*nameBoxSelected\.select\(\);\s*\}\s*nameBoxSelected = null;\s*\}"), key);
+        Assert.True(key.IndexOf("nameBoxSelected.select();", StringComparison.Ordinal) < key.IndexOf("event.isComposing", StringComparison.Ordinal),
+            "the first key's selection must come before the IME's keys are let through");
+        Assert.Matches(new Regex(@"if \(event\.target === nameBoxSelected\) \{\s*nameBoxSelected = null;\s*\}"), Body("onEditorInput"));
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*nameBoxPressed = null;\s*nameBoxSelected = null;", RegexOptions.Singleline), script);
+
+        // Selected in those two places alone, by no listener of its own, and no focus is moved: the
+        // press's default gives the field the keyboard (ADR-0021's three decisions about focus stay three).
+        Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
+        Assert.Equal(3, Regex.Matches(script, @"\.focus\(").Count);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
+    }
+
     [Fact] // ADR-0018 section 6 / ED-27: an edit whose keyboard is elsewhere has a 1px outline, from the stylesheet alone, in the token's style and colour
     public void An_edit_whose_keyboard_is_elsewhere_is_drawn_with_a_1px_outline()
     {

@@ -270,7 +270,8 @@ public static class GridKeys
 
         // The way out of Tab's cycle. ADR-0012 says Enter and Tab never leave the
         // selection, which without an exit would trap the keyboard inside the grid —
-        // against ADR-0020's own "the grid is one tab stop".
+        // against ADR-0020's own "the grid is one tab stop". With nothing to dismiss it
+        // releases Tab, and the root keeps the keyboard (rewritten 2026-10-01).
         table["Escape"] = new(GridKeyKind.Leave);
 
         // The context menu, from the keyboard (ADR-0036). Both spellings, because the

@@ -176,7 +176,7 @@ for (const chrome of ['builtin', 'mud']) {
 }
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 81, ${chrome})`, async ({ page }) => {
+    test(`a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, ${chrome})`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
         await expect(grid(page)).toHaveAttribute('tabindex', '0');
         const all = await grid(page).getAttribute('aria-rowcount');

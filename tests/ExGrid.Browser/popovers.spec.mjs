@@ -565,7 +565,7 @@ for (const chrome of CHROMES) {
             expect(byEnter).toBe(byOk);
         });
 
-        test('with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 81)', async ({ page }) => {
+        test('with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76)', async ({ page }) => {
             const all = await grid(page).getAttribute('aria-rowcount');
             const popover = grid(page).locator('.ex-popover');
             const values = VALUE_LIST[chrome];

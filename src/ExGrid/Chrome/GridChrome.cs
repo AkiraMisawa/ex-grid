@@ -124,7 +124,7 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// <para><see cref="Apply"/> is OK. It refuses an answer
 /// <see cref="FilterPanelChoices.CanApply"/> says cannot be applied — an <c>In</c> with no
 /// values, nothing ticked — and the panel stands; the panel shows its Apply unavailable
-/// while its answer is that one, as Excel's OK is (ADR-0009, ticket 81).</para>
+/// while its answer is that one, as Excel's OK is (ADR-0009, ticket 76).</para>
 ///
 /// <para><see cref="Clear"/> removes the column's filter and closes. The one popover offers
 /// it as the "clear-filter" command above the panel, so the panels this package and

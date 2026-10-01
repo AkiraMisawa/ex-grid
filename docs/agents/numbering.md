@@ -40,7 +40,8 @@ reserved here.
 |---|---|---|
 | 1–13 | written and run | the thirteenth is Pointing Scope's |
 | 14 | `claude/exsheet-cell-format` | Cell Format, Excel only |
-| 15– | free | reserve one at a time |
+| 15 | `claude/exsheet-ime-and-scaling` | a real Japanese IME, VZ-14 at the current base, and ticket 74's readings asked of Excel |
+| 16– | free | reserve one at a time |
 
 ## Sheet Document versions (`SheetDocument.CurrentVersion`)
 

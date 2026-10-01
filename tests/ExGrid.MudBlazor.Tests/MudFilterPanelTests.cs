@@ -458,7 +458,7 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal("(Select All Search Results)", cut.Find(".mud-ex-grid-filter-all").TextContent.Trim());
     }
 
-    [Fact] // WR-2 / ADR-0009/0023 (ticket 81): with nothing ticked Apply is unavailable, and the submit Enter makes applies nothing
+    [Fact] // WR-2 / ADR-0009/0023 (ticket 76): with nothing ticked Apply is unavailable, and the submit Enter makes applies nothing
     public async Task Nothing_ticked_cannot_be_applied()
     {
         var cut = RenderPanel(Context());
@@ -471,7 +471,7 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Empty(_applied);
     }
 
-    [Fact] // WR-2 / FL-10 (ticket 81): a search with no chosen value among its matches is nothing to apply — SRV-5's "Alpha " and its Enter
+    [Fact] // WR-2 / FL-10 (ticket 76): a search with no chosen value among its matches is nothing to apply — SRV-5's "Alpha " and its Enter
     public async Task A_search_with_nothing_chosen_among_its_matches_cannot_be_applied()
     {
         var cut = RenderPanel(Context());
@@ -483,7 +483,7 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Empty(_applied);
     }
 
-    [Fact] // WR-1 / FN-17 (ticket 81): nothing ticked is applied by neither Chrome, and the reference source is never asked to refuse it
+    [Fact] // WR-1 / FN-17 (ticket 76): nothing ticked is applied by neither Chrome, and the reference source is never asked to refuse it
     public async Task Nothing_ticked_is_applied_by_neither_chrome()
     {
         foreach (var chrome in new IGridChrome?[] { null, MudGridChrome.Default })

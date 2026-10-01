@@ -299,8 +299,8 @@ public class FilterChromeTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Escape", false, false, false, false, false));
 
         Assert.Empty(cut.FindAll(".ex-popover"));
-        // The grid was not blurred: Escape's Leave only fires with nothing to dismiss.
-        Assert.False(Js.BlurCount > 0);
+        // Tab was not released: Escape's Leave only fires with nothing to dismiss.
+        Assert.False(Js.TabReleases > 0);
     }
 
     [Fact] // Escape works from inside the popover too: the capture listener forwards a
@@ -315,8 +315,8 @@ public class FilterChromeTests : GridTestContext
             fromDescendant: true));
 
         Assert.Empty(cut.FindAll(".ex-popover"));
-        // Reclaimed, not blurred: the way out of the popover leads back to the grid.
-        Assert.False(Js.BlurCount > 0);
+        // Reclaimed, Tab not released: the way out of the popover leads back to the grid.
+        Assert.False(Js.TabReleases > 0);
     }
 
     [Fact] // Clicking past an open popover dismisses it, as menus close everywhere else
@@ -473,7 +473,7 @@ public class FilterChromeTests : GridTestContext
         Assert.Equal(["Gamma"], AppliedValues(source));
     }
 
-    // ---- Nothing ticked (ticket 81): an In with no values keeps nothing, and the engine
+    // ---- Nothing ticked (ticket 76): an In with no values keeps nothing, and the engine
     // refuses it (ADR-0023). No panel applies it, and OK shows it is unavailable, as Excel's.
 
     private IRenderedComponent<ExGrid<TestRow>> RenderOverReference(InMemoryGridSource<TestRow> source)
@@ -487,7 +487,7 @@ public class FilterChromeTests : GridTestContext
     private static IElement Ok(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.FindAll(".ex-popover-actions button").Single(b => b.TextContent == "OK");
 
-    [Fact] // ADR-0009/0023 (ticket 81): with nothing ticked OK is unavailable, and neither OK nor Enter hands the engine the In it refuses
+    [Fact] // ADR-0009/0023 (ticket 76): with nothing ticked OK is unavailable, and neither OK nor Enter hands the engine the In it refuses
     public async Task Nothing_ticked_is_not_applied()
     {
         var source = GridSource.From(TestRows.Window());
@@ -507,7 +507,7 @@ public class FilterChromeTests : GridTestContext
         Assert.True(Ok(cut).HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0009/0023 / FL-10 (ticket 81): a search with no chosen value among its matches is nothing to apply — SRV-5's "Alpha " and its Enter
+    [Fact] // ADR-0009/0023 / FL-10 (ticket 76): a search with no chosen value among its matches is nothing to apply — SRV-5's "Alpha " and its Enter
     public async Task A_search_with_nothing_chosen_among_its_matches_is_not_applied()
     {
         var source = GridSource.From(TestRows.Window());
@@ -527,7 +527,7 @@ public class FilterChromeTests : GridTestContext
         Assert.False(Ok(cut).HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0009 / FL-9 (ticket 81): a list in force that the domain no longer shows opens with nothing ticked, and OK is unavailable
+    [Fact] // ADR-0009 / FL-9 (ticket 76): a list in force that the domain no longer shows opens with nothing ticked, and OK is unavailable
     public async Task A_list_in_force_outside_the_domain_opens_with_nothing_to_apply()
     {
         var source = PushedSource();
@@ -548,7 +548,7 @@ public class FilterChromeTests : GridTestContext
         Assert.True(Ok(cut).HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0009/0023 / FN-17 (ticket 81): an In with no values handed to the context's Apply by a substituted panel is refused by the core, and the panel stands
+    [Fact] // ADR-0009/0023 / FN-17 (ticket 76): an In with no values handed to the context's Apply by a substituted panel is refused by the core, and the panel stands
     public async Task The_core_refuses_an_in_with_no_values_from_any_chrome()
     {
         var source = PushedSource();

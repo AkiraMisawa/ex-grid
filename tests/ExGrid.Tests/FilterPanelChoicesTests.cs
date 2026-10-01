@@ -52,7 +52,7 @@ public class FilterPanelChoicesTests
         Assert.False(FilterPanelChoices.CanApply(spec));
     }
 
-    [Fact] // ADR-0009/0023 (ticket 81): a search with no chosen value among its matches cannot be applied either
+    [Fact] // ADR-0009/0023 (ticket 76): a search with no chosen value among its matches cannot be applied either
     public void A_search_with_nothing_chosen_among_its_matches_cannot_be_applied()
     {
         var everything = new HashSet<object?>(Domain.Values);
@@ -65,7 +65,7 @@ public class FilterPanelChoicesTests
             Domain, new HashSet<object?>(["Beta", "Gamma"]), TextOf, search: "alp", addToCurrent: false, current: null)));
     }
 
-    [Fact] // ADR-0009 / FL-13 (ticket 81): added to the filter in force, a search with nothing chosen applies that filter, so it can be applied
+    [Fact] // ADR-0009 / FL-13 (ticket 76): added to the filter in force, a search with nothing chosen applies that filter, so it can be applied
     public void Adding_nothing_to_the_filter_in_force_can_be_applied()
     {
         var spec = FilterPanelChoices.FromValueList(

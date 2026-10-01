@@ -34,7 +34,7 @@ public abstract class SheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handOff", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
@@ -47,6 +47,11 @@ public abstract class SheetTestContext : BunitContext
 
     /// <summary>Where the grid told its key gate the keyboard is going, in order (ADR-0050 item 16, 2026-10-01).</summary>
     internal IReadOnlyList<string> HandOffs => [.. _handle.Invocations["handOff"].Select(i => (string)i.Arguments[0]!)];
+
+    /// <summary>How many times Escape with nothing to dismiss has told the gate to release Tab
+    /// (ADR-0012, rewritten 2026-10-01). The handle has no blur: a call to one fails the strict
+    /// stub.</summary>
+    internal int TabReleases => JSInterop.Invocations.Count(i => i.Identifier == "releaseTab");
 
     /// <summary>Renders an ExSheet as a connected, interactive component.</summary>
     internal IRenderedComponent<SheetComponent> RenderSheet(Action<ComponentParameterCollectionBuilder<SheetComponent>>? parameters = null)
