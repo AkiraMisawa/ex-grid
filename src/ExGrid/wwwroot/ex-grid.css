@@ -241,18 +241,21 @@
    a cell without lines, so it also lies over a neighbour's Fill covering the gridline this cell
    holds (--ex-cover-r, --ex-cover-b) — in a group or total row that neighbour wears the same
    tint, and a total row's rule runs on across the gridline — and beneath those the column rule,
-   an inset shadow everywhere else, which would lie over the lines. All of it lies over the cell's
+   an inset shadow everywhere else, which would lie over the lines. Last, the row's rule, where a
+   cell whose own ground hides the row's names it in --ex-row-rule (ExSheet's Pinned Column cells
+   do): beneath the covers too, as a Fill covers a gridline. All of it lies over the cell's
    own Fill, its background colour. Declared after Row Kind, whose rules paint the tint alone, and
    before the Cell States, so a Modified cell's mark still wins its box-shadow; Missing's rule
    leaves a lined cell's layers to this one. */
 .ex-cell.ex-lined {
     background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
         var(--ex-tint, none), var(--ex-cover-r, none), var(--ex-cover-b, none),
-        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0);
+        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0),
+        var(--ex-row-rule, none);
     background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
-        100% 100%, 100% 100%, 100% 100%, 100% 100%;
+        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
     background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
-        0 0, 0 0, 0 0, 0 0;
+        0 0, 0 0, 0 0, 0 0, 0 0;
     background-repeat: no-repeat;
     background-origin: border-box;
     box-shadow: none;

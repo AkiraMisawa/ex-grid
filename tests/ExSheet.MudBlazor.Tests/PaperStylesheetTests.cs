@@ -8,7 +8,8 @@ namespace ExSheet.MudBlazor.Tests;
 /// <c>--ex-sheet-paper</c> and <c>--ex-sheet-ink</c>, white and black in every scheme. ExSheet's own
 /// stylesheet gives them those defaults and nothing that follows the scheme; neither MudBlazor
 /// package maps them onto a palette, so a dark MudBlazor theme darkens the frame and never the Paper.
-/// Read from the repository's stylesheets, as SH-39 says: inspect.
+/// The gridlines on the Paper are read here too. Read from the repository's stylesheets, as SH-39
+/// says: inspect.
 /// </summary>
 public class PaperStylesheetTests
 {
@@ -32,6 +33,19 @@ public class PaperStylesheetTests
     [Fact] // SH-39 / ADR-0071: ExSheet.MudBlazor's stylesheet neither sets nor reads the Paper tokens
     public void The_sheet_chromes_stylesheet_leaves_the_paper_alone() =>
         Assert.DoesNotMatch(PaperToken, Stylesheet("src", "ExSheet.MudBlazor", "wwwroot", "mud-ex-sheet.css"));
+
+    [Fact] // ADR-0071 / ADR-0050 item 15 (ticket 90): a Pinned Column's cell names its row gridline in --ex-row-rule and paints it from there, so a cell that draws lines (.ex-lined) keeps it beneath them
+    public void A_pinned_cells_gridline_is_named_for_the_line_layer()
+    {
+        var css = Regex.Replace(Stylesheet("src", "ExSheet", "wwwroot", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var rule = Assert.Single(Regex.Matches(css, @"(?<selector>[^{}]*\.ex-pinned\b[^{}]*)\{(?<body>[^{}]*)\}"));
+        var body = rule.Groups["body"].Value;
+
+        // Unless the cell's own Fill covers it, as a Fill covers its gridlines.
+        Assert.Contains(":not([class*=\" ex-fill-\"])", rule.Groups["selector"].Value, StringComparison.Ordinal);
+        Assert.Matches(@"--ex-row-rule\s*:\s*linear-gradient\(to top, var\(--ex-row-rule-color\) 0 var\(--ex-rule-width, 1px\)", body);
+        Assert.Matches(@"background-image\s*:\s*var\(--ex-row-rule\)\s*;", body);
+    }
 
     [Fact] // SH-39 / ADR-0071: ExSheet's stylesheet defaults the Paper to Excel's white and the Ink to Excel's black, the same in every scheme
     public void The_paper_and_the_ink_default_to_white_and_black_in_every_scheme()

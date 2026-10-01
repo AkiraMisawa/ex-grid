@@ -185,3 +185,32 @@ test('SH-39: setting --ex-sheet-paper and --ex-sheet-ink changes the Paper and t
     // A recorded colour stays as recorded.
     expect(await colourOf(cell(grid, 'A1'), 'color')).toEqual([255, 0, 0]);
 });
+
+const GRIDLINE = [0xe0, 0xe0, 0xe0];
+const YELLOW = [255, 255, 0];
+
+for (const [chrome, query] of CHROMES) {
+    test(`SH-39 (${chrome} Chrome): a pinned cell that draws a line layer keeps its row gridline beneath it (ADR-0071, ADR-0050 item 15, ticket 90)`, async ({ page }) => {
+        // /sheet pins column A. In case 4, B2 is yellow, and its Fill covers its left gridline, which
+        // A2 holds: A2 paints that cover as a layer (.ex-lined), as it would a line of its own.
+        await openCase(page, '4', 'light', query);
+        const grid = sheet(page);
+        const a2 = cell(grid, 'A2');
+        await expect(a2).toHaveClass(/\bex-pinned\b/);
+        await expect(a2).toHaveClass(/\bex-lined\b/);
+        await expect(cell(grid, 'A1')).not.toHaveClass(/\bex-lined\b/);
+
+        const box = await a2.boundingBox();
+        const above = await cell(grid, 'A1').boundingBox();
+        const region = await painted(page, { x: box.x, y: above.y, width: box.width, height: box.y + box.height - above.y });
+        const middle = box.x + box.width / 2;
+        const lastRow = (b) => b.y + b.height - 0.5;
+        // A1 draws no layer: its own gridline, as ticket 48 painted it.
+        expect(sameColour(region.at(middle, lastRow(above)), GRIDLINE, 2), `A1's row gridline (${region.at(middle, lastRow(above))})`).toBe(true);
+        // A2 keeps its row gridline beneath the layer, where it held only the Paper before.
+        expect(sameColour(region.at(middle, lastRow(box)), GRIDLINE, 2), `A2's row gridline (${region.at(middle, lastRow(box))})`).toBe(true);
+        // The cover is still over A2's right gridline, and the Paper is still the ground above the line.
+        expect(sameColour(region.at(box.x + box.width - 0.5, box.y + box.height / 2), YELLOW, 2), 'B2\'s Fill over the gridline A2 holds').toBe(true);
+        expect(sameColour(region.at(middle, box.y + box.height / 2 - 2), WHITE, 2), 'the Paper inside A2').toBe(true);
+    });
+}

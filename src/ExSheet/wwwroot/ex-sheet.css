@@ -39,9 +39,12 @@
     --ex-column-rule-color: color-mix(in srgb, var(--ex-sheet-ink, #000) 12%, var(--ex-sheet-paper, #fff));
 }
 /* A Pinned Column's cell stands on a ground of its own, which covers the row's gridline beneath it:
-   it paints that gridline itself, unless its Fill covers it. */
+   it paints that gridline itself, unless its Fill covers it. It names the gridline in --ex-row-rule,
+   so that a cell that draws lines (.ex-lined in ex-grid.css, whose layers replace this one) paints
+   it beneath them, and beneath a neighbour's Fill over its edge (ticket 90). */
 :where(.ex-sheet) .ex-pinned:where(:not([class*=" ex-fill-"])) {
-    background-image: linear-gradient(to top, var(--ex-row-rule-color) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
+    --ex-row-rule: linear-gradient(to top, var(--ex-row-rule-color) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
+    background-image: var(--ex-row-rule);
 }
 /* A row not yet painted shows its bar in the Ink, as it would on a light page. */
 :where(.ex-sheet) .ex-placeholder { --ex-placeholder-background: var(--ex-sheet-ink, #000); }
