@@ -24,6 +24,10 @@ Status: ready-for-agent
 
 - [ ] `tests/ExGrid.DemoApi.Tests`: the SQL source's answers equal `PivotSource.From`'s over the
   same trades (PV-22)
-- [ ] Layer 3's configuration starts the server with each host, and CI does the same
+- [x] Layer 3's configuration starts the server with each host, and CI does the same
 
 ## Comments
+
+2026-10-01: The skeleton is in: SQLite trades (money in cents), live updates, the hub, CORS, the
+port convention, `/api/status` and `/api/trades`, and layer 3 and CI start it. The Arrow
+endpoint and the Pivot Source's three endpoints wait for the packages they answer with.

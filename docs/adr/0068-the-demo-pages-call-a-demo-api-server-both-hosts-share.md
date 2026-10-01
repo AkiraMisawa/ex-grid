@@ -86,6 +86,23 @@ Chromes.
 | `/pivot-risk` | A rate-delta report: desks and curves in Rows, tenors in Columns, ordered by an Order Key as ON, TN, 1W, 1M … 30Y |
 | `/grid-live` | ExGrid alone, with no pivot. A live Window, and the server's "trade T100123 changed" notices answering the Change Highlight |
 
+## Refined while building it
+
+*(2026-10-01, when the server was built.)* Three choices the decision above left open were made
+by the build, each for a reason a later reader would otherwise have to re-derive:
+
+- **Each start serves a fresh copy of the generated trades.** The generated file is written once
+  per count and never changed. A running server changes its own copy, so every start begins from
+  the same trades, two servers never change each other's data, and live changes do not survive a
+  restart.
+- **The Source Version names the run as well as the change counter** (`ac21183e-17`). A restart
+  starts the counter again, so the counter alone could name two different states of the data, and
+  an answer computed before a restart would be accepted after it.
+- **The hub allows credentials and the API does not.** SignalR's JavaScript client negotiates with
+  credentials by default, and a browser discards the answer unless it says credentials are
+  allowed. The server has no cookies and no sign-in, so allowing them costs nothing, and pages
+  connect with the client's defaults.
+
 ## Consequences
 
 - **ADR-0019's tree gains `samples/ExGrid.DemoApi`**, a Consumer's server that nothing references.
