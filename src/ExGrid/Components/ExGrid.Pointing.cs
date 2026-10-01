@@ -434,7 +434,7 @@ public partial class ExGrid<TRow>
             {
                 EndPointing();
                 if (_editMode == EditMode.Point)
-                    _editMode = EditMode.Overwrite;
+                    _editMode = ModeAfterPointing;
             }
             RequestCompletion();
         }

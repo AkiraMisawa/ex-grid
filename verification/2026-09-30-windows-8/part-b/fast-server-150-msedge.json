@@ -1,0 +1,3077 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:5298",
+ "label": "server-150",
+ "mode": "fast",
+ "rtt": 150,
+ "started": "2026-09-30T17:48:19.953Z",
+ "cases": [
+  {
+   "case": "1 (fast)",
+   "surface": "cell",
+   "rep": 1,
+   "started": "2026-09-30T17:48:24.015Z",
+   "escapesBefore": 0,
+   "burst": "ok burst keys=30 events=98 ms=55",
+   "valueMs": 255,
+   "colouredMs": 335,
+   "frames": {
+    "sampled": 140,
+    "shown": 74,
+    "wrong": []
+   },
+   "read": {
+    "active": "cell",
+    "editing": true,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 674.21,
+      "w": 99,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 430.77,
+         "t": 678.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 456.94,
+         "t": 678.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 482.09,
+         "t": 678.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 507.9,
+         "t": 678.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 534.84,
+         "t": 678.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 559.06,
+         "t": 678.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 583.03,
+         "t": 678.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 609.77,
+         "t": 678.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 636.84,
+         "t": 678.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 657.71,
+         "t": 678.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 163,
+         "t": 370.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 189.17,
+         "t": 370.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 214.32,
+         "t": 370.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 240.13,
+         "t": 370.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 267.07,
+         "t": 370.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 291.29,
+         "t": 370.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 315.26,
+         "t": 370.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 342,
+         "t": 370.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 369.07,
+         "t": 370.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 389.94,
+         "t": 370.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "outlines": [
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 116.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "A1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 215.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "B1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 314.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "C1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-4",
+      "color": "#007c20",
+      "outline": "solid 2px #007c20 offset -2px",
+      "background": "#007c20/0.1",
+      "box": {
+       "l": 413.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-5",
+      "color": "#b03e84",
+      "outline": "solid 2px #b03e84 offset -2px",
+      "background": "#b03e84/0.1",
+      "box": {
+       "l": 512.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "E1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-6",
+      "color": "#b64900",
+      "outline": "solid 2px #b64900 offset -2px",
+      "background": "#b64900/0.1",
+      "box": {
+       "l": 611.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "F1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-7",
+      "color": "#267392",
+      "outline": "solid 2px #267392 offset -2px",
+      "background": "#267392/0.1",
+      "box": {
+       "l": 710.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 809.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 908.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 1007.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     }
+    ],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+    "positions": [],
+    "completion": null,
+    "d10": ""
+   },
+   "escapesAfter": 1
+  },
+  {
+   "case": "1 (fast)",
+   "surface": "cell",
+   "rep": 2,
+   "started": "2026-09-30T17:48:25.828Z",
+   "escapesBefore": 0,
+   "burst": "ok burst keys=30 events=98 ms=51",
+   "valueMs": 274,
+   "colouredMs": 348,
+   "frames": {
+    "sampled": 142,
+    "shown": 62,
+    "wrong": []
+   },
+   "read": {
+    "active": "cell",
+    "editing": true,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 674.21,
+      "w": 99,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 430.77,
+         "t": 678.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 456.94,
+         "t": 678.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 482.09,
+         "t": 678.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 507.9,
+         "t": 678.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 534.84,
+         "t": 678.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 559.06,
+         "t": 678.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 583.03,
+         "t": 678.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 609.77,
+         "t": 678.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 636.84,
+         "t": 678.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 657.71,
+         "t": 678.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 163,
+         "t": 370.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 189.17,
+         "t": 370.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 214.32,
+         "t": 370.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 240.13,
+         "t": 370.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 267.07,
+         "t": 370.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 291.29,
+         "t": 370.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 315.26,
+         "t": 370.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 342,
+         "t": 370.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 369.07,
+         "t": 370.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 389.94,
+         "t": 370.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "outlines": [
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 116.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "A1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 215.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "B1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 314.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "C1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-4",
+      "color": "#007c20",
+      "outline": "solid 2px #007c20 offset -2px",
+      "background": "#007c20/0.1",
+      "box": {
+       "l": 413.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-5",
+      "color": "#b03e84",
+      "outline": "solid 2px #b03e84 offset -2px",
+      "background": "#b03e84/0.1",
+      "box": {
+       "l": 512.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "E1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-6",
+      "color": "#b64900",
+      "outline": "solid 2px #b64900 offset -2px",
+      "background": "#b64900/0.1",
+      "box": {
+       "l": 611.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "F1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-7",
+      "color": "#267392",
+      "outline": "solid 2px #267392 offset -2px",
+      "background": "#267392/0.1",
+      "box": {
+       "l": 710.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 809.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 908.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 1007.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     }
+    ],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+    "positions": [],
+    "completion": null,
+    "d10": ""
+   },
+   "escapesAfter": 1
+  },
+  {
+   "case": "1 (fast)",
+   "surface": "cell",
+   "rep": 3,
+   "started": "2026-09-30T17:48:27.417Z",
+   "escapesBefore": 0,
+   "burst": "ok burst keys=30 events=98 ms=50",
+   "valueMs": 283,
+   "colouredMs": 338,
+   "frames": {
+    "sampled": 142,
+    "shown": 63,
+    "wrong": []
+   },
+   "read": {
+    "active": "cell",
+    "editing": true,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 674.21,
+      "w": 99,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "visible",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 430.77,
+         "t": 678.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 456.94,
+         "t": 678.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 482.09,
+         "t": 678.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 507.9,
+         "t": 678.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 534.84,
+         "t": 678.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 559.06,
+         "t": 678.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 583.03,
+         "t": 678.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 609.77,
+         "t": 678.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 636.84,
+         "t": 678.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 657.71,
+         "t": 678.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 163,
+         "t": 370.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 189.17,
+         "t": 370.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 214.32,
+         "t": 370.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 240.13,
+         "t": 370.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 267.07,
+         "t": 370.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 291.29,
+         "t": 370.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 315.26,
+         "t": 370.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 342,
+         "t": 370.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 369.07,
+         "t": 370.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 389.94,
+         "t": 370.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "outlines": [
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 116.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "A1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 215.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "B1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 314.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "C1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-4",
+      "color": "#007c20",
+      "outline": "solid 2px #007c20 offset -2px",
+      "background": "#007c20/0.1",
+      "box": {
+       "l": 413.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-5",
+      "color": "#b03e84",
+      "outline": "solid 2px #b03e84 offset -2px",
+      "background": "#b03e84/0.1",
+      "box": {
+       "l": 512.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "E1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-6",
+      "color": "#b64900",
+      "outline": "solid 2px #b64900 offset -2px",
+      "background": "#b64900/0.1",
+      "box": {
+       "l": 611.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "F1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-7",
+      "color": "#267392",
+      "outline": "solid 2px #267392 offset -2px",
+      "background": "#267392/0.1",
+      "box": {
+       "l": 710.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 809.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 908.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 1007.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     }
+    ],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+    "positions": [],
+    "completion": null,
+    "d10": ""
+   },
+   "escapesAfter": 1
+  },
+  {
+   "case": "1 (fast)",
+   "surface": "bar",
+   "rep": 1,
+   "started": "2026-09-30T17:48:29.004Z",
+   "escapesBefore": 0,
+   "barMs": 1,
+   "burst": "ok burst keys=30 events=98 ms=53",
+   "valueMs": 206,
+   "colouredMs": 302,
+   "frames": {
+    "sampled": 127,
+    "shown": 61,
+    "wrong": []
+   },
+   "read": {
+    "active": "bar",
+    "editing": true,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 674.21,
+      "w": 99,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "hidden",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 430.77,
+         "t": 678.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 456.94,
+         "t": 678.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 482.09,
+         "t": 678.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 507.9,
+         "t": 678.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 534.84,
+         "t": 678.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 559.06,
+         "t": 678.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 583.03,
+         "t": 678.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 609.77,
+         "t": 678.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 636.84,
+         "t": 678.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 657.71,
+         "t": 678.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "visible",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 163,
+         "t": 370.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 189.17,
+         "t": 370.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 214.32,
+         "t": 370.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 240.13,
+         "t": 370.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 267.07,
+         "t": 370.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 291.29,
+         "t": 370.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 315.26,
+         "t": 370.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 342,
+         "t": 370.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 369.07,
+         "t": 370.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 389.94,
+         "t": 370.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "outlines": [
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 116.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "A1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 215.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "B1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 314.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "C1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-4",
+      "color": "#007c20",
+      "outline": "solid 2px #007c20 offset -2px",
+      "background": "#007c20/0.1",
+      "box": {
+       "l": 413.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-5",
+      "color": "#b03e84",
+      "outline": "solid 2px #b03e84 offset -2px",
+      "background": "#b03e84/0.1",
+      "box": {
+       "l": 512.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "E1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-6",
+      "color": "#b64900",
+      "outline": "solid 2px #b64900 offset -2px",
+      "background": "#b64900/0.1",
+      "box": {
+       "l": 611.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "F1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-7",
+      "color": "#267392",
+      "outline": "solid 2px #267392 offset -2px",
+      "background": "#267392/0.1",
+      "box": {
+       "l": 710.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 809.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 908.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 1007.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     }
+    ],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+    "positions": [],
+    "completion": null,
+    "d10": ""
+   },
+   "escapesAfter": 1
+  },
+  {
+   "case": "1 (fast)",
+   "surface": "bar",
+   "rep": 2,
+   "started": "2026-09-30T17:48:30.567Z",
+   "escapesBefore": 0,
+   "barMs": 1,
+   "burst": "ok burst keys=30 events=98 ms=54",
+   "valueMs": 195,
+   "colouredMs": 302,
+   "frames": {
+    "sampled": 127,
+    "shown": 61,
+    "wrong": []
+   },
+   "read": {
+    "active": "bar",
+    "editing": true,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 674.21,
+      "w": 99,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "hidden",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 430.77,
+         "t": 678.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 456.94,
+         "t": 678.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 482.09,
+         "t": 678.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 507.9,
+         "t": 678.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 534.84,
+         "t": 678.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 559.06,
+         "t": 678.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 583.03,
+         "t": 678.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 609.77,
+         "t": 678.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 636.84,
+         "t": 678.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 657.71,
+         "t": 678.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "visible",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 163,
+         "t": 370.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 189.17,
+         "t": 370.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 214.32,
+         "t": 370.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 240.13,
+         "t": 370.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 267.07,
+         "t": 370.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 291.29,
+         "t": 370.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 315.26,
+         "t": 370.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 342,
+         "t": 370.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 369.07,
+         "t": 370.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 389.94,
+         "t": 370.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "outlines": [
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 116.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "A1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 215.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "B1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 314.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "C1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-4",
+      "color": "#007c20",
+      "outline": "solid 2px #007c20 offset -2px",
+      "background": "#007c20/0.1",
+      "box": {
+       "l": 413.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-5",
+      "color": "#b03e84",
+      "outline": "solid 2px #b03e84 offset -2px",
+      "background": "#b03e84/0.1",
+      "box": {
+       "l": 512.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "E1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-6",
+      "color": "#b64900",
+      "outline": "solid 2px #b64900 offset -2px",
+      "background": "#b64900/0.1",
+      "box": {
+       "l": 611.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "F1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-7",
+      "color": "#267392",
+      "outline": "solid 2px #267392 offset -2px",
+      "background": "#267392/0.1",
+      "box": {
+       "l": 710.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 809.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 908.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 1007.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     }
+    ],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+    "positions": [],
+    "completion": null,
+    "d10": ""
+   },
+   "escapesAfter": 1
+  },
+  {
+   "case": "1 (fast)",
+   "surface": "bar",
+   "rep": 3,
+   "started": "2026-09-30T17:48:32.122Z",
+   "escapesBefore": 0,
+   "barMs": 1,
+   "burst": "ok burst keys=30 events=98 ms=51",
+   "valueMs": 192,
+   "colouredMs": 317,
+   "frames": {
+    "sampled": 128,
+    "shown": 62,
+    "wrong": []
+   },
+   "read": {
+    "active": "bar",
+    "editing": true,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 413.19,
+      "t": 674.21,
+      "w": 99,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "hidden",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 430.77,
+         "t": 678.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 456.94,
+         "t": 678.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 482.09,
+         "t": 678.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 507.9,
+         "t": 678.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 534.84,
+         "t": 678.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 559.06,
+         "t": 678.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 583.03,
+         "t": 678.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 609.77,
+         "t": 678.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 636.84,
+         "t": 678.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 657.71,
+         "t": 678.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "bar": {
+     "value": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+     "selection": [
+      30,
+      30
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": true,
+     "fill": "#000000/0",
+     "color": "#000000",
+     "layer": {
+      "text": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "drawn": "=A1+B1+C1+D1+E1+F1+G1+H1+I1+J1",
+      "visibility": "visible",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": [
+       {
+        "text": "A1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 163,
+         "t": 370.88,
+         "w": 16.58,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "B1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 189.17,
+         "t": 370.88,
+         "w": 15.57,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "C1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 214.32,
+         "t": 370.88,
+         "w": 16.22,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "D1",
+        "cls": "ex-reference-4",
+        "color": "#007c20",
+        "fill": "#007c20",
+        "background": "#000000/0",
+        "box": {
+         "l": 240.13,
+         "t": 370.88,
+         "w": 17.36,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "E1",
+        "cls": "ex-reference-5",
+        "color": "#b03e84",
+        "fill": "#b03e84",
+        "background": "#000000/0",
+        "box": {
+         "l": 267.07,
+         "t": 370.88,
+         "w": 14.64,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "F1",
+        "cls": "ex-reference-6",
+        "color": "#b64900",
+        "fill": "#b64900",
+        "background": "#000000/0",
+        "box": {
+         "l": 291.29,
+         "t": 370.88,
+         "w": 14.39,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "G1",
+        "cls": "ex-reference-7",
+        "color": "#267392",
+        "fill": "#267392",
+        "background": "#000000/0",
+        "box": {
+         "l": 315.26,
+         "t": 370.88,
+         "w": 17.16,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "H1",
+        "cls": "ex-reference-1",
+        "color": "#326ac7",
+        "fill": "#326ac7",
+        "background": "#000000/0",
+        "box": {
+         "l": 342,
+         "t": 370.88,
+         "w": 17.49,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "I1",
+        "cls": "ex-reference-2",
+        "color": "#c0353e",
+        "fill": "#c0353e",
+        "background": "#000000/0",
+        "box": {
+         "l": 369.07,
+         "t": 370.88,
+         "w": 11.28,
+         "h": 18.67
+        }
+       },
+       {
+        "text": "J1",
+        "cls": "ex-reference-3",
+        "color": "#8157b7",
+        "fill": "#8157b7",
+        "background": "#000000/0",
+        "box": {
+         "l": 389.94,
+         "t": 370.88,
+         "w": 12.55,
+         "h": 18.67
+        }
+       }
+      ]
+     }
+    },
+    "outlines": [
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 116.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "A1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 215.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "B1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 314.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "C1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-4",
+      "color": "#007c20",
+      "outline": "solid 2px #007c20 offset -2px",
+      "background": "#007c20/0.1",
+      "box": {
+       "l": 413.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-5",
+      "color": "#b03e84",
+      "outline": "solid 2px #b03e84 offset -2px",
+      "background": "#b03e84/0.1",
+      "box": {
+       "l": 512.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "E1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-6",
+      "color": "#b64900",
+      "outline": "solid 2px #b64900 offset -2px",
+      "background": "#b64900/0.1",
+      "box": {
+       "l": 611.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "F1 (1 in view)"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-7",
+      "color": "#267392",
+      "outline": "solid 2px #267392 offset -2px",
+      "background": "#267392/0.1",
+      "box": {
+       "l": 710.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-1",
+      "color": "#326ac7",
+      "outline": "solid 2px #326ac7 offset -2px",
+      "background": "#326ac7/0.1",
+      "box": {
+       "l": 809.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-2",
+      "color": "#c0353e",
+      "outline": "solid 2px #c0353e offset -2px",
+      "background": "#c0353e/0.1",
+      "box": {
+       "l": 908.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     },
+     {
+      "cls": "ex-reference-outline ex-reference-3",
+      "color": "#8157b7",
+      "outline": "solid 2px #8157b7 offset -2px",
+      "background": "#8157b7/0.1",
+      "box": {
+       "l": 1007.19,
+       "t": 422.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "none in view"
+     }
+    ],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": "solid 2px #0078d7 offset -0.666667px",
+    "positions": [],
+    "completion": null,
+    "d10": ""
+   },
+   "escapesAfter": 1
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-09-30T17:48:20.915Z",
+   "type": "info",
+   "text": "[2026-09-30T17:48:20.912Z] Information: Normalizing '_blazor' to 'http://localhost:5298/_blazor'."
+  },
+  {
+   "t": "2026-09-30T17:48:20.930Z",
+   "type": "info",
+   "text": "[2026-09-30T17:48:20.930Z] Information: WebSocket connected to ws://localhost:5298/_blazor?id=k0wmvgZJ6gXNm4REy5G0GA."
+  }
+ ],
+ "browserVersion": "154.0.4258.37",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok layout 0x08090809"
+ },
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1578,
+   959
+  ],
+  "forcedColors": false,
+  "dark": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0"
+ },
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 677,
+    "py": 360,
+    "client": {
+     "x": 400,
+     "y": 120
+    }
+   }
+  ]
+ },
+ "roundTripSet": {
+  "status": 200,
+  "now": "rtt=150\n"
+ },
+ "clip": {
+  "x": 28,
+  "y": 362,
+  "width": 1090,
+  "height": 429
+ },
+ "finished": "2026-09-30T17:48:33.726Z"
+}

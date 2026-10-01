@@ -120,8 +120,7 @@ public partial class ExGrid<TRow>
     private void TextTyped(string text) => TextTyped(text, caret: null);
 
     /// <summary>The same, with the caret carried by a key. Typing ends pointing: the outline
-    /// goes, and Point gives way to Overwrite, whose arrows point again wherever the Consumer
-    /// says a Reference can go (ADR-0051).</summary>
+    /// goes, and Point gives way to <see cref="ModeAfterPointing"/>.</summary>
     private void TextTyped(string text, int? caret)
     {
         if (text == _editText)
@@ -135,11 +134,18 @@ public partial class ExGrid<TRow>
         {
             EndPointing();
             if (_editMode == EditMode.Point)
-                _editMode = EditMode.Overwrite;
+                _editMode = ModeAfterPointing;
         }
         RequestCompletion();
         TellConsumerPointState();
     }
+
+    /// <summary>What Point gives way to when typing ends it (ADR-0051): Overwrite, whose arrows
+    /// point again wherever the Consumer says a Reference can go — but Caret while the edit is in
+    /// the Formula Bar, which is never in Overwrite: Excel's bar is always in Edit, and there
+    /// Overwrite's Home and arrows would commit the Formula and move the Focus (ADR-0051,
+    /// 2026-09-30; ED-29).</summary>
+    private EditMode ModeAfterPointing => _editSurface == EditSurface.Bar ? EditMode.Caret : EditMode.Overwrite;
 
     /// <summary>
     /// Hands the current text and caret to the Consumer (ADR-0051). Whatever is showing is

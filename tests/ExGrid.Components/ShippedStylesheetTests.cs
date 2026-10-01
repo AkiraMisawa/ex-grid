@@ -628,6 +628,41 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"\.ex-name-box, \.ex-formula-bar-text, \.ex-reference-text\.ex-reference-text-bar \{ padding: 0 var\(--ex-cell-padding-x, 8px\); \}"), sheet);
     }
 
+    [Fact] // ADR-0057/0029 (2026-09-30) / DC-56: the pointed Reference's text wears one Visual Token per place in the palette, Excel's shade for all seven, the approximation over a dark ground
+    public void DC56_the_pointed_shade_is_one_token_per_place_in_the_palette()
+    {
+        var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+
+        const string towardWhite = "color-mix(in srgb, currentColor 55%, white)";
+        for (var place = 1; place <= Cells.ReferenceColour.PaletteLength; place++)
+        {
+            // Excel's: the first two as Part B of the eighth Windows run read them, the rest the tenth run.
+            var light = place switch
+            {
+                1 => "#0401a2", 2 => "#630101", 3 => "#44007c", 4 => "#003600",
+                5 => "#550059", 6 => "#531c00", _ => "#00323f",
+            };
+            Assert.Contains(
+                $".ex-reference-text .ex-reference-{place}.ex-reference-pointed {{ -webkit-text-fill-color: var(--ex-reference-{place}-pointed, light-dark({light}, {towardWhite})); }}",
+                sheet, StringComparison.Ordinal);
+            // ADR-0058 / SH-34: a Reference inside the XLOOKUP(...) a press on another grid wrote, which
+            // is pointed as a whole, takes the same shade of its own colour.
+            Assert.Contains(
+                $".ex-reference-text .ex-reference-pointed .ex-reference-{place} {{ -webkit-text-fill-color: var(--ex-reference-{place}-pointed, light-dark({light}, {towardWhite})); }}",
+                sheet, StringComparison.Ordinal);
+        }
+        // Those rules alone paint the pointed text: one per place, none past the palette's end.
+        Assert.Equal(Cells.ReferenceColour.PaletteLength,
+            Regex.Matches(sheet, @"\.ex-reference-pointed \{ -webkit-text-fill-color: var\(--ex-reference-\d+-pointed,").Count);
+        Assert.DoesNotContain($"--ex-reference-{Cells.ReferenceColour.PaletteLength + 1}-pointed", sheet, StringComparison.Ordinal);
+
+        // The ground is unchanged, and the one shade for all seven is retired everywhere shipped.
+        Assert.Contains(
+            ".ex-reference-text .ex-reference-pointed { background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b)); }",
+            sheet, StringComparison.Ordinal);
+        Assert.All(ShippedAssets(), asset => Assert.DoesNotContain("--ex-reference-pointed-color", asset.Text, StringComparison.Ordinal));
+    }
+
     [Fact] // ADR-0051 second round / DC-31, ADR-0058 / SH-36: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys, and ← and → too while it is open over Point
     public void The_gate_has_a_point_set_and_a_completion_set()
     {

@@ -9,8 +9,9 @@ namespace ExGrid.Components;
 // keys typed after a press are handed on only once the core has answered it — here: the press
 // may commit an open edit and wait on the Consumer hearing it, and the keys after it must be
 // gated against the mode it leaves, never the one it found. A press into the Formula Bar's text
-// with no edit open is answered the same way: its focus opens an edit (ADR-0051), and the
-// listener holds the keys typed into the bar until that is answered.
+// is answered the same way: its focus opens an edit, or moves one from the cell into the bar in
+// Caret (ADR-0051, ED-29), and the listener holds the keys typed into the bar until that is
+// answered — by then the bar shows the text the cell was typed to (ADR-0021, 2026-10-01).
 public partial class ExGrid<TRow>
 {
     // The press or release on the rows, or the focus a press into the Formula Bar gave it, that
