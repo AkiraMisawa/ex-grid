@@ -220,7 +220,9 @@ public sealed class SnapshotDataReaderBuilder
         if (key is not null)
         {
             var keyField = fields.Find(f => f.Name == key)
-                ?? throw new SnapshotException(null, key, "the Record Key is not a column of the reader.");
+                ?? throw new SnapshotException(null, key, declared.Count == 0
+                    ? "the Record Key is not a column of the reader."
+                    : "the Record Key is not among the columns declared.");
             if (keyField.Kind is not (SnapshotKind.Text or SnapshotKind.Integer))
                 throw new SnapshotException(null, key, $"the reader gives the Record Key as {keyField.Kind}; only a Text or an Integer column can be the Record Key.");
         }

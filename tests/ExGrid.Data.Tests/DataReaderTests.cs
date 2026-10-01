@@ -282,6 +282,9 @@ public class DataReaderTests
             (await Refusal(new SnapshotDataReaderBuilder().Key("Id"), table)).Message);
         Assert.Equal("Column 'Ref': the Record Key is not a column of the reader.",
             (await Refusal(new SnapshotDataReaderBuilder().Key("Ref"), table)).Message);
+        // Named before any column is declared, and then not declared.
+        Assert.Equal("Column 'Id': the Record Key is not among the columns declared.",
+            (await Refusal(new SnapshotDataReaderBuilder().Key("Id").Decimal<decimal>("Id", d => d, name: "Amount"), table)).Message);
         Assert.Throws<ArgumentException>(() => new SnapshotDataReaderBuilder().Decimal<decimal>("Id", d => d).Key("Id"));
         Assert.Throws<ArgumentException>(() => new SnapshotDataReaderBuilder().Column("Id").Key("Other"));
     }
