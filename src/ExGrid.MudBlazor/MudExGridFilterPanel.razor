@@ -122,6 +122,12 @@
         public MudTextField<string>? TextField;
         public MudTextField<string>? NumberField;
         public MudDatePicker? DateField;
+
+        // A date typed into the picker is read by FilterPanelChoices, as the built-in panel reads
+        // it (ticket 97): the text last typed, and the converter the picker reads it through,
+        // made once so that a render hands the picker the same instance.
+        public string? DateText;
+        public OperandDateConverter? DateConverter;
         public MudSelect<bool?>? FlagField;
     }
 
@@ -204,6 +210,8 @@
                                             Error="@NumberReading(state).IsRefused" ErrorText="@NumberRefusal(state)"
                                             Class="mud-ex-grid-filter-operand" />,
         ColumnType.Date => @<MudDatePicker @ref="state.DateField" Date="state.Date" DateChanged="@(v => state.Date = v)" Editable="true"
+                                           Converter="@(state.DateConverter ??= new OperandDateConverter(state))" DateFormat="yyyy-MM-dd"
+                                           Error="@DateReading(state).IsRefused" ErrorText="@DateRefusal(state)"
                                            PickerOpened="() => ReportPopup(true)" PickerClosed="() => ReportPopup(false)"
                                            Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                            Class="mud-ex-grid-filter-operand" />,
@@ -219,6 +227,50 @@
                             Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                             Class="mud-ex-grid-filter-operand" />,
     };
+
+    /// <summary>
+    /// The date field's text, read and written as the built-in panel's is (ADR-0023, ticket 97):
+    /// a date shows in its ISO form, which reads back as itself, and typed text is read by
+    /// <see cref="FilterPanelChoices.ReadOperand"/> in the current culture — ticket 94's ISO forms
+    /// exactly, anything else in the culture alone. A refused text is no date, and the field shows
+    /// why. MudBlazor's own reading was the invariant culture's, under which <c>05/01/2026</c> is
+    /// 1 May whatever the user's culture. The picker needs a <c>DateFormat</c> beside the
+    /// converter: without one it writes a date in the culture's short form, never asking the
+    /// converter.
+    /// </summary>
+    private sealed class OperandDateConverter(OperandState state) : IReversibleConverter<DateTime?, string>
+    {
+        // The day alone at midnight, the day and time otherwise: both ISO forms read back exactly.
+        public string Convert(DateTime? value) => value switch
+        {
+            null => "",
+            { TimeOfDay.Ticks: 0 } day => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            { } date => FilterPanelChoices.OperandText(date, CultureInfo.CurrentCulture),
+        };
+
+        public DateTime? ConvertBack(string value)
+        {
+            state.DateText = value;
+            return DateReading(state).Value as DateTime?;
+        }
+    }
+
+    /// <summary>A condition's date as FilterPanelChoices reads the text last typed into the picker;
+    /// nothing typed reads as no refusal.</summary>
+    private static OperandReading DateReading(OperandState state)
+        => FilterPanelChoices.ReadOperand(ColumnType.Date, state.DateText ?? "", CultureInfo.CurrentCulture);
+
+    /// <summary>Why a condition's date is refused: the Chrome's word for it where it has one, and
+    /// otherwise what was typed and why, in the core's English. Null where it reads.</summary>
+    private string? DateRefusal(OperandState state)
+    {
+        var reading = DateReading(state);
+        if (!reading.IsRefused)
+            return null;
+        var id = reading.Refusal == OperandRefusal.ReadsTwoWays ? MudExGridWords.OperandReadsTwoWays : MudExGridWords.OperandNotReadable;
+        return Chrome.Label?.Invoke(id)
+            ?? FilterPanelChoices.RefusalText(reading, state.DateText ?? "", CultureInfo.CurrentCulture);
+    }
 
     /// <summary>A condition's number as FilterPanelChoices reads it, in the current culture —
     /// the reading the built-in panel takes (ADR-0023; ticket 96).</summary>
