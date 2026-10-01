@@ -287,6 +287,20 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>
+    /// The currency symbol Excel shows under <paramref name="culture"/>: the culture's own, with
+    /// the one difference the runs found between the data .NET reads and Windows' regional
+    /// settings. Windows' ja-JP symbol, which Excel shows (the eleventh Windows run, case 20), is
+    /// the yen sign U+00A5. The ICU data .NET reads on Linux (Ubuntu 24.04's) gives the full-width
+    /// U+FFE5, and macOS's gives U+00A5, so a Sheet's text would differ by the machine it ran on.
+    /// Windows' sign is taken everywhere.
+    /// </summary>
+    public static string CurrencySymbolOf(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        return culture.NumberFormat.CurrencySymbol.Replace('\uFFE5', '\u00A5');
+    }
+
+    /// <summary>
     /// The built-in currency format as Excel spells it under <paramref name="culture"/>, built from
     /// the culture's currency symbol and where it puts the symbol and the sign, as Windows' regional
     /// settings give Excel the same three: <c>£#,##0.00;[Red]-£#,##0.00</c> under en-GB and
@@ -298,9 +312,10 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     private static string LocalCurrencyCode(CultureInfo culture, bool decimals)
     {
         var info = culture.NumberFormat;
-        var symbol = info.CurrencySymbol.All(c => char.GetUnicodeCategory(c) == UnicodeCategory.CurrencySymbol)
-            ? info.CurrencySymbol
-            : "\"" + info.CurrencySymbol.Replace("\"", "", StringComparison.Ordinal) + "\"";
+        var currencySymbol = CurrencySymbolOf(culture);
+        var symbol = currencySymbol.All(c => char.GetUnicodeCategory(c) == UnicodeCategory.CurrencySymbol)
+            ? currencySymbol
+            : "\"" + currencySymbol.Replace("\"", "", StringComparison.Ordinal) + "\"";
         var n = decimals ? "#,##0.00" : "#,##0";
         // Windows' regional default for en-US writes a negative amount in parentheses, and Excel
         // follows it (case 20: $#,##0.00_);[Red]($#,##0.00)). .NET's ICU data writes it with a

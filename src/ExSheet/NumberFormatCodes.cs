@@ -52,7 +52,7 @@ internal static class NumberFormatCodes
     /// <summary>The Currency category's code, with the culture's symbol on the side and at the distance the culture puts it.</summary>
     public static string Currency(int places, int negative, CultureInfo culture)
     {
-        var body = Symbolised(Digits(places, separator: true), culture.NumberFormat);
+        var body = Symbolised(Digits(places, separator: true), culture);
         return negative switch
         {
             0 => body,
@@ -75,11 +75,13 @@ internal static class NumberFormatCodes
     /// symbol of currency signs alone (<c>$</c>, <c>£</c>, <c>¥</c>, <c>€</c>) is written as it is,
     /// as Excel writes it; any other is quoted, so its letters are not read as codes.
     /// </summary>
-    private static string Symbolised(string digits, NumberFormatInfo format)
+    private static string Symbolised(string digits, CultureInfo culture)
     {
-        var symbol = format.CurrencySymbol.All(c => char.GetUnicodeCategory(c) == UnicodeCategory.CurrencySymbol)
-            ? format.CurrencySymbol
-            : "\"" + format.CurrencySymbol.Replace("\"", "", StringComparison.Ordinal) + "\"";
+        var format = culture.NumberFormat;
+        var currencySymbol = NumberFormat.CurrencySymbolOf(culture);
+        var symbol = currencySymbol.All(c => char.GetUnicodeCategory(c) == UnicodeCategory.CurrencySymbol)
+            ? currencySymbol
+            : "\"" + currencySymbol.Replace("\"", "", StringComparison.Ordinal) + "\"";
         return format.CurrencyPositivePattern switch
         {
             1 => digits + symbol,

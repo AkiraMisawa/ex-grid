@@ -287,4 +287,13 @@ public class CultureTests
         Assert.Equal(1.5, reopened.GetValue(CellAddress.Parse("A1"))!.Value.Number);
         Assert.Equal("1,5", reopened.GetDisplay(CellAddress.Parse("A1")).Text);
     }
+
+    [Fact] // ADR-0071 (the eleventh Windows run, case 20): ja-JP's symbol is Windows' yen sign, U+00A5, whatever ICU data the machine holds
+    public void The_ja_JP_currency_symbol_is_the_yen_sign_on_every_platform()
+    {
+        var culture = (CultureInfo)CultureInfo.GetCultureInfo("ja-JP").Clone();
+        culture.NumberFormat.CurrencySymbol = "\uFFE5";
+
+        Assert.Equal("\u00A5", NumberFormat.CurrencySymbolOf(culture));
+    }
 }

@@ -101,7 +101,7 @@ public sealed class FormatCellsDraft
     };
 
     /// <summary>The Sheet culture's currency symbol, which Currency writes.</summary>
-    public string CurrencySymbol => _culture.NumberFormat.CurrencySymbol;
+    public string CurrencySymbol => NumberFormat.CurrencySymbolOf(_culture);
 
     /// <summary>Whether the chosen category takes decimal places.</summary>
     public bool TakesDecimalPlaces => Category is NumberFormatCategory.Number or NumberFormatCategory.Currency
