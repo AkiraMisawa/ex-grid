@@ -109,31 +109,170 @@ internal sealed class PartColumns
             Array.Copy(other.Variances!, Variances, count);
     }
 
-    // ---- One record's value ------------------------------------------------------------------
-
-    /// <summary>Folds one record's value into a cell (ADR-0059): a Blank is not counted; a number
-    /// of any integral type or <c>decimal</c> is exact; a <c>double</c> or <c>float</c> is not,
-    /// and a non-finite one makes the cell <c>#NUM!</c>; text, a Boolean and a date are counted and
-    /// are never a number.</summary>
-    public void Add(int cell, object? value)
+    /// <summary>Cell <paramref name="from"/> of <paramref name="other"/>, which holds at least these
+    /// parts, as this one's cell <paramref name="cell"/>.</summary>
+    public void CopyCell(int cell, PartColumns other, int from)
     {
-        switch (value)
+        Counts[cell] = other.Counts[from];
+        if (Sums is not null)
+            Sums[cell] = other.Sums![from];
+        if (Extremes is not null)
+            Extremes[cell] = other.Extremes![from];
+        if (Products is not null)
+            Products[cell] = other.Products![from];
+        if (Variances is not null)
+            Variances[cell] = other.Variances![from];
+    }
+
+    /// <summary>A cell back to no value at all, as a new cell starts.</summary>
+    public void ResetCell(int cell)
+    {
+        Counts[cell] = default;
+        if (Sums is not null)
+            Sums[cell] = default;
+        if (Extremes is not null)
+            Extremes[cell] = default;
+        if (Products is not null)
+            Products[cell] = 0;
+        if (Variances is not null)
+            Variances[cell] = default;
+    }
+
+    /// <summary>
+    /// Writes each exact sum and exact extreme of the first <paramref name="count"/> cells without
+    /// trailing zeros (ADR-0063: a Decimal is a value, not the scale it was written with). A sum
+    /// folded from segments at different scales then reads alike however it was made, and a
+    /// batch folded in leaves it as a fresh aggregation would.
+    /// </summary>
+    public void Canonicalize(int count)
+    {
+        if (Sums is not null)
         {
-            case null: return;
-            case decimal m: AddExact(cell, m); return;
-            case int i: AddExact(cell, i); return;
-            case long l: AddExact(cell, l); return;
-            case short s: AddExact(cell, s); return;
-            case byte b: AddExact(cell, b); return;
-            case sbyte s: AddExact(cell, s); return;
-            case uint u: AddExact(cell, u); return;
-            case ulong u: AddExact(cell, u); return;
-            case ushort u: AddExact(cell, u); return;
-            case double d: AddDouble(cell, d); return;
-            case float f: AddDouble(cell, f); return;
-            default: AddOther(cell); return;
+            for (var i = 0; i < count; i++)
+            {
+                ref var sum = ref Sums[i];
+                if (!sum.Inexact)
+                    sum.Exact = Exactly.Canonical(sum.Exact);
+            }
+        }
+        if (Extremes is not null)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                ref var extremes = ref Extremes[i];
+                if (!extremes.Inexact)
+                {
+                    extremes.ExactMin = Exactly.Canonical(extremes.ExactMin);
+                    extremes.ExactMax = Exactly.Canonical(extremes.ExactMax);
+                }
+            }
         }
     }
+
+    // ---- Exact numbers a segment at a time -------------------------------------------------------
+
+    /// <summary>
+    /// Folds a segment's exact numbers at a cell into it (ADR-0059/0063): <paramref name="numbers"/>
+    /// of them, summing to <paramref name="sum"/>, the smallest <paramref name="min"/> and the
+    /// largest <paramref name="max"/>. The sum stays exact until it cannot: then it is a
+    /// <c>double</c>, Excel's own arithmetic. Only the parts this holds are folded.
+    /// </summary>
+    public void FoldExact(int cell, int numbers, decimal sum, decimal min, decimal max)
+    {
+        ref var counts = ref Counts[cell];
+        var first = counts.Numbers == 0;
+        counts.Values += numbers;
+        counts.Numbers += numbers;
+        if (Sums is not null)
+            AddToExactSum(ref Sums[cell], sum);
+        if (Extremes is not null)
+        {
+            ref var extremes = ref Extremes[cell];
+            if (first)
+            {
+                extremes.ExactMin = min;
+                extremes.ExactMax = max;
+            }
+            else if (extremes.Inexact)
+            {
+                AddToDoubleExtremes(ref extremes, (double)min);
+                AddToDoubleExtremes(ref extremes, (double)max);
+            }
+            else
+            {
+                if (min < extremes.ExactMin)
+                    extremes.ExactMin = min;
+                if (max > extremes.ExactMax)
+                    extremes.ExactMax = max;
+            }
+        }
+    }
+
+    /// <summary>Folds one exact number into the parts kept in <c>double</c> — the product and the
+    /// running variance — as the <c>double</c> it converts to; <paramref name="count"/> is the
+    /// cell's numbers with this one. The counts and the exact parts are folded a segment at a time
+    /// (<see cref="FoldExact"/>).</summary>
+    public void AddInexactParts(int cell, double value, long count)
+    {
+        if (Products is not null)
+            Products[cell] = count == 1 ? value : Products[cell] * value;
+        if (Variances is not null)
+            AddToVariance(ref Variances[cell], value, count);
+    }
+
+    /// <summary>Adds part of a segment's exact sum at a cell, without counting anything — the sum
+    /// of a run that would have passed a 64-bit integer.</summary>
+    public void AddToExactSum(int cell, decimal partial) => AddToExactSum(ref Sums![cell], partial);
+
+    /// <summary>
+    /// Takes one exact number back out of a cell — a Change Batch removed its record (ADR-0066).
+    /// Only a cell whose parts are the counts and an exact sum can be: false, and nothing changed,
+    /// when the sum is a <c>double</c> or would leave <c>decimal</c>'s range, or the cell carries
+    /// any other part; the cell is then recomputed from its records.
+    /// </summary>
+    public bool TrySubtractExact(int cell, decimal value)
+    {
+        if (Extremes is not null || Products is not null || Variances is not null)
+            return false;
+        if (Sums is not null)
+        {
+            ref var sum = ref Sums[cell];
+            if (sum.Inexact)
+                return false;
+            try
+            {
+                sum.Exact -= value;
+            }
+            catch (OverflowException)
+            {
+                return false;
+            }
+        }
+        ref var counts = ref Counts[cell];
+        counts.Values--;
+        counts.Numbers--;
+        return true;
+    }
+
+    private static void AddToExactSum(ref SumPart sum, decimal partial)
+    {
+        if (sum.Inexact)
+        {
+            Neumaier(ref sum, (double)partial);
+            return;
+        }
+        try
+        {
+            sum.Exact += partial;
+        }
+        catch (OverflowException)
+        {
+            ToDouble(ref sum);
+            Neumaier(ref sum, (double)partial);
+        }
+    }
+
+    // ---- One record's value ------------------------------------------------------------------
 
     // The three typed ways in, which a reader of typed columns calls without boxing a value.
 

@@ -174,6 +174,11 @@ public sealed record PivotSlicing
     /// a browser, so that it can paint, and <c>Task.Yield()</c> elsewhere.</summary>
     public Func<CancellationToken, ValueTask>? Yield { get; init; }
 
+    /// <summary>Told how many rows each step of a question read — for layer 1, which holds a
+    /// question to the rows it reads (a cancelled one stops at the next slice; one refused for its
+    /// leaves stops at the row that passed the cap).</summary>
+    internal Action<long>? RowsRead { get; init; }
+
     internal ValueTask YieldAsync(CancellationToken cancellationToken)
         => Yield is { } yield ? yield(cancellationToken) : PlatformYield(cancellationToken);
 

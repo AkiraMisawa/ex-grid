@@ -225,7 +225,7 @@ public sealed class PivotAnswerValues
 /// Builds a <see cref="PivotAnswer"/> leaf by leaf — for a Consumer's server that computes the
 /// Leaf Aggregates itself, from SQL's <c>GROUP BY</c> for instance (ADR-0065). A leaf is added
 /// with its Items and its record count, then each field in Values is given its counts and the
-/// parts the question asked for. Such a server is held to <see cref="PivotSource.From{TRecord}"/>'s
+/// parts the question asked for. Such a server is held to <see cref="PivotSource.From(ExGrid.Data.Snapshot, IReadOnlyList{PivotField}?, PivotSlicing?)"/>'s
 /// answers by tests that ask both the same questions.
 /// </summary>
 public sealed class PivotAnswerBuilder

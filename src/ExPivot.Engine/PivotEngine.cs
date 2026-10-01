@@ -11,7 +11,7 @@ namespace ExPivot.Engine;
 ///
 /// <para><see cref="Aggregate{TRecord}"/> and <see cref="Compute{TRecord}"/> run the whole path over
 /// records in memory on the calling thread, through the bundled source
-/// (<see cref="PivotSource.From{TRecord}"/>).</para>
+/// (<see cref="PivotSource.From{TRecord}(IReadOnlyList{TRecord}, IReadOnlyList{PivotField{TRecord}}, PivotSlicing?)"/>).</para>
 /// </summary>
 public static class PivotEngine
 {

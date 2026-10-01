@@ -3,17 +3,28 @@
   <PropertyGroup>
     <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
     <TargetFramework>net10.0</TargetFramework>
-    <Description>The pivot engine of ExPivot: Source Records aggregated under a serialisable Pivot Layout into a Pivot Report, with Excel's PivotTable semantics — Items, Hidden Items, Sum to Varp, subtotals, grand totals, the three report forms and Show Values As. No UI and no dependency: a server computes the same report the screen shows.</Description>
+    <Description>The pivot engine of ExPivot: a Snapshot's columns aggregated under a serialisable Pivot Layout into a Pivot Report, with Excel's PivotTable semantics — Items, Hidden Items, Sum to Varp with money summed exactly, subtotals, grand totals, the three report forms and Show Values As — and the bundled Pivot Source, which folds live Change Batches in. No UI: a server computes the same report the screen shows.</Description>
     <PackageTags>pivot;pivottable;excel;aggregation;report</PackageTags>
   </PropertyGroup>
 
-  <!-- No package and no project references, deliberately (ADR-0058/0059): the engine runs
-       wherever a report is needed, a server included, and is the reference a server-side
-       answer is held to. -->
+  <!-- One reference, to the family's data package, and no package (ADR-0058/0063, PV-1): the
+       engine reads Snapshots, and runs wherever a report is needed, a server included. -->
+  <ItemGroup>
+    <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
-    <!-- Layer 1 reaches the cell index's hash, which has no public surface (ADR-0065). -->
+    <!-- Layer 1 reaches the cell index's hash and the slices' row counter, which have no public
+         surface (ADR-0065). -->
     <InternalsVisibleTo Include="ExPivot.Engine.Tests" />
   </ItemGroup>
+
+  <!-- The engine depends on exactly the ExGrid.Data it was built with (PV-1), as ExPivot depends
+       on exactly its engine: a Snapshot's layout is that version's. -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
 
 </Project>

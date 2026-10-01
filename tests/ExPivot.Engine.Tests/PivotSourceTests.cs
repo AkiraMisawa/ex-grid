@@ -220,6 +220,9 @@ public class PivotSourceTests
         Assert.Equal(2, yields);
     }
 
+    // Rewritten with ADR-0063/0065 when the engine moved onto the Snapshot: the records are read
+    // once, into a Snapshot, and a question reads the Snapshot's rows, so it is the rows a question
+    // reads that are counted — through the slicing's own counter — where the accessor's calls were.
     [Fact] // ADR-0065 (PV-27): a cancelled question stops at the next slice, and reads nothing more
     public async Task A_cancelled_question_stops_at_the_next_slice()
     {
@@ -230,7 +233,7 @@ public class PivotSourceTests
                      (source, version, token) => source.DetailsAsync(new PivotDetailsQuery(version, rowItems: [new("Desk", PivotItemKey.Text("FX"))]), token).AsTask(),
                  })
         {
-            var read = 0;
+            long read = 0;
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(Ct);
             var armed = false;
             var slicing = new PivotSlicing
@@ -244,8 +247,9 @@ public class PivotSourceTests
                         cancellation.Cancel();
                     return ValueTask.CompletedTask;
                 },
+                RowsRead = rows => read += rows,
             };
-            var source = PivotSource.From(Deals, CountingDesk(() => read++), slicing);
+            var source = PivotSource.From(Deals, DealFields, slicing);
             var version = (await source.AggregateAsync(new PivotQuery(), Ct)).SourceVersion;
             read = 0;
             armed = true;
@@ -272,8 +276,9 @@ public class PivotSourceTests
     [Fact] // ADR-0065 (PV-29): an answer that would pass MaxLeaves is refused with the bound, as soon as it is passed
     public async Task Too_many_leaves_are_refused_as_soon_as_the_bound_is_passed()
     {
-        var read = 0;
-        var source = PivotSource.From(Deals, CountingDesk(() => read++));
+        // The rows the question reads from the Snapshot are counted (rewritten with ADR-0063, as above).
+        long read = 0;
+        var source = PivotSource.From(Deals, DealFields, new PivotSlicing { RowsRead = rows => read += rows });
         var query = new PivotQuery(rows: [F("Desk"), F("Book")], maxLeaves: 3);
 
         var answer = await source.AggregateAsync(query, Ct);
