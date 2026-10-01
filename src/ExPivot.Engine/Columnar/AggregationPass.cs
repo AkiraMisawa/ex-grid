@@ -8,9 +8,11 @@ namespace ExPivot.Engine;
 /// for, accumulated at each leaf. It reads the Snapshot's slices column by column, a chunk of rows
 /// at a time: each field's Items for the chunk, then the leaves, then each field in Values.
 /// <para>
-/// When it is kept (<c>keepRows</c>), it remembers each row's leaf, and is what the bundled source
-/// holds of its answer: a Change Batch is folded into it (<see cref="Fold"/>) rather than read again
-/// from a million records (ADR-0066).
+/// When it is kept (<c>keepRows</c>), it remembers each stored row's leaf, and is what the bundled
+/// source holds of its answer: a Change Batch is folded into it (<see cref="Fold"/>) rather than
+/// read again from a million records (ADR-0066). The rows of each leaf are then chained in slice
+/// order, the first time a leaf has to be recomputed, so that a recompute reads that leaf's rows
+/// and no others.
 /// </para>
 /// </summary>
 internal sealed class AggregationPass
@@ -28,12 +30,26 @@ internal sealed class AggregationPass
     private readonly byte[] _excluded = new byte[Chunk];
     private readonly int[] _leafBuffer = new int[Chunk];
     private readonly bool _keepRows;
-    private readonly List<int[]> _leafOfRow = [];
     private readonly Action<long>? _rowsRead;
     private Snapshot _snapshot;
     private int _slice = -1;
     private long _sliceStart;
     private long _sliceEnd;
+
+    // The rows kept (ADR-0066), numbered across the slices in slice order: each slice's first
+    // row's number, and each stored row's leaf — −1 for a row no leaf holds: left out by a Hidden
+    // Item, or no longer held. A row's leaf never changes while it is held, since its values
+    // never do; a removed row's number is never handed out again.
+    private readonly List<int> _sliceBase = [];
+    private int _numbered;
+    private int[] _leafOf = [];
+
+    // Each leaf's rows as a chain through the row numbers, in slice order: made the first time a
+    // leaf is recomputed, and extended as a batch brings rows. A row a batch removed stays in its
+    // chain, and a recompute skips it (its _leafOf is −1); a compaction drops the whole pass.
+    private int[]? _next;
+    private int[] _first = [];
+    private int[] _last = [];
 
     public AggregationPass(Snapshot snapshot, IReadOnlyDictionary<string, FieldBinding> bindings, PivotQuery query, bool keepRows, Action<long>? rowsRead)
     {
@@ -64,6 +80,10 @@ internal sealed class AggregationPass
 
     /// <summary>The leaves, for the tests.</summary>
     internal LeafIndex Leaves => _leaves;
+
+    /// <summary>How many rows the last <see cref="Fold"/> recomputed parts from, for the tests and
+    /// the measurements: the rows of the leaves it could not bring up to date by subtraction.</summary>
+    internal long RecomputedRows { get; private set; }
 
     /// <summary>Reads stored rows [<paramref name="from"/>, <paramref name="to"/>), in slice order.
     /// False once the question is refused, which stops it at once.</summary>
@@ -158,12 +178,25 @@ internal sealed class AggregationPass
         _sliceEnd = _sliceStart + read.Length;
         foreach (var values in _values)
             values.BeginSegment(read);
-        if (_keepRows)
+        if (_keepRows && slice == _sliceBase.Count)
+            Number(read.Length);
+    }
+
+    // Numbers a slice's rows after the rows numbered so far, none of them in a leaf yet.
+    private void Number(int length)
+    {
+        if ((long)_numbered + length > Array.MaxLength)
+            throw new InvalidOperationException("A pass keeps the leaves of at most Array.MaxLength stored rows.");
+        _sliceBase.Add(_numbered);
+        _numbered += length;
+        if (_leafOf.Length < _numbered)
         {
-            while (_leafOfRow.Count <= slice)
-                _leafOfRow.Add([]);
-            if (_leafOfRow[slice].Length != read.Length)
-                _leafOfRow[slice] = new int[read.Length];
+            var size = (int)Math.Min(Array.MaxLength, Math.Max(_numbered, (long)_leafOf.Length * 2));
+            var old = _leafOf.Length;
+            Array.Resize(ref _leafOf, size);
+            _leafOf.AsSpan(old).Fill(-1);
+            if (_next is not null)
+                Array.Resize(ref _next, size);
         }
     }
 
@@ -189,10 +222,24 @@ internal sealed class AggregationPass
                 values.Accumulate(slice, at, leaves);
             }
             if (_keepRows)
-                leaves.CopyTo(_leafOfRow[slice.Index].AsSpan(at));
+                Keep(_sliceBase[slice.Index] + at, leaves);
             done += n;
         }
         return true;
+    }
+
+    // Remembers the leaves of rows numbered from `first`, and chains them when the chains are made.
+    private void Keep(int first, ReadOnlySpan<int> leaves)
+    {
+        leaves.CopyTo(_leafOf.AsSpan(first));
+        if (_next is null)
+            return;
+        EnsureChains(_leaves.Count);
+        for (var i = 0; i < leaves.Length; i++)
+        {
+            if (leaves[i] >= 0)
+                Chain(leaves[i], first + i);
+        }
     }
 
     // The leaves of a chunk's rows: each placed field's Items, the rows a Hidden Item or the
@@ -254,9 +301,9 @@ internal sealed class AggregationPass
     /// batch compacted the Snapshot, so rows moved, or the answer would now pass the cap on leaves
     /// — and the pass is then dropped and the question asked afresh.
     /// <list type="number">
-    /// <item>Each removed row leaves its leaf: the records and the exact parts by subtraction; a
-    /// leaf whose other parts it touched is marked for recomputing. The codes it carried are
-    /// counted out, so a spelling can leave.</item>
+    /// <item>Each removed row, read in Before, leaves its leaf: the records and the exact parts by
+    /// subtraction; a leaf whose other parts it touched is marked for recomputing. The codes it
+    /// carried are counted out, so a spelling can leave.</item>
     /// <item>The batch's slices — every row the batch brought is in them, at the end of the slice
     /// order — are read as the pass reads any slice: Items that appear bring their leaves, and
     /// the parts of a leaf gain the new rows as a fresh pass would gain them, last.</item>
@@ -276,8 +323,13 @@ internal sealed class AggregationPass
         var before = change.Before;
         var after = change.After;
         var marked = new HashSet<int>[_values.Length];
+        var subtracted = new HashSet<int>[_values.Length];
         for (var v = 0; v < _values.Length; v++)
+        {
             marked[v] = [];
+            subtracted[v] = [];
+        }
+        RecomputedRows = 0;
 
         // 1. What the batch removed, read in Before.
         foreach (var row in change.Removed)
@@ -285,15 +337,21 @@ internal sealed class AggregationPass
             var slice = before.Slice(row.Slice);
             foreach (var space in _axis)
                 space.Unmap(slice, row.Offset);
-            var leafOfRow = _leafOfRow[row.Slice];
-            var leaf = leafOfRow[row.Offset];
-            leafOfRow[row.Offset] = -1;
+            foreach (var filter in _filters)
+                filter.Unmap(slice, row.Offset);
+            var number = _sliceBase[row.Slice] + row.Offset;
+            var leaf = _leafOf[number];
+            _leafOf[number] = -1;
             if (leaf < 0)
                 continue;
             _leaves.Records[leaf]--;
             for (var v = 0; v < _values.Length; v++)
             {
-                if (!marked[v].Contains(leaf) && !_values[v].TrySubtract(leaf, slice, row.Offset))
+                if (marked[v].Contains(leaf))
+                    continue;
+                if (_values[v].TrySubtract(leaf, slice, row.Offset))
+                    subtracted[v].Add(leaf);
+                else
                     marked[v].Add(leaf);
             }
         }
@@ -315,46 +373,101 @@ internal sealed class AggregationPass
         }
         Complete();
 
-        // 3. The leaves whose parts cannot be subtracted, from their rows.
+        // 3. The leaves whose parts cannot be subtracted, from their rows — and the exact sums that
+        // were, wherever a step of some order of the sum could have rounded: subtraction is then
+        // not the fresh pass's arithmetic, and only the leaf's rows are.
         for (var v = 0; v < _values.Length; v++)
         {
+            var values = _values[v];
+            if (subtracted[v].Count > 0)
+            {
+                var limit = values.ExactRowsLimit(after);
+                if (limit != long.MaxValue)
+                {
+                    foreach (var leaf in subtracted[v])
+                    {
+                        // The most numbers the leaf held on either side of the batch.
+                        if (values.Columns.Counts[leaf].Numbers + change.Removed.Count > limit)
+                            marked[v].Add(leaf);
+                    }
+                }
+            }
             if (marked[v].Count > 0)
-                Recompute(_values[v], marked[v]);
+                Recompute(values, marked[v]);
         }
         return true;
     }
 
-    // A field's marked leaves, from nothing, over every row they hold, in slice order.
+    // A field's marked leaves, from nothing, over the rows each holds, in slice order — the
+    // operations a fresh pass performs on that leaf, in the same order, so the parts come out the
+    // same to the last bit.
     private void Recompute(ValueAccumulator values, HashSet<int> leaves)
     {
-        var mark = new bool[_leaves.Count];
+        if (_next is null)
+            MakeChains();
+        Span<int> one = stackalloc int[1];
         foreach (var leaf in leaves)
         {
             values.Columns.ResetCell(leaf);
-            mark[leaf] = true;
-        }
-        var masked = _leafBuffer;
-        for (var s = 0; s < _snapshot.SliceCount; s++)
-        {
-            var slice = _snapshot.Slice(s);
-            var leafOfRow = _leafOfRow[s];
-            var any = false;
-            for (var o = 0; o < leafOfRow.Length && !any; o++)
-                any = leafOfRow[o] >= 0 && mark[leafOfRow[o]];
-            if (!any)
-                continue;
-            values.BeginSegment(slice);
-            for (var at = 0; at < slice.Length; at += Chunk)
+            one[0] = leaf;
+            var s = 0;
+            var current = -1;
+            var slice = default(SnapshotSlice);
+            for (var number = _first[leaf]; number >= 0; number = _next![number])
             {
-                var n = Math.Min(Chunk, slice.Length - at);
-                for (var i = 0; i < n; i++)
+                if (_leafOf[number] != leaf)
+                    continue;
+                while (s + 1 < _sliceBase.Count && number >= _sliceBase[s + 1])
+                    s++;
+                if (s != current)
                 {
-                    var leaf = leafOfRow[at + i];
-                    masked[i] = leaf >= 0 && mark[leaf] ? leaf : -1;
+                    if (current >= 0)
+                        values.EndSegment();
+                    slice = _snapshot.Slice(s);
+                    values.BeginSegment(slice);
+                    current = s;
                 }
-                values.Accumulate(slice, at, masked.AsSpan(0, n));
+                values.Accumulate(slice, number - _sliceBase[s], one);
+                RecomputedRows++;
             }
-            values.EndSegment();
+            if (current >= 0)
+                values.EndSegment();
         }
+    }
+
+    // Chains every leaf's rows, in slice order, from the leaves the rows were kept with.
+    private void MakeChains()
+    {
+        _next = new int[_leafOf.Length];
+        EnsureChains(_leaves.Count);
+        for (var number = 0; number < _numbered; number++)
+        {
+            var leaf = _leafOf[number];
+            if (leaf >= 0)
+                Chain(leaf, number);
+        }
+    }
+
+    private void EnsureChains(int leaves)
+    {
+        if (_first.Length >= leaves)
+            return;
+        var size = Math.Max(leaves, Math.Max(16, _first.Length * 2));
+        var old = _first.Length;
+        Array.Resize(ref _first, size);
+        Array.Resize(ref _last, size);
+        _first.AsSpan(old).Fill(-1);
+        _last.AsSpan(old).Fill(-1);
+    }
+
+    private void Chain(int leaf, int number)
+    {
+        _next![number] = -1;
+        var last = _last[leaf];
+        if (last < 0)
+            _first[leaf] = number;
+        else
+            _next[last] = number;
+        _last[leaf] = number;
     }
 }

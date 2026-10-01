@@ -36,6 +36,7 @@ internal sealed class ValueAccumulator
     private int _touchedCount;
     private int _scale;
     private byte[] _kindOf = [];
+    private readonly List<(double Magnitude, int Scale)?> _sliceBounds = [];
 
     public ValueAccumulator(FieldBinding binding, PivotParts parts, int capacity)
     {
@@ -192,6 +193,76 @@ internal sealed class ValueAccumulator
                 Columns.Counts[leaf].Values--;
                 return true;
         }
+    }
+
+    /// <summary>
+    /// The most numbers a leaf may hold for its exact sum to come out the same in any order — so
+    /// that a sum brought up to date by subtraction equals the sum a fresh pass makes, to the last
+    /// bit (ADR-0066). A <c>decimal</c> holds 96 bits: a sum of up to n numbers, each at most M in
+    /// magnitude with at most S places, is exact at every step, in any order, while n·M·10^S stays
+    /// below 2^96 — and beyond that a step may round, differently on each path. M and S are taken
+    /// over every value the column stores in <paramref name="snapshot"/>; for money (millions,
+    /// two places) the limit is far beyond any leaf. <see cref="long.MaxValue"/> for a field whose
+    /// sum is not exact or not asked for.
+    /// </summary>
+    public long ExactRowsLimit(Snapshot snapshot)
+    {
+        if (!_exact || !_sum)
+            return long.MaxValue;
+        var magnitude = 0.0;
+        var scale = 0;
+        for (var s = 0; s < snapshot.SliceCount; s++)
+        {
+            var (m, places) = SliceBound(snapshot, s);
+            magnitude = Math.Max(magnitude, m);
+            scale = Math.Max(scale, places);
+        }
+        if (magnitude == 0)
+            return long.MaxValue;
+        // 2^95, one bit of room for the double arithmetic of the bound itself.
+        var limit = Math.Floor(Math.ScaleB(1.0, 95) / (magnitude * Math.Pow(10, scale)));
+        return limit >= long.MaxValue ? long.MaxValue : (long)limit;
+    }
+
+    // The largest magnitude and the most places among one slice's stored values, made once per
+    // slice: a slice's values never change while the pass holds it.
+    private (double Magnitude, int Scale) SliceBound(Snapshot snapshot, int index)
+    {
+        while (_sliceBounds.Count <= index)
+            _sliceBounds.Add(null);
+        if (_sliceBounds[index] is { } known)
+            return known;
+        var slice = snapshot.Slice(index);
+        var magnitude = 0.0;
+        var scale = 0;
+        if (_single!.Value.Role == ValueRole.Integer)
+        {
+            foreach (var value in slice.Integers((IntegerColumn)_single.Value.Column))
+                magnitude = Math.Max(magnitude, Math.Abs((double)value));
+        }
+        else
+        {
+            var values = slice.Decimals((DecimalColumn)_single.Value.Column);
+            if (values.Scale >= 0)
+            {
+                foreach (var value in values.Scaled)
+                    magnitude = Math.Max(magnitude, Math.Abs((double)value));
+                magnitude /= Math.Pow(10, values.Scale);
+                scale = values.Scale;
+            }
+            else
+            {
+                foreach (var value in values.Exact)
+                {
+                    magnitude = Math.Max(magnitude, Math.Abs((double)value));
+                    scale = Math.Max(scale, value.Scale);
+                }
+            }
+        }
+        // A double rounds; a bound rounded up by a part in 2^40 still bounds.
+        var bound = (magnitude * (1 + Math.ScaleB(1.0, -40)), scale);
+        _sliceBounds[index] = bound;
+        return bound;
     }
 
     /// <summary>The finished parts of the leaves <paramref name="order"/> names, in that order: a
