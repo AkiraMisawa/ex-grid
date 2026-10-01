@@ -173,6 +173,16 @@ what cannot be executed:**
     takes seconds in a browser, but the page is never held: the loading indication moves, the
     report scrolls, and a newer gesture supersedes the question. The cap is what keeps a question
     finite. Keeping the page responsive is the slicing's job.
+  - *Observed after it was built* (ticket 22; `verification/2026-10-01-linux-measure-sliced`):
+    - **The setup.** It ran on a slower CPU than the first record, 2.1 GHz, with other builds
+      running, so before and after were published and measured back to back.
+    - **Near the cap**, the longest task fell from 1.65 s to 137 ms, and the answer took 2.79 s
+      rather than 2.59.
+    - **Below 27,000 leaves**, no task in the median run was over 50 ms.
+    - **What remains over 50 ms is not unsliced work.** The browser runtime runs full collections
+      of about 70 ms inside a slice, and the turn that puts the report on screen takes 72 ms. Fewer
+      allocations would shorten the first. That is not done, so PV-21's 50 ms is still missed near
+      the cap.
   - Most reports are far from the cap. The leaves are the combinations of the placed fields'
     Items, not the records: a million records by region and desk across products make 60 leaves.
     Only a layout of fine-grained fields — trade dates by books by quantities — nears it.

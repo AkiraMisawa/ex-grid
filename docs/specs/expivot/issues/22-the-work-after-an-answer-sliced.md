@@ -1,6 +1,6 @@
 # 22: The work after an answer, sliced
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** what ADR-0065 settled on 2026-10-01. Near the 200,000-leaf cap, the work after a
 question's pass held a browser for 1.9 s in one task (`verification/2026-10-01-linux-measure`):
