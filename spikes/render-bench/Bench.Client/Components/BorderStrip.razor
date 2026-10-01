@@ -1,0 +1,100 @@
+@implements IDisposable
+@* BorderLayerPerRow (not one of ticket 44's two modes; measured beside them): BorderLayer split
+   into one strip per painted row, keyed and memoised as the rows are. A strip holds its row's
+   bottom-edge runs and one segment per right edge, positioned against the strip, so a strip whose
+   row stays painted keeps its markup when the slice moves: a scroll step mounts the entering
+   strip and skips the rest. The price is that a vertical line is one segment per row rather than
+   one run down the column.
+
+   Still a layer over the rows: the strips come after the rows, so a line is drawn above the
+   Fills, and a thick line overflows its strip to stay centred on the gridline. The rows are never
+   told about borders. *@
+
+<div class="bstrip" style="@HeightStyle(RowHeight)">
+    @{ _elements = 0; }
+    @for (var c = 0; c < VisibleCols;)
+    {
+        var k = Borders.Bottom[c];
+        var c0 = c++;
+        while (c < VisibleCols && Borders.Bottom[c] == k) c++;
+        if (k == 0) continue;
+        _elements++;
+        <div class="@Table.Horizontal[k]" style="@Geometry(false, c0, c - c0)"></div>
+    }
+    @for (var c = 0; c < VisibleCols; c++)
+    {
+        var k = Borders.Right[c];
+        if (k == 0) continue;
+        _elements++;
+        <div class="@Table.Vertical[k]" style="@Geometry(true, c, 1)"></div>
+    }
+</div>
+
+@code {
+    /// <summary>Renders since the page last reset it (see FormatRow.Renders).</summary>
+    public static int Renders;
+    /// <summary>The run elements of every mounted strip.</summary>
+    public static int Elements;
+
+    // Shared by every strip: a strip mounts on every scroll step, so a cache of its own would
+    // compose again on each mount (P5). The bench's geometry never changes, so it is never stale.
+    private static readonly Dictionary<(bool Vertical, int Start, int Length), string> GeometryCache = new();
+    private static string? _heightStyle;
+
+    // The strip's height is the row's, from the same number the geometry uses, never a stylesheet
+    // twin of it.
+    private static string HeightStyle(int rowHeight) => _heightStyle ??= $"height:{rowHeight}px";
+
+    [Parameter] public RowBorders Borders { get; set; } = default!;
+    [Parameter] public BorderTable Table { get; set; } = default!;
+    [Parameter] public int VisibleCols { get; set; }
+    [Parameter] public int RowHeight { get; set; }
+    [Parameter] public int CellWidth { get; set; }
+    [Parameter] public int Left { get; set; }
+
+    private int _elements;
+    private int _counted;
+    private RowBorders? _renderedBorders;
+    private BorderTable? _renderedTable;
+    private int _renderedCols = -1;
+
+    private string Geometry(bool vertical, int start, int length)
+    {
+        if (!GeometryCache.TryGetValue((vertical, start, length), out var style))
+        {
+            style = vertical
+                ? $"transform:translate({Left + (start + 1) * CellWidth - 1}px,0px);height:{RowHeight}px"
+                : $"transform:translate({Left + start * CellWidth}px,{RowHeight - 1}px);width:{length * CellWidth}px";
+            GeometryCache[(vertical, start, length)] = style;
+        }
+        return style;
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (ReferenceEquals(_renderedBorders, Borders) && ReferenceEquals(_renderedTable, Table) && _renderedCols == VisibleCols)
+            return false;
+
+        _renderedBorders = Borders;
+        _renderedTable = Table;
+        _renderedCols = VisibleCols;
+        return true;
+    }
+
+    // ShouldRender is not consulted for the first render, so the mount is recorded here too.
+    protected override void OnInitialized()
+    {
+        _renderedBorders = Borders;
+        _renderedTable = Table;
+        _renderedCols = VisibleCols;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        Renders++;
+        Elements += _elements - _counted;
+        _counted = _elements;
+    }
+
+    public void Dispose() => Elements -= _counted;
+}

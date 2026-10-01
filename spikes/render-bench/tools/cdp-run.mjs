@@ -7,14 +7,17 @@
 // Pass `save` as the last argument to press "Save results to the server" after a
 // completed run, so the JSON lands in results/ like a manual run's does.
 //
-// Headless Chromium must already be listening on :9222, e.g.
+// Headless Chromium must already be listening on :9222 (or on the port CDP_PORT names), e.g.
 //   "$CHROMIUM_BIN" --headless=new --no-sandbox --remote-debugging-port=9222 --user-data-dir=/tmp/p about:blank
+//
+// The cell format page (ticket 44) is the same driver pointed at /format with its own button:
+//   CDP_PORT=9391 node tools/cdp-run.mjs http://127.0.0.1:5391/format 200 3600 50 20 "Measure cell format" save
 //
 // Headless renders in software, so the ABSOLUTE numbers are not comparable to a real
 // browser. Use this to reproduce exceptions and to compare modes; take real numbers in
 // Chrome or Edge (see README.md).
 
-const CDP = 'http://127.0.0.1:9222';
+const CDP = `http://127.0.0.1:${process.env.CDP_PORT ?? 9222}`;
 const URL_ = process.argv[2] ?? 'http://127.0.0.1:5199/';
 const ITER = process.argv[3] ?? '40';
 const WAIT_S = Number(process.argv[4] ?? 90);
@@ -93,7 +96,7 @@ async function main() {
   // Wait for Blazor to boot: the run button only exists once the component rendered.
   let booted = false;
   for (let i = 0; i < 60; i++) {
-    const found = await evaluate(ws, `!![...document.querySelectorAll('button')].find(b => b.textContent.includes('Measure all'))`);
+    const found = await evaluate(ws, `!![...document.querySelectorAll('button')].find(b => b.textContent.includes('${BTN}'))`);
     if (found) { booted = true; break; }
     await sleep(1000);
   }
@@ -149,6 +152,8 @@ async function main() {
   }
   console.log('\\nOUTCOME: ' + outcome);
   dump();
+  // Close the tab, so that a later run in the same browser is not measured beside an idle app.
+  await fetch(`${CDP}/json/close/${target.id}`).catch(() => {});
   process.exit(outcome === 'COMPLETED' ? 0 : 2);
 }
 
