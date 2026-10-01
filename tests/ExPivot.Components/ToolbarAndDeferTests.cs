@@ -143,24 +143,104 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Equal(source.Questions[0].Query, source.Questions[1].Query);
     }
 
-    [Fact] // ADR-0065/0025 (PV-30): a Refresh that fails leaves the report as it was and says so where the user sees it, and throws nothing
-    public async Task A_failed_refresh_leaves_the_report_and_says_so()
-    {
-        var source = new OnDemandSource(Bundled(), new PivotSourceFeatures(Enum.GetValues<PivotAggregation>(), canRefresh: true))
+    /// <summary>The time a Stale Report's notice writes for an instant on the test's clock: today's,
+    /// in the report's culture.</summary>
+    private string TimeOf(DateTimeOffset at)
+        => TimeZoneInfo.ConvertTime(at, Clock.LocalTimeZone).ToString("T", System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+
+    private static OnDemandSource Refreshable(Exception? refreshFails = null)
+        => new(Bundled(), new PivotSourceFeatures(Enum.GetValues<PivotAggregation>(), canRefresh: true))
         {
             AnswersAtOnce = true,
-            RefreshFails = new InvalidOperationException("The server cannot be reached."),
+            RefreshFails = refreshFails,
         };
+
+    [Fact] // ADR-0066 refined (PV-37, PV-30): a failed Refresh is a Stale Report — the report stays on the version shown, and the notice says the source could not answer, as of when, with Retry; nothing is said on the toolbar, and nothing is thrown
+    public async Task A_failed_refresh_is_a_stale_report()
+    {
+        var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
         var cut = RenderPivot(RegionProduct, source: source);
+        var shownAt = Clock.GetUtcNow();
         var before = RowTexts(cut);
+        var layout = cut.Instance.CurrentLayout;
+        Clock.Advance(TimeSpan.FromSeconds(30));
 
         await cut.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
 
-        Assert.Equal("The source could not answer: The server cannot be reached.", cut.Find(".ex-pivot-refusal-notice").TextContent);
-        Assert.Equal("alert", cut.Find(".ex-pivot-refusal-notice").GetAttribute("role"));
+        Assert.True(cut.Instance.IsStale);
+        Assert.Equal($"Showing the data as of {TimeOf(shownAt)}: the source could not answer: The server cannot be reached.",
+            cut.Find(".ex-pivot-stale[role=status] .ex-pivot-stale-message").TextContent);
+        Assert.Equal("Retry", cut.Find(".ex-pivot-stale .ex-pivot-retry").TextContent);
+        Assert.False(cut.Find(".ex-pivot-retry").HasAttribute("disabled"));
+        Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));
         Assert.Equal(before, RowTexts(cut));
+        Assert.Same(layout, cut.Instance.CurrentLayout);
+        Assert.Equal(1, source.Refreshes);
         Assert.Single(source.Questions);
         Assert.IsType<InvalidOperationException>(cut.Instance.LastError);
+    }
+
+    [Fact] // ADR-0066 refined (PV-37): Retry after a failed Refresh refreshes again — what failed was the refresh — and the notice goes when the answer is laid out
+    public async Task Retry_after_a_failed_refresh_refreshes_again()
+    {
+        var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
+        var cut = RenderPivot(RegionProduct, source: source);
+        var shownAt = Clock.GetUtcNow();
+        await cut.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
+        Clock.Advance(TimeSpan.FromSeconds(30));
+
+        // Still failing: still stale, as of the same time.
+        await cut.Find(".ex-pivot-retry").ClickAsync(new MouseEventArgs());
+        Assert.Equal(2, source.Refreshes);
+        Assert.Single(source.Questions);
+        Assert.StartsWith($"Showing the data as of {TimeOf(shownAt)}: ", cut.Find(".ex-pivot-stale-message").TextContent);
+
+        source.RefreshFails = null;
+        await cut.Find(".ex-pivot-retry").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(3, source.Refreshes);
+        Assert.Equal(2, source.Questions.Count);
+        Assert.Equal(source.Questions[0].Query, source.Questions[1].Query);
+        Assert.False(cut.Instance.IsStale);
+        Assert.Empty(cut.FindAll(".ex-pivot-stale-notice"));
+        Assert.Null(cut.Instance.LastError);
+    }
+
+    [Fact] // ADR-0066 refined (PV-37): a Refresh that succeeds but whose answer fails is a Stale Report too, and its Retry asks the report again without refreshing
+    public async Task A_refresh_whose_answer_fails_is_a_stale_report_retried_by_asking_again()
+    {
+        var source = Refreshable();
+        var cut = RenderPivot(RegionProduct, source: source);
+        source.AnswersAtOnce = false;
+
+        await cut.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
+        await cut.InvokeAsync(() => source.Questions[1].Fail(new InvalidOperationException("The server is unreachable.")));
+
+        cut.WaitForAssertion(() => Assert.True(cut.Instance.IsStale));
+        Assert.EndsWith(": the source could not answer: The server is unreachable.", cut.Find(".ex-pivot-stale-message").TextContent);
+        Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));
+
+        source.AnswersAtOnce = true;
+        await cut.Find(".ex-pivot-retry").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(1, source.Refreshes);
+        Assert.Equal(3, source.Questions.Count);
+        Assert.False(cut.Instance.IsStale);
+    }
+
+    [Fact] // ADR-0066 refined (PV-37): before the first report there is nothing to be stale, so a failed Refresh is said on the toolbar
+    public async Task A_failed_refresh_before_the_first_report_is_said_on_the_toolbar()
+    {
+        var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
+        source.AnswersAtOnce = false;
+        var cut = RenderPivot(RegionProduct, source: source);
+
+        await cut.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
+
+        Assert.False(cut.Instance.IsStale);
+        Assert.Equal("The source could not answer: The server cannot be reached.", cut.Find(".ex-pivot-refusal-notice").TextContent);
+        Assert.Equal("alert", cut.Find(".ex-pivot-refusal-notice").GetAttribute("role"));
+        Assert.Empty(cut.FindAll(".ex-pivot-stale-notice"));
     }
 
     [Fact] // ADR-0060 (PV-30): the Layout menu offers Excel's Design tab choices under its headings, the current choice marked and a choice that would change nothing disabled

@@ -50,11 +50,12 @@ public partial class ExPivot
     private ReportHistory? _history;
     private CellChangeOf<PivotReportRow>? _cellChangedAt;
 
-    // The Stale Report (ADR-0066): what happened, while the newest data cannot be shown; and the
+    // The Stale Report (ADR-0066): what happened, while the newest data cannot be shown; the
     // answer held whose layout a cap refused, which the notice goes with once a layout that fits
-    // lays it out.
+    // lays it out; and whether what failed was a Refresh, which Retry then asks for again.
     private string? _stale;
     private PivotCube? _staleNewest;
+    private bool _staleRetryRefreshes;
 
     private DateTimeOffset Now() => _time.GetUtcNow();
 
@@ -246,15 +247,25 @@ public partial class ExPivot
     /// <param name="error">The source's failure, or null.</param>
     /// <param name="newest">The answer that arrived and broke a cap, held; null when nothing newer
     /// than the report is held.</param>
-    private void MarkStale(string reason, Exception? error, PivotCube? newest)
+    /// <param name="retryRefreshes">Whether what failed was the source's Refresh itself, which
+    /// Retry then asks for again rather than the report alone.</param>
+    private void MarkStale(string reason, Exception? error, PivotCube? newest, bool retryRefreshes = false)
     {
         _stale = reason;
         _staleNewest = newest;
+        _staleRetryRefreshes = retryRefreshes;
         if (error is not null)
             _lastError = error;
     }
 
-    private Task RetryAsync() => _disposed || _source is null ? Task.CompletedTask : AskAgainAsync();
+    /// <summary>The Stale Report's Retry: asks again what failed — the source's Refresh, when that
+    /// is what failed, otherwise the report's question.</summary>
+    private Task RetryAsync()
+    {
+        if (_disposed || _source is null)
+            return Task.CompletedTask;
+        return _staleRetryRefreshes ? RefreshAsync() : AskAgainAsync();
+    }
 
     /// <summary>The Stale Report's notice, drawn by the Chrome or the built-in markup inside
     /// ExPivot's live region; nothing while the report is the newest.</summary>
@@ -281,8 +292,8 @@ public partial class ExPivot
         // The time, in the report's culture; the date too, when it is not today's — a time alone
         // would say the report is fresher than it is.
         var asOfText = asOf.ToString(asOf.Date == today ? "T" : "G", _culture);
-        // Retry is not offered twice at once: the question it asked is out.
-        var retry = new PivotCommand(PivotCommandIds.Retry, Word(PivotCommandIds.Retry), !_loading, RetryAsync);
+        // Retry is not offered twice at once: the question it asked, or the Refresh, is out.
+        var retry = new PivotCommand(PivotCommandIds.Retry, Word(PivotCommandIds.Retry), !_loading && !_refreshing, RetryAsync);
         return new PivotStaleReportContext(
             PivotWords.Fill(Word(StaleReportWords.Notice), asOfText, reason), reason, asOf, asOfText, retry, Word);
     }

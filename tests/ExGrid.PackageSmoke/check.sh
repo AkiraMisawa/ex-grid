@@ -79,8 +79,15 @@ if grep -q '<dependency ' <<<"$(nuspec ExGrid.Data)"; then fail "ExGrid.Data dec
 arrowdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid.Data.Arrow)" | sort)
 [ "$arrowdeps" = "$(printf '%s\n' "<dependency id=\"Apache.Arrow\" version=\"[23.0.0, 24.0.0)\"" "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" | sort)" ] \
   || fail "ExGrid.Data.Arrow's dependencies are not exactly ExGrid.Data $version and Apache.Arrow [23.0.0, 24.0.0): $arrowdeps"
-# ExPivot's engine depends on nothing at all, as ExSheet's does (ADR-0058).
-if grep -q '<dependency ' <<<"$(nuspec ExPivot.Engine)"; then fail "ExPivot.Engine declares a dependency"; fi
+# ExPivot's engine depends on exactly the ExGrid.Data it was built with, and on nothing else: it
+# aggregates a Snapshot (ADR-0063, PV-1).
+enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
+[ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
+  || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
+# Nothing else the family packs references a data package (DA-1).
+for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExPivot ExPivot.MudBlazor; do
+  if grep -qE '<dependency id="ExGrid\.Data(\.Arrow)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
+done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.
 pivotdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot)" | sort)
 [ "$pivotdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid\" version=\"[$version]\"" "<dependency id=\"ExPivot.Engine\" version=\"[$version]\"" | sort)" ] \

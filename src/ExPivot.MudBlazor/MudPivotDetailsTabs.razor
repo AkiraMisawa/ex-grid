@@ -1,0 +1,124 @@
+@* Show Details' tabs under MudBlazor (ADR-0058/0061): MudTabs placed at the bottom, at the report's
+   foot as Q26 put them — the "PivotTable" tab first, then one per Show Details, titled by its cell,
+   each closable with a close MudIconButton named in ExPivot's words. The records of the selected
+   tab are ExPivot's, placed over the report; MudTabs' own panels stay empty, and hidden.
+
+   ExPivot owns which tab is selected. MudTabs is bound to it: its active index is ExPivot's
+   selection, and a tab the user activates — a click, Enter or Space — is selected through ExPivot,
+   which says which one is selected next. MudTabs keeps its active index by position, and moves it
+   by its own rules when a panel is added or removed, so it is made anew whenever the tabs
+   themselves change (keyed by their ids): it never carries an index from one set of tabs into
+   another, and holds nothing ExPivot did not hand it.
+
+   A tab whose FocusRequest is new takes the keyboard — the one Show Details has just opened, and
+   the one selected when the tab holding the keyboard closed — through Blazor's own FocusAsync on
+   MudTabs' tab element. The panel ExPivot places is labelled by the tab's title, which carries the
+   tab's id (MudTabs gives its tab element an id of its own). *@
+@{ _rendered = _signature; }
+<MudTabs @key="_key" Position="Position.Bottom" HideSlider="true" MinimumTabWidth="72px"
+         ActivePanelIndex="SelectedIndex" ActivePanelIndexChanged="_activated"
+         Class="mud-ex-pivot-tabs" TabButtonsClass="mud-ex-pivot-tab" ActiveTabClass="mud-ex-pivot-tab-selected"
+         TabPanelsClass="mud-ex-pivot-tab-panels" role="group" aria-label="@Context.Title">
+    @foreach (var tab in Tabs)
+    {
+        <MudTabPanel @key="tab.Id" @ref="_panels[tab.Id]" TabContent="TitleOf(tab)" TabWrapperContent="WrapperOf(tab)" hidden="hidden" />
+    }
+</MudTabs>
+
+@code {
+    // The MudTabPanel of each tab, by its id, for the keyboard: refilled whenever MudTabs is made
+    // anew, which is whenever the tabs change.
+    private readonly Dictionary<string, MudTabPanel> _panels = new(StringComparer.Ordinal);
+    private EventCallback<int> _activated;
+    private string _key = "";
+    private string _signature = "";
+    private string? _rendered;
+    private int _acted;
+
+    /// <summary>The tabs and whom to call back (ADR-0058).</summary>
+    [Parameter, EditorRequired] public PivotDetailsTabsContext Context { get; set; } = default!;
+
+    /// <summary>The Chrome these tabs belong to.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+
+    // The report's tab first, then one per Show Details, oldest first.
+    private IEnumerable<PivotDetailsTab> Tabs => Context.Tabs.Prepend(Context.Report);
+
+    private int SelectedIndex
+    {
+        get
+        {
+            var index = 0;
+            foreach (var tab in Tabs)
+            {
+                if (tab.IsSelected)
+                    return index;
+                index++;
+            }
+            return 0;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => _activated = EventCallback.Factory.Create<int>(this, Activate);
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        _signature = Signature();
+        var key = string.Join('\n', Tabs.Select(t => t.Id));
+        if (key == _key)
+            return;
+        // Other tabs: a new MudTabs, whose panels are captured again.
+        _key = key;
+        _panels.Clear();
+    }
+
+    // What the tabs show — ExPivot hands a new context on each of its renders, and a render of
+    // MudTabs measures its tabs again, so it renders only when what it shows changed (ADR-0003's
+    // rule, written by hand). Its callbacks look the tabs up when they run, so none goes stale.
+    private string Signature()
+        => string.Join('\u001F', Tabs.Select(t => $"{t.Id}\u001E{t.Title}\u001E{t.IsSelected}\u001E{t.CloseLabel}\u001E{t.FocusRequest}").Prepend(Context.Title));
+
+    /// <inheritdoc />
+    protected override bool ShouldRender() => _signature != _rendered;
+
+    /// <inheritdoc />
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The tab asked to take the keyboard, once for each request.
+        var asking = Tabs.FirstOrDefault(t => t.FocusRequest != 0 && t.FocusRequest != _acted);
+        if (asking is null || !_panels.TryGetValue(asking.Id, out var panel) || panel.PanelRef.Id is null)
+            return Task.CompletedTask;
+        return MudPivotFocus.TakeAsync(asking.FocusRequest, ref _acted, () => panel.PanelRef.FocusAsync());
+    }
+
+    /// <summary>MudTabs activated the tab at <paramref name="index"/>: ExPivot selects it.</summary>
+    private void Activate(int index)
+    {
+        var tab = Tabs.ElementAtOrDefault(index);
+        if (tab is { IsSelected: false })
+            tab.Select();
+    }
+
+    private void Close(string id)
+    {
+        if (Context.Tabs.FirstOrDefault(t => t.Id == id) is { Close: { } close })
+            close();
+    }
+
+    // The tab's title carries the tab's id, which labels the panel ExPivot places for it.
+    private static RenderFragment TitleOf(PivotDetailsTab tab)
+        => @<span id="@tab.Id" class="mud-ex-pivot-tab-title" title="@tab.Title">@tab.Title</span>;
+
+    // The tab, and beside it — not inside it, where its name would join the tab's — the close button.
+    private RenderFragment<RenderFragment> WrapperOf(PivotDetailsTab tab) => content =>
+        @<span class="mud-ex-pivot-tab-wrapper">
+            @content
+            @if (tab.Close is not null)
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" Class="mud-ex-pivot-tab-close"
+                               aria-label="@tab.CloseLabel" title="@tab.CloseLabel" OnClick="() => Close(tab.Id)" />
+            }
+        </span>;
+}

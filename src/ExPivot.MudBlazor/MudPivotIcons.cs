@@ -30,8 +30,9 @@ public static class MudPivotIcons
             PivotCommandIds.ExpandField or PivotCommandIds.Expand => Icons.Material.Filled.UnfoldMore,
             PivotCommandIds.CollapseField or PivotCommandIds.Collapse => Icons.Material.Filled.UnfoldLess,
             PivotCommandIds.ShowDetails => Icons.Material.Filled.ManageSearch,
-            PivotCommandIds.ShowFieldList or PivotCommandIds.HideFieldList => Icons.Material.Filled.ViewSidebar,
-            PivotCommandIds.Retry => Icons.Material.Filled.Refresh,
+            PivotCommandIds.ShowFieldList or PivotCommandIds.HideFieldList or PivotCommandIds.FieldListToggle => Icons.Material.Filled.ViewSidebar,
+            PivotCommandIds.LayoutMenu => Icons.Material.Filled.ViewQuilt,
+            PivotCommandIds.Refresh or PivotCommandIds.Retry => Icons.Material.Filled.Refresh,
             _ => null,
         };
     }
