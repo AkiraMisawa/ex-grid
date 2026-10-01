@@ -467,6 +467,23 @@ public class ChangeHighlightTests : GridTestContext
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-changed")));
     }
 
+    [Fact] // ADR-0067 / ADR-0033 / DC-55: a mark is seen, not announced — the live region says nothing as marks come and go
+    public void No_live_region_announces_a_mark()
+    {
+        var now = Clock.GetUtcNow();
+        var cut = RenderGrid(new ChangeTimes { [("Beta", "Amount")] = now }.Lookup());
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+
+        cut.Render(ps => ps.Add(g => g.CellChangedAt, new ChangeTimes { [("Gamma", "Amount")] = now }.Lookup()));
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+
+        Clock.Advance(Second);
+        cut.WaitForAssertion(() => Assert.Empty(MarkedCells(cut)));
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+        // The grid's one live region is the only one there is: a mark brings no other.
+        Assert.Single(cut.FindAll("[role=status], [aria-live]"));
+    }
+
     /// <summary>Row Marks nobody holds: enough for a Mark Column to be painted.</summary>
     private sealed class NoMarks : IRowMarks<TestRow>
     {
