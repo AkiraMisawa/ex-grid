@@ -144,7 +144,7 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         expect(sameColour(pixel(1), WHITE, 2), 'the Paper past it').toBe(true);
     });
 
-    test('SH-46/DC-59: inside the Selection the lines stay drawn over its shade, and its outline covers the outer ones on its bottom and right (ADR-0071, case 11)', async ({ page }) => {
+    test('SH-46/DC-59: the Selection\'s outline lies on the gridline and a pixel outside the range on all four sides, over the outer lines, and the lines inside stay drawn over its shade (ADR-0071, ADR-0008, case 11)', async ({ page }) => {
         // Under ExSheet.MudBlazor's Chrome, whose outline is the palette's primary: the built-in
         // one draws it in the Ink, as black as the lines, and could not show which is on top.
         await openCase(page, '11&chrome=mud');
@@ -154,8 +154,9 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         await page.keyboard.press('Shift+ArrowDown');
         await expect(grid.locator('.ex-range-single')).toHaveCount(1);
         await page.mouse.move(0, 0);
+        const scale = await page.evaluate(() => devicePixelRatio);
 
-        // The edges inside B2:C3, between B2 and C2 and between C2 and C3, over the shade: still
+        // The edges inside B2:C3, between C2 and C3 and between B3 and C3, over the shade: still
         // the lines', dark, on their gridline.
         const c2 = await cell(grid, 'C2').boundingBox();
         const inside = await across(page, c2, 'bottom', 0.5);
@@ -165,21 +166,27 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         const between = await across(page, b3, 'right', 0.5);
         expect(isDark(between.pixel(-1)), 'the line between B3 and C3').toBe(true);
 
-        // The outer lines on the bottom and the right lie on C3's own last pixels, under the
-        // outline: they are the outline's colour, not the line's black.
-        const outline = await resolvedColour(page, await grid.locator('.ex-range-single').first().evaluate((el) => getComputedStyle(el).outlineColor));
+        // Excel's outline (case 11: -1..0 on B2's top, -3..-2 on its left, -2..-1 on C3's bottom):
+        // on each outer edge the gridline's pixel and the one outside it are the outline's, so the
+        // outer line under it is covered, and the range's own first pixel inside it is not.
+        const outline = await resolvedColour(page, await grid.locator('.ex-range-single').first()
+            .evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
+        const b2 = await cell(grid, 'B2').boundingBox();
         const c3 = await cell(grid, 'C3').boundingBox();
-        for (const side of ['bottom', 'right']) {
-            const { pixel } = await across(page, c3, side, 0.5);
-            expect(sameColour(pixel(-1), outline, 8), `the outline over C3's ${side} line (${pixel(-1)} against ${outline})`).toBe(true);
+        const isOutline = (pixel) => sameColour(pixel, outline, 8);
+        for (const [name, box, side, on, off] of [
+            ['top', b2, 'top', [-2, -1], 0],
+            ['left', b2, 'left', [-2, -1], 0],
+            ['bottom', c3, 'bottom', [-1, 0], -3],
+            ['right', c3, 'right', [-1, 0], -3],
+        ]) {
+            const { pixel } = await across(page, box, side, 0.5);
+            for (const offset of on) {
+                expect(isOutline(pixel(offset)), `the outline on the ${name} at ${offset} (${pixel(offset)} against ${outline}, scale ${scale})`).toBe(true);
+            }
+            expect(isOutline(pixel(off)), `inside the range, past the outline's ${name} (scale ${scale})`).toBe(false);
         }
     });
-
-    // Excel's outline lies on the gridline and the pixel outside it (case 11: -1..0 on B2's top), so
-    // it covers the outer lines on all four sides. ADR-0008 draws the Selection's outline inside the
-    // range (UX-18), so the line on its top and left edges, which the cells above and to the left
-    // hold, stays drawn beside it. Moving the outline is ADR-0008's decision, not this ticket's.
-    test.fixme('SH-46: the Selection\'s outline covers the outer lines on its top and left as well (case 11; needs a decision on ADR-0008\'s outline)', async () => {});
 
     test('SH-46: a line on column A\'s left lies under the Row Headings\' edge (ADR-0071, the twelfth run\'s case 14)', async ({ page }) => {
         await openCase(page, '12-14');

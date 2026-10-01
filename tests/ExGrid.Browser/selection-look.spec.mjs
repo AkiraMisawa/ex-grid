@@ -30,16 +30,18 @@ async function parkPointer(page, grid) {
     await expect(grid.locator('.ex-hover-row')).toHaveCount(0);
 }
 
-/** The Focus outline's colour as painted (sRGB), whatever syntax the cascade resolved it to. */
+/** The Focus outline's colour as painted (sRGB), whatever syntax the cascade resolved it to: the
+ * border of its box of its own, the ::after (ADR-0008, 2026-10-01). */
 async function outlineColour(grid) {
-    const css = await grid.locator('.ex-focus').first().evaluate((el) => getComputedStyle(el).outlineColor);
+    const css = await grid.locator('.ex-focus').first().evaluate((el) => getComputedStyle(el, '::after').borderTopColor);
     return resolvedColour(grid.page(), css);
 }
 
 /**
  * The outline-coloured runs, in device pixels, across a cell's box and a margin round it: along a
- * row 4 CSS px below its top, and down a column 4 CSS px right of its left. With the outline
- * inside the cell, the first and last run of each are its four edges.
+ * row 4 CSS px below its top, and down a column 4 CSS px right of its left. With the outline on
+ * the cell's edges, outside them or inside where something would cover it (ADR-0008, 2026-10-01),
+ * the first and last run of each are its four edges.
  */
 async function runsAround(grid, box, colour, margin = 6) {
     const region = await painted(grid.page(), {
@@ -142,6 +144,33 @@ test('UX-18: with Pinned Columns and no Headings, the Focus outline has four equ
     }
 });
 
+test('UX-18: a single range\'s outline has four equal edges beside a Pinned Column, beside the Headings, under the header and in the open, its sides outside the range where nothing covers them (ADR-0008, 2026-10-01)', async ({ page }) => {
+    await openSheet(page, '');
+    const grid = sheet(page);
+    const colour = await (async () => {
+        await clickCell(grid, 'D9');
+        return outlineColour(grid);
+    })();
+    // B3:C4 beside the pinned A, A3:B4 beside the Headings, C1:D2 under the header, C3:D4 in the open.
+    const found = {};
+    for (const [from, to] of [['B3', 'C4'], ['A3', 'B4'], ['C1', 'D2'], ['C3', 'D4']]) {
+        await clickCell(grid, from);
+        await clickCell(grid, to, { modifiers: ['Shift'] });
+        await expectCovers(grid.locator('.ex-selection .ex-range, .ex-selection-pinned .ex-range').first(), grid, from, to);
+        await parkPointer(page, grid);
+        const first = await cell(grid, from).boundingBox();
+        const last = await cell(grid, to).boundingBox();
+        const box = { x: first.x, y: first.y, width: last.x + last.width - first.x, height: last.y + last.height - first.y };
+        const { across, down } = await runsAround(grid, box, colour);
+        found[`${from}:${to}`] = { across, down };
+        expect(across, `${from}:${to}: an edge each side, nothing between (${JSON.stringify({ across, down })})`).toHaveLength(2);
+        expect(down, `${from}:${to}: an edge each side, nothing between (${JSON.stringify({ across, down })})`).toHaveLength(2);
+        expect([across[1], down[0], down[1]], `${from}:${to}: ${JSON.stringify({ across, down })}`).toEqual([across[0], across[0], across[0]]);
+    }
+    // The same width at every place.
+    expect(new Set(Object.values(found).map((e) => e.across[0])).size, JSON.stringify(found)).toBe(1);
+});
+
 // ---- UX-19: Excel's look for the Focus and a single range ------------------------------------------
 
 for (const [chrome, query] of CHROMES) {
@@ -183,7 +212,9 @@ for (const [chrome, query] of CHROMES) {
         const down = runsOf(region.down(b3.x + 4, b3.y - 6, d6.y + d6.height + 6), colour);
         expect(across, JSON.stringify({ across, oneCell })).toEqual([oneCell.left, oneCell.left]);
         expect(down, JSON.stringify({ down, oneCell })).toEqual([oneCell.left, oneCell.left]);
-        // Drawn over the range's tint, not beneath it: the outline's pixels are its own colour.
+        // Drawn over the range's tint, not beneath it: the outline's pixels are its own colour. B's
+        // left lies against the pinned A, where the outline's side stays inside the range (ADR-0008,
+        // 2026-10-01).
         const edge = region.at(b3.x + 1, (b3.y + d6.y + d6.height) / 2);
         expect(sameColour(edge, colour, 8), JSON.stringify({ edge, colour })).toBe(true);
     });
@@ -264,9 +295,10 @@ test('UX-19: the range outline reads --ex-selection-outline, and a Theme that se
     await clickCell(grid, 'D6', { modifiers: ['Shift'] });
     await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'B3', 'D6');
     await parkPointer(page, grid);
+    // Each outline is the border of its box of its own, the ::after (ADR-0008, 2026-10-01).
     const colours = () => grid.evaluate((root) => ({
-        range: getComputedStyle(root.querySelector('.ex-selection .ex-range')).outlineColor,
-        focus: getComputedStyle([...root.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0)).outlineColor,
+        range: getComputedStyle(root.querySelector('.ex-selection .ex-range'), '::after').borderTopColor,
+        focus: getComputedStyle([...root.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0), '::after').borderTopColor,
     }));
     // The range's left edge, as painted, along B4's row.
     const paintedEdge = async (rgb) => {
@@ -306,7 +338,11 @@ test('UX-19: under forced colors every range is outlined and the Focus inside a 
     const outlines = () => grid.evaluate((root) => {
         const read = (el) => {
             const s = getComputedStyle(el);
-            return { style: s.outlineStyle, width: s.outlineWidth, offset: s.outlineOffset };
+            const box = getComputedStyle(el, '::after');
+            return {
+                style: s.outlineStyle, width: s.outlineWidth, offset: s.outlineOffset,
+                box: box.content === 'none' ? 'none' : `${box.borderTopStyle} ${box.borderTopWidth}`,
+            };
         };
         return {
             range: read(root.querySelector('.ex-selection .ex-range')),
@@ -314,15 +350,19 @@ test('UX-19: under forced colors every range is outlined and the Focus inside a 
         };
     });
     const normal = await outlines();
-    // Every outline lies inside its box: offset by its own width inward.
-    expect(normal.range, JSON.stringify(normal)).toEqual({ style: 'solid', width: normal.range.width, offset: `-${normal.range.width}` });
+    // The single range's outline is the border of its box of its own, where Excel's lies
+    // (ADR-0008, 2026-10-01); the element itself draws none.
+    expect(normal.range.style, JSON.stringify(normal)).toBe('none');
+    expect(normal.range.box, JSON.stringify(normal)).toBe(`solid ${normal.range.width}`);
     // The Focus inside a single range is marked by its missing tint alone…
     expect(normal.focus.style).toBe('none');
+    expect(normal.focus.box).toBe('none');
 
-    // …which forced colors discard, so there it is outlined again, and the range still is.
+    // …which forced colors discard, so there it is outlined again, and the range still is: both
+    // inside their boxes, with no box of their own.
     await page.emulateMedia({ forcedColors: 'active' });
     await expect.poll(async () => (await outlines()).focus.style).toBe('solid');
     const forced = await outlines();
-    expect(forced.range, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.range.width, offset: `-${forced.range.width}` });
-    expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.focus.width, offset: `-${forced.focus.width}` });
+    expect(forced.range, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.range.width, offset: `-${forced.range.width}`, box: 'none' });
+    expect(forced.focus, JSON.stringify(forced)).toEqual({ style: 'solid', width: forced.focus.width, offset: `-${forced.focus.width}`, box: 'none' });
 });

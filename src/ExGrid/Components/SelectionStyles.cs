@@ -55,15 +55,22 @@ internal static class SelectionStyles
     /// rectangle and written inline, as the polygon the stylesheet clips the tint with; the
     /// range stays one element whatever its size. It is left out while the Focus's row is not
     /// among the painted rows, where the clipped rectangle does not reach it.
+    ///
+    /// <para>The outline of a single range lies where Excel's does, outside the range on every
+    /// side but one that something above the selection layer would cover
+    /// (<see cref="OutlineSides"/>); so each layer's clip lets a row's height past the range's
+    /// edges on every side but the boundary, which is more than any outline is wide.</para>
     /// </summary>
     public static string? Range(
         SelectionRange range, CellPosition focus, ColumnGeometry columns, double rowHeightPx, RowRange painted,
-        bool pinnedLayer)
+        bool pinnedLayer, OutlineCover cover)
     {
         if (range.CellCount == 1 && range.Contains(focus))
             return null;
-        if (Whole(range, columns, rowHeightPx, painted, pinnedLayer) is not { } style || Clip(range, painted) is not { } rows)
+        if (Whole(range, columns, rowHeightPx, painted, pinnedLayer, outsidePx: rowHeightPx) is not { } style
+            || Clip(range, painted) is not { } rows || Side(range, columns, pinnedLayer) is not { } side)
             return null;
+        style += OutlineSides(range.TopRow, side.First, columns, pinnedLayer, cover);
 
         var leftPx = columns.OffsetPxOf(range.LeftColumn);
         if (range.Contains(focus) && Side(CellRange(focus), columns, pinnedLayer) is not null
@@ -85,10 +92,13 @@ internal static class SelectionStyles
     /// boundary, or null when the layer holds no part of it: how a selected range is painted
     /// (<see cref="Range"/>, which adds the Focus's hole), and how a Reference Outline is
     /// (ADR-0057), so that whatever is drawn inside the edge stops at the boundary on each side
-    /// with no seam.
+    /// with no seam. The clip lets what is drawn past the rectangle's edges show for
+    /// <paramref name="outsidePx"/> on every side but the boundary: zero for what is drawn inside
+    /// the edge.
     /// </summary>
     public static string? Whole(
-        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer)
+        SelectionRange range, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer,
+        double outsidePx = 0)
     {
         if (Side(range, columns, pinnedLayer) is null || Clip(range, painted) is not { } rows)
             return null;
@@ -99,11 +109,70 @@ internal static class SelectionStyles
         if (Side(range, columns, !pinnedLayer) is not null)
         {
             var boundaryPx = columns.OffsetPxOf(columns.PinnedCount);
+            var o = outsidePx > 0 ? FormattableString.Invariant($"{-outsidePx}px") : "0";
             style += pinnedLayer
-                ? FormattableString.Invariant($"; clip-path: inset(0 {rightPx - boundaryPx}px 0 0)")
-                : FormattableString.Invariant($"; clip-path: inset(0 0 0 {boundaryPx - leftPx}px)");
+                ? FormattableString.Invariant($"; clip-path: inset({o} {rightPx - boundaryPx}px {o} {o})")
+                : FormattableString.Invariant($"; clip-path: inset({o} {o} {o} {boundaryPx - leftPx}px)");
         }
         return style;
+    }
+
+    /// <summary>
+    /// The Focus as one layer paints it: its cell, cut to the layer's side, with the sides of
+    /// its outline that stay inside the cell (<see cref="OutlineSides"/>); null when the layer
+    /// holds no part of it.
+    /// </summary>
+    public static string? Focus(
+        CellPosition focus, ColumnGeometry columns, double rowHeightPx, RowRange painted, bool pinnedLayer, OutlineCover cover)
+    {
+        var cell = CellRange(focus);
+        if (Part(cell, columns, rowHeightPx, painted, pinnedLayer) is not { } style)
+            return null;
+        return style + OutlineSides(focus.Row, focus.Column, columns, pinnedLayer, cover);
+    }
+
+    /// <summary>
+    /// What lies above the selection layer at its edges at the moment (ADR-0008, 2026-10-01):
+    /// <paramref name="FirstOpenRow"/> is the first row whose top edge lies below the top of the
+    /// readable area, so every row before it has its top under the header (or above the
+    /// Viewport); <paramref name="ScrollLeftPx"/> is the horizontal scroll offset, which takes a
+    /// scrollable column's left edge under the Row Headings or the pinned block.
+    /// </summary>
+    internal readonly record struct OutlineCover(int FirstOpenRow, double ScrollLeftPx);
+
+    // The sides of the Selection's outline that stay inside the range, as the stylesheet reads
+    // them (ex-grid.css): written once, and none when every side lies outside, as Excel's does.
+    private const string InsideTop = "; --ex-outline-in-t: 1";
+    private const string InsideLeft = "; --ex-outline-in-l: 1";
+    private const string InsideTopAndLeft = "; --ex-outline-in-t: 1; --ex-outline-in-l: 1";
+
+    // A pixel's hundredth: a row's top edge or a column's left edge this close to what covers it
+    // is flush with it.
+    private const double FlushPx = 0.01;
+
+    /// <summary>
+    /// The sides of the Selection's outline that stay inside the range (ADR-0008, 2026-10-01).
+    /// Excel draws it on the gridline and one pixel outside the range, so it covers a Border on
+    /// every outer edge, and so does the stylesheet, except on a side whose outer pixels
+    /// something above the selection layer would cover: a top edge at or above the readable
+    /// area's top, under the header; a left edge at or left of the Row Headings' edge, or of the
+    /// pinned block's for a scrollable column. There the side stays inside, as it was, so its
+    /// width stays the others' (UX-18). The bottom and right sides lie on the range's own last
+    /// pixels and one past, where nothing covers them.
+    /// </summary>
+    private static string OutlineSides(int topRow, int firstColumn, ColumnGeometry columns, bool pinnedLayer, OutlineCover cover)
+    {
+        var top = topRow < cover.FirstOpenRow;
+        var left = pinnedLayer
+            ? columns.OffsetPxOf(firstColumn) <= columns.LeadWidthPx + FlushPx
+            : columns.OffsetPxOf(firstColumn) - cover.ScrollLeftPx <= columns.PinnedWidthPx + FlushPx;
+        return (top, left) switch
+        {
+            (true, true) => InsideTopAndLeft,
+            (true, false) => InsideTop,
+            (false, true) => InsideLeft,
+            _ => "",
+        };
     }
 
     /// <summary>The part of a range that pans with the content, or null when the range

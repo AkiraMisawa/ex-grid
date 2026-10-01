@@ -174,6 +174,7 @@
                 @if (_visible is { } visible)
                 {
                     var pointDashes = PointDashesRange(visible);
+                    var outlineCover = OutlineCoverAt(visible);
                     @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
                         @* One element per range, so what selection costs to paint depends
@@ -208,12 +209,12 @@
                                    2026-09-29). *@
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } fill)
                                     {
                                         <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
-                                @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedFocus)
+                                @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedFocus)
                                 {
                                     <div class="ex-focus" style="@pinnedFocus"></div>
                                 }
@@ -277,12 +278,12 @@
                                 }
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } fill)
                                     {
                                         <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
-                                @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } focus)
+                                @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
                                 {
                                     <div class="ex-focus" style="@focus"></div>
                                 }
@@ -2197,15 +2198,24 @@
     /// filtering, and visible columns (ADR-0011).</summary>
     private GridExtent Extent => new(_total ?? _window.Count, Columns.Count);
 
-    /// <summary>The Focus as a one-cell rectangle, so the outline and a block travel the
-    /// same arithmetic. Only read where the selection is known not to be empty — an empty
-    /// one has no Focus to draw.</summary>
-    private SelectionRange FocusRange => SelectionStyles.CellRange(_selection.Selection.Focus);
-
     /// <summary>A range's classes (ADR-0008, 2026-09-29): a Selection of one range carries
     /// one outline, around the whole range, and several ranges carry none. Interned, so a
     /// render composes nothing for them.</summary>
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
+
+    /// <summary>
+    /// What lies above the selection layer at its edges as the slice is painted (ADR-0008,
+    /// 2026-10-01): the first row whose top edge is below the readable area's top — every row
+    /// before it is under the header, or above the Viewport — and the horizontal offset that
+    /// takes a scrollable column under the Row Headings or the pinned block. The Selection's
+    /// outline keeps a side inside the range where its outer pixels would lie there.
+    /// </summary>
+    private SelectionStyles.OutlineCover OutlineCoverAt(RowRange visible)
+    {
+        var first = visible.Start;
+        var open = _geometry.ViewportTopPxOf(first, _scrollTopPx) > 0.01 ? first : first + 1;
+        return new SelectionStyles.OutlineCover(open, _scrollLeftPx);
+    }
 
     /// <summary>The Focus row, every column wide — the Focus band's rectangle
     /// (ADR-0008): which row am I on, in a grid a hundred columns wide.</summary>

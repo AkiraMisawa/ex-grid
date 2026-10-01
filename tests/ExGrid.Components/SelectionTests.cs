@@ -29,9 +29,10 @@ public class SelectionTests : SelectionGridContext
         => [.. cut.FindAll($"{layer} > .ex-range").Select(r => string.Join("; ", r.GetAttribute("style")!.Split("; ").Take(4)))];
 
     /// <summary>Where the Focus outline is painted in a layer — the whole of what a one-cell
-    /// selection paints.</summary>
+    /// selection paints: its box, without the sides of the outline that stay inside it
+    /// (<see cref="SelectionLookTests"/> pins those).</summary>
     private static string[] Focus(IRenderedComponent<ExGrid<TestRow>> cut, string layer = ".ex-selection")
-        => [.. cut.FindAll($"{layer} > .ex-focus").Select(r => r.GetAttribute("style")!)];
+        => [.. cut.FindAll($"{layer} > .ex-focus").Select(r => string.Join("; ", r.GetAttribute("style")!.Split("; ").Take(4)))];
 
     [Fact] // ADR-0008: selection is an overlay rectangle, not a class on the selected cells
     public async Task A_click_paints_one_rectangle_over_the_cell_it_names()
@@ -276,8 +277,8 @@ public class SelectionTests : SelectionGridContext
         // scrollable piece what lies past them.
         var pinned = Assert.Single(cut.FindAll(".ex-selection-pinned > .ex-range")).GetAttribute("style")!;
         var scrollable = Assert.Single(cut.FindAll(".ex-selection > .ex-range")).GetAttribute("style")!;
-        Assert.StartsWith(Rect(0, 0, 300, 20) + "; clip-path: inset(0 100px 0 0)", pinned);
-        Assert.StartsWith(Rect(0, 0, 300, 20) + "; clip-path: inset(0 0 0 200px)", scrollable);
+        Assert.StartsWith(Rect(0, 0, 300, 20) + "; clip-path: inset(-20px 100px -20px -20px)", pinned);
+        Assert.StartsWith(Rect(0, 0, 300, 20) + "; clip-path: inset(-20px -20px -20px 200px)", scrollable);
     }
 
     [Fact] // ADR-0004: the pixels under the pinned block belong to it, not to what has scrolled beneath

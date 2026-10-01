@@ -226,9 +226,10 @@ public class ShippedStylesheetTests
     {
         var (css, rules) = CoreStylesheet();
 
+        // The outline is the range's box of its own, its ::after (ADR-0008, 2026-10-01).
         var colours = rules
-            .Where(rule => rule.Selectors.Contains(".ex-range-single"))
-            .Select(rule => Regex.Match(rule.Body, @"outline-color:\s*(?<value>[^;]+);"))
+            .Where(rule => rule.Selectors.Contains(".ex-range-single::after"))
+            .Select(rule => Regex.Match(rule.Body, @"border-color:\s*(?<value>[^;]+);"))
             .Where(colour => colour.Success)
             .Select(colour => colour.Groups["value"].Value.Trim())
             .ToList();

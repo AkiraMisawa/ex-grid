@@ -84,10 +84,11 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         const css = await gridA(page).evaluate((g) => {
             const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
             const range = g.querySelector('.ex-range');
+            // Each outline is the border of its box of its own, the ::after (ADR-0008, 2026-10-01).
             return {
-                focus: getComputedStyle(focus).outlineColor,
-                focusStyle: getComputedStyle(focus).outlineStyle,
-                range: range ? getComputedStyle(range).outlineColor : null,
+                focus: getComputedStyle(focus, '::after').borderTopColor,
+                focusStyle: getComputedStyle(focus, '::after').borderTopStyle,
+                range: range ? getComputedStyle(range, '::after').borderTopColor : null,
                 fill: range ? getComputedStyle(range, '::before').backgroundColor : null,
                 ground: getComputedStyle(g).backgroundColor,
                 primary: getComputedStyle(g).getPropertyValue('--mud-palette-primary'),
@@ -132,10 +133,12 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         await page.mouse.move(0, 0);
         await expect(gridA(page).locator('.ex-hover-row')).toHaveCount(0);
         await expect(gridA(page).locator('.ex-focus-row')).not.toHaveCount(0);
+        // The outline's top lies above the cell, as Excel's does (ADR-0008, 2026-10-01), so it is
+        // read a pixel above the cell's top; the ground beside it is the band's tint in the cell.
         const box = await cellAt(2, 2).boundingBox();
-        const cellPixels = await painted(page, { x: box.x, y: box.y, width: box.width, height: box.height });
+        const cellPixels = await painted(page, { x: box.x, y: box.y - 4, width: box.width, height: box.height + 4 });
         const onBand = {
-            outline: cellPixels.at(box.x + box.width / 2, box.y + 1),
+            outline: cellPixels.at(box.x + box.width / 2, box.y - 1),
             ground: cellPixels.at(box.x + 6, box.y + 6),
         };
         expect(contrast(onBand.outline, onBand.ground), `painted over the Focus band, dark=${dark} (${JSON.stringify(onBand)})`)
