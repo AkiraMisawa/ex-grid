@@ -634,6 +634,8 @@ written. This section says what the run changed, and what it still left to a rea
   orders. This corrects "a Font never widens" for strikethrough.
   - Ctrl+I, Ctrl+U and Format Cells' Font tab were not asked. They stay as Ctrl+B is, until a run
     asks.
+  - `SetCellFormatAsync` setting strikethrough is read as the Font tab, and does not widen. It sets
+    a Font as the tab does (ticket 100).
 - General widens as typing the number would (case 5), and a bold number that fits stays as it is
   (case 6), as read.
 - A Number Format set through COM on a cell that already held the number widened the column (case 7,
