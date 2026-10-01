@@ -271,6 +271,14 @@ points there, closing the list. So a list takes only ↑, ↓, Tab and Escape, a
 without it: point where Point can, and move the caret elsewhere. Tab closes any list, and the grid does
 not open it again on the text Tab wrote.
 
+*(Widened by Part B of the ninth Windows run, 2026-10-01, decided with the user; ADR-0058.)* Where
+Point can go, `Home`, `End` and the Shift+arrows do the same: they close the list and do what Point
+does with them, as Excel's do in Enter mode. Elsewhere they stay the editor's. Where a Reference can
+go and no outline stands, `Home` starts pointing at the row's first column and `End` writes nothing,
+list or no list (Q53); they had started nothing, and fell to Overwrite's commit. A value list opens only
+while nothing of the argument stands after the caret: with the caret before a value, Excel lists
+nothing.
+
 ## An edit in the Formula Bar is in Caret unless F2 takes it out *(2026-09-30, decided with the user)*
 
 *(Retitled the same day, after the tenth Windows run. It was "An edit in the Formula Bar never enters

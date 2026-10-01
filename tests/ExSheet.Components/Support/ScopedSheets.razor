@@ -2,9 +2,11 @@
    Table Positions in one Scope, and beside them a grid of the same rows in no Scope. The registered
    grid names one column otherwise than the table does (Value is the table's PV), shows a column the
    table does not have (Note, which edits), groups Book and Value under a Header Group, and holds
-   fewer rows than it counts, so its last rows have not arrived. A position with an empty Id has a
+   fewer rows than it counts, so its last rows — and, when the test shows its rows further on, its
+   first ones — have not arrived. A position with an empty Id has a
    blank key. The test can show the registered grid other rows — sorted, revalued or filtered — as a
-   Consumer pushes a new Window, and its columns in another order. *@
+   Consumer pushes a new Window, its columns in another order, and its Viewport narrower than its
+   columns. *@
 @using System.Globalization
 @using global::ExGrid
 @using global::ExGrid.Cells
@@ -17,8 +19,8 @@
 <ExSheet @ref="Left" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedLeft" />
 <ExSheet @ref="Right" ViewportHeight="300" ViewportWidth="600" Culture="Culture" PointingScope="Scope" OnPointingRefused="RefusedRight" />
 <div id="positions">
-    <ExGrid TRow="Position" Window="Shown" TotalCount="Shown.Count + 20" Columns="ShownColumns" RowHeight="20"
-            ViewportHeight="200" ViewportWidth="450" HeaderGroups="Groups" PointedAt="_pointedAt" OnEdit="Edited" />
+    <ExGrid TRow="Position" Window="Shown" WindowStart="ShownFrom" TotalCount="ShownFrom + Shown.Count + 20" Columns="ShownColumns" RowHeight="20"
+            ViewportHeight="200" ViewportWidth="ShownWidth" HeaderGroups="Groups" PointedAt="_pointedAt" OnEdit="Edited" />
 </div>
 <div id="unregistered">
     <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="20" ViewportHeight="200" ViewportWidth="450" />
@@ -61,10 +63,16 @@
     /// <summary>The rows the registered grid shows: <see cref="Positions"/> until the test shows others.</summary>
     public IReadOnlyList<Position> Shown { get; private set; } = Positions;
 
-    /// <summary>Shows the registered grid <paramref name="rows"/>, as a Consumer pushes a new Window.</summary>
-    public Task ShowAsync(IReadOnlyList<Position> rows) => InvokeAsync(() =>
+    /// <summary>Where in the whole result the rows shown begin: 0 until the test shows them further on,
+    /// so that the rows before them have not arrived.</summary>
+    public int ShownFrom { get; private set; }
+
+    /// <summary>Shows the registered grid <paramref name="rows"/>, as a Consumer pushes a new Window,
+    /// beginning at <paramref name="from"/> in the whole result.</summary>
+    public Task ShowAsync(IReadOnlyList<Position> rows, int from = 0) => InvokeAsync(() =>
     {
         Shown = rows;
+        ShownFrom = from;
         StateHasChanged();
     });
 
@@ -77,6 +85,18 @@
     public Task ReorderAsync(params string[] names) => InvokeAsync(() =>
     {
         ShownColumns = [.. names.Select(name => PositionColumns.Single(column => column.Name == name))];
+        StateHasChanged();
+    });
+
+    /// <summary>How wide the registered grid's Viewport is: 450px, every column in view, until the test
+    /// narrows it.</summary>
+    public ViewportSize ShownWidth { get; private set; } = 450;
+
+    /// <summary>Lays the registered grid out <paramref name="width"/> px wide, through the grid's
+    /// parameter, as a Consumer narrows it (ADR-0013).</summary>
+    public Task NarrowAsync(int width) => InvokeAsync(() =>
+    {
+        ShownWidth = width;
         StateHasChanged();
     });
 

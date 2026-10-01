@@ -154,6 +154,8 @@ ADR-0057 decides the colours. This section says how they reach a registered grid
     Excel scrolls the other workbook. ADR-0057's "the grid never scrolls to show a Reference" is about
     the References a Formula holds, not about a cell the user is moving.
   - **A row that has not arrived yet** (a Placeholder) writes nothing, and the reason is told.
+  - **After a press on a column header, ↓ points at the column's first row, and ← and → at the next
+    column the table has, as a column** (Part B of the ninth run, below).
   - **Shift+arrow is refused as a range is**: nothing is written, the text stays as it was, and the
     reason is told. **Ctrl+arrow is not built**: it moves nothing, and the reason is told. Excel's goes
     to the edge of the data, and the grid holds only its Window.
@@ -267,11 +269,15 @@ ninth run's Part B asks Excel; a reading it contradicts is corrected here.
 
 - **"Typed whole" is read on the text before the caret.** With the caret before or inside a value
   (`,,|1)`, `,,-|1)`), every value is listed, and the one chosen replaces the whole of it.
+  *(Replaced 2026-10-01: Excel lists nothing there. See Part B of the ninth run, below.)*
 - **Text that begins no value lists nothing** (`4`, `A1`, `1+` at `match_mode`). Read literally, "any
   other text lists every value" would open a list after an operator, which the table above rules out
-  and which would take ↓ from Point.
+  and which would take ↓ from Point. *(Excel agreed for `4` and listed every value for `A`; the rest
+  waits for Excel. See Part B of the ninth run, below.)* *(Replaced 2026-10-01: Excel lists every
+  value for any text that is not a number. See the thirteenth run, Q54, below.)*
 - **`Home`, `End` and the Shift+arrows stay the editor's while any list is open**; only ← and → are
-  given to Point, where it can.
+  given to Point, where it can. *(Replaced 2026-10-01: over Point, Excel's close the list and point.
+  See Part B of the ninth run, below.)*
 
 ## Not in the first version, and what watches for it
 
@@ -384,11 +390,14 @@ The arrow keys point inside a registered grid (above). Building them settled the
   stay, and a press on a cell makes the arrows point again. Where ↓ would go from a column, and ← and
   → from one column to the next, is left until Excel is observed pointing at a whole column of
   another workbook (`verify-on-windows-9.md`, Part B). Staying silent was rejected: a key that does
-  nothing and says nothing reads as broken.
+  nothing and says nothing reads as broken. *(Replaced 2026-10-01, decided with the user as Q52 once
+  Excel was observed: ↓ points at the column's first row, and ← and → at the next column. See Part B
+  of the ninth run, below.)*
 - **A row the grid no longer holds is told** *(accepted by the user)*. When the pointed row has left
   the Window, or its column is no longer shown, an arrow writes nothing and says so.
 - **Readings, until Excel or a user says otherwise:**
-  - Ctrl+Shift+arrow is refused as Ctrl+arrow is (the edge of the data), not as a range.
+  - Ctrl+Shift+arrow is refused as Ctrl+arrow is (the edge of the data), not as a range. *(Excel
+    points at the range to the edge; ExSheet still refuses it. See Part B of the ninth run, below.)*
   - An arrow that reaches a row whose key is blank or an Error Value is refused as a press there is,
     and nothing moves, so ↓ stops at that row until a press.
   - An arrow that reaches a row not yet arrived tells so, and the grid does not scroll to it.
@@ -407,3 +416,149 @@ The arrow keys point inside a registered grid (above). Building them settled the
   caret and ends Point. Nothing is written, so no wrong value can follow.
 - **`/pointing`**, a DemoHost page, holds a Sheet and a 40-row positions grid with a column the table
   does not have, which `/sheet` and `/sheets` could not add without moving data other specs read.
+
+## What Part B of the ninth Windows run settled *(2026-10-01)*
+
+Part B of `docs/specs/exsheet/verify-on-windows-9.md` typed the Pointing Scope's cases into `/sheet`,
+`/sheets` and `/pointing` with real keys and the real mouse, in Chrome and Edge, on both hosts and
+behind 150 ms, and asked Excel what the readings above had left to it. It is recorded in
+`verification/2026-10-01-windows-9/pointing-scope.md`. 91 of 92 states read the same in all six
+configurations; the one that did not was 32 ↓ read 900 ms after the last key behind 150 ms, which
+had reached `"R-18"` and reached `"R-40"` later, nothing lost. No reading of ExSheet contradicted this
+ADR's rules. Excel contradicted four readings, and each is decided here with the user.
+
+- **With the caret before a value, nothing is listed** *(decided with the user, Q49)*. Excel, at
+  `=XLOOKUP(1,A2:A4,B2:B4,,|1)` (F2, then ←←), showed the argument's tip and no list, and Tab entered
+  the Formula and moved to the next cell. ExSheet listed the five values, and Tab replaced the `1`.
+  The value list now opens only while nothing of the argument stands after the caret. With the caret
+  inside a value (`,,-|1)`), which Excel was not asked, nothing is listed either, until Excel is
+  observed (`verify-on-windows-13.md`). Tab with no list open does what it does anywhere else in the
+  edit. This replaces the first reading taken while building ticket 44.
+- **`A` at `match_mode` lists every value in Excel**, `0 - Exact match` selected, with a tip that
+  describes the selected value; `4` lists nothing. ExSheet lists the functions `A` begins (`AVERAGE`),
+  as it does after any letter. *(Settled by the thirteenth run, Q54, below.)* One case does not give
+  Excel's rule, so **nothing changes until Excel
+  is asked more** *(decided with the user, Q50)*: `A1`, `1+`, another letter, and the same at
+  `search_mode` (`verify-on-windows-13.md`). The second reading taken while building ticket 44 holds
+  for `4` and waits for the rest.
+- **With a list open over Point, `Home`, `End` and the Shift+arrows close it and do what Point does
+  with them** *(decided with the user, Q51)*. Excel, in Enter mode after `,,` with the value list
+  open: `Home` pointed at A10, `End` turned End Mode on and wrote nothing, and Shift+→ pointed at
+  `D10:E10`, each closing the list. ExSheet kept them the editor's (`Home` moved the caret to 0;
+  `End` and Shift+→ did nothing, and the list stayed). So such a list takes only ↑, ↓, Tab and
+  Escape, as the tenth run found of ← and →. Where Point cannot go — a list of names, or an edit in
+  Caret — these keys stay the editor's, as ← and → do there; Excel was not asked about them in a list
+  of names, where Overwrite's `Home` would commit the Formula. This replaces the third reading taken
+  while building ticket 44.
+  - **At a Reference's place, `Home` points at the row's first column, and `End` writes nothing**,
+    with a list open or not *(decided with the user, Q53, while ticket 70 was built)*. Point had
+    moved an outline that stood with `Home` and `End` and started none, so with no outline they were
+    Overwrite's: a commit, which the Sheet refuses for a Formula that ends too early. Excel's `Home`
+    in Enter mode points where a Reference can go (x4) and commits where none can (the tenth run,
+    case 20); its `End` turns End Mode on and writes nothing (x5). ExSheet has no End Mode, so `End`
+    there closes a list and does nothing more. With an outline standing, both still move it, as
+    before. `Home` pointing at the last column instead was rejected for `End`: Excel writes nothing.
+- **After a press on a column header, the arrow keys point too** *(decided with the user, Q52;
+  this replaces Q48's refusal)*. Excel, pointing at a whole column of another workbook (`$B:$B`, from
+  its heading), went with ↓ to the column's first row of data (`$B$2`), and → from there to the next
+  column's cell (`$C$2`); after a drag over `Trades[PV]`'s data, begun on B2, ↓ gave `$B$3`. A
+  registered grid's header stands for the column, as Excel's heading does:
+  - **↓ points at the column's first row**, in the grid's current order: the `XLOOKUP(...)` of that
+    row's key, with the dashes on its cell. A first row that has not arrived, or whose key is blank or
+    an Error Value, is refused as an arrow reaching it is.
+  - **← and → point at the next column the table has, as a column**: `T[<that column>]` is written
+    and its body is dashed, passing over the grid's columns the table does not have. Excel was not
+    asked → straight from a heading; from its heading cell, which is a row of the Table, it would
+    reach the next column's heading. `verify-on-windows-13.md` asks.
+    - **The column reached is scrolled into view across, and only across** *(decided with the user,
+      2026-10-01, when ticket 71 was built without it)*. A grid narrower than its columns could
+      otherwise dash a column the reader cannot see, and Excel always brings what it points at into
+      view. The vertical offset stays where it is: the column's body is what is dashed, and no row of
+      it is the one pointed at. A column already whole in view, or pinned, does not move the grid.
+      The column's place comes from the grid's own column widths, so nothing is measured; only the
+      scroll offset is set (ADR-0021).
+  - **↑ is at an edge**: nothing moves and nothing is told, as at any edge.
+  - Shift+arrow and Ctrl+arrow are refused as they are from a cell.
+- **Ctrl+Shift+↓ in Excel points at the range to the edge of the data** (`$B$3:$B$4`), so the
+  reading "Ctrl+Shift+arrow is refused as Ctrl+arrow is, not as a range" describes ExSheet, not
+  Excel. It stays: the edge is not known in the grid's Window, and a range could not be written
+  either. The reason told is Ctrl+arrow's.
+- **After a drag took back what its press wrote, the arrow keys are the Sheet's own Point**: `=`
+  stood, and ↓ and → pointed at C4 and D4, from the cell being edited. That follows from the drag
+  returning the text to what it was before the press (above, decided with the user): before the
+  press, the arrows pointed in the Sheet. The reason the drag told stays shown until the next one.
+- **On a circuit, the first gap is what the procedure met.** `=`, a press and `*` sent in one
+  `SendInput` call gave `=` 20 times of 20 behind 150 ms: the press was an ordinary press, as "On a
+  circuit" accepts. With the press made once the positions grid was pointed at, it gave
+  `=XLOOKUP(…)*` 20 times of 20. DC-54's verification said "at once" of all three, which the first gap
+  rules out; it now says the press follows the grid being pointed at, as its layer 3 test does.
+- **The positions grids could not be narrowed** to give them a Scrollbar Gutter beside the last
+  column (DC-53): neither page wires column resizing, and their widths are the page's. `/pointing`
+  gains a narrow view of its grid for the next run. On `/pointing`'s own vertical scrollbar, scrolled
+  to its last row, R-40's dashes and the column outlines were whole inside the client area.
+- **Seen, and nothing to decide:** the pointer over a pointed-at grid is the `cell` cursor, and the
+  system arrow otherwise; under Windows' high contrast every outline and the dashes are white, so
+  which column is read is shown and which Reference reads it is not, as ADR-0057 leaves; the
+  completion cases of the tenth run, typed into ExSheet, gave Excel's answers.
+
+Tickets 70 to 73 in `docs/specs/exsheet/issues/` build these. `docs/specs/exsheet/verify-on-windows-13.md`
+asks Excel what is left to it and types the changes into ExSheet. *(The tickets were numbered 55 to 58
+until 2026-10-01, when the Cell Format's line was found to hold those numbers, and the procedure was
+the twelfth until the same day. The ninth run's Part B and the thirteenth run's records cite the old
+numbers.)*
+
+## What the thirteenth Windows run settled *(2026-10-01)*
+
+`docs/specs/exsheet/verify-on-windows-13.md` asked Excel what Part B of the ninth run had left to it
+(Part A, Excel 2609), and typed tickets 70 to 73 into ExSheet at 6ebc186 (Part B). It is recorded in
+`verification/2026-10-01-windows-13/pointing-scope.md`. Part B read 70 of 70 states the same in all
+six configurations, and as decided: DC-53's gutters on `/pointing?narrow`, and a column reached by the
+arrows scrolled across only. b2's keys (F2, then one ←) left the caret after `-1`, where the value is
+typed whole and listed alone, as decided; with ←← (b2x) nothing was listed and Tab committed. Part A
+agreed with Q49 (`,,-|1)` and `,,1|0)` list nothing, and Tab enters the Formula) and with ↓ from a
+heading (`$B$2`, then `$B$3`). Three things were decided with the user.
+
+- **At an argument whose values are a fixed list, text that is not a number lists every value, with
+  the first selected** *(decided with the user, Q54; this settles Q50)*. Excel, at `match_mode`, listed
+  every value with `0 - Exact match` selected for `A1`, `1+` (not `1`), `X`, `AV`, `Positions` and
+  `"`; at `search_mode`, `A` listed its four values and `5` nothing. A number lists the value it is
+  alone, or nothing when it is no value (`4`, `5`). Letters there list the values, not the functions or
+  tables they begin: ExSheet had listed `XLOOKUP` for `X`, `AVERAGE` for `AV` and `A`, the table for
+  `Positions`, and nothing for `A1`, `1+` and `"`. Tab writes the selected value over the typed text.
+  This replaces the second reading taken while building ticket 44.
+  - **What counts as a number, and where the rule stops** *(decided with the user while ticket 74 was
+    built, 2026-10-01; not asked of Excel, and asked by the next run)*. A number is what the Formula
+    grammar reads as a number constant, with one optional sign before it and spaces after it, and it
+    lists the value it equals: `1.0`, `+1` and `1 ` list `1`, and `-0` lists `0`. So Tab over a number
+    never changes the number. `--1`, `- 1`, `50%` and `1e` are not numbers, and list every value. A
+    grouping parenthesis opens an expression of its own, as inside `SUM(`: `,,(` lists nothing and
+    `,,(A` lists `AVERAGE`. So does `[` after a table's name: `,,Positions[` lists the table's columns,
+    as `Table[` does anywhere, while `,,Positions` lists the values. Once the bracket or the
+    parenthesis closes, the caret is at the argument again: `,,Positions[Id]` and `,,(1)` are text
+    that is not a number, and list every value.
+- **White space after the caret is something of the argument** *(decided with the user, Q55)*. With
+  the caret before two spaces (`,,|  )`), Excel listed nothing, and Tab entered the Formula with the
+  spaces kept. ExSheet had counted them as nothing, listed the five values, and written `,,0  )` with
+  the edit left open (ticket 70's Comments).
+- **After a header press, ← and → still point at the next column as a column, and ↑ is still an
+  edge** *(decided with the user, Q56: a recorded difference)*. Excel, after a click on a heading of
+  another workbook, moved as from the header row's cell: → gave `$C$1`, a cell outside the Table; ←
+  gave `Trades[[#Headers],[Id]]`, the next column's header cell; ↑ gave `Trades[[#Headers],[PV]]`; and
+  from the header cell `PV`, → gave `$C$1`, then ↓ `$C$2`. A registered grid's header is not a row of
+  the table, and ExSheet's grammar refuses `[#Headers]` (above, "After `Table[`"), so the header cell
+  cannot be written. The column is the nearest thing the grid shows.
+- **`=SUM(A` lists the functions ExSheet computes**: `AVERAGE` alone, where Excel lists every function
+  beginning with A. A function it cannot compute would make the Formula an error the moment it was
+  chosen, as a candidate the grammar refuses would. A deliberate difference.
+- **A defect, seen and not asked:** after `Home` or Shift+→ over Point writes `A10` or `D10:E10`, the
+  Cell Editor's own `scrollLeft` stays where it was (81.3 px), and the caret and the written Reference
+  lie 24 to 50 px past its right edge, in all six configurations. What Point writes is to be seen as it
+  is written. *(Built by ticket 75 for a caret at the start or the end of the text, which is where
+  typing a Formula from its start always points. A caret short of the end is left to the browser,
+  decided with the user on 2026-10-01: no place for it can be set without the width of the text before
+  it, and getting that width from the browser, by laying out a shorter copy of the text, is the
+  measuring ADR-0021 refuses, and it broke an IME composition. Such a write can carry the caret past
+  the field's right edge by up to what was written, until the next key. It shows only when an
+  existing Formula wider than the field is edited in its middle.)*
+
+Tickets 74 and 75 build these.

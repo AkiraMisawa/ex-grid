@@ -1,7 +1,7 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
-    sheet, positions, openSheet, cell, clickCell, editor, bar, nameBox, pressCell, boxOf, expectCovers,
+    sheet, positions, openSheet, cell, clickCell, editor, bar, nameBox, pressCell, boxOf, expectCovers, expectCaretShown,
 } from './sheet-helpers.mjs';
 
 // A Pointing Scope (ADR-0058, ticket 37; SH-32, SH-35): /sheet puts its Sheet and its positions grid
@@ -27,18 +27,27 @@ test.use({ viewport: { width: 1280, height: 1000 } });
 
 const LOOKUP_4471 = '=XLOOKUP("R-4471", Positions[Id], Positions[PV])';
 
-/**
- * Whether a grid is pointed at: ex-pointed-at on its root (DC-52). On a circuit the class can be the
- * one painted for an earlier text. Typed =SUM(, the class painted for = still stands while the server
- * has yet to hear SUM(, and =S is out of Point: a press then is the grid's own. A test that types more
- * than = before it asks waits for the Formula Bar, the server's view of the text, to show it first.
- */
+/** Whether a grid is pointed at: ex-pointed-at on its root (DC-52). */
 async function expectPointedAt(grid, pointed = true) {
     if (pointed) {
         await expect(grid).toHaveClass(/\bex-pointed-at\b/);
     } else {
         await expect(grid).not.toHaveClass(/\bex-pointed-at\b/);
     }
+}
+
+/**
+ * Whether a grid is pointed at for the text typed into the Sheet: once the Formula Bar, which the
+ * core renders, shows that text, the grid wears ex-pointed-at. The class alone can be left from an
+ * earlier text — `=` points, `=S` does not — while the renders of the texts typed since are still on
+ * their way on a circuit, and one of them can paint the grid otherwise before a press lands: that
+ * press is then an ordinary press, and the edit stands (ADR-0058, "On a circuit"). Found on CI, the
+ * Server host, 2026-10-01: `=SUM(` and `=SUM(1,` were followed by a press that landed after `=S`
+ * had been painted, and the positions grid took the press as its own.
+ */
+async function expectPointedAtFor(sheetGrid, grid, text) {
+    await expect(bar(sheetGrid)).toHaveValue(text);
+    await expectPointedAt(grid);
 }
 
 /**
@@ -67,6 +76,21 @@ async function pointedAtNow(grid) {
     }));
 }
 
+/**
+ * Whether the grid wore ex-pointed-at as the next press on it was made: heard on its root in the
+ * capture phase, in the press's own task, so it is what the browser painted then, whatever the
+ * core had meanwhile decided. The listener goes with that press. Read it with `.evaluate((h) => h.at)`.
+ */
+function paintedAtNextPress(grid) {
+    return grid.evaluateHandle((root) => {
+        const heard = {};
+        heard.at = new Promise((resolve) => {
+            root.addEventListener('mousedown', () => resolve(root.classList.contains('ex-pointed-at')), { capture: true, once: true });
+        });
+        return heard;
+    });
+}
+
 /** A column header of a grid, by its label. */
 function header(grid, label) {
     return grid.locator('.ex-header-cell', { hasText: new RegExp(`^${label}$`) });
@@ -92,6 +116,9 @@ const spansOf = (field) => field.evaluate((input) => [...input.previousElementSi
 
 /** The texts of the layer's spans marked as what Point wrote. */
 const pointedTexts = async (field) => (await spansOf(field)).filter((span) => span.pointed).map((span) => span.text);
+
+/** Where a field's caret stands, in characters. */
+const caretOf = (field) => field.evaluate((input) => input.selectionStart);
 
 /** The line an outline or the dashes are drawn with. */
 const lineOf = (locator) => locator.evaluate((element) => {
@@ -134,8 +161,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
-        await expect(bar(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(');
 
         await header(table, 'PV').click({ force: true });
 
@@ -158,8 +184,7 @@ test.describe('/sheet', () => {
         // The text the press lands after, as the user sees it: a press made while keys typed before
         // it are still on their way is DC-54's, below.
         await expect(editor(grid)).toHaveValue('=1+');
-        await expect(bar(grid)).toHaveValue('=1+');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=1+');
 
         await clickCell(table, 'C3');
         await expect(editor(grid)).toHaveValue(`=1+${LOOKUP_4471.slice(1)}`);
@@ -195,8 +220,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
-        await expect(bar(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(');
 
         await clickCell(table, 'C3', { modifiers: ['Shift'] });
 
@@ -211,8 +235,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
-        await expect(bar(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(');
         const from = await boxOf(cell(table, 'C1'));
         const to = await boxOf(cell(table, 'C3'));
 
@@ -320,8 +343,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(1,');
         await expect(editor(grid)).toHaveValue('=SUM(1,');
-        await expect(bar(grid)).toHaveValue('=SUM(1,');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(1,');
         await setRoundTrip(150);
 
         // No wait between the three.
@@ -365,14 +387,73 @@ test.describe('/sheet', () => {
         });
     }
 
+    // A press keeps the meaning the grid on screen had when it was made (ADR-0058, "On a circuit";
+    // GridPointedAt.OnPress), whichever way the core has moved since: on a circuit the grid is painted
+    // pointed at, or otherwise, a round trip after the text that decides it. Found on CI (the Server
+    // host, 2026-10-01): a press made just after `=SUM(1,` landed once `=S` had been painted, and was
+    // the positions grid's own, the Sheet's edit standing and nothing written, which the tests above
+    // now wait out (expectPointedAtFor). Here each way is made on purpose, with a round trip.
+    test('ADR-0058/DC-54: with a 150 ms round trip, a press on the positions grid still painted pointed at after the text stopped pointing writes nothing, says why, and the keys after it go on', async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly paints the end of pointing before a press can land');
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=1+');
+        await expectPointedAtFor(grid, table, '=1+');
+        const target = await boxOf(cell(table, 'C3'));
+        const painted = await paintedAtNextPress(table);
+        await setRoundTrip(150);
+
+        // `2` ends pointing in the core at once, and the grid is painted otherwise a round trip later:
+        // the press lands in between. No wait between the three.
+        await page.keyboard.type('2');
+        await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+        await page.keyboard.type('*3');
+
+        await expect(page.locator('#sheet-pointing')).toContainText('no longer stood where a Reference can go');
+        await expect(editor(grid)).toHaveValue('=1+2*3');
+        await expect(editor(grid)).toBeFocused();
+        await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        expect(await painted.evaluate((heard) => heard.at), 'the press was made on a grid painted pointed at').toBe(true);
+    });
+
+    test('ADR-0058/SH-35: with a 150 ms round trip, a press on the positions grid still painted otherwise after the text began to point is an ordinary press, and the edit stands', async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly paints the start of pointing before a press can land');
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=1');
+        await expect(bar(grid)).toHaveValue('=1');
+        await expectPointedAt(table, false);
+        const target = await boxOf(cell(table, 'C3'));
+        const painted = await paintedAtNextPress(table);
+        await setRoundTrip(150);
+
+        // `+` begins pointing in the core at once, and the grid is painted pointed at a round trip
+        // later: the press lands in between. No wait between the two.
+        await page.keyboard.type('+');
+        await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+
+        await expect(table).toBeFocused();
+        await expect(table).toHaveAttribute('aria-activedescendant', /-r2c2$/);
+        await expect(editor(grid)).toHaveValue('=1+');
+        await expectPointedAt(table, false);
+        await expect(page.locator('#sheet-pointing')).toHaveText('');
+        expect(await painted.evaluate((heard) => heard.at), 'the press was made on a grid painted otherwise').toBe(false);
+        await setRoundTrip(0);
+        // The edit stands, and a press back points.
+        await clickCell(grid, 'B2');
+        await expect(editor(grid)).toHaveValue('=1+B2');
+        await expect(editor(grid)).toBeFocused();
+    });
+
     test('ADR-0058/SH-34: =SUM(1, and a press on a PV cell outline Id and PV in their text\'s colours, dash the cell, lay the lookup on the grey, and the dashes follow the row through a sort', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(1,');
         await expect(editor(grid)).toHaveValue('=SUM(1,');
-        await expect(bar(grid)).toHaveValue('=SUM(1,');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(1,');
 
         await clickCell(table, 'C3');
 
@@ -437,8 +518,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=1+');
         await expect(editor(grid)).toHaveValue('=1+');
-        await expect(bar(grid)).toHaveValue('=1+');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=1+');
 
         await header(table, 'PV').click({ force: true });
 
@@ -486,6 +566,26 @@ test.describe('/sheet', () => {
         await expect(cell(grid, 'F3')).toHaveText('318.25');
         await expect(dashes).toHaveCount(0);
         await expect(table.locator('.ex-reference-outline')).toHaveCount(0);
+    });
+
+    // The thirteenth Windows run's b11 (ADR-0058, the defect seen and not asked; ticket 75): the
+    // lookup a press wrote stood with the caret at its end and the Cell Editor still showing the
+    // text's start. The editor shows the caret, and the coloured layer is scrolled with it (DC-48).
+    test('ticket 75: a press on the positions grid shows the lookup it wrote at the end of the text in the Cell Editor', async ({ page }) => {
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'D10');
+        await page.keyboard.type('=');
+        await expectPointedAtFor(grid, table, '=');
+
+        await clickCell(table, 'C3');
+
+        await expect(editor(grid)).toHaveValue(LOOKUP_4471);
+        await expect.poll(() => caretOf(editor(grid))).toBe(LOOKUP_4471.length);
+        await expectCaretShown(editor(grid), { scrolled: true }, 'a press on the positions grid wrote the lookup');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'D10')).toHaveText('');
     });
 
     // The first gap of ADR-0058, "On a circuit": the positions grid learns that the Sheet points from
@@ -553,13 +653,25 @@ test.describe('/sheets', () => {
 });
 
 // The arrow keys after a press on a registered grid (ADR-0058, "The keyboard", as the ninth Windows
-// run settled it; ticket 41; SH-35, DC-55). /pointing puts a Sheet and a grid of 40 positions in one
+// run settled it; tickets 41 and 56; SH-35, DC-55). /pointing puts a Sheet and a grid of 40 positions in one
 // Scope. The Linked Table Positions has two columns, Id, its key, and PV; the grid shows Id (A),
 // Book (B), which is the grid's own, and PV (C), and paints nine rows at a time. R-n's PV is 10n, and
 // the PVs sum to 8200.
+const lookup = (id, column = 'PV') => `=XLOOKUP("${id}", Positions[Id], Positions[${column}])`;
+const table = (page) => page.locator('#pointing-positions .ex-grid');
+
+/** `=` typed into the Sheet's C3, and a press on a positions cell, written. */
+async function pointFrom(page, address, written) {
+    const grid = sheet(page);
+    await pressCell(grid, 'C3');
+    await page.keyboard.type('=');
+    await expect(editor(grid)).toHaveValue('=');
+    await expectPointedAt(table(page));
+    await clickCell(table(page), address);
+    await expect(editor(grid)).toHaveValue(written);
+}
+
 test.describe('/pointing', () => {
-    const lookup = (id, column = 'PV') => `=XLOOKUP("${id}", Positions[Id], Positions[${column}])`;
-    const table = (page) => page.locator('#pointing-positions .ex-grid');
     const refused = (page) => page.locator('#pointing-refused');
 
     test.beforeEach(async ({ page }) => {
@@ -567,17 +679,6 @@ test.describe('/pointing', () => {
         // The table's snapshot has landed.
         await expect(cell(sheet(page), 'B1')).toHaveText('8200');
     });
-
-    /** `=` typed into the Sheet's C3, and a press on a positions cell, written. */
-    async function pointFrom(page, address, written) {
-        const grid = sheet(page);
-        await pressCell(grid, 'C3');
-        await page.keyboard.type('=');
-        await expect(editor(grid)).toHaveValue('=');
-        await expectPointedAt(table(page));
-        await clickCell(table(page), address);
-        await expect(editor(grid)).toHaveValue(written);
-    }
 
     test('ADR-0058/SH-35: =, a press on R-1\'s PV, ↓ gives R-2\'s lookup and moves the dashes; ↑ goes back; Enter computes it', async ({ page }) => {
         const grid = sheet(page);
@@ -687,26 +788,74 @@ test.describe('/pointing', () => {
         await expect(editor(grid)).toHaveValue(lookup('R-2'));
     });
 
-    test('ADR-0058/SH-35: after a press on the PV header an arrow writes nothing, and the page says to press a cell (decided 2026-10-01)', async ({ page }) => {
+    /** The dashes run down the body of the column a cell is in, from that cell down: its left edge
+     * and its width, from its top, over more than one row. */
+    async function expectDashedColumn(positions, address) {
+        const want = await boxOf(cell(positions, address));
+        await expect.poll(async () => {
+            const box = await positions.locator('.ex-point-dashes').boundingBox();
+            if (!box) {
+                return 'not painted';
+            }
+            const near = (p, q) => Math.abs(p - q) <= 1.5;
+            return near(box.x, want.x) && near(box.width, want.width) && near(box.y, want.y) && box.height > 2 * want.height
+                ? 'down the column'
+                : JSON.stringify({ box, want });
+        }).toBe('down the column');
+    }
+
+    // After a press on a column header, the arrow keys point too (ADR-0058, Part B of the ninth run,
+    // Q52): Excel, pointing at a whole column of another workbook, went with ↓ to the column's first
+    // row of data, and from there with → to the next column's.
+    test('ADR-0058/SH-35: a press on the PV header, then ↓, gives R-1\'s lookup, dashes its cell, and scrolls the grid back to it (Part B, Q52)', async ({ page }) => {
         const grid = sheet(page);
         const positions = table(page);
-        await pressCell(grid, 'C3');
-        await page.keyboard.type('=SUM(');
-        await expect(editor(grid)).toHaveValue('=SUM(');
-        await expect(bar(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(positions);
+        const scroller = positions.locator('.ex-scroller');
+        // ↓ from R-9, the last row in view, scrolls the grid down: R-1 is then above the view.
+        await pointFrom(page, 'C9', lookup('R-9'));
+        await page.keyboard.press('ArrowDown');
+        await expect(editor(grid)).toHaveValue(lookup('R-10'));
+        await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
         await header(positions, 'PV').click({ force: true });
-        await expect(editor(grid)).toHaveValue('=SUM(Positions[PV]');
+        await expect(editor(grid)).toHaveValue('=Positions[PV]');
 
         await page.keyboard.press('ArrowDown');
 
-        await expect(refused(page)).toContainText('Press a cell to point by keys');
-        await expect(editor(grid)).toHaveValue('=SUM(Positions[PV]');
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBe(0);
+        await expectCovers(positions.locator('.ex-point-dashes'), positions, 'C1', 'C1');
         await expect(editor(grid)).toBeFocused();
-        await expect(positions.locator('.ex-point-dashes')).toHaveCount(1);
+        await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        await expect(refused(page)).toHaveText('');
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'C3')).toHaveText('10');
+    });
+
+    test('ADR-0058/SH-35: a press on the PV header, then ←, gives Positions[Id], passing over Book, and dashes that column; ↑ and a further ← move nothing (Part B, Q52)', async ({ page }) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('=COUNTA(');
+        await expect(editor(grid)).toHaveValue('=COUNTA(');
+        await expectPointedAtFor(grid, positions, '=COUNTA(');
+        await header(positions, 'PV').click({ force: true });
+        await expect(editor(grid)).toHaveValue('=COUNTA(Positions[PV]');
+
+        await page.keyboard.press('ArrowLeft');
+
+        await expect(editor(grid)).toHaveValue('=COUNTA(Positions[Id]');
+        await expectDashedColumn(positions, 'A1');
+        await expect(editor(grid)).toBeFocused();
+        await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        // Edges: nothing moves, and nothing is told.
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('ArrowLeft');
+        await expect(editor(grid)).toHaveValue('=COUNTA(Positions[Id]');
+        await expectDashedColumn(positions, 'A1');
+        await expect(refused(page)).toHaveText('');
         await page.keyboard.type(')');
         await page.keyboard.press('Enter');
-        await expect(cell(grid, 'C3')).toHaveText('8200');
+        await expect(cell(grid, 'C3')).toHaveText('40');
     });
 
     // The keys typed after an arrow keep their place behind it (ADR-0010's hold): the arrow is answered
@@ -723,5 +872,164 @@ test.describe('/pointing', () => {
         await expect(editor(grid)).toHaveValue(`${lookup('R-2')}*2`);
         await page.keyboard.press('Enter');
         await expect(cell(grid, 'C3')).toHaveText('40');
+    });
+});
+
+// The positions grid with its own scrollbars (DC-53; ticket 72). Part B of the ninth Windows run
+// could not set this up: /pointing's grid is wider than its columns, so it has no horizontal
+// scrollbar, and its last column ends 18 px short of the vertical one. ?narrow lays the grid out
+// narrower than its columns. Scrolled to its last row and its last column, R-40's PV lies against
+// both gutters, and what the Scope draws over it stops where they begin.
+test.describe('/pointing?narrow', () => {
+    // A rectangle flush with a gutter may round the wrong way by a hair; a gutter is 12 px.
+    const SLACK_PX = 1;
+
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/pointing?narrow');
+        await expect(page.locator('#pointing-narrow')).toBeVisible();
+        await expect(cell(sheet(page), 'B1')).toHaveText('8200');
+    });
+
+    /**
+     * The scroller's client area — what its scrollbars leave readable, the browser's own answer —
+     * and the strips they take, in the coordinates boundingBox gives, read at one instant.
+     */
+    const clientAreaOf = (scroller) => scroller.evaluate((element) => {
+        const outer = element.getBoundingClientRect();
+        return {
+            left: outer.left + element.clientLeft,
+            top: outer.top + element.clientTop,
+            right: outer.left + element.clientLeft + element.clientWidth,
+            bottom: outer.top + element.clientTop + element.clientHeight,
+            gutterWidth: element.offsetWidth - element.clientWidth,
+            gutterHeight: element.offsetHeight - element.clientHeight,
+            overflows: element.scrollWidth > element.clientWidth && element.scrollHeight > element.clientHeight,
+        };
+    });
+
+    test('ADR-0058/DC-53: scrolled to R-40\'s PV, =, a press on it: the dashes and both column outlines lie inside the client area, not under either gutter', async ({ page }, testInfo) => {
+        const positions = table(page);
+        const scroller = positions.locator('.ex-scroller');
+
+        const before = await clientAreaOf(scroller);
+        testInfo.annotations.push({ type: 'gutter', description: `${before.gutterWidth}x${before.gutterHeight} on ${process.platform}` });
+        // Both of its own scrollbars: the columns overflow the box as the rows do.
+        expect(before.overflows, 'the grid overflows on both axes').toBe(true);
+        // Headless Chrome on macOS keeps overlay bars whatever the CSS asks (README.md; both strips
+        // measured 0 there on 2026-10-01), so there the sides below are held to no gutter at all.
+        // Where the bars occupy layout, as on CI's Linux, a 0 would leave them proving nothing.
+        if (process.platform !== 'darwin') {
+            expect(before.gutterWidth, 'the vertical scrollbar occupies layout').toBeGreaterThan(0);
+            expect(before.gutterHeight, 'the horizontal scrollbar occupies layout').toBeGreaterThan(0);
+        }
+        // Until the grid is scrolled right, PV runs under the vertical gutter.
+        const pvUnscrolled = await boxOf(cell(positions, 'C1'));
+        expect(pvUnscrolled.x + pvUnscrolled.width, 'PV ends past the client area').toBeGreaterThan(before.right + SLACK_PX);
+
+        // To the last row and the last column.
+        await scroller.evaluate((element) => {
+            element.scrollTop = element.scrollHeight;
+            element.scrollLeft = element.scrollWidth;
+        });
+        await expect(cell(positions, 'C40')).toBeVisible();
+        await pointFrom(page, 'C40', lookup('R-40'));
+
+        const dashes = positions.locator('.ex-point-dashes');
+        const outlines = positions.locator('.ex-reference-outline');
+        await expectCovers(dashes, positions, 'C40', 'C40');
+        await expect(outlines).toHaveCount(2);
+        const client = await clientAreaOf(scroller);
+        // The case this is about: R-40's PV lies against both gutters, its right side the client
+        // area's right edge and its bottom the client area's bottom edge.
+        const r40 = await boxOf(cell(positions, 'C40'));
+        expect(Math.abs(r40.x + r40.width - client.right), 'PV ends at the vertical gutter').toBeLessThanOrEqual(SLACK_PX);
+        expect(Math.abs(r40.y + r40.height - client.bottom), 'R-40 ends at the horizontal gutter').toBeLessThanOrEqual(SLACK_PX);
+
+        // The dashes, whole inside the client area, under the header.
+        const header = await boxOf(positions.locator('.ex-header'));
+        const dashed = await boxOf(dashes);
+        expect(dashed.x).toBeGreaterThanOrEqual(client.left - SLACK_PX);
+        expect(dashed.y).toBeGreaterThanOrEqual(header.y + header.height - SLACK_PX);
+        expect(dashed.x + dashed.width, 'the dashes run under the vertical gutter').toBeLessThanOrEqual(client.right + SLACK_PX);
+        expect(dashed.y + dashed.height, 'the dashes run under the horizontal gutter').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+
+        // Id's outline and PV's, each to R-40's bottom and no further. Their tops run up under the
+        // header, and Id's left side is scrolled out past the client area's left edge: those edges
+        // are the Viewport's, not a gutter.
+        for (let i = 0; i < 2; i++) {
+            const outline = await boxOf(outlines.nth(i));
+            expect(Math.abs(outline.y + outline.height - (r40.y + r40.height)), `outline ${i + 1} ends at R-40`).toBeLessThanOrEqual(SLACK_PX);
+            expect(outline.x + outline.width, `outline ${i + 1} runs under the vertical gutter`).toBeLessThanOrEqual(client.right + SLACK_PX);
+            expect(outline.y + outline.height, `outline ${i + 1} runs under the horizontal gutter`).toBeLessThanOrEqual(client.bottom + SLACK_PX);
+        }
+        await expect(editor(sheet(page))).toBeFocused();
+    });
+
+    // The column ← or → reaches from a header is scrolled into view across, and only across
+    // (ADR-0058, "What Part B of the ninth Windows run settled", decided with the user on 2026-10-01;
+    // DC-55): the grid is first scrolled down its rows, so that a vertical offset left alone can be
+    // told from one put back. Down, a column's dashes run the painted rows, which the Viewport cuts:
+    // across is what the reveal is for.
+    test('ADR-0058/DC-55/SH-35: =, a press on Id\'s header, → gives Positions[PV], and PV is brought whole into the client area across, scrollTop unchanged; ← brings Id back', async ({ page }, testInfo) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        const scroller = positions.locator('.ex-scroller');
+        const dashes = positions.locator('.ex-point-dashes');
+        const scrollOf = () => scroller.evaluate((element) => ({ top: element.scrollTop, left: element.scrollLeft }));
+
+        // Ten rows down. The grid has heard it once it no longer paints R-1.
+        await scroller.evaluate((element) => {
+            element.scrollTop = 280;
+        });
+        await expect(cell(positions, 'A1')).toHaveCount(0);
+        const { top, left } = await scrollOf();
+        expect(top, 'the grid stands down its rows').toBeGreaterThan(0);
+        expect(left).toBe(0);
+        const before = await clientAreaOf(scroller);
+        testInfo.annotations.push({ type: 'gutter', description: `${before.gutterWidth}x${before.gutterHeight} on ${process.platform}` });
+        // As in the test above: off macOS the vertical scrollbar occupies layout, or "beside the
+        // gutter" would prove nothing.
+        if (process.platform !== 'darwin') {
+            expect(before.gutterWidth, 'the vertical scrollbar occupies layout').toBeGreaterThan(0);
+        }
+        // Until the grid is scrolled right, PV runs under the vertical gutter.
+        const pvUnscrolled = await boxOf(header(positions, 'PV'));
+        expect(pvUnscrolled.x + pvUnscrolled.width, 'PV ends past the client area').toBeGreaterThan(before.right + SLACK_PX);
+
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toHaveValue('=');
+        await expectPointedAt(positions);
+        await header(positions, 'Id').click({ force: true });
+        await expect(editor(grid)).toHaveValue('=Positions[Id]');
+
+        await page.keyboard.press('ArrowRight');
+
+        await expect(editor(grid)).toHaveValue('=Positions[PV]');
+        await expect.poll(async () => (await scrollOf()).left).toBeGreaterThan(0);
+        // PV's dashes lie whole inside the client area across, their right side against the vertical
+        // gutter: the grid moved no further than it had to.
+        const client = await clientAreaOf(scroller);
+        const pv = await boxOf(dashes);
+        expect(pv.x, 'PV starts inside the client area').toBeGreaterThanOrEqual(client.left - SLACK_PX);
+        expect(pv.x + pv.width, 'PV runs under the vertical gutter').toBeLessThanOrEqual(client.right + SLACK_PX);
+        expect(Math.abs(pv.x + pv.width - client.right), 'PV ends at the vertical gutter').toBeLessThanOrEqual(SLACK_PX);
+        const pvHeader = await boxOf(header(positions, 'PV'));
+        expect(Math.abs(pvHeader.x - pv.x), 'the dashes are down PV').toBeLessThanOrEqual(SLACK_PX);
+        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
+
+        await page.keyboard.press('ArrowLeft');
+
+        await expect(editor(grid)).toHaveValue('=Positions[Id]');
+        await expect.poll(async () => (await scrollOf()).left).toBe(0);
+        const id = await boxOf(dashes);
+        const idHeader = await boxOf(header(positions, 'Id'));
+        expect(Math.abs(id.x - idHeader.x), 'the dashes are down Id').toBeLessThanOrEqual(SLACK_PX);
+        expect(id.x, 'Id starts inside the client area').toBeGreaterThanOrEqual(client.left - SLACK_PX);
+        expect(id.x + id.width, 'Id ends inside the client area').toBeLessThanOrEqual(client.right + SLACK_PX);
+        expect((await scrollOf()).top, 'the rows stay where they were').toBe(top);
+        await expect(editor(grid)).toBeFocused();
+        await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        await expect(page.locator('#pointing-refused')).toHaveText('');
     });
 });

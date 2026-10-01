@@ -558,7 +558,9 @@
                            apart (it carries no isComposing). A composing IME is left alone, as
                            ADR-0010 requires of every key the grid hears. Clearing is the
                            "clear-filter" command above it (ADR-0044), so the actions are OK and
-                           Cancel. *@
+                           Cancel. OK shows it is unavailable while nothing is ticked among the
+                           values the list shows; Enter is not gated on it, and what it submits is
+                           refused on the same rule (ticket 76). *@
                         <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
@@ -622,7 +624,7 @@
                                 }
                             }
                             <div class="ex-popover-actions">
-                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)">OK</button>
+                                <button type="button" @onclick="() => ApplyPanelAsync(panelColumn)" disabled="@(!PanelCanApply(panelColumn))">OK</button>
                                 <button type="button" @ref="_panelLast" @onclick="CancelPanel">Cancel</button>
                             </div>
                         </form>
@@ -723,7 +725,8 @@
         @* data-ex-list marks a list of candidates, as against a hint alone: the key gate reads
            it, so ← and → are the editor's from the render that paints the list, not from the
            later message that tells the gate (ADR-0051, ADR-0010). data-ex-over-point marks a
-           list open over Point, where ← and → point instead, from the same render (ADR-0058). *@
+           list open over Point, where ←, →, Home, End and the Shift+arrows point instead, from
+           the same render (ADR-0058). *@
         <div class="ex-completion" style="@CompletionStyle()" role="presentation" data-ex-list="@(completion.Candidates.Count > 0)"
              data-ex-over-point="@CompletionListOverPoint"
              @onmousedown:preventDefault @onmousedown:stopPropagation>
@@ -1882,6 +1885,9 @@
     private string _editText = "";
     private ElementReference _editorElement;
     private bool _editorNeedsFocus;
+    // Whether the request means to take the keyboard out of a field beside the rows that holds it
+    // (RequestEditorFocus): a Reject the press into the Name Box met.
+    private bool _editorFocusFromField;
     private int _editorFocusRequest;
     // Whether the edit standing has asked the cell's editor for the keyboard at all. An edit
     // the Formula Bar opened has not: its editor is handed a request of zero, which asks
@@ -5019,9 +5025,13 @@
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
     /// replaced or removed in the whole Filter, columns combined with AND, and the
-    /// Consumer notified — the grid never evaluates any of it.</summary>
+    /// Consumer notified — the grid never evaluates any of it. An <c>In</c> with no values
+    /// is refused here, whichever panel handed it over, and the panel stands: the engine
+    /// would refuse it inside this very handler (ADR-0023, ticket 76).</summary>
     private async Task ApplyFilterSpecAsync(string column, FilterSpec? spec)
     {
+        if (!FilterPanelChoices.CanApply(spec))
+            return;
         var columns = _filter is null
             ? new Dictionary<string, FilterSpec>(StringComparer.Ordinal)
             : new Dictionary<string, FilterSpec>(_filter.Columns, StringComparer.Ordinal);
@@ -5048,11 +5058,8 @@
     private Task ApplyPanelAsync(int column)
     {
         var declared = Columns[column];
-        if (_panelValues is { IsTooMany: false } values && _panelChecked is { } chosen)
-        {
-            return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromValueList(
-                values, chosen, v => PanelText(v, column), _panelSearch, _panelAddToCurrent, CurrentSpecOf(declared.Name)));
-        }
+        if (TryValueListAnswer(column, out var answer))
+            return ApplyFilterSpecAsync(declared.Name, answer);
 
         // Each condition's operand read as the column's type. Empty is an unfinished
         // condition, left out; text that does not read applies nothing, and the panel stands.
@@ -5064,6 +5071,25 @@
         return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromConditions(
             _panelOperator, first, _panelCombinator, _panelSecondOperator, second));
     }
+
+    /// <summary>The built-in value list's answer, by <see cref="FilterPanelChoices"/>' rules:
+    /// the checked values, among a search's matches while one stands. False where no value
+    /// list stands.</summary>
+    private bool TryValueListAnswer(int column, out FilterSpec? answer)
+    {
+        answer = null;
+        if (_panelValues is not { IsTooMany: false } values || _panelChecked is not { } chosen)
+            return false;
+        answer = FilterPanelChoices.FromValueList(
+            values, chosen, v => PanelText(v, column), _panelSearch, _panelAddToCurrent, CurrentSpecOf(Columns[column].Name));
+        return true;
+    }
+
+    /// <summary>Whether OK shows it can apply: not while the value list's answer keeps
+    /// nothing (ADR-0009, as Excel's OK). The condition form's OK stays available, and an
+    /// operand that does not read applies nothing when it is pressed.</summary>
+    private bool PanelCanApply(int column)
+        => !TryValueListAnswer(column, out var answer) || FilterPanelChoices.CanApply(answer);
 
     /// <summary>Where a popover stands (ADR-0018/0040): under the header band, at the
     /// column's visible left edge, clamped inside the Viewport and bounded by its bottom —
@@ -7115,8 +7141,10 @@
             _suppressRender = true;
             return;
         }
+        // The editor takes the keyboard out of the Name Box the user has just pressed: the request
+        // says so, or the listener would leave the field its focus (FocusSurfaceAsync).
         if (!await CommitEditAsync(reclaimFocus: false))
-            RequestEditorFocus();
+            RequestEditorFocus(fromField: true);
     }
 
     private void OnNameBoxInput(string? text) => _nameBoxText = text ?? "";
@@ -7141,9 +7169,12 @@
     /// <summary>The core wants the editor's control to hold DOM focus: the built-in
     /// input is focused after the render; a Chrome's control is told through the
     /// context's <see cref="CellEditorContext.FocusRequest"/>, which this bumps.</summary>
-    private void RequestEditorFocus()
+    /// <param name="fromField">Whether the request means to take the keyboard out of a field
+    /// beside the rows that holds it, the Formula Bar or the Name Box (FocusSurfaceAsync).</param>
+    private void RequestEditorFocus(bool fromField = false)
     {
         _editorNeedsFocus = true;
+        _editorFocusFromField = fromField;
         // A Chrome's editor focuses itself on a new request number; while the user works
         // in the Formula Bar, it must not take the keyboard from there (ADR-0051).
         if (_editSurface == EditSurface.Cell)
@@ -7251,17 +7282,22 @@
     /// the core's own box, a Chrome's control included, so the core holds no reference to a
     /// control it did not render (ADR-0021's note of 2026-09-30, ADR-0018 section 6, ADR-0010).
     /// Declined, the edit is left standing, and the listener hands the keys held behind the key
-    /// that opened it to the edit. Before the handle is attached there is no listener, and
-    /// nothing is asked.
+    /// that opened it to the edit. Nor is it granted from a field beside the rows that holds the
+    /// keyboard of its own, the Formula Bar or the Name Box, unless the request says it means to
+    /// take the keyboard out of it: the core heard of the press into the field only after asking,
+    /// and the keyboard is where the user put it (ADR-0021, as the hand-back leaves those fields).
+    /// Before the handle is attached there is no listener, and nothing is asked.
     /// </summary>
     /// <param name="bar">Whether the surface is the Formula Bar's text.</param>
     private async Task FocusSurfaceAsync(bool bar)
     {
+        var fromField = _editorFocusFromField;
+        _editorFocusFromField = false;
         if (_disposed || _scrollHandle is null)
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("focusEditor", bar);
+            await _scrollHandle.InvokeVoidAsync("focusEditor", bar, fromField);
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {
@@ -7620,8 +7656,20 @@
         // revealed whether or not this grid has a Selection of its own (ADR-0058, DC-55).
         var target = _revealTarget;
         _revealTarget = null;
-        if (_disposed || _scrollHandle is null || (target is null && _selection.Selection.IsEmpty))
+        var across = _revealColumnAcross;
+        _revealColumnAcross = null;
+        if (_disposed || _scrollHandle is null || (target is null && across is null && _selection.Selection.IsEmpty))
             return;
+        // A column pointed at from outside is revealed across only (ADR-0058, 2026-10-01; DC-55): its
+        // body is what is dashed, and no row of it is the one pointed at, so the rows stay where they
+        // are painted, as they do when a cell's row is already in view. A pinned column, or one whole
+        // in view, answers the offset the grid already has, and nothing is written.
+        if (across is { } column)
+        {
+            if (column < _columnStyles.Geometry.Count)
+                StageScroll(_scrollTopPx, _columnStyles.Geometry.ScrollLeftToReveal(column, _scrollLeftPx));
+            return;
+        }
 
         var focus = target?.Cell ?? _selection.Selection.Focus;
         if (focus.Row >= TotalRows || focus.Column >= _columnStyles.Geometry.Count)
@@ -7675,6 +7723,15 @@
             if (extending.Range.SpansEveryColumn(extent) && !toRowStart)
                 left = _expectedScrollLeftPx;
         }
+        StageScroll(top, left);
+    }
+
+    /// <summary>
+    /// Moves the model to a reveal's offsets and sends the browser the same, from inside the render
+    /// that paints them (<see cref="StageReveal"/>): nothing when the scroller is already going there.
+    /// </summary>
+    private void StageScroll(double top, double left)
+    {
         // The no-op check compares against where the scroller is GOING TO BE — the last
         // scroll event or the last write, whichever is newer — never against the event
         // mirror alone. A previous reveal's write can still be in flight; judged against

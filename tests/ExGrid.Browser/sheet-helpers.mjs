@@ -235,6 +235,52 @@ export async function expectSelectionIsCell(grid, address) {
     await expectCovers(grid.locator('.ex-focus'), grid, address, address);
 }
 
+/**
+ * Where an editor field's caret stands across its visible width, and how far the field and the
+ * line of its coloured layer (ADR-0057) are scrolled. `x` is the caret's distance from the left of
+ * the field's content box, in CSS px, and `width` is that box's width, so the caret can be seen
+ * while 0 ≤ x ≤ width. Measured here, by a copy of the text before the caret set in the field's own
+ * font: the grid itself measures nothing (ADR-0021). The copy is gone before the call returns.
+ */
+export function caretInField(field) {
+    return field.evaluate((input) => {
+        const style = getComputedStyle(input);
+        const copy = document.createElement('span');
+        for (const property of ['fontFamily', 'fontSize', 'fontWeight', 'fontStyle', 'fontStretch', 'fontVariant',
+            'fontFeatureSettings', 'fontKerning', 'letterSpacing', 'wordSpacing', 'textTransform']) {
+            copy.style[property] = style[property];
+        }
+        copy.style.whiteSpace = 'pre';
+        copy.style.position = 'absolute';
+        copy.style.visibility = 'hidden';
+        copy.textContent = input.value.slice(0, input.selectionEnd);
+        document.body.append(copy);
+        const before = copy.getBoundingClientRect().width;
+        copy.remove();
+        const layer = input.previousElementSibling;
+        return {
+            x: before - input.scrollLeft,
+            width: input.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight),
+            scrolled: input.scrollLeft,
+            layer: layer !== null && layer.classList.contains('ex-reference-text') ? layer.firstElementChild.scrollLeft : null,
+        };
+    });
+}
+
+/**
+ * Asserts an editor field shows its caret, within a pixel either side, and that the line of its
+ * coloured layer is scrolled as the field is (DC-48). `scrolled` says whether the field must be
+ * scrolled past its start to show it — text wider than the field, with the caret beyond its first
+ * width — so that a field that never moved cannot pass by showing its start.
+ */
+export async function expectCaretShown(field, { scrolled }, what) {
+    await expect.poll(async () => {
+        const at = await caretInField(field);
+        const shown = at.x >= -1 && at.x <= at.width + 1 && (at.scrolled > 0) === scrolled && at.layer === at.scrolled;
+        return shown ? 'shown' : JSON.stringify(at);
+    }, { message: what }).toBe('shown');
+}
+
 /** Reads what the clipboard holds, both flavours; an overlapping write reads as nothing yet. */
 export function readClipboard(page) {
     return page.evaluate(async () => {

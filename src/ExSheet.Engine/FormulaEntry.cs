@@ -123,16 +123,23 @@ public static partial class FormulaEntry
     /// <paramref name="linkedTables"/> beginning with it, without regard to case;</item>
     /// <item>inside the brackets of <c>Table[</c>, the columns of that table beginning with the column
     /// typed so far, in the table's order, and nothing else: not <c>@</c> or <c>#All</c>, which the
-    /// grammar refuses (ADR-0047);</item>
+    /// grammar refuses (ADR-0047). The brackets are a context of their own, so at an argument whose
+    /// values are a fixed list they list the columns too, not the values (decided with the user,
+    /// 2026-10-01);</item>
     /// <item>at an argument that takes one of a fixed list of values (<see cref="DeclaredFunction.ValuesOf"/>),
-    /// holding nothing yet or the beginning of a value, those values, in Excel's order, before
-    /// anything is typed. A value typed whole, with the caret after it, lists that value alone
-    /// (<c>0</c> lists <c>0 - Exact match</c>); any other beginning lists every value, as Excel
-    /// does not narrow a value list by what is typed (<c>-</c> lists all five of
-    /// <c>match_mode</c>'s; the tenth Windows run).</item>
+    /// those values, in Excel's order, and nothing else: whatever is typed there outside the brackets
+    /// of <c>Table[</c>, no function and no table is listed (the thirteenth Windows run, Q54). They are listed before anything is
+    /// typed, and only while nothing of the argument stands after the caret, white space included:
+    /// before a value, inside one or before white space, nothing is listed (Part B of the ninth
+    /// Windows run, Q49; the thirteenth, Q55). A number lists the value it is alone (<c>0</c> lists
+    /// <c>0 - Exact match</c>) and nothing when it is no value (<c>4</c>); any other text lists every
+    /// value, as Excel does not narrow a value list by what is typed (<c>-</c>, <c>1+</c>, <c>A1</c>,
+    /// <c>X</c> and <c>"</c> list all five of <c>match_mode</c>'s; the tenth and thirteenth Windows
+    /// runs).</item>
     /// </list>
     /// <see langword="null"/> anywhere else — after <c>=</c>, an operator, <c>(</c> or <c>,</c> at any
-    /// other argument, inside text in quotes, a Reference, a number — and when nothing matches.
+    /// other argument or inside a grouping parenthesis, inside text in quotes, a Reference, a number
+    /// — and when nothing matches.
     /// </summary>
     /// <param name="text">The text being edited.</param>
     /// <param name="caret">Where the caret stands in it.</param>
@@ -148,10 +155,41 @@ public static partial class FormulaEntry
         if (!IsFormula(text, caret)) return null;
         var tokens = Scan(text);
         var index = tokens.FindIndex(t => t.Start < caret && caret <= t.End);
-        if (index >= 0 && tokens[index] is { Kind: TokenKind.Operand, HasBrackets: true } bracketed)
+        var bracketed = index >= 0 && tokens[index] is { Kind: TokenKind.Operand, HasBrackets: true } operand ? operand : null;
+        // Inside Table['s brackets a structured reference is being typed, a context of its own as a
+        // grouping parenthesis is: its columns are listed at any argument (decided with the user,
+        // 2026-10-01).
+        if (bracketed is not null && InsideBrackets(text, caret, bracketed))
             return OperandMayStart(tokens, index) ? CompleteColumn(text, caret, bracketed, columnsOf) : null;
-        return (index >= 0 ? CompleteName(text, caret, tokens, index, linkedTables) : null)
-            ?? CompleteValue(text, caret, tokens);
+        // An argument whose values are a fixed list is completed with them alone: letters there
+        // list no function and no table, as Excel's do not (ADR-0058, the thirteenth run, Q54).
+        if (ValueArgumentAt(text, tokens, caret) is { } argument)
+            return CompleteValue(text, caret, tokens, argument.Start, argument.Values);
+        // Before a structured reference's brackets or past them, no name is being typed.
+        if (bracketed is not null) return null;
+        return index >= 0 ? CompleteName(text, caret, tokens, index, linkedTables) : null;
+    }
+
+    /// <summary>
+    /// Whether the caret stands inside the brackets of a structured reference: after its first
+    /// <c>[</c>, and not past the <c>]</c> that closes it, <c>'</c> escapes read as the scan reads them.
+    /// </summary>
+    private static bool InsideBrackets(string text, int caret, Token token)
+    {
+        var open = text.IndexOf('[', token.Start, token.End - token.Start);
+        if (open < 0 || caret <= open) return false;
+        var depth = 0;
+        for (var i = open; i < caret; i++)
+        {
+            if (text[i] == '\'')
+            {
+                i++;
+                continue;
+            }
+            if (text[i] == '[') depth++;
+            else if (text[i] == ']' && --depth == 0) return false;
+        }
+        return true;
     }
 
     /// <summary>The functions and tables beginning with the name that ends at the caret.</summary>
@@ -236,37 +274,64 @@ public static partial class FormulaEntry
     private static readonly char[] ColumnSpecials = ['[', ']', '#', '@', '\''];
 
     /// <summary>
-    /// The values of the argument the caret stands at, when it takes one of a fixed list (ADR-0058):
-    /// the argument holds nothing yet, or the beginning of a value and nothing else. A value typed
-    /// whole before the caret, with nothing of it after the caret, is listed alone; anything else
-    /// lists every value, the first to be chosen (ADR-0058, "What the tenth Windows run settled").
-    /// Accepting one writes it over the whole of the value being typed.
+    /// Where the argument the caret stands at starts, and its values, when the innermost
+    /// parenthesis open at the caret is a declared function's and that argument takes one of a
+    /// fixed list (ADR-0058); <see langword="null"/> anywhere else. Inside a grouping parenthesis
+    /// the caret stands in an expression of its own, as inside a call of its own (decided with the
+    /// user, 2026-10-01).
     /// </summary>
-    private static FormulaCompletion? CompleteValue(string text, int caret, List<Token> tokens)
+    private static (int Start, IReadOnlyList<ArgumentValue> Values)? ValueArgumentAt(string text, List<Token> tokens, int caret)
     {
         if (FramesAt(text, tokens, caret) is not { Count: > 0 } frames) return null;
         var call = frames.Peek();
         if (call.Function is null || DeclaredFunction.Find(call.Function) is not { } function) return null;
         var values = function.ValuesOf(call.Commas);
-        if (values.Count == 0) return null;
+        return values.Count == 0 ? null : (call.ArgumentStart, values);
+    }
 
-        var start = call.ArgumentStart;
+    /// <summary>
+    /// The values of an argument that takes one of a fixed list (ADR-0058), while nothing of it
+    /// stands after the caret: the caret is at the argument's end, before the <c>,</c> or <c>)</c>
+    /// that ends it. Before a value, inside one or before white space Excel lists nothing (Part B
+    /// of the ninth Windows run, Q49; the thirteenth, Q55). A number lists the value it is alone,
+    /// and nothing when it is no value; any other text — nothing yet, the beginning of a value,
+    /// letters, a Reference, text in quotes — lists every value, the first to be chosen (the tenth
+    /// and thirteenth Windows runs, Q54). Accepting one writes it over everything typed in the
+    /// argument.
+    /// </summary>
+    private static FormulaCompletion? CompleteValue(string text, int caret, List<Token> tokens, int argumentStart, IReadOnlyList<ArgumentValue> values)
+    {
+        if (tokens.Exists(t => t.Start < caret && caret < t.End)) return null;
+        if (caret < text.Length && text[caret] is not (',' or ')')) return null;
+
+        var start = argumentStart;
         while (start < caret && char.IsWhiteSpace(text[start])) start++;
-        var typed = text[start..caret];
-        bool Begins(int length) => values.Any(v => v.Value.Length >= length && string.CompareOrdinal(v.Value, 0, text, start, length) == 0);
-        if (!Begins(typed.Length)) return null;
-        var end = caret;
-        while (end < text.Length && Begins(end + 1 - start)) end++;
-        var after = end;
-        while (after < text.Length && char.IsWhiteSpace(text[after])) after++;
-        if (after < text.Length && text[after] is not (',' or ')')) return null;
-
-        var whole = end == caret ? values.Where(v => v.Value == typed).ToList() : [];
-        var candidates = (whole.Count > 0 ? whole : values)
+        IReadOnlyList<ArgumentValue> listed = NumberOf(text[start..caret]) is { } number
+            ? [.. values.Where(v => NumberOf(v.Value) == number)]
+            : values;
+        if (listed.Count == 0) return null;
+        var candidates = listed
             .Select(v => new CompletionCandidate(v.Text, CompletionKind.ArgumentValue, v.Value, null))
             .ToList();
-        return new FormulaCompletion(start, end - start, candidates);
+        return new FormulaCompletion(start, caret - start, candidates);
     }
+
+    /// <summary>
+    /// The number <paramref name="typed"/> is, read as the grammar reads a number constant with
+    /// one sign before it and white space after it (<c>-1</c>, <c>+1</c>, <c>1.0</c>, <c>1 </c>), or
+    /// <see langword="null"/> for text that is not a number (<c>-</c>, <c>1+</c>, <c>A1</c>; decided
+    /// with the user, 2026-10-01).
+    /// </summary>
+    private static double? NumberOf(string typed)
+    {
+        var match = SignedNumberPattern().Match(typed);
+        if (!match.Success) return null;
+        var number = ConstantParser.ParseFormulaNumber(match.Groups["number"].Value);
+        return match.Groups["sign"].Value == "-" ? -number : number;
+    }
+
+    [GeneratedRegex(@"^(?<sign>[+-]?)(?<number>(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?)\s*\z", RegexOptions.CultureInvariant)]
+    private static partial Regex SignedNumberPattern();
 
     /// <summary>
     /// The hint for the innermost function call whose argument list holds the caret, counting
