@@ -64,6 +64,7 @@ gives both is not known.
 |---|---|---|
 | 10 | `=XLOOKUP(1,A2:A4,B2:B4,,-1)`, `{F2}`, `{LEFT}{LEFT}` (the caret between `-` and `1`) | A list? Then `{TAB}`: what is written, and is the Formula entered |
 | 11 | `=XLOOKUP(1,A2:A4,B2:B4,,10)`, `{F2}`, `{LEFT}{LEFT}` (the caret between `1` and `0`) | The same |
+| 11a | `=XLOOKUP(1,A2:A4,B2:B4,,  )`, `{F2}`, `{LEFT}{LEFT}{LEFT}` (the caret before the two spaces) | The same. ExSheet counts spaces before `,` or `)` as nothing of the argument and lists (ticket 55's Comments); Excel was not asked |
 
 ### Group 3 — the arrow keys straight after a column heading in another workbook (Q52)
 
