@@ -409,7 +409,9 @@ public sealed partial class Sheet
             if (changed || (existing && axesBefore is not null)) rows.Add(address.Row);
             rows.UnionWith(RowsAcross(address, shown.Borders, next.Borders));
         }
-        var sheetChange = rows.Count == 0 ? SheetChange.None : new SheetChange([], [], [.. rows]);
+        // A level shows in the cells that hold nothing too, and rows names only those that hold one.
+        var levels = axesBefore is { } axes && LevelsDiffer(axes.Rows, axes.Columns);
+        var sheetChange = rows.Count == 0 && !levels ? SheetChange.None : new SheetChange([], [], [.. rows], reformatsUnnamedRows: levels);
         return new CellFormatOutcome(sheetChange, [.. before.Select(p => (p.Key, p.Value))],
             axesBefore?.Rows ?? new Dictionary<int, AxisFormat>(_rowFormats),
             axesBefore?.Columns ?? new Dictionary<int, AxisFormat>(_columnFormats));
@@ -443,10 +445,20 @@ public sealed partial class Sheet
         _rowFormats = new Dictionary<int, AxisFormat>(outcome.RowsBefore);
         _columnFormats = new Dictionary<int, AxisFormat>(outcome.ColumnsBefore);
         var rows = new SortedSet<int>(RowsAffectedByAxes(rowsNow, columnsNow));
+        var levels = LevelsDiffer(rowsNow, columnsNow);
         var change = Restore(outcome.Before);
         rows.UnionWith(change.Rows);
-        return rows.Count == 0 ? SheetChange.None : new SheetChange(change.ValueChanges, change.Recalculated, [.. rows]);
+        return rows.Count == 0 && !levels
+            ? SheetChange.None
+            : new SheetChange(change.ValueChanges, change.Recalculated, [.. rows], reformatsUnnamedRows: levels);
     }
+
+    /// <summary>Whether the row or column levels now differ from <paramref name="rows"/> and <paramref name="columns"/>.</summary>
+    private bool LevelsDiffer(Dictionary<int, AxisFormat> rows, Dictionary<int, AxisFormat> columns) =>
+        Differ(rows, _rowFormats) || Differ(columns, _columnFormats);
+
+    private static bool Differ(Dictionary<int, AxisFormat> a, Dictionary<int, AxisFormat> b) =>
+        a.Count != b.Count || a.Any(p => !b.TryGetValue(p.Key, out var level) || level != p.Value);
 
     /// <summary>
     /// The row (or column) levels after a structural edit: moved with their rows (columns), those

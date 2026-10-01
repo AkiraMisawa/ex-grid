@@ -379,10 +379,19 @@ nobody had asked for. What that means when writing a test:
   Ctrl+Shift with `~ ! @ # $ % ^` applying Excel's Number Formats under en-US, `#` also without
   Shift as a UK layout types it (SH-42); with an edit open, Ctrl+U, Ctrl+B and Ctrl+Shift+$
   changing nothing, taken from the browser — no page opened — said in ExSheet's notice and in the
-  page's status line, and the edit committing as typed (SH-43). A Font is not painted yet, so the
-  page's line under the Sheet reads the Focus cell's Cell Format back. The page's
+  page's status line, and the edit committing as typed (SH-43). The page's line under the Sheet
+  reads the Focus cell's Cell Format back. The page's
   *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
   the Sheet has heard the move, formats the extended range as one step (ticket 56).
+- `sheet-paper.spec.mjs` — the Paper and the Ink (ADR-0071, SH-39, SH-40, DC-58; ticket 48) on
+  `/sheet?case=paper`, under the built-in Chrome and `ExSheet.MudBlazor`'s, with `?scheme=light` and
+  `?scheme=dark`: the Paper white and the Ink black in both schemes; a Font colour, a Number
+  Format's red over a blue Font, a cell's, a row's and a column's Fill, read as recorded, the last
+  two on cells that hold nothing; bold, italic, underline and strikethrough; the Headings and the
+  Formula Bar dark in the dark scheme and light in the light one; the Selection, the Cell Editor,
+  a Reference Outline and the pointed shade keeping their light-scheme look on the Paper, and the
+  Formula Bar's References taking the dark scheme's; and `--ex-sheet-paper` and `--ex-sheet-ink`
+  set by a Consumer changing the Paper and the Ink.
 - `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as

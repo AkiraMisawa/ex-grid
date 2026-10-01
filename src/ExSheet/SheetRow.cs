@@ -19,6 +19,8 @@ public sealed class SheetRow
     private readonly Sheet _sheet;
     private Dictionary<int, SheetCellText?>? _cells;
     private Dictionary<int, (int Characters, string? Text)>? _painted;
+    private Dictionary<int, global::ExGrid.Cells.CellAppearance>? _appearances;
+    private int _appearancesRead;
 
     internal SheetRow(Sheet sheet, int index)
     {
@@ -66,6 +68,26 @@ public sealed class SheetRow
         }
         _painted[column] = (whole, painted);
         return painted;
+    }
+
+    /// <summary>
+    /// The cell's Font and Fill as the core paints them (ADR-0050 item 15, ADR-0071), for one
+    /// <paramref name="reading"/> of the Sheet's formatting. Within a reading the answer is kept, as
+    /// the cells' text is: a change the engine names retires the row. A change that reaches rows the
+    /// engine does not name — a whole row's or column's Cell Format — starts a new reading, and the
+    /// row is read again (<see cref="SheetAppearance.Lookup"/>).
+    /// </summary>
+    internal global::ExGrid.Cells.CellAppearance AppearanceAt(int column, int reading)
+    {
+        if (_appearances is null || _appearancesRead != reading)
+        {
+            _appearances = [];
+            _appearancesRead = reading;
+        }
+        if (_appearances.TryGetValue(column, out var cached)) return cached;
+        var appearance = SheetAppearance.Of(_sheet, new CellAddress(Index, column), At(column)?.Colour);
+        _appearances[column] = appearance;
+        return appearance;
     }
 
     /// <summary>The cell's Entry as the Cell Editor opens on it (ADR-0051).</summary>

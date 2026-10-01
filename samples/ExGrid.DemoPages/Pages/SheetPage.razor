@@ -17,7 +17,10 @@
    and the Chrome used alone is not supported where References are coloured (ADR-0057, "The
    Wrapper's shape is required…"; ADR-0030). Its Chrome is ExSheet.MudBlazor's, which is the
    Wrapper's in every seam of the grid and draws Format Cells as a MudDialog (ADR-0071). *@
-<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
+@* ?scheme=dark shows the page in the dark scheme, where the Sheet's Paper stays white and its frame
+   darkens (ADR-0071). ?case= opens one of the eleventh Windows run's set-ups instead of the page's own
+   Sheet (SheetCases), for Part C to put beside Excel's screenshots. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
 
 <DemoNav />
 
@@ -127,6 +130,16 @@
 
     private bool InWindowBox => Box == "window";
 
+    /// <summary><c>dark</c> shows the page in the dark scheme (<see cref="DemoChrome.IsDark"/>).</summary>
+    [SupplyParameterFromQuery(Name = "scheme")]
+    public string? Scheme { get; set; }
+
+    /// <summary>One of the eleventh Windows run's cases (<see cref="SheetCases"/>), opened in place of the page's own Sheet.</summary>
+    [SupplyParameterFromQuery(Name = "case")]
+    public string? Case { get; set; }
+
+    private bool Dark => DemoChrome.IsDark(Scheme);
+
     private IGridChrome? _chrome;
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
@@ -171,7 +184,7 @@
     private readonly InMemoryGridSource<Position> _positionsShown = GridSource.From(OpeningPositions);
 
     private ExSheet? _sheet;
-    private SheetDocument? _document = Opening();
+    private SheetDocument? _document;
     // The Sheet and the positions grid, pointed at while the Sheet points (ADR-0058). The grid is
     // registered with the table it shows and how its rows are the table's rows: its columns are
     // named as the table's are declared, so no column needs an entry. The Scope also outlines there
@@ -221,6 +234,7 @@
 
     protected override void OnInitialized()
     {
+        _document = SheetCases.Document(Case, Culture) ?? Opening();
         _positionsPointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
         // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
         // the Blazor traps).

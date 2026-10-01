@@ -554,7 +554,7 @@
                            "clear-filter" command above it (ADR-0044), so the actions are OK and
                            Cancel. OK shows it is unavailable while nothing is ticked among the
                            values the list shows; Enter is not gated on it, and what it submits is
-                           refused on the same rule (ticket 76). *@
+                           refused on the same rule (ticket 81). *@
                         <form class="ex-popover-form" @onsubmit="() => ApplyPanelAsync(panelColumn)" @onsubmit:preventDefault>
                             @if (_panelValues is { IsTooMany: false } domain && _panelChecked is { } chosen)
                             {
@@ -5095,7 +5095,7 @@
     /// replaced or removed in the whole Filter, columns combined with AND, and the
     /// Consumer notified — the grid never evaluates any of it. An <c>In</c> with no values
     /// is refused here, whichever panel handed it over, and the panel stands: the engine
-    /// would refuse it inside this very handler (ADR-0023, ticket 76).</summary>
+    /// would refuse it inside this very handler (ADR-0023, ticket 81).</summary>
     private async Task ApplyFilterSpecAsync(string column, FilterSpec? spec)
     {
         if (!FilterPanelChoices.CanApply(spec))

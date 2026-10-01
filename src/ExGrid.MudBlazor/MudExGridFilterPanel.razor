@@ -220,7 +220,7 @@
 
     /// <summary>Apply is unavailable until the operator's value is given (WR-2), and, over a
     /// value list, while its answer keeps nothing — nothing ticked among the values shown
-    /// (FilterPanelChoices.CanApply, ticket 76).</summary>
+    /// (FilterPanelChoices.CanApply, ticket 81).</summary>
     private bool CanApply
         => !_awaiting
            && (_chosen is not null && _domain is { IsTooMany: false } domain

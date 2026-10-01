@@ -13,7 +13,8 @@ computes, ExGrid paints, selects, navigates and reports.
 
 - **.NET 10 or newer.** The package targets `net10.0`.
 - ExGrid's stylesheet and script, as for any ExGrid, and ExSheet's own stylesheet,
-  `_content/ExSheet/ex-sheet.css`, which the built-in Format Cells is drawn with.
+  `_content/ExSheet/ex-sheet.css`, which paints the Paper and the Ink and draws the built-in Format
+  Cells.
 
 ## Showing a Sheet
 
@@ -245,6 +246,27 @@ application can grey out its own buttons:
 A Linked Table's declaration and snapshots are data arriving, not commands, and are taken while an
 edit is open. A formatting key pressed while an edit is open changes nothing, as the commands do:
 the user is told why, and `OnFormatKeyRefused` is raised with the refusal.
+
+## The Paper and the Ink
+
+A cell's Font and Fill are painted as recorded: its colour, bold, italic, underline and
+strikethrough, and its one solid Fill, on the cells that hold nothing as well when a whole row or
+column records them. A Number Format's colour (`[Red]` and the seven others) is painted in Excel's
+colour for that name, in place of the Font's. A bold number is judged by the bold widths, so one that
+does not fit shows `####` rather than being cut.
+
+The ground the cells lie on is the **Paper**, Excel's white, and text whose Font colour is
+Automatic is the **Ink**, Excel's black — in every colour scheme, as Excel's cells stay white under
+its dark theme, so a colour a user recorded reads as it did when it was chosen. The gridlines are
+Excel's, mixed from the two. What lies on the Paper — the Selection, the Focus, Reference Outlines,
+the Cell Editor in its cell — keeps its light-scheme look; what frames it — the Headings, the Name
+Box, the Formula Bar and popovers — follows the page's scheme. Both are Visual Tokens:
+
+```css
+.my-sheets { --ex-sheet-paper: #fdf6e3; --ex-sheet-ink: #073642; }
+```
+
+A recorded colour is the user's choice, so a Paper you darken can make some of them unreadable.
 
 ## Format Cells
 
