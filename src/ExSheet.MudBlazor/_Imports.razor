@@ -1,0 +1,11 @@
+@* This project's root namespace is ExSheet.MudBlazor, so a plain "MudBlazor" here is this
+   namespace, not MudBlazor's, and every product using is written with global:: (the name
+   collisions in AGENTS.md). HorizontalAlignment is both MudBlazor's and the engine's; here it is
+   the engine's, the one a Cell Format holds. *@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using global::MudBlazor
+@using global::MudBlazor.Utilities
+@using global::ExSheet
+@using global::ExSheet.Engine
+@using HorizontalAlignment = global::ExSheet.Engine.HorizontalAlignment

@@ -1,0 +1,100 @@
+/* ExSheet.MudBlazor's stylesheet, beside MudBlazor's and ExGrid.MudBlazor's.
+
+   Format Cells as a MudDialog (ADR-0063). The dialog is MudBlazor's, and so are its colours: what
+   is written here lays out its contents and draws the palette's swatches, which MudBlazor has no
+   control for, in MudBlazor's palette variables. Its classes are implementation detail (ADR-0029):
+   a Consumer restyles Format Cells by substituting its Chrome, not by writing against these. No
+   geometry here is read by the grid: the dialog stands at page level, outside the Sheet's box. */
+.mud-ex-sheet-format-cells-panel {
+    min-height: 20em;
+    padding-top: 12px;
+}
+.mud-ex-sheet-format-cells-columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+.mud-ex-sheet-format-cells-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.mud-ex-sheet-format-cells-list .mud-radio {
+    margin: 0;
+}
+.mud-ex-sheet-format-cells-list > div,
+.mud-ex-sheet-format-cells-line-styles > div {
+    display: flex;
+    flex-direction: column;
+}
+.mud-ex-sheet-format-cells-reason {
+    display: block;
+    margin: 0 0 4px 2.4em;
+    color: var(--mud-palette-text-secondary);
+}
+.mud-ex-sheet-format-cells-types {
+    max-height: 12em;
+    overflow-y: auto;
+}
+.mud-ex-sheet-format-cells-line-column {
+    display: flex;
+    flex-direction: column;
+}
+.mud-ex-sheet-format-cells-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.mud-ex-sheet-format-cells-preview {
+    border: 1px solid var(--mud-palette-lines-default);
+    color: var(--mud-palette-text-primary);
+}
+.mud-ex-sheet-format-cells-refusal {
+    margin-top: 8px;
+}
+
+/* The palette (case 23): ten swatches across. Each is a radio button drawn as its colour, which is
+   written inline as the user's choice of document data, never a Visual Token (ADR-0063). */
+.mud-ex-sheet-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 12px;
+}
+.mud-ex-sheet-palette-first {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+.mud-ex-sheet-palette-first input {
+    accent-color: var(--mud-palette-primary);
+    margin: 0;
+}
+.mud-ex-sheet-swatches {
+    display: grid;
+    grid-template-columns: repeat(10, 18px);
+    gap: 4px;
+}
+.mud-ex-sheet-swatch {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 1px solid var(--mud-palette-lines-inputs);
+    border-radius: 2px;
+    cursor: pointer;
+}
+.mud-ex-sheet-swatch:checked {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 1px;
+}
+.mud-ex-sheet-swatch:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 3px;
+}
+.mud-ex-sheet-more-colours {
+    max-width: 16em;
+}

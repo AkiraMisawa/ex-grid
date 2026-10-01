@@ -28,6 +28,9 @@
     <!-- ExSheet's page (/sheet): the demo pages are one of the two things that reference
          ExSheet, its tests being the other (ADR-0046, SH-1). -->
     <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
+    <!-- The Sheet pages under ?chrome=mud draw Format Cells as a MudDialog (ADR-0063); like ExSheet,
+         only these pages and the package's tests reference it (ADR-0019's note of 2026-09-30). -->
+    <ProjectReference Include="..\..\src\ExSheet.MudBlazor\ExSheet.MudBlazor.csproj" />
   </ItemGroup>
 
 </Project>

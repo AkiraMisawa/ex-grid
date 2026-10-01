@@ -379,6 +379,15 @@ nobody had asked for. What that means when writing a test:
   changing nothing, taken from the browser — no page opened — said in ExSheet's notice and in the
   page's status line, and the edit committing as typed (SH-43). A Font is not painted yet, so the
   page's line under the Sheet reads the Focus cell's Cell Format back.
+- `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0063, SH-45;
+  ticket 53) on `/sheet?chrome=mud` and `/sheets?chrome=mud`: a MudDialog at page level, nothing
+  of it inside the grid, opened from the Context Menu, the page's button and Ctrl+1 with the
+  keyboard on its tab; the arrows, Home and End switching the tabs; OK as one undo step, and
+  Escape, a press on the backdrop and a refused Custom code each setting nothing; a Custom code
+  typed at full speed arriving whole, Enter as OK; Tab and Shift+Tab kept inside; More Colours as
+  MudBlazor's colour picker, read back through Format Cells; and, however it closes, the next
+  arrow moving the Focus — from the page's button too, which MudBlazor would otherwise hand the
+  keyboard back to. Two Sheets each keep their own last tab and get the keyboard back.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed

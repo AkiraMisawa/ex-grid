@@ -1,0 +1,131 @@
+@implements IDisposable
+@inject IDialogService Dialogs
+
+@*
+    Where ExSheet renders the MudBlazor Chrome's Format Cells (ADR-0063, ADR-0010's note of
+    2026-09-30): beside the grid, outside its root, from the opening until OK or Cancel. It shows
+    MudFormatCellsDialog through MudBlazor's dialog service, at page level, and draws nothing of
+    its own but the place the keyboard leaves from.
+
+    That place is the one subtle part. MudBlazor's dialog hands the keyboard, on closing, back to
+    whatever held it when the dialog opened. Opened from a page's button, that is the button, and
+    the core's focus function, granted only while DOM focus is inside the grid or on nothing
+    (ADR-0021's note of 2026-09-30), would then leave the keyboard on the button: Format Cells
+    closed and the next arrow went nowhere. So the keyboard is first put on this frame's own empty
+    element, which the dialog then takes it from; the element goes once the dialog has the
+    keyboard, so what the dialog hands it back to on closing is no longer on the page, and DOM
+    focus is on nothing. The core's focus function is called after the dialog has left the page,
+    however it closed, and decides as it does for every Chrome. No script is added: the element is
+    focused with Blazor's own FocusAsync (ADR-0021). It is fixed to the viewport, so that neither
+    focusing it nor handing the keyboard back to it scrolls the page.
+*@
+@if (_leaving)
+{
+    <span class="mud-ex-sheet-format-cells-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" aria-hidden="true"
+          @ref="_leavingFrom"></span>
+}
+
+@code {
+    // The dialog is modal, closes on Escape and on a press on its backdrop, and has its × — each a
+    // Cancel. MudFormatCellsDialog takes the keyboard to the tab shown itself (DefaultFocus.None):
+    // MudBlazor's own first focus lands before the tabs are drawn. It is as wide on every tab.
+    private static readonly DialogOptions Options = new()
+    {
+        CloseOnEscapeKey = true,
+        BackdropClick = true,
+        CloseButton = true,
+        MaxWidth = MaxWidth.Small,
+        FullWidth = true,
+        DefaultFocus = DefaultFocus.None,
+    };
+
+    // Whether the element the keyboard leaves from stands, and that element.
+    private bool _leaving = true;
+    private ElementReference _leavingFrom;
+    // ExSheet renders this frame whenever it renders, the grid's scrolling included; it draws
+    // again only when the element goes (ADR-0003's rule: skip what has not changed).
+    private bool _changed;
+    private bool _disposed;
+    private IDialogReference? _dialog;
+    private readonly TaskCompletionSource _drawn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>ExSheet's Format Cells, as it opened (ADR-0063).</summary>
+    [Parameter, EditorRequired] public FormatCellsContext Context { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override bool ShouldRender()
+    {
+        if (!_changed) return false;
+        _changed = false;
+        return true;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            await _leavingFrom.FocusAsync(preventScroll: true);
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The circuit went, or ExSheet ended Format Cells, before the focus landed.
+        }
+        if (_disposed) return;
+        var parameters = new DialogParameters<MudFormatCellsDialog>
+        {
+            { d => d.Context, Context },
+            { d => d.KeyboardTaken, (Action)KeyboardTaken },
+            { d => d.Drawn, (Action)(() => _drawn.TrySetResult()) },
+        };
+        var dialog = await Dialogs.ShowAsync<MudFormatCellsDialog>(MudFormatCellsDialog.Title, parameters, Options);
+        if (_disposed)
+        {
+            // ExSheet ended this opening while the dialog was being shown.
+            dialog.Close(DialogResult.Cancel());
+            return;
+        }
+        _dialog = dialog;
+        // MudBlazor waits five seconds for a provider to draw the dialog, then answers as if one
+        // had; and it can answer a render early, when a dialog closing makes way for this one. A
+        // dialog not drawn a second later was drawn by none: say so, rather than leave Format
+        // Cells open where nothing shows it.
+        if (!_drawn.Task.IsCompleted) await Task.WhenAny(_drawn.Task, Task.Delay(TimeSpan.FromSeconds(1)));
+        if (!_drawn.Task.IsCompleted && !dialog.Result.IsCompleted)
+        {
+            Context.Cancel();
+            throw new InvalidOperationException(
+                "Format Cells under MudSheetChrome is a MudDialog, and no MudDialogProvider drew it. Add <MudDialogProvider /> to the layout, beside <MudPopoverProvider />.");
+        }
+        await EndedAsync(dialog);
+    }
+
+    // The dialog has the keyboard: the element it would hand it back to goes.
+    private void KeyboardTaken()
+    {
+        if (!_leaving || _disposed) return;
+        _leaving = false;
+        _changed = true;
+        StateHasChanged();
+    }
+
+    // However the dialog closed: anything but OK is a Cancel, which sets nothing (ExSheet ignores
+    // it once OK or Cancel has already ended this opening). The keyboard is handed back once the
+    // dialog has left the page: the provider removes it in the render its dismissal causes, and
+    // the yield puts the request behind that render, on either host.
+    private async Task EndedAsync(IDialogReference dialog)
+    {
+        var result = await dialog.Result;
+        if (result is not { Canceled: false, Data: true }) Context.Cancel();
+        await Task.Yield();
+        await Context.ReturnKeyboard();
+    }
+
+    /// <summary>ExSheet ended Format Cells — by OK, by Cancel, or because the Selection moved under it — and the dialog closes with it.</summary>
+    public void Dispose()
+    {
+        _disposed = true;
+        if (_dialog is { Result.IsCompleted: false } dialog) dialog.Close(DialogResult.Cancel());
+    }
+}

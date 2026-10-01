@@ -23,8 +23,12 @@ public static class SheetCommandIds
     /// <summary>Opens Format Cells over the Selection (ADR-0063), as <c>ExSheet.OpenFormatCellsAsync</c> does.</summary>
     public const string FormatCells = "exsheet.format-cells";
 
-    /// <summary>ExSheet's own English for one of its ids, or null for an id that is not ExSheet's.</summary>
-    internal static string? EnglishFor(string id) => id switch
+    /// <summary>
+    /// ExSheet's own English for one of its ids, or null for an id that is not ExSheet's: what the
+    /// menu shows where <c>ExSheet.CommandLabel</c> says nothing, and what a substituted Chrome,
+    /// which words a command from its id (ADR-0036), falls back to for ExSheet's.
+    /// </summary>
+    public static string? EnglishFor(string id) => id switch
     {
         InsertRows => "Insert rows above",
         DeleteRows => "Delete rows",
