@@ -1,6 +1,6 @@
 # 21: The keyboard given back, and the Escape that leaves
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** [ADR-0069](../../../adr/0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md),
 in ExGrid's core and in ExPivot's use of it.
@@ -72,3 +72,8 @@ Two things were found that need a decision, and are not built:
   press, `body` after the first repeat, and a later ↓ moved nothing. One press, one dismissal for
   every grid — a repeat dismisses nothing more — would close it, but it changes what Escape does
   without a declaration (DC-1).
+
+2026-10-01, at the merge: the held-Escape case the build found was decided with ADR-0012's
+refinement — a held Escape is one press in every grid (KB-44) — and `pivot.spec.mjs` holds Escape
+in the dialog's grid to show the report keeps the keyboard. The ADR-0069 tests pass on both hosts
+(10 each), with a clean console.
