@@ -26,10 +26,11 @@ row/column insertion and deletion, and **Formulas**. **Being specified** ([ADR-0
 _Avoid_: spreadsheet, worksheet, and **Sheet**, which names what ExSheet holds, not the product
 
 **ExPivot**:
-Excel's PivotTable inside the application. The Consumer pushes **Source Records** and declares
-their **Pivot Fields**; the user places Pivot Fields into **Areas** through the **Field List**, and
-ExPivot computes the **Pivot Report**. It is drawn by ExGrid, as that grid's **Consumer**: ExPivot
-holds the **Pivot Layout** and aggregates, ExGrid paints and reports. **Proposed**, not yet decided
+Excel's PivotTable inside the application. The Consumer gives it a **Pivot Source** over the
+**Source Records** and declares their **Pivot Fields**; the user places Pivot Fields into **Areas**
+through the **Field List**, and ExPivot computes the **Pivot Report** from the source's **Leaf
+Aggregates**. It is drawn by ExGrid, as that grid's **Consumer**: ExPivot holds the **Pivot Layout**
+and computes the report, ExGrid paints and reports. **Decided** with the user, 2026-09-30
 ([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
 _Avoid_: pivot grid, OLAP grid, cube (the cube is how the engine keeps what it aggregated, not the
 product), and **Pivot Report**, which names what ExPivot computes, not the product
