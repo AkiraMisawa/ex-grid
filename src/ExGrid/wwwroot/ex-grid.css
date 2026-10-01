@@ -236,10 +236,11 @@
 
    A tint, so a background IMAGE over the Pinned Column's opaque ground, as every tint is
    (ADR-0006): a translucent mark never makes a pinned cell see-through. Declared after the
-   stripes, Row Kind and Cell State, so the mark wins the cell over a stripe and a role. A
-   stripe's or a group's own layer on the cell stays beneath the mark, so a translucent mark
-   reads the same on a pinned cell as on the scrollable cells beside it, over the row's ground.
-   A total row's rule stays above the mark, as a line and not a ground. A Missing cell's tint
+   stripes, Row Kind and Cell State, so the mark wins the cell over a stripe and a role. Their
+   own layers on the cell stay beneath the mark rather than going: a translucent mark on a
+   striped pinned cell reads as it does on the scrollable cells beside it, which show the row's
+   stripe through it, and a group's tint stays under it as under the rest of its row. A total
+   row's rule stays above the mark, as a line and not a ground. A Missing cell's tint
    stays above it too: a state must never be the thing that disappears (ADR-0006). The overlays
    paint above every cell, so no mark hides a selection, the Focus or a band. */
 .ex-cell.ex-changed {
