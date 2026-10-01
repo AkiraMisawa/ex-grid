@@ -390,7 +390,8 @@ nobody had asked for. What that means when writing a test:
   ticket 53) on `/sheet?chrome=mud` and `/sheets?chrome=mud`: a MudDialog at page level, nothing
   of it inside the grid, opened from the Context Menu, the page's button and Ctrl+1 with the
   keyboard on its tab; the arrows, Home and End switching the tabs; OK as one undo step, and
-  Escape, a press on the backdrop and a refused Custom code each setting nothing; a Custom code
+  Escape, a press on the backdrop and a refused Custom code each setting nothing; Escape in an open
+  dropdown (Horizontal) closing only its list, and the next one cancelling; a Custom code
   typed at full speed arriving whole, Enter as OK; Tab and Shift+Tab kept inside; More Colours as
   MudBlazor's colour picker, read back through Format Cells; and, however it closes, the next
   arrow moving the Focus — from the page's button too, which MudBlazor would otherwise hand the

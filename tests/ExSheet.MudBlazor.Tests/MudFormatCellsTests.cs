@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 using MudColor = global::MudBlazor.Utilities.MudColor;
 using MudColorPicker = global::MudBlazor.MudColorPicker;
+using MudSelectOfAlignment = global::MudBlazor.MudSelect<ExSheet.Engine.HorizontalAlignment>;
+using MudSelectOfUnderline = global::MudBlazor.MudSelect<bool>;
+using global::MudBlazor.Extensions;
 
 namespace ExSheet.MudBlazor.Tests;
 
@@ -266,6 +269,37 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("#,##0.0000", FormatAt(page, "B2").NumberFormat.Code);
     }
 
+    // Opens a dropdown and presses the item the list shows as text.
+    private static async Task PickAsync<T>(Bunit.IRenderedComponent<Bunit.Rendering.ContainerFragment> page, string item)
+    {
+        var select = page.FindComponent<global::MudBlazor.MudSelect<T>>();
+        await select.InvokeAsync(select.Instance.OpenMenu);
+        await page.FindAll(".mud-popover-open .mud-list-item").Single(i => i.TextContent.Trim() == item).ClickAsync(new MouseEventArgs());
+    }
+
+    private static IReadOnlyList<string> ListItems(Bunit.IRenderedComponent<Bunit.Rendering.ContainerFragment> page) =>
+        [.. page.FindAll(".mud-popover-open .mud-list-item").Select(i => i.TextContent.Trim())];
+
+    [Fact] // ADR-0063 / SH-45: Horizontal and Underline are dropdowns, as Excel's, listing Excel's choices and showing the Focus cell's
+    public async Task Horizontal_and_underline_are_dropdowns_as_excels()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Alignment");
+
+        var alignment = page.FindComponent<MudSelectOfAlignment>();
+        Assert.Equal(HorizontalAlignment.General, alignment.Instance.GetState(x => x.Value));
+        await alignment.InvokeAsync(alignment.Instance.OpenMenu);
+        Assert.Equal(FormatCellsOffer.Alignments.Select(FormatCellsOffer.NameOf), ListItems(page));
+        await alignment.InvokeAsync(() => alignment.Instance.CloseMenu());
+
+        await ShowTabAsync(page, "Font");
+        var underline = page.FindComponent<MudSelectOfUnderline>();
+        Assert.False(underline.Instance.GetState(x => x.Value));
+        await underline.InvokeAsync(underline.Instance.OpenMenu);
+        Assert.Equal(["None", "Single"], ListItems(page));
+    }
+
     [Fact] // ADR-0063 / SH-45: Alignment is horizontal only, and OK sets the one chosen
     public async Task Alignment_sets_the_horizontal_alignment()
     {
@@ -273,7 +307,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         await OpenAsync(page, "B2");
         await ShowTabAsync(page, "Alignment");
 
-        await ChooseAsync(page, "Centre");
+        await PickAsync<HorizontalAlignment>(page, "Centre");
         await OkAsync(page);
 
         page.WaitForAssertion(() => Assert.False(IsOpen(page)));
@@ -288,7 +322,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         await ShowTabAsync(page, "Font");
 
         await ChooseAsync(page, "Bold Italic");
-        await ChooseAsync(page, "Single");
+        await PickAsync<bool>(page, "Single");
         await page.Find(".mud-ex-sheet-format-cells-strikethrough input").ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = true });
         await OkAsync(page);
 

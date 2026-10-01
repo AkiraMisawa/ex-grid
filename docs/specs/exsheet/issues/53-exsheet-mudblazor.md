@@ -76,3 +76,11 @@ Status: done
   - Package smoke passed, run before the tab fix (a C# change only).
 - **Left open.** A real IME in the Custom code field under MudBlazor was not tried.
   (`format-cells.spec.mjs` is now listed in `tests/ExGrid.Browser/README.md`.)
+
+*(2026-10-01, agent cf-53, follow-up.)* Horizontal and Underline are dropdowns (`MudSelect`), as
+Excel's and the built-in Chrome's are. The first build drew them as radio groups, on the expectation
+that Escape in an open list would also reach the dialog and close it. That expectation was never
+tried, and MudBlazor's source shows it to be wrong: while its list is open, `MudSelect` stops Escape
+at its own element (`stopDown`), so the dialog does not hear it, and the next Escape is the dialog's
+Cancel. Layer 3 holds it to that on both hosts (`format-cells-mud.spec.mjs`). ExSheet.MudBlazor.Tests
+has 35 tests (one new: the two dropdowns list Excel's choices and open on the Focus cell's).

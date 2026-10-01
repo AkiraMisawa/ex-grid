@@ -5,8 +5,8 @@
     MudFormatCellsFrame shows. What it offers is FormatCellsOffer's and every choice is set through
     the context's draft, so what a choice means and what OK sets are ExSheet's, the same under
     either Chrome. MudBlazor's controls draw it: tabs that switch with the arrow keys
-    (MudFormatCellsTabs), radio groups for each list of choices, and MudBlazor's colour picker for
-    More Colours. The palette's swatches are radio buttons drawn as their colour, as the built-in
+    (MudFormatCellsTabs), radio groups for each list of choices, dropdowns where Excel has them
+    (Horizontal and Underline), and MudBlazor's colour picker for More Colours. The palette's swatches are radio buttons drawn as their colour, as the built-in
     Chrome draws them: MudBlazor has no palette of its own.
 
     Enter in a field is OK, through the browser's implicit submission of the form and a hidden
@@ -224,14 +224,20 @@
 
     private RenderFragment AlignmentTab => __builder =>
     {
-        <MudText Typo="Typo.subtitle2">Horizontal</MudText>
-        <MudRadioGroup T="HorizontalAlignment" Value="Draft.Alignment" ValueChanged="Draft.SetAlignment" Class="mud-ex-sheet-format-cells-list mud-ex-sheet-format-cells-alignment">
+        @* A dropdown, as Excel's. Escape while its list is open is the select's alone: MudSelect stops
+           it from reaching the dialog until the list closes, so the next Escape is the dialog's Cancel. *@
+        <MudSelect T="HorizontalAlignment" Label="Horizontal" Value="Draft.Alignment" ValueChanged="Draft.SetAlignment"
+                   ToStringFunc="AlignmentName" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                   Class="mud-ex-sheet-format-cells-dropdown mud-ex-sheet-format-cells-alignment">
             @foreach (var alignment in FormatCellsOffer.Alignments)
             {
-                <MudRadio T="HorizontalAlignment" Value="alignment" Dense="true" Size="Size.Small" Label="@FormatCellsOffer.NameOf(alignment)" />
+                <MudSelectItem T="HorizontalAlignment" Value="alignment">@FormatCellsOffer.NameOf(alignment)</MudSelectItem>
             }
-        </MudRadioGroup>
+        </MudSelect>
     };
+
+    // What a dropdown shows for its value: Excel's names, as the list does.
+    private static readonly Func<HorizontalAlignment, string?> AlignmentName = alignment => FormatCellsOffer.NameOf(alignment);
 
     // ---- Font ----
 
@@ -249,17 +255,22 @@
                 </MudRadioGroup>
             </div>
             <div class="mud-ex-sheet-format-cells-options">
-                <MudText Typo="Typo.subtitle2">Underline</MudText>
-                <MudRadioGroup T="bool" Value="Draft.Underline" ValueChanged="Draft.SetUnderline" Class="mud-ex-sheet-format-cells-list mud-ex-sheet-format-cells-underline">
-                    <MudRadio T="bool" Value="false" Dense="true" Size="Size.Small" Label="None" />
-                    <MudRadio T="bool" Value="true" Dense="true" Size="Size.Small" Label="Single" />
-                </MudRadioGroup>
+                @* A dropdown, as Excel's, and closed by Escape as the Alignment's is. *@
+                <MudSelect T="bool" Label="Underline" Value="Draft.Underline" ValueChanged="Draft.SetUnderline"
+                           ToStringFunc="UnderlineName" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
+                           Class="mud-ex-sheet-format-cells-dropdown mud-ex-sheet-format-cells-underline">
+                    <MudSelectItem T="bool" Value="false">@UnderlineName(false)</MudSelectItem>
+                    <MudSelectItem T="bool" Value="true">@UnderlineName(true)</MudSelectItem>
+                </MudSelect>
                 <MudCheckBox T="bool" Value="Draft.Strikethrough" ValueChanged="Draft.SetStrikethrough" Dense="true" Size="Size.Small"
                              Label="Strikethrough" Class="mud-ex-sheet-format-cells-strikethrough" />
             </div>
         </div>
         @Palette(ColourTarget.Font, Draft.FontColour)
     };
+
+    // The Font tab's underline, as Excel names it: single, or none.
+    private static readonly Func<bool, string?> UnderlineName = underline => underline ? "Single" : "None";
 
     private void SetFontStyle(FontStyle? style)
     {

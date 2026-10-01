@@ -29,6 +29,9 @@
     display: flex;
     flex-direction: column;
 }
+.mud-ex-sheet-format-cells-dropdown {
+    max-width: 14em;
+}
 .mud-ex-sheet-format-cells-reason {
     display: block;
     margin: 0 0 4px 2.4em;
