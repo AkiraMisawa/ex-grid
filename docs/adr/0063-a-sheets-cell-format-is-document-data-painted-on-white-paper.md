@@ -68,6 +68,19 @@ judged by the bold widths. The grid still never measures.
 Italic is judged by the regular widths. Its slant leans past a glyph's advance by less than the
 cell's padding. A layer-3 check confirms that nothing is cut.
 
+*(2026-10-01, ticket 47.)* **The core measured its own bold widths** the way §21.7a measured the
+regular ones: Chrome at 14px, tabular digits, weight 700.
+- system-ui on macOS measured 14.35 / 9.25 / 5.852 (wide / digit / narrow). DejaVu Sans Bold, which
+  Linux paints for both 600 and 700, measured 14.028 / 9.742 / 6.398.
+- The defaults take the wider of the two in each class: 14.35 / 9.742 / 6.398.
+- `ExGrid.MudBlazor` supplies Roboto's widths at 700: 10.4 / 8.33 / 4.95.
+- Segoe UI on Windows is not measured.
+
+**A Consumer that supplies metrics without bold widths has bold charged at the regular widths plus
+4%.** That is the widest growth from weight 600 to 700 that was measured, on `(` in system-ui on
+macOS. Like ADR-0016's fallback for full-width characters, it is reasoned rather than measured for
+every font. It errs towards `####`, never towards a cut number.
+
 ## Paper and Ink
 
 - **The ground under a Sheet's cells is Excel's white, and Automatic text is Excel's black, in every
@@ -310,6 +323,26 @@ Ticket 44 measured the candidates. Its comment holds the tables. The result file
   The hybrid is taken if it draws the same pixels and costs less.
 - **A run on real hardware and one on the Server host** are owed by hand. Neither gates.
 
+**What ticket 47 settled** *(2026-10-01)*. The result files are `results/20261001-183929-354.json`,
+`-190312-851.json` and `-192214-388.json`.
+- **The product uses the hybrid.**
+  - A solid line on the gridline is the cell's own bottom or right `border`. A right border gives
+    its width back out of the padding, so the text does not move.
+  - Dashes, double, the pixel past the gridline, and a neighbour's Fill over the gridline are
+    background layers, read by one static rule and interned per side, style and colour.
+  - It draws the same pixels as `BorderInCellExcel`, and costs 0.2 to 0.8 ms less at the median in
+    five of six configurations, and 0.2 to 0.4 ms more at 50% with 16 distinct lines. The first of
+    the three sweeps ran at a load of up to 25 and is not counted.
+- **150% is exact** under a real device scale, with Chrome's `--force-device-scale-factor=1.5`:
+  thin is 1 device pixel, medium 2, thick 3, double dark / ground / dark, and the long dash 9. DC-59
+  passes there on both hosts.
+  - CDP's emulation, which the earlier measurement used, blurs borders and 1-px tiles at 1.5. No
+    user has that display.
+  - Windows and a browser zoomed to 150% are still owed, in the eleventh run's Part C.
+- **A Fill and a border on the same cell** cost +0.1 to +0.2 ms over the border alone with one Fill
+  colour, +1.5 to +2.6 with 16, and +2.6 to +5.6 with 256 Fills over 256 lines.
+- **A Fill covers all four of its gridlines, beneath any line.**
+
 ## Not in it
 
 - **The Font and Border exclusions above**: font size, typeface, wrapped text, vertical alignment,
@@ -508,11 +541,11 @@ every setting).
 
 Ticket 57 takes the model. Ticket 58 takes the keys' widening and the localised built-ins.
 
-## Readings until the thirteenth Windows run *(2026-10-01)*
+## Readings until the fourteenth Windows run *(2026-10-01)*
 
 Ticket 58 built the widening and the localised built-ins, and ticket 57 built the edge model. Building
 them meant reading some things that no run observed, and one earlier answer may contradict them. ExSheet follows each reading below
-until [`verify-on-windows-13.md`](../specs/exsheet/verify-on-windows-13.md) observes it. Excel's answer
+until [`verify-on-windows-14.md`](../specs/exsheet/verify-on-windows-14.md) observes it. Excel's answer
 then decides (ADR-0047's rule).
 
 - **A column that has already left the standard width widens again** when a key's text no longer fits,
@@ -543,6 +576,10 @@ then decides (ADR-0047's rule).
   - **Inside over whole rows** sets the right of XFD and leaves A's left alone. **Inside over the
     whole Sheet** sets every side, including A's left and XFD's right. Both follow from cases 14
     to 16.
+- **Ticket 47's painting, where the eleventh run's case 9 saw one cell at a time:**
+  - Where two filled cells meet, the upper or left cell's Fill shows on the gridline between them.
+  - A double line's middle pixel is the grid's ground, even over a Fill.
+  - The long dash is 8 pixels below 150% and 9 from 150% on. The runs saw only 100% and 150%.
 - **Not a reading but an estimate.** ExSheet widens column A for `05-Jan-26`, which fitted Excel's 8.09
   in case 19. ExSheet's fitting charges every character one digit width (ADR-0047). That is the same
   estimate that otherwise decides `####`, and it errs towards widening, never towards hiding text.
@@ -563,6 +600,11 @@ then decides (ADR-0047's rule).
 - **The code's names follow the glossary.** `AxisStyle` becomes `AxisFormat`, `SetStyle` becomes
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
-- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done. Tickets 44 to 58 in
-  `docs/specs/exsheet/issues/`. Ticket 55 was added by the eleventh run, 56 by ticket 51's Server
-  fix, and 57 and 58 by the twelfth run.
+- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done.
+- **Tickets** 44 to 58, 76 and 77, in `docs/specs/exsheet/issues/`:
+  - ticket 55 was added by the eleventh run;
+  - 56 by ticket 51's Server fix;
+  - 57 and 58 by the twelfth run;
+  - 76 and 77 by ticket 47.
+
+  59 to 75 are `claude/exsheet-start-8cx3v1`'s.

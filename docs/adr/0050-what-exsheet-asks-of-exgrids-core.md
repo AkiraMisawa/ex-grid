@@ -343,6 +343,22 @@ underline and strikethrough), its Fill, and its four Border sides.
   - Borders are drawn inside each cell. Each cell paints its own share of Excel's centred line,
     from edges resolved once per row, outside the render. So a border change repaints the rows
     either side of the edge as well.
+  - *(2026-10-01, ticket 47, the declaration as built.)*
+    - **The lookup.** The grid parameter `CellAppearance` takes a
+      `CellAppearanceOf<TRow>(TRow row, GridColumn<TRow> column)`. It is null by default, and then
+      nothing is painted for it.
+    - **What it answers.** A `CellAppearance` holds `FontColour`, `Bold`, `Italic`, `Underline`,
+      `Strikethrough`, `Fill`, and `Top`, `Right`, `Bottom` and `Left`. Each side is a `Border`, a
+      `BorderStyle` (None and Excel's thirteen) with an `RgbColour`.
+    - **Two lines on one edge.** The grid parameter `EdgeBorder` takes an `EdgeBorderOf`. It is
+      asked only when the two cells record different lines on the same edge. Without it, the upper
+      or left cell's line is drawn.
+    - **When a row repaints.** The row instance and the lookup signal a change, as for Cell State
+      ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)). Each painted row is resolved
+      once, outside its render, from itself and the rows either side, into an immutable object the
+      row compares by reference. A row repaints only when what it paints changed.
+    - **Bold widths.** `CellTextMetrics` gains `BoldWideWidthPx`, `BoldDigitWidthPx`,
+      `BoldNarrowWidthPx` and `Bold`.
 - **Borders are drawn as Excel draws them.** Each line is centred on the gridline. A thick line
   reaches into both cells. Lines lie above Fills and below the Focus, the Selection and the
   Reference Outlines. Which of two lines recorded on one edge is drawn is the Consumer's answer, so

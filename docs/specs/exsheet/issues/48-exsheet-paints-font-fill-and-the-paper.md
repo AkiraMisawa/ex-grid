@@ -4,7 +4,7 @@ Status: ready-for-agent
 
 **What to build:** the component's half of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "What a Cell Format holds" and "Paper and Ink".
 
-**Blocked by:** 47
+**Blocked by:** None (47 is in)
 
 - [ ] **ExSheet declares ADR-0050 item 15** from the engine's Cell Format. A Number Format's colour
       (ticket 46) takes the Font colour's place.

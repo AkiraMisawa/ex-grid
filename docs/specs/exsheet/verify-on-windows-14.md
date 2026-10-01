@@ -1,9 +1,10 @@
-# What to verify on Windows, thirteenth run
+# What to verify on Windows, fourteenth run
 
 Status: ready-for-human. Part A asks Excel only and needs no build. (Part C of the
 [eleventh run](verify-on-windows-11.md) still waits for tickets 48 and 49.)
 
-This is for the Claude Code session on the Windows desktop of the earlier runs.
+This is for the Claude Code session on the Windows desktop of the earlier runs. (The thirteenth run is
+`claude/exsheet-start-8cx3v1`'s, about Pointing Scope; this one follows it.)
 - Read [`verify-on-windows-11.md`](verify-on-windows-11.md) and
   [`verify-on-windows-12.md`](verify-on-windows-12.md) first. Their Setup, method and tools apply
   here unchanged.
@@ -12,21 +13,22 @@ This is for the Claude Code session on the Windows desktop of the earlier runs.
 
 Part A settles the readings in
 [ADR-0063](../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Readings
-until the thirteenth Windows run". Ticket 58 built ExSheet on those readings, so each answer either
+until the fourteenth Windows run". Ticket 58 built ExSheet on those readings, so each answer either
 confirms the code or names what to change. The readings cover three things:
 - when a formatting key widens a column that is no longer at the standard width;
 - what else widens a column;
 - how ja-JP shows `mmm`;
-- what each cell records for itself under the edge model of ticket 57.
+- what each cell records for itself under the edge model of ticket 57;
+- how Fills and lines meet on a gridline, and the dash lengths at other zooms (ticket 47).
 
 ## Setup
 
-- **Branches.** Fetch **`claude/exsheet-cell-format`**. Branch **`claude/exsheet-windows-verify-13`**
+- **Branches.** Fetch **`claude/exsheet-cell-format`**. Branch **`claude/exsheet-windows-verify-14`**
   from its tip, and record that tip as the verified commit.
 - **Authorisation.** The user has authorised this run in advance: real keys and mouse to Excel.
   **Do not stop to ask.** Say "starting" before the first input and "finished" after the last.
 - **Tools.** Copy the twelfth run's `cell-format-12.ps1` as
-  `verification/<date>-windows-excel-13/cell-format-13.ps1`, taking one case or a list of cases.
+  `verification/<date>-windows-excel-14/cell-format-14.ps1`, taking one case or a list of cases.
 - **Keys and COM.** Every operation a case asks about is done with real keys, or with the mouse where
   the case says so. COM only sets up a case and reads the result.
 - **Widths.** Read `ColumnWidth` and `UseStandardWidth` **after every key**, not only at the end, and
@@ -37,7 +39,7 @@ confirms the code or names what to change. The readings cover three things:
 ## Part A — Excel
 
 Use a fresh workbook for each case, with one sheet named `Sheet1`, at 100% zoom. Record each case as
-one JSON line in `cell-format-13.jsonl` and as a row in `cell-format-13.md`.
+one JSON line in `cell-format-14.jsonl` and as a row in `cell-format-14.md`.
 
 ### Group 1 — a key on a column that has already widened
 
@@ -83,10 +85,21 @@ it points to in `xl/styles.xml`.
 | 14 | — | Select rows 3:4 (A3, Shift+Space, Shift+Down), Ctrl+1 → Border → **Inside** (mouse) → OK. Save | A3's and A4's left edges, XFD3's right edge, B3's bottom edge (COM and the file) | the line between rows 3 and 4 and between columns; XFD's right set; A's left not set |
 | 15 | — | Select the whole Sheet (the corner box, mouse), Ctrl+1 → Border → **Inside** → OK | A1's left and top, XFD1's right, B2's top, A1048576's bottom (COM) | every side, including A's left and XFD's right. Record the top of row 1 and the bottom of row 1048576 |
 
+### Group 5 — lines and Fills where two cells meet, and the dashes at other zooms
+
+Screenshots at 100% unless the case says otherwise. Read the pixels across the gridline as the
+eleventh run's case 9 did.
+
+| # | Set up (COM) | What is asked | Reading |
+|---|---|---|---|
+| 16 | B2 filled yellow (`#FFFF00`), B3 filled light blue (`#00B0F0`), no borders | The pixel row on the gridline between B2 and B3, and the column on the gridline between B2 and C2 (C2 unfilled) | the gridline between B2 and B3 is yellow (the upper cell's); between B2 and C2 it is yellow too (a Fill covers its gridlines) |
+| 17 | B2 filled yellow with a double bottom border, black | The three pixels across the gridline under B2 | dark, then the gridline pixel, then dark. Record whether that middle pixel is white or yellow |
+| 18 | B2 with a medium dashed bottom and B4 with a dashed (thin) bottom | The dash lengths at zoom 100%, 125%, 175% and 200% | 8 on below 150%, 9 from 150%. Record each zoom's pattern |
+
 ## Results
 
-- Push `claude/exsheet-windows-verify-13` with `verification/<date>-windows-excel-13/`.
-- In `cell-format-13.md`, summarise two lists:
+- Push `claude/exsheet-windows-verify-14` with `verification/<date>-windows-excel-14/`.
+- In `cell-format-14.md`, summarise two lists:
   - every case whose answer differs from its reading;
   - every case marked "record".
 - Restore the regional format afterwards, and say so.

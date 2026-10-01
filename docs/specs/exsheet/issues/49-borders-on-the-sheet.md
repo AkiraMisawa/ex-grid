@@ -4,7 +4,7 @@ Status: ready-for-agent
 
 **What to build:** the Sheet's Borders, drawn through ADR-0050 item 15, as [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) says.
 
-**Blocked by:** 47 and 57. The eleventh Windows run's group 3 is in `verification/2026-10-01-windows-excel-11/cell-format.md`;
+**Blocked by:** None (47 and 57 are in). The eleventh Windows run's group 3 is in `verification/2026-10-01-windows-excel-11/cell-format.md`;
 ticket 57 makes the engine keep the line between two cells as Excel does, and ExSheet answers the
 core's question of which line to draw by its rule (the upper or left cell's, where both record one).
 
