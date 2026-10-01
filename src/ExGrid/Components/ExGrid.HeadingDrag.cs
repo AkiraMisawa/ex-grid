@@ -313,7 +313,7 @@ public partial class ExGrid<TRow>
     {
         var geometry = _columnStyles.Geometry;
         var extent = _selection.Selection.Extent;
-        var width = Math.Min(_metrics.CellMetrics.EstimatePx(text), Math.Max(0, _visibleWidthPx));
+        var width = Math.Min(_metrics.CellMetrics.For(ColumnType.Text).EstimatePx(text), Math.Max(0, _visibleWidthPx));
         double left;
         double top;
         if (_headingDrag == HeadingAxis.Columns)

@@ -2072,10 +2072,15 @@
     }
 
     /// <summary>The metrics a cell's text is estimated with for an Auto width or a fit: the
-    /// bold widths for a bold cell (ADR-0050, item 15), so a width fitted to it never shows
-    /// its value as <c>####</c>.</summary>
+    /// bold widths for a bold cell (ADR-0050, item 15), and the other class at its own width
+    /// for a value that can become <c>####</c> (ADR-0016; ticket 83), so a width fitted to it
+    /// never shows its value as <c>####</c>. A Text or Boolean cell charges it at the digit,
+    /// as it always did.</summary>
     private CellTextMetrics EstimateMetricsFor(GridColumn<TRow> column, TRow row)
-        => CellAppearance?.Invoke(row, column).Bold == true ? _metrics.CellMetrics.Bold : _metrics.CellMetrics;
+    {
+        var metrics = _metrics.CellMetrics.For(column.TypeAt(row, CellType));
+        return CellAppearance?.Invoke(row, column).Bold == true ? metrics.Bold : metrics;
+    }
 
     /// <summary>
     /// The Row Headings' width, resolved once per push (ADR-0028): the Consumer's number
@@ -2099,9 +2104,8 @@
             else
             {
                 var last = Math.Max(0, TotalRows - 1);
-                width = Math.Max(
-                    _metrics.CellMetrics.EstimatePx(label(0) ?? ""),
-                    _metrics.CellMetrics.EstimatePx(label(last) ?? ""));
+                var asText = _metrics.CellMetrics.For(ColumnType.Text);
+                width = Math.Max(asText.EstimatePx(label(0) ?? ""), asText.EstimatePx(label(last) ?? ""));
             }
         }
         if (width != _rowHeadingWidthPx || (_rowHeadingStyle is null) != (width == 0))
@@ -2546,9 +2550,11 @@
                         // column narrower than the single button it holds, which
                         // `overflow: hidden` then clips: the very outcome this estimate
                         // exists to prevent.
-                        var required = _metrics.CellMetrics.EstimatePx(0);
+                        // A label is text: its letters are charged at the digit (ticket 83).
+                        var asText = _metrics.CellMetrics.For(ColumnType.Text);
+                        var required = asText.EstimatePx(0);
                         foreach (var action in Columns[i].Actions)
-                            required += _metrics.CellMetrics.TextWidthPx(action.Label) + _metrics.ActionButtonChromePx;
+                            required += asText.TextWidthPx(action.Label) + _metrics.ActionButtonChromePx;
                         auto = auto.Observe(required);
                     }
                 }

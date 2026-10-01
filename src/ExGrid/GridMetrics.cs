@@ -49,9 +49,10 @@ public sealed record GridMetrics
     public double FormulaBarHeightPx => HeaderHeightPx;
 
     /// <summary>The Name Box's width (ADR-0051): <c>XFD1048576</c>, the longest address a
-    /// Sheet has, as the Cell Metrics estimate it with a cell's padding. Emitted inline,
-    /// never a stylesheet value.</summary>
-    public double NameBoxWidthPx => CellMetrics.EstimatePx("XFD1048576");
+    /// Sheet has, as the Cell Metrics estimate it with a cell's padding — as text, which
+    /// never becomes <c>####</c> (<see cref="CellTextMetrics.For"/>). Emitted inline, never a
+    /// stylesheet value.</summary>
+    public double NameBoxWidthPx => CellMetrics.For(ColumnType.Text).EstimatePx("XFD1048576");
 
     /// <summary>The fill handle's side (ADR-0050, item 5; ADR-0028): a square centred on
     /// the bottom-right corner of the Selection, a little under a third of a row. The
@@ -111,13 +112,14 @@ public sealed record GridMetrics
     /// mark's box when the column can be sorted — whether or not it is sorted now,
     /// so a header click never chops its label nor moves the columns to its right. The
     /// slack is there because a label is proportional letters no per-class charge can
-    /// bound (<c>W</c> is 15.44px where <c>i</c> is 4). Auto and Size to fit both read
-    /// this, so they agree on what a header needs.
+    /// bound (<c>W</c> is 15.44px where <c>i</c> is 4), so the label is charged as text,
+    /// its letters at the digit (<see cref="CellTextMetrics.For"/>). Auto and Size to fit
+    /// both read this, so they agree on what a header needs.
     /// </summary>
     public double HeaderRequiredPx(string label, bool menuButton, bool sortable)
     {
         ArgumentNullException.ThrowIfNull(label);
-        return CellMetrics.EstimatePx(label)
+        return CellMetrics.For(ColumnType.Text).EstimatePx(label)
             + CellMetrics.FullWidthPx
             + (menuButton ? MenuButtonBandPx : 0)
             + (sortable ? SortMarkWidthPx : 0);
@@ -150,32 +152,39 @@ public sealed record GridMetrics
         CellTextMetrics? cellMetrics = null,
         GridPresentationDefaults? defaults = null)
     {
-        // The preset table (ADR-0028), with the character-class widths of ADR-0016:
-        // wide/digit/narrow are the widest measured for each class on any supported
-        // platform at the stylesheet's system-ui 14px, 600 weight — DejaVu Sans on Linux
-        // (14.028 / 9.742 / 6.398), which is wider than the first machine measured
-        // (13.836 / 9.058 / 5.63). Full-width is the em: the font size. Excel's 12px set
-        // is that measurement scaled, rounded up, provisional the way the whole preset is.
-        // The action chrome is the 6px/1px/4px ex-grid.css always used, scaled down only
-        // where the whole preset is — and the menu button's 16px/6px and the sort mark's
-        // box (an em and a 6px gap) travel the same way, so the header estimate and the
-        // stylesheet read one number (the pairing ADR-0027/0028 dissolved).
-        // The bold widths (ADR-0050, item 15) were measured the same way, at weight 700, on
-        // 2026-10-01: the widest per class of system-ui on macOS (14.35 / 9.25 / 5.852) and
-        // DejaVu Sans Bold, which Linux paints for both 600 and 700 (14.028 / 9.742 / 6.398).
-        // Excel's 12px set is that measurement scaled, rounded up, as the regular one is.
-        var (row, header, font, wide, digit, narrow, padding, actionPad, actionBorder, actionGap, menuWidth, menuInset, sortMark)
+        // The preset table (ADR-0028), with the character-class widths of ADR-0016: each is
+        // the widest glyph of its class measured on any supported platform at the stylesheet's
+        // system-ui, at every weight the grid paints regular text in (400 to 600), declared a
+        // shade over. Full-width is the em: the font size. The action chrome is the
+        // 6px/1px/4px ex-grid.css always used, scaled down only where the whole preset is —
+        // and the menu button's 16px/6px and the sort mark's box (an em and a 6px gap) travel
+        // the same way, so the header estimate and the stylesheet read one number (the
+        // pairing ADR-0027/0028 dissolved).
+        // Measured on 2026-10-01 (ticket 83, tests/GlyphWidths): system-ui on macOS (SF) and
+        // DejaVu Sans, which Linux paints for system-ui and paints Bold for 600 and 700. At
+        // 14px: % 14.031 (DejaVu, 600), a digit 9.75, ( 6.406, and the other class's widest,
+        // W and ₩, 15.453 (DejaVu Bold). The first declarations (14.028 / 9.742 / 6.398) were
+        // run averages: a glyph alone is laid out to the next 1/64px, so a one-digit value
+        // painted 0.008px past its estimate. Excel's 12px set is measured at 12px, not
+        // scaled — % 12.031, a digit 8.359, ( 5.484, W 13.25 — because SF is optically
+        // sized: its 12px % is 12.438 at 700 where the 14px one scales to 12.308.
+        // The bold widths (ADR-0050, item 15) are the same measurement at weight 700: SF's %
+        // is the widest wide glyph (14.359; 12.438 at 12px), and DejaVu Sans Bold the rest.
+        // Letters and currency signs DejaVu Sans draws are charged their own widths from the
+        // generated tables (DefaultGlyphWidths, at 14px and 12px), so the other class's 15.46 is
+        // only the fallback for a glyph no table holds.
+        var (row, header, font, wide, digit, narrow, other, padding, actionPad, actionBorder, actionGap, menuWidth, menuInset, sortMark)
             = density switch
         {
-            GridDensity.Comfortable => (40d, 40d, 14d, 14.028, 9.742, 6.398, 12d, 6d, 1d, 4d, 16d, 6d, 20d),
-            GridDensity.Standard => (32d, 32d, 14d, 14.028, 9.742, 6.398, 8d, 6d, 1d, 4d, 16d, 6d, 20d),
-            GridDensity.Compact => (28d, 28d, 14d, 14.028, 9.742, 6.398, 8d, 6d, 1d, 4d, 16d, 6d, 20d),
-            GridDensity.Excel => (20d, 20d, 12d, 12.024, 8.351, 5.484, 4d, 4d, 1d, 2d, 14d, 4d, 16d),
+            GridDensity.Comfortable => (40d, 40d, 14d, 14.04, 9.75, 6.41, 15.46, 12d, 6d, 1d, 4d, 16d, 6d, 20d),
+            GridDensity.Standard => (32d, 32d, 14d, 14.04, 9.75, 6.41, 15.46, 8d, 6d, 1d, 4d, 16d, 6d, 20d),
+            GridDensity.Compact => (28d, 28d, 14d, 14.04, 9.75, 6.41, 15.46, 8d, 6d, 1d, 4d, 16d, 6d, 20d),
+            GridDensity.Excel => (20d, 20d, 12d, 12.04, 8.36, 5.49, 13.26, 4d, 4d, 1d, 2d, 14d, 4d, 16d),
             _ => throw new ArgumentOutOfRangeException(nameof(density), density, "Unknown density preset."),
         };
-        var (boldWide, boldDigit, boldNarrow) = density == GridDensity.Excel
-            ? (12.3, 8.351, 5.484)
-            : (14.35, 9.742, 6.398);
+        var (boldWide, boldDigit, boldNarrow, boldOther) = density == GridDensity.Excel
+            ? (12.44, 8.36, 5.49, 13.26)
+            : (14.36, 9.75, 6.41, 15.46);
 
         var resolvedRow = rowHeightPx ?? row;
         // An explicit RowHeight moves the header with it unless the header was set
@@ -201,7 +210,8 @@ public sealed record GridMetrics
             // size this grid emits, so explicit metrics too are charged at least that for
             // it — the uniform and three-class forms cannot know it (ADR-0016).
             (cellMetrics ?? defaults?.CellMetricsAt(font, padding)
-                ?? new CellTextMetrics(wide, digit, narrow, font, padding, boldWide, boldDigit, boldNarrow))
+                ?? new CellTextMetrics(wide, digit, narrow, font, padding, boldWide, boldDigit, boldNarrow, other, boldOther)
+                    .WithGlyphWidths(density == GridDensity.Excel ? DefaultGlyphWidths.At12 : DefaultGlyphWidths.At14, font))
                 .WithFullWidthAtLeast(font),
             actionPad, actionBorder, actionGap,
             menuWidth, menuInset, sortMark);

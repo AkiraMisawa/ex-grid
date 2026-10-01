@@ -32,4 +32,11 @@
     <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The glyph-width corpus and the painted widths of each face (ADR-0016, ticket 83);
+         the core's estimate is held to them. tests/GlyphWidths/README.md says how they are made. -->
+    <Compile Include="..\GlyphWidths\GlyphWidthRecord.cs" Link="GlyphWidths\GlyphWidthRecord.cs" />
+    <None Include="..\GlyphWidths\*.json" Link="GlyphWidths\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
