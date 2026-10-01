@@ -776,7 +776,7 @@ DA-17). Over a million trades in a published WebAssembly build:
 
 | Met | Missed |
 |---|---|
-| A collapse, a sort or a form, laid out from the answer held: 28–32 ms | A CSV of a million rows: 14.6 s against 4 s (955 ms on CoreCLR, against about 0.4 s) |
+| A collapse, a sort or a form, laid out from the answer held: 28–32 ms | A CSV of a million rows: 14.6 s against 4 s (955 ms on CoreCLR, against about 0.4 s); 4.0 s and 491 ms once made faster, below |
 | 1,000 changes on screen: 43 ms | The page blocked for at most 50 ms: a gesture's worst is about 0.2 s, and a question near the cap held the page for 1.9 s (137 ms once sliced, below) |
 | A new question for a 50-leaf report: a median of 159–229 ms | A new question near the 200,000-leaf cap: 2.7 s |
 
@@ -793,6 +793,12 @@ DA-17). Over a million trades in a published WebAssembly build:
   keyboard back however it closes. Building it found that a held Escape peeled a layer per
   repeat, cancelling a half-typed formula under its closing list. A held Escape is now one
   press in every grid (ADR-0012, KB-44).
+- **The CSV read is faster** (ExGrid.Data's ticket 07, `verification/2026-10-01-linux-measure-csv`;
+  ADR-0063, refined). A million rows read in 4.0 s in a published WebAssembly build, from 12.9 s,
+  and in 491 ms on CoreCLR, from 692, both on the same machine. Every rule of the read and every
+  refusal is unchanged. The work found and fixed a crash: a Blank early in a numeric, date or
+  Boolean column that later outgrew its first room. Slices now yield with `Task.Yield()` in a
+  browser too, which paints a frame a slice at a ninth of a 1 ms delay's cost.
 
 DA-17: a million records built from objects in 426 ms on CoreCLR and 3.8 s in the browser; read
 from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
