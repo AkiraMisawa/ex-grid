@@ -145,6 +145,7 @@ for (const chrome of ['builtin', 'mud']) {
             expect(await paintedHeaders(page)).toHaveLength(TENORS.length + 2);
 
             const table = await paintedRows(page);
+            expect(table, 'every row painted').toHaveLength(Number(await report(page).getAttribute('aria-rowcount')));
             const grand = table.at(-1);
             expect(grand.label).toBe('Grand Total');
             // Three desks, each a group row carrying its subtotal at the top, over its curves.

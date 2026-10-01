@@ -104,7 +104,9 @@ for (const chrome of ['builtin', 'mud']) {
         test(`ADR-0063: /pivot's trades written as the trade export read back under the declared Schema to the very report /pivot paints (${chrome})`, async ({ page }) => {
             await page.goto(`/pivot?chrome=${chrome}`);
             await expect(rows(page).first()).toBeVisible({ timeout: 30_000 });
+            // Every row of the report is painted, so the two are compared whole.
             const fromRecords = await paintedRows(page);
+            expect(fromRecords).toHaveLength(Number(await report(page).getAttribute('aria-rowcount')));
             expect(fromRecords.at(-1)[0]).toBe('Grand Total');
 
             await open(page, chrome);
@@ -116,6 +118,7 @@ for (const chrome of ['builtin', 'mud']) {
             await reportShown(page, chrome);
             // The same layout over the same trades, read from text: every label and every value,
             // money summed exactly, the same.
+            expect(await report(page).getAttribute('aria-rowcount')).toBe(String(fromRecords.length));
             expect(await paintedRows(page)).toEqual(fromRecords);
             // The whole file was read: the bar is full.
             const progress = page.locator('#csv-progress');
