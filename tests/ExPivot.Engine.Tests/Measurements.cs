@@ -181,6 +181,53 @@ public class Measurements
         Report("main, first question over untyped accessors (builds too)", first);
     }
 
+    [Fact(Explicit = true)] // PV-21 / ADR-0059/0065: a collapse, a sort and a change of form laid out from the answer held, asking nothing
+    public void Laying_out_the_answer_held()
+    {
+        var fields = Fields();
+        var snapshot = fields.Build(Trades.Value);
+        foreach (var (name, layout) in new[]
+                 {
+                     ("main: 3 row fields, Product, two Sums", MainReport("Product")),
+                     ("270 dates: TradeDate in Columns", MainReport("TradeDate")),
+                 })
+        {
+            var query = PivotQuery.For(layout, int.MaxValue);
+            var answer = Ask(PivotSource.From(snapshot, fields.Fields, Whole), query);
+            // What ExPivot does with an answer as it lands, at once and in one piece: makes its cube.
+            var cube = PivotEngine.Cube(query, answer, fields.Fields);
+            for (var warm = 0; warm < 4; warm++)
+                cube = PivotEngine.Cube(query, answer, fields.Fields);
+            Report($"{name}: the answer made a cube", [.. Enumerable.Range(0, 9).Select(_ => Time(() => cube = PivotEngine.Cube(query, answer, fields.Fields)))],
+                $"{answer.LeafCount:N0} leaves");
+            var (region, inner) = (layout.Rows[0], layout.Rows.Skip(1).ToArray());
+            foreach (var (gesture, next) in new[]
+                     {
+                         ("as asked", layout),
+                         ("Americas collapsed", layout with { Rows = [region with { ToggledItems = [PivotItemKey.Text("Americas")] }, .. inner] }),
+                         ("Region sorted Z to A", layout with { Rows = [region with { Sort = PivotSort.Descending }, .. inner] }),
+                         ("Book sorted by Sum of Notional, largest first", layout with { Rows = [region, inner[0], inner[1] with { Sort = new(PivotSortDirection.Descending, ByValue: 0) }] }),
+                         ("Tabular form", layout with { Form = PivotReportForm.Tabular }),
+                     })
+            {
+                // Warm, as a question is: the runtime's tiers have compiled the layout's loops.
+                var report = PivotEngine.Report(cube, next);
+                for (var warm = 0; warm < 4; warm++)
+                    report = PivotEngine.Report(cube, next);
+                var times = Enumerable.Range(0, 9).Select(_ => Time(() => report = PivotEngine.Report(cube, next))).ToArray();
+                Report($"{name}: {gesture}", times,
+                    $"{answer.LeafCount:N0} leaves, {report.Rows.Count:N0} rows x {report.ValueColumns.Count:N0} value columns");
+            }
+        }
+    }
+
+    private static PivotLayout MainReport(string column) => new()
+    {
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Desk"), new PivotFieldPlacement("Book")],
+        Columns = [new PivotFieldPlacement(column)],
+        Values = [new PivotValueField("Notional"), new PivotValueField("Pnl")],
+    };
+
     [Fact(Explicit = true)] // PV-21 / ADR-0066: 1,000 changes to a million records, folded into the held answer
     public void Folding_a_thousand_changes_into_a_million_records()
     {
