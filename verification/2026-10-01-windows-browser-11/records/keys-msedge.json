@@ -1,0 +1,3138 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:8811",
+ "started": "2026-10-01T01:54:20.003Z",
+ "keys": [
+  {
+   "group": "27",
+   "layout": "uk",
+   "name": "ctrl-1",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x31 (scan 0x02)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "1",
+     "code": "Digit1",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=1 code=Digit1 ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-27-uk-ctrl-1.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "27",
+   "layout": "uk",
+   "name": "ctrl-2",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x32 (scan 0x03)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "2",
+     "code": "Digit2",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=2 code=Digit2 ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-27-uk-ctrl-2.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "27",
+   "layout": "uk",
+   "name": "ctrl-3",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x33 (scan 0x04)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "3",
+     "code": "Digit3",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=3 code=Digit3 ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-27-uk-ctrl-3.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "27",
+   "layout": "uk",
+   "name": "ctrl-4",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x34 (scan 0x05)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "4",
+     "code": "Digit4",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=4 code=Digit4 ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-27-uk-ctrl-4.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "27",
+   "layout": "uk",
+   "name": "ctrl-5",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x35 (scan 0x06)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "5",
+     "code": "Digit5",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=5 code=Digit5 ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-27-uk-ctrl-5.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "28",
+   "layout": "uk",
+   "name": "ctrl-b",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x42 (scan 0x30)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "b",
+     "code": "KeyB",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=b code=KeyB ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-28-uk-ctrl-b.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "28",
+   "layout": "uk",
+   "name": "ctrl-i",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x49 (scan 0x17)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "i",
+     "code": "KeyI",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=i code=KeyI ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-28-uk-ctrl-i.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "28",
+   "layout": "uk",
+   "name": "ctrl-u",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x55 (scan 0x16)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "u",
+     "code": "KeyU",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=u code=KeyU ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-28-uk-ctrl-u.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-tilde",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x1de: Ctrl+Shift+vk 0xde (scan 0x2b)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "~",
+     "code": "Backslash",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=~ code=Backslash ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-tilde.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-bang",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x131: Ctrl+Shift+vk 0x31 (scan 0x02)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "!",
+     "code": "Digit1",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=! code=Digit1 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-bang.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-at",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x1c0: Ctrl+Shift+vk 0xc0 (scan 0x28)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "@",
+     "code": "Quote",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=@ code=Quote ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-at.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-hash",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x0de: Ctrl+vk 0xde (scan 0x2b)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "#",
+     "code": "Backslash",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=# code=Backslash ctrl=true shift=false alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-hash.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-dollar",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x134: Ctrl+Shift+vk 0x34 (scan 0x05)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "$",
+     "code": "Digit4",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=$ code=Digit4 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-dollar.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-percent",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x135: Ctrl+Shift+vk 0x35 (scan 0x06)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "%",
+     "code": "Digit5",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=% code=Digit5 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-percent.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-caret",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x136: Ctrl+Shift+vk 0x36 (scan 0x07)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "^",
+     "code": "Digit6",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=^ code=Digit6 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-caret.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-amp",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x137: Ctrl+Shift+vk 0x37 (scan 0x08)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "&",
+     "code": "Digit7",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=& code=Digit7 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-amp.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "uk",
+   "name": "ctrl-underscore",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x1bd: Ctrl+Shift+vk 0xbd (scan 0x0c)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "_",
+     "code": "Minus",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=_ code=Minus ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-uk-ctrl-underscore.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-tilde",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x1c0: Ctrl+Shift+vk 0xc0 (scan 0x29)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "~",
+     "code": "Backquote",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=~ code=Backquote ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-tilde.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-bang",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x131: Ctrl+Shift+vk 0x31 (scan 0x02)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "!",
+     "code": "Digit1",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=! code=Digit1 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-bang.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-at",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x132: Ctrl+Shift+vk 0x32 (scan 0x03)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "@",
+     "code": "Digit2",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=@ code=Digit2 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-at.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-hash",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x133: Ctrl+Shift+vk 0x33 (scan 0x04)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "#",
+     "code": "Digit3",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=# code=Digit3 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-hash.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-dollar",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x134: Ctrl+Shift+vk 0x34 (scan 0x05)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "$",
+     "code": "Digit4",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=$ code=Digit4 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-dollar.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-percent",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x135: Ctrl+Shift+vk 0x35 (scan 0x06)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "%",
+     "code": "Digit5",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=% code=Digit5 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-percent.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-caret",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x136: Ctrl+Shift+vk 0x36 (scan 0x07)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "^",
+     "code": "Digit6",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=^ code=Digit6 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-caret.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-amp",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x137: Ctrl+Shift+vk 0x37 (scan 0x08)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "&",
+     "code": "Digit7",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=& code=Digit7 ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-amp.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "29",
+   "layout": "ja",
+   "name": "ctrl-underscore",
+   "focusedBefore": true,
+   "sent": "ok ctrlchar vkKeyScan 0x1bd: Ctrl+Shift+vk 0xbd (scan 0x0c)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    },
+    {
+     "key": "Shift",
+     "code": "ShiftLeft",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    },
+    {
+     "key": "_",
+     "code": "Minus",
+     "ctrlKey": true,
+     "shiftKey": true,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [
+    "key=_ code=Minus ctrl=true shift=true alt=false"
+   ],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": true
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "keys-verify-11 - Memory usage - 25.5 MB"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-29-ja-ctrl-underscore.png",
+   "browserActed": [],
+   "closed": []
+  },
+  {
+   "group": "30",
+   "layout": "uk",
+   "name": "ctrl-tab",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x09 (scan 0x0f)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": false
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": true
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "tab-4-verify-11"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "tab-4-verify-11 and 6 more pages - Personal - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-30-uk-ctrl-tab.png",
+   "browserActed": [
+    "tab selected: tab-4-verify-11"
+   ],
+   "closed": [
+    "keys.html brought to the front (the selected tab was tab-4-verify-11)"
+   ]
+  },
+  {
+   "group": "30",
+   "layout": "uk",
+   "name": "ctrl-pagedown",
+   "focusedBefore": true,
+   "sent": "ok chord Ctrl+vk 0x22 (scan 0x51)",
+   "logged": [
+    {
+     "key": "Control",
+     "code": "ControlLeft",
+     "ctrlKey": true,
+     "shiftKey": false,
+     "altKey": false
+    }
+   ],
+   "pageReceived": [],
+   "tabs": [
+    {
+     "name": "tab-1-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-2-verify-11",
+     "selected": false
+    },
+    {
+     "name": "keys-verify-11 - Memory usage - 25.5 MB",
+     "selected": false
+    },
+    {
+     "name": "tab-4-verify-11",
+     "selected": true
+    },
+    {
+     "name": "tab-5-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-6-verify-11",
+     "selected": false
+    },
+    {
+     "name": "tab-7-verify-11",
+     "selected": false
+    }
+   ],
+   "selectedTab": [
+    "tab-4-verify-11"
+   ],
+   "tabsAdded": [],
+   "visiblePages": [
+    {
+     "url": "http://localhost:8811/other.html?n=1",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=2",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/keys.html",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=4",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=5",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=6",
+     "visible": "visible"
+    },
+    {
+     "url": "http://localhost:8811/other.html?n=7",
+     "visible": "visible"
+    }
+   ],
+   "pagesNow": [
+    "http://localhost:8811/other.html?n=1",
+    "http://localhost:8811/other.html?n=2",
+    "http://localhost:8811/keys.html",
+    "http://localhost:8811/other.html?n=4",
+    "http://localhost:8811/other.html?n=5",
+    "http://localhost:8811/other.html?n=6",
+    "http://localhost:8811/other.html?n=7"
+   ],
+   "windowsAdded": [],
+   "windowTitle": "tab-4-verify-11 and 6 more pages - Personal - Microsoft? Edge",
+   "focusedAfter": true,
+   "shot": "ok shot windows=1 box=90,90,2340,1590",
+   "shotFile": "msedge-30-uk-ctrl-pagedown.png",
+   "browserActed": [
+    "tab selected: tab-4-verify-11"
+   ],
+   "closed": [
+    "keys.html brought to the front (the selected tab was tab-4-verify-11)"
+   ]
+  }
+ ],
+ "messages": [],
+ "browserVersion": "Edg/154.0.4258.37",
+ "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+ "window": {
+  "hwnd": 14485772,
+  "pid": 21976
+ },
+ "tabsAtStart": [
+  {
+   "name": "tab-1-verify-11",
+   "selected": false
+  },
+  {
+   "name": "tab-2-verify-11",
+   "selected": false
+  },
+  {
+   "name": "keys-verify-11",
+   "selected": true
+  },
+  {
+   "name": "tab-4-verify-11",
+   "selected": false
+  },
+  {
+   "name": "tab-5-verify-11",
+   "selected": false
+  },
+  {
+   "name": "tab-6-verify-11",
+   "selected": false
+  },
+  {
+   "name": "tab-7-verify-11",
+   "selected": false
+  }
+ ],
+ "windowsAtStart": [
+  {
+   "class": "Chrome_WidgetWin_1",
+   "title": "keys-verify-11 and 6 more pages - Profile 1 - Microsoft? Edge",
+   "rect": [
+    90,
+    90,
+    2340,
+    1590
+   ]
+  }
+ ],
+ "layoutUk": "ok layout asked=uk hkl=0x08090809 was=0x08090809 now=0x08090809 ime=open=0 conversion=0x1",
+ "layoutJa": "ok layout asked=ja hkl=0x04110411 was=0x08090809 now=0x04110411 ime=open=0 conversion=0x19",
+ "layoutBack": "ok layout asked=uk hkl=0x08090809 was=0x04110411 now=0x08090809 ime=open=0 conversion=0x1",
+ "finished": "2026-10-01T01:54:48.978Z",
+ "pageLogAtEnd": 71
+}
