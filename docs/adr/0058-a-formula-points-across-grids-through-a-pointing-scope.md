@@ -357,8 +357,14 @@ the rule above is now Excel's, or the difference is decided here with the user.
   tells it so, and the grid checks it too.
 - **The Sheet learns where DOM focus is from Blazor's `focusin` and `focusout`**, on an element that
   wraps ExSheet's markup and takes no box (`display: contents`). No script is added. A `focusout`
-  waits one turn, because a move inside the Sheet, from its root to the Cell Editor, raises a
-  `focusout` and a `focusin` together.
+  waits before it is heard as the keyboard leaving, because a move inside the Sheet, from its root
+  to the Cell Editor, raises a `focusout` and a `focusin` together. *(Corrected 2026-10-01.)* It
+  waited one turn of the renderer's queue, which is enough in a browser but not on a circuit, where
+  the `focusin` is a message of its own and can come after that turn: on CI the Scope stopped
+  pointing for a round trip as `=` opened the Cell Editor, and a press in it was the positions
+  grid's own (measured locally at 50 ms and 150 ms: the grid painted pointed at, then not, then
+  again). It now waits for the browser to answer a render sent after the `focusout`, which comes
+  after every event the browser sent before it, and then for the turn. Still no script.
 - **The reason is told to the Consumer only.** ExSheet draws nothing of its own for it; `/sheet` and
   `/sheets` show it below their grids.
 - **Until the arrow keys point inside a registered grid** (ticket 41), after a press on one the
