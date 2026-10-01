@@ -1,5 +1,6 @@
 import { test, expect, scrollRowToTop } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
+import { expectCodeIsSource } from './demo-code.mjs';
 
 // /pivot-db (ADR-0064/0065/0068), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // the demo API server's SQLite trades two ways, side by side. "Database → Snapshot" reads the
@@ -136,3 +137,14 @@ for (const chrome of ['builtin', 'mud']) {
         });
     });
 }
+
+test('ADR-0068/0064: the code the page shows is the code it runs, the Arrow request read whole', async ({ page }) => {
+    await open(page, 'builtin');
+    const code = await expectCodeIsSource(page);
+    // The browser's HttpClient turns response streaming off for the Arrow request (ADR-0064).
+    expect(code['PivotDbPage.razor#snapshot']).toContain('request.SetBrowserResponseStreamingEnabled(false);');
+    expect(code['PivotDbPage.razor#snapshot']).toContain('SnapshotArrow.ReadAsync(');
+    expect(code['PivotDbPage.razor#snapshot']).toContain('PivotSource.From(snapshot, fields)');
+    expect(code['DemoServerPivot.cs#fetch']).toContain('PivotSource.Fetch(fields, features,');
+    expect(code['DemoServerPivot.cs#fetch']).toContain('MaxDetailsPage = 10_000');
+});

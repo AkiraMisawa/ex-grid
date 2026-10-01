@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
+import { expectCodeIsSource } from './demo-code.mjs';
 
 // /pivot-live (ADR-0066/0067/0068), under ExPivot's own markup and under ExPivot.MudBlazor's Chrome:
 // live data both ways. In the page's own process, a timer the page owns folds Change Batches into
@@ -115,3 +116,12 @@ for (const chrome of ['builtin', 'mud']) {
         });
     });
 }
+
+test('ADR-0068/0066: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on', async ({ page }) => {
+    await open(page, 'builtin');
+    const code = await expectCodeIsSource(page);
+    expect(code['DemoPivotData.cs#fields']).toContain('.Key("Id", t => t.Id)');
+    expect(code['PivotLivePage.razor#batch']).toContain('_local.Apply(DemoPivotData.Fields.Batch(changed: amended))');
+    expect(code['PivotLivePage.razor#server']).toContain('server.NotifyChanged(version)');
+    expect(code['PivotLivePage.razor#pivots']).toContain('RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"');
+});

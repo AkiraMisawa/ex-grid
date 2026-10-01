@@ -1,5 +1,6 @@
 import { test, expect, scrollRowToTop } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
+import { expectCodeIsSource } from './demo-code.mjs';
 
 // /grid-live (ADR-0067/0068): ExGrid alone over the demo API server's trades. The page pushes a
 // Window of GET /api/trades, hears the hub's "these trades changed", reads them again and answers
@@ -257,4 +258,13 @@ test('PV-20/ADR-0068: the Window is read from the server as the grid scrolls, an
     // The page turned the live updates on, and turns them off as it goes.
     await page.goto('/');
     await expect.poll(async () => (await api('/api/live')).on, { timeout: 15_000 }).toBe(false);
+});
+
+test('ADR-0068/0067: the code the page shows is the code it runs: the hub\'s notice read again, and CellChangedAt answered', async ({ page }) => {
+    await open(page, 'builtin');
+    const code = await expectCodeIsSource(page);
+    expect(code['GridLivePage.razor#notices']).toContain('hub.On<string, string[]>("TradesChanged"');
+    expect(code['GridLivePage.razor#notices']).toContain('"api/trades/by-id"');
+    expect(code['GridLivePage.razor#grid']).toContain('CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"');
+    expect(code['GridLivePage.razor#window']).toContain('api/trades?start=');
 });
