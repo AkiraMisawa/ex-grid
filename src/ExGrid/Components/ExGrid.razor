@@ -1161,9 +1161,9 @@
     /// to align or hash.
     ///
     /// <para>The text a cell paints is unchanged by it: the column's <c>Format</c> where it
-    /// declares one, the value's own <c>ToString()</c> where it does not — the core's
-    /// default format is the same for every kind, so there is nothing kind-dependent to
-    /// follow.</para>
+    /// declares one, the value's own text where it does not — a date's ISO form follows the
+    /// value's type, not the cell's kind (ADR-0006, note of 2026-10-01), so there is nothing
+    /// kind-dependent to follow.</para>
     ///
     /// <para><b>Hold it in a field and hand over a new one when the kinds change.</b> Its
     /// identity is the change signal, as <see cref="CellState"/>'s is (ADR-0003/0006).</para>
@@ -5067,10 +5067,13 @@
         // substituted panel starts from (ADR-0009/0010).
         var current = CurrentSpecOf(declared.Name);
         _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: false);
-        _panelValueText = FilterPanelChoices.InitialOperand(current)?.ToString() ?? "";
+        // A date operand is written as the cell shows it, in its ISO form, which ParseOperand
+        // reads back in the invariant culture first: a culture's own text would read a day
+        // and a month the other way round there (ADR-0006, note of 2026-10-01).
+        _panelValueText = FilterPanelChoices.InitialOperand(current) is { } first ? DisplayText.Of(first) : "";
         var (secondOperator, secondOperand, combinator) = FilterPanelChoices.InitialSecond(current);
         _panelSecondOperator = secondOperator;
-        _panelSecondValueText = secondOperand?.ToString() ?? "";
+        _panelSecondValueText = secondOperand is { } second ? DisplayText.Of(second) : "";
         _panelCombinator = combinator;
         var startedOn = _panelOperator;
 
@@ -5112,12 +5115,11 @@
         return operand is not null;
     }
 
-    /// <summary>A value as the built-in panel lists it, and as its search matches it: the
-    /// column's own format, and Blank in the built-in Chrome's words.</summary>
+    /// <summary>A value as the built-in panel lists it, and as its search matches it: the text
+    /// its cell shows — the column's own format, or a date's ISO form (ADR-0006) — and Blank in
+    /// the built-in Chrome's words.</summary>
     private string PanelText(object? value, int column)
-        => value is null
-            ? "(Blanks)"
-            : Columns[column].Format is { } format ? format(value) : value.ToString() ?? "";
+        => value is null ? "(Blanks)" : Columns[column].Info.TextFor(value);
 
     private static string AriaCheckedOf(SelectAllState state) => state switch
     {
