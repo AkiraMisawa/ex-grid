@@ -605,6 +605,14 @@ then decides (ADR-0047's rule).
   - Where two filled cells meet, the upper or left cell's Fill shows on the gridline between them.
   - A double line's middle pixel is the grid's ground, even over a Fill.
   - The long dash is 8 pixels below 150% and 9 from 150% on. The runs saw only 100% and 150%.
+- **Tickets 88 and 89, where no run looked:**
+  - **The Cell Editor takes the edited cell's Fill and Font.** That covers italic, underline and
+    strikethrough. A Number Format's colour is left out, because the editor shows the Entry.
+  - **The editor covers the cell's own bottom and right line shares while it is open.**
+  - **`0;[Red]@`**: Excel kept it as written and showed 5 in black (case 3b).
+    - -5 and 0 show in the first section, with no colour.
+    - Text shows in the last section's red.
+    - In three sections that end in `@`, zero takes the first section.
 - **Not a reading but an estimate.** ExSheet widens column A for `05-Jan-26`, which fitted Excel's 8.09
   in case 19. ExSheet's fitting charges every character one digit width (ADR-0047). That is the same
   estimate that otherwise decides `####`, and it errs towards widening, never towards hiding text.
@@ -628,11 +636,11 @@ then decides (ADR-0047's rule).
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
 - **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done.
-- **Tickets** 44 to 58 and 81 to 91, in `docs/specs/exsheet/issues/`:
+- **Tickets** 44 to 58 and 81 to 92, in `docs/specs/exsheet/issues/`:
   - ticket 55 was added by the eleventh run;
   - 56 by ticket 51's Server fix;
   - 57 and 58 by the twelfth run;
-  - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, 86 to 90 by ticket 48, and 91 by ticket 83.
+  - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, 86 to 90 by ticket 48, 91 by ticket 83, and 92 by ticket 88.
 
   59 to 75 are `claude/exsheet-start-8cx3v1`'s, and 76 to 80 are Pointing Scope's line
   (`docs/agents/numbering.md`).

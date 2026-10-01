@@ -368,6 +368,18 @@ underline and strikethrough), its Fill, and its four Border sides.
       row compares by reference. A row repaints only when what it paints changed.
     - **Bold widths.** `CellTextMetrics` gains `BoldWideWidthPx`, `BoldDigitWidthPx`,
       `BoldNarrowWidthPx` and `Bold`.
+  - *(2026-10-01, tickets 88 and 90.)*
+    - **The Cell Editor's look.** The grid parameter `EditorAppearance` (a
+      `CellAppearanceOf<TRow>`) answers how the editor looks over the cell it edits: the Fill as its
+      ground, and the Font as its text. Borders are not read.
+      - Without the parameter, the editor uses `CellAppearance`. With neither, it is unchanged.
+      - The editor's rules set `--ex-editor-background` and `--ex-editor-color`, so ADR-0057's
+        coloured References read over a Fill.
+      - ExSheet answers with the Font's own colour, not a Number Format's, because the editor shows
+        the Entry.
+    - **`--ex-row-rule`** is a layer hook on a lined cell, as `--ex-tint` is. It lies beneath the
+      lines, so a cell whose ground covers the row's gridline can paint the gridline back. ExSheet
+      sets it on pinned cells. The core sets it nowhere.
 - **Borders are drawn as Excel draws them.** Each line is centred on the gridline. A thick line
   reaches into both cells. Lines lie above Fills and below the Focus, the Selection and the
   Reference Outlines. Which of two lines recorded on one edge is drawn is the Consumer's answer, so

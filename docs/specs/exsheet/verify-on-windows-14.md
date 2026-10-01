@@ -19,7 +19,8 @@ confirms the code or names what to change. The readings cover three things:
 - what else widens a column;
 - how ja-JP shows `mmm`;
 - what each cell records for itself under the edge model of ticket 57;
-- how Fills and lines meet on a gridline, and the dash lengths at other zooms (ticket 47).
+- how Fills and lines meet on a gridline, and the dash lengths at other zooms (ticket 47);
+- a formatted cell while it is edited, and `0;[Red]@` (tickets 88 and 89).
 
 ## Setup
 
@@ -95,6 +96,14 @@ eleventh run's case 9 did.
 | 16 | B2 filled yellow (`#FFFF00`), B3 filled light blue (`#00B0F0`), no borders | The pixel row on the gridline between B2 and B3, and the column on the gridline between B2 and C2 (C2 unfilled) | the gridline between B2 and B3 is yellow (the upper cell's); between B2 and C2 it is yellow too (a Fill covers its gridlines) |
 | 17 | B2 filled yellow with a double bottom border, black | The three pixels across the gridline under B2 | dark, then the gridline pixel, then dark. Record whether that middle pixel is white or yellow |
 | 18 | B2 with a medium dashed bottom and B4 with a dashed (thin) bottom | The dash lengths at zoom 100%, 125%, 175% and 200% | 8 on below 150%, 9 from 150%. Record each zoom's pattern |
+
+### Group 6 — a formatted cell while it is edited, and `0;[Red]@` (tickets 88, 89)
+
+| # | Set up (COM) | Keys | What is asked | Reading |
+|---|---|---|---|---|
+| 19 | B2 = 12345, Font bold, italic, underlined, red; Fill yellow; a thick black bottom and right border | F2 on B2. Screenshot with the edit open, then Esc | The edit's ground, the text's colour, weight, slant and underline, and whether the bottom and right lines still show while editing | yellow ground, red bold italic underlined text; the lines hidden under the edit. Record |
+| 20 | B2 = -5 in `0;[Red]-0`, Font blue | F2 on B2. Screenshot, then Esc | The colour of `-5` while edited | blue (the Font's), not red |
+| 21 | A1:A4 = 5, -5, 0, `abc`, each in `0;[Red]@` | — | Each cell's text and colour (pixels) | `5` black, `-5` and `0` black, `abc` red. Record |
 
 ## Results
 
