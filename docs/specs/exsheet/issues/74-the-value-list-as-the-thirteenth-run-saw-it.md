@@ -1,6 +1,6 @@
 # 74: The value list as the thirteenth run saw it
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** ADR-0058, "What the thirteenth Windows run settled", its first two bullets (Q54,
 Q55), and SH-36 as rewritten on 2026-10-01. The thirteenth run
@@ -25,7 +25,7 @@ typed them into ExSheet) found Excel listing the values for text ExSheet listed 
 - [x] Outside a value-list argument nothing changes: a letter after `=`, an operator, `(` or `,` lists
       functions and Linked Tables by prefix, `Table[` lists columns, and nothing is listed after `=`, an
       operator, `(` or `,` before anything is typed (SH-36)
-- [ ] Layer 1 for the rule (each text of the run, at both arguments, and the spaces); Layer 2 for Tab
+- [x] Layer 1 for the rule (each text of the run, at both arguments, and the spaces); Layer 2 for Tab
       over typed text; Layer 3 on `/sheet` under both Chromes: `,,X` lists the five values, `0`
       selected, and Tab writes `0`; `,,4` lists nothing; the spaces case commits (SH-36)
 
@@ -101,3 +101,13 @@ hint shown; and 11a (F2 ←←←, nothing listed, Tab commits to E10 with the s
 failed before the change, and the one for `Positions[` against the first reading; the two for a
 number that is no value passed before it too, as the ticket says. Layers 1 and 2: 826 + 2135 + 88 +
 1190 (1 skipped, as before) + 390, all passing.
+
+Layer 3, `declarations.spec.mjs`, "SH-36 under the builtin/mud Chrome", two new tests per Chrome:
+Q54 on D10 (`,,X` lists the five values, `0 - Exact match` selected, the list not open over Point,
+so it is the answer for `X` and not the one for `,,`; Tab writes `…,,0`, the caret after it, the
+hint stays and no list comes back within 300 ms; `,,4` lists nothing and keeps the hint), and 11a
+(F2 ←←←, the caret at 24, the hint and no list; Tab closes the edit, the Name Box on E10, and D10's
+Formula Bar shows `=XLOOKUP(1,A2:A4,B2:B4,,  )`, the spaces kept). Run headless on macOS with
+`--project=chrome` and `--grep "SH-36"`: 16 of 16 on WebAssembly and 16 of 16 on the Server host.
+`Table[` at a value-list argument (decision 3) is pinned in layers 1 and 2 only; it is not one of
+the run's cases. Edge and the full run are CI's.
