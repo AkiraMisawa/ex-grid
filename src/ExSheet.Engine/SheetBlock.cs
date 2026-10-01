@@ -28,7 +28,12 @@ public sealed class SheetBlock
     /// <summary>The Entry at a position inside the block, as copied; <see langword="null"/> for a blank cell.</summary>
     public Entry? EntryAt(int row, int column) => At(row, column).Entry;
 
-    /// <summary>The Cell Format at a position inside the block: what the cell showed at the copy, from whichever level recorded it.</summary>
+    /// <summary>
+    /// The Cell Format at a position inside the block: what the cell showed at the copy, from
+    /// whichever level recorded it. Its Borders are the cell's own four sides, which is what a paste
+    /// writes, not a line it showed from the cell beside it (ADR-0063; the twelfth Windows run, cases
+    /// 1 and 2).
+    /// </summary>
     public CellFormat CellFormatAt(int row, int column) => At(row, column).CellFormat;
 
     internal CellState At(int row, int column)

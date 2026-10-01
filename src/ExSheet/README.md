@@ -135,7 +135,9 @@ var shown = sheet.CellFormatAt(CellAddress.Parse("A1"));   // cell over row over
 
 A Cell Format set on a selection of whole columns or whole rows is recorded on the columns or
 rows, one entry each, as Excel records it, and `CellFormatAt` answers what a cell shows, part by
-part from the cell, its row or its column. It is a read, and answers while an edit is open.
+part from the cell, its row or its column. Its borders are the edges as shown, which read the same
+from the cell on either side: where both cells record a line on an edge, the upper cell's is shown,
+or the left cell's for a vertical edge. It is a read, and answers while an edit is open.
 
 While an edit is open — a cell or the Formula Bar typed in, and not yet committed or cancelled —
 these commands, `RedoAsync`, `SetCellFormatAsync` and `SetAlignmentAsync` among them, are refused with

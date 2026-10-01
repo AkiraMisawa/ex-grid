@@ -78,9 +78,11 @@ public readonly record struct BorderLine
 
 /// <summary>
 /// A cell's Borders (ADR-0063): the line on each of its four sides. Each cell records its own four
-/// sides, as Excel's files do, but the line between two cells is one line: a command that sets or
-/// clears it writes both cells' sides, so the later setting wins from either side (the eleventh
-/// Windows run, case 7). The default value is <see cref="None"/>.
+/// sides, as Excel's files do, and the edge two cells share shows one line from either side: the
+/// upper cell's, or the left cell's for a vertical edge, where both record one, and otherwise
+/// whichever does (the twelfth Windows run). A border command records the edge on the cells it sets
+/// and clears the neighbour's record of it, so the later setting wins from either side (the eleventh
+/// run, case 7). The default value is <see cref="None"/>.
 /// </summary>
 /// <param name="Top">The line on the top side.</param>
 /// <param name="Bottom">The line on the bottom side.</param>

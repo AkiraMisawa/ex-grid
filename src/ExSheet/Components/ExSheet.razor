@@ -513,9 +513,10 @@
     /// <summary>
     /// The Cell Format of the cell at <paramref name="address"/> as it shows (ADR-0063): each part
     /// the cell's own, else its row's, else its column's, else the part's default — cell over row
-    /// over column, as in Excel. What a toolbar reads for the Focus cell whenever the Selection
-    /// changes. It is a read, so it answers while an edit is open too: until the edit is
-    /// committed, the cell is as it was.
+    /// over column, as in Excel — and each Border side the edge as shown, which reads the same from
+    /// the cell beside it (<see cref="Sheet.GetBorders"/>). What a toolbar reads for the Focus cell
+    /// whenever the Selection changes. It is a read, so it answers while an edit is open too: until
+    /// the edit is committed, the cell is as it was.
     /// </summary>
     public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
 

@@ -38,13 +38,11 @@ public class CellFormatDocumentTests
             Head + ""","columns":[{"at":"B:B","font":{"italic":true},"fill":"#FFFF00"}]"""
             + ""","rows":[{"at":"3:3","font":{"color":"#FF0000","bold":true}}]"""
             + ""","cells":[{"at":"B3","font":{"color":"#FF0000","bold":true,"italic":true}},"""
-            + """{"at":"B4","borders":{"bottom":{"style":"thin"}}},"""
-            + """{"at":"B5","font":{"italic":true,"underline":true,"strikethrough":true},"fill":"none","borders":{"top":{"style":"thin"},"bottom":{"style":"double","color":"#0000FF"}}},"""
-            + """{"at":"B6","borders":{"top":{"style":"double","color":"#0000FF"}}}]}""",
+            + """{"at":"B5","font":{"italic":true,"underline":true,"strikethrough":true},"fill":"none","borders":{"top":{"style":"thin"},"bottom":{"style":"double","color":"#0000FF"}}}]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         Assert.Equal(json, reopened.ToDocument().ToJson());
-        foreach (var cell in new[] { "B3", "B5", "B9", "C3", "C5" })
+        foreach (var cell in new[] { "B3", "B4", "B5", "B6", "B9", "C3", "C5" })
         {
             Assert.Equal(sheet.GetCellFormat(At(cell)), reopened.GetCellFormat(At(cell)));
         }
@@ -70,9 +68,37 @@ public class CellFormatDocumentTests
         for (var i = 0; i < styles.Count; i++)
         {
             Assert.Equal(new BorderLine(styles[i], CellColour.FromRgb(i)), reopened.GetBorders(At($"B{i + 2}")).Bottom);
-            // The cell below reads the same line on its top: one line (case 7).
+            // The cell below shows the same line on its top, which it shares (case 11-7).
             Assert.Equal(new BorderLine(styles[i], CellColour.FromRgb(i)), reopened.GetBorders(At($"B{i + 3}")).Top);
         }
+    }
+
+    [Fact] // ADR-0063, ADR-0048 (SH-38), the twelfth Windows run: a document ticket 55's code wrote records both sides of each edge it set, and they agree, so it shows the same edges from either side under Excel's rule, at every level, and reads back unchanged
+    public void A_document_recording_both_sides_of_an_edge_shows_the_same_edges()
+    {
+        // B2's bottom and B3's top, C5's right and D5's left, row 7's bottom and row 8's top, and
+        // column F's right and column G's left, each written on both sides.
+        var json = Head
+            + ""","columns":[{"at":"F:F","borders":{"right":{"style":"thick"}}},{"at":"G:G","borders":{"left":{"style":"thick"}}}]"""
+            + ""","rows":[{"at":"7:7","borders":{"bottom":{"style":"double","color":"#0000FF"}}},{"at":"8:8","borders":{"top":{"style":"double","color":"#0000FF"}}}]"""
+            + ""","cells":[{"at":"B2","borders":{"bottom":{"style":"thin"}}},{"at":"B3","borders":{"top":{"style":"thin"}}},"""
+            + """{"at":"C5","borders":{"right":{"style":"medium","color":"#FF0000"}}},{"at":"D5","borders":{"left":{"style":"medium","color":"#FF0000"}}}]}""";
+        var thin = new BorderLine(BorderLineStyle.Thin);
+        var mediumRed = new BorderLine(BorderLineStyle.Medium, CellColour.FromRgb(0xFF0000));
+        var thick = new BorderLine(BorderLineStyle.Thick);
+        var doubleBlue = new BorderLine(BorderLineStyle.Double, CellColour.FromRgb(0x0000FF));
+
+        var sheet = Sheet.Open(SheetDocument.FromJson(json));
+
+        Assert.Equal(new CellBorders(Bottom: thin), sheet.GetBorders(At("B2")));
+        Assert.Equal(new CellBorders(Top: thin), sheet.GetBorders(At("B3")));
+        Assert.Equal(new CellBorders(Right: mediumRed), sheet.GetBorders(At("C5")));
+        Assert.Equal(new CellBorders(Left: mediumRed), sheet.GetBorders(At("D5")));
+        Assert.Equal(new CellBorders(Right: thick), sheet.GetBorders(At("F2")));
+        Assert.Equal(new CellBorders(Left: thick), sheet.GetBorders(At("G1048576")));
+        Assert.Equal(new CellBorders(Bottom: doubleBlue), sheet.GetBorders(At("A7")));
+        Assert.Equal(new CellBorders(Top: doubleBlue), sheet.GetBorders(At("XFD8")));
+        Assert.Equal(json, sheet.ToDocument().ToJson());
     }
 
     [Fact] // ADR-0063 (SH-38): a part recorded at its default is written, so it still hides the level under it

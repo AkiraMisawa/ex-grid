@@ -5,7 +5,10 @@ public sealed partial class Sheet
     /// <summary>
     /// The Cell Formats the cells of <paramref name="range"/> show, each once (ADR-0063): what
     /// Format Cells reads to show a part that differs across the Selection as Excel shows it. A
-    /// range whose cells all show one Cell Format answers that one alone.
+    /// range whose cells all show one Cell Format answers that one alone. Its Borders are each
+    /// cell's own four sides, not the edges as shown (<see cref="GetBorders"/>), because Excel's
+    /// Format Cells compares what the cells record: a thick bottom on A1 over a plain A2 shows the
+    /// edge between them as differing (the eleventh Windows run, case 24).
     /// </summary>
     /// <remarks>
     /// Read from what the Sheet records, never cell by cell: the cells that record a Cell Format of
@@ -23,7 +26,7 @@ public sealed partial class Sheet
         foreach (var cell in _cells.Values)
         {
             if (!cell.IsFormatted || !range.Contains(cell.Address)) continue;
-            shown.Add(GetCellFormat(cell.Address));
+            shown.Add(OwnFormat(cell.Address));
             var block = (_rowFormats.GetValueOrDefault(cell.Address.Row), _columnFormats.GetValueOrDefault(cell.Address.Column));
             recorded[block] = recorded.GetValueOrDefault(block) + 1;
         }

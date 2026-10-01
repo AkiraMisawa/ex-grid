@@ -77,24 +77,26 @@ public sealed record CellFormatChange
 /// has it. <see cref="Outline"/>, <see cref="Inside"/> and <see cref="None"/> are Excel's presets.
 /// </summary>
 /// <remarks>
-/// The line between two cells is one line, as Excel's is (the eleventh Windows run, cases 7 and 13):
-/// an outer edge is set on the range's cells and on the cells beside it, which read the same line
-/// from the other side. An edge on the Sheet's outer edge has no cell beside it. Whole columns have
-/// no top or bottom edge, and whole rows no left or right edge, so an outline over them sets only
-/// their sides (case 15); the whole Sheet is its columns.
+/// As Excel keeps the line between two cells (the twelfth Windows run): an outer edge is recorded on
+/// the range's own cells, and the cells beside it lose their record of the same edge, so the line
+/// set is the one shown from either side (the eleventh run, cases 7 and 13). An edge on the Sheet's
+/// outer edge has no cell beside it. Whole columns have no top or bottom edge, so an outline over
+/// them sets their left and right (case 15). Whole rows have no right edge, so an outline over them
+/// sets their top and bottom and the left of column A (the twelfth run, case 14). The whole Sheet
+/// has no outer edge, so an outline over it sets nothing (case 15).
 /// </remarks>
 public sealed record BorderChange
 {
-    /// <summary>The range's top edge: the top side of its first row's cells, and the bottom side of the cells above them.</summary>
+    /// <summary>The range's top edge: the top side of its first row's cells. The cells above them lose their record of it.</summary>
     public BorderLine? Top { get; init; }
 
-    /// <summary>The range's bottom edge: the bottom side of its last row's cells, and the top side of the cells below them.</summary>
+    /// <summary>The range's bottom edge: the bottom side of its last row's cells. The cells below them lose their record of it.</summary>
     public BorderLine? Bottom { get; init; }
 
-    /// <summary>The range's left edge: the left side of its first column's cells, and the right side of the cells to their left.</summary>
+    /// <summary>The range's left edge: the left side of its first column's cells. The cells to their left lose their record of it.</summary>
     public BorderLine? Left { get; init; }
 
-    /// <summary>The range's right edge: the right side of its last column's cells, and the left side of the cells to their right.</summary>
+    /// <summary>The range's right edge: the right side of its last column's cells. The cells to their right lose their record of it.</summary>
     public BorderLine? Right { get; init; }
 
     /// <summary>Every edge between two of the range's rows: the bottom side of the upper cell and the top side of the lower.</summary>
@@ -133,27 +135,27 @@ public sealed record BorderChange
 
     /// <summary>
     /// The cells beside <paramref name="range"/> across each outer edge the change sets, with the
-    /// change that sets their side of it to the same line. An edge on the Sheet's outer edge has
-    /// none, which is also why whole columns have none above or below and whole rows none to
-    /// either side.
+    /// change that clears their record of it (the twelfth Windows run). An edge on the Sheet's outer
+    /// edge has none, which is also why whole columns have none above or below and whole rows none
+    /// to either side.
     /// </summary>
     internal IEnumerable<(CellRange Range, BorderChange Borders)> Beside(CellRange range)
     {
-        if (Top is { } top && range.First.Row > 0)
+        if (Top is not null && range.First.Row > 0)
         {
-            yield return (new CellRange(new CellAddress(range.First.Row - 1, range.First.Column), new CellAddress(range.First.Row - 1, range.Last.Column)), new BorderChange { Bottom = top });
+            yield return (new CellRange(new CellAddress(range.First.Row - 1, range.First.Column), new CellAddress(range.First.Row - 1, range.Last.Column)), new BorderChange { Bottom = BorderLine.None });
         }
-        if (Bottom is { } bottom && range.Last.Row < Sheet.RowCount - 1)
+        if (Bottom is not null && range.Last.Row < Sheet.RowCount - 1)
         {
-            yield return (new CellRange(new CellAddress(range.Last.Row + 1, range.First.Column), new CellAddress(range.Last.Row + 1, range.Last.Column)), new BorderChange { Top = bottom });
+            yield return (new CellRange(new CellAddress(range.Last.Row + 1, range.First.Column), new CellAddress(range.Last.Row + 1, range.Last.Column)), new BorderChange { Top = BorderLine.None });
         }
-        if (Left is { } left && range.First.Column > 0)
+        if (Left is not null && range.First.Column > 0)
         {
-            yield return (new CellRange(new CellAddress(range.First.Row, range.First.Column - 1), new CellAddress(range.Last.Row, range.First.Column - 1)), new BorderChange { Right = left });
+            yield return (new CellRange(new CellAddress(range.First.Row, range.First.Column - 1), new CellAddress(range.Last.Row, range.First.Column - 1)), new BorderChange { Right = BorderLine.None });
         }
-        if (Right is { } right && range.Last.Column < Sheet.ColumnCount - 1)
+        if (Right is not null && range.Last.Column < Sheet.ColumnCount - 1)
         {
-            yield return (new CellRange(new CellAddress(range.First.Row, range.Last.Column + 1), new CellAddress(range.Last.Row, range.Last.Column + 1)), new BorderChange { Left = right });
+            yield return (new CellRange(new CellAddress(range.First.Row, range.Last.Column + 1), new CellAddress(range.Last.Row, range.Last.Column + 1)), new BorderChange { Left = BorderLine.None });
         }
     }
 }
@@ -171,20 +173,24 @@ internal readonly record struct PlaceInRange(bool FirstRow, bool LastRow, bool F
     public static PlaceInRange Inside { get; } = new(false, false, false, false);
 
     /// <summary>
-    /// Where <paramref name="at"/> lies in <paramref name="range"/>. Whole columns have no top or
-    /// bottom edge, and whole rows no left or right edge: an outline over whole columns sets only
-    /// their left and right edges (the eleventh Windows run, case 15), and over whole rows only
-    /// their top and bottom, a reading by mirror. The whole Sheet is its columns, also a reading by
-    /// mirror.
+    /// Where <paramref name="at"/> lies in <paramref name="range"/>, as Excel places an outline:
+    /// <list type="bullet">
+    /// <item>whole columns have no top or bottom edge, so an outline over them sets their left and
+    /// right edges (the eleventh Windows run, case 15);</item>
+    /// <item>whole rows have no right edge, so an outline over them sets their top and bottom and the
+    /// left of column A (the twelfth run, case 14);</item>
+    /// <item>the whole Sheet has no outer edge, so an outline over it sets nothing (the twelfth run,
+    /// case 15).</item>
+    /// </list>
     /// </summary>
     public static PlaceInRange Of(CellRange range, CellAddress at)
     {
         var columns = range.IsWholeColumns;
-        var rows = range.IsWholeRows && !columns;
+        var rows = range.IsWholeRows;
         return new(
             !columns && at.Row == range.First.Row,
             !columns && at.Row == range.Last.Row,
-            !rows && at.Column == range.First.Column,
+            !(columns && rows) && at.Column == range.First.Column,
             !rows && at.Column == range.Last.Column);
     }
 }

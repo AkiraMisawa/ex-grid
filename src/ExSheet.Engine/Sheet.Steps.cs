@@ -28,7 +28,7 @@ public sealed partial class Sheet
 
     /// <summary>
     /// Puts cells back to what they recorded — Entry and every part of the Cell Format — as one
-    /// change with one recalculation.
+    /// change with one recalculation. A changed top or bottom side names the row across it too.
     /// </summary>
     internal SheetChange Restore(IEnumerable<(CellAddress Address, CellState State)> states)
     {
@@ -40,6 +40,11 @@ public sealed partial class Sheet
             cell ??= new Cell(address);
             if (Equals(cell.NumberFormat, state.NumberFormat) && cell.Alignment == state.Alignment
                 && cell.Font == state.Font && cell.Fill == state.Fill && cell.Borders == state.Borders) continue;
+            if (cell.Borders != state.Borders)
+            {
+                var inherited = Inherited(address).Borders;
+                rows.UnionWith(RowsAcross(address, cell.Borders ?? inherited, state.Borders ?? inherited));
+            }
             cell.NumberFormat = state.NumberFormat;
             cell.Alignment = state.Alignment;
             cell.Font = state.Font;
@@ -73,7 +78,6 @@ public sealed partial class Sheet
         var states = new List<(CellAddress, CellState)>();
         foreach (var (address, entry) in outcome.Rewritten) states.Add((address, StateOf(address).Recorded with { Entry = entry }));
         states.AddRange(outcome.Dropped.Select(d => (d.Address, d.State.Recorded)));
-        states.AddRange(outcome.Rejoined);
         recalculated.AddRange(Restore(states).Recalculated);
         return SheetChange.Merge([Diff(before, recalculated, shownBefore), new SheetChange([], [], [], WidthsChangedSince(widthsBefore))]);
     }

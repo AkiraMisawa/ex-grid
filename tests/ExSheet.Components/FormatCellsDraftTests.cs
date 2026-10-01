@@ -193,4 +193,15 @@ public class FormatCellsDraftTests
         Assert.Equal(Thin, draft.EdgeLine(BorderEdge.Right));
         Assert.Equal(BorderLine.None, draft.EdgeLine(BorderEdge.InsideVertical));
     }
+
+    [Fact] // ADR-0063 / SH-45, case 11-24: Format Cells compares each cell's own sides, so a thick bottom over a plain cell is an inside edge that differs, drawn grey and dotted, though the edge shows the line from either cell
+    public void A_thick_bottom_over_a_plain_cell_is_an_edge_that_differs_case_11_24()
+    {
+        var thick = new BorderLine(BorderLineStyle.Thick);
+        void Prepare(Sheet sheet) => Format(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = thick } });
+
+        Assert.Null(Open(Prepare, "A1", "A1:A2").EdgeLine(BorderEdge.InsideHorizontal));
+        // A2 alone records no top: a reading, since case 24 saw only the inside edge.
+        Assert.Equal(BorderLine.None, Open(Prepare, "A2", "A2").EdgeLine(BorderEdge.Top));
+    }
 }
