@@ -322,6 +322,10 @@ rule applies: a disagreement is fixed to Excel's answer. None of them needed a n
     Under en-US it is `$#,##0.00_);[Red]($#,##0.00)`.
   - ExSheet records the currency key's format as a culture-localised built-in, as it already records
     Excel's built-in short date.
+  - *(Built by ticket 51.)* The local form comes from .NET's currency data, with one correction:
+    under en-US, Excel follows Windows and puts a negative amount in parentheses, where .NET writes
+    `-$n`. Cultures other than en-GB, en-US and ja-JP follow .NET's data. They have not been checked
+    against Excel.
 - **Format Cells** (cases 22, 24 and 26).
   - The tabs are in Excel's order. A fresh Excel opens on Number, and Ctrl+1 then reopens on the
     last tab shown.
@@ -335,6 +339,15 @@ rule applies: a disagreement is fixed to Excel's answer. None of them needed a n
     sampled from the screen.
   - 38 of the 50 tints are drawn 1–3 away from their named value. That is Excel's rendering, and
     recording the named value is what Excel would report.
+
+### Seen by ticket 51 in the run's record, and not yet built
+
+- **Excel widened column A for the date key** (case 18). ExSheet widens a column when something is
+  entered (ADR-0047), never when a format changes. Whether a formatting key widens a column at the
+  default width needs an observation of its own.
+- **Under en-GB, `NumberFormatLocal` reads `hh:mm` for the time key and `dd-mmm-yy` for the date
+  key.** That suggests Excel localises built-ins 20 and 15 as it localises 16. The run's samples
+  (`12:00`, `18-May-03`) cannot tell. ExSheet shows them as their codes spell them.
 
 ### Where ExSheet stays unlike Excel *(follows from decisions above)*
 
