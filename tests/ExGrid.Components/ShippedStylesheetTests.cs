@@ -599,14 +599,17 @@ public class ShippedStylesheetTests
                 .ToList();
     }
 
-    [Fact] // ADR-0067 / ADR-0029: the Change Highlight's one token defaults to the system colour Mark, and the core only reads it
-    public void The_change_highlight_token_defaults_to_mark_and_is_only_read()
+    [Fact] // ADR-0067 / ADR-0029: the Change Highlight's one token defaults to a tint of the system colour Mark, readable on a dark page as on a light one, and the core only reads it
+    public void The_change_highlight_token_defaults_to_a_tint_of_mark_and_is_only_read()
     {
         var (css, _) = CoreStylesheet();
 
-        var reads = Regex.Matches(css, @"var\(--ex-change-highlight-background(?<fallback>[^)]*)\)");
+        // Every read of the token carries the same fallback: Mark at 40% over the cell's own
+        // ground, because Mark itself stays yellow on a dark page whose text is light.
+        var reads = Regex.Matches(css, @"var\(--ex-change-highlight-background");
         Assert.NotEmpty(reads);
-        Assert.All(reads, read => Assert.Equal(", Mark", read.Groups["fallback"].Value));
+        Assert.Equal(reads.Count, Regex.Matches(css,
+            @"var\(--ex-change-highlight-background, color-mix\(in srgb, Mark 40%, transparent\)\)").Count);
         // A theme sets it; the core never does (ADR-0027).
         Assert.DoesNotMatch(new Regex(@"--ex-change-highlight-background\s*:"), css);
     }
@@ -616,7 +619,7 @@ public class ShippedStylesheetTests
     {
         var (rules, _) = ForcedColorsSplit();
         int IndexOf(string selector) => rules.ToList().FindIndex(rule => rule.Selectors.Contains(selector));
-        const string mark = "linear-gradient(var(--ex-change-highlight-background, Mark), var(--ex-change-highlight-background, Mark))";
+        const string mark = "linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)))";
 
         var marked = rules.Where(rule => rule.Selectors.Any(s => s.Contains("ex-changed", StringComparison.Ordinal))).ToList();
         Assert.Equal(

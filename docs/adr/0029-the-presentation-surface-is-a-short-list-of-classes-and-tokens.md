@@ -106,7 +106,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Column gestures | `--ex-resize-guide-color`, `--ex-drop-indicator-color` — the guide and the indicator are painted, not laid out, so neither is metrics-bearing (ADR-0011/0016) |
 | Scrollbar | `--ex-scrollbar-width`, `--ex-scrollbar-color` |
 | Row Mark | `--ex-mark-background`, `--ex-mark-border-color`, `--ex-mark-checked-background`, `--ex-mark-checked-color` — the box sizes in `em` from the font-size token, so it carries no length of its own *(added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md))* |
-| Change Highlight | `--ex-change-highlight-background` — default the system colour `Mark`, painted on a cell with the class `ex-changed` while its mark lasts, never transitioned (P8) *(added later, by [ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md))* |
+| Change Highlight | `--ex-change-highlight-background` — default a 40% tint of the system colour `Mark` (`Mark` itself stays yellow on a dark page whose text is light), painted on a cell with the class `ex-changed` while its mark lasts, never transitioned (P8) *(added later, by [ADR-0067](./0067-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md))* |
 
 Defaults stay on system colours (`Canvas`, `Highlight`, `currentColor`) so the bare grid follows
 the host's colour scheme and forced-colors settings (ADR-0027). `--ex-font-family` and

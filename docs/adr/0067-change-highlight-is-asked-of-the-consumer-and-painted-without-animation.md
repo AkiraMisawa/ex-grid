@@ -62,8 +62,9 @@ apart across Windows, and the grid has none: Row Identity is a reference
 
 (Q59c) The mark is one colour, whichever way the value moved: `--ex-change-highlight-background`.
 
-- **Its default is the system colour `Mark`**, so the bare grid follows the host's colour scheme
-  ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)).
+- **Its default is a 40% tint of the system colour `Mark`** over the cell's own ground
+  ([ADR-0029](./0029-the-presentation-surface-is-a-short-list-of-classes-and-tokens.md)). See
+  "Refined while building it" below for why it is a tint and not `Mark` itself.
 - **The MudBlazor Wrapper maps the token onto its palette.**
 - **The forced-colors block restates the mark** in system colours, as it restates every state.
 
@@ -84,6 +85,30 @@ The mark is visual only. **No live region announces it.**
 
 A Consumer that wants an audible alert on one value writes its own, from the knowledge it answers
 the delegate with.
+
+## Refined while building it
+
+*(2026-10-01, when the declaration was built.)*
+
+- **The default was `Mark` itself, and that was wrong on a dark page.** The decision above said
+  `Mark` "so the bare grid follows the host's colour scheme". Measured in Chromium, it does not
+  follow it: `Mark` stays pure yellow (255, 255, 0) under `color-scheme: dark`, while the cell's
+  text, `CanvasText`, turns white. A marked value on a dark host would have been white on yellow,
+  which cannot be read. The default is now `color-mix(in srgb, Mark 40%, transparent)`, painted
+  over the cell's ground: about 5:1 against the white text on Chromium's dark `Canvas`, and 20:1
+  against black text on a light page. It is still `Mark`'s colour, and still one token a theme
+  replaces; the MudBlazor Wrapper maps it to its warning colour at 25%.
+- **A `Clock` left null is the grid's own clock**: the `TimeProvider` the host registers, or the
+  system's when it registers none. The grid's other timers already resolve their clock this way,
+  so a host or a test that registers one gets one clock throughout.
+- **A change time still to come is taken as given**: the cell is marked until that time plus the
+  duration, which is the rule above as written. The grid asks again on every render, so treating
+  it as now would paint the same marks and only add renders.
+- **A negative duration is refused by name.** A zero duration marks only change times still to
+  come.
+- **A state outranks the mark.** In the forced-colors block a Missing or Modified outline wins a
+  cell that is both marked and in that state, and under the Wrapper a Missing cell's opaque ground
+  hides the mark. The mark lasts a second; the state is what the reader must not lose (ADR-0006).
 
 ## Consequences
 
