@@ -86,6 +86,8 @@ internal static class CsvSuggester
 
         var separator = options.Separator ?? Detect(bytes.Span, eof, options.Rows + 1, culture, fileMarks);
         var records = Records(bytes.Span, Byte(separator), eof, options.Rows + 1, encoding);
+        if (records.Count == 0)
+            throw new SnapshotException("The file is empty, so no Schema can be suggested.");
         var hasHeader = options.HasHeader ?? HeaderRow(records, separator, culture, fileMarks);
         var data = (hasHeader ? records.Skip(1) : records).Take(options.Rows).ToList();
         var headers = hasHeader && records.Count > 0 ? records[0] : [];
@@ -428,7 +430,7 @@ internal static class CsvSuggester
         }
 
         var integer = !chosen.AnyPoint && Array.TrueForAll(chosen.Values, v => v is >= long.MinValue and <= long.MaxValue);
-        if (integer && Array.TrueForAll(chosen.Values, v => v is 0 or 1))
+        if (integer && Array.TrueForAll(chosen.Values, v => v is 0 or 1) && Array.IndexOf(chosen.Values, 0m) >= 0 && Array.IndexOf(chosen.Values, 1m) >= 0)
             marks.Add(new CsvMark(CsvDoubt.CouldBeBoolean, "The column holds only 0 and 1; it could be a Boolean, with those spellings declared."));
         return new Proposal(integer ? SnapshotKind.Integer : SnapshotKind.Decimal)
         {
