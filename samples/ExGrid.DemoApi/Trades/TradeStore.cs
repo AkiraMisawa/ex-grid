@@ -40,6 +40,10 @@ internal sealed record TradeChange(string Version, string[] TradeIds);
 /// trades that version holds.</summary>
 internal sealed record TradePage(string Version, long Total, long Start, IReadOnlyList<Trade> Trades);
 
+/// <summary>The named trades as they are at one Source Version, in <c>TradeId</c> order, and the
+/// Record Keys no trade has — a trade removed, or never booked — in ordinal order.</summary>
+internal sealed record TradesById(string Version, IReadOnlyList<Trade> Trades, IReadOnlyList<string> Missing);
+
 /// <summary>
 /// One read of the trades at one Source Version (ADR-0065). Every command it makes runs in one
 /// read transaction, so each of them sees the trades as they were when the read began, whatever
@@ -79,8 +83,8 @@ internal sealed class TradeRead(SqliteConnection connection, SqliteTransaction t
 /// and two servers never change each other's data.</item>
 /// <item>Reads go through <see cref="ReadAsync{T}"/>, which hands them one state of the data and
 /// its Source Version together.</item>
-/// <item>Changes go through <see cref="ApplyLiveChangesAsync"/>, one transaction each, which moves
-/// the change counter on and tells <see cref="Changes"/>.</item>
+/// <item>Changes go through <see cref="ApplyLiveChangesAsync"/> and <see cref="ResetAsync"/>, one
+/// transaction each, which moves the change counter on and tells <see cref="Changes"/>.</item>
 /// </list>
 /// <para>
 /// The Source Version is this run's name and the change counter, <c>3f2a9c1e-17</c>. The counter
@@ -114,6 +118,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
     private SqliteConnection? _writer;
     private string? _readConnectionString;
     private string? _workingPath;
+    private string? _generatedPath;
 
     /// <summary>Where the store is on its way to serving.</summary>
     public TradeStoreState State => _state;
@@ -167,6 +172,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                 $"{Path.GetFileNameWithoutExtension(generated)}.{Environment.ProcessId.ToString(CultureInfo.InvariantCulture)}.{_run}.sqlite");
             File.Copy(generated, working, overwrite: true);
             _workingPath = working;
+            _generatedPath = generated;
 
             // Held from here on, so DisposeAsync closes it whatever fails below.
             var writer = _writer = TradeDatabase.Open(working, SqliteOpenMode.ReadWrite);
@@ -203,6 +209,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             ?? throw new InvalidOperationException($"The trades are not ready: {_state}.");
         await using var connection = new SqliteConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
+        TradeDatabase.AddItemCollation(connection);
         // Deferred: the read transaction begins at its first statement, which reads the version,
         // so the version and every row after it come from the same state.
         await using var transaction = connection.BeginTransaction(deferred: true);
@@ -225,6 +232,113 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                 trades.Add(Trade.Read(reader));
             return new TradePage(read.Version, read.Trades, start, trades);
         }, cancellationToken);
+
+    /// <summary>
+    /// The named trades as they are now, read at one Source Version: what a grid reads again for
+    /// the trades the hub named (ADR-0067). A Record Key no trade has is a trade removed. Keys are
+    /// matched exactly, as a Record Key is; one named twice is read once.
+    /// </summary>
+    public Task<TradesById> ReadByIdAsync(IReadOnlyCollection<string> tradeIds, CancellationToken cancellationToken) =>
+        ReadAsync(async (read, token) =>
+        {
+            // One parameter however many keys: SQLite's json_each lists a JSON array's values, and
+            // each is found through the primary key.
+            await using var command = read.Command(
+                $"SELECT {TradeDatabase.TradeColumns} FROM trades WHERE TradeId IN (SELECT value FROM json_each($ids)) ORDER BY TradeId");
+            command.Parameters.AddWithValue("$ids", JsonSerializer.Serialize(tradeIds));
+            var trades = new List<Trade>();
+            await using (var reader = await command.ExecuteReaderAsync(token))
+            {
+                while (await reader.ReadAsync(token))
+                    trades.Add(Trade.Read(reader));
+            }
+            var found = trades.Select(trade => trade.TradeId).ToHashSet(StringComparer.Ordinal);
+            var missing = tradeIds.Where(id => !found.Contains(id)).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+            return new TradesById(read.Version, trades, missing);
+        }, cancellationToken);
+
+    /// <summary>
+    /// Puts the generated trades back, in one transaction that moves the Source Version on, and
+    /// tells <see cref="Changes"/> which trades it changed: those a live update moved, booked or
+    /// cancelled, found by comparing every row with the generated file's. The data is then what
+    /// a start serves, under a version no earlier answer carries — for a test that turned live
+    /// updates on and must leave the data as it found it. The generated file is only read.
+    /// </summary>
+    public async Task<TradeChange> ResetAsync(CancellationToken cancellationToken)
+    {
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            var writer = _writer ?? throw new InvalidOperationException($"The trades are not ready: {_state}.");
+            var counter = _latest!.Counter + 1;
+            // Attached outside the transaction, which ATTACH cannot run inside.
+            TradeDatabase.Execute(writer, null, "ATTACH DATABASE $path AS generated", ("$path", _generatedPath!));
+            string[] ids;
+            long trades;
+            try
+            {
+                using var transaction = writer.BeginTransaction();
+                TradeDatabase.Execute(writer, transaction, ResetSql);
+                using (var changed = writer.CreateCommand())
+                {
+                    changed.Transaction = transaction;
+                    changed.CommandText = "SELECT TradeId FROM temp.reset ORDER BY TradeId";
+                    using var reader = changed.ExecuteReader();
+                    var list = new List<string>();
+                    while (reader.Read())
+                        list.Add(reader.GetString(0));
+                    ids = [.. list];
+                }
+                using (var count = writer.CreateCommand())
+                {
+                    count.Transaction = transaction;
+                    count.CommandText = "SELECT count(*) FROM main.trades";
+                    trades = (long)count.ExecuteScalar()!;
+                }
+                TradeDatabase.Execute(writer, transaction,
+                    "INSERT INTO changes (Version, Trades, TradeIds) VALUES ($version, $trades, $ids)",
+                    ("$version", counter), ("$trades", trades), ("$ids", JsonSerializer.Serialize(ids)));
+                TradeDatabase.Execute(writer, transaction, "DELETE FROM changes WHERE Version <= $oldest",
+                    ("$oldest", counter - KeptChanges));
+                transaction.Commit();
+            }
+            finally
+            {
+                TradeDatabase.Execute(writer, null, "DETACH DATABASE generated");
+            }
+
+            _latest = new Latest(counter, trades, NextNumber(writer));
+            var change = new TradeChange(FormatVersion(counter), ids);
+            _changes.Writer.TryWrite(change);
+            logger.LogInformation("Reset to the generated trades at version {Version}: {Count} trades put back.", change.Version, ids.Length);
+            return change;
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    // The trades that differ from the generated ones — a row changed, or present on one side
+    // only — each put back as generated. Compared column by column with IS NOT, which tells a
+    // NULL apart and compares text exactly.
+    private const string ResetSql = $"""
+        CREATE TEMP TABLE IF NOT EXISTS reset (TradeId TEXT NOT NULL PRIMARY KEY) WITHOUT ROWID;
+        DELETE FROM temp.reset;
+        INSERT INTO temp.reset (TradeId)
+            SELECT t.TradeId FROM main.trades AS t LEFT JOIN generated.trades AS g ON g.TradeId = t.TradeId
+            WHERE g.TradeId IS NULL
+               OR t.Region IS NOT g.Region OR t.Desk IS NOT g.Desk OR t.Book IS NOT g.Book
+               OR t.Product IS NOT g.Product OR t.Currency IS NOT g.Currency OR t.TradeDate IS NOT g.TradeDate
+               OR t.Notional IS NOT g.Notional OR t.Pnl IS NOT g.Pnl OR t.Quantity IS NOT g.Quantity
+               OR t.Confirmed IS NOT g.Confirmed;
+        INSERT INTO temp.reset (TradeId)
+            SELECT g.TradeId FROM generated.trades AS g
+            WHERE NOT EXISTS (SELECT 1 FROM main.trades AS t WHERE t.TradeId = g.TradeId);
+        DELETE FROM main.trades WHERE TradeId IN (SELECT TradeId FROM temp.reset);
+        INSERT INTO main.trades ({TradeDatabase.TradeColumns})
+            SELECT {TradeDatabase.TradeColumns} FROM generated.trades WHERE TradeId IN (SELECT TradeId FROM temp.reset);
+        """;
 
     /// <summary>
     /// One tick of the live updates, in one transaction with the change counter, so no read ever

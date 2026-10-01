@@ -61,6 +61,15 @@ internal static class TradeDatabase
     public const string TradeColumns =
         "TradeId, Region, Desk, Book, Product, Currency, TradeDate, Notional, Pnl, Quantity, Confirmed";
 
+    /// <summary>
+    /// The collation that compares text as a pivot tells Items apart: ordinally, ignoring case,
+    /// every letter that has one (<see cref="StringComparison.OrdinalIgnoreCase"/>, ADR-0059).
+    /// SQLite's own <c>NOCASE</c> folds the ASCII letters only. Every read registers it
+    /// (<see cref="AddItemCollation"/>); SQLite calls back into .NET for each comparison, so it is
+    /// used only where <c>NOCASE</c> would not be the engine's comparison (<see cref="TradePivotSql"/>).
+    /// </summary>
+    public const string ItemCollation = "ITEM";
+
     /// <summary>How often generation reports its progress and looks at its cancellation.</summary>
     private const int ProgressStep = 10_000;
 
@@ -180,6 +189,10 @@ internal static class TradeDatabase
         connection.Open();
         return connection;
     }
+
+    /// <summary>Registers <see cref="ItemCollation"/> on an open connection.</summary>
+    public static void AddItemCollation(SqliteConnection connection) =>
+        connection.CreateCollation(ItemCollation, static (x, y) => string.Compare(x, y, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The connection string for the file.</summary>
     public static string ConnectionString(string path, SqliteOpenMode mode, bool pooling) =>

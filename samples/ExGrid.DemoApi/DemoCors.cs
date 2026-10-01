@@ -23,13 +23,16 @@ internal static class DemoCors
     /// <summary>The hub's policy: this machine's pages, with credentials allowed.</summary>
     public const string HubPolicy = "hub";
 
-    /// <summary>The default policy, for the API, and the hub's.</summary>
+    /// <summary>The default policy, for the API, and the hub's. The API's lets a page read the
+    /// Source Version header beside an Arrow stream (<see cref="SnapshotEndpoints.VersionHeader"/>):
+    /// a browser hides from a page on another origin every response header not exposed by name.</summary>
     public static void AddPolicies(CorsOptions options)
     {
         options.AddDefaultPolicy(policy => policy
             .SetIsOriginAllowed(IsLocalPage)
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .WithExposedHeaders(SnapshotEndpoints.VersionHeader));
         options.AddPolicy(HubPolicy, policy => policy
             .SetIsOriginAllowed(IsLocalPage)
             .AllowAnyHeader()
