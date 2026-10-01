@@ -1,5 +1,9 @@
 # A Consumer gives a grid the keyboard back, and hears an Escape that leaves it
 
+*(Numbered ADR-0069 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Decided with the user, 2026-10-01 — Q64 and Q65, raised by building ExPivot's Show Details
 dialog. Both are opt-in Consumer capabilities, shaped like the ones
 [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) and

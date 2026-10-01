@@ -1,5 +1,9 @@
 # The Snapshot is the Ex family's immutable data, held in columns, in `ExGrid.Data`
 
+*(Numbered ADR-0063 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Decided with the user, 2026-09-30, in the grilling of ExPivot's first version — Q22, Q29 to Q35,
 Q37 to Q39, Q41 to Q44, Q53 and Q55. It began as a question about making a 1,000,000-row CSV fast
 in a pivot. The user saw that the answer was not a pivot's: holding data as columns "looks right

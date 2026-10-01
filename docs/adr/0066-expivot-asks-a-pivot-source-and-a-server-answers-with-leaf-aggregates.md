@@ -1,5 +1,9 @@
 # ExPivot asks a Pivot Source, and a server answers with the Leaf Aggregates
 
+*(Numbered ADR-0065 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Decided with the user, 2026-09-30, in the ExPivot grilling — Q2, Q12 to Q15, Q21, Q23 to Q25,
 Q28, Q36, Q40, Q50 and Q57. It replaces [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)'s
 "aggregation runs in ExPivot, in process, over the snapshot", and settles the pivot query that

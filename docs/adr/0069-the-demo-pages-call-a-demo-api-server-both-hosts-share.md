@@ -1,5 +1,9 @@
 # The demo pages call a demo API server, which both hosts share
 
+*(Numbered ADR-0068 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Decided with the user, 2026-09-30, in the ExPivot grilling — Q39, Q46 to Q49, Q62 and Q63. It
 refines [ADR-0019](./0019-one-repository-many-packages.md)'s demo hosts.
 

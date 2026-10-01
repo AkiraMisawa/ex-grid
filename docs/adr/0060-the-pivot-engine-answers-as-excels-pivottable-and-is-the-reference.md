@@ -1,5 +1,9 @@
 # The pivot engine answers as Excel's PivotTable does, and is the reference implementation
 
+*(Numbered ADR-0059 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Proposed 2026-09-30 with [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md),
 and decided with the user the same day. The grilling held the rule this ADR is built on (Q1): both
 the numbers and the gestures are Excel's, and ExPivot departs from Excel only where an ADR says how

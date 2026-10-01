@@ -1,5 +1,9 @@
 # Change Highlight: the Consumer says when a cell changed, and the grid marks it without animating
 
+*(Numbered ADR-0067 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Decided with the user, 2026-09-30, in the ExPivot grilling — Q59 with its parts a to d, and Q60.
 The user asked for it in the first version, and in ExGrid rather than only in ExPivot. It is an
 opt-in declaration, shaped like the ones [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md)

@@ -1,5 +1,9 @@
 # ExPivot.MudBlazor is a Chrome and a stylesheet, around the grid Wrapper it reuses
 
+*(Numbered ADR-0061 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Proposed 2026-09-30 with [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
 The user had asked for "a Wrapper for a MudBlazor-like design". The proposal was brought in line with
 what was built the same day: the list of controls, and where the words come from.*

@@ -1,5 +1,9 @@
 # A Snapshot travels as Apache Arrow, through `ExGrid.Data.Arrow`
 
+*(Numbered ADR-0064 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Decided with the user, 2026-09-30, in the ExPivot grilling — Q51 and Q51a, on the measurement
 below. The user's first answer was "our own format is fine, but I want to push harder on Arrow".
 The measurement showed that choosing Arrow gives nothing up.)*

@@ -1,5 +1,9 @@
 # What ExPivot asks of ExGrid's core — a double click where no edit opens
 
+*(Numbered ADR-0062 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Proposed 2026-09-30 with [ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md).
 It is shaped as [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) shaped ExSheet's requests of
 the core: opt-in, and right for any Consumer.*

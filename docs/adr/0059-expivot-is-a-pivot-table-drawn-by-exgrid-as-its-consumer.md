@@ -1,5 +1,9 @@
 # ExPivot is a pivot table, drawn by ExGrid as that grid's Consumer
 
+*(Numbered ADR-0058 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
+ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
+for them. Commit messages before then use the old numbers.)*
+
 *(Proposed 2026-09-30, when ExPivot was started. The user asked for "ExPivot, used like Excel's
 PivotTable, with a Wrapper for a MudBlazor-like design". The first build followed this proposal, so
 that there was something concrete to decide over.*
