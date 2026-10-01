@@ -151,6 +151,13 @@ public sealed class PivotCube
             }
         }
 
+        // One form for each exact value (ADR-0063): a source may write a Decimal at any scale — a
+        // database's money comes back as 75.60 — and decimal addition keeps the larger scale, so
+        // 0.25 + 0.25 is 0.50. The report, and the raw form a copy carries, is then the same
+        // whichever source answered (PV-22).
+        foreach (var columns in values)
+            columns.Canonicalize(cellCount);
+
         return new PivotCube(query, answer.SourceVersion, included, meta, rowRoot, columnRoot, sources, cells, values)
         {
             RecordsIdentity = records,

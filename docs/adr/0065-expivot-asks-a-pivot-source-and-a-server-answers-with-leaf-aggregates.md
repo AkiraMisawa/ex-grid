@@ -202,7 +202,11 @@ A source that can be asked again, such as a server's, says so in its features (Q
   an extreme, a JSON number is an exact decimal and a string is a `double`, so `0.1 + 0.2` travels
   as the `double` it is, and a sum of money as the decimal it is.
 - **Counts are 64-bit throughout**, because a server's data is not bounded by a process's.
-
+- **A Decimal's scale is not part of an answer.** A database's money column comes back as
+  `75.60`, the bundled source sums to `75.6`, and decimal addition makes `0.25 + 0.25` into
+  `0.50`. ExPivot writes every exact sum and extreme of the report without trailing zeros
+  ([ADR-0063](./0063-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)), so a
+  report, and the raw form a copy of it carries, is the same whichever source answered.
 - **While a new version's Items are on their way, the previous version's stay in view.** With a
   server's source, every redraw of live data brings a new Source Version. Re-listing would make
   the report filter band read "Loading…" and disable Filter…'s OK for a round trip after each
