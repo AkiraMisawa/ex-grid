@@ -261,7 +261,8 @@ nobody had asked for. What that means when writing a test:
   one striped row paint the same ground, and the stripe moves with its row (UX-15); a
   group or total row's ground and a Cell State's paint over the stripe, the roles still
   count in the parity, the overlays paint above it, and forced colours paint none
-  (UX-16).
+  (UX-16). A group or total row is one tint deep on its pinned and its scrollable cells
+  alike, at the token's shade, and the hover band reads the same over both (ADR-0024).
 - `marks.spec.mjs` — Row Marks on `/marks` (ADR-0043), 10⁶ rows through
   `GridSource.Fetch` with a mark adapter: after "mark all", rows scrolled to far away
   paint ticked (MK-6); a filter keeps the marks and the count names those outside it,

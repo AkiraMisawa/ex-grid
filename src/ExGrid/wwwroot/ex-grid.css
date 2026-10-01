@@ -103,20 +103,34 @@
    contains (ADR-0001). Weight and ground only. */
 .ex-row-group { font-weight: var(--ex-row-group-weight, 600); }
 .ex-row-total { font-weight: var(--ex-row-total-weight, 600); }
-/* Painted on the row AND on its cells, as a background IMAGE layer. A Pinned Column
-   carries its own opaque background-color (it has to: the columns underneath pass beneath
-   it), so a tint on the row alone stops at the pinned block and the role of the row is
-   visible everywhere except the column its name is in. An image layer sits above that
-   colour on the cell itself, and the row keeps its own for the space beyond the last
-   column. The separating rule is likewise a 1px gradient, not a border: .ex-row's height
-   is content-box, so a border would make every total row one pixel taller than the
+/* Painted on its cells, as a background IMAGE layer, and on the row only where no cell
+   is. A Pinned Column carries its own opaque background-color (it has to: the columns
+   underneath pass beneath it), and so does a cell with a Fill, so a tint on the row alone
+   stops at the pinned block and the role of the row is visible everywhere except the
+   column its name is in. An image layer sits above that colour on the cell itself. A
+   scrollable cell without a Fill is transparent, so a tint on the row as well would lie
+   beneath it, and the cell would be two tints deep where its pinned neighbour is one
+   (ticket 85): the row paints none beneath its cells. Its ::after, after the last of them,
+   grows into the space beyond the last column and paints it there, and the gap standing in
+   for the columns virtualised away paints it too, so no part of the row goes untinted while
+   a sideways scroll waits for its cells. A Placeholder paints no scrollable cell, only its
+   pinned ones and its bar, which is its ::after, so it keeps the tint on the row. Every
+   part of the row is then one tint deep over its own ground, which is what the token says.
+   The separating rule is likewise a 1px gradient, not a border: .ex-row's height is
+   content-box, so a border would make every total row one pixel taller than the
    arithmetic says — the drift ADR-0013 warns about, and invisible on screen. */
 .ex-row-group, .ex-row-group .ex-cell {
     --ex-tint: linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
-    background-image: var(--ex-tint);
 }
 .ex-row-total, .ex-row-total .ex-cell {
     --ex-tint: linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px);
+}
+.ex-row-group, .ex-row-total { background-image: none; }
+.ex-row-group .ex-cell, .ex-row-group .ex-gap, .ex-row-group.ex-placeholder,
+.ex-row-total .ex-cell, .ex-row-total .ex-gap, .ex-row-total.ex-placeholder { background-image: var(--ex-tint); }
+.ex-row-group:not(.ex-placeholder)::after, .ex-row-total:not(.ex-placeholder)::after {
+    content: "";
+    flex: 1 1 auto;
     background-image: var(--ex-tint);
 }
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016);
