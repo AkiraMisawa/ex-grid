@@ -34,6 +34,8 @@ public static class DemoPageList
             "A Mark Column over 1,000,000 fetched rows: mark all, marks that survive a filter, and an action over them (ADR-0043)."),
         new("stripes", "Row Stripes", "Cells and rows",
             "Stripes decided from each row's position in the whole result, so they stay with the row as it scrolls (ADR-0038)."),
+        new("tones", "Tone and Cell State", "Cells and rows",
+            "A tone rule's gains and losses in a theme's colours, and a Cell State that outranks them on the same cell (ADR-0006, ADR-0029)."),
         new("appearance", "Cell appearance", "Cells and rows",
             "A per-cell Font, Fill and Borders as Excel paints them; bold judged by bold widths, italic never cut (ADR-0050, ADR-0071)."),
         new("features", "Features", "Interaction",

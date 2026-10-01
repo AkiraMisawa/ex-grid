@@ -72,9 +72,12 @@ public class CellToneTests : GridTestContext
         Assert.False(asked);
     }
 
-    [Fact] // ADR-0006: a tone composes with alignment, pinning and a Cell State — the state is last, so it outranks
+    [Fact] // ADR-0006: a tone composes with alignment, pinning and a Cell State, one class each
     public void A_tone_composes_with_the_other_vocabularies()
     {
+        // Where a class stands in the attribute decides nothing in the cascade. The stylesheet's
+        // order does: it declares the states after the tones, so a state outranks
+        // (ShippedStylesheetTests.A_cell_state_outranks_a_tone).
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Window())
             .Add(g => g.Columns, [new GridColumn<TestRow>("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, align: CellAlign.Left, tone: Sign)])

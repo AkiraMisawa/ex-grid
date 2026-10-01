@@ -1,0 +1,68 @@
+@page "/tones"
+
+<DemoNav />
+
+<h1>Tone and Cell State</h1>
+
+<p>
+    A tone is what a column's rule says a value means — a gain, a loss — and the theme says
+    what colour that is (ADR-0006, ADR-0029). The bare grid paints a toned cell as an ordinary
+    one; this page's theme, set on the element around the grid, paints a gain green and a loss
+    orange. A Cell State is what the Consumer said about one cell, and it outranks the tone:
+    in each column below every cell is in that column's state, and a stale or an error value
+    keeps its state's colour whatever colour the theme gives its tone, as the flat value, which
+    has no tone, shows it. A modified value keeps its mark, and a missing one its ground.
+</p>
+
+@* The theme: Visual Tokens set on an ancestor, the route a Consumer or a Wrapper takes
+   (ADR-0029). The tone's only; every Cell State keeps the grid's default. *@
+<div id="tones-theme" style="--ex-tone-positive-color: #1b7f3b; --ex-tone-negative-color: #d35400;">
+    <ExGrid TRow="ToneRow"
+            Window="Rows"
+            Columns="Columns"
+            CellState="StateOf"
+            RowHeight="28"
+            ViewportHeight="160"
+            ViewportWidth="720"
+            PinnedColumnCount="1" />
+</div>
+
+@code {
+    /// <summary>One row of this page: a value, painted once in each state.</summary>
+    public sealed class ToneRow
+    {
+        public string Book = "";
+        public decimal Amount;
+    }
+
+    private static readonly ToneRow[] Rows =
+    [
+        new() { Book = "Gain", Amount = 1_250.00m },
+        new() { Book = "Loss", Amount = -830.00m },
+        new() { Book = "Flat", Amount = 0.00m },
+    ];
+
+    private static readonly CellState[] States = [CellState.Normal, CellState.Stale, CellState.Error, CellState.Modified, CellState.Missing];
+
+    // The tone rule: one comparison, declared once per column (ADR-0006). Zero has no tone.
+    private static CellTone Sign(object value) => (decimal)value switch
+    {
+        < 0 => CellTone.Negative,
+        > 0 => CellTone.Positive,
+        _ => CellTone.None,
+    };
+
+    private static readonly GridColumn<ToneRow>[] Columns =
+    [
+        new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+        .. States.Select(state => new GridColumn<ToneRow>(state.ToString(), ColumnType.Number, r => r.Amount,
+            width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), tone: Sign)),
+    ];
+
+    private static readonly Dictionary<string, CellState> StateByColumn = States.ToDictionary(state => state.ToString());
+
+    // Held in a field, never rebuilt per render: a new delegate would hand every row a
+    // changed parameter and defeat memoisation (ADR-0003). One dictionary probe per cell.
+    private static readonly CellStateOf<ToneRow> StateOf = (_, column) =>
+        StateByColumn.TryGetValue(column.Name, out var state) ? state : CellState.Normal;
+}
