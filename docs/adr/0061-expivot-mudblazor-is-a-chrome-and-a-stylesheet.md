@@ -83,6 +83,25 @@ reasons.
 - **No JavaScript.** MudBlazor's controls bring MudBlazor's own, as they already do for
   `ExGrid.MudBlazor`'s filter panel; the Wrapper adds none.
 
+*(Refined 2026-10-01, when the toolbar, the Details tabs and the dialog were dressed.)*
+
+- **`MudTabs` draws the Details tabs, and ExPivot still owns which one is selected.** Four things
+  `MudTabs` does by itself are held to that:
+  - It gives each tab element an id of its own, so the records' panel is labelled by the tab's
+    title inside the tab.
+  - It renders a panel for the active tab. Those panels stay empty and hidden, because ExPivot
+    places the records over the report.
+  - Its underline is hidden. Each tab's close button stands beside the tab, since inside it the
+    button's name would join the tab's, and the underline would then be misaligned.
+  - It moves its own selection when a tab before the selected one closes. The Wrapper rebuilds it
+    whenever the set of tabs changes, so the tab shown stays the one ExPivot selected.
+
+  Its tab list has no name of its own, so the Wrapper puts it in a group named "Sheets", as the
+  built-in markup does.
+- **The dialog stays ExPivot's frame, with MudBlazor content inside.** The frame's edge, corners
+  and shadow are Visual Tokens of their own, which the Wrapper sets to a `MudDialog`'s look. No
+  `MudDialog` is opened.
+
 ## Consequences
 
 - **`ExPivot.MudBlazor` references `ExPivot`, `ExGrid.MudBlazor` and `MudBlazor`**, at exactly the
