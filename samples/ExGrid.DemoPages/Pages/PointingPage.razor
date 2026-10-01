@@ -14,7 +14,9 @@
     <code>=</code> into a cell and press a PV cell of the positions grid: the Sheet writes what reads it
     by its row's key, <code>XLOOKUP("R-1", Positions[Id], Positions[PV])</code>. The arrow keys then
     point inside the positions grid: ↑ and ↓ one row further in the order it shows, ← and → to the next
-    column the table has, and the grid scrolls to keep the pointed cell in view.
+    column the table has, and the grid scrolls to keep the pointed cell in view. After a press on a
+    column's header, <code>Positions[PV]</code>, ↓ points at the column's first row, and ← and → at the
+    next column the table has, as a column.
 </p>
 
 @if (Narrow is not null)

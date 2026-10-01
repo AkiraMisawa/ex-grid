@@ -12,7 +12,9 @@ namespace ExGrid.Components.Tests;
 /// A grid pointed at from outside answers where one step from a cell lands, and scrolls a cell into
 /// view when asked (ADR-0058, "The keyboard", as the ninth Windows run settled it; DC-55): up or down
 /// by one row in its current order, or left or right to the nearest of the columns the Consumer
-/// names; no cell at an edge; a row that has not arrived answered as such. Neither request moves the
+/// names; no cell at an edge; a row that has not arrived answered as such. From a column (Part B of
+/// the ninth run): down to the column's first row, left or right to the nearest named column as a
+/// column, and up is an edge. Neither request moves the
 /// Selection or the Focus, and the step scrolls nothing. No JavaScript is added: the module stand-in
 /// is strict, so a new call would fail these tests. 50 rows of 20px in a 350 × 200 Viewport under a
 /// 20px header, 9 rows painted; Book, Note and Amount are 100px each.
@@ -52,6 +54,11 @@ public class PointedStepTests : GridTestContext
         IRenderedComponent<ExGrid<TestRow>> cut, GridPointedAt<TestRow> declared, TestRow from, string column, GridDirection direction,
         Func<string, bool>? isColumn = null)
         => cut.InvokeAsync(() => declared.StepAsync(row => ReferenceEquals(row, from), column, direction, isColumn ?? (_ => true)));
+
+    private static Task<GridPointedStep<TestRow>> StepFromColumnAsync(
+        IRenderedComponent<ExGrid<TestRow>> cut, GridPointedAt<TestRow> declared, string column, GridDirection direction,
+        Func<string, bool>? isColumn = null)
+        => cut.InvokeAsync(() => declared.StepFromColumnAsync(column, direction, isColumn ?? (_ => true)));
 
     private static Task<bool> RevealAsync(IRenderedComponent<ExGrid<TestRow>> cut, GridPointedAt<TestRow> declared, TestRow row, string column)
         => cut.InvokeAsync(() => declared.RevealAsync(candidate => ReferenceEquals(candidate, row), column));
@@ -164,6 +171,90 @@ public class PointedStepTests : GridTestContext
 
         await DisposeComponentsAsync();
         Assert.Equal(GridPointedStepKind.NotHeld, (await other.StepAsync(r => ReferenceEquals(r, rows[3]), "Book", GridDirection.Down, _ => true)).Kind);
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth run) / DC-55: down from a column reaches the column's first row in the grid's current order, wherever the grid is scrolled, and moves nothing
+    public async Task Down_from_a_column_reaches_its_first_row_in_the_current_order()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows);
+        await RevealAsync(cut, declared, rows[30], "Amount");
+        Assert.DoesNotContain(0, PaintedRows(cut));
+        var scrolls = Js.ScrolledTo.Count;
+
+        Assert.Equal(new GridPointedStep<TestRow>(GridPointedStepKind.Cell, rows[0], "Amount"), await StepFromColumnAsync(cut, declared, "Amount", GridDirection.Down));
+
+        // The Consumer shows another order: the first row of that order.
+        TestRow[] reversed = [.. rows.Reverse()];
+        cut.Render(ps => ps.Add(g => g.Window, reversed));
+        Assert.Equal(new GridPointedStep<TestRow>(GridPointedStepKind.Cell, rows[49], "Note"), await StepFromColumnAsync(cut, declared, "Note", GridDirection.Down));
+
+        // Nothing moved: no Selection, no Focus, no scroll.
+        Assert.Empty(_selections);
+        Assert.Empty(cut.FindAll(".ex-focus, .ex-range"));
+        Assert.Equal(scrolls, Js.ScrolledTo.Count);
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth run) / DC-55: down from a column whose first row has not arrived is answered as such; with no rows at all it is an edge
+    public async Task Down_from_a_column_whose_first_row_has_not_arrived_is_answered_as_such()
+    {
+        var declared = Declaration();
+        var cut = RenderGrid(declared, TestRows.Many(20), total: 50, more: ps => ps.Add(g => g.WindowStart, 20));
+
+        Assert.Equal(new GridPointedStep<TestRow>(GridPointedStepKind.RowNotArrived, Column: "Book"), await StepFromColumnAsync(cut, declared, "Book", GridDirection.Down));
+
+        var empty = Declaration();
+        var none = RenderGrid(empty, []);
+        Assert.Equal(GridPointedStepKind.Edge, (await StepFromColumnAsync(none, empty, "Book", GridDirection.Down)).Kind);
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth run) / DC-55: up from a column is an edge
+    public async Task Up_from_a_column_is_an_edge()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows);
+
+        Assert.Equal(new GridPointedStep<TestRow>(GridPointedStepKind.Edge), await StepFromColumnAsync(cut, declared, "Note", GridDirection.Up));
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth run) / DC-55: left and right from a column reach the nearest column the Consumer names, as a column, passing over the others; none that way is an edge
+    public async Task Left_and_right_from_a_column_reach_the_nearest_named_column_as_a_column()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows);
+        static bool NotNote(string name) => name != "Note";
+
+        Assert.Equal(new GridPointedStep<TestRow>(GridPointedStepKind.Column, Column: "Amount"), await StepFromColumnAsync(cut, declared, "Book", GridDirection.Right, NotNote));
+        Assert.Equal(new GridPointedStep<TestRow>(GridPointedStepKind.Column, Column: "Book"), await StepFromColumnAsync(cut, declared, "Amount", GridDirection.Left, NotNote));
+        Assert.Equal(GridPointedStepKind.Edge, (await StepFromColumnAsync(cut, declared, "Amount", GridDirection.Right, NotNote)).Kind);
+        Assert.Equal(GridPointedStepKind.Edge, (await StepFromColumnAsync(cut, declared, "Book", GridDirection.Left, NotNote)).Kind);
+        Assert.Equal(GridPointedStepKind.Edge, (await StepFromColumnAsync(cut, declared, "Book", GridDirection.Right, _ => false)).Kind);
+        // Every column named: the next one.
+        Assert.Equal(new GridPointedStep<TestRow>(GridPointedStepKind.Column, Column: "Note"), await StepFromColumnAsync(cut, declared, "Book", GridDirection.Right));
+        Assert.Empty(_selections);
+    }
+
+    [Fact] // ADR-0058 / DC-55: no step is taken from a column the grid does not show, while it is not pointed at, or for a declaration given no grid
+    public async Task Nothing_is_stepped_from_a_column_the_grid_does_not_show_or_while_not_pointed_at()
+    {
+        var rows = TestRows.Many(50);
+        var declared = Declaration();
+        var cut = RenderGrid(declared, rows);
+
+        Assert.Equal(GridPointedStepKind.NotHeld, (await StepFromColumnAsync(cut, declared, "Nope", GridDirection.Down)).Kind);
+        Assert.Equal(GridPointedStepKind.NotHeld, (await StepFromColumnAsync(cut, declared, "Nope", GridDirection.Up)).Kind);
+
+        await cut.InvokeAsync(() => declared.IsPointedAt = false);
+        Assert.Equal(GridPointedStepKind.NotHeld, (await StepFromColumnAsync(cut, declared, "Book", GridDirection.Down)).Kind);
+        Assert.Equal(GridPointedStepKind.NotHeld, (await StepFromColumnAsync(cut, declared, "Book", GridDirection.Right)).Kind);
+
+        var alone = Declaration();
+        Assert.Equal(GridPointedStepKind.NotHeld, (await alone.StepFromColumnAsync("Book", GridDirection.Down, _ => true)).Kind);
+        await Assert.ThrowsAsync<ArgumentException>(() => alone.StepFromColumnAsync("", GridDirection.Down, _ => true));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => alone.StepFromColumnAsync("Book", (GridDirection)99, _ => true));
     }
 
     [Fact] // ADR-0058 / DC-55: asked to, the grid scrolls a cell into view, with no Selection of its own and moving none; a cell in view scrolls nothing

@@ -508,7 +508,7 @@ test.describe('/sheets', () => {
 });
 
 // The arrow keys after a press on a registered grid (ADR-0058, "The keyboard", as the ninth Windows
-// run settled it; ticket 41; SH-35, DC-55). /pointing puts a Sheet and a grid of 40 positions in one
+// run settled it; tickets 41 and 56; SH-35, DC-55). /pointing puts a Sheet and a grid of 40 positions in one
 // Scope. The Linked Table Positions has two columns, Id, its key, and PV; the grid shows Id (A),
 // Book (B), which is the grid's own, and PV (C), and paints nine rows at a time. R-n's PV is 10n, and
 // the PVs sum to 8200.
@@ -616,25 +616,74 @@ test.describe('/pointing', () => {
         await expect(editor(grid)).toHaveValue(lookup('R-2'));
     });
 
-    test('ADR-0058/SH-35: after a press on the PV header an arrow writes nothing, and the page says to press a cell (decided 2026-10-01)', async ({ page }) => {
+    /** The dashes run down the body of the column a cell is in, from that cell down: its left edge
+     * and its width, from its top, over more than one row. */
+    async function expectDashedColumn(positions, address) {
+        const want = await boxOf(cell(positions, address));
+        await expect.poll(async () => {
+            const box = await positions.locator('.ex-point-dashes').boundingBox();
+            if (!box) {
+                return 'not painted';
+            }
+            const near = (p, q) => Math.abs(p - q) <= 1.5;
+            return near(box.x, want.x) && near(box.width, want.width) && near(box.y, want.y) && box.height > 2 * want.height
+                ? 'down the column'
+                : JSON.stringify({ box, want });
+        }).toBe('down the column');
+    }
+
+    // After a press on a column header, the arrow keys point too (ADR-0058, Part B of the ninth run,
+    // Q52): Excel, pointing at a whole column of another workbook, went with ↓ to the column's first
+    // row of data, and from there with → to the next column's.
+    test('ADR-0058/SH-35: a press on the PV header, then ↓, gives R-1\'s lookup, dashes its cell, and scrolls the grid back to it (Part B, Q52)', async ({ page }) => {
         const grid = sheet(page);
         const positions = table(page);
-        await pressCell(grid, 'C3');
-        await page.keyboard.type('=SUM(');
-        await expect(editor(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(positions);
+        const scroller = positions.locator('.ex-scroller');
+        // ↓ from R-9, the last row in view, scrolls the grid down: R-1 is then above the view.
+        await pointFrom(page, 'C9', lookup('R-9'));
+        await page.keyboard.press('ArrowDown');
+        await expect(editor(grid)).toHaveValue(lookup('R-10'));
+        await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
         await header(positions, 'PV').click({ force: true });
-        await expect(editor(grid)).toHaveValue('=SUM(Positions[PV]');
+        await expect(editor(grid)).toHaveValue('=Positions[PV]');
 
         await page.keyboard.press('ArrowDown');
 
-        await expect(refused(page)).toContainText('Press a cell to point by keys');
-        await expect(editor(grid)).toHaveValue('=SUM(Positions[PV]');
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBe(0);
+        await expectCovers(positions.locator('.ex-point-dashes'), positions, 'C1', 'C1');
         await expect(editor(grid)).toBeFocused();
-        await expect(positions.locator('.ex-point-dashes')).toHaveCount(1);
+        await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        await expect(refused(page)).toHaveText('');
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'C3')).toHaveText('10');
+    });
+
+    test('ADR-0058/SH-35: a press on the PV header, then ←, gives Positions[Id], passing over Book, and dashes that column; ↑ and a further ← move nothing (Part B, Q52)', async ({ page }) => {
+        const grid = sheet(page);
+        const positions = table(page);
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('=COUNTA(');
+        await expect(editor(grid)).toHaveValue('=COUNTA(');
+        await expectPointedAt(positions);
+        await header(positions, 'PV').click({ force: true });
+        await expect(editor(grid)).toHaveValue('=COUNTA(Positions[PV]');
+
+        await page.keyboard.press('ArrowLeft');
+
+        await expect(editor(grid)).toHaveValue('=COUNTA(Positions[Id]');
+        await expectDashedColumn(positions, 'A1');
+        await expect(editor(grid)).toBeFocused();
+        await expect(positions.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        // Edges: nothing moves, and nothing is told.
+        await page.keyboard.press('ArrowUp');
+        await page.keyboard.press('ArrowLeft');
+        await expect(editor(grid)).toHaveValue('=COUNTA(Positions[Id]');
+        await expectDashedColumn(positions, 'A1');
+        await expect(refused(page)).toHaveText('');
         await page.keyboard.type(')');
         await page.keyboard.press('Enter');
-        await expect(cell(grid, 'C3')).toHaveText('8200');
+        await expect(cell(grid, 'C3')).toHaveText('40');
     });
 
     // The keys typed after an arrow keep their place behind it (ADR-0010's hold): the arrow is answered

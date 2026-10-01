@@ -14,8 +14,8 @@ namespace ExGrid.Components;
 // the press keeps its place among that grid's keys: it is handed over once the keys typed there
 // before it have been handed on, and that grid holds the keys typed after it until it has been
 // answered (ADR-0058, "On a circuit"). The grid also draws the dashes and the column outlines the
-// declaration asks for, and answers it where one step from a cell lands and scrolls a cell into
-// view, for arrow keys pressed elsewhere (ADR-0058, "The keyboard"; DC-55). What a press means is
+// declaration asks for, and answers it where one step from a cell or a column lands and scrolls a
+// cell into view, for arrow keys pressed elsewhere (ADR-0058, "The keyboard"; DC-55). What a press means is
 // the Consumer's: the grid knows no Formula.
 public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
 {
@@ -492,6 +492,14 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
     }
 
     /// <inheritdoc />
+    async Task<GridPointedStep<TRow>> IPointedAtGrid<TRow>.StepFromColumnAsync(string column, GridDirection direction, Func<string, bool> isColumn)
+    {
+        var step = new GridPointedStep<TRow>(GridPointedStepKind.NotHeld);
+        await InvokeAsync(() => step = PointedStepFromColumn(column, direction, isColumn));
+        return step;
+    }
+
+    /// <inheritdoc />
     async Task<bool> IPointedAtGrid<TRow>.RevealAsync(Func<TRow, bool> isRow, string column)
     {
         var revealed = false;
@@ -517,13 +525,50 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
                 ? new GridPointedStep<TRow>(GridPointedStepKind.Cell, data, column)
                 : new GridPointedStep<TRow>(GridPointedStepKind.RowNotArrived, Column: column);
         }
+        return NearestColumn(from, direction, isColumn) is { } reached
+            ? new GridPointedStep<TRow>(GridPointedStepKind.Cell, WindowRowAt(row), reached)
+            : new GridPointedStep<TRow>(GridPointedStepKind.Edge);
+    }
+
+    /// <summary>
+    /// What one step from a whole column reaches (ADR-0058, "The keyboard", as Part B of the ninth
+    /// Windows run settled it; DC-55): down, the column's first row in the current order; left or
+    /// right, the nearest column the Consumer names, as a column; up, nothing. The Selection, the Focus
+    /// and the scroll do not move.
+    /// </summary>
+    private GridPointedStep<TRow> PointedStepFromColumn(string column, GridDirection direction, Func<string, bool> isColumn)
+    {
+        if (_disposed || !PointedAtNow || ColumnNamed(column) is not { } from)
+            return new GridPointedStep<TRow>(GridPointedStepKind.NotHeld);
+        switch (direction)
+        {
+            case GridDirection.Up:
+                return new GridPointedStep<TRow>(GridPointedStepKind.Edge);
+            case GridDirection.Down:
+                if (TotalRows == 0)
+                    return new GridPointedStep<TRow>(GridPointedStepKind.Edge);
+                return WindowRowAt(0) is { } first
+                    ? new GridPointedStep<TRow>(GridPointedStepKind.Cell, first, column)
+                    : new GridPointedStep<TRow>(GridPointedStepKind.RowNotArrived, Column: column);
+            default:
+                return NearestColumn(from, direction, isColumn) is { } reached
+                    ? new GridPointedStep<TRow>(GridPointedStepKind.Column, Column: reached)
+                    : new GridPointedStep<TRow>(GridPointedStepKind.Edge);
+        }
+    }
+
+    /// <summary>The name of the nearest column left or right of <paramref name="from"/> that
+    /// <paramref name="isColumn"/> answers true for, passing over the others; null with none that
+    /// way.</summary>
+    private string? NearestColumn(int from, GridDirection direction, Func<string, bool> isColumn)
+    {
         var step = direction == GridDirection.Left ? -1 : 1;
         for (var c = from + step; c >= 0 && c < Columns.Count; c += step)
         {
             if (isColumn(Columns[c].Name))
-                return new GridPointedStep<TRow>(GridPointedStepKind.Cell, WindowRowAt(row), Columns[c].Name);
+                return Columns[c].Name;
         }
-        return new GridPointedStep<TRow>(GridPointedStepKind.Edge);
+        return null;
     }
 
     /// <summary>
