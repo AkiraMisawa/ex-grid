@@ -16,7 +16,9 @@ internal struct CountsPart
 
 /// <summary>The sum part: exact while every number was, <c>double</c> once one was not or the
 /// exact sum overflowed. <see cref="Compensation"/> is Neumaier's running error while a sum is
-/// being accumulated; a finished part has folded it in.</summary>
+/// being accumulated; a finished part has folded it in. While an Integer or Decimal column is
+/// read, its exact sum is kept apart as an integer (<see cref="ValueAccumulator"/>), and only a
+/// finished part holds it in <see cref="Exact"/>.</summary>
 internal struct SumPart
 {
     public decimal Exact;
@@ -109,31 +111,134 @@ internal sealed class PartColumns
             Array.Copy(other.Variances!, Variances, count);
     }
 
-    // ---- One record's value ------------------------------------------------------------------
-
-    /// <summary>Folds one record's value into a cell (ADR-0059): a Blank is not counted; a number
-    /// of any integral type or <c>decimal</c> is exact; a <c>double</c> or <c>float</c> is not,
-    /// and a non-finite one makes the cell <c>#NUM!</c>; text, a Boolean and a date are counted and
-    /// are never a number.</summary>
-    public void Add(int cell, object? value)
+    /// <summary>Cell <paramref name="from"/> of <paramref name="other"/>, which holds at least these
+    /// parts, as this one's cell <paramref name="cell"/>.</summary>
+    public void CopyCell(int cell, PartColumns other, int from)
     {
-        switch (value)
+        Counts[cell] = other.Counts[from];
+        if (Sums is not null)
+            Sums[cell] = other.Sums![from];
+        if (Extremes is not null)
+            Extremes[cell] = other.Extremes![from];
+        if (Products is not null)
+            Products[cell] = other.Products![from];
+        if (Variances is not null)
+            Variances[cell] = other.Variances![from];
+    }
+
+    /// <summary>A cell back to no value at all, as a new cell starts.</summary>
+    public void ResetCell(int cell)
+    {
+        Counts[cell] = default;
+        if (Sums is not null)
+            Sums[cell] = default;
+        if (Extremes is not null)
+            Extremes[cell] = default;
+        if (Products is not null)
+            Products[cell] = 0;
+        if (Variances is not null)
+            Variances[cell] = default;
+    }
+
+    /// <summary>
+    /// Writes each exact sum and exact extreme of the first <paramref name="count"/> cells without
+    /// trailing zeros (ADR-0063: a Decimal is a value, not the scale it was written with). A sum
+    /// folded from segments at different scales then reads alike however it was made, and a
+    /// batch folded in leaves it as a fresh aggregation would.
+    /// </summary>
+    public void Canonicalize(int count)
+    {
+        if (Sums is not null)
         {
-            case null: return;
-            case decimal m: AddExact(cell, m); return;
-            case int i: AddExact(cell, i); return;
-            case long l: AddExact(cell, l); return;
-            case short s: AddExact(cell, s); return;
-            case byte b: AddExact(cell, b); return;
-            case sbyte s: AddExact(cell, s); return;
-            case uint u: AddExact(cell, u); return;
-            case ulong u: AddExact(cell, u); return;
-            case ushort u: AddExact(cell, u); return;
-            case double d: AddDouble(cell, d); return;
-            case float f: AddDouble(cell, f); return;
-            default: AddOther(cell); return;
+            for (var i = 0; i < count; i++)
+            {
+                ref var sum = ref Sums[i];
+                if (!sum.Inexact)
+                    sum.Exact = Exactly.Canonical(sum.Exact);
+            }
+        }
+        if (Extremes is not null)
+        {
+            for (var i = 0; i < count; i++)
+            {
+                ref var extremes = ref Extremes[i];
+                if (!extremes.Inexact)
+                {
+                    extremes.ExactMin = Exactly.Canonical(extremes.ExactMin);
+                    extremes.ExactMax = Exactly.Canonical(extremes.ExactMax);
+                }
+            }
         }
     }
+
+    // ---- Exact numbers a run at a time ----------------------------------------------------------
+    //
+    // An exact column's numbers are counted and their extremes kept a run of rows at a time, and
+    // their sum is a 128-bit integer the reader keeps (ValueAccumulator); these take what a run
+    // folds in.
+
+    /// <summary>Counts <paramref name="numbers"/> exact numbers into a cell, each a value that is not
+    /// Blank.</summary>
+    public void CountNumbers(int cell, int numbers)
+    {
+        ref var counts = ref Counts[cell];
+        counts.Values += numbers;
+        counts.Numbers += numbers;
+    }
+
+    /// <summary>Folds a run's smallest and largest exact numbers into a cell's extremes;
+    /// <paramref name="first"/> when the cell held no number before the run.</summary>
+    public void FoldExtremes(int cell, decimal min, decimal max, bool first)
+    {
+        ref var extremes = ref Extremes![cell];
+        if (first)
+        {
+            extremes.ExactMin = min;
+            extremes.ExactMax = max;
+        }
+        else if (extremes.Inexact)
+        {
+            AddToDoubleExtremes(ref extremes, (double)min);
+            AddToDoubleExtremes(ref extremes, (double)max);
+        }
+        else
+        {
+            if (min < extremes.ExactMin)
+                extremes.ExactMin = min;
+            if (max > extremes.ExactMax)
+                extremes.ExactMax = max;
+        }
+    }
+
+    /// <summary>Folds one exact number into the parts kept in <c>double</c> — the product and the
+    /// running variance — as the <c>double</c> it converts to; <paramref name="count"/> is the
+    /// cell's numbers with this one.</summary>
+    public void AddInexactParts(int cell, double value, long count)
+    {
+        if (Products is not null)
+            Products[cell] = count == 1 ? value : Products[cell] * value;
+        if (Variances is not null)
+            AddToVariance(ref Variances[cell], value, count);
+    }
+
+    /// <summary>Whether a cell's sum has left exactness for Excel's <c>double</c>.</summary>
+    public bool IsInexactSum(int cell) => Sums![cell].Inexact;
+
+    /// <summary>A cell's sum leaves exactness for Excel's <c>double</c>, starting from
+    /// <paramref name="start"/> — the exact sum it had, converted.</summary>
+    public void ToInexactSum(int cell, double start)
+    {
+        ref var sum = ref Sums![cell];
+        sum.Inexact = true;
+        sum.Exact = 0;
+        sum.Double = start;
+        sum.Compensation = 0;
+    }
+
+    /// <summary>Adds to a cell's <c>double</c> sum, compensated.</summary>
+    public void AddInexactSum(int cell, double value) => Neumaier(ref Sums![cell], value);
+
+    // ---- One record's value ------------------------------------------------------------------
 
     // The three typed ways in, which a reader of typed columns calls without boxing a value.
 

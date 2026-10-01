@@ -174,14 +174,21 @@ public sealed record PivotSlicing
     /// a browser, so that it can paint, and <c>Task.Yield()</c> elsewhere.</summary>
     public Func<CancellationToken, ValueTask>? Yield { get; init; }
 
+    /// <summary>Told how many rows each step of a question read — for layer 1, which holds a
+    /// question to the rows it reads (a cancelled one stops at the next slice; one refused for its
+    /// leaves stops at the row that passed the cap).</summary>
+    internal Action<long>? RowsRead { get; init; }
+
     internal ValueTask YieldAsync(CancellationToken cancellationToken)
         => Yield is { } yield ? yield(cancellationToken) : PlatformYield(cancellationToken);
 
+    // The bundled source captures no caller's context: its slices go on wherever the runtime puts
+    // them, so a caller that blocks on a question — on a UI thread, say — never waits on itself.
     private static async ValueTask PlatformYield(CancellationToken cancellationToken)
     {
         if (OperatingSystem.IsBrowser())
-            await Task.Delay(1, cancellationToken);
+            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
         else
-            await Task.Yield();
+            await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
     }
 }

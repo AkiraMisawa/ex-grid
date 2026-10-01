@@ -1,3 +1,5 @@
+using ExGrid.Data;
+
 namespace ExPivot.Engine;
 
 /// <summary>
@@ -5,9 +7,11 @@ namespace ExPivot.Engine;
 /// (ADR-0065). ExPivot takes the shape ExGrid takes: it never opens a connection and holds no
 /// data. The Consumer hands it a source:
 /// <list type="bullet">
-/// <item><see cref="From{TRecord}"/> answers from records in the process — in the browser under
-/// WebAssembly, or in the host's process under Blazor Server — and is the reference
-/// implementation: its answers are the engine's rules (ADR-0059);</item>
+/// <item><see cref="From(Snapshot, IReadOnlyList{PivotField}?, PivotSlicing?)"/> answers from a
+/// Snapshot in the process — in the browser under WebAssembly, or in the host's process under
+/// Blazor Server — and is the reference implementation: its answers are the engine's rules
+/// (ADR-0059). Records in memory come to it through typed field declarations
+/// (<see cref="PivotFields.Of{T}"/>), or through untyped accessors;</item>
 /// <item><see cref="Fetch"/> carries the Consumer's transport to a server, which answers with the
 /// Leaf Aggregates and is held to the reference's answers, question for question.</item>
 /// </list>
@@ -58,12 +62,86 @@ public abstract class PivotSource
     }
 
     /// <summary>
-    /// The bundled source over records in memory — the reference implementation (ADR-0065): it
-    /// answers every question by the engine's rules (ADR-0059), reading each record through the
-    /// fields' accessors. The records are its data at one Source Version, fixed for the instance:
-    /// a new list is a new source, which is Excel's Refresh, and a question asked under another
-    /// version is refused. It works in slices and yields between them (<paramref name="slicing"/>),
-    /// and a cancelled question stops at the next slice.
+    /// The bundled source over a Snapshot — the reference implementation (ADR-0065): it answers
+    /// every question from the Snapshot's columns by the engine's rules (ADR-0059), in slices,
+    /// yielding between them (<paramref name="slicing"/>); a cancelled question stops at the next
+    /// slice. It takes Change Batches (<see cref="SnapshotPivotSource.Apply"/>, ADR-0066).
+    /// </summary>
+    /// <param name="snapshot">The data.</param>
+    /// <param name="fields">The Pivot Fields, each reading the column its
+    /// <see cref="PivotField.Column"/> names, or the column of its own name — a date part reads the
+    /// Date column it is a part of; or null for one field per column, captioned as the column is
+    /// and declared by its kind: Text as Text, Decimal, Double and Integer as Number, Date as Date,
+    /// Boolean as Boolean.</param>
+    /// <param name="slicing">How it shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <exception cref="ArgumentException">A field names a column the Snapshot does not have, or is a
+    /// date part of a column that is not a Date column; two fields share a name.</exception>
+    public static SnapshotPivotSource From(Snapshot snapshot, IReadOnlyList<PivotField>? fields = null, PivotSlicing? slicing = null)
+        => new(snapshot, fields, slicing ?? PivotSlicing.Default);
+
+    /// <summary>
+    /// The bundled source over records in memory, declared with typed fields (ADR-0063/0065, Q53) —
+    /// the standard way: the records are read once, on the calling thread, into a Snapshot whose
+    /// columns the declarations made, boxing no value, and every question is answered from it.
+    /// <see cref="FromAsync"/> reads them in slices, which a browser needs for a large list.
+    /// </summary>
+    /// <param name="records">The Source Records, read once and kept, by reference, behind their rows.</param>
+    /// <param name="fields">The typed declarations (<see cref="PivotFields.Of{T}"/>).</param>
+    /// <param name="slicing">How it shares the thread while it answers; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <exception cref="SnapshotException">A value could not be read, or a Record Key is Blank or
+    /// carried twice: nothing is built, and the row and the column are named (ADR-0063).</exception>
+    public static SnapshotPivotSource From<TRecord>(IReadOnlyList<TRecord> records, PivotFields<TRecord> fields, PivotSlicing? slicing = null)
+    {
+        ArgumentNullException.ThrowIfNull(records);
+        ArgumentNullException.ThrowIfNull(fields);
+        return new(fields.Build(records), fields.Fields, slicing ?? PivotSlicing.Default);
+    }
+
+    /// <summary>
+    /// <see cref="From{TRecord}(IReadOnlyList{TRecord}, PivotFields{TRecord}, PivotSlicing?)"/> with the
+    /// records read in slices, yielding between them as the source does and reporting progress
+    /// (ADR-0063): a browser keeps painting while a million records are read. A cancelled read
+    /// builds nothing.
+    /// </summary>
+    /// <param name="records">The Source Records, read once and kept, by reference, behind their rows.</param>
+    /// <param name="fields">The typed declarations (<see cref="PivotFields.Of{T}"/>).</param>
+    /// <param name="slicing">How it shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <param name="progress">Told how far the read has come after every slice.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <exception cref="SnapshotException">A value could not be read, or a Record Key is Blank or
+    /// carried twice.</exception>
+    public static async ValueTask<SnapshotPivotSource> FromAsync<TRecord>(
+        IReadOnlyList<TRecord> records,
+        PivotFields<TRecord> fields,
+        PivotSlicing? slicing = null,
+        IProgress<SnapshotProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(records);
+        ArgumentNullException.ThrowIfNull(fields);
+        var shared = slicing ?? PivotSlicing.Default;
+        var options = new SnapshotLoadOptions
+        {
+            SliceBudget = shared.Budget,
+            Yield = () => shared.YieldAsync(cancellationToken),
+            Progress = progress,
+        };
+        var snapshot = await fields.BuildAsync(records, options, cancellationToken).ConfigureAwait(false);
+        return new(snapshot, fields.Fields, shared);
+    }
+
+    /// <summary>
+    /// The bundled source over records in memory read through untyped accessors — a reference
+    /// implementation like the others (ADR-0065). On the first question the records are read once,
+    /// in slices, into a Snapshot, each value keeping its own kind — a field "whose values are not
+    /// all of the declared type is still pivoted as its values are" (ADR-0059) — and every question
+    /// is answered from it by the engine's rules. Typed declarations
+    /// (<see cref="From{TRecord}(IReadOnlyList{TRecord}, PivotFields{TRecord}, PivotSlicing?)"/>) box nothing,
+    /// and are the standard way.
+    /// <para>The records are its data at one Source Version, fixed for the instance: a new list is
+    /// a new source, which is Excel's Refresh, and a question asked under another version is
+    /// refused. It works in slices and yields between them (<paramref name="slicing"/>), and a
+    /// cancelled question stops at the next slice.</para>
     /// </summary>
     /// <param name="records">The Source Records, read and never written. The list must not change
     /// while the source is in use: a changed list is a new source.</param>

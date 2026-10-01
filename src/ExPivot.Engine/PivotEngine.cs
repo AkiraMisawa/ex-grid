@@ -11,7 +11,7 @@ namespace ExPivot.Engine;
 ///
 /// <para><see cref="Aggregate{TRecord}"/> and <see cref="Compute{TRecord}"/> run the whole path over
 /// records in memory on the calling thread, through the bundled source
-/// (<see cref="PivotSource.From{TRecord}"/>).</para>
+/// (<see cref="PivotSource.From{TRecord}(IReadOnlyList{TRecord}, IReadOnlyList{PivotField{TRecord}}, PivotSlicing?)"/>).</para>
 /// </summary>
 public static class PivotEngine
 {
@@ -148,7 +148,9 @@ public static class PivotEngine
         var hidden = placement.HiddenItems.Select(ItemKey.FromPublic).ToHashSet();
         var order = new ItemOrder(meta, labels, resolved.Culture,
             placement.Sort.Direction == PivotSortDirection.Descending && placement.Sort.ByValue is null);
-        return items
+        var listed = items.ToArray();
+        order.Prepare(listed);
+        return listed
             .OrderBy(item => item, order)
             .Select(item => new PivotItemInfo(item.PublicKey, labels.Of(item, meta), hidden.Contains(item.Key)))
             .ToArray();

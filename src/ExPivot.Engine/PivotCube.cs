@@ -291,6 +291,19 @@ internal sealed class ItemRef
 
     public PivotItemKey PublicKey { get; }
 
+    /// <summary>Whether <see cref="OrderKey"/> has been computed: a field's Order Key is called once
+    /// per Item (ADR-0059).</summary>
+    public bool HasOrderKey { get; private set; }
+
+    /// <summary>What the field's Order Key gave the Item, or null for no key.</summary>
+    public IComparable? OrderKey { get; private set; }
+
+    public void SetOrderKey(IComparable? key)
+    {
+        OrderKey = key;
+        HasOrderKey = true;
+    }
+
     /// <summary>The Item an answer names: its key, and the value its key stands for.</summary>
     public static ItemRef Of(PivotItemKey key) => Of(ItemKey.FromPublic(key), key);
 
@@ -313,6 +326,8 @@ internal sealed class FieldMeta
     {
         Info = field.Info;
         Format = field.Format;
+        DatePart = field.DatePart;
+        OrderKey = field.OrderKey;
         var index = new Dictionary<ItemKey, int>();
         for (var i = 0; i < field.ItemOrder.Count; i++)
             index.TryAdd(ItemKey.Of(field.ItemOrder[i]), i);
@@ -324,6 +339,12 @@ internal sealed class FieldMeta
     public string? Format { get; }
 
     public IReadOnlyDictionary<ItemKey, int> DeclaredOrder { get; }
+
+    /// <summary>The part of a Date column the field is, or null (ADR-0059).</summary>
+    public PivotDatePart? DatePart { get; }
+
+    /// <summary>The field's Order Key, or null (ADR-0059).</summary>
+    public Func<object, IComparable?>? OrderKey { get; }
 
     /// <summary>The metadata of every declared field, by name, refusing a name declared twice.</summary>
     public static IReadOnlyDictionary<string, FieldMeta> Of(IReadOnlyList<PivotField> fields)
