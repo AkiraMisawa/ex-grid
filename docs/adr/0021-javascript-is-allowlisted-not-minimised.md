@@ -298,6 +298,12 @@ script:
   the `B1` went into the bar's older `=`, and the render of the cell's last input wrote `=A1+`
   over it. The page showed `=A1+` while the core held `=B1`, which Enter would have committed.
   Any press into an editable, unfocused bar is held now, as this entry already said.
+- **A press that gives the Name Box the keyboard selects its text** *(added 2026-10-01, ADR-0051,
+  ticket 78)*. The press keeps its default, so the browser gives the field the keyboard; the
+  `mouseup` then selects the whole text and prevents its own default, which would put the caret
+  back. If a render renames the box after the press (a commit the press made, or a render a round
+  trip late on a circuit), the first key typed there selects the name again before it goes on. No
+  focus is moved from script, no listener is added, and nothing reads layout.
 - **A held press on the rows suppresses its default**, which would move DOM focus onto the rows.
   The rows hand focus back to the root a round trip later, and that hand-over is not held; landing
   just after the Cell Editor took focus, it pulled the keyboard off the editor and every later key
