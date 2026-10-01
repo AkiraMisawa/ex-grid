@@ -138,7 +138,9 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   passes focus back to it: a trap. And the element holding the keyboard carries
   `aria-activedescendant`, with every rule above. The root keeps `role="grid"` and the rest of the
   table. Chromium's resolution of the field's active descendant is checked over CDP; what a screen
-  reader says is still owed a real one. A display-only grid keeps both on its root.
+  reader says is still owed a real one. A display-only grid keeps both on its root. The header's ▾
+  buttons left the tab sequence on every grid the same day, as the action buttons did (ADR-0037), so
+  that a Tab into the grid reaches the cells first; Alt+↓ opens a column's popover by keyboard.
 - **The scroller is not a tab stop either** *(found while implementing, 2026-09-26)*. Chrome makes
   a scroll container with no tabbable content a tab stop of its own once it overflows, so every
   overflowing display-only grid had a second stop inside it — `/wide` at any size, and `/cells`
