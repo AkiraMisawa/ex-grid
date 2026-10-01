@@ -44,9 +44,9 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
         cancellationToken.ThrowIfCancellationRequested();
         if (Refusal(query) is { } refusal)
             return PivotAnswer.Refused(refusal);
-        var (snapshot, bindings) = await DataAsync(cancellationToken);
+        var (snapshot, bindings) = await DataAsync(cancellationToken).ConfigureAwait(false);
         var pass = new AggregationPass(snapshot, bindings, query, keepRows: false, _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken);
+        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
         pass.Complete();
         return pass.Answer(SourceVersion);
     }
@@ -72,9 +72,9 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
             return PivotItemPage.Refused(refusal);
         if (query.SourceVersion != SourceVersion)
             return PivotItemPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
-        var (snapshot, bindings) = await DataAsync(cancellationToken);
+        var (snapshot, bindings) = await DataAsync(cancellationToken).ConfigureAwait(false);
         var pass = new ItemsPass(snapshot, bindings[query.Field], _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken);
+        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
         return pass.Page(query, SourceVersion);
     }
 
@@ -96,9 +96,9 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
             return PivotDetailPage.Refused(refusal);
         if (query.SourceVersion != SourceVersion)
             return PivotDetailPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
-        var (snapshot, bindings) = await DataAsync(cancellationToken);
+        var (snapshot, bindings) = await DataAsync(cancellationToken).ConfigureAwait(false);
         var pass = new DetailsPass(snapshot, bindings, query, _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken);
+        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
         var records = new PivotDetailRecord[pass.Matches.Count];
         var values = new object?[_fields.Length];
         for (var i = 0; i < records.Length; i++)
@@ -141,7 +141,7 @@ internal sealed class RecordPivotSource<TRecord> : PivotSource
         Task<(Snapshot Snapshot, Dictionary<string, FieldBinding> Bindings)> data;
         lock (_gate)
             data = _data ??= RecordColumns<TRecord>.BuildAsync(_records, _fields, _slicing);
-        return await data.WaitAsync(cancellationToken);
+        return await data.WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private (Snapshot, Dictionary<string, FieldBinding>) Data()

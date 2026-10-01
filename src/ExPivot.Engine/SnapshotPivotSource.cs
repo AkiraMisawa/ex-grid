@@ -111,7 +111,7 @@ public sealed class SnapshotPivotSource : PivotSource
             }
         }
         var pass = new AggregationPass(snapshot, _bindings, query, keepRows: snapshot.RecordKey is not null, _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken);
+        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
         pass.Complete();
         var answer = pass.Answer(VersionOf(snapshot));
         lock (_gate)
@@ -138,7 +138,7 @@ public sealed class SnapshotPivotSource : PivotSource
         if (Held(query.SourceVersion) is not { } snapshot)
             return PivotItemPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
         var pass = new ItemsPass(snapshot, _bindings[query.Field], _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken);
+        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
         return pass.Page(query, query.SourceVersion);
     }
 
@@ -154,7 +154,7 @@ public sealed class SnapshotPivotSource : PivotSource
         if (Held(query.SourceVersion) is not { } snapshot)
             return PivotDetailPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion));
         var pass = new DetailsPass(snapshot, _bindings, query, _slicing.RowsRead);
-        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken);
+        await SlicedRun.RunAsync(pass.RowCount, pass.Step, _slicing, cancellationToken).ConfigureAwait(false);
         var records = new PivotDetailRecord[pass.Matches.Count];
         var values = new object?[_fields.Length];
         for (var i = 0; i < records.Length; i++)

@@ -389,6 +389,44 @@ public class PivotSourceTests
         Assert.Empty(bundled);
     }
 
+    [Fact] // ADR-0065: the bundled source captures no caller's context — a question a UI thread blocks on still completes, slices and all
+    public void A_question_completes_though_its_callers_context_is_blocked()
+    {
+        var slicing = new PivotSlicing { Budget = TimeSpan.Zero, RecordsPerCheck = 2 };
+        var typed = PivotFields.Of<Deal>().Text("Desk", d => d.Desk).Number("Risk", d => d.Risk);
+        var blocked = new BlockedContext();
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(blocked);
+        try
+        {
+            foreach (var source in new[] { PivotSource.From(Deals, DealFields, slicing), PivotSource.From(Deals, typed, slicing) })
+            {
+                var answer = source.AggregateAsync(new PivotQuery(rows: [F("Desk")], values: [V("Risk")]), Ct).AsTask();
+                // Blocking is what is tested: a caller that blocks on its own thread, as a test of a
+                // component does, must not wait on a slice posted back to that thread.
+#pragma warning disable xUnit1031
+                Assert.True(answer.Wait(TimeSpan.FromSeconds(30), Ct), "the question waited on its caller's context");
+                Assert.Equal(5, answer.Result.LeafCount);
+#pragma warning restore xUnit1031
+            }
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+        Assert.Equal(0, blocked.Posted);
+    }
+
+    /// <summary>A UI thread that is blocked: what is posted to it never runs.</summary>
+    private sealed class BlockedContext : SynchronizationContext
+    {
+        public int Posted { get; private set; }
+
+        public override void Post(SendOrPostCallback d, object? state) => Posted++;
+
+        public override void Send(SendOrPostCallback d, object? state) => Posted++;
+    }
+
     private static PivotField<Deal>[] CountingDesk(Action read)
         => [new("Desk", PivotFieldType.Text, d => { read(); return d.Desk; }), .. DealFields.Skip(1)];
 

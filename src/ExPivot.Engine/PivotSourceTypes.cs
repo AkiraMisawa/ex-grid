@@ -182,11 +182,13 @@ public sealed record PivotSlicing
     internal ValueTask YieldAsync(CancellationToken cancellationToken)
         => Yield is { } yield ? yield(cancellationToken) : PlatformYield(cancellationToken);
 
+    // The bundled source captures no caller's context: its slices go on wherever the runtime puts
+    // them, so a caller that blocks on a question — on a UI thread, say — never waits on itself.
     private static async ValueTask PlatformYield(CancellationToken cancellationToken)
     {
         if (OperatingSystem.IsBrowser())
-            await Task.Delay(1, cancellationToken);
+            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
         else
-            await Task.Yield();
+            await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
     }
 }

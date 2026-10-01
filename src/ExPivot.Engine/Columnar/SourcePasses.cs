@@ -29,7 +29,7 @@ internal static class SlicedRun
             }
             if (at >= count)
                 break;
-            await slicing.YieldAsync(cancellationToken);
+            await slicing.YieldAsync(cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
         }
         cancellationToken.ThrowIfCancellationRequested();
