@@ -403,7 +403,7 @@ public class ShippedStylesheetTests
     public void The_open_edits_focus_is_granted_only_while_the_keyboard_is_this_grids()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
-        var method = Regex.Match(script.Text, @"focusEditor: \(bar\) => \{.*?\n        \},", RegexOptions.Singleline);
+        var method = Regex.Match(script.Text, @"focusEditor: \(bar, fromField\) => \{.*?\n        \},", RegexOptions.Singleline);
         Assert.True(method.Success, "focusEditor is not in the handle");
         var body = method.Value;
 
@@ -413,6 +413,12 @@ public class ShippedStylesheetTests
         Assert.Contains("surfaceField(box)", body, StringComparison.Ordinal);
         // Granted only while DOM focus is inside this root or on nothing: reclaimFocus's condition.
         Assert.Contains("!active || active === document.body || active === document.documentElement || root.contains(active)", body, StringComparison.Ordinal);
+        // Nor from a field beside the rows with focus of its own, a field a press on the rows left
+        // standing aside, unless the core means to take the keyboard out of it, as the hand-back
+        // leaves those fields (ADR-0021, 2026-09-28).
+        Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
+        Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
+        Assert.Contains("fromField !== true", body, StringComparison.Ordinal);
         // Scrolled into view as Blazor's FocusAsync did: no preventScroll here.
         Assert.Contains("field.focus();", body, StringComparison.Ordinal);
         Assert.DoesNotContain("preventScroll", body, StringComparison.Ordinal);

@@ -1925,7 +1925,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // about focus made in script (ADR-0021's note of 2026-09-30); it reads
         // document.activeElement and no layout. Declined, the keys held behind the key that
         // opened the edit go into it (focusDeclined).
-        focusEditor: (bar) => {
+        //
+        // Nor from a field beside the rows with focus of its own, as reclaimFocus leaves it — the
+        // Formula Bar's text or the Name Box the user pressed while the request was on its way,
+        // whose press the core heard only after asking — unless the core means to take the
+        // keyboard out of that field (fromField: a Reject the press into the Name Box met). The
+        // keyboard stays where the user put it, and the edit goes on there: a request for the
+        // Cell Editor, landing after a press into the bar, took the keyboard from the bar, and the
+        // key typed next opened an edit in the cell (found on CI, msedge, the Server host).
+        focusEditor: (bar, fromField) => {
             if (!root) {
                 return;
             }
@@ -1936,6 +1944,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 return;
             }
             const active = document.activeElement;
+            const fieldOfItsOwn = active instanceof Element && active !== staleField && !field.contains(active)
+                && root.contains(active) && active.closest('.ex-formula-bar') !== null;
+            if (fieldOfItsOwn && fromField !== true) {
+                return;
+            }
             if (!active || active === document.body || active === document.documentElement || root.contains(active)) {
                 focusDeclined = false;
                 // Scrolled into view as Blazor's FocusAsync scrolled it: an editor opened by keys

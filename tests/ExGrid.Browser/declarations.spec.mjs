@@ -895,6 +895,61 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+// The same steps with the press into the bar made at one moment of the round trip: once the Cell
+// Editor is painted, the core has heard that render acknowledged and asked the Cell Editor to take
+// the keyboard, and it hears of the press into the bar only afterwards; the request lands in the
+// browser after that press. Granted there, because DOM focus was inside the root, it took the
+// keyboard from the bar, the row press's commit handed it on to the root, and `7` opened an edit in
+// the cell instead of typing into the bar (found on CI, msedge, the Server host, 2026-10-01: 2 runs
+// of 4; under Chrome throttled 4×, 2 of 15).
+/** Resolves in the task that paints the Cell Editor over the rows: heard from the markup, not polled. */
+const cellEditorPainted = (grid) => grid.evaluate((root) => new Promise((resolve, reject) => {
+    const painted = () => root.querySelector('.ex-viewport .ex-editor') !== null;
+    if (painted()) {
+        resolve();
+        return;
+    }
+    const observer = new MutationObserver(() => {
+        if (painted()) {
+            observer.disconnect();
+            clearTimeout(timer);
+            resolve();
+        }
+    });
+    const timer = setTimeout(() => {
+        observer.disconnect();
+        reject(new Error('the Cell Editor was never painted'));
+    }, 5000);
+    observer.observe(root, { childList: true, subtree: true });
+}));
+
+for (const chrome of ['builtin', 'mud']) {
+    test(`ADR-0021: an edit's request for the Cell Editor, landing after a press into the Formula Bar, leaves the keyboard in the bar, on a 150 ms circuit (${chrome} Chrome)`, async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly has no round trip: the request lands before a press can follow it');
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'F2');
+        await expect(bar(grid)).toHaveValue('');
+        const field = await bar(grid).boundingBox();
+        await setRoundTrip(150);
+
+        await page.keyboard.type('x');
+        await clickCell(grid, 'F5');
+        await cellEditorPainted(grid);
+        await page.mouse.click(field.x + field.width - 4, field.y + field.height / 2);
+        await page.keyboard.type('7');
+
+        await expect(bar(grid)).toHaveValue('7');
+        await expect(editor(grid)).toHaveValue('7');
+        await expect(bar(grid)).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(cell(grid, 'F2')).toHaveText('x');
+        await expect(cell(grid, 'F5')).toHaveText('7');
+        await expectFocusAt(grid, 'F6');
+        await setRoundTrip(0);
+    });
+}
+
 test('DC-20: typed quickly on a 150 ms circuit, no arrow points where the text forbids it', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'F2');
