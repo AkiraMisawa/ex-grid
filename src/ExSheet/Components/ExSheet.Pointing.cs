@@ -66,6 +66,19 @@ public partial class ExSheet : IPointingSheet, IDisposable
     // inside the Sheet, from the root to the Cell Editor, say — is not heard as the keyboard leaving.
     private int _keyboardMoves;
 
+    // What a focusout waits for before it is heard as the keyboard leaving, and its markup: built
+    // in C#, because Razor does not find an internal component by its tag. Held in a field, so a
+    // render does not see a new fragment each time.
+    private BrowserTurn? _browserTurn;
+    private RenderFragment? _browserTurnMarkup;
+
+    private RenderFragment BrowserTurnMarkup => _browserTurnMarkup ??= builder =>
+    {
+        builder.OpenComponent<BrowserTurn>(0);
+        builder.AddComponentReferenceCapture(1, turn => _browserTurn = (BrowserTurn)turn);
+        builder.CloseComponent();
+    };
+
     // The focus listeners on the Sheet's element, present only while a Scope is given, so a Sheet in
     // none sends the browser's focus events nowhere.
     private readonly Dictionary<string, object> _keyboardListeners = new(StringComparer.Ordinal);
@@ -143,12 +156,18 @@ public partial class ExSheet : IPointingSheet, IDisposable
     /// <summary>
     /// DOM focus left an element of the Sheet. The browser raises this before it raises the focusin
     /// of wherever focus went, and the two come in one task: a focusin of this Sheet's that follows
-    /// is the keyboard moving inside it, and not leaving it. So the Sheet waits one turn of the
-    /// renderer's queue before it says the keyboard left, rather than stop pointing and start again.
+    /// is the keyboard moving inside it, and not leaving it. So the Sheet waits before it says the
+    /// keyboard left, rather than stop pointing and start again. In a browser one turn of the
+    /// renderer's queue is enough. On a circuit the focusin is a message of its own, which can come
+    /// after that turn (the Scope stopped pointing for a round trip as = opened the Cell Editor, and
+    /// a press then was the other grid's own); it always comes before the browser answers a render
+    /// sent after the focusout, so the Sheet waits for that answer, and then for the turn.
     /// </summary>
     private async Task OnKeyboardOut()
     {
         var move = ++_keyboardMoves;
+        if (_browserTurn is { } turn)
+            await turn.AnsweredAsync();
         await Task.Yield();
         if (move != _keyboardMoves)
             return;

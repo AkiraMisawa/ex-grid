@@ -45,6 +45,8 @@
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
+@* The browser's answer to a render, which a focusout waits for (ADR-0058). Renders nothing. *@
+@BrowserTurnMarkup
 </div>
 
 @code {

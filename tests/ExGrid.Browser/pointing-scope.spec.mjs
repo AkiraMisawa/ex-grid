@@ -272,6 +272,39 @@ test.describe('/sheet', () => {
         await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
     });
 
+    // Found on CI: as = opens the Cell Editor, DOM focus moves from the Sheet's root to it, and the
+    // Sheet heard the focusout as the keyboard leaving, because on a circuit the focusin came in a
+    // later message than the one turn it waited. The Scope stopped pointing for a round trip, and a
+    // press in it was the positions grid's own: it took the keyboard and selected the cell.
+    test('ADR-0058: with a 150 ms round trip, the Cell Editor taking the keyboard from the Sheet\'s root does not stop the pointing', async ({ page }) => {
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await setRoundTrip(150);
+
+        // Every class change on the positions grid from the = on, heard as it is applied, for a
+        // second: several round trips, which the stop and the start again took between them.
+        const watch = await table.evaluateHandle((root) => {
+            const seen = [];
+            const observer = new MutationObserver(() => seen.push(root.classList.contains('ex-pointed-at')));
+            observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+            return { seen, stop: () => observer.disconnect() };
+        });
+        await page.keyboard.type('=');
+        const seen = await watch.evaluate((w) => new Promise((resolve) => setTimeout(() => {
+            w.stop();
+            resolve(w.seen);
+        }, 1000)));
+        await watch.dispose();
+
+        await expect(editor(grid)).toBeFocused();
+        expect(seen[0], 'pointed at once the = was typed').toBe(true);
+        expect(seen, 'never painted otherwise meanwhile').not.toContain(false);
+        await setRoundTrip(0);
+        await page.keyboard.press('Escape');
+        await expectPointedAt(table, false);
+    });
+
     test('ADR-0058/DC-54: with a 150 ms round trip, =SUM(1,, a press, then ) and Enter at once commit the lookup inside the SUM', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
