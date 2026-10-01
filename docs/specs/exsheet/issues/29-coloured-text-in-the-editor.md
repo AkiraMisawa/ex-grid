@@ -22,7 +22,9 @@ text turns transparent only while the layer holds the field's current value.
       and 1fb). The surface is the field holding DOM focus, the one held keys go to (ADR-0051)
 - [x] The Reference Point is writing is shown selected: its span in the layer lies on a grey ground
       (`--ex-reference-pointed-background`), its text a darker shade of its colour
-      (`--ex-reference-pointed-color`), unless the span starts right after the text's first
+      (`--ex-reference-1-pointed` to `--ex-reference-7-pointed`, one per place in the palette since
+      ticket 43; built here as one `--ex-reference-pointed-color` for all seven, retired
+      2026-09-30, ADR-0029), unless the span starts right after the text's first
       character (`=` ↓ ↓ shows none; `=SUM(` ↓, `=1+` ↓ and `=D11+` ↓ ↓ do). A look on the layer,
       never a selection of the field's text: `5` typed next follows the Reference and ends Point
       (ADR-0051's newest section; ADR-0057, "What cases 24–32 settled")

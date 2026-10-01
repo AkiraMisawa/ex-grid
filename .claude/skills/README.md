@@ -1,7 +1,8 @@
 # Agent skills
 
 Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) at commit
-`c55ee46073ed923f86ce59a5eb3b6d895095d1b7`, unmodified. MIT licensed — see
+`c55ee46073ed923f86ce59a5eb3b6d895095d1b7`, unmodified, except `research`, which comes from
+`d81f3a183412e71a5b1e84ca21bc1a35eea03a60` (without the Codex-only `agents/openai.yaml`). MIT licensed — see
 `LICENSE-mattpocock-skills`.
 
 | Skill | Role | Calls |
@@ -15,6 +16,7 @@ Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) at commi
 | `tdd` | Red → green at pre-agreed seams | `codebase-design` |
 | `codebase-design` | Deep-module vocabulary (module, interface, seam, depth, …) | |
 | `code-review` | Two-axis review: Standards and Spec | |
+| `research` | A background agent reads primary sources and writes the findings, cited, to one Markdown file | |
 | `setup-matt-pocock-skills` | One-time setup writing `docs/agents/*.md` (issue tracker, labels, domain layout) | |
 
 `to-spec`, `to-tickets` and `code-review` read `docs/agents/issue-tracker.md`; run

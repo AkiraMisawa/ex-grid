@@ -6693,9 +6693,10 @@
         if (OnCompletionKey(canonical))
             return;
         // In Caret the arrows are the editor's, and reach the core only when the gate was
-        // told something else a moment ago — a list that has just closed. They move no Focus
-        // (ADR-0010). Only where formula entry is declared can that happen at all.
-        if (_editMode == EditMode.Caret && (CompleteEditorText is not null || PointAt is not null)
+        // told something else a moment ago — a list that has just closed, or an edit that a
+        // press has just moved into the Formula Bar (ADR-0051, 2026-09-30). They move no Focus
+        // (ADR-0010).
+        if (_editMode == EditMode.Caret
             && canonical is "ArrowUp" or "ArrowDown" or "ArrowLeft" or "ArrowRight" or "Home" or "End")
         {
             _suppressRender = false;
@@ -6717,7 +6718,10 @@
                 // F2 moves between the two states (ADR-0010) — and, where pointing is
                 // declared, between Caret and Point: from Caret it points where the Consumer
                 // says a Reference can go at the caret, and from Point it moves the caret
-                // again, the outline gone and its Reference left written (ADR-0051).
+                // again, the outline gone and its Reference left written (ADR-0051). In the
+                // Formula Bar it does the same: Excel's bar goes from Edit to Enter on F2, and
+                // Home and the arrows then enter the Formula and move, as in the cell (ADR-0051,
+                // 2026-09-30, the tenth Windows run; ED-29). Only F2 takes the bar out of Caret.
                 _editMode = _editMode switch
                 {
                     EditMode.Point => EditMode.Caret,
@@ -6957,20 +6961,37 @@
     /// not known until the listener reports it. Only where the opening text differs from what
     /// the bar showed — rewriting the field moves the browser's caret anyway — is it placed at
     /// the end, as an edit opened by typing or F2 is.</para>
+    ///
+    /// <para>An edit that moves in from the cell goes into Caret, and Overwrite never stands in
+    /// the bar (ADR-0051, 2026-09-30; ED-29): there, Home and the arrows would commit the Formula
+    /// and move the Focus. A pointing outline brought in from the cell goes, as a caret moved
+    /// away from its Reference ends it (ADR-0051's third round). Point already in the bar
+    /// stays: that focus is the core handing the keyboard back to the bar after a press
+    /// elsewhere pointed (ADR-0018, ED-26), and a press in the bar's own text ends pointing by
+    /// the caret it reports.</para>
     /// </summary>
     private async Task OnFormulaBarFocusAsync()
     {
         if (_editMode != EditMode.None)
         {
+            var fromCell = _editSurface == EditSurface.Cell;
             _editSurface = EditSurface.Bar;
+            var intoCaret = _editMode == EditMode.Overwrite || (_editMode == EditMode.Point && fromCell);
+            if (intoCaret)
+            {
+                EndPointing();
+                _editMode = EditMode.Caret;
+            }
             // A Chrome's Cell Editor asked for the keyboard when the edit opened focuses itself
             // once it is painted — on a circuit that can be after this press, and it would take
             // the keyboard from the bar the user has just pressed. The request is withdrawn; a
             // later one, back on the cell, is a new number (ADR-0010/0030/0051).
             if (_editorFocusAsked)
                 _editorFocusAsked = false;
-            else
+            else if (!intoCaret)
                 _suppressRender = true;
+            if (intoCaret)
+                await PushEditingStateAsync();
             return;
         }
         if (_selection.Selection.IsEmpty || !IsEditableCell(_selection.Selection.Focus))

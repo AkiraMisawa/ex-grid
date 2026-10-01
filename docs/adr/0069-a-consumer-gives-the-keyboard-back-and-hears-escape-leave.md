@@ -119,7 +119,7 @@ two gaps in what a Consumer can do with a grid's keyboard.
 
 ## Consequences
 
-- **§26 gains DC-56 and DC-57**, which gate the release as the rest of §26 does. **§29 gains PV-39**
+- **§26 gains DC-57 and DC-58**, which gate the release as the rest of §26 does. **§29 gains PV-39**
   for ExPivot's use of them.
 - **Layer 2 holds both declarations to their rules**: the hand-back's conditions, and the Escapes
   that do and do not raise `OnLeave`. **Layer 3 runs them on `/pivot?details=dialog`**: Escape

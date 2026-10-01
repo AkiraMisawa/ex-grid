@@ -293,6 +293,13 @@ script:
   but the core hears of it a round trip later. Keys typed in that gap — F2, ↓, a character held
   for another reason — were read as keys outside an edit, and were lost or did the wrong thing. The
   press is queued as a marker, and the keys after it wait for the core's answer to it.
+  *(Found on CI, the Server host, 2026-10-01.)* The listener held only a press that opened an
+  edit, not one into the bar while an edit was open in the cell — which moves the edit into the
+  bar, in Caret (ED-29), and so changes the mode too. On a circuit the bar's text is also a round
+  trip behind the typing in the cell: `=A1+` typed there, the bar pressed and `B1` typed at once,
+  the `B1` went into the bar's older `=`, and the render of the cell's last input wrote `=A1+`
+  over it. The page showed `=A1+` while the core held `=B1`, which Enter would have committed.
+  Any press into an editable, unfocused bar is held now, as this entry already said.
 - **A held press on the rows suppresses its default**, which would move DOM focus onto the rows.
   The rows hand focus back to the root a round trip later, and that hand-over is not held; landing
   just after the Cell Editor took focus, it pulled the keyboard off the editor and every later key

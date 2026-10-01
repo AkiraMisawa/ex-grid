@@ -676,17 +676,22 @@
    to 32): on a grey ground, its text a darker shade of its colour. A look on the layer, never a
    selection of the field's text, so a key typed next follows the Reference; and only where the
    core marks it, which it does not for a Reference straight after the text's first character.
-   Excel's ground is #c6c6c6, and its text #0401a2 for the first colour (#326ac7) and #630101 for
-   the second (#c0353e). Approximated: the Reference's own colour mixed 55% toward black gives
-   #1c3a6d and #6a1d22, as dark as Excel's, the blue less saturated. Excel was not seen over a dark
-   ground; there the grey stands as far from the dark Canvas as #c6c6c6 does from white, and the
-   shade is mixed toward white. The shade is the text's fill, so the span's color stays its
-   Reference's, and currentColor reads it — in the default and in a Theme's
-   --ex-reference-pointed-color alike. */
-.ex-reference-text .ex-reference-pointed {
-    background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));
-    -webkit-text-fill-color: var(--ex-reference-pointed-color, light-dark(color-mix(in srgb, currentColor 55%, black), color-mix(in srgb, currentColor 55%, white)));
-}
+   Excel's ground is #c6c6c6. The shade is one Visual Token per place in the palette,
+   --ex-reference-1-pointed to --ex-reference-7-pointed, which a Theme sets (ADR-0029). Their light
+   defaults are Excel's, in the palette's order: #0401a2, #630101 (Part B of the eighth Windows
+   run), #44007c, #003600, #550059, #531c00 and #00323f (the tenth run). Excel keeps its cells white
+   under its Black theme, with the same shades, so it has no dark ground to take them from; over a
+   dark ground the grey stands as far from the dark Canvas as #c6c6c6 does from white, and all seven
+   shades are the Reference's colour mixed 55% toward white. The shade is the text's fill, so the span's color stays its Reference's,
+   and currentColor reads it. */
+.ex-reference-text .ex-reference-pointed { background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b)); }
+.ex-reference-text .ex-reference-1.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-2.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-3.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-4.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-5.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-6.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-7.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, currentColor 55%, white))); }
 /* A Chrome places the layer inside the core's box, before its control, which fills the box's
    content (IGridChrome): the layer stands over that content, inside the padding the box has from
    .ex-editor and .ex-formula-bar-text, with none of its own, as the control has none. The bar's

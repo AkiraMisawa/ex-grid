@@ -788,8 +788,8 @@ DA-17). Over a million trades in a published WebAssembly build:
   over 50 ms is the browser runtime's full collections, about 70 ms inside a slice, and the turn
   that puts the report on screen.
 - **A Consumer gives a grid the keyboard back, and hears an Escape that leaves it**
-  ([ADR-0069](adr/0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-56,
-  DC-57, PV-39, ticket 21). Show Details' dialog closes on Escape, and the report takes the
+  ([ADR-0069](adr/0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-57,
+  DC-58, PV-39, ticket 21). Show Details' dialog closes on Escape, and the report takes the
   keyboard back however it closes. Building it found that a held Escape peeled a layer per
   repeat, cancelling a half-typed formula under its closing list. A held Escape is now one
   press in every grid (ADR-0012, KB-44).

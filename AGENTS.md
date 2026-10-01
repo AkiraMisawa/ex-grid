@@ -325,7 +325,7 @@ rules that make this safe:
 
 Project skills from [mattpocock/skills](https://github.com/mattpocock/skills) live in
 `.claude/skills/`: `/grill-with-docs` (with `grilling` and `domain-modeling`), `tdd` (with
-`codebase-design`), `/to-spec`, `/implement`, and `/setup-matt-pocock-skills`. They are ordinary
+`codebase-design`), `/to-spec`, `/implement`, `/research`, and `/setup-matt-pocock-skills`. They are ordinary
 files; where one disagrees with this document, this document wins.
 
 ### Implement
