@@ -379,7 +379,9 @@ underline and strikethrough), its Fill, and its four Border sides.
         the Entry.
     - **`--ex-row-rule`** is a layer hook on a lined cell, as `--ex-tint` is. It lies beneath the
       lines, so a cell whose ground covers the row's gridline can paint the gridline back. ExSheet
-      sets it on pinned cells. The core sets it nowhere.
+      sets it on pinned cells. *(Ticket 92: the core now sets it on a Pinned Column's cells
+      itself, to its row's rule, and to none under a Fill and on group and total rows, so a theme's
+      row rule no longer stops at the pinned block.)*
 - **Borders are drawn as Excel draws them.** Each line is centred on the gridline. A thick line
   reaches into both cells. Lines lie above Fills and below the Focus, the Selection and the
   Reference Outlines. Which of two lines recorded on one edge is drawn is the Consumer's answer, so
@@ -394,3 +396,20 @@ the built-in Chrome.
 - Without the declaration, nothing changes.
 - The MudBlazor Chrome does not use it. It shows Format Cells in a `MudDialog`, whose frame is its
   own (ADR-0071; ADR-0010's note of 2026-09-30).
+- *(2026-10-01, ticket 93.)* **A Consumer that opens a frame of its own hands the keyboard to it
+  through the core.**
+  - On a circuit, keys typed between the command that opens Format Cells and the frame taking
+    focus reached the grid. A digit started an edit behind the dialog, under both Chromes, whether
+    the command came from Enter on the menu, a click or Ctrl+1. That is quietly wrong (principle 1).
+  - **The core's own popover:** the existing key hold waits for the popover to hold the keyboard,
+    and then replays the keys to it. A declared key that opens one is held as Alt+Down's is, and a
+    click on a menu item starts the hold as Enter does.
+  - **A frame of the Consumer's own:** the core gains `HandKeyboardToFrameAsync()`. ExSheet calls it
+    whenever it opens Format Cells in a frame of the Chrome's own. The core then:
+    - does not return the keyboard to its root after the command;
+    - holds keys typed on the root, a menu or `body` until DOM focus leaves the root;
+    - replays them, in order, to the element that took focus;
+    - drops them if focus never leaves within the hold's fallback.
+    The keys are never the grid's.
+  - A dynamic call was chosen over a fixed flag on the command, because the same command opens the
+    core's popover under one Chrome and a frame of its own under another.

@@ -61,3 +61,10 @@ Status: ready-for-agent
   - **A narrower cure stays possible:** a popover whose sentinels are the core's could take a held
     Tab or Shift+Tab as its own wrap request.
 
+*(2026-10-01, orchestrator.)* **Decided: P1, built together with A.** ADR-0050 item 16's note and ADR-0039's
+note of this date record it.
+- The core gains `HandKeyboardToFrameAsync()`. ExSheet calls it whenever it opens Format Cells in a
+  Chrome's own frame.
+- The built-in popover's hold waits for the popover and replays the keys to it. Ctrl+1 is held as
+  Alt+Down is, and a click on a menu item starts the hold.
+- Ship the click hold only together with P1.

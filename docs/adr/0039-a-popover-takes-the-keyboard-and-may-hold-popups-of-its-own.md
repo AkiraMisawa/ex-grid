@@ -200,6 +200,9 @@ Until then, focus is on `body`, and a key typed in that gap lands wherever the b
 - **A Chrome whose frame is its own holds keys typed in the gap,** in order, and acts on them once
   its contents have the keyboard. `ExSheet.MudBlazor`'s Format Cells does this on the element that
   holds the keyboard before its tabs do. It uses no script.
-- **Still open** (ticket 93): keys typed between the menu command and that element taking focus
-  still reach the grid. The core returns the keyboard to its root after a command, and does not
-  know the Consumer is opening a frame of its own.
+- **Ticket 93 closes the gap** (ADR-0050 item 16's note of 2026-10-01): the core holds keys typed
+  while a popover or a Consumer's frame opens, and replays them to it once it holds the keyboard.
+  They are never the grid's.
+- **A held Tab is dropped with the keys behind it**, as ADR-0010's hold already does. Script can
+  neither reproduce Tab nor move focus in its place. Typing then stops short where the user can see
+  it, rather than running on in the wrong field. That is a deliberate limit, not a defect.
