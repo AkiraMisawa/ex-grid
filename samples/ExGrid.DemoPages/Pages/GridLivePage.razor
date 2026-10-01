@@ -1,0 +1,535 @@
+@page "/grid-live"
+@implements IAsyncDisposable
+@inject DemoApiClient Api
+@using System.Globalization
+@using System.Net.Http.Json
+@using System.Text.Json
+@using Microsoft.AspNetCore.SignalR.Client
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud stands the grid on ExGrid.MudBlazor's paper under its Chrome and its stylesheet,
+   as /mud does; absent or builtin is the core's own. The Change Highlight is checked under both
+   (DC-55: the core's stylesheet and a Wrapper's). *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" />
+
+<DemoNav />
+
+<h1>Live grid — a Window over a server's trades, and the cells that changed</h1>
+
+<p>
+    <strong>The use case:</strong> a blotter over trades that a server keeps changing — ExGrid
+    alone, with no pivot. The page pushes a Window of the demo API server's trades, read a page at a
+    time (<code>GET /api/trades</code>) as the grid asks for rows (ADR-0001). The server's live
+    updates change trades several times a second, and its SignalR hub names them: "trades T10000123
+    and T10000456 changed". The page reads those trades again (<code>POST /api/trades/by-id</code>),
+    puts the new rows in its Window, and answers the grid's <code>CellChangedAt</code> with when each
+    cell's value moved. The grid marks those cells for <code>ChangeHighlightDuration</code> and takes
+    the marks away itself: keyed by row and column, never by the element, so a mark stays on its
+    trade as you scroll; one colour, without animating, and never announced (ADR-0067).
+</p>
+<p>
+    A trade cancelled moves every row after it up one, so the page then reads its Window again and
+    bumps <code>RowSequenceVersion</code>, which drops a selection rather than leave it on other
+    rows (ADR-0011). The live updates go off when you leave the page. Among a million trades a
+    change lands in the rows in view only now and then; a server started with
+    <code>EXGRID_DEMO_TRADES=20000</code> shows a busier view.
+</p>
+
+<div class="demo-toolbar">
+    <button id="grid-live-toggle" disabled="@(!_connected)" @onclick="ToggleLiveAsync">@(_liveOn ? "Turn the server's live updates off" : "Turn the server's live updates on")</button>
+    <label>
+        Trades changed every 250 ms
+        <select id="grid-live-rate" @bind="_rate" @bind:after="RateChangedAsync">
+            <option value="20">20</option>
+            <option value="200">200</option>
+            <option value="1000">1,000</option>
+        </select>
+    </label>
+    <label>
+        A mark lasts
+        <select id="grid-live-highlight" @bind="_highlightMs">
+            <option value="1000">1 second (the default)</option>
+            <option value="5000">5 seconds</option>
+            <option value="60000">1 minute</option>
+        </select>
+    </label>
+</div>
+
+<p class="demo-status">
+    <span id="grid-live-window">@WindowStatus</span>
+    <DemoStatusLine @ref="_noticesLine" Id="grid-live-notices" Initial="@_noticesInitial" />
+</p>
+
+@if (DemoChrome.IsMud(ChromeName))
+{
+    <MudExGridPaper Elevation="1">@Grid</MudExGridPaper>
+}
+else
+{
+    @Grid
+}
+
+<h2>The code</h2>
+<p>
+    What this page runs, read from its source. <code>Api.Http</code> is an <code>HttpClient</code>
+    whose base address is the demo API server, at the page's own port plus 3000
+    (<code>DemoApiClient</code>).
+</p>
+<DemoCodeBlock File="GridLivePage.razor" Region="window" />
+<DemoCodeBlock File="GridLivePage.razor" Region="notices" />
+<DemoCodeBlock File="GridLivePage.razor" Region="grid" />
+<DemoCodeBlock File="GridLivePage.razor" Region="leaving" />
+
+@code {
+    // Rows either side of the range the grid asks for: read-ahead is the Consumer's (ADR-0001).
+    private const int ReadAhead = 40;
+
+    // The most GET /api/trades answers at once, and the most POST /api/trades/by-id is asked.
+    private const int MaxPage = 1_000;
+    private const int MaxIds = 2_000;
+
+    // The longest a mark can be asked to last here: an older change time marks nothing.
+    private static readonly TimeSpan LongestMark = TimeSpan.FromMinutes(1);
+
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    private readonly CancellationTokenSource _leaving = new();
+    private IGridChrome? _chrome;
+    private EventCallback<RowRange> _onRangeNeeded;
+    private DemoStatusLine? _noticesLine;
+    private string _noticesInitial = "Connecting to the demo API server's hub…";
+    private string? _version;
+    private bool _connected;
+    private bool _liveOn;
+    private int _rate = 1_000;
+    private int _highlightMs = 1_000;
+    private long _notices;
+    private long _named;
+    private long _changedInView;
+
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Held in fields: a delegate made per render would reach the grid as a change (ADR-0003).
+        _onRangeNeeded = EventCallback.Factory.Create<RowRange>(this, OnRangeNeededAsync);
+        _cellChangedAt = (row, column) => _changedAt.TryGetValue((row.TradeId, column.Name), out var at) ? at : null;
+    }
+
+    protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Interactive only: on the Server host the page is prerendered first, and a prerender that
+        // read the trades or connected to the hub would do it for nothing.
+        if (!firstRender)
+            return;
+        var token = _leaving.Token;
+        try
+        {
+            // An empty result asks for no range — nothing to show is not a range (ADR-0001) — so
+            // the first page is the page's to read.
+            await _turn.WaitAsync(token);
+            try
+            {
+                Show(await PageAsync(0, 100, token));
+            }
+            finally
+            {
+                _turn.Release();
+            }
+            StateHasChanged();
+            await ListenAsync(token);
+            _connected = true;
+            _liveOn = true;
+            Describe();
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // The page went first.
+        }
+        catch (HttpRequestException error)
+        {
+            Unavailable(error);
+        }
+    }
+
+    #region The code: window
+    // A trade as GET /api/trades and POST /api/trades/by-id answer it.
+    public sealed record LiveTrade(string TradeId, string Region, string Desk, string Book, string Product,
+        string? Currency, DateTime TradeDate, decimal Notional, decimal Pnl, int Quantity, bool Confirmed);
+
+    private sealed record TradePage(string Version, int Total, int Start, LiveTrade[] Trades);
+
+    // The Window the page pushes (ADR-0001): the rows from WindowStart, of TotalCount in all, and
+    // where each trade stands in it.
+    private IReadOnlyList<LiveTrade> _window = [];
+    private int _windowStart;
+    private int _total;
+    private int _rowSequenceVersion;
+    private bool _loading = true;
+    private RowRange? _wanted;
+    private Dictionary<string, int> _at = new(StringComparer.Ordinal);
+
+    // One question to the server at a time, in turn, so that an answer never lands over a newer
+    // one: a range the grid needs and the trades a notice named wait for each other.
+    private readonly SemaphoreSlim _turn = new(1, 1);
+
+    // The grid needs these rows: read them, with rows either side, at most a page of 1,000.
+    private async Task OnRangeNeededAsync(RowRange range)
+    {
+        _wanted = range;
+        var start = Math.Max(0, range.Start - ReadAhead);
+        var count = Math.Min(MaxPage, range.Start + range.Count + ReadAhead - start);
+        var token = _leaving.Token;
+        try
+        {
+            await _turn.WaitAsync(token);
+            try
+            {
+                // A later range overtook this one while it waited: its answer would be stale.
+                if (_wanted != range)
+                    return;
+                _loading = true;
+                Show(await PageAsync(start, count, token));
+            }
+            finally
+            {
+                _turn.Release();
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (HttpRequestException error)
+        {
+            Unavailable(error);
+        }
+    }
+
+    // GET /api/trades: `count` trades from the `start`-th in TradeId order, with how many there are.
+    private async Task<TradePage> PageAsync(int start, int count, CancellationToken token) =>
+        await Api.Http.GetFromJsonAsync<TradePage>($"api/trades?start={start}&count={count}", Json, token)
+            ?? throw new InvalidOperationException("The server answered no page of trades.");
+
+    private void Show(TradePage page)
+    {
+        // A position that names another trade than it did is a new order: a selection, which is
+        // positions, would now cover other rows, so it is dropped (ADR-0011).
+        for (var i = Math.Max(page.Start, _windowStart); i < Math.Min(page.Start + page.Trades.Length, _windowStart + _window.Count); i++)
+        {
+            if (page.Trades[i - page.Start].TradeId != _window[i - _windowStart].TradeId)
+            {
+                _rowSequenceVersion++;
+                break;
+            }
+        }
+        _window = page.Trades;
+        _windowStart = page.Start;
+        _total = page.Total;
+        _version = page.Version;
+        _loading = false;
+        _at = Positions(page.Trades);
+    }
+
+    private static Dictionary<string, int> Positions(IReadOnlyList<LiveTrade> rows)
+    {
+        var at = new Dictionary<string, int>(rows.Count, StringComparer.Ordinal);
+        for (var i = 0; i < rows.Count; i++)
+            at[rows[i].TradeId] = i;
+        return at;
+    }
+    #endregion
+
+    #region The code: notices
+    // When each cell's shown value last changed, by trade and column: what the page knows, which
+    // the grid asks for by (row, column) as it paints a value cell (ADR-0067). The delegate is held
+    // in a field and never replaced: a row whose trade changed arrives as a new instance, so it
+    // paints again and asks again, and no other row has anything new to say.
+    private readonly Dictionary<(string TradeId, string Column), DateTimeOffset> _changedAt = new();
+    private CellChangeOf<LiveTrade>? _cellChangedAt;   // (row, column) => _changedAt[(row.TradeId, column.Name)], in OnInitialized
+
+    private HubConnection? _hub;
+    private Task? _hubStarting;
+    private bool _liveAsked;
+    private readonly HashSet<string> _heard = new(StringComparer.Ordinal);
+    private Task _reading = Task.CompletedTask;
+
+    private async Task ListenAsync(CancellationToken token)
+    {
+        var hub = _hub = new HubConnectionBuilder().WithUrl(Api.Hub).WithAutomaticReconnect().Build();
+        // "These trades changed": heard on a thread of SignalR's, and handed to the page's own.
+        hub.On<string, string[]>("TradesChanged", (version, tradeIds) => InvokeAsync(() => Heard(tradeIds)));
+        // Not cancelled by the page's going: a connection cut off while it opens is an error in the
+        // browser's console. DisposeAsync waits for it instead.
+        await (_hubStarting = hub.StartAsync());
+        // Live updates are off until a page turns them on (ADR-0068), and this one turns them off
+        // as it goes.
+        await SetLiveAsync(true, token);
+    }
+
+    // Notices that arrive while trades are being read are gathered into the next read.
+    private void Heard(string[] tradeIds)
+    {
+        _notices++;
+        _named += tradeIds.Length;
+        _heard.UnionWith(tradeIds);
+        if (_reading.IsCompleted)
+            _reading = ReadHeardAsync();
+    }
+
+    private async Task ReadHeardAsync()
+    {
+        var token = _leaving.Token;
+        try
+        {
+            while (_heard.Count > 0)
+            {
+                string[] named = [.. _heard];
+                _heard.Clear();
+                await ApplyAsync(named, token);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (HttpRequestException error)
+        {
+            Unavailable(error);
+        }
+    }
+
+    // POST /api/trades/by-id: the named trades as they are now; a key no longer found is a trade
+    // cancelled. Asked only of the trades that can change what the grid shows: those in the Window
+    // or before it — a trade cancelled before the Window moves every row in it up one — and, while
+    // the Window reaches the last trade, those after it, which are trades booked into view.
+    private async Task ApplyAsync(string[] named, CancellationToken token)
+    {
+        await _turn.WaitAsync(token);
+        try
+        {
+            if (_window.Count == 0)
+                return;
+            var last = _window[^1].TradeId;
+            var atEnd = _windowStart + _window.Count >= _total;
+            string[] asked = [.. named.Where(id => atEnd || string.CompareOrdinal(id, last) <= 0)];
+            if (asked.Length == 0)
+            {
+                Describe();
+                return;
+            }
+            var read = await ByIdAsync(asked, token);
+            var now = DateTimeOffset.UtcNow;
+            var before = _window;
+            var beforeAt = _at;
+            if (read.Missing.Count > 0 || read.Trades.Any(t => !beforeAt.ContainsKey(t.TradeId)))
+            {
+                // A trade cancelled, booked or put back moves rows: the Window is read again.
+                Show(await PageAsync(_windowStart, Math.Max(before.Count, 1), token));
+            }
+            else
+            {
+                var rows = before.ToArray();
+                foreach (var trade in read.Trades)
+                    rows[beforeAt[trade.TradeId]] = trade;
+                _window = rows;
+            }
+            // The cells of the named trades in view whose values differ from what was shown; every
+            // cell of a trade booked into view, a row that appears.
+            var changed = 0;
+            foreach (var row in read.Trades)
+            {
+                if (!_at.ContainsKey(row.TradeId))
+                    continue;
+                if (beforeAt.TryGetValue(row.TradeId, out var at))
+                {
+                    var old = before[at];
+                    foreach (var column in Columns.Where(column => !Equals(column.Value(old), column.Value(row))))
+                    {
+                        _changedAt[(row.TradeId, column.Name)] = now;
+                        changed++;
+                    }
+                }
+                else if (atEnd && string.CompareOrdinal(row.TradeId, last) > 0)
+                {
+                    foreach (var column in Columns)
+                        _changedAt[(row.TradeId, column.Name)] = now;
+                    changed += Columns.Length;
+                }
+            }
+            _changedInView += changed;
+            _version = read.Version;
+            Forget(now);
+        }
+        finally
+        {
+            _turn.Release();
+        }
+        Describe();
+        StateHasChanged();
+    }
+
+    private sealed record TradesById(string Version, LiveTrade[] Trades, IReadOnlyList<string> Missing);
+
+    // At most 2,000 keys a question: a reset can name more, and they are asked in turn.
+    private async Task<TradesById> ByIdAsync(string[] ids, CancellationToken token)
+    {
+        var trades = new List<LiveTrade>();
+        var missing = new List<string>();
+        var version = "";
+        foreach (var chunk in ids.Chunk(MaxIds))
+        {
+            using var response = await Api.Http.PostAsJsonAsync("api/trades/by-id", new { ids = chunk }, Json, token);
+            response.EnsureSuccessStatusCode();
+            var read = await response.Content.ReadFromJsonAsync<TradesById>(Json, token)
+                ?? throw new InvalidOperationException("The server answered nothing for the trades named.");
+            trades.AddRange(read.Trades);
+            missing.AddRange(read.Missing);
+            version = read.Version;
+        }
+        return new TradesById(version, [.. trades], missing);
+    }
+
+    // A change time older than the longest mark marks nothing, and is let go.
+    private void Forget(DateTimeOffset now)
+    {
+        foreach (var key in _changedAt.Where(pair => now - pair.Value > LongestMark).Select(pair => pair.Key).ToArray())
+            _changedAt.Remove(key);
+    }
+    #endregion
+
+    #region The code: grid
+    // The live Window, its order's version, and the Change Highlight: when each cell changed, and
+    // how long a mark lasts.
+    private RenderFragment Grid => @<ExGrid TRow="LiveTrade" Window="_window" WindowStart="_windowStart" TotalCount="_total"
+                                            RowSequenceVersion="_rowSequenceVersion" IsLoading="_loading"
+                                            OnRangeNeeded="_onRangeNeeded" Columns="Columns" PinnedColumnCount="1"
+                                            CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"
+                                            ViewportHeight="480" ViewportWidth="1180" Chrome="_chrome" />;
+
+    private TimeSpan Highlight => TimeSpan.FromMilliseconds(_highlightMs);
+
+    // One reference-stable array: a list rebuilt per render would repaint every row (ADR-0003).
+    private static readonly GridColumn<LiveTrade>[] Columns =
+    [
+        new("TradeId", ColumnType.Text, t => t.TradeId, header: "Trade ID", width: Fixed(110)),
+        new("Region", ColumnType.Text, t => t.Region, width: Fixed(100)),
+        new("Desk", ColumnType.Text, t => t.Desk, width: Fixed(90)),
+        new("Book", ColumnType.Text, t => t.Book, width: Fixed(170)),
+        new("Product", ColumnType.Text, t => t.Product, width: Fixed(90)),
+        new("Currency", ColumnType.Text, t => t.Currency, width: Fixed(90)),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(110), align: CellAlign.Left,
+            format: value => ((DateTime)value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(130), format: Money),
+        new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L", width: Fixed(120), format: Money),
+        new("Quantity", ColumnType.Number, t => t.Quantity, width: Fixed(90)),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed, width: Fixed(100)),
+    ];
+
+    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
+
+    private static string Money(object value) => ((decimal)value).ToString("#,##0.00", CultureInfo.InvariantCulture);
+    #endregion
+
+    // POST /api/live: the server changes `_rate` trades every 250 ms while on.
+    private async Task SetLiveAsync(bool on, CancellationToken token)
+    {
+        _liveAsked |= on;
+        using var response = await Api.Http.PostAsJsonAsync("api/live", new { on, intervalMs = 250, tradesPerTick = _rate }, Json, token);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task ToggleLiveAsync()
+    {
+        var token = _leaving.Token;
+        try
+        {
+            await SetLiveAsync(!_liveOn, token);
+            _liveOn = !_liveOn;
+            Describe();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (HttpRequestException error)
+        {
+            Unavailable(error);
+        }
+    }
+
+    private async Task RateChangedAsync()
+    {
+        if (_liveOn)
+            await ToggleRateAsync();
+    }
+
+    private async Task ToggleRateAsync()
+    {
+        var token = _leaving.Token;
+        try
+        {
+            await SetLiveAsync(true, token);
+            Describe();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (HttpRequestException error)
+        {
+            Unavailable(error);
+        }
+    }
+
+    private string WindowStatus => _window.Count == 0
+        ? "Reading the first trades from the demo API server…"
+        : $"Window: rows {_windowStart.ToString("N0", Culture)}–{(_windowStart + _window.Count - 1).ToString("N0", Culture)} "
+            + $"of {_total.ToString("N0", Culture)}, at version {_version}.";
+
+    private void Describe()
+    {
+        var live = _liveOn ? $"on, {_rate.ToString("N0", Culture)} trades every 250 ms" : "off";
+        _noticesLine?.Show($"Live updates {live}. Heard {_notices.ToString("N0", Culture)} notices naming "
+            + $"{_named.ToString("N0", Culture)} trades; {_changedInView.ToString("N0", Culture)} cells in view changed.");
+    }
+
+    private void Unavailable(HttpRequestException error)
+    {
+        _noticesInitial = Api.NotAnswering(error);
+        _noticesLine?.Show(_noticesInitial);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    #region The code: leaving
+    // The server's live updates go off when the page goes: the data then holds still for whoever
+    // reads it next (ADR-0068).
+    public async ValueTask DisposeAsync()
+    {
+        _leaving.Cancel();
+        try
+        {
+            if (_hubStarting is not null)
+                await _hubStarting;
+        }
+        catch (Exception)
+        {
+            // A connection that never opened has nothing to close.
+        }
+        try
+        {
+            if (_liveAsked)
+                await SetLiveAsync(false, CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            // A server that has gone is changing nothing.
+        }
+        if (_hub is not null)
+            await _hub.DisposeAsync();
+    }
+    #endregion
+}

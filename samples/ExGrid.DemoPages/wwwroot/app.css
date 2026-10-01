@@ -225,3 +225,24 @@ body:has(.demo-mud-app) {
     color: #8a5a00;
     font-style: italic;
 }
+
+/* /pivot-db and /pivot-live: two pivots side by side where the window is wide enough for both
+   with their panes, one above the other where it is not. A track may shrink below its content's
+   width, so a report scrolls inside its own box rather than pushing the page wider. */
+.demo-pivot-pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(44rem, 100%), 1fr));
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.demo-pivot-pair > * {
+    min-width: 0;
+}
+
+/* What a page shows under "The code": its own source, which may be wider than the page. */
+.demo-code pre {
+    overflow-x: auto;
+    padding: 0.75rem;
+    background: rgba(128, 128, 128, 0.08);
+}
