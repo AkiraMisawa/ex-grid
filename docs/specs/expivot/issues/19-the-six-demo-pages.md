@@ -1,6 +1,6 @@
 # 19: The six demo pages
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the six pages ADR-0068 lists.
 
