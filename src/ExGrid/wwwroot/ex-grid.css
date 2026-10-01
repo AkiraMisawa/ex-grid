@@ -706,18 +706,20 @@
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
 /* The coloured text (ADR-0057): beneath each editor surface, a layer the core renders with the
-   field's text and each Reference in its colour (.ex-reference-1 to -8). It stands immediately
-   before its field, in the field's box, font and line, and keeps every space the field keeps, so
-   its characters stand where the field's do; the rest is what the browser gives an input and not
-   a div. Paint only: it takes no pointer, and assistive technology reads the field. Hidden unless
-   the field after it wears ex-reference-text-shown, which the editor listener sets only in the
-   surface the edit is in — the field holding DOM focus, as Excel colours only that one — only
-   while the layer's text (data-ex-text) is the field's value, and never during an IME composition
-   (ADR-0021's note of ADR-0057): uncoloured for a moment rather than coloured on the wrong
-   characters. Its line scrolls sideways with the field, and has room to scroll as far. It is
-   painted beneath the field, caret and selection included, whether or not the field is
-   positioned: at -1 it goes under everything its stacking context lays out, and over only that
-   context's own ground — the Cell Editor's box, or the Formula Bar, made one for it here. */
+   field's text, as one run of text as the field's is, so its characters stand where the field's
+   do (ADR-0057's note of 2026-10-01: a run per Reference drifted 1/64 px a run). It stands
+   immediately before its field, in the field's box, font and line, and keeps every space the field
+   keeps; the rest is what the browser gives an input and not a div. Paint only: it takes no
+   pointer, and assistive technology reads the field. Hidden unless the field after it wears
+   ex-reference-text-shown, which the editor listener sets only in the surface the edit is in — the
+   field holding DOM focus, as Excel colours only that one — only while the layer's text
+   (data-ex-text) is the field's value, and never during an IME composition (ADR-0021's note of
+   ADR-0057): uncoloured for a moment rather than coloured on the wrong characters. Its References
+   are coloured then, by highlights of the grid's own (below). Its line scrolls sideways with the
+   field, and has room to scroll as far. It is painted beneath the field, caret and selection
+   included, whether or not the field is positioned: at -1 it goes under everything its stacking
+   context lays out, and over only that context's own ground — the Cell Editor's box, or the
+   Formula Bar, made one for it here. */
 .ex-reference-text {
     position: absolute;
     z-index: -1;
@@ -744,7 +746,14 @@
 }
 .ex-reference-text-line { height: 100%; overflow: hidden; }
 .ex-reference-text-line::after { content: ""; display: inline-block; width: 100%; }
-/* The Reference Point is writing, shown selected (ADR-0051/0057; the eighth Windows run, cases 19
+/* The colours of the layer's References (ADR-0057, note of 2026-10-01). The editor listener colours
+   them with the CSS Custom Highlight API, over the layer's one run: one highlight per colour, per
+   pointed shade and for the pointed ground, each named for its grid, and the grid's own generated
+   stylesheet paints each of its names with the property here of the same place, so the colours are
+   still the Visual Tokens, read on the layer as the spans read them: a Theme, the scheme and forced
+   colours reach them as before. The palette's colours are --ex-reference-1 to -7, with the defaults
+   of the Reference Outlines above.
+   The Reference Point is writing is shown selected (ADR-0051/0057; the eighth Windows run, cases 19
    to 32): on a grey ground, its text a darker shade of its colour. A look on the layer, never a
    selection of the field's text, so a key typed next follows the Reference; and only where the
    core marks it, which it does not for a Reference straight after the text's first character.
@@ -754,26 +763,27 @@
    run), #44007c, #003600, #550059, #531c00 and #00323f (the tenth run). Excel keeps its cells white
    under its Black theme, with the same shades, so it has no dark ground to take them from; over a
    dark ground the grey stands as far from the dark Canvas as #c6c6c6 does from white, and all seven
-   shades are the Reference's colour mixed 55% toward white. The shade is the text's fill, so the
-   span's color stays its Reference's, and currentColor reads it. Text a press on another grid wrote,
+   shades are the Reference's colour mixed 55% toward white. Text a press on another grid wrote,
    such as XLOOKUP("R-4471", Positions[Id], Positions[PV]), is shown selected as a whole (ADR-0058):
-   one span on the grey, and the References inside it, each in a span of its own colour, take the
-   shade of their place in the palette. */
-.ex-reference-text .ex-reference-pointed { background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b)); }
-.ex-reference-text .ex-reference-1.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-2.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-3.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-4.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-5.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-6.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-7.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-1 { -webkit-text-fill-color: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-2 { -webkit-text-fill-color: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-3 { -webkit-text-fill-color: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-4 { -webkit-text-fill-color: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-5 { -webkit-text-fill-color: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-6 { -webkit-text-fill-color: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-7 { -webkit-text-fill-color: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, currentColor 55%, white))); }
+   one stretch on the grey, and the References inside it take the shade of their place in the
+   palette. */
+.ex-reference-text {
+    --ex-reference-text-1: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white)));
+    --ex-reference-text-2: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white)));
+    --ex-reference-text-3: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white)));
+    --ex-reference-text-4: var(--ex-reference-4, light-dark(#007c20, color-mix(in srgb, #007c20 67%, white)));
+    --ex-reference-text-5: var(--ex-reference-5, light-dark(#b03e84, color-mix(in srgb, #b03e84 67%, white)));
+    --ex-reference-text-6: var(--ex-reference-6, light-dark(#b64900, color-mix(in srgb, #b64900 67%, white)));
+    --ex-reference-text-7: var(--ex-reference-7, light-dark(#267392, color-mix(in srgb, #267392 67%, white)));
+    --ex-reference-text-1-pointed: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, var(--ex-reference-text-1) 55%, white)));
+    --ex-reference-text-2-pointed: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, var(--ex-reference-text-2) 55%, white)));
+    --ex-reference-text-3-pointed: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, var(--ex-reference-text-3) 55%, white)));
+    --ex-reference-text-4-pointed: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, var(--ex-reference-text-4) 55%, white)));
+    --ex-reference-text-5-pointed: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, var(--ex-reference-text-5) 55%, white)));
+    --ex-reference-text-6-pointed: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, var(--ex-reference-text-6) 55%, white)));
+    --ex-reference-text-7-pointed: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, var(--ex-reference-text-7) 55%, white)));
+    --ex-reference-text-pointed: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));
+}
 /* A Chrome places the layer inside the core's box, before its control, which fills the box's
    content (IGridChrome): the layer stands over that content, inside the padding the box has from
    .ex-editor and .ex-formula-bar-text, with none of its own, as the control has none. The bar's
@@ -911,4 +921,21 @@
     /* The chosen action stays tellable from its neighbours, which keep their own
        ButtonBorder (ADR-0037). */
     .ex-action-chosen { outline-color: Highlight; }
+    /* The coloured text's References come out as the rest of the text does, as ADR-0057 says
+       of forced colours ("Not done"), and the pointed ground goes, as a ground does. Chrome
+       paints a custom highlight in the system's Highlight and HighlightText under forced
+       colours, whatever its rule says, which would set each Reference in a dark block; the
+       spans the highlights replaced (2026-10-01, ticket 86) were forced to the text's own
+       colour. So the layer's line is left as authored, and its colours are the system's. */
+    .ex-reference-text-line { forced-color-adjust: none; color: CanvasText; }
+    .ex-reference-text {
+        --ex-reference-text-1: CanvasText; --ex-reference-text-2: CanvasText; --ex-reference-text-3: CanvasText;
+        --ex-reference-text-4: CanvasText; --ex-reference-text-5: CanvasText; --ex-reference-text-6: CanvasText;
+        --ex-reference-text-7: CanvasText;
+        --ex-reference-text-1-pointed: CanvasText; --ex-reference-text-2-pointed: CanvasText;
+        --ex-reference-text-3-pointed: CanvasText; --ex-reference-text-4-pointed: CanvasText;
+        --ex-reference-text-5-pointed: CanvasText; --ex-reference-text-6-pointed: CanvasText;
+        --ex-reference-text-7-pointed: CanvasText;
+        --ex-reference-text-pointed: transparent;
+    }
 }

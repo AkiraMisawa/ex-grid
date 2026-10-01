@@ -50,7 +50,7 @@ public class MudReferenceTextTests : MudTestContext
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("=", false, false, false, false, false));
     }
 
-    private static string Drawn(IElement layer) => Assert.Single(layer.Children).InnerHtml;
+    private static string Drawn(IElement layer) => global::ReferenceText.ColouredText.Of(layer);
 
     [Fact] // ADR-0057/0030 / DC-47 / DC-48: this Chrome places the core's layer immediately before each of its inputs, inside the core's boxes
     public async Task The_layer_stands_before_each_input_in_the_cores_box()

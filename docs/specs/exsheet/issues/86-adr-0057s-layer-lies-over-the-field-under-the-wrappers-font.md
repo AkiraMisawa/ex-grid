@@ -1,6 +1,6 @@
 # 86: ADR-0057's coloured layer lies over the field's text under the Wrapper's font
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the fix ticket 48 found and decided (its comment, "DC-48 under ExSheet.MudBlazor, at End").
 - Under `ExSheet.MudBlazor`'s Chrome, with Roboto, the coloured layer of
@@ -15,11 +15,11 @@ Status: ready-for-agent
 - [x] **Find where the layer and the field part.** The test's comment names per-span snapping. Check
       the font's metrics, `letter-spacing`, `font-kerning`, `text-rendering` and `font-feature-settings`
       on the layer against the field, under the Wrapper.
-- [ ] **Make the layer draw where the field draws**, under both Chromes. Add no script beyond ADR-0057's
-      allowance (ADR-0021).
-- [ ] **DC-48 passes at its threshold under both Chromes**, at both ends, on both hosts. The threshold
+- [x] **Make the layer draw where the field draws**, under both Chromes. Add no script beyond ADR-0057's
+      allowance (ADR-0021). *The allowance as ADR-0057's and ADR-0021's notes of 2026-10-01 extend it.*
+- [x] **DC-48 passes at its threshold under both Chromes**, at both ends, on both hosts. The threshold
       is not loosened.
-- [ ] **Say in the comment** how many pixels still differ under each Chrome.
+- [x] **Say in the comment** how many pixels still differ under each Chrome.
 
 ## Comments
 
@@ -149,7 +149,137 @@ decision, taken the same day, to keep accepting the drift.
 - ADR-0057's note, ADR-0021's note and DC-51 of this date say what the script may do.
 - The layer becomes one text node, and its References are coloured by highlights named per instance, which carry
   the grid's id. The grid's generated stylesheet paints them (ADR-0018).
-- [ ] DC-48 passes at its unchanged threshold under both Chromes, at both ends, on both hosts.
-- [ ] Two grids on a page each keep their colours while the other edits (ADR-0018).
-- [ ] An IME composition still recolours on `compositionend`. Dark-scheme, pointed and forced-colours shades are
+- [x] DC-48 passes at its unchanged threshold under both Chromes, at both ends, on both hosts.
+- [x] Two grids on a page each keep their colours while the other edits (ADR-0018).
+- [x] An IME composition still recolours on `compositionend`. Dark-scheme, pointed and forced-colours shades are
       unchanged.
+
+2026-10-01, agent cf-86, building the decision.
+
+Built as decided. The layer's text is one run, and its References are coloured by the CSS Custom
+Highlight API, under highlight names of the grid's own. DC-48 passes at its unchanged threshold, under
+both Chromes, at both ends and on both hosts.
+
+### What was built
+
+- **One run** (`ExGrid.ReferenceText.cs`, `ReferenceHighlights.cs`). The layer's line holds the
+  edit's text and nothing else, under both Chromes and in both surfaces. The core writes on the layer,
+  beside `data-ex-text`, which highlight covers which characters: `data-ex-colours`, with
+  `start,length,name` per stretch.
+  - Each Reference is one stretch, in its colour's highlight.
+  - The span Point wrote is a stretch on the pointed ground, written first. The References inside
+    it wear their pointed shades: a Reference standing exactly there, or the References of a lookup
+    a press on another grid wrote.
+  - A span that cuts through a Reference wears no look, as before.
+  - The string is written again only when the colouring or the pointed span changes.
+- **Names of the grid's own.** Each name carries the grid's id prefix:
+  `ex12-reference-1` to `-7`, `ex12-reference-1-pointed` to `-7-pointed`, and
+  `ex12-reference-pointed` for the ground.
+  - The grid renders its own `<style>` with one rule per name, fifteen in all, wherever a References
+    function is declared. There is no `>` in it, so a prerender writes it as it is.
+  - Each rule reads a property the shipped stylesheet declares on the layer:
+    `--ex-reference-text-N`, `--ex-reference-text-N-pointed` and `--ex-reference-text-pointed`. Those
+    take the Visual Tokens with the defaults the spans had, so a Theme and the dark scheme reach the
+    highlights as they reached the spans. The generated stylesheet holds no colour.
+- **The editor listener** (`ex-grid.js`). When it shows a layer, the listener builds one `Range` per
+  stretch over the layer's one text node, from `data-ex-colours`. It adds each `Range` to the
+  highlight of that name.
+  - The listener registers a highlight the first time this grid uses its name. The grid's dispose
+    deletes from `CSS.highlights` only the highlights the grid registered.
+  - Hiding a layer takes its ranges out. So does the edit closing.
+  - It builds again only when the layer's text, its colours or its text node change, or when a range
+    has been moved by a change to the text. It reads no layout, and it hears no new event.
+- **Forced colours.** Under forced colours, Chrome paints a custom highlight in `Highlight` and
+  `HighlightText`, whatever its rule says. That set each Reference in a dark block, where the spans
+  came out as plain text.
+  - In the forced-colours block, the layer's line is `forced-color-adjust: none`, in `CanvasText`.
+    Its colour properties are all `CanvasText`, and the ground is transparent.
+  - Measured against the span build under forced colours, in the cell and in the bar: the same
+    pixels. In the dark and light schemes the same colours appear, with the dark scheme's lifted
+    colours in the bar and the pointed shade on the grey in the cell.
+
+### One thing for the orchestrator: DC-51 says "one attribute"
+
+DC-51 and ADR-0021's note say the `MutationObserver` watches one attribute of the layer. It watches
+two now: `data-ex-text` and `data-ex-colours`. The colours can change while the text does not, and
+watching only the text would leave a stale look until the next key:
+- Point ends without the text changing.
+- A Linked Table's declaration arrives during an edit.
+
+It is the same observer, on the layer's own attributes, and reads no layout. DC-51's wording wants
+"two attributes" or "its text and its colours". I have not edited it.
+
+### Tests
+
+- **Layer 2.**
+  - `ReferenceTextTests`, new: the line holds one run on both surfaces; each stretch names the grid's
+    own highlights; two grids have different prefixes; each grid's stylesheet paints exactly its
+    fifteen names from the layer's properties, with no colour in it. Also, without a References
+    function no `::highlight` is written (DC-1).
+  - `ShippedStylesheetTests`:
+    - the script's shape: the gate, the two attributes, `new Highlight()`, the ranges, the deletes
+      and dispose;
+    - the pointed shades as layer properties (DC-56);
+    - a new test for the forced-colours block.
+  - The layer-2 tests that read a layer's markup now read it through `tests/ReferenceText/ColouredText.cs`,
+    linked into the three test projects. It writes the layer's colouring back as the markup the
+    tests already expected. It also checks the colouring is consistent: one run, a pointed shade
+    exactly on the grey, and every name the grid's own. Every expected string is unchanged.
+- **Layer 3.** The new helper `stretchesOf` in `sheet-helpers.mjs` reads the ranges the listener
+  registered in `CSS.highlights`, and the colours the grid's stylesheet paints them in. It replaces
+  the span readers in reference-text, pointing-scope, declarations and sheet-paper.
+  - DC-47's frame sampler: in every frame, a shown layer's highlights cover exactly the stretches the
+    core named, and a hidden layer has none.
+  - DC-47's IME test: no highlight while composing, and `A1` coloured again after `compositionend`.
+  - DC-47 on WebAssembly: one run, three References in three colours.
+  - DC-48's drawing of the layer in the Ink sets the layer's colour properties to `currentColor`, in
+    place of the spans' colour. The threshold is unchanged.
+  - `sheets.spec.mjs`, new (ADR-0018): the left Sheet colours `=B1+C1+`, and the right Sheet colours
+    `=C1+` with a different prefix. Each stylesheet paints only its own names. A press back on the
+    left's rows brings back the left's colours, in the colours they wore; a press back on the right
+    brings back the right's.
+    - With one shared name forced into the build for a check, this test fails where the left's
+      colours should come back.
+
+### Pixels that differ now
+
+DC-48's comparison: differing pixels / pixels over 96.
+
+| | Cell Editor, End | Cell Editor, Home | Formula Bar, End | Formula Bar, Home |
+|---|---|---|---|---|
+| Built-in | 0 / 0 | 0 / 0 | 606 / 0 | 606 / 0 |
+| Wrapper | 1 / 0 | 2 / 0 | 5 / 0 | 7 / 0 |
+
+- The built-in bar's 606 are its bottom row of pixels. That row is the bar's edge, not text, and it
+  differed the same way with the spans.
+- With the spans the table was 88 / 0, 0 / 0, 1570 / 0 and 900 / 0 for the built-in Chrome, and 94 / 1,
+  2 / 0, 732 / 0 and 294 / 0 for the Wrapper.
+- WebAssembly and Server gave the same numbers.
+
+### Runs
+
+- **Layer 3**, headless on this Mac, `--project=chrome`.
+  - **WebAssembly:** `reference-text.spec.mjs` whole, 25 passed. The tests touched in sheets,
+    pointing-scope, sheet-paper and declarations also ran: 67 passed and 2 failed.
+  - The 2 failures are ticket 90's pinned-cell gridline test, under both Chromes. It also fails on
+    this tree's base without these changes.
+  - **Server:** DC-48, DC-47, DC-56, ADR-0051/0057 and the new two-Sheets test: 23 passed, and 2
+    skipped by design (WebAssembly only).
+- **Layers 1 and 2:**
+
+  | Suite | Passed |
+  |---|---|
+  | ExGrid.Tests | 1001 |
+  | ExSheet.Engine.Tests | 2333 |
+  | ExGrid.MudBlazor.Tests | 168 |
+  | ExGrid.Components | 1295 (one skipped) |
+  | ExSheet.MudBlazor.Tests | 43 |
+  | ExSheet.Components.Tests | 587 |
+
+### Seen on the way
+
+The probes of past Windows runs read the layer's spans:
+- `verification/2026-09-30-windows-8/part-b-probe.mjs`;
+- the `pointing-scope-probe.mjs` of runs 9 and 13.
+
+They are records, and are left as they are. A run that uses them again needs `stretchesOf`'s reading.

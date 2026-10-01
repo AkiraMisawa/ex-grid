@@ -448,12 +448,15 @@ nobody had asked for. What that means when writing a test:
   built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`, the Sheet on the Wrapper's paper
   with its stylesheet): a burst of typing with 150 ms on the Server host,
   sampled every animation frame in the page, never showing transparent field text over a layer
-  that differs, and the colours back once it pauses; on WebAssembly the colours following each
-  keystroke, three References in three colours; only the surface the edit is in coloured, the
+  that differs, nor a highlight over characters other than those the core named for it, nor one
+  over a hidden layer, and the colours back once it pauses; on WebAssembly the colours following
+  each keystroke, the layer's text one run and three References in three colours over it, read off
+  the highlights the listener registered (ADR-0057, note of 2026-10-01); only the surface the edit is in coloured, the
   other plain, as in Excel: an edit opened by F2 or by a press into the Formula Bar coloured there
   before anything is typed, and the colours following a press from the cell into the bar and back;
   the caret and a selection drawn by the field; an IME composition through CDP drawn by the field
-  while it lasts, and the colours back when it ends (DC-47); the Mud Cell Editor still showing the
+  while it lasts, no highlight left over the layer then, and the Reference coloured again when it
+  ends (DC-47); the Mud Cell Editor still showing the
   layer's text with the Wrapper's stylesheet taken away; the Reference Point is writing on a grey
   ground after `=SUM(`, in the cell and in the bar, none after `=` ↓ ↓, and a `5` typed after
   pointing following the Reference (ADR-0051); a Formula longer than
@@ -462,7 +465,10 @@ nobody had asked for. What that means when writing a test:
 - `sheets.spec.mjs` — two ExSheets on `/sheets` (ADR-0018, SH-13): typing, Formulas, the
   Name Box, the Formula Bar, completion, the pointing outline, the Context Menu and each undo
   stack stay with the Sheet that has the keyboard, and each Sheet's Linked Table columns are
-  outlined only in the grid its page wired to it (SH-31, DC-25).
+  outlined only in the grid its page wired to it (SH-31, DC-25). Each Sheet colours its References
+  under highlights named for it, which its own stylesheet paints, and gets its colours back when the
+  keyboard returns after the other has coloured its own (ADR-0057's note of 2026-10-01): with one
+  shared name the other's registration would have replaced it.
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or

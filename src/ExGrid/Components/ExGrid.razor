@@ -355,7 +355,7 @@
                                            stylesheet look for it. A Chrome places its own. *@
                                         @if (ReferencesIn is not null)
                                         {
-                                            <div class="@referenceTextClass" style="@pinnedBox" data-ex-text="@_editText" aria-hidden="true"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                            <div class="@referenceTextClass" style="@pinnedBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@_editText</div></div>
                                         }
                                         <input class="@editorClass" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
@@ -372,7 +372,7 @@
                             {
                                 @if (ReferencesIn is not null)
                                 {
-                                    <div class="@referenceTextClass" style="@editorBox" data-ex-text="@_editText" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                    <div class="@referenceTextClass" style="@editorBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@_editText</div></div>
                                 }
                                 <input class="@editorClass" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
@@ -472,7 +472,7 @@
                    edit opening is a change of its text that the listener hears. *@
                 @if (ReferencesIn is not null)
                 {
-                    <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceSpans</div></div>
+                    <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" data-ex-colours="@BarReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceText</div></div>
                 }
                 <input class="ex-editor ex-formula-bar-text" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarPressedAsync"
@@ -838,6 +838,14 @@
            be in it. The text is one held string until a rule is added, so the diff compares a
            reference. *@
         <style>@appearances.Styles.Css</style>
+    }
+    @if (ReferencesIn is not null)
+    {
+        @* The coloured text's highlights (ADR-0057, note of 2026-10-01): one rule per highlight of
+           this grid's own, each reading a custom property the shipped stylesheet declares on the
+           layer from the Visual Tokens. Names of its own, so no other grid's rule paints them
+           (ADR-0018). One held string, so the diff compares a reference. *@
+        <style>@ReferenceHighlightStyles</style>
     }
 </div>
 

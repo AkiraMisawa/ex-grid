@@ -1,6 +1,6 @@
 import { test, expect, alterPage, setRoundTrip, twoFrames } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
-import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily } from './sheet-helpers.mjs';
+import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily, stretchesOf } from './sheet-helpers.mjs';
 
 // The coloured text in the editor (ADR-0057, "The coloured text is a layer that shows only while it
 // is up to date"; DC-47, DC-48), as ExSheet declares its References on /sheet, under the built-in
@@ -69,12 +69,26 @@ async function expectPlain(field, text) {
 /**
  * Samples every editor surface of the page in every animation frame from now to the end of the
  * test: whenever the field's text is transparent or the layer shows, the layer's text — as written
- * on it, and as drawn — must be the field's value (DC-47). The page is left as it was.
+ * on it, and as drawn — must be the field's value, and every highlight over the layer's run must
+ * cover exactly the characters the core named for it (DC-47; ADR-0057, note of 2026-10-01). A
+ * highlight over a hidden layer is a stretch coloured where nothing is shown, and is wrong too. The
+ * page is left as it was.
  */
 async function recordFrames(page) {
     await alterPage(page, () => {
-        const frames = { sampled: 0, shown: 0, wrong: [] };
+        const frames = { sampled: 0, shown: 0, coloured: 0, wrong: [] };
         let request = 0;
+        const highlighted = (run) => {
+            const ranges = [];
+            CSS.highlights.forEach((highlight, name) => {
+                for (const range of highlight) {
+                    if (range.startContainer === run) {
+                        ranges.push(`${range.startOffset},${range.endOffset - range.startOffset},${name}`);
+                    }
+                }
+            });
+            return ranges.sort();
+        };
         const sample = () => {
             for (const layer of document.querySelectorAll('.ex-reference-text')) {
                 const field = layer.nextElementSibling;
@@ -83,12 +97,18 @@ async function recordFrames(page) {
                 }
                 const transparent = getComputedStyle(field).webkitTextFillColor === 'rgba(0, 0, 0, 0)';
                 const visible = getComputedStyle(layer).visibility === 'visible';
+                const run = layer.firstElementChild?.firstChild ?? null;
+                const ranges = run === null ? [] : highlighted(run);
                 if (transparent || visible) {
                     frames.shown++;
                     const text = layer.getAttribute('data-ex-text');
-                    if (text !== field.value || layer.textContent !== field.value) {
-                        frames.wrong.push({ value: field.value, text, drawn: layer.textContent, transparent, visible });
+                    const named = (layer.getAttribute('data-ex-colours') ?? '').split(' ').filter((entry) => entry !== '').sort();
+                    frames.coloured += ranges.length > 0 ? 1 : 0;
+                    if (text !== field.value || layer.textContent !== field.value || JSON.stringify(ranges) !== JSON.stringify(named)) {
+                        frames.wrong.push({ value: field.value, text, drawn: layer.textContent, transparent, visible, ranges, named });
                     }
+                } else if (ranges.length > 0) {
+                    frames.wrong.push({ value: field.value, hidden: true, ranges });
                 }
             }
             frames.sampled++;
@@ -151,11 +171,13 @@ for (const chrome of ['builtin', 'mud']) {
         }
         await expectPlain(bar(grid), formula);
 
-        const spans = await editor(grid).evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
-            .map((span) => ({ text: span.textContent, class: span.className, colour: getComputedStyle(span).color })));
-        expect(spans.map((span) => [span.text, span.class]))
-            .toEqual([['A1', 'ex-reference-1'], ['B2', 'ex-reference-2'], ['C3:D4', 'ex-reference-3']]);
-        expect(new Set(spans.map((span) => span.colour)).size).toBe(3);
+        // The layer's text is one run, and its References are coloured over it (ADR-0057, note of
+        // 2026-10-01).
+        expect(await editor(grid).evaluate((input) => input.previousElementSibling.firstElementChild.childNodes.length)).toBe(1);
+        const references = await stretchesOf(editor(grid));
+        expect(references.map((reference) => [reference.text, reference.place]))
+            .toEqual([['A1', 1], ['B2', 2], ['C3:D4', 3]]);
+        expect(new Set(references.map((reference) => reference.ink)).size).toBe(3);
         expect((await framesRecorded(page)).wrong).toEqual([]);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
@@ -245,15 +267,19 @@ for (const chrome of ['builtin', 'mud']) {
 
         await expect(editor(grid)).toHaveValue('=A1&にほ');
         // Long past the round trip, the core has rendered the composing text, and the field still
-        // draws it itself.
+        // draws it itself: no highlight is left over the hidden layer.
         await expect.poll(async () => (await colouring(editor(grid))).text).toBe('=A1&にほ');
         await page.waitForTimeout(400);
         await expectPlain(editor(grid), '=A1&にほ');
+        expect(await stretchesOf(editor(grid))).toEqual([]);
 
-        // The composition ends, and nothing is typed after it.
+        // The composition ends, and nothing is typed after it: compositionend shows the layer, and
+        // its Reference is coloured again over the one run (ADR-0057, note of 2026-10-01).
         await client.send('Input.insertText', { text: '日本' });
         await expect(editor(grid)).toHaveValue('=A1&日本');
         await expectColoured(editor(grid), '=A1&日本');
+        await expect.poll(async () => (await stretchesOf(editor(grid))).map((stretch) => [stretch.text, stretch.place, stretch.ink === stretch.colour]))
+            .toEqual([['A1', 1, true]]);
         expect((await framesRecorded(page)).wrong).toEqual([]);
         await client.detach();
         await setRoundTrip(0);
@@ -304,20 +330,6 @@ test("ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell 
 // ---------------------------------------------------------------------------------------------
 // The Reference Point is writing, shown selected (ADR-0051; ADR-0057, "What cases 24–32 settled")
 
-/** Each span of a field's layer: its text, whether the core marked it as the Reference being
- * pointed, and how the stylesheet paints it — its ground, its ink, and the colour it wears. */
-const spansOf = (field) => field.evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
-    .map((span) => {
-        const style = getComputedStyle(span);
-        return {
-            text: span.textContent,
-            pointed: span.classList.contains('ex-reference-pointed'),
-            ground: style.backgroundColor,
-            ink: style.webkitTextFillColor,
-            colour: style.color,
-        };
-    }));
-
 /** The field's selection: the look is never one. */
 const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, input.selectionEnd]);
 
@@ -325,10 +337,10 @@ const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, 
 // --ex-reference-pointed-background).
 const POINTED_GROUND = 'rgb(198, 198, 198)';
 
-/** The one span pointed, on the grey, its ink a shade of its colour and not the colour itself. */
+/** The one stretch pointed, on the grey, its ink a shade of its colour and not the colour itself. */
 async function expectPointedLook(field, text) {
-    await expect.poll(async () => (await spansOf(field)).filter((span) => span.pointed).map((span) => span.text)).toEqual([text]);
-    const span = (await spansOf(field)).find((one) => one.pointed);
+    await expect.poll(async () => (await stretchesOf(field)).filter((span) => span.pointed).map((span) => span.text)).toEqual([text]);
+    const span = (await stretchesOf(field)).find((one) => one.pointed);
     expect(span.ground).toBe(POINTED_GROUND);
     expect(span.ink).not.toBe(span.colour);
     expect(span.ink).not.toBe(TRANSPARENT);
@@ -342,10 +354,10 @@ const SECOND_COLOUR = 'rgb(192, 53, 62)';
 const FIRST_POINTED = 'rgb(4, 1, 162)';
 const SECOND_POINTED = 'rgb(99, 1, 1)';
 
-/** The one span pointed wears this colour, and on the grey its text is this shade of it. */
+/** The one stretch pointed wears this colour, and on the grey its text is this shade of it. */
 async function expectPointedShade(field, text, colour, ink) {
     await expectPointedLook(field, text);
-    const span = (await spansOf(field)).find((one) => one.pointed);
+    const span = (await stretchesOf(field)).find((one) => one.pointed);
     expect({ colour: span.colour, ink: span.ink, ground: span.ground }).toEqual({ colour, ink, ground: POINTED_GROUND });
 }
 
@@ -400,7 +412,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         await expectColoured(editor(grid), '=F5');
         await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
-        const spans = await spansOf(editor(grid));
+        const spans = await stretchesOf(editor(grid));
         expect(spans.map((span) => [span.text, span.pointed])).toEqual([['F5', false]]);
         expect(spans[0].ground).not.toBe(POINTED_GROUND);
         expect(spans[0].ink).toBe(spans[0].colour);
@@ -425,7 +437,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         await expectColoured(editor(grid), '=D11+F55');
         await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
-        expect((await spansOf(editor(grid))).map((span) => [span.text, span.pointed])).toEqual([['D11', false], ['F55', false]]);
+        expect((await stretchesOf(editor(grid))).map((span) => [span.text, span.pointed])).toEqual([['D11', false], ['F55', false]]);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
     });
@@ -511,7 +523,11 @@ async function overlayDrawingWays(page) {
             .ex-reference-text + [data-drawn="own"]::spelling-error,
             .ex-reference-text + [data-drawn="own"]::grammar-error { color: inherit !important; }
             .ex-reference-text + input.ex-editor[data-drawn="own"] { background: var(--ex-editor-background, Canvas) !important; }
-            .ex-reference-text:has(+ [data-drawn="layer"]) span { color: inherit !important; }`;
+            .ex-reference-text:has(+ [data-drawn="layer"]) {
+                --ex-reference-text-1: currentColor; --ex-reference-text-2: currentColor; --ex-reference-text-3: currentColor;
+                --ex-reference-text-4: currentColor; --ex-reference-text-5: currentColor; --ex-reference-text-6: currentColor;
+                --ex-reference-text-7: currentColor;
+            }`;
         document.head.append(style);
         return () => style.remove();
     });
@@ -532,11 +548,11 @@ async function drawnBothWays(page, field) {
 }
 
 // Longer than either surface on /sheet, with a handful of References, as a Formula a user writes
-// is. The layer draws each span as a text of its own, and the browser snaps each one's width to its
-// layout unit, where the field's text is one run: measured on 2026-09-30, the layer's text runs
-// about 1/128 px long per span, so at the far end of a Formula the error is 0.1 px with ten
-// References, 0.6 px with forty, 1.3 px with eighty — never a character, but past twenty
-// References no longer the same picture. This Formula is the same picture.
+// is. The layer once drew each Reference as a span, a run of text each, and the browser rounds each
+// run's width up to its layout unit, 1/64 px, where the field's text is one run: at End of this
+// Formula the layer stood 1/16 px right of the field, and under ExSheet.MudBlazor's Roboto one edge
+// pixel crossed the threshold below (ticket 86). The layer is one run now, coloured by highlights
+// (ADR-0057, note of 2026-10-01), so the two are one picture at both ends.
 const FORMULA = '=IF(AND(B2>0,C2>0),ROUND(B2*C2*(1+D2),2),"Enter both the quantity and the price '
     + 'before the amount of this line is worked out, and check the discount in the next column")'
     + '&" as of "&TEXT(B7,"yyyy-mm-dd")&", due "&TEXT(B8,"yyyy-mm-dd")';

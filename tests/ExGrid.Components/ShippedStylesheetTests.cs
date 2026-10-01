@@ -284,7 +284,7 @@ public class ShippedStylesheetTests
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // One attribute of this instance's own root, nothing wider and nothing measured. The
-        // module's other observer is the coloured text's, on one attribute of a layer (DC-51).
+        // module's other observer is the coloured text's, on a layer's text and colours (DC-51).
         Assert.Equal(2, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
         Assert.Matches(new Regex(@"revealObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-reveal'\] \}\)"), script.Text);
         // Let go as soon as the write is made or replaced, and with the instance.
@@ -685,11 +685,11 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        // The comparison: the layer's one attribute against the field's value, never while no
-        // edit is open, only in the surface the edit is in — the field holding DOM focus, as Excel
-        // colours only that one — and never over a field composing. One class, set in one place
-        // and taken away only when the edit closes.
-        Assert.Matches(new Regex(@"field\.classList\.toggle\('ex-reference-text-shown',\s*editing !== 'none' && field === document\.activeElement && composingIn !== field\s*&& layer\.getAttribute\('data-ex-text'\) === field\.value\);"),
+        // The comparison: the layer's text against the field's value, never while no edit is open,
+        // only in the surface the edit is in — the field holding DOM focus, as Excel colours only
+        // that one — and never over a field composing. One class, set in one place and taken away
+        // only when the edit closes; the layer is coloured exactly while it is set.
+        Assert.Matches(new Regex(@"const shown = editing !== 'none' && field === document\.activeElement && composingIn !== field\s*&& layer\.getAttribute\('data-ex-text'\) === field\.value;\s*field\.classList\.toggle\('ex-reference-text-shown', shown\);\s*if \(shown\) \{\s*colour\(layer\);\s*\} else \{\s*uncolour\(layer\);\s*\}"),
             script.Text);
         Assert.Single(Regex.Matches(script.Text, @"classList\.toggle\('ex-reference-text-shown'"));
         Assert.DoesNotMatch(new Regex(@"classList\.add\('ex-reference-text-shown'"), script.Text);
@@ -704,9 +704,9 @@ public class ShippedStylesheetTests
         // event — ...
         Assert.Matches(new Regex(@"const onEditorInput = \(event\) => \{\s*heardReferenceInput\(event\);"), script.Text);
         Assert.Matches(new Regex(@"composingIn = event\.isComposing === true \? field : null;"), script.Text);
-        // ...when the layer's text changes: one attribute, in this root, observed only while an
-        // edit is open and let go when it closes or the instance goes...
-        Assert.Matches(new Regex(@"referenceTextObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-text'\], subtree: true \}\);"), script.Text);
+        // ...when the layer's text or its colours change: two attributes, in this root, observed
+        // only while an edit is open and let go when it closes or the instance goes...
+        Assert.Matches(new Regex(@"referenceTextObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-text', 'data-ex-colours'\], subtree: true \}\);"), script.Text);
         Assert.Single(Regex.Matches(script.Text, @"referenceTextObserver\.observe\("));
         Assert.Matches(new Regex(@"referenceTextObserver\.disconnect\(\);"), script.Text);
         Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{(?:(?!\n        \},).)*?watchReferenceTexts\(mode !== 'none'\);", RegexOptions.Singleline), script.Text);
@@ -730,6 +730,23 @@ public class ShippedStylesheetTests
         Assert.Single(Regex.Matches(script.Text, @"addEventListener\('compositionend'"));
         Assert.Matches(new Regex(@"const onCompositionEnd = \(event\) => \{\s*const field = event\.target;\s*const layer = [^;]*referenceTextOf\(field\) : null;\s*if \(layer !== null\) \{\s*composingIn = null;\s*gateReferenceText\(field, layer\);\s*\}\s*\};"),
             script.Text);
+
+        // The colours (ADR-0057 and ADR-0021, notes of 2026-10-01; DC-51): one Range per stretch the
+        // core wrote on the layer, over its one run of text, in the highlight of that name, which
+        // this instance registers itself and takes back with it. The names are the core's, carrying
+        // the grid's id; the script makes up none, and keeps no highlight another grid made.
+        Assert.Matches(new Regex(@"const colours = layer\.getAttribute\('data-ex-colours'\) \?\? '';"), script.Text);
+        Assert.Matches(new Regex(@"const run = layer\.firstElementChild\?\.firstChild;"), script.Text);
+        Assert.Matches(new Regex(@"const \[start, length, name\] = stretch\.split\(','\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"new Highlight\(\)"));
+        Assert.Matches(new Regex(@"highlights\.set\(name, highlight\);\s*CSS\.highlights\.set\(name, highlight\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"CSS\.highlights\.set\("));
+        Assert.Matches(new Regex(@"range\.setStart\(run, from\);\s*range\.setEnd\(run, to\);\s*highlight\.add\(range\);"), script.Text);
+        Assert.Matches(new Regex(@"for \(const \[highlight, range\] of coloured\.ranges\) \{\s*highlight\.delete\(range\);"), script.Text);
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*?for \(const \[name, highlight\] of highlights\) \{\s*if \(CSS\.highlights\.get\(name\) === highlight\) \{\s*CSS\.highlights\.delete\(name\);", RegexOptions.Singleline), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"CSS\.highlights\.delete\("));
+        // Closing the edit takes every colour away with the class.
+        Assert.Matches(new Regex(@"for \(const layer of \[\.\.\.colouredLayers\.keys\(\)\]\) \{\s*uncolour\(layer\);"), script.Text);
 
         // No layout is read anywhere in the module.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"),
@@ -782,7 +799,9 @@ public class ShippedStylesheetTests
     {
         var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
 
-        const string towardWhite = "color-mix(in srgb, currentColor 55%, white)";
+        // Since ADR-0057's note of 2026-10-01 the layer's References are highlights, and the grid's
+        // generated stylesheet paints each from a property the layer declares: the colour of its place,
+        // its pointed shade, and the pointed ground.
         for (var place = 1; place <= Cells.ReferenceColour.PaletteLength; place++)
         {
             // Excel's: the first two as Part B of the eighth Windows run read them, the rest the tenth run.
@@ -791,25 +810,41 @@ public class ShippedStylesheetTests
                 1 => "#0401a2", 2 => "#630101", 3 => "#44007c", 4 => "#003600",
                 5 => "#550059", 6 => "#531c00", _ => "#00323f",
             };
+            // Over a dark ground, the Reference's own colour mixed 55% toward white; ADR-0058 / SH-34:
+            // a Reference inside the XLOOKUP(...) a press on another grid wrote takes the same shade.
             Assert.Contains(
-                $".ex-reference-text .ex-reference-{place}.ex-reference-pointed {{ -webkit-text-fill-color: var(--ex-reference-{place}-pointed, light-dark({light}, {towardWhite})); }}",
+                $"--ex-reference-text-{place}-pointed: var(--ex-reference-{place}-pointed, light-dark({light}, color-mix(in srgb, var(--ex-reference-text-{place}) 55%, white)));",
                 sheet, StringComparison.Ordinal);
-            // ADR-0058 / SH-34: a Reference inside the XLOOKUP(...) a press on another grid wrote, which
-            // is pointed as a whole, takes the same shade of its own colour.
-            Assert.Contains(
-                $".ex-reference-text .ex-reference-pointed .ex-reference-{place} {{ -webkit-text-fill-color: var(--ex-reference-{place}-pointed, light-dark({light}, {towardWhite})); }}",
-                sheet, StringComparison.Ordinal);
+            Assert.Contains($"--ex-reference-text-{place}: var(--ex-reference-{place}, light-dark(", sheet, StringComparison.Ordinal);
         }
-        // Those rules alone paint the pointed text: one per place, none past the palette's end.
+        // Those properties alone paint the pointed text: one per place, none past the palette's end.
         Assert.Equal(Cells.ReferenceColour.PaletteLength,
-            Regex.Matches(sheet, @"\.ex-reference-pointed \{ -webkit-text-fill-color: var\(--ex-reference-\d+-pointed,").Count);
+            Regex.Matches(sheet, @"--ex-reference-text-\d+-pointed: var\(--ex-reference-\d+-pointed,").Count);
         Assert.DoesNotContain($"--ex-reference-{Cells.ReferenceColour.PaletteLength + 1}-pointed", sheet, StringComparison.Ordinal);
+        Assert.DoesNotContain($"--ex-reference-text-{Cells.ReferenceColour.PaletteLength + 1}", sheet, StringComparison.Ordinal);
 
         // The ground is unchanged, and the one shade for all seven is retired everywhere shipped.
         Assert.Contains(
-            ".ex-reference-text .ex-reference-pointed { background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b)); }",
+            "--ex-reference-text-pointed: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));",
             sheet, StringComparison.Ordinal);
         Assert.All(ShippedAssets(), asset => Assert.DoesNotContain("--ex-reference-pointed-color", asset.Text, StringComparison.Ordinal));
+    }
+
+    [Fact] // ADR-0057 (note of 2026-10-01) / ADR-0027/0029: under forced colours the References read as the rest of the text, and the ground goes, as the spans they replaced did
+    public void Under_forced_colours_the_highlights_take_the_system_colours()
+    {
+        var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+        var forced = sheet[sheet.IndexOf("@media (forced-colors: active)", StringComparison.Ordinal)..];
+
+        // Chrome paints a custom highlight in Highlight and HighlightText under forced colours,
+        // whatever its rule says; the line is left as authored, and its colours are the system's.
+        Assert.Contains(".ex-reference-text-line { forced-color-adjust: none; color: CanvasText; }", forced, StringComparison.Ordinal);
+        for (var place = 1; place <= Cells.ReferenceColour.PaletteLength; place++)
+        {
+            Assert.Contains($"--ex-reference-text-{place}: CanvasText;", forced, StringComparison.Ordinal);
+            Assert.Contains($"--ex-reference-text-{place}-pointed: CanvasText;", forced, StringComparison.Ordinal);
+        }
+        Assert.Contains("--ex-reference-text-pointed: transparent;", forced, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0051 second round / DC-31, ADR-0058 / SH-36: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys, and ←, →, Home, End and the Shift+arrows too while it is open over Point

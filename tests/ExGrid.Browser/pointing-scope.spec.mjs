@@ -2,6 +2,7 @@ import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, editor, bar, nameBox, pressCell, boxOf, expectCovers, expectCaretShown,
+    stretchesOf,
 } from './sheet-helpers.mjs';
 
 // A Pointing Scope (ADR-0058, ticket 37; SH-32, SH-35): /sheet puts its Sheet and its positions grid
@@ -100,22 +101,8 @@ const TRANSPARENT = 'rgba(0, 0, 0, 0)';
 // Excel's grey, #c6c6c6, over the light ground /sheet has (--ex-reference-pointed-background).
 const POINTED_GROUND = 'rgb(198, 198, 198)';
 
-/** Each span of the layer beneath a field (ADR-0057): its text, whether the core marked it as what
- * Point wrote, and how the stylesheet paints it — its ground, its ink and the colour it wears. */
-const spansOf = (field) => field.evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
-    .map((span) => {
-        const style = getComputedStyle(span);
-        return {
-            text: span.textContent,
-            pointed: span.classList.contains('ex-reference-pointed'),
-            ground: style.backgroundColor,
-            ink: style.webkitTextFillColor,
-            colour: style.color,
-        };
-    }));
-
-/** The texts of the layer's spans marked as what Point wrote. */
-const pointedTexts = async (field) => (await spansOf(field)).filter((span) => span.pointed).map((span) => span.text);
+/** The texts on the grey in the layer beneath a field: what Point wrote (ADR-0057). */
+const pointedTexts = async (field) => (await stretchesOf(field)).filter((span) => span.pointed).map((span) => span.text);
 
 /** Where a field's caret stands, in characters. */
 const caretOf = (field) => field.evaluate((input) => input.selectionStart);
@@ -469,7 +456,7 @@ test.describe('/sheet', () => {
         await expectCovers(pv, table, 'C1', 'C5');
         // In the colours their References wear in the Cell Editor.
         await expect.poll(() => pointedTexts(editor(grid))).toEqual([lookup]);
-        const spans = await spansOf(editor(grid));
+        const spans = await stretchesOf(editor(grid));
         const idText = spans.find((span) => span.text === 'Positions[Id]');
         const pvText = spans.find((span) => span.text === 'Positions[PV]');
         expect((await lineOf(id)).colour).toBe(idText.colour);
@@ -490,7 +477,7 @@ test.describe('/sheet', () => {
         expect(pointed.ground).toBe(POINTED_GROUND);
         for (const reference of [idText, pvText]) {
             expect(reference.pointed).toBe(false);
-            expect(reference.ground).toBe(TRANSPARENT);
+            expect(reference.ground).toBe(POINTED_GROUND);
             expect(reference.ink).not.toBe(reference.colour);
             expect(reference.ink).not.toBe(TRANSPARENT);
         }
@@ -557,7 +544,7 @@ test.describe('/sheet', () => {
         await expectCovers(dashes, table, 'C3', 'C3');
         await expect(table.locator('.ex-reference-outline')).toHaveCount(2);
         // Coloured, and not shown selected: it follows the = directly (ADR-0057, cases 19 and 20x).
-        await expect.poll(async () => (await spansOf(editor(grid))).map((span) => span.text))
+        await expect.poll(async () => (await stretchesOf(editor(grid))).map((span) => span.text))
             .toEqual(['Positions[Id]', 'Positions[PV]']);
         expect(await pointedTexts(editor(grid))).toEqual([]);
 
