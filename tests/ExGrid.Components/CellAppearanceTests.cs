@@ -388,6 +388,25 @@ public class CellAppearanceTests : GridTestContext
         Assert.Equal(9, handed["Regular"].DigitWidthPx);
     }
 
+    [Fact] // ADR-0050 item 15 / ADR-0016: a fit over a bold cell is measured with the bold widths, so it never shows ####
+    public async Task A_fit_over_a_bold_cell_uses_the_bold_widths()
+    {
+        var changes = new List<ColumnWidthChange>();
+        TestRow[] rows = [new() { Book = "Bold", Amount = 123456789012345m }, new() { Book = "Regular", Amount = 1m }];
+        var metrics = new CellTextMetrics(14, 9, 5, 14, 4, 15, 10, 6);
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, rows)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.CellMetrics, metrics)
+            .Add(g => g.CellAppearance, From(("Bold", "Amount", new CellAppearance { Bold = true })))
+            .Add(g => g.OnColumnWidthChanged, changes.Add));
+
+        await cut.FindAll(".ex-resize-grip")[1].DoubleClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { Button = 0 });
+
+        // 15 bold digits at 10px and 4px of padding a side; at the regular 9px it would be 143.
+        Assert.Equal([new ColumnWidthChange("Amount", 158)], changes);
+    }
+
     [Fact] // ADR-0050 item 15: a Pinned Column's cell paints its appearance too, and so do the scrollable ones beside it
     public void A_pinned_cell_paints_its_appearance()
     {
