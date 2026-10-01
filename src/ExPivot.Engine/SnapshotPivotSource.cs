@@ -16,7 +16,9 @@ namespace ExPivot.Engine;
 /// <see cref="PivotSource.Changed"/> is raised with the new Source Version. Asked the same question
 /// again, the source answers from what it holds; after any sequence of batches, every leaf equals a
 /// fresh aggregation of the Snapshot they made, to the last bit. A batch that compacted the
-/// Snapshot moved its rows, and the next question is read afresh.
+/// Snapshot moved its rows, and the next question is read afresh. An answer is assembled from what
+/// the source holds in slices (PV-40), and a batch applied meanwhile waits until it is made, so
+/// that no answer is half a batch.
 /// </para>
 /// <para>
 /// <b>Source Version</b>: this source's own name and the Snapshot's version, so a new source is a
