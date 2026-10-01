@@ -53,11 +53,15 @@ Table read by `SUM(Positions[PV])`
   two spellings are two entries. A reader that tells text apart ignoring case, as a pivot's Items
   do ([ADR-0059](./0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)),
   folds the dictionary, not the rows.
-- **Decimal is held exactly.** When every value fits in 64 bits after scaling by one power of ten
-  for the whole column, it is held as those scaled integers. A sum is then an integer addition,
-  which was measured 3–5 times faster with the same result. Otherwise it is held as `decimal`.
-  A Decimal column holds values, not the scale each was written with: `1.5` and `1.50` read back
-  alike.
+- **Decimal is held exactly.** When every value fits in 64 bits after scaling by one power of ten,
+  it is held as those scaled integers. A sum is then an integer addition, which was measured 3–5
+  times faster with the same result. Otherwise it is held as `decimal`. A Decimal column holds
+  values, not the scale each was written with: `1.5` and `1.50` read back alike.
+  *(Refined 2026-10-01, when it was built: the power of ten is chosen for each stored segment of
+  the column, not once for the whole column. A Change Batch may bring a value with more places,
+  or one that does not fit, and a scale for the whole column would mean rewriting every segment
+  the batch did not touch. Each segment says its own scale, and a reader sums each segment at
+  its scale.)*
 - **Double is held as `double`**, non-finite values included, exactly as they came. What they mean
   is the reader's to say; a pivot shows `#NUM!`.
 - **Integer is held as a 64-bit integer.**

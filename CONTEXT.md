@@ -178,7 +178,7 @@ a batch half applied.
 _Avoid_: delta (a risk measure here — rate delta, credit delta), diff, patch, transaction
 
 **Record Key**:
-The declared field, or fields, whose value tells one record of a Snapshot from every other. A
+The declared column whose value tells one record of a Snapshot from every other. A
 Change Batch changes and removes records by it, and two records under one key are refused.
 _Avoid_: Row Identity (the grid's test for sameness), id, primary key (the database's)
 
