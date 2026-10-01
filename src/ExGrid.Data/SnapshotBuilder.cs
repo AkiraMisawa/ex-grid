@@ -148,6 +148,8 @@ public sealed class SnapshotBuilder<T>
 
     private SnapshotBuilder<T> Add(ObjectColumn<T> column)
     {
+        if (string.IsNullOrEmpty(column.Name))
+            throw new ArgumentException("A column has a name.", "name");
         if (columns.Exists(c => c.Name == column.Name))
             throw new ArgumentException($"A column named '{column.Name}' is already declared; a column's name is unique within a Snapshot.", nameof(column));
         columns.Add(column);
