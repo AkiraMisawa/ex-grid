@@ -258,6 +258,383 @@
           },
           "reportRows": 8371
         }
+      },
+      "DA-17 objects, browser (/pivot?trades=1000000)": {
+        "records": 1000000,
+        "readIntoSnapshotMs": 3721,
+        "how": "PivotSource.From(trades, DemoPivotData.Fields): one synchronous build, timed by the page",
+        "pageTaskMs": 7416
+      },
+      "PV-21 first question at load, /pivot over 1,000,000 trades": {
+        "answerMs": 552,
+        "longestTaskMs": 227,
+        "firstReportAtMs": 8994
+      },
+      "PV-21 gestures, /pivot over 1,000,000 trades": {
+        "open a field's menu": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 11.1,
+            "min": 9.5,
+            "max": 36.5
+          },
+          "answerMs": {
+            "median": 11.1,
+            "min": 9.5,
+            "max": 36.5
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.6,
+            "max": 0.8
+          }
+        },
+        "sort Z to A": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 34.8,
+            "min": 20.9,
+            "max": 46.6
+          },
+          "answerMs": {
+            "median": 34.8,
+            "min": 20.9,
+            "max": 46.7
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.6,
+            "max": 4.3
+          }
+        },
+        "sort A to Z": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 27.2,
+            "min": 20.5,
+            "max": 33.2
+          },
+          "answerMs": {
+            "median": 27.2,
+            "min": 20.5,
+            "max": 33.2
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.9,
+            "min": 0.4,
+            "max": 2
+          }
+        },
+        "collapse": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 24.7,
+            "min": 18.8,
+            "max": 41.5
+          },
+          "answerMs": {
+            "median": 24.7,
+            "min": 18.8,
+            "max": 41.5
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.7,
+            "min": 0.5,
+            "max": 1
+          }
+        },
+        "expand": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 31.1,
+            "min": 24.1,
+            "max": 39.8
+          },
+          "answerMs": {
+            "median": 31.2,
+            "min": 24.1,
+            "max": 39.8
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 1.1,
+            "min": 0.7,
+            "max": 1.3
+          }
+        },
+        "open the Layout menu": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 10.4,
+            "min": 9.2,
+            "max": 19.8
+          },
+          "answerMs": {
+            "median": 10.4,
+            "min": 9.2,
+            "max": 19.8
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.3,
+            "max": 0.9
+          }
+        },
+        "change of form: Tabular": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 24.8,
+            "min": 21,
+            "max": 35.5
+          },
+          "answerMs": {
+            "median": 24.8,
+            "min": 21,
+            "max": 35.5
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.5,
+            "min": 0.5,
+            "max": 0.7
+          }
+        },
+        "change of form: Compact": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 22.5,
+            "min": 19.8,
+            "max": 44.9
+          },
+          "answerMs": {
+            "median": 22.5,
+            "min": 19.8,
+            "max": 44.9
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.4,
+            "max": 1.4
+          }
+        },
+        "new question: tick Book": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 44.6,
+            "min": 38.5,
+            "max": 155.9
+          },
+          "answerMs": {
+            "median": 198.6,
+            "min": 156.4,
+            "max": 385.9
+          },
+          "longestTaskMs": {
+            "median": 51,
+            "min": 0,
+            "max": 152
+          },
+          "longestTaskSettlingMs": {
+            "median": 51,
+            "min": 0,
+            "max": 152
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.4,
+            "max": 0.9
+          }
+        },
+        "new question: untick Book": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 54.4,
+            "min": 38.7,
+            "max": 125.7
+          },
+          "answerMs": {
+            "median": 180.4,
+            "min": 147.9,
+            "max": 249.3
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 125
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 125
+          },
+          "inputDelayMs": {
+            "median": 0.8,
+            "min": 0.4,
+            "max": 1.4
+          }
+        },
+        "open the report filter": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 11.6,
+            "min": 8.8,
+            "max": 45.3
+          },
+          "answerMs": {
+            "median": 11.6,
+            "min": 8.8,
+            "max": 45.3
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.6
+          }
+        },
+        "new question: filter to USD": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 43.6,
+            "min": 42.9,
+            "max": 50.9
+          },
+          "answerMs": {
+            "median": 153.5,
+            "min": 150.9,
+            "max": 165.4
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.8,
+            "min": 0.6,
+            "max": 1.4
+          }
+        },
+        "new question: filter to (All)": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 45.2,
+            "min": 44.5,
+            "max": 48.4
+          },
+          "answerMs": {
+            "median": 174.9,
+            "min": 150,
+            "max": 197.3
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.7,
+            "min": 0.6,
+            "max": 1.3
+          }
+        }
       }
     },
     "before: the integration branch at d596209, published the same way": {
@@ -509,6 +886,383 @@
             "max": 0.9
           },
           "reportRows": 8371
+        }
+      },
+      "DA-17 objects, browser (/pivot?trades=1000000)": {
+        "records": 1000000,
+        "readIntoSnapshotMs": 3207,
+        "how": "PivotSource.From(trades, DemoPivotData.Fields): one synchronous build, timed by the page",
+        "pageTaskMs": 6642
+      },
+      "PV-21 first question at load, /pivot over 1,000,000 trades": {
+        "answerMs": 531,
+        "longestTaskMs": 203,
+        "firstReportAtMs": 7924
+      },
+      "PV-21 gestures, /pivot over 1,000,000 trades": {
+        "open a field's menu": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 9.6,
+            "min": 8.7,
+            "max": 31.4
+          },
+          "answerMs": {
+            "median": 9.6,
+            "min": 8.8,
+            "max": 31.4
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.4,
+            "max": 0.9
+          }
+        },
+        "sort Z to A": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 23.3,
+            "min": 19.9,
+            "max": 40.8
+          },
+          "answerMs": {
+            "median": 23.3,
+            "min": 19.9,
+            "max": 40.8
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.6,
+            "max": 0.9
+          }
+        },
+        "sort A to Z": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 30.8,
+            "min": 19,
+            "max": 34
+          },
+          "answerMs": {
+            "median": 30.8,
+            "min": 19,
+            "max": 34
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.5,
+            "max": 1
+          }
+        },
+        "collapse": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 23.4,
+            "min": 18.4,
+            "max": 44.5
+          },
+          "answerMs": {
+            "median": 23.5,
+            "min": 18.4,
+            "max": 44.5
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.7,
+            "min": 0.6,
+            "max": 1.3
+          }
+        },
+        "expand": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 33,
+            "min": 20.5,
+            "max": 34.7
+          },
+          "answerMs": {
+            "median": 33,
+            "min": 20.5,
+            "max": 34.7
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.7,
+            "min": 0.5,
+            "max": 0.9
+          }
+        },
+        "open the Layout menu": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 10,
+            "min": 8.5,
+            "max": 12.2
+          },
+          "answerMs": {
+            "median": 10,
+            "min": 8.5,
+            "max": 12.2
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.3,
+            "max": 1
+          }
+        },
+        "change of form: Tabular": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 25.2,
+            "min": 19,
+            "max": 33.7
+          },
+          "answerMs": {
+            "median": 25.2,
+            "min": 19.1,
+            "max": 33.7
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.4,
+            "max": 0.6
+          }
+        },
+        "change of form: Compact": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 22.3,
+            "min": 18.8,
+            "max": 29.7
+          },
+          "answerMs": {
+            "median": 22.4,
+            "min": 18.8,
+            "max": 29.7
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.5,
+            "min": 0.5,
+            "max": 0.7
+          }
+        },
+        "new question: tick Book": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 43.5,
+            "min": 38.2,
+            "max": 139.7
+          },
+          "answerMs": {
+            "median": 170.8,
+            "min": 159.7,
+            "max": 290.2
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 139
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 139
+          },
+          "inputDelayMs": {
+            "median": 0.6,
+            "min": 0.4,
+            "max": 3.3
+          }
+        },
+        "new question: untick Book": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 46.2,
+            "min": 38.4,
+            "max": 121.8
+          },
+          "answerMs": {
+            "median": 181.2,
+            "min": 142.6,
+            "max": 225.4
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 121
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 121
+          },
+          "inputDelayMs": {
+            "median": 0.7,
+            "min": 0.6,
+            "max": 0.8
+          }
+        },
+        "open the report filter": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 11.8,
+            "min": 9.2,
+            "max": 64.7
+          },
+          "answerMs": {
+            "median": 11.8,
+            "min": 9.2,
+            "max": 64.7
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 64
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 64
+          },
+          "inputDelayMs": {
+            "median": 0.5,
+            "min": 0.5,
+            "max": 1.5
+          }
+        },
+        "new question: filter to USD": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 42.5,
+            "min": 39.7,
+            "max": 44.9
+          },
+          "answerMs": {
+            "median": 135.8,
+            "min": 124.3,
+            "max": 148.7
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.7
+          }
+        },
+        "new question: filter to (All)": {
+          "runs": 5,
+          "firstVisualAnswerMs": {
+            "median": 44.1,
+            "min": 41.1,
+            "max": 48.7
+          },
+          "answerMs": {
+            "median": 154.7,
+            "min": 146,
+            "max": 211.9
+          },
+          "longestTaskMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "longestTaskSettlingMs": {
+            "median": 0,
+            "min": 0,
+            "max": 0
+          },
+          "inputDelayMs": {
+            "median": 0.9,
+            "min": 0.3,
+            "max": 1.7
+          }
         }
       }
     }

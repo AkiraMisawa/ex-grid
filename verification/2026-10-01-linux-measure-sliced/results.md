@@ -44,8 +44,8 @@ through a config outside the repository that runs the suite's own config against
 `/opt/pw-browsers/chromium`. No Chrome or Edge is installed here. Each run was under `xvfb-run`,
 holding the layer-3 lock.
 
-- **Two tests:** `--grep "near the 200,000-leaf cap"`, then `--grep "questions of a thousand to
-  thirty thousand leaves"`.
+- **Three tests:** `--grep "near the 200,000-leaf cap"`, then `--grep "questions of a thousand to
+  thirty thousand leaves"`, then `--grep "and the gestures over them"`.
 - **Order:** each test on the build before, then on the build after.
 - **Data:** `/pivot?trades=1000000`. The demo API server, which the suite's config starts, held
   20,000 trades. These tests do not call it.
@@ -101,6 +101,37 @@ What the rows say:
   nothing, and a medium one yields little.
 - **The refused layout is unchanged.** The source stops at the leaf that passes the cap, and
   nothing is built after it. Its 132 ms task was there before. It was not traced.
+
+## The gestures laid out from the answer held
+
+The ticket asked that these stay as quick as they were, and that no yield be added where none is
+needed. The first test of `measure-pivot.spec.mjs` was run on both builds, in the same way, after the
+others (`--grep "and the gestures over them"`): /pivot's 50-leaf report, five rounds of each gesture.
+
+| Gesture | Answer, before | Answer, after | Longest task, before / after |
+|---|---|---|---|
+| A field's menu opened | 9.6 ms (8.8–31.4) | 11.1 ms (9.5–36.5) | 0 / 0 |
+| Region sorted Z to A | 23.3 ms (19.9–40.8) | 34.8 ms (20.9–46.7) | 0 / 0 |
+| … and A to Z | 30.8 ms (19.0–34.0) | 27.2 ms (20.5–33.2) | 0 / 0 |
+| The first outer Item collapsed | 23.5 ms (18.4–44.5) | 24.7 ms (18.8–41.5) | 0 / 0 |
+| … and expanded | 33.0 ms (20.5–34.7) | 31.2 ms (24.1–39.8) | 0 / 0 |
+| The Layout menu opened | 10.0 ms (8.5–12.2) | 10.4 ms (9.2–19.8) | 0 / 0 |
+| Show in Tabular Form | 25.2 ms (19.1–33.7) | 24.8 ms (21.0–35.5) | 0 / 0 |
+| Show in Compact Form | 22.4 ms (18.8–29.7) | 22.5 ms (19.8–44.9) | 0 / 0 |
+| Book ticked into Rows: a new question | 171 ms (160–290) | 199 ms (156–386) | 0 / 51 (worst 139 / 152) |
+| Book unticked: a new question | 181 ms (143–225) | 180 ms (148–249) | 0 / 0 (worst 121 / 125) |
+| Filtered to USD: a new question | 136 ms (124–149) | 154 ms (151–165) | 0 / 0 |
+| Back to (All): a new question | 155 ms (146–212) | 175 ms (150–197) | 0 / 0 |
+
+- **A gesture laid out from the answer held is as quick as before**, within the noise. Its first
+  visual answer is still the answer itself: it is laid out and painted in the input's own turn, and
+  no yield was added.
+- **A new question took 0–28 ms more in its median.** Each of these answers has 50 leaves or
+  fewer, because a book belongs to one region and one desk. Work after the pass of that size never
+  reads the clock and adds no yield, so the difference is not the slicing's.
+- **The build after was measured second, on a busier machine.** In the same run, the page's read of
+  a million objects into a Snapshot, which this change does not touch, took 16% longer: 3,721 ms
+  against 3,207 ms.
 
 ## The long tasks left, traced
 

@@ -89,6 +89,8 @@ the same machine:
 - **Near the cap (197,151 leaves), the longest task fell from 1.65 s to 137 ms** (medians), and the
   answer went from 2.59 s to 2.79 s.
 - **Below 30,000 leaves, the median run has no long task**, and the answers are unchanged.
+- **Gestures laid out from the answer held are as quick as before.** Collapse, sort and form take
+  22–35 ms in their medians, and each is still painted in the input's own turn.
 - **The tasks left are not the work after the answer.** A diagnostic build traced them to the
   runtime's full collections — about 70 ms, landing inside a 30 ms slice — and to the one turn that
   puts the report on screen: 30–54 ms near the cap, including the grid's first render of it.
