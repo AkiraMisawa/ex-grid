@@ -219,7 +219,7 @@ public sealed class SnapshotColumnsBuilder
     {
         private readonly KeyIndexer? keys = shape.Key is null
             ? null
-            : new KeyIndexer(shape, segments, rows) { TextOf = code => stores[shape.KeyOrdinal]!.Text(code) };
+            : new KeyIndexer(shape, segments, rows, counts[shape.KeyOrdinal]) { TextOf = code => stores[shape.KeyOrdinal]!.Text(code) };
 
         public int Rows => rows;
 

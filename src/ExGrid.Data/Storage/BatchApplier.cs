@@ -403,14 +403,14 @@ internal static class Compaction
             }
             segments.Add(Gather.Build(shape, rows.AsSpan(0, length), source, start, null, indexKeys: false));
         }
+        var (stores, counts) = version.TextState();
         KeyIndex? keys = null;
         if (shape.Key is not null)
         {
-            var indexer = new KeyIndexer(shape, segments, version.RowCount);
+            var indexer = new KeyIndexer(shape, segments, version.RowCount, counts[shape.KeyOrdinal]);
             indexer.Step(long.MaxValue);
             keys = indexer.Index;
         }
-        var (stores, counts) = version.TextState();
         return Writers.Base(shape, segments, stores, counts, keys, version.RowCount, version.Version);
     }
 

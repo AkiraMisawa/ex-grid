@@ -76,7 +76,7 @@ internal sealed class ObjectsBuild<T>
     {
         if (shape.Key is not { } key)
             return true;
-        keys ??= new KeyIndexer(shape, segments, Total) { TextOf = code => interners[key.Ordinal]![code] };
+        keys ??= new KeyIndexer(shape, segments, Total, interners[key.Ordinal]?.Count ?? -1) { TextOf = code => interners[key.Ordinal]![code] };
         return keys.Step(deadline);
     }
 
