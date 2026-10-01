@@ -69,6 +69,8 @@ Built, 2026-10-01.
   (exactly `ExGrid.Data`, and `Apache.Arrow [23.0.0, 24.0.0)`), kept out of the release feed, and
   compiled into the smoke application; `RoundTrip/` runs a Snapshot of every kind through a stream
   and back through the packed packages and fails the check on any difference.
+- **Trimmable**, as `ExGrid.Data` is, with no trim warning. In the published smoke application,
+  which both reads and writes, `Apache.Arrow` is 70 KiB and `ExGrid.Data.Arrow` 29 KiB with Brotli.
 - **Measured** (4 vCPUs, .NET 10.0.12, CoreCLR, never gated): a million of the demo API's trades,
   keyed by a unique `TradeId` — 75.7 MiB raw, 17.7 MiB with gzip; written in 139 ms, read in
   388 ms from memory and 373 ms from a stream. Of the read, about 220 ms is the million distinct
