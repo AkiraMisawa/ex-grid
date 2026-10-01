@@ -4,17 +4,20 @@ import { sameColour, resolvedColour } from './pixels.mjs';
 import { STYLES, across, along, pattern, expected, isDark, isLight } from './line-pixels.mjs';
 
 // ExSheet's Borders as Excel draws them (ticket 49; ADR-0071; ADR-0050 item 15; DC-59, SH-46), read
-// in device pixels on /sheet?case=…, the eleventh and twelfth Windows runs' set-ups (SheetCases):
-// Excel's thirteen line styles on the Paper with its gridlines, a Fill over the gridlines, a line
-// over a Fill, the Selection over lines, the line two cells both record, a line on column A's left,
-// and rows that keep their one height.
+// in device pixels on /sheet?case=…, the eleventh, twelfth and fourteenth Windows runs' set-ups
+// (SheetCases): Excel's thirteen line styles on the Paper with its gridlines, a Fill over the
+// gridlines, two Fills meeting, a line over a Fill, a double line's middle over a Fill, the dashes,
+// the Selection over lines, the line two cells both record, a line on column A's left, and rows that
+// keep their one height.
 //
 // The line tests run at 100% here and at 150% in the chrome-150 project, whose display scale is set
-// on Chrome's command line as an OS sets it; Excel's pixels at both zooms are case 9's table.
+// on Chrome's command line as an OS sets it; Excel's pixels at both zooms are case 9's table, and
+// the fourteenth run's cases 16 to 18 at a 150% display.
 
 const WHITE = [255, 255, 255];
 const GRIDLINE = [0xe0, 0xe0, 0xe0];
 const YELLOW = [255, 255, 0];
+const LIGHT_BLUE = [0x00, 0xb0, 0xf0];
 const RED = [255, 0, 0];
 
 /** Opens a case's Sheet, with the pointer off it. */
@@ -52,7 +55,7 @@ async function expectLine(page, style, side) {
     const target = await reveal(page, `${side === 'bottom' ? 'B' : 'D'}${STYLES.indexOf(style) + 2}`);
     const box = await target.boundingBox();
     const { scale, pixel } = await across(page, box, side, 0.5);
-    const want = expected(style, scale);
+    const want = expected(style);
     for (const offset of want.light) {
         const pixels = await along(page, box, side, offset);
         expect(pixels.filter(isDark).length, `${style} leaves ${offset} clear`).toBe(0);
@@ -150,6 +153,79 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
         const box = await cell(sheet(page), 'B2').boundingBox();
         const { pixel } = await across(page, box, 'right', 0.5);
         for (const offset of [-3, -2, -1, 0, 1, 2]) expect(sameColour(pixel(offset), YELLOW, 2), `yellow at ${offset}`).toBe(true);
+    });
+
+    test('SH-46/DC-59: between two filled cells one above the other the gridline is the lower cell\'s Fill, and each Fill still covers its other gridlines (ADR-0071, the fourteenth run\'s case 16)', async ({ page }, testInfo) => {
+        await openCase(page, '14-16');
+        expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+        const grid = sheet(page);
+        const b2 = await cell(grid, 'B2').boundingBox();
+        const b3 = await cell(grid, 'B3').boundingBox();
+        // Excel: column B runs yellow, then light blue from the gridline between B2 and B3 on, which is
+        // one device pixel at a 150% display.
+        const between = (await across(page, b2, 'bottom', 0.5)).pixel;
+        expect(sameColour(between(-1), LIGHT_BLUE, 2), `the gridline between B2 and B3 is B3's (${between(-1)})`).toBe(true);
+        expect(sameColour(between(0), LIGHT_BLUE, 2), 'B3 after it').toBe(true);
+        expect(sameColour(between(-2), YELLOW, 2), `B2 up to it (${between(-2)})`).toBe(true);
+        // The other gridlines round each cell are its own Fill's: above B2 and left of it, B1's and
+        // A2's pixels; right of it, B2's own, C2 being unfilled; and round B3 the same.
+        for (const [name, box, side, colour] of [
+            ['above B2', b2, 'top', YELLOW], ['left of B2', b2, 'left', YELLOW], ['right of B2', b2, 'right', YELLOW],
+            ['left of B3', b3, 'left', LIGHT_BLUE], ['right of B3', b3, 'right', LIGHT_BLUE], ['below B3', b3, 'bottom', LIGHT_BLUE],
+        ]) {
+            const { pixel } = await across(page, box, side, 0.5);
+            expect(sameColour(pixel(-1), colour, 2), `the gridline ${name} (${pixel(-1)})`).toBe(true);
+        }
+    });
+
+    test('SH-46/DC-59: between two filled cells side by side the gridline is the right cell\'s Fill (ADR-0071, read from the fourteenth run\'s case 16)', async ({ page }) => {
+        await openCase(page, 'fills');
+        const { pixel } = await across(page, await cell(sheet(page), 'B2').boundingBox(), 'right', 0.5);
+        expect(sameColour(pixel(-1), LIGHT_BLUE, 2), `the gridline between B2 and C2 is C2's (${pixel(-1)})`).toBe(true);
+        expect(sameColour(pixel(0), LIGHT_BLUE, 2), 'C2 after it').toBe(true);
+        expect(sameColour(pixel(-2), YELLOW, 2), `B2 up to it (${pixel(-2)})`).toBe(true);
+    });
+
+    test('SH-46/DC-59: a double line\'s middle pixel is the Fill its gridline would show — dark, the Fill, dark (ADR-0071, the fourteenth run\'s case 17)', async ({ page }) => {
+        await openCase(page, '14-17');
+        const { pixel } = await across(page, await cell(sheet(page), 'B2').boundingBox(), 'bottom', 0.5);
+        expect(isDark(pixel(-2)), 'the line above the gridline').toBe(true);
+        expect(sameColour(pixel(-1), YELLOW, 2), `the gridline between the two is B2's Fill (${pixel(-1)})`).toBe(true);
+        expect(isDark(pixel(0)), 'the line past the gridline').toBe(true);
+        expect(sameColour(pixel(-3), YELLOW, 2), 'B2 above the line').toBe(true);
+        expect(sameColour(pixel(1), WHITE, 2), 'B3\'s Paper below it').toBe(true);
+    });
+
+    test('SH-46/DC-59: a double line between Fills shows the lower or right cell\'s in its middle, else the upper or left cell\'s (ADR-0071, read from the fourteenth run\'s cases 16 and 17)', async ({ page }) => {
+        await openCase(page, 'fills');
+        const grid = sheet(page);
+        // [cell, side, the middle pixel, the cell's own ground before the line, the neighbour's after it]
+        for (const [address, side, middle, before, after] of [
+            ['E2', 'bottom', YELLOW, WHITE, YELLOW],
+            ['B8', 'bottom', LIGHT_BLUE, YELLOW, LIGHT_BLUE],
+            ['B5', 'right', LIGHT_BLUE, YELLOW, LIGHT_BLUE],
+            ['E5', 'right', YELLOW, WHITE, YELLOW],
+        ]) {
+            const { pixel } = await across(page, await cell(grid, address).boundingBox(), side, 0.5);
+            expect(isDark(pixel(-2)), `${address}'s ${side}: the line before the gridline`).toBe(true);
+            expect(sameColour(pixel(-1), middle, 2), `${address}'s ${side}: the middle pixel (${pixel(-1)})`).toBe(true);
+            expect(isDark(pixel(0)), `${address}'s ${side}: the line past the gridline`).toBe(true);
+            expect(sameColour(pixel(-3), before, 2), `${address}'s ${side}: its own ground (${pixel(-3)})`).toBe(true);
+            expect(sameColour(pixel(1), after, 2), `${address}'s ${side}: the neighbour's ground (${pixel(1)})`).toBe(true);
+        }
+    });
+
+    test('SH-46/DC-59: medium dashed is 9 on and 3 off, and dashed 3 on and 1 off, in device pixels at the run\'s scale (ADR-0071, the fourteenth run\'s case 18)', async ({ page }, testInfo) => {
+        await openCase(page, '14-18');
+        expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
+        const grid = sheet(page);
+        for (const [address, rows, want] of [['B2', [-2, -1], [9, 3, 9, 3, 9]], ['B4', [-1], [3, 1, 3, 1, 3, 1, 3]]]) {
+            const box = await cell(grid, address).boundingBox();
+            for (const offset of rows) {
+                const lengths = pattern(await along(page, box, 'bottom', offset));
+                expect(lengths.slice(0, want.length), `${address} along ${offset}`).toEqual(want);
+            }
+        }
     });
 
     test('SH-46/DC-59: a thick line lies above the Fill below it, a pixel into the filled cell (ADR-0071, case 10)', async ({ page }) => {

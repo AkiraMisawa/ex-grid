@@ -55,29 +55,35 @@ internal sealed class AppearanceStyles
     }
 
     /// <summary>
-    /// The class attribute's appearance half for one cell, interned: its Font, its Fill, and its four
-    /// shares, or null when it paints none of them. The base half — kind, alignment, state — is the
-    /// row's to compose, and <see cref="Join"/> puts the two together.
+    /// The class attribute's appearance half for one cell, interned: its Font, its Fill, its four
+    /// shares, and the Fill over each gridline it holds that is not its own — <paramref name="rightCover"/>
+    /// and <paramref name="bottomCover"/>, beneath any line there — or null when it paints none of
+    /// them. The base half — kind, alignment, state — is the row's to compose, and <see cref="Join"/>
+    /// puts the two together.
     /// </summary>
-    public string? ClassFor(in CellAppearance own, Share top, Share right, Share bottom, Share left)
+    public string? ClassFor(in CellAppearance own, Share top, Share right, Share bottom, Share left, RgbColour? rightCover, RgbColour? bottomCover)
     {
         var font = new FontKey(own.FontColour?.Rgb ?? -1, own.Bold, own.Italic, own.Underline, own.Strikethrough);
-        var key = new CellKey(font, own.Fill?.Rgb ?? -1, top, right, bottom, left);
+        var key = new CellKey(font, own.Fill?.Rgb ?? -1, top, right, bottom, left, rightCover?.Rgb ?? -1, bottomCover?.Rgb ?? -1);
         if (_cells.TryGetValue(key, out var cached))
             return cached;
 
-        var parts = new List<string>(7);
+        var parts = new List<string>(9);
         if (font.Rgb >= 0 || font.Bold || font.Italic || font.Underline || font.Strikethrough)
             parts.Add(FontClass(font));
         if (key.Fill >= 0)
             parts.Add(FillClass(key.Fill));
-        if (!top.IsNone || !right.IsNone || !bottom.IsNone || !left.IsNone)
+        if (!top.IsNone || !right.IsNone || !bottom.IsNone || !left.IsNone || rightCover is not null || bottomCover is not null)
         {
             parts.Add("ex-lined");
             AddPart(parts, 't', top);
             AddPart(parts, 'r', right);
             AddPart(parts, 'b', bottom);
             AddPart(parts, 'l', left);
+            if (rightCover is { } coverRight)
+                AddPart(parts, 'r', Share.Cover(coverRight));
+            if (bottomCover is { } coverBottom)
+                AddPart(parts, 'b', Share.Cover(coverBottom));
         }
 
         var composed = parts.Count == 0 ? null : string.Join(' ', parts);
@@ -210,8 +216,11 @@ internal sealed class AppearanceStyles
         // The Fill covers the gridlines at its edges (ADR-0071; the eleventh run, cases 4–6): its own
         // colour covers the row's rule beneath it, a Pinned Column's cell paints that rule no more,
         // and the column rule on its right edge goes. The gridlines its neighbours paint are
-        // covered by their shares (Share.Cover).
+        // covered by their shares (Share.Cover), and so are its own where the cell below (right)
+        // has a Fill of its own (case 16 of the fourteenth). --ex-fill-color is what a double
+        // line's middle pixel shows on a gridline no neighbour's Fill covers.
         _rules.Append(".ex-cell.").Append(name).Append("{background-color:#").Append(Hex(rgb))
+            .Append(";--ex-fill-color:#").Append(Hex(rgb))
             .Append(";--ex-column-rule-color:transparent;--ex-row-rule:none}\n");
         Version++;
         return name;
@@ -231,10 +240,13 @@ internal sealed class AppearanceStyles
         if (share.Kind == ShareKind.Cover)
         {
             // A neighbour's Fill over the gridline this cell holds: a layer of its own, beneath every
-            // line, so a line along the other edge keeps its corner pixel (lines lie above Fills).
+            // line, so a line along the other edge keeps its corner pixel (lines lie above Fills),
+            // and the gaps of a dashed line on this gridline show it. Its colour is named as well,
+            // for a double line's middle pixel.
             _rules.Append('.').Append(name).Append("{--ex-cover-").Append(side)
                 .Append(":linear-gradient(to ").Append(toward).Append(',').Append(colour)
-                .Append(" 0 var(--ex-rule-width, 1px),transparent 0)}\n");
+                .Append(" 0 var(--ex-rule-width, 1px),transparent 0);--ex-cover-").Append(side)
+                .Append("-color:").Append(colour).Append("}\n");
             Version++;
             return;
         }
@@ -291,8 +303,12 @@ internal sealed class AppearanceStyles
         }
         else
         {
-            // Double: a line above (left of) the gridline, whose own pixel shows the ground.
-            image = $"linear-gradient(to {toward},var(--ex-background, Canvas) 0 var(--ex-dp),{colour} 0 calc(2 * var(--ex-dp)),transparent 0)";
+            // Double: a line above (left of) the gridline, whose own pixel shows what the gridline
+            // beneath it would: the lower (right) cell's Fill, else this cell's, else the ground (the
+            // fourteenth Windows run, case 17; the eleventh, case 9). Named, not left transparent:
+            // beneath a gridline no Fill covers lies the grid's rule, which Excel does not show there.
+            var under = $"var(--ex-cover-{side}-color,var(--ex-fill-color,var(--ex-background, Canvas)))";
+            image = $"linear-gradient(to {toward},{under} 0 var(--ex-dp),{colour} 0 calc(2 * var(--ex-dp)),transparent 0)";
             size = "100% 100%";
             at = "0 0";
         }
@@ -317,9 +333,9 @@ internal sealed class AppearanceStyles
     /// thick and double (case 9).</summary>
     internal static bool ReachesPast(BorderStyle style) => style is BorderStyle.Thick or BorderStyle.Double;
 
-    /// <summary>A dash segment: <see cref="Dash"/> is Excel's long dash, 8 device pixels at 100% and
-    /// 9 at 150% (<c>--ex-dash</c>, case 9); any other value is that many device pixels.</summary>
-    private const int Dash = -1;
+    /// <summary>Excel's long dash: 9 device pixels at every scale, as every other length of a pattern
+    /// is the same number of device pixels at every scale (the fourteenth Windows run, case 18).</summary>
+    private const int Dash = 9;
 
     private readonly record struct DashRow(int Height, int Offset, int[] Pattern);
 
@@ -345,27 +361,17 @@ internal sealed class AppearanceStyles
     private static string Repeating(string along, string colour, int[] pattern)
     {
         var css = new StringBuilder("repeating-linear-gradient(to ").Append(along);
-        var (dashes, pixels) = (0, 0);
-        var at = Length(dashes, pixels);
+        var at = 0;
         for (var i = 0; i < pattern.Length; i++)
         {
-            if (pattern[i] == Dash) dashes++;
-            else pixels += pattern[i];
-            var end = Length(dashes, pixels);
-            css.Append(',').Append(i % 2 == 0 ? colour : "transparent").Append(' ').Append(at).Append(' ').Append(end);
+            var end = at + pattern[i];
+            css.Append(',').Append(i % 2 == 0 ? colour : "transparent").Append(' ').Append(Length(at)).Append(' ').Append(Length(end));
             at = end;
         }
         return css.Append(')').ToString();
 
-        // A stop is one calc() of long dashes and device pixels, so it never rounds on the way.
-        static string Length(int dashes, int pixels) => (dashes, pixels) switch
-        {
-            (0, 0) => "0px",
-            (0, 1) => "var(--ex-dp)",
-            (0, _) => $"calc({pixels} * var(--ex-dp))",
-            (_, 0) => $"calc({dashes} * var(--ex-dash) * var(--ex-dp))",
-            _ => $"calc(({dashes} * var(--ex-dash) + {pixels}) * var(--ex-dp))",
-        };
+        // A stop is one calc() of device pixels from the tile's start, so it never rounds on the way.
+        static string Length(int pixels) => pixels == 0 ? "0px" : Device(pixels);
     }
 
     private static string Device(int pixels) => pixels == 1 ? "var(--ex-dp)" : $"calc({pixels} * var(--ex-dp))";
@@ -394,7 +400,7 @@ internal sealed class AppearanceStyles
 
     private readonly record struct PartKey(char Side, Share Share);
 
-    private readonly record struct CellKey(FontKey Font, int Fill, Share Top, Share Right, Share Bottom, Share Left);
+    private readonly record struct CellKey(FontKey Font, int Fill, Share Top, Share Right, Share Bottom, Share Left, int RightCover, int BottomCover);
 
     /// <summary>Compares the interned halves of a class attribute by reference.</summary>
     private sealed class ByReference : IEqualityComparer<(string Base, string Appearance)>

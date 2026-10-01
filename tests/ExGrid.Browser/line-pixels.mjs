@@ -72,11 +72,12 @@ export function pattern(pixels) {
 
 /**
  * Excel's pixels (the eleventh Windows run, case 9): which device pixels across the gridline each
- * style takes, counted as `across` counts them, and its dash pattern along it. A long dash is 8
- * pixels at 100% and 9 at 150%; every other length is the same at both.
+ * style takes, counted as `across` counts them, and its dash pattern along it. Every length is the
+ * same number of device pixels at every scale, and the long dash is 9 (the fourteenth run, case 18:
+ * the eleventh read 8 below 150%, which the fourteenth did not see at any zoom).
  */
-export function expected(style, scale) {
-    const dash = scale >= 1.5 ? 9 : 8;
+export function expected(style) {
+    const dash = 9;
     switch (style) {
         case 'Thin': return { dark: [-1], light: [-2, 0] };
         case 'Medium': return { dark: [-2, -1], light: [-3, 0] };

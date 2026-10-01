@@ -115,7 +115,7 @@ public class PinnedRowRuleTests : GridTestContext
         var filled = Cell(cut, 7, 0);
         Assert.Contains("ex-fill-ffff00", filled.ClassList);
 
-        Assert.Contains(".ex-cell.ex-fill-ffff00{background-color:#ffff00;--ex-column-rule-color:transparent;--ex-row-rule:none}", cut.Find(".ex-grid > style").TextContent);
+        Assert.Contains(".ex-cell.ex-fill-ffff00{background-color:#ffff00;--ex-fill-color:#ffff00;--ex-column-rule-color:transparent;--ex-row-rule:none}", cut.Find(".ex-grid > style").TextContent);
         Assert.True(ShippedStylesheetTests.Specificity(".ex-cell.ex-fill-ffff00").CompareTo(ShippedStylesheetTests.Specificity(".ex-pinned:where(.ex-cell)")) > 0);
     }
 }

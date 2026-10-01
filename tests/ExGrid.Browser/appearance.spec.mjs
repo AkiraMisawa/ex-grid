@@ -91,11 +91,26 @@ function pattern(pixels) {
     return lengths;
 }
 
+/** How many of `runs` a read of `length` pixels from the line's first dark one shows whole: a run is
+ * whole once the pixel after it is read. With no dark pixel the whole read is counted, and shows
+ * none of them. */
+function wholeRuns(runs, length) {
+    let end = 0;
+    let whole = 0;
+    for (const run of runs) {
+        end += run;
+        if (end >= length) break;
+        whole++;
+    }
+    return whole;
+}
+
 // Excel's pixels (the eleventh Windows run, case 9): which device pixels across the gridline each
-// style takes, counted as `across` counts them, and its dash pattern along it. A long dash is 8
-// pixels at 100% and 9 at 150%; every other length is the same at both.
-function expected(style, scale) {
-    const dash = scale >= 1.5 ? 9 : 8;
+// style takes, counted as `across` counts them, and its dash pattern along it. Every length is the
+// same number of device pixels at every scale, and the long dash is 9 (the fourteenth run, case 18:
+// the eleventh read 8 below 150%, which the fourteenth did not see at any zoom).
+function expected(style) {
+    const dash = 9;
     switch (style) {
         case 'Thin': return { dark: [-1], light: [-2, 0] };
         case 'Medium': return { dark: [-2, -1], light: [-3, 0] };
@@ -127,7 +142,7 @@ test.describe('DC-59: lines', () => {
                 await cell.scrollIntoViewIfNeeded();
                 const box = await cell.boundingBox();
                 const { scale, pixel } = await across(page, box, side, 0.5);
-                const want = expected(style, scale);
+                const want = expected(style);
                 for (const offset of want.light) {
                     // A dashed line is read where it is on, so "light" is about the rows beside it.
                     const pixels = await along(page, box, side, offset);
@@ -144,8 +159,12 @@ test.describe('DC-59: lines', () => {
                 } else {
                     for (const offset of want.rows) {
                         // As many whole runs as the cell's length holds: a right edge is one row high.
-                        const lengths = pattern(await along(page, box, side, offset)).slice(0, want.pattern.length);
-                        expect(lengths.length, `${style} along ${offset}: runs read`).toBeGreaterThanOrEqual(3);
+                        // At least three, or every whole one where it holds fewer: a row of 20 pixels
+                        // holds medium dashed's 9 and 3 and then cuts its next 9 (case 18).
+                        const pixels = await along(page, box, side, offset);
+                        const lengths = pattern(pixels).slice(0, want.pattern.length);
+                        const holds = wholeRuns(want.pattern.slice(0, 3), pixels.length - pixels.findIndex(isDark));
+                        expect(lengths.length, `${style} along ${offset}: runs read`).toBeGreaterThanOrEqual(holds);
                         expect(lengths, `${style} along ${offset} (scale ${scale})`).toEqual(want.pattern.slice(0, lengths.length));
                     }
                 }

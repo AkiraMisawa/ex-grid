@@ -196,6 +196,31 @@ public class SheetAppearanceTests : SheetTestContext
         }
     }
 
+    [Fact] // ADR-0071, SH-46 (the fourteenth Windows run, case 16): between two filled cells the gridline takes the lower cell's Fill, and side by side the right cell's
+    public void Between_two_fills_the_gridline_takes_the_lower_or_right_cells()
+    {
+        var lightBlue = CellFill.Solid(CellColour.FromRgb(0x00B0F0));
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(sheet =>
+        {
+            Format(sheet, "B2", new CellFormatChange { Fill = Yellow });
+            Format(sheet, "B3", new CellFormatChange { Fill = lightBlue });
+            Format(sheet, "E2", new CellFormatChange { Fill = Yellow });
+            Format(sheet, "F2", new CellFormatChange { Fill = lightBlue });
+        })));
+
+        // B2 holds the gridline between it and B3: B3's light blue covers it, over B2's yellow.
+        Assert.Contains("ex-fill-ffff00", Classes(cut, "B2"));
+        Assert.Contains("ex-lb-cover-00b0f0", Classes(cut, "B2"));
+        Assert.Contains("ex-lr-cover-00b0f0", Classes(cut, "E2"));
+        // Each filled cell still covers all four of its gridlines: B1 and A2 hold B2's top and left.
+        Assert.Contains("ex-lb-cover-ffff00", Classes(cut, "B1"));
+        Assert.Contains("ex-lr-cover-ffff00", Classes(cut, "A2"));
+        Assert.Contains("ex-lr-cover-00b0f0", Classes(cut, "A3"));
+        // B2's right and B3's bottom are their own Fill's: no cover.
+        Assert.DoesNotContain("ex-lr-cover-", Classes(cut, "B2"));
+        Assert.DoesNotContain("ex-lined", Classes(cut, "B3"));
+    }
+
     [Fact] // ADR-0071, SH-4: an entry on a Sheet whose levels are formatted repaints its row alone
     public async Task An_entry_beside_formatted_levels_repaints_its_row_alone()
     {

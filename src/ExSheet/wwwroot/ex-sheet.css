@@ -10,7 +10,8 @@
    How the exception to ADR-0027 is made. Everywhere else the grid's defaults stay on system colours
    and follow the page's scheme. ExSheet divides its grid by element, here and nowhere else:
    - What lies on the Paper is painted from the two tokens: the rows' ground, the cells' text, the
-     ground a Pinned Column's cells stand on, the middle pixel of a double line, the gridlines, and
+     ground a Pinned Column's cells stand on, the middle pixel of a double line with no Fill beneath
+     it (with one, the Fill's: the core's generated rules, ticket 99), the gridlines, and
      the Cell Editor in its cell, unless the edited cell's own Fill and Font replace them (the
      core's generated rules, ticket 88). Everything the grid draws over the rows — the Focus, the
      Selection, Reference Outlines and the pointed shade, the fill handle, the Cell Editor and its

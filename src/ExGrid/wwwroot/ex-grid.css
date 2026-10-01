@@ -261,7 +261,8 @@
    tint (--ex-tint: a Row Stripe's, a Row Kind's or a Missing state's, as the cascade picked it),
    which the lines never take away (ADR-0038, ADR-0024, ADR-0006). It covers the whole cell, as on
    a cell without lines, so it also lies over a neighbour's Fill covering the gridline this cell
-   holds (--ex-cover-r, --ex-cover-b) — in a group or total row that neighbour wears the same
+   holds (--ex-cover-r, --ex-cover-b: the right or lower cell's, over this cell's own Fill too, and
+   beneath any line on that gridline) — in a group or total row that neighbour wears the same
    tint, and a total row's rule runs on across the gridline — and beneath those the column rule,
    an inset shadow everywhere else, which would lie over the lines. Last, the row's rule, where a
    cell whose own ground hides the row's names it in --ex-row-rule (a Pinned Column's cell does,
@@ -282,15 +283,15 @@
     background-origin: border-box;
     box-shadow: none;
 }
-/* One device pixel, and Excel's long dash in device pixels: a line's lengths are the screen's, as
-   Excel's are — at 150% a thin line is still one pixel and thick three, and the long dash is 9
-   (the eleventh Windows run, case 9). The resolution follows browser zoom and display scale alike;
-   a resolution between two steps draws a little under a pixel, which the browser blends. Paint
-   only: nothing in C# computes with these. */
-.ex-grid { --ex-dp: 1px; --ex-dash: 8; }
+/* One device pixel: a line's lengths are the screen's, as Excel's are — at 150% a thin line is
+   still one pixel and thick three (the eleventh Windows run, case 9), and a dash pattern is the same
+   number of pixels at every scale, its long dash 9 (the fourteenth, case 18). The resolution follows
+   browser zoom and display scale alike; a resolution between two steps draws a little under a
+   pixel, which the browser blends. Paint only: nothing in C# computes with it. */
+.ex-grid { --ex-dp: 1px; }
 @media (min-resolution: 1.1dppx) { .ex-grid { --ex-dp: calc(1px / 1.1); } }
 @media (min-resolution: 1.25dppx) { .ex-grid { --ex-dp: 0.8px; } }
-@media (min-resolution: 1.5dppx) { .ex-grid { --ex-dp: calc(1px / 1.5); --ex-dash: 9; } }
+@media (min-resolution: 1.5dppx) { .ex-grid { --ex-dp: calc(1px / 1.5); } }
 @media (min-resolution: 1.75dppx) { .ex-grid { --ex-dp: calc(1px / 1.75); } }
 @media (min-resolution: 2dppx) { .ex-grid { --ex-dp: 0.5px; } }
 @media (min-resolution: 2.5dppx) { .ex-grid { --ex-dp: 0.4px; } }

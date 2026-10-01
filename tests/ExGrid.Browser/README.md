@@ -387,11 +387,15 @@ nobody had asked for. What that means when writing a test:
   *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
   the Sheet has heard the move, formats the extended range as one step (ticket 56).
 - `sheet-borders.spec.mjs` — ExSheet's Borders beside Excel's (ADR-0071, DC-59, SH-46; ticket 49)
-  on `/sheet?case=…`, the eleventh and twelfth Windows runs' set-ups, read in device pixels:
-  Excel's thirteen line styles on a bottom and on a right edge, scrolled down the Sheet, at 100%
-  here and at 150% in `chrome-150` (case 9's table, the long dash 8 and 9); rows keeping their one
-  height; a Fill over its four gridlines (case 4), a white Fill taking them away (case 5), two
-  Fills meeting (case 6); a thick line over the Fill below it (case 10); the left cell's line drawn
+  on `/sheet?case=…`, the eleventh, twelfth and fourteenth Windows runs' set-ups, read in device
+  pixels: Excel's thirteen line styles on a bottom and on a right edge, scrolled down the Sheet, at
+  100% here and at 150% in `chrome-150` (case 9's table, the long dash 9 at both, as the fourteenth
+  run's case 18 drew it); rows keeping their one height; a Fill over its four gridlines (case 4), a
+  white Fill taking them away (case 5), two Fills meeting (case 6); at both scales, the gridline
+  between two Fills taking the lower one's, and side by side the right one's (the fourteenth run's
+  case 16, and `fills`), a double line's middle pixel showing the Fill beneath it in each
+  arrangement (case 17, and `fills`), and medium dashed 9 on and 3 off with dashed 3 on and 1 off
+  (case 18); a thick line over the Fill below it (case 10); the left cell's line drawn
   where both cells record one (the twelfth run's case 1); the Selection's outline lying on the
   gridline and a pixel outside the range on all four sides, over the outer lines, with the lines
   inside staying drawn over its shade (case 11, ADR-0008 of 2026-10-01); and a line on column A's
