@@ -160,6 +160,10 @@ public sealed record GridMetrics
         // where the whole preset is — and the menu button's 16px/6px and the sort mark's
         // box (an em and a 6px gap) travel the same way, so the header estimate and the
         // stylesheet read one number (the pairing ADR-0027/0028 dissolved).
+        // The bold widths (ADR-0050, item 15) were measured the same way, at weight 700, on
+        // 2026-10-01: the widest per class of system-ui on macOS (14.35 / 9.25 / 5.852) and
+        // DejaVu Sans Bold, which Linux paints for both 600 and 700 (14.028 / 9.742 / 6.398).
+        // Excel's 12px set is that measurement scaled, rounded up, as the regular one is.
         var (row, header, font, wide, digit, narrow, padding, actionPad, actionBorder, actionGap, menuWidth, menuInset, sortMark)
             = density switch
         {
@@ -169,6 +173,9 @@ public sealed record GridMetrics
             GridDensity.Excel => (20d, 20d, 12d, 12.024, 8.351, 5.484, 4d, 4d, 1d, 2d, 14d, 4d, 16d),
             _ => throw new ArgumentOutOfRangeException(nameof(density), density, "Unknown density preset."),
         };
+        var (boldWide, boldDigit, boldNarrow) = density == GridDensity.Excel
+            ? (12.3, 8.351, 5.484)
+            : (14.35, 9.742, 6.398);
 
         var resolvedRow = rowHeightPx ?? row;
         // An explicit RowHeight moves the header with it unless the header was set
@@ -193,7 +200,8 @@ public sealed record GridMetrics
             // A full-width character is an em whatever the family, and the em is the font
             // size this grid emits, so explicit metrics too are charged at least that for
             // it — the uniform and three-class forms cannot know it (ADR-0016).
-            (cellMetrics ?? defaults?.CellMetricsAt(font, padding) ?? new CellTextMetrics(wide, digit, narrow, font, padding))
+            (cellMetrics ?? defaults?.CellMetricsAt(font, padding)
+                ?? new CellTextMetrics(wide, digit, narrow, font, padding, boldWide, boldDigit, boldNarrow))
                 .WithFullWidthAtLeast(font),
             actionPad, actionBorder, actionGap,
             menuWidth, menuInset, sortMark);

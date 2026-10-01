@@ -207,6 +207,41 @@
    own box, because the cell clips anything that reaches past its edge: its width and inward
    offset are the Focus outline's, set with it in the selection's rules below. */
 .ex-action-chosen { outline-style: solid; outline-color: var(--ex-focus-outline, CanvasText); }
+/* Borders (ADR-0050 item 15; ADR-0063, "What the measurement chose"): each cell draws its own share
+   of Excel's centred line — the upper (left) cell the gridline's pixel and what lies above (left
+   of) it, the lower (right) cell the pixel a thick or double line reaches past it — as background
+   layers over its Fill and under its text, so nothing is painted outside a row and no box changes
+   size. The grid's generated stylesheet names each share in custom properties (an image, its size,
+   where it stands; per side t, r, b, l), one class per side, line style and colour, and this one
+   rule reads them, so the sheet grows with the lines and never with their combinations. Beneath the
+   lines, a neighbour's Fill covering the gridline this cell holds (--ex-cover-r, --ex-cover-b), and
+   beneath that the column rule, an inset shadow everywhere else, which would lie over the lines.
+   Declared before the Cell States, so a Modified cell's mark still wins its box-shadow. */
+.ex-cell.ex-lined {
+    background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
+        var(--ex-cover-r, none), var(--ex-cover-b, none),
+        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0);
+    background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
+        100% 100%, 100% 100%, 100% 100%;
+    background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
+        0 0, 0 0, 0 0;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+    box-shadow: none;
+}
+/* One device pixel, and Excel's long dash in device pixels: a line's lengths are the screen's, as
+   Excel's are — at 150% a thin line is still one pixel and thick three, and the long dash is 9
+   (the eleventh Windows run, case 9). The resolution follows browser zoom and display scale alike;
+   a resolution between two steps draws a little under a pixel, which the browser blends. Paint
+   only: nothing in C# computes with these. */
+.ex-grid { --ex-dp: 1px; --ex-dash: 8; }
+@media (min-resolution: 1.1dppx) { .ex-grid { --ex-dp: calc(1px / 1.1); } }
+@media (min-resolution: 1.25dppx) { .ex-grid { --ex-dp: 0.8px; } }
+@media (min-resolution: 1.5dppx) { .ex-grid { --ex-dp: calc(1px / 1.5); --ex-dash: 9; } }
+@media (min-resolution: 1.75dppx) { .ex-grid { --ex-dp: calc(1px / 1.75); } }
+@media (min-resolution: 2dppx) { .ex-grid { --ex-dp: 0.5px; } }
+@media (min-resolution: 2.5dppx) { .ex-grid { --ex-dp: 0.4px; } }
+@media (min-resolution: 3dppx) { .ex-grid { --ex-dp: calc(1px / 3); } }
 /* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
    says what that looks like — hence a variable per state with a default that only has to
    be legible. Every one of them decorates; none replaces the text. Missing in particular

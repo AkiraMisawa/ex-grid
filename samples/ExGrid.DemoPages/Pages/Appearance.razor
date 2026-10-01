@@ -1,0 +1,143 @@
+@page "/appearance"
+@using global::ExGrid.MudBlazor
+
+@* The font the bold grid's widths were measured for, loaded by this page alone so the other
+   pages stay bare. *@
+<HeadContent>
+    <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+</HeadContent>
+
+<DemoNav />
+
+<h1>Cell appearance</h1>
+
+<p>
+    A per-cell Font, Fill and Borders, as a Consumer supplies them (ADR-0050, item 15), painted as
+    Excel paints them (ADR-0063). The browser layer reads these grids' pixels.
+</p>
+
+<h2>Bold is judged by bold widths</h2>
+<p>
+    Roboto, with the widths ExGrid.MudBlazor measured for it, regular and bold. The same number in
+    every cell: <i>Fits</i> is as wide as the number needs at the regular widths, so the bold one
+    there is <code>####</code>; <i>Wide</i> is as wide as it needs bold.
+</p>
+<div id="appearance-bold" class="demo-roboto">
+    <CascadingValue Value="MudExGridPresentation.Roboto">
+        <ExGrid TRow="AppearanceRow" Window="BoldRows" Columns="BoldColumns" CellAppearance="BoldOf"
+                Density="GridDensity.Standard" ViewportHeight="140" ViewportWidth="420" />
+    </CascadingValue>
+</div>
+
+<h2>Italic is not cut</h2>
+<p>
+    Italic, judged by the regular widths: text against the left edge, and a number against the
+    right edge of a column exactly as wide as the number needs.
+</p>
+<div id="appearance-italic">
+    <ExGrid TRow="AppearanceRow" Window="ItalicRows" Columns="ItalicColumns" CellAppearance="ItalicOf"
+            Density="GridDensity.Excel" ViewportHeight="120" ViewportWidth="320" />
+</div>
+
+<h2>Borders</h2>
+<p>
+    Excel's thirteen line styles, black: each on the bottom of a cell in <i>B</i> and on the right
+    of a cell in <i>D</i>. In <i>C</i>, a red thick line over a yellow Fill, for the Fill below it
+    and the Focus above it.
+</p>
+<div id="appearance-borders">
+    <ExGrid TRow="AppearanceRow" Window="BorderRows" Columns="BorderColumns" CellAppearance="BorderOf"
+            Density="GridDensity.Excel" ViewportHeight="320" ViewportWidth="360" />
+</div>
+
+<style>
+    .demo-roboto { --ex-font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
+</style>
+
+@code {
+    /// <summary>One row of these grids: its position, and the values its cells show.</summary>
+    public sealed class AppearanceRow
+    {
+        public int Index;
+        public string Label = "";
+        public decimal? Number;
+        public string Text = "";
+    }
+
+    /// <summary>Excel's thirteen line styles, in the order the eleventh Windows run drew them.</summary>
+    public static readonly BorderStyle[] Styles =
+    [
+        BorderStyle.Hair, BorderStyle.Thin, BorderStyle.Medium, BorderStyle.Thick, BorderStyle.Double,
+        BorderStyle.Dotted, BorderStyle.Dashed, BorderStyle.DashDot, BorderStyle.DashDotDot,
+        BorderStyle.MediumDashed, BorderStyle.MediumDashDot, BorderStyle.MediumDashDotDot, BorderStyle.SlantedDashDot,
+    ];
+
+    // Roboto's Standard widths: "1234567890" needs 80 + 16 = 96px at the regular digit (8.0) and
+    // 83.3 + 16 = 99.3px at the bold one (8.33).
+    private static readonly AppearanceRow[] BoldRows =
+    [
+        new() { Index = 0, Label = "Regular", Number = 1234567890m },
+        new() { Index = 1, Label = "Bold", Number = 1234567890m },
+    ];
+
+    private static readonly GridColumn<AppearanceRow>[] BoldColumns =
+    [
+        new("Label", ColumnType.Text, r => r.Label, width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+        new("Fits", ColumnType.Number, r => r.Number, width: new ColumnWidthSpec(ColumnWidth.Fixed(97))),
+        new("Wide", ColumnType.Number, r => r.Number, width: new ColumnWidthSpec(ColumnWidth.Fixed(100))),
+    ];
+
+    private static readonly CellAppearanceOf<AppearanceRow> BoldOf = (row, _) =>
+        row.Index == 1 ? new CellAppearance { Bold = true } : default;
+
+    // The Excel preset's widths: "1234567" needs 7 × 8.351 + 8 = 66.457px, so 67 fits it.
+    private static readonly AppearanceRow[] ItalicRows =
+    [
+        new() { Index = 0, Text = "fjfjfj", Number = 1234567m },
+        new() { Index = 1, Text = "jWjWjW", Number = 7777777m },
+    ];
+
+    private static readonly GridColumn<AppearanceRow>[] ItalicColumns =
+    [
+        new("Text", ColumnType.Text, r => r.Text, width: new ColumnWidthSpec(ColumnWidth.Fixed(120))),
+        new("Number", ColumnType.Number, r => r.Number, width: new ColumnWidthSpec(ColumnWidth.Fixed(67))),
+    ];
+
+    private static readonly CellAppearanceOf<AppearanceRow> ItalicOf = (_, _) => new CellAppearance { Italic = true };
+
+    private static readonly AppearanceRow[] BorderRows = BuildBorderRows();
+
+    private static AppearanceRow[] BuildBorderRows()
+    {
+        var rows = new AppearanceRow[15];
+        for (var i = 0; i < rows.Length; i++)
+            rows[i] = new AppearanceRow { Index = i, Label = i < Styles.Length ? Styles[i].ToString() : "" };
+        return rows;
+    }
+
+    // Even widths, so every gridline falls on a device pixel at 150% as well.
+    private static readonly GridColumn<AppearanceRow>[] BorderColumns =
+    [
+        new("A", ColumnType.Text, r => r.Label, width: new ColumnWidthSpec(ColumnWidth.Fixed(110))),
+        new("B", ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(64))),
+        new("C", ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(64))),
+        new("D", ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(64))),
+        new("E", ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(48))),
+    ];
+
+    private static readonly RgbColour Red = RgbColour.FromRgb(0xFF0000);
+    private static readonly RgbColour Yellow = RgbColour.FromRgb(0xFFFF00);
+
+    private static readonly CellAppearanceOf<AppearanceRow> BorderOf = (row, column) =>
+    {
+        var style = row.Index < Styles.Length ? Styles[row.Index] : BorderStyle.None;
+        return column.Name switch
+        {
+            "B" when style != BorderStyle.None => new CellAppearance { Bottom = new Border(style) },
+            "D" when style != BorderStyle.None => new CellAppearance { Right = new Border(style) },
+            "C" when row.Index == 3 => new CellAppearance { Bottom = new Border(BorderStyle.Thick, Red) },
+            "C" when row.Index == 4 => new CellAppearance { Fill = Yellow },
+            _ => default,
+        };
+    };
+}

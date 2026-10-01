@@ -1,0 +1,350 @@
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Text;
+using ExGrid.Cells;
+
+namespace ExGrid.Components;
+
+/// <summary>
+/// The classes a per-cell appearance is painted with, and the stylesheet that gives them their
+/// meaning (ADR-0050, item 15; ADR-0063, "What the measurement chose"). One grid's, so its strings
+/// and rules go with it.
+///
+/// <para><b>Interned per part, never per combination of parts.</b> Each distinct Font, each Fill
+/// colour, and each line on each side gets one class and one rule, the first time it is asked for.
+/// A cell names the classes of its parts; the combination is interned here as a string (P5), but the
+/// stylesheet grows only with the parts. A class's name says what it paints — <c>ex-fill-ffff00</c>
+/// is that yellow in every grid — so two grids on one page that write the same rule write the same
+/// meaning (ADR-0018).</para>
+///
+/// <para><b>Lines are drawn inside each cell</b>, each cell painting its own share of Excel's centred
+/// line (the eleventh Windows run, case 9): the upper (left) cell the gridline's pixel and the
+/// pixels above it (left of it), the lower (right) cell what lies below (right of) it, which only
+/// thick and double have. Each share is a background layer, over the Fill and under the text, read
+/// by one static rule in <c>ex-grid.css</c> (<c>.ex-lined</c>) from the custom properties a part's
+/// class sets. Lengths are device pixels (<c>--ex-dp</c>), as Excel's are; a solid share is a
+/// gradient over the whole cell whose hard stop falls on a device pixel, and a dash pattern a tile
+/// as high as its line.</para>
+/// </summary>
+internal sealed class AppearanceStyles
+{
+    private readonly Dictionary<FontKey, string> _fonts = [];
+    private readonly Dictionary<int, string> _fills = [];
+    private readonly Dictionary<PartKey, string> _parts = [];
+    private readonly Dictionary<CellKey, string?> _cells = [];
+    private readonly Dictionary<(string Base, string Appearance), string> _joined = new(ByReference.Instance);
+    private readonly StringBuilder _rules = new();
+    private string _css = "";
+
+    /// <summary>Moves whenever a rule is added; the grid repaints its stylesheet when it does, and
+    /// at no other time.</summary>
+    public int Version { get; private set; }
+
+    /// <summary>Every rule asked for so far, as the grid's generated <c>&lt;style&gt;</c> holds them.</summary>
+    public string Css
+    {
+        get
+        {
+            if (_css.Length != _rules.Length)
+                _css = _rules.ToString();
+            return _css;
+        }
+    }
+
+    /// <summary>
+    /// The class attribute's appearance half for one cell, interned: its Font, its Fill, and its four
+    /// shares, or null when it paints none of them. The base half — kind, alignment, state — is the
+    /// row's to compose, and <see cref="Join"/> puts the two together.
+    /// </summary>
+    public string? ClassFor(in CellAppearance own, Share top, Share right, Share bottom, Share left)
+    {
+        var font = new FontKey(own.FontColour?.Rgb ?? -1, own.Bold, own.Italic, own.Underline, own.Strikethrough);
+        var key = new CellKey(font, own.Fill?.Rgb ?? -1, top, right, bottom, left);
+        if (_cells.TryGetValue(key, out var cached))
+            return cached;
+
+        var parts = new List<string>(7);
+        if (font.Rgb >= 0 || font.Bold || font.Italic || font.Underline || font.Strikethrough)
+            parts.Add(FontClass(font));
+        if (key.Fill >= 0)
+            parts.Add(FillClass(key.Fill));
+        if (!top.IsNone || !right.IsNone || !bottom.IsNone || !left.IsNone)
+        {
+            parts.Add("ex-lined");
+            AddPart(parts, 't', top);
+            AddPart(parts, 'r', right);
+            AddPart(parts, 'b', bottom);
+            AddPart(parts, 'l', left);
+        }
+
+        var composed = parts.Count == 0 ? null : string.Join(' ', parts);
+        _cells[key] = composed;
+        return composed;
+    }
+
+    /// <summary>The whole class attribute of a cell: its base classes and its appearance's,
+    /// interned per pair (P5). Both halves are interned strings, so the pair is compared by
+    /// reference.</summary>
+    public string Join(string baseClass, string appearanceClass)
+    {
+        if (_joined.TryGetValue((baseClass, appearanceClass), out var joined))
+            return joined;
+        joined = string.Concat(baseClass, " ", appearanceClass);
+        _joined[(baseClass, appearanceClass)] = joined;
+        return joined;
+    }
+
+    private void AddPart(List<string> parts, char side, Share share)
+    {
+        if (share.IsNone)
+            return;
+        var key = new PartKey(side, share);
+        if (!_parts.TryGetValue(key, out var name))
+        {
+            name = share.Kind == ShareKind.Cover
+                ? $"ex-l{side}-cover-{Hex(share.Rgb)}"
+                : $"ex-l{side}-{StyleName(share.Style)}-{Hex(share.Rgb)}";
+            _parts[key] = name;
+            AppendPartRule(name, side, share);
+        }
+        parts.Add(name);
+    }
+
+    private string FontClass(FontKey font)
+    {
+        if (_fonts.TryGetValue(font, out var name))
+            return name;
+        var flags = string.Concat(font.Bold ? "b" : "", font.Italic ? "i" : "", font.Underline ? "u" : "", font.Strikethrough ? "s" : "");
+        name = $"ex-font-{(font.Rgb >= 0 ? Hex(font.Rgb) : "x")}{flags}";
+        _fonts[font] = name;
+
+        // A Stale or Error Cell State keeps its own look: the state is never the one that
+        // disappears (ADR-0006). Over a tone the Font wins, being the cell's own.
+        _rules.Append(".ex-cell:not(.ex-state-stale, .ex-state-error).").Append(name).Append('{');
+        if (font.Rgb >= 0)
+            _rules.Append("color:#").Append(Hex(font.Rgb)).Append(';');
+        if (font.Bold)
+            _rules.Append("font-weight:700;");
+        if (font.Italic)
+            _rules.Append("font-style:italic;");
+        if (font.Underline || font.Strikethrough)
+        {
+            _rules.Append("text-decoration-line:")
+                .Append(font.Underline && font.Strikethrough ? "underline line-through" : font.Underline ? "underline" : "line-through")
+                .Append(';');
+        }
+        _rules.Append("}\n");
+        Version++;
+        return name;
+    }
+
+    private string FillClass(int rgb)
+    {
+        if (_fills.TryGetValue(rgb, out var name))
+            return name;
+        name = $"ex-fill-{Hex(rgb)}";
+        _fills[rgb] = name;
+        // The Fill covers the gridlines at its edges (ADR-0063; the eleventh run, cases 4–6): its own
+        // colour covers the row's rule beneath it, and the column rule on its right edge goes. The
+        // gridlines its neighbours paint are covered by their shares (Share.Cover).
+        _rules.Append(".ex-cell.").Append(name).Append("{background-color:#").Append(Hex(rgb))
+            .Append(";--ex-column-rule-color:transparent}\n");
+        Version++;
+        return name;
+    }
+
+    private void AppendPartRule(string name, char side, Share share)
+    {
+        // t and l are the shares a line reaches into the lower (right) cell with; b and r the
+        // gridline's pixel and what lies above (left of) it.
+        var horizontal = side is 't' or 'b';
+        var fromFar = side is 'b' or 'r';
+        var toward = horizontal ? (fromFar ? "top" : "bottom") : (fromFar ? "left" : "right");
+        var along = horizontal ? "right" : "bottom";
+        var colour = "#" + Hex(share.Rgb);
+        var property = "--ex-line-" + side;
+
+        if (share.Kind == ShareKind.Cover)
+        {
+            // A neighbour's Fill over the gridline this cell holds: a layer of its own, beneath every
+            // line, so a line along the other edge keeps its corner pixel (lines lie above Fills).
+            _rules.Append('.').Append(name).Append("{--ex-cover-").Append(side)
+                .Append(":linear-gradient(to ").Append(toward).Append(',').Append(colour)
+                .Append(" 0 var(--ex-rule-width, 1px),transparent 0)}\n");
+            Version++;
+            return;
+        }
+
+        string image, size, at;
+        if (!fromFar)
+        {
+            // The pixel past the gridline: thick's and double's only.
+            image = $"linear-gradient(to {toward},{colour} 0 var(--ex-dp),transparent 0)";
+            size = "100% 100%";
+            at = "0 0";
+        }
+        else if (Dashes(share.Style) is { } rows)
+        {
+            // Each row of the line its own tile, as high as the row and as long as the cell, so a
+            // pattern starts at the cell's edge. Slanted dash-dot's two rows differ; every other
+            // pattern is the same on both.
+            var images = new List<string>(rows.Length);
+            var sizes = new List<string>(rows.Length);
+            var ats = new List<string>(rows.Length);
+            for (var r = 0; r < rows.Length; r++)
+            {
+                images.Add(Repeating(along, colour, rows[r].Pattern));
+                var thick = rows[r].Height == 1 ? "var(--ex-dp)" : $"calc({rows[r].Height} * var(--ex-dp))";
+                sizes.Add(horizontal ? $"100% {thick}" : $"{thick} 100%");
+                var offset = rows[r].Offset == 0 ? "0px" : "var(--ex-dp)";
+                ats.Add(horizontal ? $"left 0 bottom {offset}" : $"right {offset} top 0");
+            }
+            image = string.Join(',', images);
+            size = string.Join(',', sizes);
+            at = string.Join(',', ats);
+        }
+        else
+        {
+            image = share.Style == BorderStyle.Double
+                ? $"linear-gradient(to {toward},var(--ex-background, Canvas) 0 var(--ex-dp),{colour} 0 calc(2 * var(--ex-dp)),transparent 0)"
+                : $"linear-gradient(to {toward},{colour} 0 {Device(UpPixels(share.Style))},transparent 0)";
+            size = "100% 100%";
+            at = "0 0";
+        }
+
+        _rules.Append('.').Append(name).Append('{')
+            .Append(property).Append(':').Append(image).Append(';')
+            .Append(property).Append("-size:").Append(size).Append(';')
+            .Append(property).Append("-at:").Append(at).Append("}\n");
+        Version++;
+    }
+
+    /// <summary>How many device pixels a line takes on its gridline and above it (left of it):
+    /// one for the 1-px styles, two for medium, thick, double and the medium dashes (case 9).</summary>
+    internal static int UpPixels(BorderStyle style) => style switch
+    {
+        BorderStyle.Medium or BorderStyle.Thick or BorderStyle.Double or BorderStyle.MediumDashed
+            or BorderStyle.MediumDashDot or BorderStyle.MediumDashDotDot or BorderStyle.SlantedDashDot => 2,
+        _ => 1,
+    };
+
+    /// <summary>Whether a line reaches one pixel past its gridline into the lower (right) cell:
+    /// thick and double (case 9).</summary>
+    internal static bool ReachesPast(BorderStyle style) => style is BorderStyle.Thick or BorderStyle.Double;
+
+    /// <summary>A dash segment: <see cref="Dash"/> is Excel's long dash, 8 device pixels at 100% and
+    /// 9 at 150% (<c>--ex-dash</c>, case 9); any other value is that many device pixels.</summary>
+    private const int Dash = -1;
+
+    private readonly record struct DashRow(int Height, int Offset, int[] Pattern);
+
+    /// <summary>The dash rows of a patterned style, nearest the gridline last, or null for a solid
+    /// one. Each pattern alternates on and off, starting on.</summary>
+    private static DashRow[]? Dashes(BorderStyle style) => style switch
+    {
+        BorderStyle.Hair => [new(1, 0, [1, 1])],
+        BorderStyle.Dotted => [new(1, 0, [2, 2])],
+        BorderStyle.Dashed => [new(1, 0, [3, 1])],
+        BorderStyle.DashDot => [new(1, 0, [Dash, 3, 3, 3])],
+        BorderStyle.DashDotDot => [new(1, 0, [Dash, 3, 3, 3, 3, 3])],
+        BorderStyle.MediumDashed => [new(2, 0, [Dash, 3])],
+        BorderStyle.MediumDashDot => [new(2, 0, [Dash, 3, 3, 3])],
+        BorderStyle.MediumDashDotDot => [new(2, 0, [Dash, 3, 3, 3, 3, 3])],
+        // Excel offsets the two rows of a slanted dash-dot: 11 on, 1 off, 5 on, 1 off above the
+        // gridline, and on the gridline the same period shifted a pixel and narrower (case 9, at
+        // both zooms).
+        BorderStyle.SlantedDashDot => [new(1, 1, [11, 1, 5, 1]), new(1, 0, [9, 2, 4, 2, 1, 0])],
+        _ => null,
+    };
+
+    private static string Repeating(string along, string colour, int[] pattern)
+    {
+        var css = new StringBuilder("repeating-linear-gradient(to ").Append(along);
+        var (dashes, pixels) = (0, 0);
+        var at = Length(dashes, pixels);
+        for (var i = 0; i < pattern.Length; i++)
+        {
+            if (pattern[i] == Dash) dashes++;
+            else pixels += pattern[i];
+            var end = Length(dashes, pixels);
+            css.Append(',').Append(i % 2 == 0 ? colour : "transparent").Append(' ').Append(at).Append(' ').Append(end);
+            at = end;
+        }
+        return css.Append(')').ToString();
+
+        // A stop is one calc() of long dashes and device pixels, so it never rounds on the way.
+        static string Length(int dashes, int pixels) => (dashes, pixels) switch
+        {
+            (0, 0) => "0px",
+            (0, 1) => "var(--ex-dp)",
+            (0, _) => $"calc({pixels} * var(--ex-dp))",
+            (_, 0) => $"calc({dashes} * var(--ex-dash) * var(--ex-dp))",
+            _ => $"calc(({dashes} * var(--ex-dash) + {pixels}) * var(--ex-dp))",
+        };
+    }
+
+    private static string Device(int pixels) => pixels == 1 ? "var(--ex-dp)" : $"calc({pixels} * var(--ex-dp))";
+
+    private static string StyleName(BorderStyle style) => style switch
+    {
+        BorderStyle.Hair => "hair",
+        BorderStyle.Thin => "thin",
+        BorderStyle.Medium => "medium",
+        BorderStyle.Thick => "thick",
+        BorderStyle.Double => "double",
+        BorderStyle.Dotted => "dotted",
+        BorderStyle.Dashed => "dashed",
+        BorderStyle.DashDot => "dashdot",
+        BorderStyle.DashDotDot => "dashdotdot",
+        BorderStyle.MediumDashed => "mediumdashed",
+        BorderStyle.MediumDashDot => "mediumdashdot",
+        BorderStyle.MediumDashDotDot => "mediumdashdotdot",
+        BorderStyle.SlantedDashDot => "slanteddashdot",
+        _ => throw new ArgumentOutOfRangeException(nameof(style), style, null),
+    };
+
+    private static string Hex(int rgb) => rgb.ToString("x6", CultureInfo.InvariantCulture);
+
+    private readonly record struct FontKey(int Rgb, bool Bold, bool Italic, bool Underline, bool Strikethrough);
+
+    private readonly record struct PartKey(char Side, Share Share);
+
+    private readonly record struct CellKey(FontKey Font, int Fill, Share Top, Share Right, Share Bottom, Share Left);
+
+    /// <summary>Compares the interned halves of a class attribute by reference.</summary>
+    private sealed class ByReference : IEqualityComparer<(string Base, string Appearance)>
+    {
+        public static readonly ByReference Instance = new();
+
+        public bool Equals((string Base, string Appearance) x, (string Base, string Appearance) y)
+            => ReferenceEquals(x.Base, y.Base) && ReferenceEquals(x.Appearance, y.Appearance);
+
+        public int GetHashCode((string Base, string Appearance) obj)
+            => HashCode.Combine(RuntimeHelpers.GetHashCode(obj.Base), RuntimeHelpers.GetHashCode(obj.Appearance));
+    }
+}
+
+/// <summary>What a share of one edge paints in a cell: nothing, the cell's share of a line, or the
+/// neighbour's Fill over the gridline this cell holds.</summary>
+internal enum ShareKind : byte
+{
+    None = 0,
+    Line,
+    Cover,
+}
+
+/// <summary>
+/// One cell's share of one edge, resolved from both cells' records (ADR-0050, item 15). A bottom or
+/// right share is the gridline's pixel and what lies above (left of) it; a top or left share is the
+/// pixel a thick or double line reaches past the gridline into this cell.
+/// </summary>
+internal readonly record struct Share(ShareKind Kind, BorderStyle Style, int Rgb)
+{
+    public static Share None => default;
+
+    public bool IsNone => Kind == ShareKind.None;
+
+    public static Share Line(Border line) => line.IsNone ? default : new(ShareKind.Line, line.Style, line.Colour.Rgb);
+
+    public static Share Cover(RgbColour fill) => new(ShareKind.Cover, BorderStyle.None, fill.Rgb);
+}

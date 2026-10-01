@@ -1,3 +1,5 @@
+using ExGrid.Columns;
+
 namespace ExGrid.MudBlazor;
 
 /// <summary>
@@ -29,9 +31,25 @@ public static class MudExGridPresentation
     /// them to the resolved font size (ADR-0028).</summary>
     public const double RobotoMeasuredAtPx = 14;
 
+    /// <summary>
+    /// Roboto bold (ADR-0050, item 15: a bold cell is judged by bold widths), measured in Chrome
+    /// on 2026-10-01 at 14px and weight 700 from the Roboto the demo pages serve, as the regular
+    /// widths were: <c>%</c> 10.352px (<c>#</c> 8.292, <c>€</c> 8.036). Declared a shade over, as
+    /// they are.
+    /// </summary>
+    public const double RobotoBoldWidePx = 10.4;
+
+    /// <summary>Roboto bold's digit class: the tabular digit is 8.036px and <c>£</c>, the widest
+    /// glyph the class holds, 8.323px.</summary>
+    public const double RobotoBoldDigitPx = 8.33;
+
+    /// <summary>Roboto bold's widest separator, <c>)</c>, measured at 4.917px.</summary>
+    public const double RobotoBoldNarrowPx = 4.95;
+
     /// <summary>The widths alone — no density, no hover — for a bare grid.</summary>
     public static GridPresentationDefaults Roboto { get; } =
-        new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx);
+        new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx,
+            RobotoBoldWidePx, RobotoBoldDigitPx, RobotoBoldNarrowPx);
 
     // One instance per combination: an allocation-free lookup, and a cascaded value
     // that only changes when Dense, Hover or Striped do. Identity buys nothing beyond
@@ -46,6 +64,7 @@ public static class MudExGridPresentation
         for (var flags = 0; flags < all.Length; flags++)
         {
             all[flags] = new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx,
+                RobotoBoldWidePx, RobotoBoldDigitPx, RobotoBoldNarrowPx,
                 DensityFor(dense: (flags & 4) != 0), highlightHoverRow: (flags & 2) != 0,
                 stripeRows: (flags & 1) != 0);
         }
@@ -77,9 +96,14 @@ public static class MudExGridPresentation
     public static GridPresentationDefaults For(MudExGridFont font, bool dense, bool hover, bool striped)
     {
         ArgumentNullException.ThrowIfNull(font);
-        return new GridPresentationDefaults(
-            font.WideWidthPx, font.DigitWidthPx, font.NarrowWidthPx, font.MeasuredAtPx,
-            DensityFor(dense), hover, striped);
+        return font.BoldWideWidthPx is { } boldWide && font.BoldDigitWidthPx is { } boldDigit
+            && font.BoldNarrowWidthPx is { } boldNarrow
+            ? new GridPresentationDefaults(
+                font.WideWidthPx, font.DigitWidthPx, font.NarrowWidthPx, font.MeasuredAtPx,
+                boldWide, boldDigit, boldNarrow, DensityFor(dense), hover, striped)
+            : new GridPresentationDefaults(
+                font.WideWidthPx, font.DigitWidthPx, font.NarrowWidthPx, font.MeasuredAtPx,
+                DensityFor(dense), hover, striped);
     }
 }
 
@@ -96,13 +120,21 @@ public static class MudExGridPresentation
 /// <c>#</c> — in this font (ADR-0016).</param>
 /// <param name="DigitWidthPx">A tabular digit in this font.</param>
 /// <param name="NarrowWidthPx">The widest separator in this font.</param>
-/// <param name="MeasuredAtPx">The font size the three widths were measured at.</param>
+/// <param name="MeasuredAtPx">The font size the widths were measured at.</param>
+/// <param name="BoldWideWidthPx">The wide class at the bold weight, or null (ADR-0050, item 15).
+/// Without all three bold widths, a bold cell is charged the core's allowance over the regular
+/// ones (<see cref="CellTextMetrics.BoldWidthAllowance"/>).</param>
+/// <param name="BoldDigitWidthPx">A tabular digit at the bold weight, or null.</param>
+/// <param name="BoldNarrowWidthPx">The widest separator at the bold weight, or null.</param>
 public sealed record MudExGridFont(
-    string Family, double WideWidthPx, double DigitWidthPx, double NarrowWidthPx, double MeasuredAtPx)
+    string Family, double WideWidthPx, double DigitWidthPx, double NarrowWidthPx, double MeasuredAtPx,
+    double? BoldWideWidthPx = null, double? BoldDigitWidthPx = null, double? BoldNarrowWidthPx = null)
 {
     /// <summary>Roboto, as this package measured it.</summary>
     public static MudExGridFont Roboto { get; } = new(
         "Roboto, \"Helvetica Neue\", Arial, sans-serif",
         MudExGridPresentation.RobotoWidePx, MudExGridPresentation.RobotoDigitPx,
-        MudExGridPresentation.RobotoNarrowPx, MudExGridPresentation.RobotoMeasuredAtPx);
+        MudExGridPresentation.RobotoNarrowPx, MudExGridPresentation.RobotoMeasuredAtPx,
+        MudExGridPresentation.RobotoBoldWidePx, MudExGridPresentation.RobotoBoldDigitPx,
+        MudExGridPresentation.RobotoBoldNarrowPx);
 }
