@@ -272,7 +272,8 @@ nobody had asked for. What that means when writing a test:
 - `presentation.spec.mjs` — the presentation contract, measured: inline Geometry
   Tokens beat the supported override routes (UX-2), painted geometry equals declared
   (UX-3/ST-3), Visual Tokens recolour from an ancestor (UX-5), nothing under the
-  Viewport animates (UX-6), forced colors keep every state tellable (UX-7), the dark
+  Viewport animates (UX-6), forced colors keep every state tellable (UX-7), a Stale or
+  Error state outranks a theme's tone colour on `/tones` (ADR-0006/0029), the dark
   scheme stays readable (UX-8), the LTR island inside an RTL page (DIR-2/3), the
   editor's box is the cell's (ED-9), the runaway auto-scroll stops (SL-14/15), the
   Blazor error UI never shows (CON-5).

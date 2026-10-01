@@ -1,6 +1,9 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using AngleSharp.Css;
+using AngleSharp.Css.Parser;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -110,6 +113,90 @@ public class ShippedStylesheetTests
                 rule.Groups["body"].Value))
             .ToList();
         return (css, rules);
+    }
+
+    /// <summary>The shipped core stylesheet's rules that hold under every condition — those outside
+    /// any at-rule, which a media or a feature query would scope — in the order declared, each as
+    /// its selectors and its body.</summary>
+    internal static IReadOnlyList<(string[] Selectors, string Body)> UnconditionalRules()
+    {
+        var css = CoreStylesheet().Css;
+        var outside = new StringBuilder(css.Length);
+        for (var i = 0; i < css.Length; i++)
+        {
+            if (css[i] != '@')
+            {
+                outside.Append(css[i]);
+                continue;
+            }
+            // An at-rule is left out whole: to its semicolon, or to the brace that closes its block.
+            for (var depth = 0; i < css.Length; i++)
+            {
+                if (css[i] == ';' && depth == 0)
+                    break;
+                if (css[i] == '{')
+                    depth++;
+                else if (css[i] == '}' && --depth == 0)
+                    break;
+            }
+        }
+        return Regex.Matches(outside.ToString(), @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+            .Select(rule => (
+                rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(),
+                rule.Groups["body"].Value))
+            .ToList();
+    }
+
+    /// <summary>The declarations of a rule's body, custom properties included, as written.</summary>
+    internal static IEnumerable<(string Property, string Value)> Declarations(string body)
+        => body.Split(';')
+            .Select(declaration => declaration.Split(':', 2))
+            .Where(parts => parts.Length == 2)
+            .Select(parts => (parts[0].Trim(), parts[1].Trim()));
+
+    private static readonly CssSelectorParser SelectorParser = new();
+
+    /// <summary>A selector's specificity, as the cascade weighs it.</summary>
+    internal static Priority Specificity(string selector)
+        => SelectorParser.ParseSelector(selector)?.Specificity
+           ?? throw new ArgumentException($"not a selector: {selector}", nameof(selector));
+
+    [Fact] // ADR-0006 / ADR-0029 / ticket 84: whatever a tone paints, a Cell State that paints it too outranks the tone, under every token
+    public void A_cell_state_outranks_a_tone()
+    {
+        var rules = UnconditionalRules()
+            .SelectMany((rule, order) => rule.Selectors.Select(selector => (Selector: selector, rule.Body, Order: order)))
+            .ToList();
+        var tones = rules.Where(rule => rule.Selector.StartsWith(".ex-cell.ex-tone-", StringComparison.Ordinal)).ToList();
+        var states = rules.Where(rule => rule.Selector.StartsWith(".ex-cell.ex-state-", StringComparison.Ordinal)).ToList();
+
+        // A state the Consumer named outranks a tone its rule derived (ADR-0006): on every property
+        // both paint, the state's selector is the more specific, or as specific and declared later.
+        // Which colour either paints is a token's, so the order is what decides, whatever a theme sets.
+        var contested = new List<string>();
+        foreach (var tone in tones)
+        {
+            foreach (var (property, _) in Declarations(tone.Body))
+            {
+                foreach (var state in states.Where(state => Declarations(state.Body).Any(declared => declared.Property == property)))
+                {
+                    contested.Add($"{state.Selector} over {tone.Selector}: {property}");
+                    var order = Specificity(state.Selector).CompareTo(Specificity(tone.Selector));
+                    Assert.True(order > 0 || (order == 0 && state.Order > tone.Order),
+                        $"{tone.Selector} (rule {tone.Order}) outranks {state.Selector} (rule {state.Order}) on {property}");
+                }
+            }
+        }
+        // There is something to outrank: a tone paints a colour, and Stale and Error each paint one
+        // of their own. Modified's mark and Missing's tint are layers a tone never paints.
+        Assert.Equal(
+            [
+                ".ex-cell.ex-state-error over .ex-cell.ex-tone-negative: color",
+                ".ex-cell.ex-state-error over .ex-cell.ex-tone-positive: color",
+                ".ex-cell.ex-state-stale over .ex-cell.ex-tone-negative: color",
+                ".ex-cell.ex-state-stale over .ex-cell.ex-tone-positive: color",
+            ],
+            contested.Order(StringComparer.Ordinal));
     }
 
     [Fact] // ADR-0008 (2026-09-29) / UX-18: every outline drawn in the Focus outline's width lies wholly inside its box, from one rule

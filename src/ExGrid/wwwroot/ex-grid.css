@@ -256,6 +256,14 @@
 @media (min-resolution: 2dppx) { .ex-grid { --ex-dp: 0.5px; } }
 @media (min-resolution: 2.5dppx) { .ex-grid { --ex-dp: 0.4px; } }
 @media (min-resolution: 3dppx) { .ex-grid { --ex-dp: calc(1px / 3); } }
+/* Tone (ADR-0006/0029): the meaning a column's rule attached to the value — a gain, a
+   loss — as the theme's tokens paint it. No default colour: the bare grid paints a
+   toned cell as an ordinary one until a token says otherwise, which is Excel's default
+   number format too. Declared before the Cell State block, at the same specificity, so a
+   state the Consumer named outranks a tone its rule derived, whatever colours a theme
+   gives the two. */
+.ex-cell.ex-tone-positive { color: var(--ex-tone-positive-color, inherit); }
+.ex-cell.ex-tone-negative { color: var(--ex-tone-negative-color, inherit); }
 /* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
    says what that looks like — hence a variable per state with a default that only has to
    be legible. Every one of them decorates; none replaces the text. Missing in particular
@@ -264,10 +272,11 @@
    answer for (ADR-0023). The accompanying data — an as-of stamp, a failure message —
    stays with the Consumer and is not on the cell.
 
-   Written as `.ex-cell.ex-state-x`, and declared after the Row Kind block, so that a
-   state the Consumer named outranks the role of the row it happens to sit in. A state
-   is something the grid was explicitly told; a role is something about its neighbours,
-   and it is the state that must never be the one that disappears. */
+   Written as `.ex-cell.ex-state-x`, and declared after the Row Kind block and the Tone
+   block, so that a state the Consumer named outranks the role of the row it happens to sit
+   in, and the tone of its value. A state is something the grid was explicitly told; a role
+   is something about its neighbours, a tone something a rule derived, and it is the state
+   that must never be the one that disappears. */
 .ex-cell.ex-state-stale { color: var(--ex-state-stale-color, #8a6d1f); font-style: var(--ex-state-stale-style, italic); }
 /* Missing's tint is a cell's tint like a stripe's or a role's: named here, after them, so it
    wins, and painted beneath the lines by .ex-lined, which is declared before this block and
@@ -830,13 +839,6 @@
     visibility: hidden;
     pointer-events: none;
 }
-/* Tone (ADR-0006/0029): the meaning a column's rule attached to the value — a gain, a
-   loss — as the theme's tokens paint it. No default colour: the bare grid paints a
-   toned cell as an ordinary one until a token says otherwise, which is Excel's default
-   number format too. Declared before the Cell State block, so a state the Consumer
-   named outranks a tone its rule derived. */
-.ex-cell.ex-tone-positive { color: var(--ex-tone-positive-color, inherit); }
-.ex-cell.ex-tone-negative { color: var(--ex-tone-negative-color, inherit); }
 /* The column rule, transparent by default (ADR-0029): an inset shadow on the cell's
    right edge — painted, never a border. A Modified cell's own mark overrides it;
    the state must never be the one that disappears (ADR-0006). */
