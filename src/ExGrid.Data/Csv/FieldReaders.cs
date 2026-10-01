@@ -100,9 +100,10 @@ internal abstract class FieldReader
     {
         if (content.IsEmpty)
             return true;
+        // The lengths first, which tell most fields from every blank text without a call.
         foreach (var blank in blanks)
         {
-            if (content.SequenceEqual(blank))
+            if (blank.Length == content.Length && content[0] == blank[0] && content.SequenceEqual(blank))
                 return true;
         }
         return false;
