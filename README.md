@@ -13,7 +13,7 @@ Three products share this repository and ship as separate packages
 - **ExSheet** — edit-oriented. Being specified: decided in ADR-0046 to ADR-0051, specified in
   `docs/specs/exsheet/`.
 - **ExPivot** — Excel's PivotTable, drawn by ExGrid, with a MudBlazor Wrapper
-  (`ExPivot.MudBlazor`). Decided in ADR-0058 to ADR-0068, specified in `docs/specs/expivot/`.
+  (`ExPivot.MudBlazor`). Decided in ADR-0058 to ADR-0069, specified in `docs/specs/expivot/`.
   See it on the demo host's pages, one per use case, each showing the code it runs: `/pivot`
   (add `?chrome=mud` for MudBlazor), `/pivot-csv`, `/pivot-db`, `/pivot-live` and `/pivot-risk`;
   and ExGrid alone over live data on `/grid-live`.
@@ -32,7 +32,7 @@ pure-logic core and the component layer exist, virtualised on both axes, with pi
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (68 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (69 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Using the packages

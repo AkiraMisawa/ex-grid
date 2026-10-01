@@ -47,3 +47,8 @@ knows what it means.
 - **ExPivot listens**: Show Details on a value cell, and expand or collapse on the label of an
   outer Item.
 - **A plain ExGrid Consumer may listen too**, for its own detail view of a row.
+
+*(Added 2026-10-01.)* **Building Show Details' dialog asked for two more**, decided with the user in
+[ADR-0069](./0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md): a Consumer
+gives a grid the keyboard back (`ReturnKeyboardAsync()`), and hears an Escape that leaves it
+(`OnLeave`). They are §26's DC-56 and DC-57, and gate ExGrid as DC-52 does.

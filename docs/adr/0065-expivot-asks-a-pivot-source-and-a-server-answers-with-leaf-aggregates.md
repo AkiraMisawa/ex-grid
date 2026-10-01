@@ -159,16 +159,34 @@ what cannot be executed:**
   device, and on where the aggregation runs.
   - The default for the leaves is 200,000. It is provisional, and the Definition of Done's
     observational targets record the measurement that settles it.
-  - *Measured 2026-10-01, not yet settled* (`verification/2026-10-01-linux-measure`, a 4-vCPU
+  - *Measured 2026-10-01* (`verification/2026-10-01-linux-measure`, a 4-vCPU
     container, a published WebAssembly build in Chromium 141, a million trades). A question costs
     0.25 s at 1,350 leaves, 0.36 s at 13,500, 1.2 s at 66,150, and 2.7 s at 197,151, nine times
     PV-21's 0.3 s. Of that, 1.9 s is one task that holds the page: after the source's last slice,
     the answer is assembled, its cube made and the report laid out without yielding. A layout past
     the cap is refused in 0.5 s, because the source stops at the leaf that passes it. On CoreCLR the
     same question costs about 0.26 s. So the cap keeps a question finite, and does not keep the
-    page responsive below it. Three ways forward are open, and choosing among them is the user's: a
-    lower default in the browser, slicing the work after the answer as the pass is sliced, or a
-    default per host.
+    page responsive below it.
+  - **Settled 2026-10-01 with the user, on that measurement: the default stays 200,000, and the
+    work after an answer is sliced as the pass is.** Assembling the answer, making its cube and
+    laying out the report yield to the browser at least every 30 ms. A question near the cap still
+    takes seconds in a browser, but the page is never held: the loading indication moves, the
+    report scrolls, and a newer gesture supersedes the question. The cap is what keeps a question
+    finite. Keeping the page responsive is the slicing's job.
+  - Most reports are far from the cap. The leaves are the combinations of the placed fields'
+    Items, not the records: a million records by region and desk across products make 60 leaves.
+    Only a layout of fine-grained fields — trade dates by books by quantities — nears it.
+  - *Considered:*
+    - **A lower default** — rejected: the page still froze below it, 0.6 s at 66,150 leaves.
+    - **A default per host** — rejected: the Consumer already sets caps, and slicing removes the
+      reason a browser would need a lower one.
+    - **The server laying out the report as well** (the user's question) — not taken. A server's
+      source already runs the pass over the records, and the browser only waits. What the browser
+      does is proportional to the leaves, not the records. A server that laid out the report would
+      make every collapse, sort or change of form a round trip, where each now takes about 30 ms in
+      the browser. Every user would also share its processors. An application whose reports are
+      huge runs ExPivot on Blazor Server, which does all of it on the server today: 0.26 s near the
+      cap.
 
 ## Refresh
 
