@@ -51,16 +51,16 @@ async function open(page, chrome) {
     await expect(entry(page, 'Tenor')).toBeVisible();
 }
 
-/** The column headers the report paints, in their columns' order, after checking that it paints
- *  every column it has: none is left out of view. */
+/** The column headers the report paints, in their columns' order — or null unless it paints every
+ *  column it has, each once: then none is left out of view. Never throws, so it can be polled. */
 async function paintedHeaders(page) {
     const grid = report(page);
+    const count = Number(await grid.getAttribute('aria-colcount'));
     const headers = await grid.locator('[role=columnheader]').evaluateAll((cells) => cells
         .map((cell) => ({ index: Number(cell.getAttribute('aria-colindex')), text: cell.textContent.trim() }))
         .sort((a, b) => a.index - b.index));
-    expect(headers.map((h) => h.index), 'every column painted, once').toEqual(
-        Array.from({ length: Number(await grid.getAttribute('aria-colcount')) }, (_, i) => i + 1));
-    return headers.map((h) => h.text);
+    const whole = headers.length === count && headers.every((header, i) => header.index === i + 1);
+    return whole ? headers.map((header) => header.text) : null;
 }
 
 /** The report's rows as painted: each one's label, whether it is a group row (it has a − or +
@@ -82,16 +82,16 @@ async function paintedRows(page) {
         }));
 }
 
-const sum = (values) => values.reduce((total, v) => total + (v ?? 0), 0);
+/** What a total of these cells paints: their sum, or nothing when no cell has a value. */
+const total = (values) => (values.every((v) => v === null) ? null : values.reduce((sum, v) => sum + (v ?? 0), 0));
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
         test(`ADR-0059: the tenors stand in the Order Key's order, ON to 30Y, with 18M and 1Y6M two Items side by side (${chrome})`, async ({ page }) => {
             await open(page, chrome);
 
-            const headers = await paintedHeaders(page);
-
-            expect(headers).toEqual(['Row Labels', ...TENORS, 'Grand Total']);
+            // Every column painted, in the key's order.
+            await expect.poll(() => paintedHeaders(page)).toEqual(['Row Labels', ...TENORS, 'Grand Total']);
             // Both are 18 months: the key orders them together and merges nothing. 18M is the flow
             // and treasury desks' spelling, 1Y6M the options desk's, and each carries its own.
             const table = await paintedRows(page);
@@ -142,7 +142,8 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0059: every total painted is the sum of what it totals, and the report's is the page's own sum of the positions (${chrome})`, async ({ page }) => {
             await open(page, chrome);
-            expect(await paintedHeaders(page)).toHaveLength(TENORS.length + 2);
+            // Every column painted, so every value is read.
+            await expect.poll(() => paintedHeaders(page)).toHaveLength(TENORS.length + 2);
 
             const table = await paintedRows(page);
             expect(table, 'every row painted').toHaveLength(Number(await report(page).getAttribute('aria-rowcount')));
@@ -156,7 +157,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             // Across: each row's Grand Total is the sum of its tenors.
             for (const row of table) {
-                expect(row.values.at(-1), `${row.label}'s Grand Total`).toBe(sum(row.values.slice(0, -1)));
+                expect(row.values.at(-1), `${row.label}'s Grand Total`).toBe(total(row.values.slice(0, -1)));
             }
             // Down: each desk's subtotal is the sum of its curves, and the Grand Total row the sum
             // of every curve. PV01s are whole dollars, so nothing painted is rounded.
@@ -165,9 +166,9 @@ for (const chrome of ['builtin', 'mud']) {
                     const from = table.indexOf(desk) + 1;
                     const next = table.findIndex((row, i) => i >= from && (row.group || row === grand));
                     const own = table.slice(from, next).map((row) => row.values[column]);
-                    expect(desk.values[column], `${desk.label}, column ${column + 1}`).toBe(own.every((v) => v === null) ? null : sum(own));
+                    expect(desk.values[column], `${desk.label}, column ${column + 1}`).toBe(total(own));
                 }
-                expect(grand.values[column], `Grand Total, column ${column + 1}`).toBe(sum(curves.map((row) => row.values[column])));
+                expect(grand.values[column], `Grand Total, column ${column + 1}`).toBe(total(curves.map((row) => row.values[column])));
             }
             // The page sums the positions itself; the engine computed the report from the same ones.
             const net = /net PV01, summed by the page itself: (-?[\d,]+) USD/.exec(await page.locator('#risk-net').textContent());
