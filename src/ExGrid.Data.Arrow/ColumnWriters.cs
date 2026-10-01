@@ -111,33 +111,33 @@ internal sealed class TextWriter : ColumnWriter
         var entries = column.Dictionary;
         var offsets = new byte[(entries.Count + 1) * 4];
         var ends = MemoryMarshal.Cast<byte, int>(offsets.AsSpan());
-        HashSet<int>? replaced = null;
-        long total = 0;
+        // One pass, into room that grows: a UTF-16 unit is at most three bytes of UTF-8.
+        var bytes = new byte[Math.Max(64, entries.Count * 8L > System.Array.MaxLength ? System.Array.MaxLength : entries.Count * 8)];
+        var total = 0;
         for (var code = 0; code < entries.Count; code++)
         {
             var text = entries[code];
+            var most = (long)text.Length * 3;
+            if (total + most > bytes.Length)
+            {
+                var room = Math.Min(System.Array.MaxLength, Math.Max(total + most, bytes.Length * 2L));
+                if (total + most > room)
+                    throw new SnapshotException(null, column.Name, "the column's distinct texts come to more than the 2 GiB a utf8 dictionary holds.");
+                System.Array.Resize(ref bytes, (int)room);
+            }
             try
             {
-                total += Strict.GetByteCount(text);
+                total += Strict.GetBytes(text, bytes.AsSpan(total));
             }
             catch (EncoderFallbackException)
             {
                 if (FirstRowHolding(snapshot, column, order, code) is { } row)
                     throw new SnapshotException(row + 1L, column.Name, "the text is not valid Unicode — it holds a lone surrogate — so UTF-8 cannot carry it.");
-                (replaced ??= []).Add(code);
-                total += Encoding.UTF8.GetByteCount(text);
+                total += Encoding.UTF8.GetBytes(text, bytes.AsSpan(total));
             }
-            if (total > int.MaxValue)
-                throw new SnapshotException(null, column.Name, "the column's distinct texts come to more than the 2 GiB a utf8 dictionary holds.");
-            ends[code + 1] = (int)total;
+            ends[code + 1] = total;
         }
-        var bytes = new byte[total];
-        for (var code = 0; code < entries.Count; code++)
-        {
-            var encoding = replaced is not null && replaced.Contains(code) ? Encoding.UTF8 : Strict;
-            encoding.GetBytes(entries[code], bytes.AsSpan(ends[code], ends[code + 1] - ends[code]));
-        }
-        return new StringArray(entries.Count, new ArrowBuffer(offsets), new ArrowBuffer(bytes), ArrowBuffer.Empty);
+        return new StringArray(entries.Count, new ArrowBuffer(offsets), new ArrowBuffer(bytes.AsMemory(0, total)), ArrowBuffer.Empty);
     }
 
     /// <summary>The place in the Snapshot's order of the first row that holds <paramref name="code"/>,
