@@ -572,6 +572,8 @@ Ticket 58 built the widening and the localised built-ins, and ticket 57 built th
 them meant reading some things that no run observed, and one earlier answer may contradict them. ExSheet follows each reading below
 until [`verify-on-windows-14.md`](../specs/exsheet/verify-on-windows-14.md) observes it. Excel's answer
 then decides (ADR-0047's rule).
+*(Answered by the fourteenth Windows run, 2026-10-02. The section after this one says what the answers
+settled.)*
 
 - **A column that has already left the standard width widens again** when a key's text no longer fits,
   provided an entry or an earlier key widened it. A column the user sized never widens, as for
@@ -617,6 +619,76 @@ then decides (ADR-0047's rule).
   in case 19. ExSheet's fitting charges every character one digit width (ADR-0047). That is the same
   estimate that otherwise decides `####`, and it errs towards widening, never towards hiding text.
 
+## What the fourteenth Windows run settled *(2026-10-02)*
+
+The run was made at 523c0b9. Its record is
+`verification/2026-10-01-windows-excel-14/cell-format-14.md`. Every answer is Excel's (ADR-0047's
+rule), and none of them needed a new decision. A reading above that the run confirmed stands as
+written. This section says what the run changed, and what it still left to a reading.
+
+**Widening.**
+- **A column that has left the standard width widens again** (cases 1 and 2), as read. Under en-US
+  the date key widened column A to 8.73 and the currency key widened it again, to 8.91 (case 3). The
+  eleventh run's `########` was not reproduced.
+- **Ctrl+5 widens as a Number Format key does** (case 7). Ctrl+B and the Fill do not, in any of three
+  orders. This corrects "a Font never widens" for strikethrough.
+  - Ctrl+I, Ctrl+U and Format Cells' Font tab were not asked. They stay as Ctrl+B is, until a run
+    asks.
+- General widens as typing the number would (case 5), and a bold number that fits stays as it is
+  (case 6), as read.
+- A Number Format set through COM on a cell that already held the number widened the column (case 7,
+  pass a), as in FMT-052 and FMT-072. `SetCellFormatAsync` and Format Cells' OK go on widening as a key
+  does. Format Cells' Number tab widened as read (case 8), and its Border tab did not (case 9).
+
+**`mmm` under ja-JP** (cases 10 and 11).
+- **`mmm` shows the month as a number, with no leading zero, in every code**: `05-1-26`, `1 5, 2026`,
+  `2026/1/05`. `mmmm` shows `1月`. These are Windows' month names under ja-JP; .NET's `1月` for `mmm` is
+  ICU's, as `Sept` was for en-GB. ExSheet shows Windows' names.
+- **A code typed into Format Cells is a built-in only when it spells that built-in's code under the
+  Sheet's culture.** Under ja-JP, `dd-mmm-yy` is built-in 15 and shows `05-1-26`. `d-mmm-yy` is a code
+  of its own and shows `5-1-26`.
+
+**Ticket 57's model, read from the saved files** (cases 12 to 15).
+- **Each cell records its own sides**, as read. After a paste, C2 still records its thin blue left
+  under B2's thick red right (case 12).
+- **Format Cells shows a range's outer edge as it is drawn.** Where the cell records no line, a
+  neighbour's line on that edge shows. Under A1's thick bottom, A2 opens with a thick top, its button
+  pressed (case 13), though A2 records nothing. An inside edge shows mixed where the two cells' own
+  records differ (the eleventh run's case 24).
+  - OK still sets only what the user touched (SH-45). Taking the shown top away clears that edge on
+    both sides, as clearing an edge does. That is a reading; no run pressed it.
+- **Inside over whole rows sets every vertical side, A's left and XFD's right included**, and the
+  lines between the rows (case 14). Excel records it as a row format: row 3 holds left, right and
+  bottom, and row 4 left, right and top.
+- **Inside over the whole Sheet sets every side** (case 15), as read. Excel records it as one format
+  over every column.
+
+**Ticket 47's painting** (cases 16 to 18).
+- **Where two filled cells meet, the gridline between them takes the lower cell's Fill** (case 16).
+  Where only one cell is filled, its Fill covers that gridline, on all four sides, as before.
+  - Between two filled cells side by side, the right cell's is read. That is the cell Excel would paint
+    later, as it painted the lower. No run looked.
+- **A double line's middle pixel shows the Fill** (case 17), as the gridline beneath it would. Where
+  neither cell is filled, it is the ground, as the eleventh run saw.
+- **The long dash is 9 device pixels at every scale** (case 18). Excel drew 9 on and 3 off, and thin
+  dashed 3 on and 1 off, at every zoom from 50% to 200% on a 150% display. Those zooms span 0.75 to
+  1.35 device pixels to a pixel at 100%. So a line's pattern is in device pixels, and does not grow
+  with the scale.
+
+**A cell while it is edited** (cases 19 to 21), as read.
+- The Cell Editor shows the cell's Fill and Font, and the outline lies over the cell's lines.
+- `0;[Red]-0` with a blue Font is blue while edited.
+- Under `0;[Red]@`, numbers show black and text red.
+
+### Seen in the run, and left to the next PR
+
+- **Excel drops the Selection outline's inner white ring while an edit is open** (case 19). That
+  belongs to the outline, not to a Cell Format.
+- **Ctrl+5's widening raises a question about the other Font keys** (above). The next run that asks
+  Excel about Cell Format can ask about Ctrl+I, Ctrl+U and the Font tab.
+
+Tickets 99 to 103 build these answers.
+
 ## Consequences
 
 - **Notes on other ADRs**, each saying what changed:
@@ -636,11 +708,12 @@ then decides (ADR-0047's rule).
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
 - **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done.
-- **Tickets** 44 to 58 and 81 to 98, in `docs/specs/exsheet/issues/`:
+- **Tickets** 44 to 58 and 81 to 103, in `docs/specs/exsheet/issues/`:
   - ticket 55 was added by the eleventh run;
   - 56 by ticket 51's Server fix;
   - 57 and 58 by the twelfth run;
-  - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, 86 to 90 by ticket 48, 91 by ticket 83, 92 by ticket 88, 93 by PR #42's CI, 94 by the user (ADR-0006's note of 2026-10-01), 95 and 96 by ticket 94, 97 by ticket 96, and 98 by ticket 97, for the PR after #42.
+  - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, 86 to 90 by ticket 48, 91 by ticket 83, 92 by ticket 88, 93 by PR #42's CI, 94 by the user (ADR-0006's note of 2026-10-01), 95 and 96 by ticket 94, 97 by ticket 96, and 98 by ticket 97, for the PR after #42;
+  - 99 to 103 by the fourteenth Windows run.
 
   59 to 75 are `claude/exsheet-start-8cx3v1`'s, and 76 to 80 are Pointing Scope's line
   (`docs/agents/numbering.md`).
