@@ -190,6 +190,61 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>
+    /// Excel's built-in date with the month's name (<c>d-mmm-yy</c>, format 15): what Ctrl+#
+    /// records under every culture, and what a date typed with a month name and a year records.
+    /// </summary>
+    private const string DayMonthYearCode = "d-mmm-yy";
+
+    /// <summary>Excel's built-in hour and minute (<c>h:mm</c>, format 20): what Ctrl+Shift+@ records where the culture's own time is 24-hour.</summary>
+    private const string HourMinuteCode = "h:mm";
+
+    private static readonly Dictionary<(string Culture, string Code), NumberFormat> DatesAndTimes = [];
+
+    /// <summary>
+    /// The built-ins 15 and 20 in <paramref name="culture"/>'s own form, as the twelfth Windows run
+    /// read them (ADR-0063, case 19); <see langword="null"/> for any other format, or where the
+    /// culture's form is the code itself. Like the built-in short date and currency, each is
+    /// recorded in its invariant code and is not the pattern it spells.
+    /// <list type="bullet">
+    /// <item><c>d-mmm-yy</c> writes the day with two digits where the culture's short date does, as
+    /// the built-in <c>d-mmm</c> does: <c>05-Jan-26</c> under en-GB, <c>5-Jan-26</c> under en-US.
+    /// Under ja-JP the month is its number, <c>05-1-26</c>, as Excel showed it there.</item>
+    /// <item><c>h:mm</c> writes the hour with two digits where the culture's short time does:
+    /// <c>09:05</c> under en-GB, <c>9:05</c> under en-US and ja-JP.</item>
+    /// </list>
+    /// </summary>
+    private NumberFormat? DateOrTimeIn(CultureInfo culture)
+    {
+        string code;
+        if (string.Equals(Code, DayMonthYearCode, StringComparison.OrdinalIgnoreCase))
+        {
+            var day = culture.DateTimeFormat.ShortDatePattern.Contains("dd", StringComparison.Ordinal) ? "dd" : "d";
+            // Excel's own local code there reads dd-mmm-yy, yet it showed the month as a number.
+            var month = culture.Name == "ja-JP" ? "m" : "mmm";
+            code = $"{day}-{month}-yy";
+        }
+        else if (string.Equals(Code, HourMinuteCode, StringComparison.OrdinalIgnoreCase))
+        {
+            var time = culture.DateTimeFormat.ShortTimePattern;
+            code = time.Contains("HH", StringComparison.Ordinal) || time.Contains("hh", StringComparison.Ordinal) ? "hh:mm" : HourMinuteCode;
+        }
+        else
+        {
+            return null;
+        }
+        if (string.Equals(code, Code, StringComparison.Ordinal)) return null;
+        lock (DatesAndTimes)
+        {
+            if (!DatesAndTimes.TryGetValue((culture.Name, code), out var local))
+            {
+                local = Parse(code);
+                DatesAndTimes[(culture.Name, code)] = local;
+            }
+            return local;
+        }
+    }
+
+    /// <summary>
     /// Excel's built-in currency format under <paramref name="culture"/>: what Ctrl+Shift+$
     /// records (ADR-0063; the eleventh Windows run, cases 18 and 20). It is format 8,
     /// <c>$#,##0.00_);[Red]($#,##0.00)</c> in the invariant codes, or format 6,
@@ -290,7 +345,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// </summary>
     internal (string Text, bool CannotShow, NumberFormatColour? Colour) Format(Value value, CultureInfo culture)
     {
-        if (value.Kind == ValueKind.Number && (ShortDateIn(culture) ?? CurrencyIn(culture)) is { } local) return local.Format(value, culture);
+        if (value.Kind == ValueKind.Number && (ShortDateIn(culture) ?? DateOrTimeIn(culture) ?? CurrencyIn(culture)) is { } local) return local.Format(value, culture);
         switch (value.Kind)
         {
             case ValueKind.Boolean:
