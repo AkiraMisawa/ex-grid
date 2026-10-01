@@ -31,6 +31,51 @@ public class CsvShortPathTests
         }
     }
 
+    [Theory] // ADR-0063: a date read from its bytes under a compiled format is what .NET's TryParseExact reads, valid or not
+    [InlineData("yyyy-MM-dd")]
+    [InlineData("dd.MM.yyyy HH:mm:ss")]
+    [InlineData("yyyyMMdd")]
+    [InlineData("yyyy-MM-dd HH:mm:ss.fff")]
+    [InlineData("yyyy-MM-dd HH:mm:ss.fffffff")]
+    [InlineData("yyyy/M/d")]
+    [InlineData("d.M.yyyy H:mm")]
+    public void A_date_read_from_its_bytes_is_what_dotnet_reads(string format)
+    {
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        var reader = new ExGrid.Data.Csv.DateFormat(format, culture);
+        Assert.True(reader.ReadsBytes);
+        var random = new Random(20261001);
+        int[] years = [0, 1, 4, 100, 400, 1900, 1999, 2000, 2024, 2025, 2026, 9999];
+        for (var i = 0; i < 20_000; i++)
+        {
+            var year = years[random.Next(years.Length)];
+            var month = random.Next(0, 14);
+            var day = random.Next(0, 33);
+            var text = format
+                .Replace("yyyy", year.ToString("0000", culture), StringComparison.Ordinal)
+                .Replace("MM", month.ToString("00", culture), StringComparison.Ordinal)
+                .Replace("M", month.ToString(culture), StringComparison.Ordinal)
+                .Replace("dd", day.ToString("00", culture), StringComparison.Ordinal)
+                .Replace("d", day.ToString(culture), StringComparison.Ordinal)
+                .Replace("HH", random.Next(0, 25).ToString("00", culture), StringComparison.Ordinal)
+                .Replace("H", random.Next(0, 25).ToString(culture), StringComparison.Ordinal)
+                .Replace("mm", random.Next(0, 61).ToString("00", culture), StringComparison.Ordinal)
+                .Replace("ss", random.Next(0, 61).ToString("00", culture), StringComparison.Ordinal)
+                .Replace("fffffff", random.Next(0, 10_000_000).ToString("0000000", culture), StringComparison.Ordinal)
+                .Replace("fff", random.Next(0, 1000).ToString("000", culture), StringComparison.Ordinal);
+            if (random.Next(10) == 0)
+                text = text.Remove(random.Next(text.Length), 1);
+
+            var expected = DateTime.TryParseExact(text, format, culture,
+                System.Globalization.DateTimeStyles.NoCurrentDateDefault | System.Globalization.DateTimeStyles.AdjustToUniversal, out var date);
+            var read = reader.TryRead(System.Text.Encoding.ASCII.GetBytes(text), out var ticks);
+
+            Assert.True(expected == read, $"'{text}' under '{format}': .NET {expected}, the reader {read}");
+            if (read)
+                Assert.Equal(date.Ticks, ticks);
+        }
+    }
+
     [Fact] // ADR-0063: declared spellings of any case, ASCII or not, are matched ignoring case
     public void Declared_spellings_are_matched_ignoring_case()
     {
