@@ -26,9 +26,25 @@ public sealed record GridPresentationDefaults
     /// <summary>The three glyph widths of the Theme's font, measured at
     /// <paramref name="fontSizePx"/>, and optionally the Density, hover band and Row
     /// Stripes the Wrapper's own words map onto — null leaves each to the grid. Widths the
-    /// Cell Metrics would refuse are refused here, where they were written.</summary>
+    /// Cell Metrics would refuse are refused here, where they were written. Without bold
+    /// widths, a bold cell is charged the Cell Metrics' allowance over these
+    /// (<see cref="CellTextMetrics.BoldWidthAllowance"/>).</summary>
     public GridPresentationDefaults(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
+        GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)
+        : this(wideWidthPx, digitWidthPx, narrowWidthPx, fontSizePx,
+            wideWidthPx * CellTextMetrics.BoldWidthAllowance, digitWidthPx * CellTextMetrics.BoldWidthAllowance,
+            narrowWidthPx * CellTextMetrics.BoldWidthAllowance, density, highlightHoverRow, stripeRows)
+    {
+    }
+
+    /// <summary>The three glyph widths of the Theme's font, and the same three measured at the
+    /// bold weight (ADR-0050, item 15), all at <paramref name="fontSizePx"/> — supplying them is
+    /// the Wrapper's metrics-bearing obligation, as the regular widths are (ADR-0030) — and
+    /// optionally the Density, hover band and Row Stripes, as the other form takes them.</summary>
+    public GridPresentationDefaults(
+        double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
+        double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx,
         GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)
     {
         if (!double.IsFinite(fontSizePx) || fontSizePx <= 0)
@@ -38,11 +54,15 @@ public sealed record GridPresentationDefaults
         }
         // The same rules the metrics themselves enforce, checked at construction so a
         // bad measurement fails where it was written rather than in a grid far away.
-        _ = new CellTextMetrics(wideWidthPx, digitWidthPx, narrowWidthPx, 0);
+        _ = new CellTextMetrics(wideWidthPx, digitWidthPx, narrowWidthPx, 2 * digitWidthPx, 0,
+            boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx);
 
         WideWidthPx = wideWidthPx;
         DigitWidthPx = digitWidthPx;
         NarrowWidthPx = narrowWidthPx;
+        BoldWideWidthPx = boldWideWidthPx;
+        BoldDigitWidthPx = boldDigitWidthPx;
+        BoldNarrowWidthPx = boldNarrowWidthPx;
         FontSizePx = fontSizePx;
         Density = density;
         HighlightHoverRow = highlightHoverRow;
@@ -57,6 +77,15 @@ public sealed record GridPresentationDefaults
 
     /// <summary>The widest separator.</summary>
     public double NarrowWidthPx { get; }
+
+    /// <summary>The wide class at the bold weight (ADR-0050, item 15).</summary>
+    public double BoldWideWidthPx { get; }
+
+    /// <summary>A tabular digit at the bold weight.</summary>
+    public double BoldDigitWidthPx { get; }
+
+    /// <summary>The widest separator at the bold weight.</summary>
+    public double BoldNarrowWidthPx { get; }
 
     /// <summary>The font size the three widths are true at.</summary>
     public double FontSizePx { get; }
@@ -94,6 +123,7 @@ public sealed record GridPresentationDefaults
         // Full-width is the em, not a measurement to scale: it is the resolved size.
         return new CellTextMetrics(
             WideWidthPx * scale, DigitWidthPx * scale, NarrowWidthPx * scale,
-            Math.Max(fontSizePx, DigitWidthPx * scale), cellHorizontalPaddingPx);
+            Math.Max(fontSizePx, DigitWidthPx * scale), cellHorizontalPaddingPx,
+            BoldWideWidthPx * scale, BoldDigitWidthPx * scale, BoldNarrowWidthPx * scale);
     }
 }

@@ -45,6 +45,9 @@ per row, whose reference is the row's change signal.
 | `BorderLayerPerRow` | not one of the ticket's two: `BorderLayer` split into one keyed, memoised strip per painted row, with one segment per right edge. Measured because `BorderLayer` renders every run on every scroll step |
 | `BorderInCellExcel` | not one of the ticket's two: each cell paints its own share of Excel's line on its four edges, at the eleventh Windows run's geometry (case 9), as background layers over its Fill. Nothing is painted outside the row, and no cell's box changes size |
 | `BorderInCellExcelBox` | the same pixels with no custom property and no per-cell gradient: solid lines are the cell's own borders, the pixel past the gridline (thick, double) and double's inner row are inset shadows, and a dash pattern is a pseudo-element whose rule belongs to the line |
+| `BorderInCellHybrid` | ticket 47: `BorderInCellExcel`'s pixels with every solid line on and above the gridline (thin, medium, thick's upper two) as the cell's own bottom or right border, the right padding narrowed by what a wider border takes; background layers only for the dashes, double and the pixel past the gridline. Interned per side, style and colour |
+| `BorderInCellExcelFull` | ticket 47: `BorderInCellExcel` with each solid share a gradient over the whole cell whose hard stop falls on the device pixel, in place of a tile one or two device pixels high; the dash patterns stay tiles. What the product draws |
+| `BorderInCellExcelFill`, `BorderInCellHybridFill` | ticket 47: the two above with a Fill on every bordered cell, from one interned class per colour, so the background colour and the line layers are painted on the same cells |
 
 Each Font and Fill mode runs over a share of formatted cells (10%, 50%, 100%) and N distinct formats
 (1, 16, 256); a formatted cell carries a colour, a background and bold. The border modes run over the
@@ -109,6 +112,11 @@ nix develop -c dotnet run -c Release --project Bench.Host --urls http://0.0.0.0:
 nix develop .#browser -c node tools/cdp-run.mjs http://127.0.0.1:5199/format 200 3600 50 20 "Measure cell format" save
 ```
 
+**Measure the hybrid and a Fill with borders (ticket 47)** runs `BorderInCellExcel`,
+`BorderInCellHybrid`, `BorderInCellExcelFull` and the two Fill variants beside a `RowComponent` baseline
+of their own at six shares and Ns (pass `"Measure the hybrid and a Fill with borders"` as the driver's
+button).
+
 `CDP_PORT` points the driver at another debugging port. **Measure cell format (quick: 50%, N 16)**
 runs one configuration per mode. **Measure borders** runs the border modes only, each share and N
 beside a `RowComponent` baseline of its own, to be read as deltas against it (pass `"Measure borders"`
@@ -127,7 +135,14 @@ pattern on both rows). At 1.5, under headless Chrome's device-scale emulation, n
 - `BorderInCellExcelBox`: Chrome computes a 0.667px or 1.333px border as `1px`, so every line drawn as
   a border is 1.5 device pixels.
 
-A real browser zoomed to 150% has not been checked, nor Windows.
+*(Ticket 47, 2026-10-01.)* That was CDP's emulation, which lays the page out in CSS pixels and
+scales the result, and the bench's scroller has a 1px border, which puts every cell edge on a half
+device pixel at 1.5. Chrome given the scale on its command line (`--force-device-scale-factor=1.5`,
+as an OS display scale gives it, and as browser zoom lays out) lays out in device pixels: there
+`BorderInCellExcel`, `BorderInCellExcelFull` and `BorderInCellHybrid` all draw case 9's pixels at 1.5,
+and the same at 1. Under emulation, on cells whose edges fall on device pixels, a whole-cell gradient
+and an inset shadow stay exact, while a tile of a fractional CSS height and a border are blended
+over two rows. Windows has not been checked.
 
 ## Running it
 

@@ -15,6 +15,13 @@ namespace ExGrid.Columns;
 /// <c>####</c>, the safe direction. <c>system-ui</c> is a different family on each
 /// operating system, so one machine's measurement is not enough — DejaVu Sans on Linux
 /// paints a bold digit at 9.742px and <c>−</c>, <c>+</c> and <c>#</c> at 11.731px.</para>
+///
+/// <para><b>Bold widths</b> (ADR-0050, item 15; ADR-0063) are the same three classes measured at
+/// the bold weight a Consumer's per-cell Font paints, and a bold cell is judged by them: its
+/// <c>####</c> decision, and the width its painted text is fitted to. The full-width class is an em
+/// in every weight. Metrics built without them derive them from the regular widths (see
+/// <see cref="BoldWidthAllowance"/>); the core's own defaults and a Wrapper's supply measured
+/// ones.</para>
 /// </summary>
 public readonly record struct CellTextMetrics
 {
@@ -44,6 +51,18 @@ public readonly record struct CellTextMetrics
     public CellTextMetrics(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fullWidthPx,
         double cellHorizontalPaddingPx)
+        : this(wideWidthPx, digitWidthPx, narrowWidthPx, fullWidthPx, cellHorizontalPaddingPx,
+            wideWidthPx * BoldWidthAllowance, digitWidthPx * BoldWidthAllowance, narrowWidthPx * BoldWidthAllowance)
+    {
+    }
+
+    /// <summary>The four-class form with the bold widths (ADR-0050, item 15): each class measured
+    /// again at the bold weight. The full-width class is an em at either weight. The bold widths
+    /// are refused by the rules the regular ones are.</summary>
+    public CellTextMetrics(
+        double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fullWidthPx,
+        double cellHorizontalPaddingPx,
+        double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx)
     {
         if (!double.IsFinite(digitWidthPx) || digitWidthPx <= 0)
             throw new ArgumentOutOfRangeException(nameof(digitWidthPx), digitWidthPx,
@@ -61,12 +80,35 @@ public readonly record struct CellTextMetrics
             throw new ArgumentOutOfRangeException(nameof(cellHorizontalPaddingPx), cellHorizontalPaddingPx,
                 "Cell padding is a finite, non-negative number of pixels.");
 
+        if (!double.IsFinite(boldDigitWidthPx) || boldDigitWidthPx <= 0)
+            throw new ArgumentOutOfRangeException(nameof(boldDigitWidthPx), boldDigitWidthPx,
+                "A bold digit width is a finite, positive number of pixels.");
+        if (!double.IsFinite(boldNarrowWidthPx) || boldNarrowWidthPx <= 0 || boldNarrowWidthPx > boldDigitWidthPx)
+            throw new ArgumentOutOfRangeException(nameof(boldNarrowWidthPx), boldNarrowWidthPx,
+                "The bold narrow width is a finite, positive number of pixels, no wider than the bold digit.");
+        if (!double.IsFinite(boldWideWidthPx) || boldWideWidthPx < boldDigitWidthPx)
+            throw new ArgumentOutOfRangeException(nameof(boldWideWidthPx), boldWideWidthPx,
+                "The bold wide width is finite and at least the bold digit's.");
+
         WideWidthPx = wideWidthPx;
         DigitWidthPx = digitWidthPx;
         NarrowWidthPx = narrowWidthPx;
         FullWidthPx = fullWidthPx;
         CellHorizontalPaddingPx = cellHorizontalPaddingPx;
+        BoldWideWidthPx = boldWideWidthPx;
+        BoldDigitWidthPx = boldDigitWidthPx;
+        BoldNarrowWidthPx = boldNarrowWidthPx;
     }
+
+    /// <summary>
+    /// What metrics built without bold widths charge a bold character, over its regular class
+    /// width: 4% more. The regular widths are already the 600 weight the grid's own group and total
+    /// rows paint (ADR-0016), and the widest growth measured from there to bold was 3.9% — <c>(</c>
+    /// in <c>system-ui</c> on macOS, 5.633px to 5.852px — so the allowance errs toward an early
+    /// <c>####</c>, the safe direction. Reasoned from the faces measured, as the full-width
+    /// fallback is; a theme that knows its bold widths supplies them.
+    /// </summary>
+    public const double BoldWidthAllowance = 1.04;
 
     /// <summary>What <c>%</c> costs — and <c>€</c>, <c>−</c>, <c>+</c> and <c>#</c>, each
     /// measured past the digit on some platform: charging them here overshoots where
@@ -86,6 +128,33 @@ public readonly record struct CellTextMetrics
 
     /// <summary>Padding on one side; a cell pays it twice.</summary>
     public double CellHorizontalPaddingPx { get; }
+
+    /// <summary>The wide class at the bold weight (ADR-0050, item 15).</summary>
+    public double BoldWideWidthPx { get; }
+
+    /// <summary>A tabular digit, and every character not classed otherwise, at the bold
+    /// weight.</summary>
+    public double BoldDigitWidthPx { get; }
+
+    /// <summary>The separators at the bold weight.</summary>
+    public double BoldNarrowWidthPx { get; }
+
+    /// <summary>
+    /// The metrics a bold cell is judged by (ADR-0050, item 15): the bold widths in the regular
+    /// widths' place, with the same full-width class — no narrower than the bold digit, which the
+    /// uniform form's em would be — and the same padding. Its own bold widths are the same ones, so
+    /// it is bold however often it is asked. Hand it to <see cref="OverflowRules.Decide"/> for a bold
+    /// cell's <c>####</c> decision.
+    /// </summary>
+    public CellTextMetrics Bold => new(
+        BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, Math.Max(FullWidthPx, BoldDigitWidthPx),
+        CellHorizontalPaddingPx, BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx);
+
+    /// <summary>These metrics with measured bold widths in place of whatever they carried —
+    /// derived, or another theme's (ADR-0050, item 15).</summary>
+    public CellTextMetrics WithBoldWidths(double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx)
+        => new(WideWidthPx, DigitWidthPx, NarrowWidthPx, FullWidthPx, CellHorizontalPaddingPx,
+            boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx);
 
     /// <summary>One character's charge, by class (ADR-0016). Anything unclassified is
     /// a digit — what the tabular-digit contract makes safe for every glyph a format
@@ -158,7 +227,8 @@ public readonly record struct CellTextMetrics
     /// lifts whatever a theme or the three-class form supplied (ADR-0016).</summary>
     internal CellTextMetrics WithFullWidthAtLeast(double emPx) => FullWidthPx >= emPx
         ? this
-        : new CellTextMetrics(WideWidthPx, DigitWidthPx, NarrowWidthPx, emPx, CellHorizontalPaddingPx);
+        : new CellTextMetrics(WideWidthPx, DigitWidthPx, NarrowWidthPx, emPx, CellHorizontalPaddingPx,
+            BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx);
 
     /// <summary>The width left for content after padding; can be zero or negative in a
     /// crushed column.</summary>

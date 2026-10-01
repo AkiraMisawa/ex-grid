@@ -34,7 +34,9 @@
             }
             break;
 
-        case CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+        case CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox
+            or CellFormatMode.BorderInCellHybrid or CellFormatMode.BorderInCellExcelFill or CellFormatMode.BorderInCellHybridFill
+            or CellFormatMode.BorderInCellExcelFull:
             @for (var c = 0; c < VisibleCols; c++)
             {
                 <div class="@Borders!.CellClass![c]">@CellFormat.Value(Cols[c].Get(RowData))</div>

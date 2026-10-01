@@ -363,6 +363,7 @@
                        identity objects and Placeholder keys are boxed indices, so the
                        two can never collide — and a position turning from Placeholder
                        into a row correctly reads as a fresh mount. *@
+                    BeginAppearances();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
                         var slice = row - _windowStart;
@@ -380,7 +381,8 @@
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
                                        Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)"
-                                       Heading="@RowHeadingAt(row)" HeadingStyle="@_rowHeadingStyle" />
+                                       Heading="@RowHeadingAt(row)" HeadingStyle="@_rowHeadingStyle"
+                                       Appearance="@AppearanceAt(row, slice)" />
                         }
                         else
                         {
@@ -799,6 +801,15 @@
        tallest length it will, and a ResizeObserver reports that size — the ceiling in CSS
        pixels at this scale and zoom. Paint nothing, take nothing, say nothing. *@
     <div class="ex-ceiling-probe" aria-hidden="true"><div style="@CeilingProbeStyle"></div></div>
+    @if (CellAppearance is not null && _appearances is { } appearances)
+    {
+        @* The generated stylesheet of a per-cell appearance (ADR-0050, item 15; ADR-0063): one
+           rule per Font, per Fill colour and per line on each side, never per combination, added
+           the first time a cell asks for one. Last in the root, because the rows above resolved
+           their appearance in this same render and the rules they named must be in it. The text
+           is one held string until a rule is added, so the diff compares a reference. *@
+        <style>@appearances.Styles.Css</style>
+    }
 </div>
 
 @code {
@@ -1154,6 +1165,36 @@
     /// change of column width repaints the rows on its own.</para>
     /// </summary>
     [Parameter] public PaintedTextOf<TRow>? PaintedText { get; set; }
+
+    /// <summary>
+    /// A per-cell appearance (ADR-0050, item 15): asked for by (row, column), it answers the
+    /// cell's Font — a colour, bold, italic, underline and strikethrough — its Fill, and the
+    /// Border on each of its four sides, all painted as Excel paints them (ADR-0063). Font and
+    /// Fill are interned classes in a stylesheet the grid generates, one rule per distinct
+    /// Font and Fill. Each line is centred on its gridline, a thick one reaching into both
+    /// cells, above the Fills and below the Focus, the Selection and the Reference Outlines,
+    /// and each cell draws its own share of it, so nothing is painted outside a painted row. A
+    /// bold cell's <c>####</c> decision and the width its <see cref="PaintedText"/> is fitted
+    /// to use the bold widths of <see cref="CellMetrics"/> (ADR-0016). Null, the default,
+    /// paints every cell exactly as before (DC-1). Asked of value cells only, as
+    /// <see cref="CellType"/> is.
+    ///
+    /// <para><b>Hold it in a field; a row's identity and its identity are the change
+    /// signal</b> (ADR-0003/0006). The grid resolves each painted row once, outside its
+    /// render, from the row and the rows either side of it — a cell's top line is the edge it
+    /// shares with the row above — and repaints a row only when what it paints changed. A new
+    /// instance therefore repaints its own row, and a neighbour only where a line they share
+    /// moved; a new lookup asks every painted row again.</para>
+    /// </summary>
+    [Parameter] public CellAppearanceOf<TRow>? CellAppearance { get; set; }
+
+    /// <summary>
+    /// Which line is drawn on an edge whose two cells record different lines (ADR-0050, item
+    /// 15): asked with the upper (left) cell's line and the lower (right) cell's. Null, the
+    /// default, draws the upper or left cell's. Its identity is a change signal, as
+    /// <see cref="CellAppearance"/>'s is.
+    /// </summary>
+    [Parameter] public EdgeBorderOf? EdgeBorder { get; set; }
 
     /// <summary>
     /// What role each row plays — detail, group or total (ADR-0024). Null means every
@@ -1981,6 +2022,37 @@
     /// <summary>A painted row's Row Heading label, or null while there is no band.</summary>
     private string? RowHeadingAt(int row) => RowHeadings?.Invoke(row);
 
+    // The painted rows' appearances (ADR-0050, item 15), resolved outside the rows' renders;
+    // made the first time a Consumer declares one, and its rules kept for the grid's life.
+    private CellAppearances<TRow>? _appearances;
+
+    /// <summary>Starts the rows' render for their appearances: which columns are painted, so
+    /// which a row is resolved for. A Placeholder paints its Pinned Columns only.</summary>
+    private void BeginAppearances()
+    {
+        if (CellAppearance is not { } lookup)
+            return;
+        (_appearances ??= new()).Begin(lookup, EdgeBorder, Columns, _columnStyles.Geometry.PinnedCount,
+            _placeholderMode ? null : _scrollable);
+    }
+
+    /// <summary>The appearance the row at <paramref name="row"/> paints, resolved with the rows
+    /// either side of it that the Window holds; null without the declaration.</summary>
+    private RowAppearance? AppearanceAt(int row, int slice)
+    {
+        if (CellAppearance is null || _appearances is not { } appearances)
+            return null;
+        var above = slice > 0 ? _window[slice - 1] : null;
+        var below = slice + 1 < _window.Count ? _window[slice + 1] : null;
+        return appearances.At(row, _window[slice], above, below);
+    }
+
+    /// <summary>The metrics a cell's text is estimated with for an Auto width or a fit: the
+    /// bold widths for a bold cell (ADR-0050, item 15), so a width fitted to it never shows
+    /// its value as <c>####</c>.</summary>
+    private CellTextMetrics EstimateMetricsFor(GridColumn<TRow> column, TRow row)
+        => CellAppearance?.Invoke(row, column).Bold == true ? _metrics.CellMetrics.Bold : _metrics.CellMetrics;
+
     /// <summary>
     /// The Row Headings' width, resolved once per push (ADR-0028): the Consumer's number
     /// where it gave one, otherwise the wider of the first and last rows' labels as the
@@ -2734,7 +2806,7 @@
                 if (!column.Width.Width.IsAuto || !column.PaintsValue)
                     continue;
                 _autoWidths[c] = _autoWidths[c].Observe(
-                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, data)));
+                    EstimateMetricsFor(column, data).EstimatePx(ExGridRow<TRow>.CellText(column, data)));
             }
         }
     }
@@ -4337,7 +4409,7 @@
             {
                 required = Math.Max(
                     required,
-                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(declared, row)));
+                    EstimateMetricsFor(declared, row).EstimatePx(ExGridRow<TRow>.CellText(declared, row)));
             }
             changes.Add(new ColumnWidthChange(declared.Name, declared.Width.SizeToFit(required).FixedPx));
         }

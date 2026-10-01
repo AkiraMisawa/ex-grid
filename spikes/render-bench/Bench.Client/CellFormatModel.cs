@@ -35,6 +35,21 @@ public enum CellFormatMode
     /// lines are the cell's own borders, the parts past the gridline and double's inner row are inset
     /// shadows, and a dash pattern is a pseudo-element whose rule is the line's own.</summary>
     BorderInCellExcelBox,
+    /// <summary>Ticket 47: BorderInCellExcel's pixels with the solid lines (thin, medium, and the part
+    /// of thick on and above the gridline) as the cell's own bottom and right border, and background
+    /// layers only for the dashes, double and the pixel past the gridline. Interned per side, style
+    /// and colour, as BorderInCellExcel is.</summary>
+    BorderInCellHybrid,
+    /// <summary>Ticket 47: BorderInCellExcel with a Fill on the same cells, from an interned class per
+    /// colour, so a bordered cell paints its background colour under its line layers.</summary>
+    BorderInCellExcelFill,
+    /// <summary>Ticket 47: BorderInCellHybrid with a Fill on the same cells.</summary>
+    BorderInCellHybridFill,
+    /// <summary>Ticket 47: BorderInCellExcel with every solid part as a gradient over the whole cell,
+    /// its hard stop on the device pixel, in place of a tile one or two device pixels high; the dash
+    /// patterns stay tiles. Built because under device-scale emulation a tile of a fractional CSS
+    /// height is drawn antialiased at 1.5, and a whole-cell gradient is not.</summary>
+    BorderInCellExcelFull,
 }
 
 /// <summary>
@@ -120,6 +135,12 @@ public sealed class BorderTable
     private readonly StringBuilder _layerRules = new();
     private readonly StringBuilder _cellRules = new();
     private readonly StringBuilder _excelRules = new();
+    private readonly StringBuilder _hybridRules = new();
+    private readonly StringBuilder _fullRules = new();
+    private readonly StringBuilder _fillRules = new();
+    private readonly Dictionary<(ushort Top, ushort Right, ushort Bottom, ushort Left), string> _hybridClasses = new();
+    private readonly Dictionary<(string Lines, ushort Fill), string> _filledClasses = new();
+    private int _fills;
     private readonly Dictionary<(ushort Bottom, ushort Right), string> _cellClasses = new();
     private readonly Dictionary<(ushort Top, ushort Right, ushort Bottom, ushort Left), string> _excelClasses = new();
     private readonly Dictionary<(ushort Top, ushort Left, ushort Bottom, ushort Right), string> _shadowClasses = new();
@@ -144,6 +165,34 @@ public sealed class BorderTable
     public string ExcelRules => _excelRules.ToString();
     /// <summary>The generated stylesheet of BorderInCellExcelBox.</summary>
     public string BoxRules => $"{_boxBase}@media (resolution: 1.5dppx) {{\n{_boxScaled}}}\n";
+    /// <summary>The generated stylesheet of BorderInCellExcelFull.</summary>
+    public string FullRules => _fullRules.ToString();
+    /// <summary>The generated stylesheet of BorderInCellHybrid.</summary>
+    public string HybridRules => _hybridRules.ToString();
+    /// <summary>The Fills of the two Fill variants: one rule per colour.</summary>
+    public string FillRules => _fillRules.ToString();
+
+    /// <summary>A Fill colour for the Fill variants: one class per colour, as CellFormatClasses
+    /// interns them. Pale, so a line over it still reads.</summary>
+    public ushort AddFill()
+    {
+        var id = ++_fills;
+        _fillRules.Append($".fx .c.g{id}{{background-color:{FormatTable.Colour(id, 0xC0, 4)}}}\n");
+        Version++;
+        return (ushort)id;
+    }
+
+    /// <summary>A cell's line classes with its Fill's class, interned per pair.</summary>
+    public string WithFill(string lines, ushort fill)
+    {
+        if (fill == 0) return lines;
+        if (!_filledClasses.TryGetValue((lines, fill), out var cls))
+        {
+            cls = $"{lines} g{fill}";
+            _filledClasses[(lines, fill)] = cls;
+        }
+        return cls;
+    }
 
     public ushort Add(string? colour = null)
     {
@@ -181,6 +230,46 @@ public sealed class BorderTable
         {
             _excelRules.Append($".fx .et{id}{{--et:linear-gradient({colour},{colour});--ets:100% {Dp(s.Down)}}}\n");
             _excelRules.Append($".fx .el{id}{{--el:linear-gradient({colour},{colour});--els:{Dp(s.Down)} 100%}}\n");
+        }
+
+        // BorderInCellExcelFull (ticket 47): the same classes, every solid part a whole-cell gradient.
+        string full(bool horizontal, int n, bool fromEdge) => s.Name == "double" && fromEdge
+            ? $"linear-gradient(to {(horizontal ? "top" : "left")},#fff 0 {Dp(1)},{colour} {Dp(1)} {Dp(2)},transparent {Dp(2)})"
+            : $"linear-gradient(to {(fromEdge ? (horizontal ? "top" : "left") : (horizontal ? "bottom" : "right"))},{colour} 0 {Dp(n)},transparent {Dp(n)})";
+        if (s.Dashes is null)
+        {
+            _fullRules.Append($".fx .eb{id}{{--eb:{full(true, s.Up, true)};--ebs:100% 100%;border-bottom-color:transparent}}\n");
+            _fullRules.Append($".fx .er{id}{{--er:{full(false, s.Up, true)};--ers:100% 100%;border-right-color:transparent}}\n");
+        }
+        else
+        {
+            _fullRules.Append($".fx .eb{id}{{--eb:{up(true)};--ebs:100% {Dp(s.Up)};border-bottom-color:transparent}}\n");
+            _fullRules.Append($".fx .er{id}{{--er:{up(false)};--ers:{Dp(s.Up)} 100%;border-right-color:transparent}}\n");
+        }
+        if (s.Down > 0)
+        {
+            _fullRules.Append($".fx .et{id}{{--et:{full(true, s.Down, false)};--ets:100% 100%}}\n");
+            _fullRules.Append($".fx .el{id}{{--el:{full(false, s.Down, false)};--els:100% 100%}}\n");
+        }
+
+        // BorderInCellHybrid (ticket 47): a solid line on and above the gridline is the cell's own
+        // bottom or right border, in place of its gridline; the right padding gives back what a wider
+        // border takes, so no text moves (the cell keeps 7px between its text and its right edge).
+        // Dashes and double stay background layers, as does the pixel past the gridline.
+        if (s.Dashes is null && s.Name != "double")
+        {
+            _hybridRules.Append($".fx .c.hb{id}{{border-bottom:{Dp(s.Up)} solid {colour}}}\n");
+            _hybridRules.Append($".fx .c.hr{id}{{border-right:{Dp(s.Up)} solid {colour};padding-right:calc(7px - {Dp(s.Up)})}}\n");
+        }
+        else
+        {
+            _hybridRules.Append($".fx .hb{id}{{--eb:{up(true)};--ebs:100% {Dp(s.Up)};border-bottom-color:transparent}}\n");
+            _hybridRules.Append($".fx .hr{id}{{--er:{up(false)};--ers:{Dp(s.Up)} 100%;border-right-color:transparent}}\n");
+        }
+        if (s.Down > 0)
+        {
+            _hybridRules.Append($".fx .et{id}{{--et:linear-gradient({colour},{colour});--ets:100% {Dp(s.Down)}}}\n");
+            _hybridRules.Append($".fx .el{id}{{--el:linear-gradient({colour},{colour});--els:{Dp(s.Down)} 100%}}\n");
         }
 
         // BorderInCellExcelBox: the same pixels from plain declarations. The cell keeps 7px between
@@ -308,6 +397,25 @@ public sealed class BorderTable
         return cls;
     }
 
+    /// <summary>BorderInCellHybrid's class attribute for a cell's four resolved edges, interned per
+    /// combination in C#; the stylesheet keeps one rule per side, style and colour.</summary>
+    public string HybridClass(ushort top, ushort right, ushort bottom, ushort left)
+    {
+        if (top != 0 && Styles[_style[top]].Down == 0) top = 0;
+        if (left != 0 && Styles[_style[left]].Down == 0) left = 0;
+        if (!_hybridClasses.TryGetValue((top, right, bottom, left), out var cls))
+        {
+            var css = new StringBuilder("c num");
+            if (bottom != 0) css.Append($" hb{bottom}");
+            if (right != 0) css.Append($" hr{right}");
+            if (top != 0) css.Append($" et{top}");
+            if (left != 0) css.Append($" el{left}");
+            cls = css.ToString();
+            _hybridClasses[(top, right, bottom, left)] = cls;
+        }
+        return cls;
+    }
+
     /// <summary>BorderInCellExcel's class attribute for a cell's four resolved edges, interned. A top or
     /// left edge enters it only when that line reaches past the gridline into this cell.</summary>
     public string ExcelClass(ushort top, ushort right, ushort bottom, ushort left)
@@ -342,7 +450,7 @@ public sealed class RowBorders
 }
 
 /// <summary>Which class, if any, a <see cref="BorderSheet"/> composes per cell.</summary>
-public enum BorderPaint { Layer, InCell, InCellExcel, InCellExcelBox }
+public enum BorderPaint { Layer, InCell, InCellExcel, InCellExcelBox, InCellHybrid }
 
 /// <summary>
 /// The Borders of the sheet. Each formatted cell records the same line on its four sides, as Excel's
@@ -354,15 +462,18 @@ public sealed class BorderSheet
 {
     /// <summary>The line each cell records on its four sides (0 = none).</summary>
     public readonly ushort[][] Recorded;
+    /// <summary>The Fill variants only (ticket 47): each cell's Fill colour (0 = none), or null.</summary>
+    public readonly ushort[][]? Fills;
     /// <summary>The resolved edges, per row.</summary>
     public readonly RowBorders[] Rows;
 
     private readonly BorderTable _table;
     private readonly BorderPaint _paint;
 
-    public BorderSheet(ushort[][] recorded, BorderTable table, BorderPaint paint)
+    public BorderSheet(ushort[][] recorded, BorderTable table, BorderPaint paint, ushort[][]? fills = null)
     {
         Recorded = recorded;
+        Fills = fills;
         Rows = new RowBorders[recorded.Length];
         _table = table;
         _paint = paint;
@@ -394,7 +505,7 @@ public sealed class BorderSheet
             classes = new string[cols];
             for (var c = 0; c < cols; c++) classes[c] = _table.CellClass(bottom[c], right[c]);
         }
-        else if (_paint is BorderPaint.InCellExcel or BorderPaint.InCellExcelBox)
+        else if (_paint is BorderPaint.InCellExcel or BorderPaint.InCellExcelBox or BorderPaint.InCellHybrid)
         {
             // This cell also paints the part of its top and left edges that lies inside it: the top
             // edge is the row above's bottom edge, which is why a border change can repaint the row
@@ -404,9 +515,13 @@ public sealed class BorderSheet
             {
                 var top = above[c] != 0 ? above[c] : own[c];
                 var left = c == 0 ? (ushort)0 : right[c - 1];
-                classes[c] = _paint == BorderPaint.InCellExcel
-                    ? _table.ExcelClass(top, right[c], bottom[c], left)
-                    : _table.BoxClass(top, right[c], bottom[c], left);
+                classes[c] = _paint switch
+                {
+                    BorderPaint.InCellExcel => _table.ExcelClass(top, right[c], bottom[c], left),
+                    BorderPaint.InCellHybrid => _table.HybridClass(top, right[c], bottom[c], left),
+                    _ => _table.BoxClass(top, right[c], bottom[c], left),
+                };
+                if (Fills is not null) classes[c] = _table.WithFill(classes[c], Fills[r][c]);
             }
         }
 
