@@ -25,7 +25,10 @@ const fieldsList = (page) => pane(page).getByRole('list', { name: 'PivotTable Fi
 const field = (page, caption) => fieldsList(page).getByRole('listitem').filter({ has: page.getByRole('checkbox', { name: caption, exact: true }) });
 const areaList = (page, title) => pane(page).getByRole('list', { name: title, exact: true });
 const entry = (page, caption) => pane(page).getByRole('button', { name: `Options for ${caption}`, exact: true });
-const toolbarButton = (page, name) => pivot(page).locator('.ex-pivot-toolbar').getByRole('button', { name, exact: true });
+// The toolbar's buttons, found by name in the report's column, which both Chromes give the same:
+// ExPivot draws the toolbar there under its own markup, and MudBlazor's controls under the Mud
+// Chrome. That they stand above the report is asserted where it matters.
+const toolbarButton = (page, name) => pivot(page).locator('.ex-pivot-report').getByRole('button', { name, exact: true });
 // Row 1 is Americas' first desk under the Compact form, column 1 its first product.
 const firstValue = (page) => rows(page).nth(1).locator('[role=gridcell]').nth(1);
 
@@ -120,7 +123,11 @@ for (const chrome of ['builtin', 'mud']) {
             // The records are an ExGrid of the source's fields, paged from the source, every one
             // of them Americas'.
             const panel = pivot(page).getByRole('tabpanel');
-            await expect(panel).toHaveAttribute('aria-labelledby', await details.getAttribute('id'));
+            // Labelled by its tab: the tab itself under ExPivot's markup, the tab's title inside
+            // it under MudTabs, which gives its tab element an id of its own.
+            const labelledBy = await panel.getAttribute('aria-labelledby');
+            expect(await details.evaluate((tab, id) => tab.id === id || tab.querySelector(`[id="${id}"]`) !== null, labelledBy)).toBe(true);
+            await expect(panel).toHaveAccessibleName(/^Details: Americas \/ \w+ \/ \w+$/);
             const records = panel.locator('.ex-grid .ex-viewport .ex-row');
             await expect(records.first()).toBeVisible();
             await expect(panel.getByRole('columnheader', { name: 'Trade date' })).toBeVisible();

@@ -472,8 +472,10 @@ public sealed record PivotDetailsTabsContext(
     string Title, PivotDetailsTab Report, IReadOnlyList<PivotDetailsTab> Tabs, Func<string, string> Word);
 
 /// <summary>One tab at the report's foot.</summary>
-/// <param name="Id">Unique among the tabs of this ExPivot, and stable while the tab stands; the
-/// id of the panel it shows is <c>{Id}-panel</c>.</param>
+/// <param name="Id">Unique among the tabs of this ExPivot, and stable while the tab stands. The
+/// panel ExPivot places for it has the id <c>{Id}-panel</c> and is labelled by the element with this
+/// id (<c>aria-labelledby</c>): the Chrome gives it to the tab itself, or — where a design system's
+/// tab carries an id of its own — to the tab's title inside it.</param>
 /// <param name="Title">What it is called: the report's tab "PivotTable", a details tab its cell.</param>
 /// <param name="IsSelected">Whether it is the one shown.</param>
 /// <param name="Select">Shows it.</param>
