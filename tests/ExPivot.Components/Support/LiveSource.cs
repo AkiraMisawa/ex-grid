@@ -89,10 +89,37 @@ internal sealed class LiveSource : PivotSource
         return new ValueTask<PivotAnswer>(question.Completion.Task);
     }
 
+    /// <summary>Whether a field's Items are held for the test, each answered under the version it
+    /// names when the test says (<see cref="ItemsQuestion.AnswerAsync"/>), rather than at once.</summary>
+    public bool HoldsItems { get; set; }
+
+    /// <summary>The Items asked for while <see cref="HoldsItems"/> is set, in order.</summary>
+    public List<ItemsQuestion> ItemQuestions { get; } = [];
+
     public override ValueTask<PivotItemPage> ItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default)
+    {
+        if (!HoldsItems)
+            return ListItems(query);
+        var question = new ItemsQuestion(this, query);
+        ItemQuestions.Add(question);
+        return new ValueTask<PivotItemPage>(question.Completion.Task);
+    }
+
+    private ValueTask<PivotItemPage> ListItems(PivotItemsQuery query)
         => _versions.TryGetValue(query.SourceVersion, out var reference)
-            ? reference.ItemsAsync(query, cancellationToken)
+            ? reference.ItemsAsync(query, CancellationToken.None)
             : ValueTask.FromResult(PivotItemPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(query.SourceVersion)));
+
+    /// <summary>A field's Items, asked for under a Source Version and held until the test answers.</summary>
+    public sealed class ItemsQuestion(LiveSource source, PivotItemsQuery query)
+    {
+        public PivotItemsQuery Query { get; } = query;
+
+        public TaskCompletionSource<PivotItemPage> Completion { get; } = new();
+
+        /// <summary>Answers it as the source answers under the version it names.</summary>
+        public async Task AnswerAsync() => Completion.TrySetResult(await source.ListItems(Query));
+    }
 
     public override ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
         => _versions.TryGetValue(query.SourceVersion, out var reference)

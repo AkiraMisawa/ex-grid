@@ -84,8 +84,8 @@ public interface IPivotChrome
 /// clock's local time zone.</param>
 /// <param name="AsOfText"><paramref name="AsOf"/> as the sentence writes it, in the report's
 /// culture: the time, and the date too when it is not today's.</param>
-/// <param name="Retry">Asks the source again for the report's layout; not available while that
-/// question is out.</param>
+/// <param name="Retry">Asks again what failed — the source's Refresh, when that is what failed,
+/// otherwise the report's layout — and is not available while that is out.</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotStaleReportContext(
     string Message,
@@ -307,8 +307,17 @@ public sealed record PivotItemFilterContext(
     Func<string, string> Word)
 {
     /// <summary>Whether the field's Items are still on their way from the Pivot Source, which
-    /// lists them under the report's Source Version (ADR-0065).</summary>
+    /// lists them under the report's Source Version (ADR-0065): a first listing, with nothing yet
+    /// to list. OK cannot be pressed meanwhile.</summary>
     public bool IsLoading { get; init; }
+
+    /// <summary>Whether the Items listed are an earlier Source Version's, kept in view while the
+    /// report's version's are on their way (ADR-0065 refined). They are listed, ticked and applied
+    /// as any are — Hidden Items are keys, which name the same Items under any version — and the
+    /// report's version's replace them when they land. A Chrome may mark the list as updating; it
+    /// does not blank it, and does not dim it: a live report brings a new version several times a
+    /// second.</summary>
+    public bool IsUpdating { get; init; }
 
     /// <summary>Why the Items cannot be listed, in words, or null: "The data has changed —
     /// refresh." when the source can no longer answer under the report's Source Version, rather

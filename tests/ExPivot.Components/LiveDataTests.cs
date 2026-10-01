@@ -245,6 +245,160 @@ public class LiveDataTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
     }
 
+    // ---- ADR-0065 refined: the Items in view while a new version's are on their way -------------
+
+    private static readonly PivotLayout WestHidden = new()
+    {
+        Filters = [P("Region") with { HiddenItems = [PivotItemKey.Text("West")] }],
+        Rows = [P("Product")],
+        Values = [Sum("Amount")],
+    };
+
+    private static string BandSummary(IRenderedComponent<PivotComponent> cut) => cut.Find(".ex-pivot-filter-summary").TextContent;
+
+    private static string[] ListedItems(IRenderedComponent<PivotComponent> cut)
+        => cut.FindAll(".ex-pivot-item-filter .ex-pivot-item").Select(i => i.TextContent.Trim()).ToArray();
+
+    /// <summary>Renders over a live source whose Items answer on demand, the first listing answered.</summary>
+    private async Task<(IRenderedComponent<PivotComponent> Cut, LiveSource Source)> ListedAsync(PivotLayout layout)
+    {
+        var source = new LiveSource { HoldsItems = true };
+        var cut = RenderPivot(layout, source: source);
+        // A first listing has nothing to show yet, and says so.
+        Assert.Equal("Loading…", BandSummary(cut));
+        await cut.InvokeAsync(Assert.Single(source.ItemQuestions).AnswerAsync);
+        cut.WaitForAssertion(() => Assert.Equal("(Multiple Items)", BandSummary(cut)));
+        return (cut, source);
+    }
+
+    [Fact] // ADR-0065 refined (PV-23, PV-35): a new Source Version keeps the band's summary in view while its Items are on their way, and asks for them under the new version
+    public async Task A_new_version_keeps_the_bands_summary_while_its_items_are_on_their_way()
+    {
+        var (cut, source) = await ListedAsync(WestHidden);
+        var first = cut.Instance.Report!.Cube.SourceVersion;
+
+        await PublishAsync(cut, source, [.. Sales, South]);
+
+        Assert.NotEqual(first, cut.Instance.Report!.Cube.SourceVersion);
+        var asked = source.ItemQuestions[^1];
+        Assert.Equal(2, source.ItemQuestions.Count);
+        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, asked.Query.SourceVersion);
+        Assert.False(asked.Completion.Task.IsCompleted);
+        Assert.Equal("(Multiple Items)", BandSummary(cut));
+
+        await cut.InvokeAsync(asked.AnswerAsync);
+        Assert.Equal("(Multiple Items)", BandSummary(cut));
+    }
+
+    [Fact] // ADR-0065 refined (PV-23): Filter… lists the earlier version's Items while the new version's are on their way — marked busy, not blanked, OK enabled — and the new version's replace them when they land
+    public async Task Filter_lists_the_earlier_versions_items_while_the_new_ones_are_on_their_way()
+    {
+        var (cut, source) = await ListedAsync(WestHidden);
+        await cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
+        Assert.Equal(["(Select All)", "East", "North", "West", "(blank)"], ListedItems(cut));
+        Assert.Null(cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
+
+        await PublishAsync(cut, source, [.. Sales, South]);
+
+        Assert.Equal(2, source.ItemQuestions.Count);
+        Assert.Equal(["(Select All)", "East", "North", "West", "(blank)"], ListedItems(cut));
+        Assert.Equal("true", cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
+        Assert.Empty(cut.FindAll(".ex-pivot-item-filter .ex-pivot-loading"));
+        Assert.False(cut.Find(".ex-pivot-ok").HasAttribute("disabled"));
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+
+        await cut.InvokeAsync(source.ItemQuestions[1].AnswerAsync);
+
+        cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "East", "North", "South", "West", "(blank)"], ListedItems(cut)));
+        Assert.Null(cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
+    }
+
+    [Fact] // ADR-0065 refined (PV-23): ticking and applying against the earlier version's Items is safe — Hidden Items are keys, which name the same Items under any version
+    public async Task Applying_against_the_earlier_versions_items_hides_them_by_key()
+    {
+        var (cut, source) = await ListedAsync(WestHidden);
+        await PublishAsync(cut, source, [.. Sales, South]);
+        await cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
+        Assert.Equal("true", cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
+
+        await cut.FindAll(".ex-pivot-item").Single(i => i.TextContent.Trim() == "East").QuerySelector("input")!
+            .ChangeAsync(new ChangeEventArgs { Value = false });
+        await cut.Find(".ex-pivot-ok").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(
+            new HashSet<PivotItemKey> { PivotItemKey.Text("West"), PivotItemKey.Text("East") },
+            cut.Instance.CurrentLayout.Filters[0].HiddenItems.ToHashSet());
+        // North's Pears, the blank region's Plums, and South's Apples: the newest data, East and
+        // West left out.
+        Assert.Equal(["Apples | 1", "Pears | 10", "Plums | 5", "Grand Total | 16"], RowTexts(cut));
+    }
+
+    private static readonly Sale Central = South with { Region = "Central" };
+
+    private static readonly Sale Delta = South with { Region = "Delta" };
+
+    [Fact] // ADR-0065 refined (PV-23): Items listed under a version the report has since moved past, landing late, stay in view when they are the newest listed
+    public async Task A_late_listing_that_is_the_newest_stays_in_view()
+    {
+        var (cut, source) = await ListedAsync(WestHidden);
+        await cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
+
+        // The second version's Items are still on their way when the third version's report lands.
+        await PublishAsync(cut, source, [.. Sales, South]);
+        var second = source.ItemQuestions[1];
+        Clock.Advance(Interval);
+        await PublishAsync(cut, source, [.. Sales, South, Central]);
+        var third = source.ItemQuestions[2];
+
+        await cut.InvokeAsync(second.AnswerAsync);
+
+        cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "East", "North", "South", "West", "(blank)"], ListedItems(cut)));
+        Assert.Equal("true", cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
+
+        await cut.InvokeAsync(third.AnswerAsync);
+        cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "Central", "East", "North", "South", "West", "(blank)"], ListedItems(cut)));
+        Assert.Null(cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
+    }
+
+    [Fact] // ADR-0065 refined (PV-23): a listing older than the Items in view, landing late, never takes their place
+    public async Task A_late_listing_older_than_the_one_in_view_is_set_aside()
+    {
+        var (cut, source) = await ListedAsync(WestHidden);
+        await cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
+        await PublishAsync(cut, source, [.. Sales, South]);
+        var second = source.ItemQuestions[1];
+        Clock.Advance(Interval);
+        await PublishAsync(cut, source, [.. Sales, South, Central]);
+        await cut.InvokeAsync(source.ItemQuestions[2].AnswerAsync);
+        cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "Central", "East", "North", "South", "West", "(blank)"], ListedItems(cut)));
+
+        // A fourth version: the third's Items stay in view while its own are on their way, and the
+        // second's, landing meanwhile, are older than them.
+        Clock.Advance(Interval);
+        await PublishAsync(cut, source, [.. Sales, South, Central, Delta]);
+        var fourth = source.ItemQuestions[3];
+        await cut.InvokeAsync(second.AnswerAsync);
+
+        Assert.Equal(["(Select All)", "Central", "East", "North", "South", "West", "(blank)"], ListedItems(cut));
+        Assert.Equal("true", cut.Find(".ex-pivot-item-list").GetAttribute("aria-busy"));
+
+        await cut.InvokeAsync(fourth.AnswerAsync);
+        cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "Central", "Delta", "East", "North", "South", "West", "(blank)"], ListedItems(cut)));
+    }
+
+    [Fact] // ADR-0065 refined (PV-23): a new source lists from nothing — its first listing shows loading
+    public async Task A_new_source_lists_its_items_from_nothing()
+    {
+        var (cut, _) = await ListedAsync(WestHidden);
+        var next = new LiveSource { HoldsItems = true };
+
+        cut.Render(ps => ps.Add(p => p.Source, next));
+
+        Assert.Equal("Loading…", BandSummary(cut));
+        await cut.InvokeAsync(Assert.Single(next.ItemQuestions).AnswerAsync);
+        cut.WaitForAssertion(() => Assert.Equal("(Multiple Items)", BandSummary(cut)));
+    }
+
     // ---- A change of data, and a question already out ------------------------------------------
 
     [Fact] // ADR-0066/0065: a change of data does not cancel the user's layout question; it is asked for once that lands, and only it marks cells

@@ -79,10 +79,13 @@ public partial class ExPivot
         public string NumberFormat { get; set; } = "";
     }
 
-    /// <summary>A field's Items as the source listed them, under the report's Source Version, or
-    /// why it could not; neither while the answer is on its way.</summary>
+    /// <summary>A field's Items as the source listed them under one Source Version, or why it could
+    /// not; neither while the answer is on its way. The sequence orders listings by when they were
+    /// asked for, so an older one landing late never replaces a newer one.</summary>
     private sealed class ItemsLoad
     {
+        public required long Sequence { get; init; }
+
         public PivotItemPage? Page { get; set; }
 
         public SourceProblem? Problem { get; set; }
@@ -90,9 +93,24 @@ public partial class ExPivot
         public bool Pending => Page is null && Problem is null;
     }
 
-    // Items over all the data depend only on the data (ADR-0059): one listing per field, held for
-    // the Source Version the report was computed from, and dropped with it.
+    /// <summary>A field's Items as Filter… and the report filter band see them: listed under the
+    /// report's Source Version, or why they cannot be — or, while those are on their way, the
+    /// newest listed under an earlier version of the same source (<see cref="Updating"/>); none of
+    /// these while a first listing is on its way.</summary>
+    private readonly record struct ItemsView(PivotItemPage? Page, SourceProblem? Problem, bool Updating)
+    {
+        public bool Pending => Page is null && Problem is null;
+    }
+
+    // Items over all the data depend only on the data (ADR-0059): one listing per field, asked for
+    // under the Source Version the report was computed from. When the report moves to a new
+    // version of the same source, each field's newest listing stays in view until the new
+    // version's lands (ADR-0065 refined): Hidden Items are keys, which name the same Items under
+    // any version, so ticking and applying against them is safe, and a live report does not blank
+    // the band and Filter… for a round trip after every redraw. A new source lists from nothing.
     private readonly Dictionary<string, ItemsLoad> _itemLoads = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ItemsLoad> _earlierItems = new(StringComparer.Ordinal);
+    private long _itemsSequence;
     private PivotSource? _itemsSource;
     private string? _itemsVersion;
 
@@ -103,13 +121,58 @@ public partial class ExPivot
 
     // ---- Items, from the source (ADR-0065) ----------------------------------------------------
 
-    /// <summary>The listing of a field's Items held for the report's Source Version, or null while
-    /// there is no report, or none has been asked for.</summary>
-    private ItemsLoad? CachedItems(string field)
+    /// <summary>A field's Items as they stand for the report on screen: listed under its Source
+    /// Version, or why they cannot be; while those are on their way, or not asked for yet, the
+    /// newest an earlier version of the same source listed (ADR-0065 refined); and nothing — a
+    /// first listing on its way — while there is neither, or no report.</summary>
+    private ItemsView ItemsOf(string field)
     {
-        if (_report is not { } report || !ReferenceEquals(_reportSource, _itemsSource) || report.Cube.SourceVersion != _itemsVersion)
-            return null;
-        return _itemLoads.GetValueOrDefault(field);
+        if (_report is null)
+            return default;
+        FollowReportVersion();
+        if (_itemLoads.TryGetValue(field, out var load) && !load.Pending)
+            return new ItemsView(load.Page, load.Problem, Updating: false);
+        return _earlierItems.TryGetValue(field, out var earlier) ? new ItemsView(earlier.Page, null, Updating: true) : default;
+    }
+
+    /// <summary>
+    /// Brings the listings to the report's Source Version. Under a new version of the same source,
+    /// each field's Items listed so far become its earlier listing, which stays in view until the
+    /// new version's land — unless the source could not list them, when nothing was in view to
+    /// keep (ADR-0065 refined). Under a new source, nothing listed before is kept.
+    /// </summary>
+    private void FollowReportVersion()
+    {
+        if (_report is not { } report || _reportSource is not { } source)
+            return;
+        var version = report.Cube.SourceVersion;
+        if (ReferenceEquals(source, _itemsSource) && version == _itemsVersion)
+            return;
+        if (ReferenceEquals(source, _itemsSource))
+        {
+            foreach (var (field, load) in _itemLoads)
+            {
+                if (load.Page is not null)
+                    KeepEarlier(field, load);
+                else if (load.Problem is not null)
+                    _earlierItems.Remove(field);
+            }
+        }
+        else
+        {
+            _earlierItems.Clear();
+        }
+        _itemLoads.Clear();
+        _itemsSource = source;
+        _itemsVersion = version;
+    }
+
+    /// <summary>Keeps <paramref name="load"/>'s Items in view for <paramref name="field"/> until the
+    /// report's version's land, unless a listing asked for after it is kept already.</summary>
+    private void KeepEarlier(string field, ItemsLoad load)
+    {
+        if (!_earlierItems.TryGetValue(field, out var kept) || kept.Sequence < load.Sequence)
+            _earlierItems[field] = load;
     }
 
     /// <summary>Asks the source for a field's Items under the report's Source Version, unless they
@@ -119,23 +182,27 @@ public partial class ExPivot
     {
         if (_report is not { } report || _reportSource is not { } source)
             return;
-        var version = report.Cube.SourceVersion;
-        if (!ReferenceEquals(source, _itemsSource) || version != _itemsVersion)
-        {
-            _itemLoads.Clear();
-            _itemsSource = source;
-            _itemsVersion = version;
-        }
+        FollowReportVersion();
         if (_itemLoads.ContainsKey(field))
             return;
-        var load = new ItemsLoad();
+        var load = new ItemsLoad { Sequence = ++_itemsSequence };
         _itemLoads[field] = load;
-        _ = ListItemsAsync(source, new PivotItemsQuery(field, version, max: ItemListCap),
+        _ = ListItemsAsync(source, new PivotItemsQuery(field, report.Cube.SourceVersion, max: ItemListCap),
             page =>
             {
                 load.Page = page;
+                if (!ReferenceEquals(_itemLoads.GetValueOrDefault(field), load))
+                {
+                    // Listed under a version the report has since moved past: until the report's
+                    // own land, these are the newest Items of the source to keep in view.
+                    if (ReferenceEquals(source, _itemsSource))
+                        KeepEarlier(field, load);
+                    return;
+                }
+                // The report's version's Items replace whatever an earlier one listed.
+                _earlierItems.Remove(field);
                 // A search already typed into this field's open Filter…, beyond the Items listed,
-                // is the source's to answer, under this listing's version (ADR-0065 refined).
+                // is the source's to answer, under the report's version (ADR-0065 refined).
                 if (_open is { Kind: Surface.ItemFilter } open && open.Field == field && open.ItemSearch.Length > 0
                     && page.Total > page.Items.Count)
                     SearchItems(open, open.ItemSearch);
@@ -144,9 +211,10 @@ public partial class ExPivot
     }
 
     /// <summary>A new report — another Source Version — lists again what an open Filter… and the
-    /// report filter band show: the Items held were the previous version's.</summary>
+    /// report filter band show; the Items they show meanwhile are the earlier version's.</summary>
     private void LoadShownItems()
     {
+        FollowReportVersion();
         LoadBandItems();
         if (_open is { Kind: Surface.ItemFilter } open)
             LoadItems(open.Field);
@@ -666,16 +734,16 @@ public partial class ExPivot
     private PivotItemFilterContext ItemFilterContext(OpenSurface open)
     {
         var layout = open.BandField is null ? PaneLayout : _layout;
-        var load = CachedItems(open.Field);
+        var items = ItemsOf(open.Field);
         var search = open.ItemSearch;
         var field = FieldOf(open.Field)!;
         IReadOnlyList<PivotItemInfo> matches = [];
-        var loading = load is null or { Pending: true };
-        string? unavailable = load?.Problem is { } problem ? ProblemText(problem) : null;
+        var loading = items.Pending;
+        string? unavailable = items.Problem is { } problem ? ProblemText(problem) : null;
         var allHeld = true;
         var itemCount = 0;
         var matchCount = 0;
-        if (load?.Page is { } page)
+        if (items.Page is { } page)
         {
             itemCount = page.Total;
             allHeld = page.Total <= page.Items.Count;
@@ -707,7 +775,9 @@ public partial class ExPivot
         var listed = matches.Take(ItemListCap).Select(i => new PivotItemChoice(i.Key, i.Label, !open.Hidden.Contains(i.Key))).ToArray();
         var ticked = listed.Count(i => i.Ticked);
         bool? all = ticked == listed.Length ? true : ticked == 0 ? false : null;
-        var held = load?.Page?.Items ?? [];
+        // The Items in view, an earlier version's while the report's are on their way: Hidden Items
+        // are keys, so OK applies against them safely (ADR-0065 refined).
+        var held = items.Page?.Items ?? [];
         var canApply = !loading && unavailable is null
             && (!allHeld || held.Count == 0 || held.Any(key => !open.Hidden.Contains(key)));
         return new PivotItemFilterContext(
@@ -748,6 +818,7 @@ public partial class ExPivot
             Word)
         {
             IsLoading = loading,
+            IsUpdating = items.Updating,
             Unavailable = unavailable,
         };
     }
@@ -758,10 +829,12 @@ public partial class ExPivot
         open.SearchPage = null;
         open.SearchProblem = null;
         var generation = ++open.SearchGeneration;
-        if (text.Length > 0 && CachedItems(open.Field)?.Page is { } page && page.Total > page.Items.Count && _reportSource is { } source)
+        if (text.Length > 0 && ItemsOf(open.Field).Page is { } page && page.Total > page.Items.Count
+            && _reportSource is { } source && _report is { } report)
         {
-            // An answer to an older search is discarded, as an answer to a superseded question is.
-            _ = ListItemsAsync(source, new PivotItemsQuery(open.Field, page.SourceVersion, text, ItemListCap),
+            // Under the report's Source Version, whichever version listed the Items in view. An
+            // answer to an older search is discarded, as an answer to a superseded question is.
+            _ = ListItemsAsync(source, new PivotItemsQuery(open.Field, report.Cube.SourceVersion, text, ItemListCap),
                 found =>
                 {
                     if (open.SearchGeneration == generation)

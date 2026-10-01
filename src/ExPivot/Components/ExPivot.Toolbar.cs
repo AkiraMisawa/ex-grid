@@ -113,15 +113,17 @@ public partial class ExPivot
 
     /// <summary>What a report filter shows, as Excel shows a page field: <c>(All)</c> while it hides
     /// nothing, the one Item shown, or <c>(Multiple Items)</c> — read from the field's Items, asked
-    /// of the source; "Loading…" until they arrive, rather than a guess, and why when they cannot.</summary>
+    /// of the source; "Loading…" until a first listing arrives, rather than a guess, and why when
+    /// they cannot be listed. While a new Source Version's Items are on their way, the summary is
+    /// read from the Items in view, the earlier version's (ADR-0065 refined).</summary>
     private string BandSummary(PivotFieldPlacement placement)
     {
         if (placement.HiddenItems.Count == 0)
             return Word(PivotWords.All);
-        var load = CachedItems(placement.Field);
-        if (load?.Problem is { } problem)
+        var items = ItemsOf(placement.Field);
+        if (items.Problem is { } problem)
             return ProblemText(problem);
-        if (load?.Page is not { } page || FieldOf(placement.Field) is not { } field)
+        if (items.Page is not { } page || FieldOf(placement.Field) is not { } field)
             return Word("loading");
         if (page.Total > page.Items.Count)
         {

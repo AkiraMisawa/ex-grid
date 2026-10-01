@@ -1,14 +1,16 @@
 @using System.Globalization
 @* The built-in Filter… (ADR-0060): the field's Items, each ticked while shown, (Select All), a
    search that narrows the list, and OK / Cancel. The ticks are ExPivot's draft. The Items come from
-   the Pivot Source under the report's Source Version (ADR-0065): while they are on their way the
-   panel says so, and when the source can no longer list them under it, the panel says the data
-   has changed instead of listing Items that are not the report's. *@
+   the Pivot Source under the report's Source Version (ADR-0065): while a first listing is on its
+   way the panel says so, and when the source can no longer list them under it, the panel says the
+   data has changed instead of listing Items that are not the report's. While a new version's Items
+   are on their way, the earlier version's stay listed, the list marked busy and nothing dimmed
+   (ADR-0065 refined). *@
 <div class="ex-pivot-panel ex-pivot-item-filter">
     <input @ref="_search" type="search" class="ex-pivot-search" placeholder="@Context.Word("search-items")"
            aria-label="@Context.Word("search-items")"
            @bind:get="Context.Search" @bind:set="Context.SearchChanged" @bind:event="oninput" />
-    <div class="ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption" aria-busy="@(Context.IsLoading ? "true" : null)">
+    <div class="ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption" aria-busy="@(Context.IsLoading || Context.IsUpdating ? "true" : null)">
         @if (Context.Unavailable is { } unavailable)
         {
             <div class="ex-pivot-refusal ex-pivot-unavailable" role="alert">@unavailable</div>

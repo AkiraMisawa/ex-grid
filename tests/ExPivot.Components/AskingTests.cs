@@ -148,7 +148,7 @@ public class AskingTests : PivotTestContext
         Assert.All(told, layout => Assert.Equal(2, layout.Values.Count));
     }
 
-    [Fact] // ADR-0065/0025 (PV-25): a source that fails leaves the report as it was, and says so where the user sees it
+    [Fact] // ADR-0065/0025, ADR-0066 refined (PV-25): a failed question for the user's layout leaves the report as it was and says so on the toolbar — not a Stale Report — and the layout goes back
     public async Task A_failure_leaves_the_report_as_it_was_and_says_so()
     {
         var told = new List<PivotLayout>();
@@ -164,8 +164,37 @@ public class AskingTests : PivotTestContext
         Assert.Equal("The source could not answer: The server is unreachable.", cut.Find(".ex-pivot-refusal-notice").TextContent);
         Assert.Equal("alert", cut.Find(".ex-pivot-refusal-notice").GetAttribute("role"));
         Assert.IsType<InvalidOperationException>(cut.Instance.LastError);
+        Assert.False(cut.Instance.IsStale);
+        Assert.Empty(cut.FindAll(".ex-pivot-stale-notice"));
         Assert.Equal(RegionAmount, cut.Instance.CurrentLayout);
+        // The pane goes back to the layout the report shows.
+        Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
+        Assert.False(FieldItem(cut, "Product").QuerySelector("input")!.HasAttribute("checked"));
         Assert.Empty(told);
+
+        // So the next change starts from the report's layout, and its answer is raised.
+        await TickFieldAsync(cut, "Quantity", true);
+        await AnswerAsync(cut, source.Questions[2]);
+        Assert.Equal(["Amount", "Quantity"], cut.Instance.CurrentLayout.Values.Select(v => v.Field));
+        Assert.Equal(["Region"], cut.Instance.CurrentLayout.Rows.Select(p => p.Field));
+        Assert.Single(told);
+        Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));
+    }
+
+    [Fact] // ADR-0066 refined (PV-25): before the first report there is no layout to go back to — a failed first question is said on the toolbar, and the pane keeps the layout
+    public async Task A_failed_first_question_keeps_the_layout()
+    {
+        var source = Holding();
+        var cut = RenderPivot(RegionAmount, source: source);
+
+        await cut.InvokeAsync(() => source.Questions[0].Fail(new InvalidOperationException("The server is unreachable.")));
+        cut.WaitForState(() => !cut.Instance.IsLoading);
+
+        Assert.Equal("The source could not answer: The server is unreachable.", cut.Find(".ex-pivot-refusal-notice").TextContent);
+        Assert.Equal(["Region"], AreaEntries(cut, "Rows"));
+        Assert.Equal(["Sum of Amount"], AreaEntries(cut, "Values"));
+        Assert.False(cut.Instance.IsStale);
+        Assert.Null(cut.Instance.Report);
     }
 
     // ---- PV-26: a change that needs no new question asks none ------------------------------------
