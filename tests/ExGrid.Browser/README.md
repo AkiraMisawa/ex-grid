@@ -322,6 +322,15 @@ nobody had asked for. What that means when writing a test:
   virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both
   settings (PF-6, and BIG-6 as its "on" half), and a selection drag's cost per step
   (PF-7). Each one asserts only that it measured something.
+- `measure-pivot.spec.mjs` — PV-21 and DA-17, recorded and never gated: ExPivot and the
+  Snapshot over a million trades in a published WebAssembly build without AOT. That build
+  must already be served, with the demo API server holding a million trades beside it,
+  and every test skips itself unless `EXGRID_MEASURE=pivot`. It times the gestures on
+  `/pivot?trades=1000000`, questions by their leaves up to the cap and past it, 1,000
+  changes on `/pivot-live`, and reading Arrow on `/pivot-db` and a CSV on `/pivot-csv`
+  (`EXGRID_MEASURE_CSV` names the file). Times are in the page's own clock, from the
+  input to the frame after the answer, and every long task is collected.
+  `verification/2026-10-01-linux-measure/results.md` says how it was run.
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
