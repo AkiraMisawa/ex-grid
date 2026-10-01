@@ -24,6 +24,7 @@
     <button @onclick="RunQuickAsync" disabled="@_running">@(_running ? "measuring…" : "Measure cell format (quick: 50%, N 16)")</button>
     <button @onclick="RunBordersAsync" disabled="@_running">@(_running ? "measuring…" : "Measure borders (each share and N beside its own baseline)")</button>
     <button @onclick="RunInCellAsync" disabled="@_running">@(_running ? "measuring…" : "Measure in-cell borders (the Excel variants)")</button>
+    <button @onclick="RunHybridAsync" disabled="@_running">@(_running ? "measuring…" : "Measure the hybrid and a Fill with borders (ticket 47)")</button>
 </div>
 
 @if (_error is not null)
@@ -86,7 +87,7 @@
                 var abs = (_startRow + r) % TotalRows;
                 var row = _rows[abs];
                 <FormatRow @key="row.Id" RowData="row" Cols="_cols" VisibleCols="VisibleCols" Mode="_mode" Table="_table"
-                           Format="@(_fontRows?[abs])" Borders="@(_mode is CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox ? _borders!.Rows[abs] : null)" />
+                           Format="@(_fontRows?[abs])" Borders="@(InCellBorders(_mode) ? _borders!.Rows[abs] : null)" />
             }
             @if (_mode == CellFormatMode.BorderLayer)
             {
@@ -241,8 +242,8 @@
                 _css = mode == CellFormatMode.CellFormatClasses ? _table.Rules : "";
                 break;
 
-            case CellFormatMode.BorderLayer or CellFormatMode.BorderInCell or CellFormatMode.BorderLayerPerRow
-                or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+            case CellFormatMode.BorderLayer or CellFormatMode.BorderLayerPerRow:
+            case var _ when InCellBorders(mode):
                 _borderTable = new BorderTable();
                 for (var i = 0; i < distinct; i++) _borderTable.Add(specimen ? "#000000" : null);
                 var recorded = new ushort[TotalRows][];
@@ -252,13 +253,30 @@
                     for (var c = 0; c < MaxCols; c++)
                         if (!specimen && rnd.Next(100) < share) recorded[r][c] = (ushort)(1 + rnd.Next(distinct));
                 }
+                // The Fill variants (ticket 47): every bordered cell also carries one of N Fills, so the
+                // background colour and the line layers are painted on the same cells.
+                ushort[][]? fills = null;
+                if (mode is CellFormatMode.BorderInCellExcelFill or CellFormatMode.BorderInCellHybridFill)
+                {
+                    for (var i = 0; i < distinct; i++) _borderTable.AddFill();
+                    var fillRnd = new Random(45);
+                    fills = new ushort[TotalRows][];
+                    for (var r = 0; r < TotalRows; r++)
+                    {
+                        fills[r] = new ushort[MaxCols];
+                        for (var c = 0; c < MaxCols; c++)
+                            if (recorded[r][c] != 0) fills[r][c] = (ushort)(1 + fillRnd.Next(distinct));
+                    }
+                }
                 _borders = new BorderSheet(recorded, _borderTable, mode switch
                 {
                     CellFormatMode.BorderInCell => BorderPaint.InCell,
-                    CellFormatMode.BorderInCellExcel => BorderPaint.InCellExcel,
+                    CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelFill
+                        or CellFormatMode.BorderInCellExcelFull => BorderPaint.InCellExcel,
                     CellFormatMode.BorderInCellExcelBox => BorderPaint.InCellExcelBox,
+                    CellFormatMode.BorderInCellHybrid or CellFormatMode.BorderInCellHybridFill => BorderPaint.InCellHybrid,
                     _ => BorderPaint.Layer,
-                });
+                }, fills);
                 _borderVersion++;
                 _css = BorderRules();
                 break;
@@ -277,7 +295,8 @@
     private string ScrollerClass => _mode switch
     {
         CellFormatMode.CellFormatVars => "scroller fx vars",
-        CellFormatMode.BorderInCellExcel => "scroller fx xcell",
+        CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellHybrid or CellFormatMode.BorderInCellExcelFull
+            or CellFormatMode.BorderInCellExcelFill or CellFormatMode.BorderInCellHybridFill => "scroller fx xcell",
         _ => "scroller fx",
     };
 
@@ -286,13 +305,37 @@
         CellFormatMode.BorderInCell => _borderTable!.CellRules,
         CellFormatMode.BorderInCellExcel => _borderTable!.ExcelRules,
         CellFormatMode.BorderInCellExcelBox => _borderTable!.BoxRules,
+        CellFormatMode.BorderInCellHybrid => _borderTable!.HybridRules,
+        CellFormatMode.BorderInCellExcelFull => _borderTable!.FullRules,
+        CellFormatMode.BorderInCellExcelFill => _borderTable!.FillRules + _borderTable.ExcelRules,
+        CellFormatMode.BorderInCellHybridFill => _borderTable!.FillRules + _borderTable.HybridRules,
         _ => _borderTable!.LayerRules,
     };
 
-    private enum Sweep { Full, Quick, Borders, InCell }
+    /// <summary>The modes whose rows paint the resolved edges inside their cells.</summary>
+    private static bool InCellBorders(CellFormatMode mode) => mode is CellFormatMode.BorderInCell
+        or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox or CellFormatMode.BorderInCellHybrid
+        or CellFormatMode.BorderInCellExcelFill or CellFormatMode.BorderInCellHybridFill or CellFormatMode.BorderInCellExcelFull;
+
+    private enum Sweep { Full, Quick, Borders, InCell, Hybrid }
 
     private static IEnumerable<(CellFormatMode Mode, int Share, int Distinct)> Configs(Sweep sweep)
     {
+        if (sweep == Sweep.Hybrid)
+        {
+            // Ticket 47: the hybrid against BorderInCellExcel, and each with a Fill on the same cells,
+            // interleaved beside a baseline of their own at each share and N, to be read as deltas.
+            CellFormatMode[] hybrid =
+            [
+                CellFormatMode.RowComponent, CellFormatMode.BorderInCellExcel, CellFormatMode.BorderInCellHybrid,
+                CellFormatMode.BorderInCellExcelFull, CellFormatMode.BorderInCellExcelFill, CellFormatMode.BorderInCellHybridFill,
+            ];
+            foreach (var (share, distinct) in new[] { (10, 1), (50, 16), (50, 256), (100, 1), (100, 16), (100, 256) })
+                foreach (var mode in hybrid)
+                    yield return (mode, share, distinct);
+            yield break;
+        }
+
         if (sweep == Sweep.InCell)
         {
             // The in-cell modes against each other, each share and N beside a baseline of its own:
@@ -362,8 +405,8 @@
                 break;
             }
 
-            case CellFormatMode.BorderLayer or CellFormatMode.BorderInCell or CellFormatMode.BorderLayerPerRow
-                or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+            case CellFormatMode.BorderLayer or CellFormatMode.BorderLayerPerRow:
+            case var _ when InCellBorders(_mode):
             {
                 var k = _borderTable!.Add();
                 for (var r = 0; r < TotalRows; r++) _borders!.Recorded[r][column] = k;
@@ -402,8 +445,8 @@
                 break;
             }
 
-            case CellFormatMode.BorderLayer or CellFormatMode.BorderInCell or CellFormatMode.BorderLayerPerRow
-                or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+            case CellFormatMode.BorderLayer or CellFormatMode.BorderLayerPerRow:
+            case var _ when InCellBorders(_mode):
             {
                 var recorded = _borders!.Recorded[abs];
                 recorded[column] = Next(recorded[column], _distinct);
@@ -559,7 +602,7 @@
             if (oneCell.MaxRowRenders != 0) problems.Add($"one cell's border rendered {oneCell.MaxRowRenders} rows");
             if (oneCell.MaxLayerRenders > (strips ? 2 : 1)) problems.Add($"one cell's border rendered {oneCell.MaxLayerRenders} layer components");
         }
-        else if (mode is CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox)
+        else if (InCellBorders(mode))
         {
             // In the cell's box, the row above paints the shared edge; Excel's geometry also has the
             // row below paint the part of a thick or double line that reaches into it.
@@ -585,6 +628,8 @@
     private Task RunBordersAsync() => RunAsync(Sweep.Borders);
 
     private Task RunInCellAsync() => RunAsync(Sweep.InCell);
+
+    private Task RunHybridAsync() => RunAsync(Sweep.Hybrid);
 
     private async Task RunAsync(Sweep sweep)
     {
@@ -628,8 +673,7 @@
 
     private void ShowStyles()
     {
-        var mode = _showMode is CellFormatMode.BorderLayer or CellFormatMode.BorderInCell
-            or CellFormatMode.BorderLayerPerRow or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox
+        var mode = _showMode is CellFormatMode.BorderLayer or CellFormatMode.BorderLayerPerRow || InCellBorders(_showMode)
             ? _showMode
             : CellFormatMode.BorderInCellExcel;
         Setup(mode, 0, 13, specimen: true);
@@ -675,7 +719,7 @@
                 Environment = _env,
                 Runs = _runs,
                 ManualScrollFrames = _manualStats,
-                Note = "ticket 44: per-cell appearance (Font, Fill, Borders) on RowComponent. "
+                Note = "tickets 44 and 47: per-cell appearance (Font, Fill, Borders) on RowComponent. "
                     + "Render as the other page measures it; Layout forced right after; Paint from the next frame.",
             };
             var res = await Http.PostAsJsonAsync("api/results", report);
