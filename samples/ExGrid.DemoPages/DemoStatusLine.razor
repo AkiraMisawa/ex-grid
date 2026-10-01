@@ -1,0 +1,31 @@
+@* A line of status a page updates often — the latest batch of a live feed, the version a server's
+   hub named — rendered on its own, so the page and the grids on it do not render with it: a page
+   rendered four times a second would hand every grid on it its parameters four times a second. *@
+<span id="@Id">@_text</span>
+
+@code {
+    private string _text = "";
+    private bool _shown;
+
+    /// <summary>The element's id, for the browser tests.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>What the line says until <see cref="Show"/> is first called.</summary>
+    [Parameter] public string Initial { get; set; } = "";
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (!_shown)
+            _text = Initial;
+    }
+
+    /// <summary>Shows <paramref name="text"/>. Callable from any thread: it is marshalled to the
+    /// renderer's.</summary>
+    public void Show(string text) => _ = InvokeAsync(() =>
+    {
+        _shown = true;
+        _text = text;
+        StateHasChanged();
+    });
+}

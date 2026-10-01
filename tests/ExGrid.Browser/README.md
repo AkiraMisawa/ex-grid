@@ -464,6 +464,21 @@ nobody had asked for. What that means when writing a test:
   desk, the account numbers keeping their zeros; the page's two samples, one under the declared
   Schema and one under a suggested Schema, reading the same trades to the same total — a second
   file read while a report stands; and the code shown under "The code" equal to its source.
+- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0064/0065/0068), **run once per Chrome**, against the
+  demo API server from either host: its trades read over Arrow into a Snapshot the page pivots in
+  its own process, at the version `/api/status` names, and asked of the server through
+  `PivotSource.Fetch`, which answers in SQL, show the same numbers painted row for row — and
+  again after a layout changed in one pane is shown on the other pivot; Refresh is offered by the
+  server's source alone, and asks again; Show Details opens the same records behind a cell in
+  both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20);
+  and the code the page shows equal to its source, the Arrow request taking its response whole
+  (ADR-0064).
+- `pivot-live.spec.mjs` — `/pivot-live` (ADR-0066/0067/0068), **run once per Chrome**: Change
+  Batches the page folds into the bundled source on its own timer mark the values they changed;
+  paused, the marks go after their second, and a collapse marks nothing however long after
+  (PV-36). The server's live updates, which the page turns on, mark the server report's values
+  through the hub's notices; the page's button turns them off and on, and leaving the page turns
+  them off (PV-20); and the code the page shows equal to its source.
 - `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0059, PV-20), **run once
   per Chrome**, in a window wide enough for every tenor column beside the pane, since the report
   grid paints only the columns in view: the tenors painted in the Order Key's order, `ON`, `TN`,
@@ -473,6 +488,20 @@ nobody had asked for. What that means when writing a test:
   across each row, down each desk and down the Grand Total row — and the report's own the page's
   sum of the positions; and the code the page shows, the README's `Tenors.Months` among it,
   equal to its source.
+- `grid-live.spec.mjs` — `/grid-live` (ADR-0067/0068), ExGrid alone over the server's trades, its
+  marks set to last a minute so that where they are is what is compared. A mark is keyed by row
+  and column: across a three-row scroll every trade still painted keeps exactly its marked cells,
+  and after a scroll far away and back, which reads the Window again into new instances and new
+  elements, the same cells are marked again (DC-54). With marks painting and going, nothing under
+  the Viewport transitions or animates, under the core's stylesheet and under the Wrapper's
+  (`?chrome=mud`), whose warning tint the mark takes; the grid's live region is not touched; and
+  forced colours restate the mark as a dashed outline (DC-55). The Window is read from the server
+  as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the page
+  shows is equal to its source.
+
+  `pivot-db`, `pivot-live` and `grid-live` share the run's one API server: each test starts from
+  `POST /api/reset`, reads the trade count and the Source Version from `/api/status`, and turns
+  the live updates off as it ends. They read "The code" regions through `demo-code.mjs`.
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or
