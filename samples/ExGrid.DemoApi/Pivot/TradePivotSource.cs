@@ -188,7 +188,16 @@ internal sealed class TradePivotSource(TradeStore store) : PivotSource
     /// <summary>
     /// The leaves of one answer, gathered from the <c>GROUP BY</c>'s groups: groups that are one
     /// combination of Items — two spellings of one text Item — are folded into one leaf, their
-    /// parts merged exactly. A text Item is labelled by the first spelling read.
+    /// parts merged exactly.
+    /// <para>
+    /// A text Item is labelled by the spelling of the first group read, in the order SQLite returns
+    /// the groups: the stored values' order, outermost field first. <c>PivotSource.From</c> labels
+    /// it by its first spelling in the data's order, over every record. The two agree wherever an
+    /// Item is stored in one spelling, as every generated trade's is (<c>TradePivotSqlTests</c> pins
+    /// it). Where one is stored in several, the numbers are the same and the label may be another
+    /// of its spellings; choosing the data's first would cost an aggregate more — measured 8% to
+    /// 35% on a million trades — or a query more per field.
+    /// </para>
     /// </summary>
     private sealed class Leaves(PivotQuery query, TradePivotField[] axis, TradePivotField[] values)
     {
