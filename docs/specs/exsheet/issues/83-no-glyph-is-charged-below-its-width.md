@@ -104,6 +104,9 @@ charged as a digit.
 - Charging Text with the other class too would have widened every text column and every header:
   in the core, a letter costs 15.46px against 9.75. That would have changed what ADR-0016 decided
   about headers, so it was not done.
+- The orchestrator accepted this scope on 2026-10-01, for ADR-0016 at merge. A Number or Date must
+  not be cut, so it is charged the other class. Text is cut visibly with an ellipsis, as before, so
+  it is not.
 
 ### The measured widths
 
@@ -202,9 +205,11 @@ sizes: `W` at 12px is 12.432 at 14, and `£` bold at 12px is 8.331.
 Layers 1 and 2 pass: ExGrid.Tests 984, ExGrid.Components 1259 (one skipped), ExGrid.MudBlazor.Tests
 164, ExSheet.Engine.Tests 2304, ExSheet.Components.Tests 540, ExSheet.MudBlazor.Tests 35.
 
-Layer 3 has not run. It waits for the orchestrator's go, which has been asked for: a targeted run of
-`appearance.spec.mjs` (DC-58's bold column and the Excel preset's italic one), `mud.spec.mjs`, and
-`format-keys.spec.mjs` (the date and time keys widen a column by the new estimate).
+Layer 3 was not run locally. Since 2026-10-01 it runs in CI only, on the merged branch's draft
+pull request (#42). The specs this change bears on are:
+- `appearance.spec.mjs`: DC-58's 99px bold column, and the Excel preset's 67px italic one;
+- `mud.spec.mjs`;
+- `format-keys.spec.mjs`: the date and time keys widen a column by the new estimate.
 
 ### What stays out
 
