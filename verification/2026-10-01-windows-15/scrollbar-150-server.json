@@ -1,0 +1,698 @@
+{
+  "config": {
+    "argv": [
+      "%USERPROFILE%\\AppData\\Local\\exgrid-layer3\\node-v24.14.1-win-x64\\node.exe",
+      "%USERPROFILE%\\AppData\\Local\\exgrid-layer3\\run-2026-10-01-15\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "scrollbar.spec.mjs",
+      "--project=chrome",
+      "--project=msedge",
+      "--reporter=list,json"
+    ],
+    "configFile": "%USERPROFILE%\\AppData\\Local\\exgrid-layer3\\run-2026-10-01-15\\playwright.config.mjs",
+    "rootDir": "%USERPROFILE%/AppData/Local/exgrid-layer3/run-2026-10-01-15",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "%USERPROFILE%/AppData/Local/exgrid-layer3/run-2026-10-01-15/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome",
+        "name": "chrome",
+        "testDir": "%USERPROFILE%/AppData/Local/exgrid-layer3/run-2026-10-01-15",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "%USERPROFILE%/AppData/Local/exgrid-layer3/run-2026-10-01-15/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "msedge",
+        "name": "msedge",
+        "testDir": "%USERPROFILE%/AppData/Local/exgrid-layer3/run-2026-10-01-15",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "%USERPROFILE%/AppData/Local/exgrid-layer3/run-2026-10-01-15/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome-150",
+        "name": "chrome-150",
+        "testDir": "%USERPROFILE%/AppData/Local/exgrid-layer3/run-2026-10-01-15",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "scrollbar.spec.mjs",
+      "file": "scrollbar.spec.mjs",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "the Focus is never behind a scrollbar (ADR-0012/0013)",
+          "file": "scrollbar.spec.mjs",
+          "line": 226,
+          "column": 6,
+          "specs": [
+            {
+              "title": "with the platform's own scrollbars",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chrome",
+                  "projectName": "chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 683,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:16.998Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "msedge",
+                  "projectName": "msedge",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 544,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:20.054Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8f2ffb2a1ee9da08754b-850b0a14d6c7638bb831",
+              "file": "scrollbar.spec.mjs",
+              "line": 227,
+              "column": 5
+            },
+            {
+              "title": "with scrollbars that occupy layout",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chrome",
+                  "projectName": "chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 323,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:18.069Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "msedge",
+                  "projectName": "msedge",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 333,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:21.022Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8f2ffb2a1ee9da08754b-de309a929b4563da1dcd",
+              "file": "scrollbar.spec.mjs",
+              "line": 237,
+              "column": 5
+            },
+            {
+              "title": "at every zoom level, after moving again",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "zoom",
+                      "description": "dpr 1: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "zoom",
+                      "description": "dpr 1.25: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.6000000381469737}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "zoom",
+                      "description": "dpr 2: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0.9999999701976785}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "zoom",
+                      "description": "dpr 1: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chrome",
+                  "projectName": "chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 726,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:18.402Z",
+                      "annotations": [
+                        {
+                          "type": "zoom",
+                          "description": "dpr 1: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "zoom",
+                          "description": "dpr 1.25: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.6000000381469737}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "zoom",
+                          "description": "dpr 2: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0.9999999701976785}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "zoom",
+                          "description": "dpr 1: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "zoom",
+                      "description": "dpr 1: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "zoom",
+                      "description": "dpr 1.25: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.6000000381469737}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "zoom",
+                      "description": "dpr 2: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0.9999999701976785}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "zoom",
+                      "description": "dpr 1: gutter 15x15"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "msedge",
+                  "projectName": "msedge",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 755,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:21.362Z",
+                      "annotations": [
+                        {
+                          "type": "zoom",
+                          "description": "dpr 1: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "zoom",
+                          "description": "dpr 1.25: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.6000000381469737}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.2499999701976776,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "zoom",
+                          "description": "dpr 2: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0.9999999701976785}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":2.0000000596046448,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "zoom",
+                          "description": "dpr 1: gutter 15x15"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":1.999999940395357}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.0000000298023224,\"gutterWidth\":15,\"gutterHeight\":15,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8f2ffb2a1ee9da08754b-9ea01191aacd6abf54aa",
+              "file": "scrollbar.spec.mjs",
+              "line": 263,
+              "column": 5
+            }
+          ]
+        },
+        {
+          "title": "on a Windows desktop at fractional display scaling (VZ-14)",
+          "file": "scrollbar.spec.mjs",
+          "line": 314,
+          "column": 6,
+          "specs": [
+            {
+              "title": "the Focus stays readable with the OS doing the scaling",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "gutter",
+                      "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chrome",
+                  "projectName": "chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 439,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:19.132Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "gutter",
+                          "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    },
+                    {
+                      "type": "gutter",
+                      "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                    },
+                    {
+                      "type": "measured",
+                      "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "msedge",
+                  "projectName": "msedge",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 439,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-10-01T20:41:22.122Z",
+                      "annotations": [
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        },
+                        {
+                          "type": "gutter",
+                          "description": "{\"width\":12,\"height\":12,\"deviceContent\":[1332,882]}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":1.3333333333333333}"
+                        },
+                        {
+                          "type": "measured",
+                          "description": "{\"platform\":\"Windows\",\"dpr\":1.5,\"gutterWidth\":12,\"gutterHeight\":12,\"deviceRounding\":0}"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "8f2ffb2a1ee9da08754b-46c9ae5fc5d2139ecda3",
+              "file": "scrollbar.spec.mjs",
+              "line": 342,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-01T20:41:16.059Z",
+    "duration": 6944.9220000000005,
+    "expected": 8,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
