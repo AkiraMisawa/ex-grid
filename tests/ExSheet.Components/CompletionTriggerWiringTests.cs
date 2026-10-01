@@ -175,6 +175,24 @@ public class CompletionTriggerWiringTests : SheetTestContext
         Assert.Equal("overwrite", GateModesTold()[^1]);
     }
 
+    [Fact] // ADR-0058 (decided with the user 2026-10-01), SH-36: at match_mode, Table[ lists the table's columns, as anywhere else, and Tab writes the column without the ], closes the list, and does not open it again on what it wrote
+    public async Task SH36_table_bracket_at_match_mode_lists_the_columns()
+    {
+        var cut = RenderSheet();
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "PV"]);
+        const string typed = AtMatchMode + "Positions[";
+        await StartTypingAsync(cut, "D10", typed);
+
+        Assert.Equal(["Id", "PV"], Candidates(cut));
+        await PressInEditorAsync(cut, "ArrowDown", typed, typed.Length);
+        await PressInEditorAsync(cut, "Tab", typed, typed.Length);
+
+        Assert.Equal(typed + "PV", EditorText(cut));
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+        Assert.Equal("overwrite", GateModesTold()[^1]);
+    }
+
     [Fact] // ADR-0058 (Q54), SH-36: at search_mode a letter lists its four values, not AVERAGE
     public async Task SH36_a_letter_at_search_mode_lists_its_values()
     {

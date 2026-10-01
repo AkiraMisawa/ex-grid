@@ -123,10 +123,12 @@ public static partial class FormulaEntry
     /// <paramref name="linkedTables"/> beginning with it, without regard to case;</item>
     /// <item>inside the brackets of <c>Table[</c>, the columns of that table beginning with the column
     /// typed so far, in the table's order, and nothing else: not <c>@</c> or <c>#All</c>, which the
-    /// grammar refuses (ADR-0047);</item>
+    /// grammar refuses (ADR-0047). The brackets are a context of their own, so at an argument whose
+    /// values are a fixed list they list the columns too, not the values (decided with the user,
+    /// 2026-10-01);</item>
     /// <item>at an argument that takes one of a fixed list of values (<see cref="DeclaredFunction.ValuesOf"/>),
-    /// those values, in Excel's order, and nothing else: whatever is typed there, no function and
-    /// no table is listed (the thirteenth Windows run, Q54). They are listed before anything is
+    /// those values, in Excel's order, and nothing else: whatever is typed there outside the brackets
+    /// of <c>Table[</c>, no function and no table is listed (the thirteenth Windows run, Q54). They are listed before anything is
     /// typed, and only while nothing of the argument stands after the caret, white space included:
     /// before a value, inside one or before white space, nothing is listed (Part B of the ninth
     /// Windows run, Q49; the thirteenth, Q55). A number lists the value it is alone (<c>0</c> lists
@@ -152,14 +154,42 @@ public static partial class FormulaEntry
         ArgumentNullException.ThrowIfNull(columnsOf);
         if (!IsFormula(text, caret)) return null;
         var tokens = Scan(text);
+        var index = tokens.FindIndex(t => t.Start < caret && caret <= t.End);
+        var bracketed = index >= 0 && tokens[index] is { Kind: TokenKind.Operand, HasBrackets: true } operand ? operand : null;
+        // Inside Table['s brackets a structured reference is being typed, a context of its own as a
+        // grouping parenthesis is: its columns are listed at any argument (decided with the user,
+        // 2026-10-01).
+        if (bracketed is not null && InsideBrackets(text, caret, bracketed))
+            return OperandMayStart(tokens, index) ? CompleteColumn(text, caret, bracketed, columnsOf) : null;
         // An argument whose values are a fixed list is completed with them alone: letters there
         // list no function and no table, as Excel's do not (ADR-0058, the thirteenth run, Q54).
         if (ValueArgumentAt(text, tokens, caret) is { } argument)
             return CompleteValue(text, caret, tokens, argument.Start, argument.Values);
-        var index = tokens.FindIndex(t => t.Start < caret && caret <= t.End);
-        if (index >= 0 && tokens[index] is { Kind: TokenKind.Operand, HasBrackets: true } bracketed)
-            return OperandMayStart(tokens, index) ? CompleteColumn(text, caret, bracketed, columnsOf) : null;
+        // Before a structured reference's brackets or past them, no name is being typed.
+        if (bracketed is not null) return null;
         return index >= 0 ? CompleteName(text, caret, tokens, index, linkedTables) : null;
+    }
+
+    /// <summary>
+    /// Whether the caret stands inside the brackets of a structured reference: after its first
+    /// <c>[</c>, and not past the <c>]</c> that closes it, <c>'</c> escapes read as the scan reads them.
+    /// </summary>
+    private static bool InsideBrackets(string text, int caret, Token token)
+    {
+        var open = text.IndexOf('[', token.Start, token.End - token.Start);
+        if (open < 0 || caret <= open) return false;
+        var depth = 0;
+        for (var i = open; i < caret; i++)
+        {
+            if (text[i] == '\'')
+            {
+                i++;
+                continue;
+            }
+            if (text[i] == '[') depth++;
+            else if (text[i] == ']' && --depth == 0) return false;
+        }
+        return true;
     }
 
     /// <summary>The functions and tables beginning with the name that ends at the caret.</summary>
@@ -247,7 +277,8 @@ public static partial class FormulaEntry
     /// Where the argument the caret stands at starts, and its values, when the innermost
     /// parenthesis open at the caret is a declared function's and that argument takes one of a
     /// fixed list (ADR-0058); <see langword="null"/> anywhere else. Inside a grouping parenthesis
-    /// the caret stands in an expression of its own, as inside a call of its own.
+    /// the caret stands in an expression of its own, as inside a call of its own (decided with the
+    /// user, 2026-10-01).
     /// </summary>
     private static (int Start, IReadOnlyList<ArgumentValue> Values)? ValueArgumentAt(string text, List<Token> tokens, int caret)
     {
@@ -288,7 +319,8 @@ public static partial class FormulaEntry
     /// <summary>
     /// The number <paramref name="typed"/> is, read as the grammar reads a number constant with
     /// one sign before it and white space after it (<c>-1</c>, <c>+1</c>, <c>1.0</c>, <c>1 </c>), or
-    /// <see langword="null"/> for text that is not a number (<c>-</c>, <c>1+</c>, <c>A1</c>).
+    /// <see langword="null"/> for text that is not a number (<c>-</c>, <c>1+</c>, <c>A1</c>; decided
+    /// with the user, 2026-10-01).
     /// </summary>
     private static double? NumberOf(string typed)
     {

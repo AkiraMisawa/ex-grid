@@ -237,7 +237,7 @@ public class CompletionTriggerTests
         Assert.NotNull(FormulaEntry.HintAt(text, caret));
     }
 
-    [Theory] // ADR-0058 (Q54), SH-36: a number is read as the grammar reads one, with its sign, and lists the value it is — 1.0 is the value 1 — so Tab on a number writes that same number or nothing (a reading: Excel was not asked these texts)
+    [Theory] // ADR-0058 (Q54), SH-36: a number is read as the grammar reads one, with its sign, and lists the value it is — 1.0 is the value 1 — so Tab on a number writes that same number or nothing (decided with the user 2026-10-01, not asked of Excel)
     [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,1.0|", "1 - Exact match or next larger item", 24, 3)]
     [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,+1|", "1 - Exact match or next larger item", 24, 2)]
     [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-0|", "0 - Exact match", 24, 2)]
@@ -312,7 +312,7 @@ public class CompletionTriggerTests
         Assert.NotNull(FormulaEntry.PointAt(text, caret));
     }
 
-    [Theory] // ADR-0058 (Q54), SH-36: outside a value-list argument a letter lists the functions and Linked Tables it begins, as before — at another argument, after an operator, inside a call of its own, and inside a grouping parenthesis, which holds an expression of its own (a reading: Excel was not asked ,,( )
+    [Theory] // ADR-0058 (Q54), SH-36: outside a value-list argument a letter lists the functions and Linked Tables it begins, as before — at another argument, after an operator, inside a call of its own, and inside a grouping parenthesis, which holds an expression of its own (decided with the user 2026-10-01, not asked of Excel)
     [InlineData("=A|", "AVERAGE")]
     [InlineData("=1+A|", "AVERAGE")]
     [InlineData("=SUM(A|", "AVERAGE")]
@@ -330,13 +330,41 @@ public class CompletionTriggerTests
         Assert.DoesNotContain(completion.Candidates, c => c.Kind == CompletionKind.ArgumentValue);
     }
 
-    [Fact] // ADR-0058 (Q54), SH-36: at a value-list argument Table[ is text that is not a number, and lists the values, not the table's columns (a reading: Excel was not asked); elsewhere Table[ lists the columns, as before
-    public void ADR0058_Q54_table_bracket_at_a_value_list_argument_lists_the_values()
+    [Theory] // ADR-0058 (decided with the user 2026-10-01, not asked of Excel), SH-36: at a value-list argument Table[ lists the table's columns, as anywhere else — [ opens a structured reference, a context of its own as a grouping parenthesis is — and nothing else inside its brackets, not the values
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,Positions[|", new[] { "Id", "PV" }, 34, 0)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,Positions[P|", new[] { "PV" }, 34, 1)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,Positions[P|V])", new[] { "PV" }, 34, 2)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,1+Positions[|", new[] { "Id", "PV" }, 36, 0)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,Positions[|", new[] { "Id", "PV" }, 36, 0)]
+    public void ADR0058_table_bracket_at_a_value_list_argument_lists_the_columns(string marked, string[] listed, int start, int length)
     {
-        var sheet = WithPositions();
+        var completion = Complete(WithPositions(), marked)!;
 
-        Assert.Equal(MatchModes, Complete(sheet, "=XLOOKUP(1,A2:A4,B2:B4,,Positions[|")!.Candidates.Select(c => c.Name));
-        Assert.Equal(["Id", "PV"], Complete(sheet, "=XLOOKUP(1,A2:A4,Positions[|")!.Candidates.Select(c => c.Name));
+        Assert.Equal(listed, completion.Candidates.Select(c => c.Name));
+        Assert.All(completion.Candidates, c => Assert.Equal(CompletionKind.LinkedTableColumn, c.Kind));
+        Assert.Equal(start, completion.Start);
+        Assert.Equal(length, completion.Length);
+    }
+
+    [Theory] // ADR-0058 (decided with the user 2026-10-01), SH-36: inside the brackets at a value-list argument, what lists no column lists nothing — not the values
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,Positions[Q|")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,Trades[|")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,Positions[#|")]
+    public void ADR0058_inside_the_brackets_at_a_value_list_argument_no_value_is_listed(string marked)
+    {
+        Assert.Null(Complete(WithPositions(), marked));
+    }
+
+    [Theory] // ADR-0058 (Q54, and the decisions of 2026-10-01), SH-36: once a structured reference's bracket or a grouping parenthesis closes, the caret is back at the argument, and what it holds is text that is not a number: every value is listed
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,Positions[Id]|", 24, 13)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,(1)|", 24, 3)]
+    public void ADR0058_past_a_closed_bracket_or_parenthesis_the_values_are_listed(string marked, int start, int length)
+    {
+        var completion = Complete(WithPositions(), marked)!;
+
+        Assert.Equal(MatchModes, completion.Candidates.Select(c => c.Name));
+        Assert.Equal(start, completion.Start);
+        Assert.Equal(length, completion.Length);
     }
 
     [Fact] // ADR-0051 / ADR-0058: the hint sets off match_mode while its values are listed

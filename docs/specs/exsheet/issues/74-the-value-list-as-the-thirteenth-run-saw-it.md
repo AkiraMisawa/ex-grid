@@ -35,8 +35,9 @@ typed them into ExSheet) found Excel listing the values for text ExSheet listed 
 
 - **The listing rule (Q54, Q55)**, in `FormulaEntry.Complete`. When the innermost parenthesis open at
   the caret is a declared function's, at an argument whose values are a fixed list
-  (`ValueArgumentAt`), that argument is completed with its values alone: `CompleteName` and
-  `CompleteColumn` are not asked there, so letters list no function and no table. `CompleteValue`
+  (`ValueArgumentAt`), that argument is completed with its values alone: `CompleteName` is not asked
+  there, so letters list no function and no table. Only inside the brackets of `Table[`
+  (`InsideBrackets`) are the columns listed instead, as anywhere else (decision 3, below). `CompleteValue`
   then lists only while the caret stands at the argument's end: straight before the `,` or `)` that
   ends it, or at the end of the text, with no token running across the caret. White space after the
   caret is now something of the argument (Q55), where ticket 70 had skipped it. A number lists the
@@ -56,8 +57,8 @@ typed them into ExSheet) found Excel listing the values for text ExSheet listed 
   open over Point (`completionOverPoint`), as the list after `,,` already was, so ↑ and ↓ choose in
   it, and Escape then ↓ points (`…,,1+D11`).
 
-**Readings, not asked of Excel** *(taken while building this ticket; each is pinned by a layer 1
-test, and each is a small change if Excel or the user says otherwise)*:
+**Decided with the user, 2026-10-01, not asked of Excel** *(proposed as readings while building this
+ticket; each is pinned by a layer 1 test, and the next Windows run is to ask Excel)*:
 
 1. **"A number" is what the grammar reads as a number constant**, with one `+` or `-` before it and
    white space after it, and it lists the value it equals as a number: `1.0`, `+1` and `1 ` list
@@ -70,23 +71,33 @@ test, and each is a small change if Excel or the user says otherwise)*:
    of its own: `,,(` lists nothing, as before, and `,,(A` lists `AVERAGE`. Read literally, "text
    that is not a number lists every value" would list the five values for both. The argument hint
    still names `[match_mode]` there, as before.
-3. **`,,Positions[` at `match_mode` lists the five values, not the table's columns**: it is text that
-   is not a number, at an argument whose values are a fixed list. `Table[` at any other argument
-   lists the columns, as before.
+3. **`Table[` at an argument whose values are a fixed list lists the table's columns, as anywhere
+   else.** `[` opens a structured reference, a context of its own as a grouping parenthesis is:
+   `,,Positions[` lists `Id` and `PV`, `,,Positions[P|V])` lists `PV`, and inside the brackets what
+   lists no column (`,,Positions[Q`, `,,Trades[`, `,,Positions[#`) lists nothing, not the values.
+   `,,Positions` with no `[` still lists the values (Q54). This replaced the reading proposed first,
+   which listed the values for `,,Positions[` as text that is not a number. Once the bracket closes,
+   as once a grouping parenthesis closes, the caret is back at the argument, and what it holds is
+   text that is not a number: `,,Positions[Id]` and `,,(1)` list every value.
 
 Layer 1: `CompletionTriggerTests`. New: `ADR0058_Q54_text_that_is_not_a_number_lists_every_value`
 (15 texts, at both arguments, with the span each replaces), `ADR0058_Q54_a_number_that_is_no_value_lists_nothing`
-(6), `ADR0058_Q54_a_number_lists_the_value_it_is` (5, reading 1),
+(6), `ADR0058_Q54_a_number_lists_the_value_it_is` (5, decision 1),
 `ADR0058_Q55_white_space_after_the_caret_is_something_of_the_argument` (8, the hint still shown),
 `ADR0058_what_stands_after_the_caret_inside_the_argument_lists_nothing` (4),
-`ADR0058_Q54_outside_a_value_list_argument_a_letter_lists_names` (9, reading 2) and
-`ADR0058_Q54_table_bracket_at_a_value_list_argument_lists_the_values` (reading 3);
+`ADR0058_Q54_outside_a_value_list_argument_a_letter_lists_names` (9, decision 2),
+`ADR0058_table_bracket_at_a_value_list_argument_lists_the_columns` (5),
+`ADR0058_inside_the_brackets_at_a_value_list_argument_no_value_is_listed` (3) and
+`ADR0058_past_a_closed_bracket_or_parenthesis_the_values_are_listed` (2), all decision 3;
 `Nothing_is_listed_outside_the_argument` keeps the old theory's cases that still list nothing, and
 `A_letter_at_a_value_argument_lists_names`, which pinned the replaced reading, is gone. 30 of the new
-cases failed before the change. Layer 2: `CompletionTriggerWiringTests`, new: `X`, `AV`,
+cases failed before the change, and the 8 of decision 3 that differ from the first reading failed
+against it. Layer 2: `CompletionTriggerWiringTests`, new: `X`, `AV`,
 `Positions`, `A1` and `"` each list the five values, `0` chosen, not over Point, and Tab writes
 `…,,0`, closes the list and leaves the hint, the gate back in Overwrite; `0,A` lists `search_mode`'s
-four; `1+` lists the five over Point, and Escape then ↓ points; `4` and `0,5` list nothing with the
+four; `Positions[` lists the columns, and Tab writes `…,,Positions[PV`, closes the list and
+leaves `[match_mode]`'s hint; `1+` lists the five over Point, and Escape then ↓ points; `4` and `0,5` list nothing with the
 hint shown; and 11a (F2 ←←←, nothing listed, Tab commits to E10 with the spaces kept). 8 of them
-failed before the change; the two for a number that is no value passed before it too, as the ticket
-says. Layers 1 and 2: 826 + 2126 + 88 + 1190 (1 skipped, as before) + 389, all passing.
+failed before the change, and the one for `Positions[` against the first reading; the two for a
+number that is no value passed before it too, as the ticket says. Layers 1 and 2: 826 + 2135 + 88 +
+1190 (1 skipped, as before) + 390, all passing.
