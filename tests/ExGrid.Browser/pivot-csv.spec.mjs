@@ -1,7 +1,6 @@
 import { test, expect } from './fixtures.mjs';
+import { codeRegion } from './demo-code.mjs';
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // ExPivot over a CSV on /pivot-csv (ADR-0063, ADR-0068), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: a file the user chooses — through Blazor's InputFile, given here a
@@ -15,24 +14,6 @@ import { fileURLToPath } from 'node:url';
 
 // Tall and wide enough for the report and the pane beside it, under the page's controls.
 test.use({ viewport: { width: 1400, height: 1100 } });
-
-const PAGES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../samples/ExGrid.DemoPages');
-
-/** A region of the page's source, read as DemoCode.cs reads it to show it under "The code": the
- *  lines between `#region The code: name` and the next `#endregion`, less the indentation they share. */
-function codeRegion(file, region) {
-    const at = [path.join(PAGES, file), path.join(PAGES, 'Pages', file)].find((p) => fs.existsSync(p));
-    const lines = fs.readFileSync(at, 'utf8').replace(/\r\n?/g, '\n').split('\n');
-    const marker = (line) => line.trim().replace(/^@\*\s*(.*?)\s*\*@$/, '$1');
-    const start = lines.findIndex((line) => marker(line) === `#region The code: ${region}`);
-    const end = lines.findIndex((line, i) => i > start && marker(line).startsWith('#endregion'));
-    if (start < 0 || end < 0) {
-        throw new Error(`${file} has no region 'The code: ${region}'`);
-    }
-    const body = lines.slice(start + 1, end);
-    const indent = Math.min(...body.filter((line) => line.trim()).map((line) => line.length - line.trimStart().length));
-    return body.map((line) => (line.length >= indent ? line.slice(indent) : line.trimStart())).join('\n');
-}
 
 // The trade export the page declares a Schema for (DemoCsv.TradeExport): a comma between fields,
 // ISO dates, money with a thousands separator, in quotes where it has one.

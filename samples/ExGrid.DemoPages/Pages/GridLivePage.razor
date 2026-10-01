@@ -32,9 +32,10 @@
 <p>
     A trade cancelled moves every row after it up one, so the page then reads its Window again and
     bumps <code>RowSequenceVersion</code>, which drops a selection rather than leave it on other
-    rows (ADR-0011). The live updates go off when you leave the page. Among a million trades a
-    change lands in the rows in view only now and then; a server started with
-    <code>EXGRID_DEMO_TRADES=20000</code> shows a busier view.
+    rows (ADR-0011). The live updates go off when you leave the page. The server gives every other
+    change to its first 500 trades, the busy ones this blotter opens on, so the rows in view change
+    several times a second whatever the trade count; further down, a change lands only now and
+    then.
 </p>
 
 <div class="demo-toolbar">

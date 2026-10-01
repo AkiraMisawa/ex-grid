@@ -122,6 +122,10 @@ by the build, each for a reason a later reader would otherwise have to re-derive
 - **The Arrow stream carries the Month**, so a pivot over the Snapshot on `/pivot-db` offers the
   same fields as the SQL source. **`/api/trades/by-id` also takes a POST**, because a URL with a
   thousand ids passes Kestrel's request-line limit. **`/api/reset` also turns live updates off.**
+- **Every other change of a live tick falls on the first 500 trades**, the busy ones a blotter
+  opens on, and the rest anywhere. Spread evenly over a million trades, a tick's changes almost
+  never reached the rows on screen, and `/grid-live` looked still. The pivots are unaffected:
+  every change moves their totals wherever it lands.
 - **Measured at a million trades**: an aggregate takes 1.2 s, almost all of it SQLite's sort, so
   the bundled source over a Snapshot remains the fast path the demo shows beside it. The first
   Arrow build takes 6 s; half of it is reading the rows through `Microsoft.Data.Sqlite`, and later

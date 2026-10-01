@@ -244,6 +244,28 @@ public sealed class TradeStoreTests
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
+    [Fact] // ADR-0068 refined: every other change of a tick falls on the first trades, which a blotter opens on, so it sees changes at any trade count
+    public async Task ADR0068_half_of_a_ticks_changes_fall_on_the_busy_trades()
+    {
+        using var directory = new TempDirectory();
+        await using var store = await TestData.ReadyStore(directory.Path, 3_000);
+
+        long busy = 0, all = 0;
+        for (var tick = 0; tick < 20; tick++)
+        {
+            var change = await store.ApplyLiveChangesAsync(20, Token);
+            foreach (var id in change.TradeIds)
+            {
+                all++;
+                if (long.Parse(id[1..], CultureInfo.InvariantCulture) - TradeGenerator.FirstKeyNumber < TradeStore.HotTrades)
+                    busy++;
+            }
+        }
+
+        // Uniform picks among 3,000 would put about a sixth there.
+        Assert.True(busy * 2 >= all, $"{busy} of {all} changes fell on the first {TradeStore.HotTrades} trades");
+    }
+
     private static string LineOf(Trade t) =>
         TestData.Line(t.TradeId, t.Region, t.Desk, t.Book, t.Product, t.Currency, TradeDatabase.FormatDate(t.TradeDate),
             decimal.ToInt64(t.Notional * 100), decimal.ToInt64(t.Pnl * 100), t.Quantity, t.Confirmed);

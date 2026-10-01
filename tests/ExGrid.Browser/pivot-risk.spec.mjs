@@ -1,7 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { codeRegion } from './demo-code.mjs';
 
 // ExPivot on /pivot-risk (ADR-0059, ADR-0068), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: a rate-delta report with desks and curves in Rows and tenors in
@@ -15,24 +13,6 @@ import { fileURLToPath } from 'node:url';
 test.use({ viewport: { width: 2400, height: 1100 } });
 
 const TENORS = ['ON', 'TN', '1W', '1M', '3M', '6M', '9M', '1Y', '18M', '1Y6M', '2Y', '3Y', '5Y', '7Y', '10Y', '15Y', '20Y', '30Y'];
-
-const PAGES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../samples/ExGrid.DemoPages');
-
-/** A region of the page's source, read as DemoCode.cs reads it to show it under "The code": the
- *  lines between `#region The code: name` and the next `#endregion`, less the indentation they share. */
-function codeRegion(file, region) {
-    const at = [path.join(PAGES, file), path.join(PAGES, 'Pages', file)].find((p) => fs.existsSync(p));
-    const lines = fs.readFileSync(at, 'utf8').replace(/\r\n?/g, '\n').split('\n');
-    const marker = (line) => line.trim().replace(/^@\*\s*(.*?)\s*\*@$/, '$1');
-    const start = lines.findIndex((line) => marker(line) === `#region The code: ${region}`);
-    const end = lines.findIndex((line, i) => i > start && marker(line).startsWith('#endregion'));
-    if (start < 0 || end < 0) {
-        throw new Error(`${file} has no region 'The code: ${region}'`);
-    }
-    const body = lines.slice(start + 1, end);
-    const indent = Math.min(...body.filter((line) => line.trim()).map((line) => line.length - line.trimStart().length));
-    return body.map((line) => (line.length >= indent ? line.slice(indent) : line.trimStart())).join('\n');
-}
 
 const pivot = (page) => page.locator('.ex-pivot');
 const report = (page) => pivot(page).locator('.ex-pivot-sheet > .ex-grid');

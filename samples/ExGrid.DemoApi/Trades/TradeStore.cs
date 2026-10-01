@@ -102,6 +102,11 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
     /// <summary>Of how many ticks one also cancels a trade and books another.</summary>
     public const int BookingOneTickIn = 8;
 
+    /// <summary>How many of the first trades take every other change of a tick: the busy ones a
+    /// blotter opens on. Spread over a million trades, a tick's changes would almost never reach
+    /// the rows on screen, and /grid-live would look still (ADR-0068).</summary>
+    public const int HotTrades = 500;
+
     // The live updates' numbers: tick n's come from this seed and n, so the same ticks from the
     // same state give the same trades.
     private const ulong LiveSeed = 0x4C495645_2026_0930;
@@ -372,9 +377,13 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                 "UPDATE trades SET Notional = $notional, Pnl = $pnl WHERE TradeId = $id", "$notional", "$pnl", "$id");
             for (var left = Math.Min(tradesPerTick, trades); left > 0; left--)
             {
-                if (Pick(ref random, next, touched, select) is not { } picked)
+                // Every other change falls on the busy trades, the rest anywhere; once a tick has
+                // spent the busy ones, the whole book takes their share.
+                var picked = ((left & 1) == 0 ? Pick(ref random, Math.Min(next, HotTrades), touched, select) : null)
+                    ?? Pick(ref random, next, touched, select);
+                if (picked is null)
                     break;
-                var (id, notional, pnl) = picked;
+                var (id, notional, pnl) = picked.Value;
                 // The P&L moves by up to 0.05% of the notional, and never by nothing: every trade
                 // the hub names has a value that changed.
                 var move = 1 + random.NextLong(Math.Max(1, notional / 2_000));
