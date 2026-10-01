@@ -62,7 +62,13 @@ toolbar (ADR-0066); while a new Source Version's Items are on their way, the ban
 keep the earlier version's in view, OK enabled, the list marked busy
 (`PivotItemFilterContext.IsUpdating`) (ADR-0065).
 
-Layer 2: `MudPivotToolbarTests`, `MudPivotDetailsTests`, `MudPivotLiveItemsTests` and
-`MudPivotStaleReportTests` in `tests/ExPivot.MudBlazor.Tests` (52); `AskingTests`,
-`ToolbarAndDeferTests` and `LiveDataTests` in `tests/ExPivot.Components` (175). Layer 3:
-`pivot.spec.mjs` on the WebAssembly host in Chromium, under both Chromes.
+Found in a browser while dressing the tabs, under either Chrome: the report grid's sticky header
+painted over a details tab's records, so they read under the report's column headings. While a
+details tab is selected the covered report is now left unpainted (`ex-pivot-sheet-covered`); it
+keeps its place and state, takes no keyboard and is not read out.
+
+Layer 2: `MudPivotToolbarTests`, `MudPivotDetailsTests`, `MudPivotLiveItemsTests`,
+`MudPivotStaleReportTests` and `MudPivotJapaneseWordsTests` in `tests/ExPivot.MudBlazor.Tests`
+(53); `AskingTests`, `ToolbarAndDeferTests`, `LiveDataTests` and `DetailsAndVersionTests` in
+`tests/ExPivot.Components` (176). Layer 3: `pivot.spec.mjs` on the WebAssembly host in Chromium,
+under both Chromes, 34 passed; it now also holds the records' heading to being what paints there.
