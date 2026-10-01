@@ -1,3 +1,7 @@
+using System.Numerics;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+
 namespace ExGrid.Data.Csv;
 
 /// <summary>What cutting a record from the bytes at hand came to.</summary>
@@ -60,13 +64,25 @@ internal sealed class CsvTokenizer
     /// <summary>For each byte: whether it ends an unquoted field (1) or may not stand in one (2).</summary>
     private readonly byte[] stops = new byte[256];
 
+    private readonly Vector128<byte> separatorVector;
+    private readonly Vector128<byte> crVector = Vector128.Create(Cr);
+    private readonly Vector128<byte> lfVector = Vector128.Create(Lf);
+    private readonly Vector128<byte> quoteVector = Vector128.Create(Quote);
+
     private int[] starts = new int[16];
     private int[] lengths = new int[16];
     private byte[] flags = new byte[16];
 
+    /// <summary>Where the fields of the record last cut begin among those held.</summary>
+    private int first;
+
+    /// <summary>The fields held: those of the records appended since <see cref="Clear"/>.</summary>
+    private int held;
+
     public CsvTokenizer(byte separator)
     {
         this.separator = separator;
+        separatorVector = Vector128.Create(separator);
         stops[separator] = 1;
         stops[Cr] = 1;
         stops[Lf] = 1;
@@ -88,19 +104,41 @@ internal sealed class CsvTokenizer
     /// <summary>Where, in the bytes cut, the record broke RFC 4180.</summary>
     public int ErrorAt { get; private set; }
 
-    public int Start(int field) => starts[field];
+    /// <summary>Where each field held begins in the bytes cut, record after record.</summary>
+    public ReadOnlySpan<int> Starts => starts.AsSpan(0, held);
 
-    public int Length(int field) => lengths[field];
+    /// <summary>The length of each field held.</summary>
+    public ReadOnlySpan<int> Lengths => lengths.AsSpan(0, held);
 
-    public byte Flags(int field) => flags[field];
+    /// <summary>Whether each field held is quoted, and holds a doubled quote.</summary>
+    public ReadOnlySpan<byte> FieldFlags => flags.AsSpan(0, held);
+
+    public int Start(int field) => starts[first + field];
+
+    public int Length(int field) => lengths[first + field];
+
+    public byte Flags(int field) => flags[first + field];
+
+    /// <summary>Lets go of the fields held, to append the records of a new batch.</summary>
+    public void Clear() => held = 0;
 
     /// <summary>
     /// Cuts the record that begins at <paramref name="pos"/> in <paramref name="data"/>. When
     /// <paramref name="final"/>, the data ends where <paramref name="data"/> does; otherwise more may
     /// follow, and a record that reaches the end is not cut until it has. <paramref name="next"/> is
-    /// where the next record begins, when a record was cut.
+    /// where the next record begins, when a record was cut. The fields held before are let go.
     /// </summary>
     public CutResult Cut(ReadOnlySpan<byte> data, int pos, bool final, out int next)
+    {
+        held = 0;
+        return Append(data, pos, final, out next);
+    }
+
+    /// <summary>
+    /// Cuts the record that begins at <paramref name="pos"/>, as <see cref="Cut"/> does, and holds its
+    /// fields after those of the records appended before it. A record not cut leaves those as they were.
+    /// </summary>
+    public CutResult Append(ReadOnlySpan<byte> data, int pos, bool final, out int next)
     {
         next = pos;
         if (pos >= data.Length)
@@ -108,62 +146,159 @@ internal sealed class CsvTokenizer
         FieldCount = 0;
         Breaks = 0;
         Error = CsvFault.None;
+        first = held;
+        // The scans below look at sixteen bytes at a time where the hardware can, and at one byte at a
+        // time for the last few: the same bytes are found either way. They are written out in this
+        // one method, rather than called, because a browser runs .NET in an interpreter, where a call
+        // costs more than the comparisons it would save (ticket 07's profile).
+        ref var origin = ref MemoryMarshal.GetReference(data);
+        var end = data.Length;
+        var stop = stops;
+        var fields = 0;
+        var breaks = 0;
         var p = pos;
+        // The last block of sixteen bytes compared for an unquoted field, and where its stops are: the
+        // fields of a record are short, so the next one often ends in the same block.
+        var blockAt = -Vector128<byte>.Count;
+        uint blockStops = 0;
         while (true)
         {
             int start;
             int length;
-            byte flag = 0;
-            if (p < data.Length && data[p] == Quote)
+            byte flag;
+            if (p < end && data[p] == Quote)
             {
-                var q = p + 1;
+                // A quoted field: its content runs to a quote that is not doubled. The line breaks in
+                // it are counted on the way, CR LF as one.
+                flag = Quoted;
+                start = p + 1;
+                var q = start;
                 while (true)
                 {
-                    var found = data[q..].IndexOf(Quote);
-                    if (found < 0)
-                        return final ? Fault(CsvFault.Unclosed, p) : CutResult.NeedMore;
-                    q += found;
-                    if (q + 1 < data.Length)
+                    var at = -1;
+                    if (Vector128.IsHardwareAccelerated)
                     {
-                        if (data[q + 1] != Quote)
+                        while (q + Vector128<byte>.Count <= end)
+                        {
+                            var bytes = Vector128.LoadUnsafe(ref origin, (nuint)q);
+                            var hits = (Vector128.Equals(bytes, quoteVector) | Vector128.Equals(bytes, crVector) | Vector128.Equals(bytes, lfVector)).ExtractMostSignificantBits();
+                            if (hits != 0)
+                            {
+                                at = q + BitOperations.TrailingZeroCount(hits);
+                                break;
+                            }
+                            q += Vector128<byte>.Count;
+                        }
+                    }
+                    if (at < 0)
+                    {
+                        for (; q < end; q++)
+                        {
+                            var c = data[q];
+                            if (c == Quote || c == Cr || c == Lf)
+                            {
+                                at = q;
+                                break;
+                            }
+                        }
+                        if (at < 0)
+                            return final ? Fault(CsvFault.Unclosed, p, fields) : CutResult.NeedMore;
+                    }
+                    var found = data[at];
+                    if (found != Quote)
+                    {
+                        // CR, LF, or the LF of a CR LF already counted at its CR.
+                        if (found == Cr || at == start || data[at - 1] != Cr)
+                            breaks++;
+                        q = at + 1;
+                        continue;
+                    }
+                    if (at + 1 < end)
+                    {
+                        if (data[at + 1] != Quote)
+                        {
+                            q = at;
                             break;
-                        flag = Doubled;
-                        q += 2;
+                        }
+                        flag = Quoted | Doubled;
+                        q = at + 2;
                         continue;
                     }
                     // The quote is the last byte at hand: the next byte says whether it is doubled.
                     if (!final)
                         return CutResult.NeedMore;
+                    q = at;
                     break;
                 }
-                start = p + 1;
                 length = q - start;
-                flag |= Quoted;
-                Breaks += CountBreaks(data.Slice(start, length));
                 p = q + 1;
-                if (p < data.Length && stops[data[p]] != 1)
-                    return Fault(CsvFault.AfterQuote, p);
+                if (p < end && stop[data[p]] != 1)
+                    return Fault(CsvFault.AfterQuote, p, fields);
             }
             else
             {
-                var q = p;
-                var stop = stops;
-                while (q < data.Length && stop[data[q]] == 0)
-                    q++;
-                if (q < data.Length && data[q] == Quote)
-                    return Fault(CsvFault.QuoteInside, q);
-                if (q == data.Length && !final)
-                    return CutResult.NeedMore;
+                // An unquoted field runs to the separator or a line end; a quote may not stand in it.
+                flag = 0;
                 start = p;
+                var q = p;
+                var found = false;
+                if (Vector128.IsHardwareAccelerated)
+                {
+                    // The stops left in the block the field begins in, when one was compared already.
+                    var offset = q - blockAt;
+                    if ((uint)offset < (uint)Vector128<byte>.Count)
+                    {
+                        var left = blockStops >> offset;
+                        if (left != 0)
+                        {
+                            q += BitOperations.TrailingZeroCount(left);
+                            found = true;
+                        }
+                        else
+                        {
+                            q = blockAt + Vector128<byte>.Count;
+                        }
+                    }
+                    while (!found && q + Vector128<byte>.Count <= end)
+                    {
+                        var bytes = Vector128.LoadUnsafe(ref origin, (nuint)q);
+                        var hits = (Vector128.Equals(bytes, separatorVector) | Vector128.Equals(bytes, crVector)
+                            | Vector128.Equals(bytes, lfVector) | Vector128.Equals(bytes, quoteVector)).ExtractMostSignificantBits();
+                        if (hits != 0)
+                        {
+                            blockAt = q;
+                            blockStops = hits;
+                            q += BitOperations.TrailingZeroCount(hits);
+                            found = true;
+                            break;
+                        }
+                        q += Vector128<byte>.Count;
+                    }
+                }
+                if (!found)
+                {
+                    while (q < end && stop[data[q]] == 0)
+                        q++;
+                }
+                if (q < end && data[q] == Quote)
+                    return Fault(CsvFault.QuoteInside, q, fields);
+                if (q == end && !final)
+                    return CutResult.NeedMore;
                 length = q - p;
                 p = q;
             }
 
-            Add(start, length, flag);
-            if (p >= data.Length)
+            var index = first + fields;
+            if (index == starts.Length)
+                Grow();
+            starts[index] = start;
+            lengths[index] = length;
+            flags[index] = flag;
+            fields++;
+            if (p >= end)
             {
                 next = p;
-                return CutResult.Record;
+                return Done(fields, breaks);
             }
             var b = data[p];
             if (b == separator)
@@ -174,57 +309,43 @@ internal sealed class CsvTokenizer
             if (b == Lf)
             {
                 next = p + 1;
-                return CutResult.Record;
+                return Done(fields, breaks);
             }
             // CR, alone or before LF.
-            if (p + 1 < data.Length)
+            if (p + 1 < end)
             {
                 next = data[p + 1] == Lf ? p + 2 : p + 1;
-                return CutResult.Record;
+                return Done(fields, breaks);
             }
             if (!final)
                 return CutResult.NeedMore;
             next = p + 1;
-            return CutResult.Record;
+            return Done(fields, breaks);
         }
     }
 
-    /// <summary>The line breaks in a quoted field's content: CR LF, LF and CR each count as one.</summary>
-    private static int CountBreaks(ReadOnlySpan<byte> content)
+    private CutResult Done(int fields, int breaks)
     {
-        var breaks = 0;
-        var at = content.IndexOfAny(Cr, Lf);
-        while (at >= 0)
-        {
-            breaks++;
-            if (content[at] == Cr && at + 1 < content.Length && content[at + 1] == Lf)
-                at++;
-            content = content[(at + 1)..];
-            at = content.IndexOfAny(Cr, Lf);
-        }
-        return breaks;
+        FieldCount = fields;
+        Breaks = breaks;
+        held = first + fields;
+        return CutResult.Record;
     }
 
-    private CutResult Fault(CsvFault fault, int at)
+    private CutResult Fault(CsvFault fault, int at, int field)
     {
+        FieldCount = field;
         Error = fault;
-        ErrorField = FieldCount;
+        ErrorField = field;
         ErrorAt = at;
         return CutResult.Malformed;
     }
 
-    private void Add(int start, int length, byte flag)
+    private void Grow()
     {
-        var field = FieldCount;
-        if (field == starts.Length)
-        {
-            Array.Resize(ref starts, field * 2);
-            Array.Resize(ref lengths, field * 2);
-            Array.Resize(ref flags, field * 2);
-        }
-        starts[field] = start;
-        lengths[field] = length;
-        flags[field] = flag;
-        FieldCount = field + 1;
+        var length = starts.Length * 2;
+        Array.Resize(ref starts, length);
+        Array.Resize(ref lengths, length);
+        Array.Resize(ref flags, length);
     }
 }

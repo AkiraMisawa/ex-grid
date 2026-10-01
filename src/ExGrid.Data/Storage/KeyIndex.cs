@@ -4,11 +4,17 @@ namespace ExGrid.Data.Storage;
 /// Where each Record Key is stored: an open-addressing table of row numbers, which reads the keys
 /// themselves from the key column's arrays, so the index costs four bytes a slot. A Text key is its
 /// code, which the dictionary makes unique per text; an Integer key is its value.
+/// <para>
+/// A Text key's codes all lie below the dictionary's count, so where that takes no more slots than
+/// the table would, the index is a slot per code instead (ticket 07): nothing to hash or probe, and a
+/// load, which makes a key's code as it reads its row, fills the slots in order.
+/// </para>
 /// <para>Immutable once built, and shared by every version that holds its rows.</para>
 /// </summary>
 internal sealed class KeyIndex
 {
     private readonly KeySource source;
+    private readonly bool byCode;
     private int[] slots;
     private int bits;
     private int count;
@@ -22,12 +28,45 @@ internal sealed class KeyIndex
         slots = new int[1 << bits];
     }
 
+    private KeyIndex(KeySource source, int[] slots)
+    {
+        this.source = source;
+        this.slots = slots;
+        byCode = true;
+    }
+
     public int Count => count;
+
+    /// <summary>
+    /// An index of a Text key's codes for <paramref name="expected"/> rows, every code below
+    /// <paramref name="codes"/>: a slot per code when that takes no more room than the table would,
+    /// and the table otherwise.
+    /// </summary>
+    public static KeyIndex ForCodes(KeySource source, int expected, int codes)
+    {
+        var table = new KeyIndex(source, expected);
+        return codes <= table.slots.Length ? new KeyIndex(source, new int[codes]) : table;
+    }
 
     /// <summary>Adds <paramref name="row"/>, whose key is <paramref name="key"/>; false, with the row that
     /// already carries the key, when one does.</summary>
     public bool TryAdd(int row, long key, out int existing)
     {
+        if (byCode)
+        {
+            if ((ulong)key >= (ulong)slots.Length)
+                Array.Resize(ref slots, (int)Math.Max(key + 1, slots.Length * 2L));
+            ref var held = ref slots[(int)key];
+            if (held != 0)
+            {
+                existing = held - 1;
+                return false;
+            }
+            held = row + 1;
+            count++;
+            existing = -1;
+            return true;
+        }
         if ((count + 1) * 2 > slots.Length)
             Grow();
         var mask = slots.Length - 1;
@@ -49,8 +88,70 @@ internal sealed class KeyIndex
         }
     }
 
+    /// <summary>
+    /// Adds the rows from <paramref name="first"/> on, whose keys are <paramref name="codes"/>, and
+    /// returns how many were added: all of them, or as many as come before the first whose key another
+    /// row carries, which <paramref name="existing"/> names.
+    /// </summary>
+    public int TryAdd(int first, ReadOnlySpan<int> codes, out int existing)
+    {
+        if (byCode)
+        {
+            // In one loop, with nothing to call: a browser runs .NET in an interpreter.
+            var held = slots;
+            for (var i = 0; i < codes.Length; i++)
+            {
+                var code = codes[i];
+                if ((uint)code >= (uint)held.Length)
+                {
+                    Array.Resize(ref slots, Math.Max(code + 1, held.Length * 2));
+                    held = slots;
+                }
+                if (held[code] != 0)
+                {
+                    count += i;
+                    existing = held[code] - 1;
+                    return i;
+                }
+                held[code] = first + i + 1;
+            }
+            count += codes.Length;
+            existing = -1;
+            return codes.Length;
+        }
+        for (var i = 0; i < codes.Length; i++)
+        {
+            if (!TryAdd(first + i, codes[i], out existing))
+                return i;
+        }
+        existing = -1;
+        return codes.Length;
+    }
+
+    /// <summary>As <see cref="TryAdd(int, ReadOnlySpan{int}, out int)"/>, for an Integer key's values.</summary>
+    public int TryAdd(int first, ReadOnlySpan<long> values, out int existing)
+    {
+        for (var i = 0; i < values.Length; i++)
+        {
+            if (!TryAdd(first + i, values[i], out existing))
+                return i;
+        }
+        existing = -1;
+        return values.Length;
+    }
+
     public bool TryGet(long key, out int row)
     {
+        if (byCode)
+        {
+            if ((ulong)key < (ulong)slots.Length && slots[(int)key] != 0)
+            {
+                row = slots[(int)key] - 1;
+                return true;
+            }
+            row = -1;
+            return false;
+        }
         var mask = slots.Length - 1;
         for (var i = Hash(key, bits); ; i = (i + 1) & mask)
         {

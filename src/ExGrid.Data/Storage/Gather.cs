@@ -147,49 +147,85 @@ internal sealed class KeyIndexer
     private readonly KeySource source;
     private int next;
 
-    public KeyIndexer(Shape shape, IReadOnlyList<Segment> segments, int rowCount)
+    /// <param name="shape">The Snapshot's shape, which has a Record Key.</param>
+    /// <param name="segments">The base segments, row r at offset r mod the segment length of segment
+    /// r / the segment length.</param>
+    /// <param name="rowCount">The rows to index.</param>
+    /// <param name="codes">For a Text key, the dictionary's count, which every code lies below, or -1
+    /// when it is not known.</param>
+    public KeyIndexer(Shape shape, IReadOnlyList<Segment> segments, int rowCount, int codes = -1)
     {
         this.shape = shape;
         this.segments = segments;
         this.rowCount = rowCount;
         var key = shape.Key!;
         source = KeySource.Of(key.Kind, segments.Select(s => s.Columns[key.Ordinal]).ToArray(), shape.Tuning.SegmentShift);
-        Index = new KeyIndex(source, rowCount);
+        Index = key.Kind == SnapshotKind.Text && codes >= 0 ? KeyIndex.ForCodes(source, rowCount, codes) : new KeyIndex(source, rowCount);
     }
 
     public KeyIndex Index { get; }
 
     public int Rows => next;
 
-    /// <summary>Indexes rows until they are all indexed or the clock passes <paramref name="deadline"/>.</summary>
+    /// <summary>
+    /// Indexes rows until they are all indexed or the clock passes <paramref name="deadline"/>, a
+    /// chunk at a time, each chunk within one segment: its keys as they lie in the segment's array, up
+    /// to its first Blank. A row is refused as a row-by-row index would: the first Blank or the first
+    /// key carried twice, whichever comes first.
+    /// </summary>
     public bool Step(long deadline)
     {
         var key = shape.Key!;
         var shift = shape.Tuning.SegmentShift;
         var mask = shape.Tuning.SegmentMask;
-        do
+        var chunk = shape.Tuning.ChunkLength;
+        while (next < rowCount)
         {
-            var end = Math.Min(rowCount, next + shape.Tuning.ChunkLength);
-            for (; next < end; next++)
+            var end = Math.Min(rowCount, next + chunk);
+            var data = segments[next >> shift].Columns[key.Ordinal];
+            var offset = next & mask;
+            var blank = FirstBlank(data.Blanks, offset, end - next);
+            var added = data is TextData text
+                ? Index.TryAdd(next, text.Codes.AsSpan(offset, blank), out var existing)
+                : Index.TryAdd(next, ((IntegerData)data).Values.AsSpan(offset, blank), out existing);
+            if (added < blank)
             {
-                var data = segments[next >> shift].Columns[key.Ordinal];
-                if (data.IsBlank(next & mask))
-                    throw new SnapshotException(next + 1, key.Name, "the Record Key is Blank.");
-                var value = source.KeyOf(next);
-                if (!Index.TryAdd(next, value, out var existing))
+                var row = next + added;
+                var value = source.KeyOf(row);
+                var shown = key.Kind == SnapshotKind.Text ? (object)TextOf((int)value) : value;
+                next = row;
+                throw new SnapshotException(row + 1, key.Name, string.Create(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    $"the Record Key {Keys.Show(shown)} is already carried by row {existing + 1:N0}."))
                 {
-                    var shown = key.Kind == SnapshotKind.Text ? (object)TextOf((int)value) : value;
-                    throw new SnapshotException(next + 1, key.Name, string.Create(
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        $"the Record Key {Keys.Show(shown)} is already carried by row {existing + 1:N0}."))
-                    {
-                        Key = shown,
-                    };
-                }
+                    Key = shown,
+                };
             }
+            if (blank < end - next)
+            {
+                next += blank;
+                throw new SnapshotException(next + 1, key.Name, "the Record Key is Blank.");
+            }
+            next = end;
+            if (System.Diagnostics.Stopwatch.GetTimestamp() >= deadline)
+                break;
         }
-        while (next < rowCount && System.Diagnostics.Stopwatch.GetTimestamp() < deadline);
         return next == rowCount;
+    }
+
+    /// <summary>Where the first Blank lies among <paramref name="length"/> rows from
+    /// <paramref name="offset"/>, counted from <paramref name="offset"/>; <paramref name="length"/>
+    /// when there is none.</summary>
+    private static int FirstBlank(ulong[]? blanks, int offset, int length)
+    {
+        if (blanks is null)
+            return length;
+        for (var i = 0; i < length; i++)
+        {
+            if (Bits.Get(blanks, offset + i))
+                return i;
+        }
+        return length;
     }
 
     /// <summary>A Text key's text, for a refusal. Set by the build, which still holds the dictionary.</summary>
