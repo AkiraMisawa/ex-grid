@@ -2,11 +2,11 @@
 
 Status: done
 
-**What to build:** [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "How it is painted: measured first", which keeps ADR-0046's precondition.
+**What to build:** [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "How it is painted: measured first", which keeps ADR-0046's precondition.
 Add modes to `spikes/render-bench` that measure what a Fill, a Font and Borders cost per painted
 cell, and bring the numbers back. **The choice is the user's.** The agent reports the results with
 a recommendation. The orchestrator puts them to the user, and records the decision as an addendum
-to ADR-0063. The agent does not edit the ADR.
+to ADR-0071. The agent does not edit the ADR.
 
 **Blocked by:** None (can start immediately)
 
@@ -28,7 +28,7 @@ to ADR-0063. The agent does not edit the ADR.
 - [x] The result JSON is kept beside the existing results, and `README.md` lists the modes.
 - [x] **The report**: the numbers, and a recommendation for Font and Fill and one for Border. If
       the layer is too costly, say so: the fall-back (lines inside each cell) is the user's call
-      (ADR-0063).
+      (ADR-0071).
 
 ## Comments
 

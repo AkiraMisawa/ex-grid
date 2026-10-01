@@ -67,7 +67,7 @@ public class CommandSelectionTests : SheetTestContext
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, "Not a formatting command."),
     };
 
-    [Theory] // ADR-0050 item 14's note / ADR-0063, SH-44 / ticket 56: a command given straight after Shift+ArrowDown, before ExSheet has heard the move, formats the extended range as one step
+    [Theory] // ADR-0050 item 14's note / ADR-0071, SH-44 / ticket 56: a command given straight after Shift+ArrowDown, before ExSheet has heard the move, formats the extended range as one step
     [InlineData(nameof(ExSheet.SetCellFormatAsync))]
     [InlineData(nameof(ExSheet.SetNumberFormatAsync))]
     [InlineData(nameof(ExSheet.SetAlignmentAsync))]
@@ -94,7 +94,7 @@ public class CommandSelectionTests : SheetTestContext
         Assert.False(sheet.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0050 item 14's note / ADR-0063, SH-45 / ticket 56: OpenFormatCellsAsync straight after Shift+ArrowDown opens over the extended range, and the late notification naming it leaves Format Cells open
+    [Fact] // ADR-0050 item 14's note / ADR-0071, SH-45 / ticket 56: OpenFormatCellsAsync straight after Shift+ArrowDown opens over the extended range, and the late notification naming it leaves Format Cells open
     public async Task Open_format_cells_straight_after_a_move_opens_over_the_selection_the_grid_holds()
     {
         var page = RenderPage<SheetWithCommand>();
@@ -116,7 +116,7 @@ public class CommandSelectionTests : SheetTestContext
         Assert.True(FormatAt(sheet, "A2").Font.Bold);
     }
 
-    [Fact] // ADR-0050 item 14's note / ADR-0036 / ADR-0063 / ticket 56: the Context Menu's "Format Cells…" opens over the Selection the menu was opened on, whose notification waits behind the menu's focus
+    [Fact] // ADR-0050 item 14's note / ADR-0036 / ADR-0071 / ticket 56: the Context Menu's "Format Cells…" opens over the Selection the menu was opened on, whose notification waits behind the menu's focus
     public async Task The_context_menu_opens_format_cells_over_the_selection_it_was_opened_on()
     {
         var heard = new List<GridSelection>();

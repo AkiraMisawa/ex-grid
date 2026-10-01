@@ -2,7 +2,7 @@
 @using Microsoft.AspNetCore.Components.Rendering
 
 @*
-    Format Cells under the built-in Chrome (ADR-0063): the contents ExSheet shows in the grid's
+    Format Cells under the built-in Chrome (ADR-0071): the contents ExSheet shows in the grid's
     popover frame (ADR-0050 item 16). The frame is the grid's — where it stands, its bound, Escape,
     a press elsewhere and the box shrinking — and these contents draw what ExSheet offers
     (FormatCellsOffer), set what the user chooses through the draft, and call back on OK and Cancel.
@@ -78,7 +78,7 @@
     private bool _parametersChanged = true;
     private bool _renderFromParameters;
 
-    /// <summary>What ExSheet offers and opens on, and its callbacks (ADR-0063).</summary>
+    /// <summary>What ExSheet offers and opens on, and its callbacks (ADR-0071).</summary>
     [Parameter, EditorRequired] public FormatCellsContext FormatCells { get; set; } = default!;
 
     /// <summary>The grid's popover frame's context (ADR-0050 item 16): its focus requests and its close.</summary>
@@ -402,7 +402,7 @@
     };
 
     // A line style's sample, as the Border tab draws it: a stroke and its dashes. Only a picture of
-    // the style; how a Border is painted on the Sheet is the grid's (ADR-0063).
+    // the style; how a Border is painted on the Sheet is the grid's (ADR-0071).
     private static RenderFragment LineSample(BorderLineStyle style) => __builder =>
     {
         var (width, dashes) = StrokeOf(style);

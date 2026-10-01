@@ -215,7 +215,7 @@ public class RefusedWhileEditingTests : SheetTestContext
         Assert.Equal("text", EditorText(cut));
     }
 
-    [Fact] // ADR-0063 / ADR-0048, SH-43: SetCellFormatAsync is refused while an edit is open, and no part of the change is set
+    [Fact] // ADR-0071 / ADR-0048, SH-43: SetCellFormatAsync is refused while an edit is open, and no part of the change is set
     public async Task SetCellFormatAsync_is_refused()
     {
         var cut = RenderSheet();
@@ -237,7 +237,7 @@ public class RefusedWhileEditingTests : SheetTestContext
         Assert.Equal("1234.5", CellText(cut, "A1"));
     }
 
-    [Fact] // ADR-0063, SH-43 / SH-44: CellFormatAt is a read, so it answers while an edit is open, and the edit stays
+    [Fact] // ADR-0071, SH-43 / SH-44: CellFormatAt is a read, so it answers while an edit is open, and the edit stays
     public async Task CellFormatAt_answers_while_an_edit_is_open()
     {
         var cut = RenderSheet();

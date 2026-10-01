@@ -822,7 +822,7 @@
     <div class="ex-ceiling-probe" aria-hidden="true"><div style="@CeilingProbeStyle"></div></div>
     @if (CellAppearance is not null && _appearances is { } appearances)
     {
-        @* The generated stylesheet of a per-cell appearance (ADR-0050, item 15; ADR-0063): one
+        @* The generated stylesheet of a per-cell appearance (ADR-0050, item 15; ADR-0071): one
            rule per Font, per Fill colour and per line on each side, never per combination, added
            the first time a cell asks for one. Last in the root, because the rows above resolved
            their appearance in this same render and the rules they named must be in it. The text
@@ -1188,7 +1188,7 @@
     /// <summary>
     /// A per-cell appearance (ADR-0050, item 15): asked for by (row, column), it answers the
     /// cell's Font — a colour, bold, italic, underline and strikethrough — its Fill, and the
-    /// Border on each of its four sides, all painted as Excel paints them (ADR-0063). Font and
+    /// Border on each of its four sides, all painted as Excel paints them (ADR-0071). Font and
     /// Fill are interned classes in a stylesheet the grid generates, one rule per distinct
     /// Font and Fill. Each line is centred on its gridline, a thick one reaching into both
     /// cells, above the Fills and below the Focus, the Selection and the Reference Outlines,

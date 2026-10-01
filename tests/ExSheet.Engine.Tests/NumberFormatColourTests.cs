@@ -15,7 +15,7 @@ public class NumberFormatColourTests
         return width is { } w ? sheet.GetDisplay(a1, w) : sheet.GetDisplay(a1);
     }
 
-    [Theory] // ADR-0063, SH-40: formatting a number answers the colour of the section it used, with the text
+    [Theory] // ADR-0071, SH-40: formatting a number answers the colour of the section it used, with the text
     [InlineData("[Red]0", 5, "5", NumberFormatColour.Red)]
     [InlineData("[red]0", 5, "5", NumberFormatColour.Red)]
     [InlineData("[MAGENTA]0", 5, "5", NumberFormatColour.Magenta)]
@@ -40,7 +40,7 @@ public class NumberFormatColourTests
         Assert.Equal(colour, display.Colour);
     }
 
-    [Theory] // ADR-0063, SH-40: text shown by a text section takes that section's colour
+    [Theory] // ADR-0071, SH-40: text shown by a text section takes that section's colour
     [InlineData("0;0;0;[Red]@", "Q3", "Q3", NumberFormatColour.Red)]
     [InlineData("[Blue]@", "Q3", "Q3", NumberFormatColour.Blue)]
     [InlineData("0;[Red]-0;0;\"total \"@", "Q3", "total Q3", null)]
@@ -52,7 +52,7 @@ public class NumberFormatColourTests
         Assert.Equal(colour, display.Colour);
     }
 
-    [Fact] // ADR-0063 reading, SH-40: text in a format with no text section uses no section, so no section's colour
+    [Fact] // ADR-0071 reading, SH-40: text in a format with no text section uses no section, so no section's colour
     public void Text_without_a_text_section_has_no_colour()
     {
         var display = Show(Value.FromText("Q3"), "[Red]0");
@@ -61,7 +61,7 @@ public class NumberFormatColourTests
         Assert.Null(display.Colour);
     }
 
-    [Fact] // ADR-0063 reading, SH-40: a number shown as General beside a lone text section uses no section, so no section's colour
+    [Fact] // ADR-0071 reading, SH-40: a number shown as General beside a lone text section uses no section, so no section's colour
     public void A_number_beside_a_lone_text_section_has_no_colour()
     {
         var display = Show(Value.FromNumber(5), "[Red]@");
@@ -70,14 +70,14 @@ public class NumberFormatColourTests
         Assert.Null(display.Colour);
     }
 
-    [Fact] // ADR-0063 reading, SH-40: booleans and Error Values show as themselves, through no section, so no section's colour
+    [Fact] // ADR-0071 reading, SH-40: booleans and Error Values show as themselves, through no section, so no section's colour
     public void Booleans_and_Error_Values_have_no_colour()
     {
         Assert.Null(Show(Value.FromBoolean(true), "[Red]0;[Red]-0;[Red]0;[Red]@").Colour);
         Assert.Null(Show(Value.FromError(ErrorValue.Div0), "[Red]0;[Red]-0;[Red]0;[Red]@").Colour);
     }
 
-    [Fact] // ADR-0063, SH-40: a blank cell shows nothing, so nothing is coloured
+    [Fact] // ADR-0071, SH-40: a blank cell shows nothing, so nothing is coloured
     public void A_blank_cell_has_no_colour()
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
@@ -88,7 +88,7 @@ public class NumberFormatColourTests
         Assert.Null(sheet.GetDisplay(a1, 10).Colour);
     }
 
-    [Theory] // ADR-0063, SH-40: the display at a column's width, which the component paints, carries the colour too
+    [Theory] // ADR-0071, SH-40: the display at a column's width, which the component paints, carries the colour too
     [InlineData("0;[Red]-0", -5, 10, "-5", NumberFormatColour.Red)]
     [InlineData("0;[Red]-0", 5, 10, "5", null)]
     [InlineData("[Blue]0;[Magenta]-0;[Green]\"zero\"", 0, 10, "zero", NumberFormatColour.Green)]
@@ -101,7 +101,7 @@ public class NumberFormatColourTests
         Assert.Equal(colour, display.Colour);
     }
 
-    [Theory] // ADR-0063 reading, SH-40, ADR-0016: a number its section cannot show in the width (####) keeps that section's colour
+    [Theory] // ADR-0071 reading, SH-40, ADR-0016: a number its section cannot show in the width (####) keeps that section's colour
     [InlineData("0;[Red]-0", -123456, 3, NumberFormatColour.Red)]
     [InlineData("[Blue]0.00", 123456, 3, NumberFormatColour.Blue)]
     public void A_number_that_does_not_fit_keeps_its_colour(string code, double number, double width, NumberFormatColour colour)
@@ -113,7 +113,7 @@ public class NumberFormatColourTests
         Assert.Equal(colour, display.Colour);
     }
 
-    [Fact] // ADR-0063 reading, SH-40, ADR-0016: a date that cannot exist cannot show at any width, and keeps its section's colour
+    [Fact] // ADR-0071 reading, SH-40, ADR-0016: a date that cannot exist cannot show at any width, and keeps its section's colour
     public void An_impossible_date_keeps_its_colour()
     {
         var display = Show(Value.FromNumber(-1), "[Red]yyyy-mm-dd");
@@ -122,14 +122,14 @@ public class NumberFormatColourTests
         Assert.Equal(NumberFormatColour.Red, display.Colour);
     }
 
-    [Fact] // ADR-0063, SH-40: General fitted to a width uses no section, so no colour
+    [Fact] // ADR-0071, SH-40: General fitted to a width uses no section, so no colour
     public void General_at_a_width_has_no_colour()
     {
         Assert.Null(Show(Value.FromNumber(1.0 / 3), "General", 8).Colour);
         Assert.Null(Show(Value.FromNumber(123456789), "General", 1).Colour);
     }
 
-    [Fact] // ADR-0063, SH-40, ADR-0047 (TYPED-052): $-5 typed takes Excel's currency format, and its negative section is red
+    [Fact] // ADR-0071, SH-40, ADR-0047 (TYPED-052): $-5 typed takes Excel's currency format, and its negative section is red
     public void A_typed_negative_dollar_amount_is_red()
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
@@ -144,7 +144,7 @@ public class NumberFormatColourTests
         Assert.Null(sheet.GetDisplay(b1).Colour);
     }
 
-    [Theory] // ADR-0063, SH-40: a reading until the eleventh Windows run, case 1 — the eight names are Excel's legacy palette
+    [Theory] // ADR-0071, SH-40: a reading until the eleventh Windows run, case 1 — the eight names are Excel's legacy palette
     [InlineData(NumberFormatColour.Black, 0x000000)]
     [InlineData(NumberFormatColour.Blue, 0x0000FF)]
     [InlineData(NumberFormatColour.Cyan, 0x00FFFF)]
@@ -158,7 +158,7 @@ public class NumberFormatColourTests
         Assert.Equal(rgb, colour.Rgb());
     }
 
-    [Fact] // ADR-0063, SH-40: every one of the eight names is read, and each answers itself
+    [Fact] // ADR-0071, SH-40: every one of the eight names is read, and each answers itself
     public void Every_name_is_read()
     {
         foreach (var colour in Enum.GetValues<NumberFormatColour>())
@@ -167,7 +167,7 @@ public class NumberFormatColourTests
         }
     }
 
-    [Fact] // ADR-0063, SH-40: a reading until the eleventh Windows run, case 2 — the engine's half: -5 answers Red, which wins over the Font colour; 5 answers none, so the Font colour shows
+    [Fact] // ADR-0071, SH-40: a reading until the eleventh Windows run, case 2 — the engine's half: -5 answers Red, which wins over the Font colour; 5 answers none, so the Font colour shows
     public void The_format_colour_is_answered_only_where_its_section_names_one()
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
@@ -181,7 +181,7 @@ public class NumberFormatColourTests
         Assert.Null(sheet.GetDisplay(b1).Colour);
     }
 
-    [Theory] // ADR-0063, ADR-0047 (FMT-075..077), SH-40: a numbered colour stays refused, by name
+    [Theory] // ADR-0071, ADR-0047 (FMT-075..077), SH-40: a numbered colour stays refused, by name
     [InlineData("[Color10]0")]
     [InlineData("[color3]0")]
     [InlineData("0;[Color10]-0")]

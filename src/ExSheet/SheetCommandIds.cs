@@ -20,7 +20,7 @@ public static class SheetCommandIds
     /// <summary>Deletes the columns the Selection spans (ADR-0046).</summary>
     public const string DeleteColumns = "exsheet.delete-columns";
 
-    /// <summary>Opens Format Cells over the Selection (ADR-0063), as <c>ExSheet.OpenFormatCellsAsync</c> does.</summary>
+    /// <summary>Opens Format Cells over the Selection (ADR-0071), as <c>ExSheet.OpenFormatCellsAsync</c> does.</summary>
     public const string FormatCells = "exsheet.format-cells";
 
     /// <summary>

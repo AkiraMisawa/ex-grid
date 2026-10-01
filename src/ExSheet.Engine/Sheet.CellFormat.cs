@@ -3,7 +3,7 @@ using ExSheet.Engine.Formulas;
 namespace ExSheet.Engine;
 
 /// <summary>
-/// The parts of a Cell Format recorded on a whole row or a whole column (ADR-0047, ADR-0063):
+/// The parts of a Cell Format recorded on a whole row or a whole column (ADR-0047, ADR-0071):
 /// <see langword="null"/> where that level records nothing.
 /// </summary>
 internal readonly record struct AxisFormat(NumberFormat? NumberFormat, HorizontalAlignment? Alignment, CellFont? Font, CellFill? Fill, CellBorders? Borders)
@@ -37,7 +37,7 @@ public sealed partial class Sheet
     /// <summary>
     /// The cell's Cell Format as it shows: each part the cell's own, else its row's, else its
     /// column's, else the part's default — cell over row over column, as in Excel (ADR-0047,
-    /// ADR-0063, SH-38). Its Borders are the edges as shown, which the cells beside it share
+    /// ADR-0071, SH-38). Its Borders are the edges as shown, which the cells beside it share
     /// (<see cref="GetBorders"/>).
     /// </summary>
     public CellFormat GetCellFormat(CellAddress address) => OwnFormat(address) with { Borders = GetBorders(address) };
@@ -67,14 +67,14 @@ public sealed partial class Sheet
         ?? _columnFormats.GetValueOrDefault(address.Column).Alignment
         ?? HorizontalAlignment.General;
 
-    /// <summary>The cell's Font, as it takes effect: cell over row over column (ADR-0063, SH-38).</summary>
+    /// <summary>The cell's Font, as it takes effect: cell over row over column (ADR-0071, SH-38).</summary>
     public CellFont GetFont(CellAddress address) =>
         (_cells.TryGetValue(address, out var cell) ? cell.Font : null)
         ?? _rowFormats.GetValueOrDefault(address.Row).Font
         ?? _columnFormats.GetValueOrDefault(address.Column).Font
         ?? CellFont.Default;
 
-    /// <summary>The cell's Fill, as it takes effect: cell over row over column (ADR-0063, SH-38).</summary>
+    /// <summary>The cell's Fill, as it takes effect: cell over row over column (ADR-0071, SH-38).</summary>
     public CellFill GetFill(CellAddress address) =>
         (_cells.TryGetValue(address, out var cell) ? cell.Fill : null)
         ?? _rowFormats.GetValueOrDefault(address.Row).Fill
@@ -83,7 +83,7 @@ public sealed partial class Sheet
 
     /// <summary>
     /// The line on each of the cell's four sides as it shows, which is the line on the edge it shares
-    /// with the cell beside it, read the same from either cell (ADR-0063; the twelfth Windows run).
+    /// with the cell beside it, read the same from either cell (ADR-0071; the twelfth Windows run).
     /// Each cell records its own four sides, cell over row over column. Where both cells record a
     /// line on the edge, the upper cell's is shown, or the left cell's for a vertical edge; where
     /// only one does, that one. A side on the Sheet's outer edge is the cell's own.
@@ -98,7 +98,7 @@ public sealed partial class Sheet
             own.Right.IsNone && address.Column < ColumnCount - 1 ? OwnSides(new CellAddress(address.Row, address.Column + 1)).Left : own.Right);
     }
 
-    /// <summary>The cell's own four sides, as it records them: cell over row over column (ADR-0063, SH-38).</summary>
+    /// <summary>The cell's own four sides, as it records them: cell over row over column (ADR-0071, SH-38).</summary>
     private CellBorders OwnSides(CellAddress address) =>
         (_cells.TryGetValue(address, out var cell) ? cell.Borders : null)
         ?? _rowFormats.GetValueOrDefault(address.Row).Borders
@@ -163,7 +163,7 @@ public sealed partial class Sheet
 
     /// <summary>
     /// Sets the parts <paramref name="change"/> names on several ranges at once (ADR-0046,
-    /// ADR-0063), each range as <see cref="SetNumberFormat(CellRange, NumberFormat?)"/> records
+    /// ADR-0071), each range as <see cref="SetNumberFormat(CellRange, NumberFormat?)"/> records
     /// one: whole columns and whole rows as one entry each. Every other part stays as each cell
     /// has it. The change's Borders are relative to each range, so each range gets its own
     /// outline. No Value changes.
@@ -228,7 +228,7 @@ public sealed partial class Sheet
         Dictionary<int, AxisFormat> ColumnsBefore);
 
     /// <summary>
-    /// A change set on a range, as Excel sets it (ADR-0047, ADR-0063): on the range
+    /// A change set on a range, as Excel sets it (ADR-0047, ADR-0071): on the range
     /// (<see cref="ApplyCellFormatOn"/>), and, across each outer edge the change sets, on the cells
     /// beside it at whichever level they lie on, whose record of that edge it clears. So the line
     /// set is the one shown from either cell, and the later setting wins (the eleventh Windows run,
@@ -452,7 +452,7 @@ public sealed partial class Sheet
     /// The row (or column) levels after a structural edit: moved with their rows (columns), those
     /// deleted or pushed off the edge dropped, and inserted rows (columns) given the level of the
     /// one before them, all but its Borders, when <paramref name="formatInserted"/> (ADR-0046,
-    /// ADR-0063; the twelfth Windows run, cases 10 to 13).
+    /// ADR-0071; the twelfth Windows run, cases 10 to 13).
     /// </summary>
     private void ShiftAxisFormats(StructuralEdit edit, bool formatInserted)
     {

@@ -1,6 +1,6 @@
 /* ExSheet.MudBlazor's stylesheet, beside MudBlazor's and ExGrid.MudBlazor's.
 
-   Format Cells as a MudDialog (ADR-0063). The dialog is MudBlazor's, and so are its colours: what
+   Format Cells as a MudDialog (ADR-0071). The dialog is MudBlazor's, and so are its colours: what
    is written here lays out its contents and draws the palette's swatches, which MudBlazor has no
    control for, in MudBlazor's palette variables. Its classes are implementation detail (ADR-0029):
    a Consumer restyles Format Cells by substituting its Chrome, not by writing against these. No
@@ -59,7 +59,7 @@
 }
 
 /* The palette (case 23): ten swatches across. Each is a radio button drawn as its colour, which is
-   written inline as the user's choice of document data, never a Visual Token (ADR-0063). */
+   written inline as the user's choice of document data, never a Visual Token (ADR-0071). */
 .mud-ex-sheet-palette {
     display: flex;
     flex-direction: column;

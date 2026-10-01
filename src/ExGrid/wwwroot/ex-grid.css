@@ -213,7 +213,7 @@
    own box, because the cell clips anything that reaches past its edge: its width and inward
    offset are the Focus outline's, set with it in the selection's rules below. */
 .ex-action-chosen { outline-style: solid; outline-color: var(--ex-focus-outline, CanvasText); }
-/* Borders (ADR-0050 item 15; ADR-0063, "What the measurement chose"): each cell draws its own share
+/* Borders (ADR-0050 item 15; ADR-0071, "What the measurement chose"): each cell draws its own share
    of Excel's centred line — the upper (left) cell the gridline's pixel and what lies above (left
    of) it, the lower (right) cell the pixel a thick or double line reaches past it — so nothing is
    painted outside a row and no row changes height. A solid line on the gridline is the cell's own

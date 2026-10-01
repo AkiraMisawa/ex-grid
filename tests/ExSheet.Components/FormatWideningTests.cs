@@ -12,7 +12,7 @@ using Xunit;
 namespace ExSheet.Components.Tests;
 
 /// <summary>
-/// What the twelfth Windows run settled about the formatting keys (ticket 58; ADR-0063, cases 17
+/// What the twelfth Windows run settled about the formatting keys (ticket 58; ADR-0071, cases 17
 /// to 19; <c>verification/2026-10-01-windows-excel-12/cell-format-12.md</c>): a Number Format
 /// widens a column the user has not sized whose numbers it no longer fits, as one undo step with
 /// the format, and recorded as a width an entry widened (SH-26); a column the user sized never
@@ -47,7 +47,7 @@ public class FormatWideningTests : SheetTestContext
 
     // ---- Case 17: which keys widen a column at the default width ----
 
-    [Theory] // ADR-0063 case 17: every Number Format key widens a column still at the default width whose text no longer fits, so the text shows rather than ####
+    [Theory] // ADR-0071 case 17: every Number Format key widens a column still at the default width whose text no longer fits, so the text shows rather than ####
     [InlineData("#", false, "46000.5", "09-Dec-25")]  // UK: # needs no Shift
     [InlineData("$", true, "1234567.5", "£1,234,567.50")]
     [InlineData("!", true, "1234567.5", "1,234,567.50")]
@@ -67,7 +67,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 2));
     }
 
-    [Theory] // ADR-0063 case 17 (pass a): a key whose text still fits leaves the column at the default width
+    [Theory] // ADR-0071 case 17 (pass a): a key whose text still fits leaves the column at the default width
     [InlineData("%", "0.123456", "12%")]
     [InlineData("@", "46000", "00:00")]
     [InlineData("^", "1234567.5", "1.23E+06")]
@@ -83,7 +83,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
     }
 
-    [Fact] // ADR-0063 case 17, ADR-0048: the widening is part of the key's one undo step, undone and redone with the format
+    [Fact] // ADR-0071 case 17, ADR-0048: the widening is part of the key's one undo step, undone and redone with the format
     public async Task The_widening_is_part_of_the_keys_one_undo_step()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB", ("A1", "1234567.5"))));
@@ -105,7 +105,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(WidenedFor("£1,234,567.50"), WidthOf(cut, 0), 6);
     }
 
-    [Fact] // ADR-0063 case 17, ADR-0046 SH-26: the column leaves the default width as a width an entry widened, so a longer number — a later key's among them — widens it again
+    [Fact] // ADR-0071 case 17, ADR-0046 SH-26: the column leaves the default width as a width an entry widened, so a longer number — a later key's among them — widens it again
     public async Task The_widened_column_is_recorded_as_widened_by_entry()
     {
         SheetDocument? raised = null;
@@ -138,7 +138,7 @@ public class FormatWideningTests : SheetTestContext
 
     // ---- Case 18: a column the user sized ----
 
-    [Fact] // ADR-0063 case 18, SH-26: a column the user has sized never widens, at the default width or narrower, and its number shows ####
+    [Fact] // ADR-0071 case 18, SH-26: a column the user has sized never widens, at the default width or narrower, and its number shows ####
     public async Task A_column_the_user_sized_never_widens()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB", ("A1", "1234567.5"), ("B1", "1234567.5"))));
@@ -157,7 +157,7 @@ public class FormatWideningTests : SheetTestContext
 
     // ---- What is widened ----
 
-    [Fact] // ADR-0063 case 17: over a Selection of several columns each column widens to hold its widest number, and a column whose cells fit, or hold text, stays
+    [Fact] // ADR-0071 case 17: over a Selection of several columns each column widens to hold its widest number, and a column whose cells fit, or hold text, stays
     public async Task Each_column_of_the_selection_widens_to_its_widest_number()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB",
@@ -177,7 +177,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063 case 17, ADR-0047 (SH-21): a key over a whole column widens it for every number it holds, however far down
+    [Fact] // ADR-0071 case 17, ADR-0047 (SH-21): a key over a whole column widens it for every number it holds, however far down
     public async Task A_whole_column_widens_for_every_number_it_holds()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB",
@@ -190,7 +190,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal("1,234,567.50", CellText(cut, "B5"));
     }
 
-    [Fact] // ADR-0063 case 17: only a Number Format widens — a Font or a Border leaves the width though a number already shows ####
+    [Fact] // ADR-0071 case 17: only a Number Format widens — a Font or a Border leaves the width though a number already shows ####
     public async Task Only_a_number_format_widens()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB", ("A1", "1234567890"))));
@@ -209,7 +209,7 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(WidenedFor("1,234,567,890.00"), WidthOf(cut, 0), 6);
     }
 
-    [Fact] // ADR-0063 case 17, read for the commands: SetCellFormatAsync and Format Cells' OK widen as the key does, each in its one undo step; DoAsync widens nothing
+    [Fact] // ADR-0071 case 17, read for the commands: SetCellFormatAsync and Format Cells' OK widen as the key does, each in its one undo step; DoAsync widens nothing
     public async Task Set_cell_format_and_format_cells_widen_as_the_key_does()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB",
@@ -244,7 +244,7 @@ public class FormatWideningTests : SheetTestContext
 
     // ---- Case 19: the date and time keys' built-ins under three cultures ----
 
-    [Theory] // ADR-0063 case 19: the date key writes built-in 15 and the time key 20, or the AM/PM built-in under en-US, each shown in the Sheet culture's own form and recorded as the built-in
+    [Theory] // ADR-0071 case 19: the date key writes built-in 15 and the time key 20, or the AM/PM built-in under en-US, each shown in the Sheet culture's own form and recorded as the built-in
     [InlineData("en-GB", "05-Jan-26", "d-mmm-yy", "09:05", "h:mm")]
     [InlineData("en-US", "5-Jan-26", "d-mmm-yy", "9:05 AM", "h:mm AM/PM")]
     [InlineData("ja-JP", "05-1-26", "d-mmm-yy", "9:05", "h:mm")]

@@ -366,7 +366,7 @@ wanted, it is a decision of its own.
 
 ## A seam whose frame the Chrome chooses — 2026-09-30
 
-*(Decided with the user, with [ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md).)* ExSheet's **Format Cells** is a Chrome seam. As at every
+*(Decided with the user, with [ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md).)* ExSheet's **Format Cells** is a Chrome seam. As at every
 other seam, ExSheet decides what is offered: the tabs, the Number Format categories, the palette and
 the line styles. It also decides what OK means. The Chrome draws the dialog and calls back with the
 change.

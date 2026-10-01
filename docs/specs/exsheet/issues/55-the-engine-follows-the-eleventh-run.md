@@ -3,7 +3,7 @@
 Status: done
 
 **What to build:** the engine's corrections from
-[ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "What the
+[ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "What the
 eleventh Windows run settled". Ticket 45 built three readings that Excel answered otherwise. The
 record is `verification/2026-10-01-windows-excel-11/cell-format.md`.
 
@@ -23,7 +23,7 @@ record is `verification/2026-10-01-windows-excel-11/cell-format.md`.
       left of column A and the right of column XFD, as its columns do; both are readings by mirror,
       not observed.
 - [x] The Sheet Document needs no new version: it records the same sides, now kept equal.
-- [x] Layer 1, each test named with ADR-0063 and the run's case.
+- [x] Layer 1, each test named with ADR-0071 and the run's case.
 
 ## Comments
 
@@ -83,7 +83,7 @@ and 15. The Sheet Document is unchanged: it records the same sides, now kept equ
   came later. Whether those operations should also make the edge one line, and how the painter
   (ticket 49) draws two records that differ, is a question for the next run or a decision.
 - **Tests:** layer 1, 13 new or rewritten cases in `CellFormatTests` and `CellFormatCarryTests`,
-  and 3 more `InlineData` rows on the undo theory. Each is named with ADR-0063 and its case.
+  and 3 more `InlineData` rows on the undo theory. Each is named with ADR-0071 and its case.
   - ExSheet.Engine.Tests: 2091 passed.
   - ExSheet.Components.Tests: 310 passed.
   - ExGrid.Tests: 826 passed.

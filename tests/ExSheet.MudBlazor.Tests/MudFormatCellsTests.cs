@@ -11,7 +11,7 @@ using global::MudBlazor.Extensions;
 namespace ExSheet.MudBlazor.Tests;
 
 /// <summary>
-/// Format Cells under ExSheet.MudBlazor's Chrome (ticket 53; ADR-0063, ADR-0010's note of
+/// Format Cells under ExSheet.MudBlazor's Chrome (ticket 53; ADR-0071, ADR-0010's note of
 /// 2026-09-30; SH-45): a MudDialog at page level, outside the Sheet's root, drawing what ExSheet
 /// offers and setting what the user chooses through ExSheet's draft, so that OK means under this
 /// Chrome what it means under the built-in one; and the keyboard handed back through the core's
@@ -23,7 +23,7 @@ public class MudFormatCellsTests : MudSheetTestContext
 
     // ---- The frame ----
 
-    [Fact] // ADR-0063 / SH-45: under the MudBlazor Chrome Format Cells is a MudDialog beside the grid, not a popover inside it
+    [Fact] // ADR-0071 / SH-45: under the MudBlazor Chrome Format Cells is a MudDialog beside the grid, not a popover inside it
     public async Task Format_cells_is_a_mud_dialog_outside_the_sheets_root()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -37,7 +37,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Contains("Format Cells", page.Find(".mud-dialog-title").TextContent);
     }
 
-    [Fact] // ADR-0063 / ADR-0050 item 14 / SH-45: Ctrl+1 opens the dialog, and the Context Menu's command is the same opening
+    [Fact] // ADR-0071 / ADR-0050 item 14 / SH-45: Ctrl+1 opens the dialog, and the Context Menu's command is the same opening
     public async Task Ctrl_1_opens_the_dialog()
     {
         var page = RenderPage();
@@ -49,7 +49,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.False(Sheet(page).CanUndo);
     }
 
-    [Fact] // ADR-0063 / SH-45: the dialog is modal and closes on Escape, on its backdrop and by its ×, each a Cancel
+    [Fact] // ADR-0071 / SH-45: the dialog is modal and closes on Escape, on its backdrop and by its ×, each a Cancel
     public async Task The_dialog_closes_as_a_cancel_by_mudblazors_own_means()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -66,7 +66,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Empty(page.FindAll(".mud-ex-sheet-format-cells-leaving"));
     }
 
-    [Fact] // ADR-0063: without a MudDialogProvider Format Cells is refused by name rather than standing open unseen
+    [Fact] // ADR-0071: without a MudDialogProvider Format Cells is refused by name rather than standing open unseen
     public async Task Without_a_dialog_provider_it_is_refused_by_name()
     {
         var page = RenderPage(dialogs: false);
@@ -84,7 +84,7 @@ public class MudFormatCellsTests : MudSheetTestContext
 
     // ---- The tabs ----
 
-    [Fact] // ADR-0063 / SH-45, case 22: the tabs are Number, Alignment, Font, Border and Fill, and the first opening is on Number
+    [Fact] // ADR-0071 / SH-45, case 22: the tabs are Number, Alignment, Font, Border and Fill, and the first opening is on Number
     public async Task The_tabs_are_excels_order_and_the_first_opening_is_on_number()
     {
         var page = RenderPage();
@@ -95,7 +95,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("Number", SelectedTab(page).TextContent.Trim());
     }
 
-    [Fact] // ADR-0063 / SH-45: the tabs switch with the arrow keys, wrapping, and Home and End reach the first and the last (ARIA's tabs pattern)
+    [Fact] // ADR-0071 / SH-45: the tabs switch with the arrow keys, wrapping, and Home and End reach the first and the last (ARIA's tabs pattern)
     public async Task The_tabs_switch_with_the_arrow_keys()
     {
         var page = RenderPage();
@@ -112,7 +112,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal("Fill", SelectedTab(page).TextContent.Trim()));
     }
 
-    [Fact] // ADR-0063 / SH-45 / ADR-0018: two arrows typed together on a circuit — the second pressed on the tab the keyboard has not yet left — move two tabs
+    [Fact] // ADR-0071 / SH-45 / ADR-0018: two arrows typed together on a circuit — the second pressed on the tab the keyboard has not yet left — move two tabs
     public async Task Two_arrows_typed_together_move_two_tabs()
     {
         var page = RenderPage();
@@ -130,7 +130,7 @@ public class MudFormatCellsTests : MudSheetTestContext
             page.FindAll(".mud-ex-sheet-format-cells [role=tab]").Single(t => t.TextContent.Trim() == "Alignment");
     }
 
-    [Fact] // ADR-0063 / SH-45, case 22: a later opening reopens on the last tab shown
+    [Fact] // ADR-0071 / SH-45, case 22: a later opening reopens on the last tab shown
     public async Task A_later_opening_reopens_on_the_last_tab_shown()
     {
         var page = RenderPage();
@@ -146,7 +146,7 @@ public class MudFormatCellsTests : MudSheetTestContext
 
     // ---- What it offers is ExSheet's ----
 
-    [Fact] // ADR-0063 / SH-45, case 22: the categories in Excel's order; Accounting, Fraction and Special shown disabled, each with its reason
+    [Fact] // ADR-0071 / SH-45, case 22: the categories in Excel's order; Accounting, Fraction and Special shown disabled, each with its reason
     public async Task The_categories_and_the_disabled_ones_with_their_reasons()
     {
         var page = RenderPage();
@@ -160,7 +160,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         }
     }
 
-    [Fact] // ADR-0063 / SH-45: it opens on the Focus cell's Number Format, its category and its places
+    [Fact] // ADR-0071 / SH-45: it opens on the Focus cell's Number Format, its category and its places
     public async Task It_opens_on_the_focus_cells_number_format()
     {
         var page = RenderPage(DocumentOf(sheet => sheet.SetCellFormat([CellRange.Parse("B2")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.000%") }), ("B2", "0.5")));
@@ -171,7 +171,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("3", page.Find(".mud-ex-sheet-format-cells-places input").GetAttribute("value"));
     }
 
-    [Fact] // ADR-0063 / SH-45, case 24: a differing Fill shows as No Colour, and a differing emphasis leaves the Font style empty
+    [Fact] // ADR-0071 / SH-45, case 24: a differing Fill shows as No Colour, and a differing emphasis leaves the Font style empty
     public async Task Parts_that_differ_show_as_excel_shows_them()
     {
         var page = RenderPage(DocumentOf(
@@ -189,7 +189,7 @@ public class MudFormatCellsTests : MudSheetTestContext
 
     // ---- What OK sets is ExSheet's ----
 
-    [Fact] // ADR-0063 / ADR-0048 / SH-45: OK sets the part touched as one undo step, and the keyboard is handed back
+    [Fact] // ADR-0071 / ADR-0048 / SH-45: OK sets the part touched as one undo step, and the keyboard is handed back
     public async Task Ok_sets_the_part_touched_as_one_undo_step()
     {
         var page = RenderPage(DocumentOf(("B2", "0.5")));
@@ -207,7 +207,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.False(Sheet(page).CanUndo);
     }
 
-    [Fact] // ADR-0063 / SH-45: OK with nothing touched sets nothing, raises nothing and records no step
+    [Fact] // ADR-0071 / SH-45: OK with nothing touched sets nothing, raises nothing and records no step
     public async Task Ok_with_nothing_touched_sets_nothing()
     {
         var raised = new List<SheetDocument>();
@@ -222,7 +222,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.False(Sheet(page).CanUndo);
     }
 
-    [Fact] // ADR-0063 / SH-45: Cancel sets nothing, whatever was touched, and the keyboard is handed back
+    [Fact] // ADR-0071 / SH-45: Cancel sets nothing, whatever was touched, and the keyboard is handed back
     public async Task Cancel_sets_nothing_and_hands_the_keyboard_back()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -239,7 +239,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.True(ReclaimCount > reclaims));
     }
 
-    [Fact] // ADR-0063 / SH-45: a Custom code ExSheet does not read is refused by name, the dialog stays open, and nothing is set
+    [Fact] // ADR-0071 / SH-45: a Custom code ExSheet does not read is refused by name, the dialog stays open, and nothing is set
     public async Task A_custom_code_ExSheet_does_not_read_is_refused_by_name()
     {
         var page = RenderPage(DocumentOf(("B2", "0.5")));
@@ -254,7 +254,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal("General", FormatAt(page, "B2").NumberFormat.Code);
     }
 
-    [Fact] // ADR-0063 / SH-45: Enter in a field is OK — a Custom code the engine reads is set
+    [Fact] // ADR-0071 / SH-45: Enter in a field is OK — a Custom code the engine reads is set
     public async Task Enter_in_a_field_is_ok()
     {
         var page = RenderPage(DocumentOf(("B2", "0.5")));
@@ -281,7 +281,7 @@ public class MudFormatCellsTests : MudSheetTestContext
     private static IReadOnlyList<string> ListItems(Bunit.IRenderedComponent<Bunit.Rendering.ContainerFragment> page) =>
         [.. page.FindAll(".mud-popover-open .mud-list-item").Select(i => i.TextContent.Trim())];
 
-    [Fact] // ADR-0063 / SH-45: Horizontal and Underline are dropdowns, as Excel's, listing Excel's choices and showing the Focus cell's
+    [Fact] // ADR-0071 / SH-45: Horizontal and Underline are dropdowns, as Excel's, listing Excel's choices and showing the Focus cell's
     public async Task Horizontal_and_underline_are_dropdowns_as_excels()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -301,7 +301,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(["None", "Single"], ListItems(page));
     }
 
-    [Fact] // ADR-0063 / SH-45: Alignment is horizontal only, and OK sets the one chosen
+    [Fact] // ADR-0071 / SH-45: Alignment is horizontal only, and OK sets the one chosen
     public async Task Alignment_sets_the_horizontal_alignment()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -315,7 +315,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(HorizontalAlignment.Center, FormatAt(page, "B2").Alignment);
     }
 
-    [Fact] // ADR-0063 / SH-45, case 25: the Font's style, underline and strikethrough are set as chosen
+    [Fact] // ADR-0071 / SH-45, case 25: the Font's style, underline and strikethrough are set as chosen
     public async Task The_font_tab_sets_the_style_underline_and_strikethrough()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -332,7 +332,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.True(font.Bold && font.Italic && font.Underline && font.Strikethrough);
     }
 
-    [Fact] // ADR-0063 / SH-45, case 23: the Fill tab offers No Colour, the theme's sixty and the ten standard colours, as the Fill tab names them
+    [Fact] // ADR-0071 / SH-45, case 23: the Fill tab offers No Colour, the theme's sixty and the ten standard colours, as the Fill tab names them
     public async Task The_fill_palette_is_case_23s()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -352,7 +352,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(CellFill.Solid(Red), FormatAt(page, "B2").Fill);
     }
 
-    [Fact] // ADR-0063 / SH-45: More Colours is MudBlazor's colour picker, and the colour it picks is set, opaque
+    [Fact] // ADR-0071 / SH-45: More Colours is MudBlazor's colour picker, and the colour it picks is set, opaque
     public async Task More_colours_is_mudblazors_colour_picker()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -367,7 +367,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(CellColour.FromRgb(0x1F4E79), FormatAt(page, "B2").Font.Colour);
     }
 
-    [Fact] // ADR-0063 / SH-45, case 22: the thirteen styles and None in Excel's two columns, Thin chosen on opening; for one cell Inside, Horizontal and Vertical are disabled
+    [Fact] // ADR-0071 / SH-45, case 22: the thirteen styles and None in Excel's two columns, Thin chosen on opening; for one cell Inside, Horizontal and Vertical are disabled
     public async Task The_border_tab_offers_excels_styles_and_presets()
     {
         var page = RenderPage();
@@ -388,7 +388,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.True(page.Find(".mud-ex-sheet-format-cells-edge[data-edge=InsideVertical]").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0063 / SH-45: an edge's button sets the chosen style and colour on that edge
+    [Fact] // ADR-0071 / SH-45: an edge's button sets the chosen style and colour on that edge
     public async Task An_edge_sets_the_chosen_line()
     {
         var page = RenderPage(DocumentOf(("B2", "12")));
@@ -408,7 +408,7 @@ public class MudFormatCellsTests : MudSheetTestContext
 
     // ---- The keyboard ----
 
-    [Fact] // ADR-0063 / ADR-0021's note of 2026-09-30: the dialog takes the keyboard from an element of the frame's own, which goes once the dialog has it
+    [Fact] // ADR-0071 / ADR-0021's note of 2026-09-30: the dialog takes the keyboard from an element of the frame's own, which goes once the dialog has it
     public async Task The_keyboard_leaves_from_the_frames_own_element()
     {
         var page = RenderPage();
@@ -426,7 +426,7 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.True(IsOpen(page));
     }
 
-    [Fact] // ADR-0063 / ADR-0018: opening it again while it stands opens it afresh, in one dialog
+    [Fact] // ADR-0071 / ADR-0018: opening it again while it stands opens it afresh, in one dialog
     public async Task Opening_again_replaces_the_dialog()
     {
         var page = RenderPage();

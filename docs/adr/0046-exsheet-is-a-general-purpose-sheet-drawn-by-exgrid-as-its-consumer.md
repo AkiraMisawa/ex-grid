@@ -117,7 +117,7 @@ Sheet has to rewrite the References to it in the other.
   ([ADR-0003](./0003-cells-are-plain-markup-by-default-not-components.md)). It waits for a
   `spikes/render-bench` mode that measures it, and an ADR that reads the result.
   *(Replaced 2026-09-30, decided with the user, by
-  [ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). Fonts, fills
+  [ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). Fonts, fills
   and borders are now in the first version. The measurement is still the precondition, but only for
   how they are painted, and no longer for whether they are in. The bullet is kept as it was
   written.)*
@@ -159,7 +159,7 @@ Sheet has to rewrite the References to it in the other.
   column to its left**, as Excel's default does. Entries are never copied.
   *(2026-10-01: Borders are the exception. Excel gives an inserted row the Fill of the row above and
   not its Borders, as the eleventh Windows run observed
-  ([ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).)*
+  ([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).)*
 - **`ExSheet.Engine` is not published by the release workflow** while ExSheet is outside the
   release (Definition of Done §2). The package smoke check still packs it, on its own feed.
 

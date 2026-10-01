@@ -2,7 +2,7 @@
 
 Status: ready-for-agent
 
-**What to build:** the Sheet's Borders, drawn through ADR-0050 item 15, as [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) says.
+**What to build:** the Sheet's Borders, drawn through ADR-0050 item 15, as [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) says.
 
 **Blocked by:** None (47 and 57 are in). The eleventh Windows run's group 3 is in `verification/2026-10-01-windows-excel-11/cell-format.md`;
 ticket 57 makes the engine keep the line between two cells as Excel does, and ExSheet answers the
@@ -26,7 +26,7 @@ core's question of which line to draw by its rule (the upper or left cell's, whe
       gridline's pixel white; the dash and dot patterns as tabled (dashes 8 px at 100%, 9 at 150%).
 - [ ] Inside the Selection, borders stay drawn over its shade; the Selection's outline covers the
       outer ones (case 11).
-- [ ] Rows keep their one height where Excel would raise them for a medium or a thick line (ADR-0063).
+- [ ] Rows keep their one height where Excel would raise them for a medium or a thick line (ADR-0071).
 - [ ] A line on column A's left edge lies under the Row Headings' edge, as Excel draws it (run 12,
       case 14).
 - [ ] Layer 3 beside Excel's screenshots, which is Part C of the run (SH-46).

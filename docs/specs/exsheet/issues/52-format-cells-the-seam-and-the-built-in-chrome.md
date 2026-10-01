@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Format Cells, a Chrome seam whose frame the Chrome chooses", and
+**What to build:** [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Format Cells, a Chrome seam whose frame the Chrome chooses", and
 [ADR-0050](../../../adr/0050-what-exsheet-asks-of-exgrids-core.md) item 16.
 
 **Blocked by:** None (can start immediately). Ticket 50 is done; the eleventh Windows run's group 5
@@ -38,7 +38,7 @@ is in `verification/2026-10-01-windows-excel-11/cell-format.md` (cases 22–26).
       `OpenFormatCellsAsync()`. Each is refused while an edit is open.
 - [x] Layer 2; Layer 3 on both hosts.
 
-What the eleventh run found, for this ticket (ADR-0063, "What the eleventh Windows run settled"):
+What the eleventh run found, for this ticket (ADR-0071, "What the eleventh Windows run settled"):
 
 - [x] Tabs in Excel's order; the first open is Number, and a later Ctrl+1 reopens on the last tab
       shown, per Sheet instance (case 22).

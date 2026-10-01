@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures.mjs';
 import { painted, runsOf, sameColour } from './pixels.mjs';
 
-// A per-cell appearance as the browser painted it (ADR-0050 item 15; ADR-0063; DC-58 and DC-59),
+// A per-cell appearance as the browser painted it (ADR-0050 item 15; ADR-0071; DC-58 and DC-59),
 // on /appearance, read in device pixels from a screenshot at the device's own scale. Three grids:
 // Roboto with ExGrid.MudBlazor's regular and bold widths (#appearance-bold), italic text against
 // both edges (#appearance-italic), and Excel's thirteen line styles (#appearance-borders) — in
@@ -153,7 +153,7 @@ test.describe('DC-59: lines', () => {
         }
     }
 
-    test('DC-59: a line lies above the Fill, and a thick one reaches one pixel into the filled cell below (ADR-0063, case 10)', async ({ page }) => {
+    test('DC-59: a line lies above the Fill, and a thick one reaches one pixel into the filled cell below (ADR-0071, case 10)', async ({ page }) => {
         await open(page);
         const cell = cellOf(page, 'appearance-borders', 3, 2);
         await cell.scrollIntoViewIfNeeded();
@@ -165,7 +165,7 @@ test.describe('DC-59: lines', () => {
         expect(sameColour(pixel(1), YELLOW), 'the Fill after it').toBe(true);
     });
 
-    test('DC-59: the Focus and the Selection are drawn above a line (ADR-0063, case 11)', async ({ page }) => {
+    test('DC-59: the Focus and the Selection are drawn above a line (ADR-0071, case 11)', async ({ page }) => {
         await open(page);
         const grid = page.locator('#appearance-borders .ex-grid');
         const lined = cellOf(page, 'appearance-borders', 3, 2);
@@ -246,7 +246,7 @@ test('DC-58: a bold number that fits at the regular widths and not at the bold o
     expect(hashes.last).toBeLessThan(hashes.columns - 1);
 });
 
-test('DC-58: italic text is not cut at either edge of its cell (ADR-0063, "Bold, and what fits")', async ({ page }) => {
+test('DC-58: italic text is not cut at either edge of its cell (ADR-0071, "Bold, and what fits")', async ({ page }) => {
     await open(page);
     for (const [row, column] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
         const cell = cellOf(page, 'appearance-italic', row, column);

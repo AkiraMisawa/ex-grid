@@ -118,7 +118,7 @@ public class NumberFormatTests
         Assert.Throws<FormatException>(() => NumberFormat.Parse(code));
     }
 
-    [Theory] // ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact (what it paints: NumberFormatColourTests, ADR-0063)
+    [Theory] // ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact (what it paints: NumberFormatColourTests, ADR-0071)
     [InlineData("[Red]0", 5, "5")]
     [InlineData("[red]0", 5, "5")]
     [InlineData("0.00_);[Red](0.00)", -1.5, "(1.50)")]

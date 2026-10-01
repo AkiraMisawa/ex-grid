@@ -10,7 +10,7 @@ using Xunit;
 namespace ExSheet.Components.Tests;
 
 /// <summary>
-/// Excel's formatting keys on ExSheet (ticket 51; ADR-0063, "Keys"; ADR-0050 item 14), as the
+/// Excel's formatting keys on ExSheet (ticket 51; ADR-0071, "Keys"; ADR-0050 item 14), as the
 /// eleventh Windows run found them in Excel (<c>verification/2026-10-01-windows-excel-11</c>,
 /// cases 16 to 21): each applies what Excel applies under the Sheet's culture as one undo step
 /// (SH-42), and while an edit is open each changes nothing, says why and is raised (SH-43). The
@@ -85,7 +85,7 @@ public class FormatKeyTests : SheetTestContext
 
     // ---- What ExSheet declares ----
 
-    [Fact] // ADR-0063 / ADR-0050 item 14, SH-42: exactly Excel's keys, by the character typed, with the Shift a layout needs; a key Excel does not have is not claimed
+    [Fact] // ADR-0071 / ADR-0050 item 14, SH-42: exactly Excel's keys, by the character typed, with the Shift a layout needs; a key Excel does not have is not claimed
     public void Exactly_excels_formatting_keys_are_declared()
     {
         string[] expected =
@@ -120,7 +120,7 @@ public class FormatKeyTests : SheetTestContext
 
     // ---- The toggles (cases 16 and 17) ----
 
-    [Theory] // ADR-0063, SH-42 (case 16): B and 2 bold, I and 3 italic, U and 4 single underline, 5 strikethrough; each toggles, one undo step a press
+    [Theory] // ADR-0071, SH-42 (case 16): B and 2 bold, I and 3 italic, U and 4 single underline, 5 strikethrough; each toggles, one undo step a press
     [InlineData("b", "bold")]
     [InlineData("B", "bold")] // CapsLock
     [InlineData("2", "bold")]
@@ -150,7 +150,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063, SH-42 (case 17): the direction follows the Focus cell — a bold Focus takes bold off every cell, a plain one puts it on every cell
+    [Fact] // ADR-0071, SH-42 (case 17): the direction follows the Focus cell — a bold Focus takes bold off every cell, a plain one puts it on every cell
     public async Task A_toggles_direction_follows_the_focus_cell()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-US", ("A1", "abc"), ("A2", "def"))));
@@ -174,7 +174,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.True(FormatAt(cut, "A2").Font.Bold);
     }
 
-    [Fact] // ADR-0063: a toggle sets only its own emphasis; the other parts stay as each cell has them
+    [Fact] // ADR-0071: a toggle sets only its own emphasis; the other parts stay as each cell has them
     public async Task A_toggle_keeps_every_other_part()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-US", ("A1", "1234.5"), ("A2", "x"))));
@@ -202,7 +202,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0050 item 14 / ADR-0063, SH-42 (case 17): a key acts on the Selection the grid held at the key, though ExSheet has not heard it yet — on a circuit SelectionChanged lands after the next key
+    [Fact] // ADR-0050 item 14 / ADR-0071, SH-42 (case 17): a key acts on the Selection the grid held at the key, though ExSheet has not heard it yet — on a circuit SelectionChanged lands after the next key
     public async Task A_key_formats_the_selection_it_carries_before_exsheet_hears_it()
     {
         var selections = new List<GridSelection>();
@@ -226,7 +226,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.Equal(told, selections.Count);
     }
 
-    [Fact] // ADR-0050 item 14 / ADR-0063, SH-45: Ctrl+1 opens Format Cells over the Selection it carries, and the late notification naming that Selection leaves it open
+    [Fact] // ADR-0050 item 14 / ADR-0071, SH-45: Ctrl+1 opens Format Cells over the Selection it carries, and the late notification naming that Selection leaves it open
     public async Task Ctrl_1_opens_format_cells_over_the_selection_it_carries()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-US", ("A1", "abc"), ("A2", "def"))));
@@ -246,7 +246,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.True(FormatAt(cut, "A2").Font.Bold);
     }
 
-    [Fact] // ADR-0063 / SH-45: a notification naming another Selection still ends Format Cells, as a Selection moved under it does
+    [Fact] // ADR-0071 / SH-45: a notification naming another Selection still ends Format Cells, as a Selection moved under it does
     public async Task A_notification_naming_another_selection_still_ends_format_cells()
     {
         var cut = RenderSheet();
@@ -261,7 +261,7 @@ public class FormatKeyTests : SheetTestContext
 
     // ---- The Number Formats (cases 18 to 20) ----
 
-    [Theory] // ADR-0063, SH-42 (cases 18 to 20): the Number Format each Ctrl+Shift key applies under each culture the run observed, as one undo step
+    [Theory] // ADR-0071, SH-42 (cases 18 to 20): the Number Format each Ctrl+Shift key applies under each culture the run observed, as one undo step
     [InlineData("en-GB", "~", true, "General")]
     [InlineData("en-GB", "!", true, "#,##0.00")]
     [InlineData("en-GB", "@", true, "h:mm")]
@@ -300,7 +300,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.Equal(steps, cut.Instance.CanUndo);
     }
 
-    [Theory] // ADR-0063, SH-42 (case 20): Ctrl+Shift+$ shows the Sheet culture's own currency, recorded as Excel's built-in
+    [Theory] // ADR-0071, SH-42 (case 20): Ctrl+Shift+$ shows the Sheet culture's own currency, recorded as Excel's built-in
     [InlineData("en-GB", "£5.00")]
     [InlineData("ja-JP", "¥5")]
     [InlineData("en-US", "$5.00 ")]
@@ -317,7 +317,7 @@ public class FormatKeyTests : SheetTestContext
 
     // ---- Borders (cases 13 and 15) ----
 
-    [Fact] // ADR-0063, SH-42 (case 13): Ctrl+Shift+& outlines the range, thin and Automatic; inside it nothing is set
+    [Fact] // ADR-0071, SH-42 (case 13): Ctrl+Shift+& outlines the range, thin and Automatic; inside it nothing is set
     public async Task The_outline_key_outlines_the_range()
     {
         var cut = RenderSheet();
@@ -336,7 +336,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063, SH-42 (case 13): Ctrl+Shift+_ clears every edge of the Selection, outer and inner, as one step
+    [Fact] // ADR-0071, SH-42 (case 13): Ctrl+Shift+_ clears every edge of the Selection, outer and inner, as one step
     public async Task The_no_borders_key_clears_every_edge_of_the_selection()
     {
         var cut = RenderSheet();
@@ -356,7 +356,7 @@ public class FormatKeyTests : SheetTestContext
 
     // ---- While an edit is open (case 21) ----
 
-    [Theory] // ADR-0063 / ADR-0048, SH-43: while an edit is open a formatting key changes nothing, says why, is raised, and leaves the edit as it was
+    [Theory] // ADR-0071 / ADR-0048, SH-43: while an edit is open a formatting key changes nothing, says why, is raised, and leaves the edit as it was
     [InlineData("b", false)]
     [InlineData("u", false)]
     [InlineData("5", false)]
@@ -391,7 +391,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.Equal(CellFormat.Default, FormatAt(cut, "A1"));
     }
 
-    [Fact] // ADR-0063 / ADR-0051, SH-43: from the Formula Bar too, a formatting key changes nothing and says why
+    [Fact] // ADR-0071 / ADR-0051, SH-43: from the Formula Bar too, a formatting key changes nothing and says why
     public async Task In_the_formula_bar_a_formatting_key_changes_nothing()
     {
         var refusals = new List<SheetRefusal>();
@@ -411,7 +411,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.False(FormatAt(cut, "A1").Font.Italic);
     }
 
-    [Fact] // ADR-0063 / ADR-0050 section 6, SH-43: a key the grid forwards while ExSheet still hears an edit open is refused the same way, never thrown into the key handler
+    [Fact] // ADR-0071 / ADR-0050 section 6, SH-43: a key the grid forwards while ExSheet still hears an edit open is refused the same way, never thrown into the key handler
     public async Task A_key_while_exsheet_still_hears_an_edit_open_is_refused()
     {
         var refusals = new List<SheetRefusal>();
@@ -431,7 +431,7 @@ public class FormatKeyTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063, SH-43: once the edit has ended the keys format again, and the notice goes with the user's next action
+    [Fact] // ADR-0071, SH-43: once the edit has ended the keys format again, and the notice goes with the user's next action
     public async Task Once_the_edit_ends_the_keys_format_again()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-US", ("A1", "abc"))));

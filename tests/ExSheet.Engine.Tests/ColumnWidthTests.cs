@@ -392,7 +392,7 @@ public class ColumnWidthTests
             sheet.ToDocument().ToJson());
     }
 
-    [Fact] // ADR-0063 case 17: the cells a Number Format may widen a column for are the range's Entries, a whole column's included, and a formatted blank is not one
+    [Fact] // ADR-0071 case 17: the cells a Number Format may widen a column for are the range's Entries, a whole column's included, and a formatted blank is not one
     public void The_entries_in_a_range_are_its_cells_that_hold_one()
     {
         var sheet = NewSheet();

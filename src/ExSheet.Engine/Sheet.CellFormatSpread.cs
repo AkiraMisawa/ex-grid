@@ -3,7 +3,7 @@ namespace ExSheet.Engine;
 public sealed partial class Sheet
 {
     /// <summary>
-    /// The Cell Formats the cells of <paramref name="range"/> show, each once (ADR-0063): what
+    /// The Cell Formats the cells of <paramref name="range"/> show, each once (ADR-0071): what
     /// Format Cells reads to show a part that differs across the Selection as Excel shows it. A
     /// range whose cells all show one Cell Format answers that one alone. Its Borders are each
     /// cell's own four sides, not the edges as shown (<see cref="GetBorders"/>), because Excel's

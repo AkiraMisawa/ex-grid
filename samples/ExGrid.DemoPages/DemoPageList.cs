@@ -35,7 +35,7 @@ public static class DemoPageList
         new("stripes", "Row Stripes", "Cells and rows",
             "Stripes decided from each row's position in the whole result, so they stay with the row as it scrolls (ADR-0038)."),
         new("appearance", "Cell appearance", "Cells and rows",
-            "A per-cell Font, Fill and Borders as Excel paints them; bold judged by bold widths, italic never cut (ADR-0050, ADR-0063)."),
+            "A per-cell Font, Fill and Borders as Excel paints them; bold judged by bold widths, italic never cut (ADR-0050, ADR-0071)."),
         new("features", "Features", "Interaction",
             "Editing, the clipboard, sorting, filtering and Header Groups on one page, with every notification written out."),
         new("sizing", "Sizing", "Layout",

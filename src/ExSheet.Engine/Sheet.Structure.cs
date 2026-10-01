@@ -9,7 +9,7 @@ public sealed partial class Sheet
     /// moves down, and every Reference is rewritten to keep naming the same cells (ADR-0046/0047).
     /// The new rows hold no Entries; each of their cells takes the Number Format, Alignment, Font
     /// and Fill of the cell above it, and each row those recorded on the row above, as Excel's
-    /// default does (ADR-0046, ADR-0047, ADR-0063). They take none of its Borders, and every cell
+    /// default does (ADR-0046, ADR-0047, ADR-0071). They take none of its Borders, and every cell
     /// moves with its own four sides, so the first new row's top shows the line the row above
     /// records on its bottom, and a line on the top of the row that moved down moves with it (the
     /// twelfth Windows run, cases 10 to 12). Rows inserted at the top take nothing. A Cell Format
@@ -34,7 +34,7 @@ public sealed partial class Sheet
     /// <summary>
     /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the Number Format,
     /// Alignment, Font and Fill of the cell to its left, and each column those and the width recorded
-    /// on the column to its left, automatic or custom as it is (ADR-0046, ADR-0047, ADR-0063). They
+    /// on the column to its left, automatic or custom as it is (ADR-0046, ADR-0047, ADR-0071). They
     /// take none of its Borders, and every cell moves with its own four sides, so the first new
     /// column's left shows the line the column to its left records on its right (the twelfth Windows
     /// run, case 13). Columns inserted at <c>A</c> take nothing. A width set on a column moves with
@@ -80,7 +80,7 @@ public sealed partial class Sheet
 
     /// <summary>
     /// Gives each cell of the inserted rows (columns) the Cell Format of the cell above (to the left
-    /// of) the insertion, every part of it but its Borders — never its Entry (ADR-0046, ADR-0063;
+    /// of) the insertion, every part of it but its Borders — never its Entry (ADR-0046, ADR-0071;
     /// the twelfth Windows run, cases 11 to 13).
     /// </summary>
     private void FormatInserted(StructuralEdit edit, List<Cell> moved)

@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
+**What to build:** [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
 "What the twelfth Windows run settled", and its model of how Excel keeps the line between two cells.
 Ticket 55 wrote both cells' sides whenever an edge was set. The twelfth run showed Excel works
 differently, and that model explains every edge answer of the eleventh and twelfth runs. The record
@@ -38,7 +38,7 @@ is `verification/2026-10-01-windows-excel-12/cell-format-12.md`.
     two records of an edge agree.
   - No new version.
 - [x] **Tests.**
-  - Layer 1, each test named with ADR-0063 and the run's case (11-7, 11-13, 12-1 … 12-16).
+  - Layer 1, each test named with ADR-0071 and the run's case (11-7, 11-13, 12-1 … 12-16).
   - Ticket 55's tests that pinned the mirroring change to say what Excel does.
 
 ## Comments
@@ -103,7 +103,7 @@ found Excel to. Ticket 55's mirroring is gone.
 **Left to ticket 49, as the brief said:** ExSheet answering the core's "which line to draw" from
 `Sheet.GetBorders` (ADR-0050, item 15). No painting is built here.
 
-**Tests.** Layer 1 names ADR-0063 and the case: 11-7, 11-12, 11-13, 11-15, 11-24, and 12-1 to
+**Tests.** Layer 1 names ADR-0071 and the case: 11-7, 11-12, 11-13, 11-15, 11-24, and 12-1 to
 12-16. Ticket 55's tests that pinned the mirroring now state what Excel does. Layer 2 adds case 24
 to `FormatCellsDraftTests`.
 - ExSheet.Engine.Tests: 2122 passed.

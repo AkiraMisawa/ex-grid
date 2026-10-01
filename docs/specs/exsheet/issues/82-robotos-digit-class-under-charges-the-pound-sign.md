@@ -1,4 +1,4 @@
-# 77: `ExGrid.MudBlazor` charges `£` below its width
+# 82: `ExGrid.MudBlazor` charges `£` below its width
 
 Status: ready-for-agent
 

@@ -2,7 +2,7 @@
 
 Status: ready-for-agent
 
-**What to build:** the sample of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "A toolbar is a sample, not a product". It is built only on
+**What to build:** the sample of [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "A toolbar is a sample, not a product". It is built only on
 public commands.
 
 **Blocked by:** 48 and 50 (52 for its Format Cells button)

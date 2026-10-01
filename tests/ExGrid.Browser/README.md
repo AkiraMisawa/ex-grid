@@ -371,7 +371,7 @@ nobody had asked for. What that means when writing a test:
   at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
   Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
   scrolled and the edit kept, which on macOS the listener answers (ticket 32).
-- `format-keys.spec.mjs` — Excel's formatting keys on `/sheet` (ADR-0063, ADR-0050 item 14;
+- `format-keys.spec.mjs` — Excel's formatting keys on `/sheet` (ADR-0071, ADR-0050 item 14;
   ticket 51), with real keys: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each toggling the
   Focus cell, taken from the browser, one Ctrl+Z a press, and following the Focus cell over a range;
   Ctrl+Shift with `~ ! @ # $ % ^` applying Excel's Number Formats under en-US, `#` also without
@@ -381,7 +381,7 @@ nobody had asked for. What that means when writing a test:
   page's line under the Sheet reads the Focus cell's Cell Format back. The page's
   *Format selection as #,##0.00* pressed straight after Shift+ArrowDown on a 150 ms circuit, before
   the Sheet has heard the move, formats the extended range as one step (ticket 56).
-- `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0063, SH-45, DC-60;
+- `format-cells.spec.mjs` — Format Cells under the built-in Chrome (ADR-0071, SH-45, DC-60;
   tickets 52 and 56) on `/sheet` and `/sheets`: a popover inside the Sheet's box, opened from the
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
   one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
@@ -391,7 +391,7 @@ nobody had asked for. What that means when writing a test:
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid
   holds and stand when the move's notification lands (ticket 56).
-- `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0063, SH-45;
+- `format-cells-mud.spec.mjs` — Format Cells under `ExSheet.MudBlazor`'s Chrome (ADR-0071, SH-45;
   ticket 53) on `/sheet?chrome=mud` and `/sheets?chrome=mud`: a MudDialog at page level, nothing
   of it inside the grid, opened from the Context Menu, the page's button and Ctrl+1 with the
   keyboard on its tab; the arrows, Home and End switching the tabs; OK as one undo step, and

@@ -70,6 +70,6 @@ and `msedge` projects are CI's to run. All four criteria are met.
 
 2026-09-30, a note for readers of the first comment: "the engine inserts blank rows" is no longer
 so. ADR-0046 settled that an inserted row takes the formatting of the row above, and a column that
-of the column to its left, and the engine copies it (`FormatInserted`, `ShiftAxisStyles`). ADR-0063
+of the column to its left, and the engine copies it (`FormatInserted`, `ShiftAxisStyles`). ADR-0071
 extends the same rule to Font, Fill and Border.
 

@@ -14,7 +14,7 @@ using Color = global::MudBlazor.Color;
 namespace ExSheet.MudBlazor.Tests;
 
 /// <summary>
-/// SH-47 and the Chrome's shape (ADR-0019's note of 2026-09-30, ADR-0021, ADR-0063): the package
+/// SH-47 and the Chrome's shape (ADR-0019's note of 2026-09-30, ADR-0021, ADR-0071): the package
 /// references ExSheet, ExGrid.MudBlazor and MudBlazor, and the direction stays one-way — no
 /// ExSheet package in ExGrid.MudBlazor, no MudBlazor in ExSheet or the core; it adds no script; and
 /// its Chrome is ExGrid.MudBlazor's in every seam of the grid, so the Sheet's grid looks and behaves
@@ -137,7 +137,7 @@ public class MudSheetPackageTests : MudSheetTestContext
         }
     }
 
-    [Fact] // ADR-0063 / ADR-0010 / ADR-0030: every seam of the grid's is MudSheetChrome's own, forwarded to its Grid — none falls through to the core's default
+    [Fact] // ADR-0071 / ADR-0010 / ADR-0030: every seam of the grid's is MudSheetChrome's own, forwarded to its Grid — none falls through to the core's default
     public void Every_seam_of_the_grids_is_forwarded()
     {
         var map = typeof(MudSheetChrome).GetInterfaceMap(typeof(IGridChrome));
@@ -149,7 +149,7 @@ public class MudSheetPackageTests : MudSheetTestContext
         Assert.Empty(fallingThrough);
     }
 
-    [Fact] // ADR-0063 / ADR-0030 / WR-3: a seam of the grid's draws what the Grid Chrome draws, in its words
+    [Fact] // ADR-0071 / ADR-0030 / WR-3: a seam of the grid's draws what the Grid Chrome draws, in its words
     public void A_seam_of_the_grids_is_the_grid_chromes()
     {
         var chrome = new MudSheetChrome { Grid = new MudGridChrome { Label = id => id == FindPanelLabelIds.Next ? "Weiter" : null } };
@@ -169,7 +169,7 @@ public class MudSheetPackageTests : MudSheetTestContext
     private static ColumnMenuContext MenuOf(params string[] ids) =>
         new("A", ColumnType.Text, [.. ids.Select(id => new GridCommand(id, true, () => Task.CompletedTask))], () => { });
 
-    [Fact] // ADR-0036 / ADR-0063: the menus word ExSheet's commands — "Format Cells…", not its id — and the grid's own as the Wrapper does
+    [Fact] // ADR-0036 / ADR-0071: the menus word ExSheet's commands — "Format Cells…", not its id — and the grid's own as the Wrapper does
     public void The_menus_word_exsheets_commands()
     {
         var items = MenuItems(MudSheetChrome.Default.ColumnMenu(MenuOf(SheetCommandIds.FormatCells, SheetCommandIds.InsertRows, GridCommandIds.Copy))!, this);
@@ -187,7 +187,7 @@ public class MudSheetPackageTests : MudSheetTestContext
         Assert.Equal(["Zellen formatieren…", "Delete rows"], items);
     }
 
-    [Fact] // ADR-0030 / ADR-0063: the Grid Chrome handed over is carried whole into the seams — every property MudGridChrome has
+    [Fact] // ADR-0030 / ADR-0071: the Grid Chrome handed over is carried whole into the seams — every property MudGridChrome has
     public void The_grid_chrome_is_carried_whole()
     {
         // A property MudGridChrome gains is one Worded must carry: this list fails until it does.
@@ -205,7 +205,7 @@ public class MudSheetPackageTests : MudSheetTestContext
         Assert.Same(grid, new MudSheetChrome { Grid = grid }.Grid);
     }
 
-    [Fact] // ADR-0063 / ADR-0030: under MudSheetChrome the Sheet's grid wears ExGrid.MudBlazor's controls — the Name Box is the Wrapper's
+    [Fact] // ADR-0071 / ADR-0030: under MudSheetChrome the Sheet's grid wears ExGrid.MudBlazor's controls — the Name Box is the Wrapper's
     public void The_sheets_grid_wears_the_wrappers_controls()
     {
         var page = RenderPage();

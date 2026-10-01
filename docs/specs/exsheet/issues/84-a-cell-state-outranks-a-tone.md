@@ -1,8 +1,8 @@
-# 79: A Cell State's colour outranks a tone's
+# 84: A Cell State's colour outranks a tone's
 
 Status: ready-for-agent
 
-**What to build:** a fix found by ticket 76. `ex-grid.css` declares the tone rules (`.ex-cell.ex-tone-positive`,
+**What to build:** a fix found by ticket 81. `ex-grid.css` declares the tone rules (`.ex-cell.ex-tone-positive`,
 `.ex-cell.ex-tone-negative`) **after** the Cell State block, at the same specificity. Their own comment says they are
 declared before it, "so a state the Consumer named outranks a tone its rule derived".
 - So a theme that sets `--ex-tone-negative-color` paints a Stale or Error cell in the tone's colour, not the

@@ -22,7 +22,7 @@ internal static class SheetWords
     internal static string EditIsOpen =>
         "Nothing was changed: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
 
-    // ADR-0063: in this state Excel formats the selected characters, and a Cell Format is per cell.
+    // ADR-0071: in this state Excel formats the selected characters, and a Cell Format is per cell.
     internal static string FormatKeyWhileEditing =>
         "Nothing was formatted: a cell is being edited, and a format applies to whole cells, not to part of the text. Press Enter to commit the edit or Escape to cancel it, then try again.";
 

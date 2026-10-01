@@ -1,7 +1,7 @@
 namespace ExSheet.Engine;
 
 /// <summary>
-/// What a formatting command sets on the Cell Format of ranges (ADR-0063): every part that is not
+/// What a formatting command sets on the Cell Format of ranges (ADR-0071): every part that is not
 /// <see langword="null"/>, each Font emphasis on its own, and every other part left as each cell
 /// has it. Its <see cref="Borders"/> are relative to each range it is set on, so several ranges
 /// each get their own outline, as in Excel.
@@ -71,7 +71,7 @@ public sealed record CellFormatChange
 }
 
 /// <summary>
-/// The Borders a change sets, relative to each range it is set on (ADR-0063), as Excel's Format
+/// The Borders a change sets, relative to each range it is set on (ADR-0071), as Excel's Format
 /// Cells sets them: each edge that is not <see langword="null"/> is set — to a line, or to
 /// <see cref="BorderLine.None"/> to take the line away — and every other edge is left as each cell
 /// has it. <see cref="Outline"/>, <see cref="Inside"/> and <see cref="None"/> are Excel's presets.

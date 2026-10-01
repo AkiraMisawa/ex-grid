@@ -4,7 +4,7 @@ using System.Text;
 namespace Bench.Client;
 
 /// <summary>
-/// The per-cell appearance modes (ticket 44, ADR-0063 "How it is painted: measured first"). Every one
+/// The per-cell appearance modes (ticket 44, ADR-0071 "How it is painted: measured first"). Every one
 /// is built on RowComponent: the row is the memoisation boundary and cells are plain markup.
 /// </summary>
 public enum CellFormatMode

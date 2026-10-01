@@ -98,7 +98,7 @@ number.
 
 ## A dialog that is not a popover *(2026-09-30)*
 
-[ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) has ExSheet's Format Cells shown in a `MudDialog` under the MudBlazor Chrome. This ADR
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) has ExSheet's Format Cells shown in a `MudDialog` under the MudBlazor Chrome. This ADR
 governs the popovers whose frame the core owns.
 - **The `MudDialog` is outside it.** Its frame is the Chrome's
   ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s note of 2026-09-30). MudBlazor's

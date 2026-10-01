@@ -31,7 +31,7 @@ public static class DemoChrome
     /// <summary>The Chrome <paramref name="name"/> asks for on a page of Sheets: null for the core's
     /// own, which is ExSheet's built-in Format Cells too, and <see cref="MudSheetChrome.Default"/> for
     /// <c>mud</c> — ExGrid.MudBlazor's Chrome in the grid's seams and Format Cells as a MudDialog
-    /// (ADR-0063).</summary>
+    /// (ADR-0071).</summary>
     /// <exception cref="ArgumentException">The name is neither.</exception>
     public static IGridChrome? ForSheet(string? name) => From(name) is null ? null : MudSheetChrome.Default;
 }

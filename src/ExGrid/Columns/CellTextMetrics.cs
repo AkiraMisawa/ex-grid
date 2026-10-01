@@ -16,7 +16,7 @@ namespace ExGrid.Columns;
 /// operating system, so one machine's measurement is not enough — DejaVu Sans on Linux
 /// paints a bold digit at 9.742px and <c>−</c>, <c>+</c> and <c>#</c> at 11.731px.</para>
 ///
-/// <para><b>Bold widths</b> (ADR-0050, item 15; ADR-0063) are the same three classes measured at
+/// <para><b>Bold widths</b> (ADR-0050, item 15; ADR-0071) are the same three classes measured at
 /// the bold weight a Consumer's per-cell Font paints, and a bold cell is judged by them: its
 /// <c>####</c> decision, and the width its painted text is fitted to. The full-width class is an em
 /// in every weight. Metrics built without them derive them from the regular widths (see

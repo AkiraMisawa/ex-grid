@@ -15,7 +15,7 @@ ex-grid/                      ← one repository
 │   ├── ExGrid.Fluxor/        → NuGet: ExGrid.Fluxor     (push interface ↔ store)
 │   ├── ExSheet/              → NuGet: ExSheet           (the component; ADR-0046)
 │   ├── ExSheet.Engine/       → NuGet: ExSheet.Engine    (the formula engine, no UI; ADR-0047)
-│   └── ExSheet.MudBlazor/    → NuGet: ExSheet.MudBlazor (ExSheet's Chrome on MudBlazor; ADR-0063)
+│   └── ExSheet.MudBlazor/    → NuGet: ExSheet.MudBlazor (ExSheet's Chrome on MudBlazor; ADR-0071)
 ├── tests/
 │   ├── ExGrid.Tests/         ← pure logic (xUnit)
 │   ├── ExGrid.Components/    ← component (bUnit)
@@ -119,7 +119,7 @@ may be too aggressive for a sheet.
 
 ## `ExSheet.MudBlazor` *(2026-09-30, decided with the user)*
 
-[ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) gives ExSheet a
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) gives ExSheet a
 Format Cells dialog with a MudBlazor Chrome. It lives in its own package, `ExSheet.MudBlazor`.
 - **What it references**: `ExSheet`, `ExGrid.MudBlazor` and MudBlazor.
 - **Why it is not in `ExGrid.MudBlazor`**: Cell Format is ExSheet's concept. Putting its Chrome in

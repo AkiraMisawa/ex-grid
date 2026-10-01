@@ -8,7 +8,7 @@ namespace ExSheet.Engine;
 /// The serialisable form of a Sheet (CONTEXT.md, ADR-0048). It records the Sheet's culture, its
 /// name (ADR-0046), the Linked Tables declared on it — each one's name, column names and key, never
 /// its rows (ADR-0049) — its Entries — constants already parsed, Formulas in invariant syntax — the
-/// Cell Formats recorded on its columns, rows and cells (ADR-0047, ADR-0063) and the widths set on
+/// Cell Formats recorded on its columns, rows and cells (ADR-0047, ADR-0071) and the widths set on
 /// its columns (ADR-0046), and never a Value: opening one
 /// computes every Value again. The Consumer persists it; ExSheet never does.
 /// </summary>
@@ -25,7 +25,7 @@ namespace ExSheet.Engine;
 /// by entry, which is what version 5 meant by them (ADR-0046, 2026-09-28); versions 2 to 6 recorded
 /// no Linked Table's key, and every table of a Sheet opened from one is declared without one
 /// (ADR-0049, 2026-09-30); versions 1 to 7 recorded no Font, Fill or Borders, and a Sheet opened
-/// from one has none (ADR-0063, ADR-0048).
+/// from one has none (ADR-0071, ADR-0048).
 /// </remarks>
 public sealed class SheetDocument
 {
@@ -64,13 +64,13 @@ public sealed class SheetDocument
 
     /// <summary>
     /// The Cell Formats recorded on whole columns, in column order, adjacent columns recorded alike
-    /// as one run (ADR-0047, ADR-0063). Empty for a document read from version 1 or 2.
+    /// as one run (ADR-0047, ADR-0071). Empty for a document read from version 1 or 2.
     /// </summary>
     public IReadOnlyList<SheetDocumentAxisFormat> Columns { get; init; } = [];
 
     /// <summary>
     /// The Cell Formats recorded on whole rows, in row order, adjacent rows recorded alike as one
-    /// run (ADR-0047, ADR-0063). Empty for a document read from version 1 or 2.
+    /// run (ADR-0047, ADR-0071). Empty for a document read from version 1 or 2.
     /// </summary>
     public IReadOnlyList<SheetDocumentAxisFormat> Rows { get; init; } = [];
 
@@ -695,15 +695,15 @@ public sealed class SheetDocument
 /// <param name="Entry">What the user put into it; <see langword="null"/> for a cell that holds only a Cell Format.</param>
 /// <param name="NumberFormat">The Number Format the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
 /// <param name="Alignment">The horizontal alignment the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0047).</param>
-/// <param name="Font">The Font the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0063).</param>
-/// <param name="Fill">The Fill the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0063).</param>
-/// <param name="Borders">The four sides the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0063).</param>
+/// <param name="Font">The Font the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0071).</param>
+/// <param name="Fill">The Fill the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0071).</param>
+/// <param name="Borders">The four sides the cell records itself; <see langword="null"/> when it takes its row's or column's (ADR-0071).</param>
 public sealed record SheetDocumentCell(CellAddress Address, Entry? Entry, NumberFormat? NumberFormat, HorizontalAlignment? Alignment, CellFont? Font, CellFill? Fill, CellBorders? Borders);
 
 /// <summary>
 /// A Cell Format recorded on whole columns or whole rows, as a Sheet Document records it: one
 /// entry for a run of adjacent columns (rows) recorded alike, never one per cell (ADR-0047,
-/// ADR-0063).
+/// ADR-0071).
 /// </summary>
 /// <param name="First">The first column (row) of the run, from 0.</param>
 /// <param name="Last">The last column (row) of the run.</param>

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExSheet;
 
-/// <summary>Format Cells' tabs, in Excel's order: five of Excel's six, Protection left out (ADR-0063).</summary>
+/// <summary>Format Cells' tabs, in Excel's order: five of Excel's six, Protection left out (ADR-0071).</summary>
 public enum FormatCellsTab
 {
     /// <summary>The Number Format, by category.</summary>
@@ -23,7 +23,7 @@ public enum FormatCellsTab
     Fill,
 }
 
-/// <summary>The Number tab's categories, in Excel's order (ADR-0063; the eleventh Windows run, case 22).</summary>
+/// <summary>The Number tab's categories, in Excel's order (ADR-0071; the eleventh Windows run, case 22).</summary>
 public enum NumberFormatCategory
 {
     /// <summary>General.</summary>
@@ -79,7 +79,7 @@ public enum FontStyle
     BoldItalic,
 }
 
-/// <summary>An edge the Border tab sets, relative to each selected range, as Excel's dialog sets it (ADR-0063).</summary>
+/// <summary>An edge the Border tab sets, relative to each selected range, as Excel's dialog sets it (ADR-0071).</summary>
 public enum BorderEdge
 {
     /// <summary>The range's top edge.</summary>
@@ -127,7 +127,7 @@ public enum ColourTarget
     Border,
 }
 
-/// <summary>One colour of the palette, with the name Excel gives it (ADR-0063; the eleventh Windows run, case 23).</summary>
+/// <summary>One colour of the palette, with the name Excel gives it (ADR-0071; the eleventh Windows run, case 23).</summary>
 /// <param name="Name">Excel's name for it, such as <c>Dark Blue, Text 2, Lighter 90%</c>.</param>
 /// <param name="Colour">The RGB value Excel names it with in Format Cells' Fill tab.</param>
 public sealed record PaletteSwatch(string Name, CellColour Colour);
@@ -142,7 +142,7 @@ public sealed record NumberFormatCategoryOffer(NumberFormatCategory Category, st
 }
 
 /// <summary>
-/// The context of ExSheet's Format Cells seam (ADR-0063, ADR-0010's note of 2026-09-30). ExSheet
+/// The context of ExSheet's Format Cells seam (ADR-0071, ADR-0010's note of 2026-09-30). ExSheet
 /// decides what is offered and what OK means; the Chrome draws it, in a frame of its own choosing,
 /// and calls back.
 ///
@@ -178,7 +178,7 @@ public sealed record FormatCellsContext(
     Func<Task> ReturnKeyboard);
 
 /// <summary>
-/// ExSheet's Chrome seam (ADR-0063, ADR-0010's note of 2026-09-30): Format Cells, the one seam whose
+/// ExSheet's Chrome seam (ADR-0071, ADR-0010's note of 2026-09-30): Format Cells, the one seam whose
 /// frame is the Chrome's. A Chrome handed to <c>ExSheet.Chrome</c> that is also an
 /// <see cref="ISheetChrome"/> draws Format Cells as well as the grid's seams.
 /// </summary>
@@ -194,7 +194,7 @@ public interface ISheetChrome : IGridChrome
 }
 
 /// <summary>
-/// What Format Cells offers, in Excel's order (ADR-0063; the eleventh Windows run, cases 22 and 23):
+/// What Format Cells offers, in Excel's order (ADR-0071; the eleventh Windows run, cases 22 and 23):
 /// the same under every Chrome.
 /// </summary>
 public static class FormatCellsOffer
@@ -244,7 +244,7 @@ public static class FormatCellsOffer
     /// <summary>The Border tab's presets, in Excel's order.</summary>
     public static IReadOnlyList<BorderPreset> Presets { get; } = [BorderPreset.None, BorderPreset.Outline, BorderPreset.Inside];
 
-    /// <summary>The Border tab's edges, in Excel's order, without its diagonals (ADR-0063).</summary>
+    /// <summary>The Border tab's edges, in Excel's order, without its diagonals (ADR-0071).</summary>
     public static IReadOnlyList<BorderEdge> Edges { get; } =
         [BorderEdge.Top, BorderEdge.InsideHorizontal, BorderEdge.Bottom, BorderEdge.Left, BorderEdge.InsideVertical, BorderEdge.Right];
 

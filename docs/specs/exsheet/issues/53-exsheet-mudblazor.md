@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the package of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) and ADR-0019's note of 2026-09-30.
+**What to build:** the package of [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) and ADR-0019's note of 2026-09-30.
 
 **Blocked by:** None (52 is in)
 

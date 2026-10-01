@@ -3,7 +3,7 @@ namespace ExSheet.Engine;
 /// <summary>
 /// What one cell holds and shows, compared before and after an operation. The parts of its Cell
 /// Format are the cell's own; <see langword="null"/> takes the row's or the column's (ADR-0047,
-/// ADR-0063).
+/// ADR-0071).
 /// </summary>
 internal readonly record struct CellState(
     Entry? Entry,
@@ -42,7 +42,7 @@ public sealed partial class Sheet
     /// <summary>
     /// The cell as a copy or a fill carries it: its Entry, and every part of the Cell Format it
     /// records, from whichever level records it, as Excel's paste brings the source's formatting
-    /// (ADR-0047, ADR-0063). Its Borders are its own four sides, never a line it shows from the cell
+    /// (ADR-0047, ADR-0071). Its Borders are its own four sides, never a line it shows from the cell
     /// beside it, so a paste, Ctrl+D, Ctrl+R and the fill handle write the target's own sides and
     /// touch no neighbour (the twelfth Windows run, cases 1 to 5).
     /// </summary>

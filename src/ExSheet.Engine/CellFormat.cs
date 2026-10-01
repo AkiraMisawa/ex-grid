@@ -1,7 +1,7 @@
 namespace ExSheet.Engine;
 
 /// <summary>
-/// A cell's Cell Format as it shows (<c>CONTEXT.md</c>; ADR-0047, ADR-0063): each part from the
+/// A cell's Cell Format as it shows (<c>CONTEXT.md</c>; ADR-0047, ADR-0071): each part from the
 /// level that records it, cell over row over column, and the part's default where no level does.
 /// </summary>
 /// <param name="NumberFormat">The Number Format; <see cref="Engine.NumberFormat.General"/> where no level records one.</param>
@@ -16,7 +16,7 @@ public sealed record CellFormat(NumberFormat NumberFormat, HorizontalAlignment A
 }
 
 /// <summary>
-/// A cell's Font (<c>CONTEXT.md</c>; ADR-0063): the colour and emphasis of its text. Not its size
+/// A cell's Font (<c>CONTEXT.md</c>; ADR-0071): the colour and emphasis of its text. Not its size
 /// or typeface: every row has one height, and one digit width decides what fits. The default value
 /// is <see cref="Default"/>.
 /// </summary>
@@ -32,7 +32,7 @@ public readonly record struct CellFont(CellColour Colour = default, bool Bold = 
 }
 
 /// <summary>
-/// A cell's Fill (<c>CONTEXT.md</c>; ADR-0063): the one solid colour behind its text, or
+/// A cell's Fill (<c>CONTEXT.md</c>; ADR-0071): the one solid colour behind its text, or
 /// <see cref="None"/>, where the Paper shows. No patterns and no gradients. The default value is
 /// <see cref="None"/>.
 /// </summary>

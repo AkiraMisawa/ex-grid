@@ -6,7 +6,7 @@ namespace ExSheet.MudBlazor;
 
 /// <summary>
 /// Format Cells' tabs: MudBlazor's <see cref="MudTabs"/>, with ARIA's tabs pattern as the built-in
-/// Chrome follows it (ADR-0063). MudTabs moves the keyboard between the tabs with the arrow keys
+/// Chrome follows it (ADR-0071). MudTabs moves the keyboard between the tabs with the arrow keys
 /// and shows a tab only on Enter or Space; here the arrows, Home and End show the tab they reach,
 /// so the tabs switch with the arrow keys under either Chrome (SH-45). Excel's Ctrl+Tab and
 /// Ctrl+PageDown are the browser's, and a page never receives them.

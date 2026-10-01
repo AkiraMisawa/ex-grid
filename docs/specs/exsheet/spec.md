@@ -143,7 +143,7 @@ from the ExGrid next to it, and its formulas cannot see the application's data.
 76. As an ExGrid Consumer, I want to take Fill Intents into my Overlay, so that my editable grid gets a fill handle too.
 77. As an ExGrid Consumer, I want to hide the column header, so that a headerless list is possible.
 
-### Cell Format (ADR-0063, added 2026-09-30)
+### Cell Format (ADR-0071, added 2026-09-30)
 
 78. As a user, I want to make a cell's text bold, italic, underlined or struck through, and to colour it, so that headings and totals stand out.
 79. As a user, I want to fill a cell with a colour and draw borders around and between cells, so that a table reads as one.
@@ -188,7 +188,7 @@ from the ExGrid next to it, and its formulas cannot see the application's data.
   at most 15 significant digits.
 - **Culture**: typed constants are parsed under the Sheet's culture and recorded parsed.
 - **The Sheet Document**: a versioned, serialisable form holding the culture, the Entries (parsed
-  constants and invariant Formulas), and each cell's, row's and column's Cell Format (ADR-0063). It
+  constants and invariant Formulas), and each cell's, row's and column's Cell Format (ADR-0071). It
   is read with a refusal on an unknown version (ADR-0048).
 - **Linked Tables**: declared by name and column names; rows replaced by a whole snapshot; resolved
   by structured references (ADR-0049).
@@ -236,7 +236,7 @@ Definition of Done:
   by day; anything else refused.
 - **Commands**: insert and delete rows and columns through the Context Menu (ADR-0036), undo and
   redo, and Cell Format: `SetCellFormatAsync`, `CellFormatAt`, `OpenFormatCellsAsync`, Excel's
-  formatting keys, and Format Cells as a Chrome seam whose frame the Chrome chooses (ADR-0063).
+  formatting keys, and Format Cells as a Chrome seam whose frame the Chrome chooses (ADR-0071).
 - **Parameters** for the Sheet Document in and out, Linked Tables, the culture, and hiding each
   Heading and the Formula Bar.
 
@@ -277,7 +277,7 @@ As ADR-0046's table: several Sheets, frozen rows, hiding rows and columns, sort 
 find and replace, protecting cells, and `.xlsx`. Also:
 
 - ~~**Fonts, fills and borders**: they wait for a render-bench measurement and an ADR.~~ In
-  since 2026-09-30 (ADR-0063); the measurement now decides only how they are painted. Still out:
+  since 2026-09-30 (ADR-0071); the measurement now decides only how they are painted. Still out:
   font size, typeface, wrapped text, vertical alignment, rotation, diagonal borders, rich text,
   pattern fills, theme colours, conditional formatting, Paste Special and the Format Painter.
 - **Merged cells and per-row heights**: not supported (ADR-0046).

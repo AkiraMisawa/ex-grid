@@ -241,7 +241,7 @@ stylesheet, scoped under `.mud-ex-grid`. The Chrome is therefore used with `MudE
 
 ## Two additions from a Sheet's Cell Format *(2026-09-30, decided with the user)*
 
-[ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) adds two things
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) adds two things
 to the boundary above.
 - **The metrics-bearing obligation grows.** A Wrapper supplies `CellMetrics` with bold widths
   beside the regular ones, for its own font: each character class measured at the bold weight. A

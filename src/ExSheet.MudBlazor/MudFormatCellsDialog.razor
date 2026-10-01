@@ -1,7 +1,7 @@
 @using System.Globalization
 
 @*
-    Format Cells under the MudBlazor Chrome (ADR-0063): the contents of the MudDialog that
+    Format Cells under the MudBlazor Chrome (ADR-0071): the contents of the MudDialog that
     MudFormatCellsFrame shows. What it offers is FormatCellsOffer's and every choice is set through
     the context's draft, so what a choice means and what OK sets are ExSheet's, the same under
     either Chrome. MudBlazor's controls draw it: tabs that switch with the arrow keys
@@ -50,7 +50,7 @@
 
     [CascadingParameter] private IMudDialogInstance? Dialog { get; set; }
 
-    /// <summary>ExSheet's Format Cells, as it opened (ADR-0063).</summary>
+    /// <summary>ExSheet's Format Cells, as it opened (ADR-0071).</summary>
     [Parameter, EditorRequired] public FormatCellsContext Context { get; set; } = default!;
 
     /// <summary>Raised once, when the dialog first has the keyboard.</summary>
@@ -333,7 +333,7 @@
     };
 
     // A line style's sample: a stroke and its dashes. Only a picture of the style; how a Border is
-    // painted on the Sheet is the grid's (ADR-0063).
+    // painted on the Sheet is the grid's (ADR-0071).
     private static RenderFragment LineSample(BorderLineStyle style) => __builder =>
     {
         var (width, dashes) = StrokeOf(style);
@@ -412,7 +412,7 @@
 
     // Case 23's palette as one group of radio buttons: Automatic (the Font and the Border) or No
     // Colour (the Fill) first, then the theme's sixty and the ten standard colours, each named as
-    // Excel names it, and More Colours, which is MudBlazor's colour picker (ADR-0063).
+    // Excel names it, and More Colours, which is MudBlazor's colour picker (ADR-0071).
     private RenderFragment Palette(ColourTarget target, CellColour? chosen) => __builder =>
     {
         var name = _id + "-palette-" + target.ToString().ToLowerInvariant();
@@ -477,7 +477,7 @@
         : null;
 
     // A colour picked under More Colours: its red, green and blue, without alpha — a Cell Format's
-    // colours are opaque (ADR-0063).
+    // colours are opaque (ADR-0071).
     private void Picked(ColourTarget target, MudColor? colour)
     {
         if (colour is null) return;

@@ -16,7 +16,7 @@
    text's contract (no padding, no ground, filling the core's box) only through that stylesheet,
    and the Chrome used alone is not supported where References are coloured (ADR-0057, "The
    Wrapper's shape is required…"; ADR-0030). Its Chrome is ExSheet.MudBlazor's, which is the
-   Wrapper's in every seam of the grid and draws Format Cells as a MudDialog (ADR-0063). *@
+   Wrapper's in every seam of the grid and draws Format Cells as a MudDialog (ADR-0071). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
@@ -89,7 +89,7 @@
 </p>
 
 <p>
-    Excel's formatting keys work on the Selection, each as one step Ctrl+Z undoes (ADR-0063): Ctrl+B,
+    Excel's formatting keys work on the Selection, each as one step Ctrl+Z undoes (ADR-0071): Ctrl+B,
     Ctrl+I, Ctrl+U and Ctrl+5 (or Ctrl+2 to Ctrl+4) toggle bold, italic, underline and
     strikethrough from the Focus cell's state, and Ctrl+Shift with <code>~ ! @@ # $ % ^</code> applies
     General, <code>#,##0.00</code>, a time, a date, the currency, a percentage and scientific; with
@@ -187,8 +187,8 @@
     private bool _editing;
     private EventCallback<bool> _editingChanged;
     // The Focus cell's Cell Format, read back from the Sheet whenever the Selection or the Sheet
-    // changes (ADR-0063's CellFormatAt), and a formatting key the Sheet refused, said in the status
-    // line as the page says a refused command (ADR-0063, SH-43).
+    // changes (ADR-0071's CellFormatAt), and a formatting key the Sheet refused, said in the status
+    // line as the page says a refused command (ADR-0071, SH-43).
     private EventCallback<GridSelection> _selectionChanged;
     private EventCallback<SheetRefusal> _formatKeyRefused;
     private GridSelection _selection = GridSelection.Empty;
@@ -288,7 +288,7 @@
 
     private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
 
-    // The Consumer's own button for Format Cells (ADR-0063), beside the Context Menu's command.
+    // The Consumer's own button for Format Cells (ADR-0071), beside the Context Menu's command.
     private Task FormatCellsAsync() => CommandAsync(sheet => sheet.OpenFormatCellsAsync());
 
     // A command ExSheet refuses changes nothing and says why (ADR-0048): an insertion that would

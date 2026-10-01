@@ -1,7 +1,7 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
 
-// Format Cells under the built-in Chrome (ADR-0063, ticket 52; SH-45, DC-60): a popover in the
+// Format Cells under the built-in Chrome (ADR-0071, ticket 52; SH-45, DC-60): a popover in the
 // grid's frame (ADR-0050 item 16), opened from the Context Menu and from the page's own button,
 // taking the keyboard and giving it back, inside the Sheet's box and closed as a Cancel when the
 // box shrinks below one row, and independent per Sheet (ADR-0018). The Number Format is what is

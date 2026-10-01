@@ -10,7 +10,7 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// A per-cell appearance reaching the DOM (ADR-0050 item 15; ADR-0063, "What the measurement
+/// A per-cell appearance reaching the DOM (ADR-0050 item 15; ADR-0071, "What the measurement
 /// chose"; DC-58, DC-59): Font and Fill as interned classes in a generated stylesheet, each line
 /// drawn inside the cells either side of its edge as their shares of Excel's centred line, a bold
 /// cell judged by the bold widths, and rows that repaint only when what they paint changed.
@@ -122,7 +122,7 @@ public class CellAppearanceTests : GridTestContext
         Assert.Contains(":not(.ex-state-stale, .ex-state-error).ex-font-ff0000{", Css(cut));
     }
 
-    [Fact] // DC-58 / ADR-0063: a Fill is painted on that cell alone, and covers the gridlines at its edges
+    [Fact] // DC-58 / ADR-0071: a Fill is painted on that cell alone, and covers the gridlines at its edges
     public void A_fill_is_painted_on_that_cell_and_covers_its_gridlines()
     {
         var cut = RenderGrid(TestRows.Window(), From(("Beta", "Amount", new CellAppearance { Fill = Yellow })));
@@ -231,7 +231,7 @@ public class CellAppearanceTests : GridTestContext
         Assert.Contains("ex-lr-thin-000000", Cell(cut, 2, 0).ClassList);
     }
 
-    [Fact] // ADR-0063: the stylesheet grows with the lines, never with the combinations of four sides
+    [Fact] // ADR-0071: the stylesheet grows with the lines, never with the combinations of four sides
     public void The_stylesheet_has_one_rule_per_side_style_and_colour()
     {
         var thin = new Border(BorderStyle.Thin);
@@ -281,7 +281,7 @@ public class CellAppearanceTests : GridTestContext
         Assert.Contains("ex-font-xb", Cell(cut, 1, 1).ClassList);
     }
 
-    [Fact] // DC-58 / ADR-0063: a line that moves repaints the rows either side of its edge, and no other
+    [Fact] // DC-58 / ADR-0071: a line that moves repaints the rows either side of its edge, and no other
     public void A_moved_line_repaints_the_rows_either_side_of_its_edge()
     {
         var rows = TestRows.Many(5);
@@ -305,7 +305,7 @@ public class CellAppearanceTests : GridTestContext
         Assert.Equal(1, RenderCountOf(cut, rows[4]));
     }
 
-    [Fact] // DC-58 / ADR-0063: a thick bottom line reaches into the row below, which repaints
+    [Fact] // DC-58 / ADR-0071: a thick bottom line reaches into the row below, which repaints
     public void A_thick_bottom_line_repaints_the_row_below_as_well()
     {
         var rows = TestRows.Many(4);

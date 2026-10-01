@@ -2,7 +2,7 @@
 
 Status: ready-for-human. **Parts A and B were run on 2026-10-01 at 76d3866**
 (`verification/2026-10-01-windows-excel-11/`, `verification/2026-10-01-windows-browser-11/`; what they
-settled is in ADR-0063). **Part C waits until tickets 48, 49 and 51 are done.**
+settled is in ADR-0071). **Part C waits until tickets 48, 49 and 51 are done.**
 
 This is for the Claude Code session on the Windows desktop of the earlier runs (Excel, Chrome, Edge,
 WSL2 with nix).
@@ -13,7 +13,7 @@ WSL2 with nix).
 
 Part A asks Excel only, and Part B asks the browsers only. Neither needs a build. Their answers
 settle the readings in
-[ADR-0063](../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) before
+[ADR-0071](../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) before
 its tickets are built.
 
 ## Setup
@@ -42,7 +42,7 @@ its tickets are built.
   - Take every screenshot at **100% zoom**. Repeat at **150%** where a case says so.
   - Sample colours as hex from the screenshot, never from COM. The question is what Excel draws.
 
-## Part A — Excel (ADR-0063, "Readings")
+## Part A — Excel (ADR-0071, "Readings")
 
 Use a fresh workbook for each case, with one sheet named `Sheet1` and A1 in view. Record each case as
 one JSON line in `cell-format.jsonl` and a row in `cell-format.md`. Each row holds the screenshot

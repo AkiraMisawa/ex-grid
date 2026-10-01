@@ -248,7 +248,7 @@ the user is told why, and `OnFormatKeyRefused` is raised with the refusal.
 
 ## Format Cells
 
-Format Cells sets a Cell Format as Excel's dialog does (ADR-0063): five tabs — Number, Alignment,
+Format Cells sets a Cell Format as Excel's dialog does (ADR-0071): five tabs — Number, Alignment,
 Font, Border and Fill — in Excel's order, opened on the Focus cell's Cell Format, with what differs
 across the selection shown as Excel shows it. OK sets only the parts the user touched, as one undo
 step; Cancel and Escape set nothing. It opens from the Context Menu's "Format Cells…" and from your

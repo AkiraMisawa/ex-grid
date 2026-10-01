@@ -3,10 +3,10 @@
 Status: done
 
 **What to build:** [ADR-0050](../../../adr/0050-what-exsheet-asks-of-exgrids-core.md) item 14, and
-[ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Keys".
+[ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Keys".
 
 **Blocked by:** None (can start immediately). Ticket 50 is done, and the eleventh Windows run has
-answered. Its record is `verification/2026-10-01-windows-excel-11/cell-format.md` with `../2026-10-01-windows-browser-11/keys.md`; ADR-0063 "What the
+answered. Its record is `verification/2026-10-01-windows-excel-11/cell-format.md` with `../2026-10-01-windows-browser-11/keys.md`; ADR-0071 "What the
 eleventh Windows run settled" sums it up.
 
 - [x] **Core: declared keys** (DC-57).

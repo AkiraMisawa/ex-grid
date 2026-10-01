@@ -4,7 +4,7 @@ using ExSheet.Engine;
 namespace ExSheet;
 
 /// <summary>
-/// Excel's formatting keys, as ExSheet declares them to its grid (ADR-0063, "Keys"; ADR-0050 item
+/// Excel's formatting keys, as ExSheet declares them to its grid (ADR-0071, "Keys"; ADR-0050 item
 /// 14) and what each applies. Only the keys Excel has, each only as Excel has it, as the eleventh
 /// Windows run found them (<c>verification/2026-10-01-windows-excel-11/cell-format.md</c>, cases
 /// 16 to 20).

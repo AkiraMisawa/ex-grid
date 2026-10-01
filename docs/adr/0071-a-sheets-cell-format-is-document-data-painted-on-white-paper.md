@@ -3,6 +3,11 @@
 *(Decided with the user, 2026-09-30, in a design grilling. The question was what to do about cell
 formatting beyond the Number Format and the Alignment that ADR-0046 put in the first version.)*
 
+*(Numbered 0063 until 2026-10-01. ExPivot's ADRs hold 0059 to 0070, so this one moved to its
+branch's block, as [`docs/agents/numbering.md`](../agents/numbering.md) reserves them. Its tickets
+81 to 85 were numbered 76 to 80 for the same reason. The Windows run records in `verification/`
+still say ADR-0063.)*
+
 [ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md) put
 Excel's Number Formats and horizontal Alignment in ExSheet's first version. It left fonts, fills and
 borders out until a `spikes/render-bench` mode had measured per-cell styling and an ADR had read the
@@ -73,7 +78,7 @@ regular ones: Chrome at 14px, tabular digits, weight 700.
 - system-ui on macOS measured 14.35 / 9.25 / 5.852 (wide / digit / narrow). DejaVu Sans Bold, which
   Linux paints for both 600 and 700, measured 14.028 / 9.742 / 6.398.
 - The defaults take the wider of the two in each class: 14.35 / 9.742 / 6.398.
-- `ExGrid.MudBlazor` supplies Roboto's widths at 700: 10.4 / 8.33 / 5.25. *(4.95 at first; ticket 77
+- `ExGrid.MudBlazor` supplies Roboto's widths at 700: 10.4 / 8.33 / 5.25. *(4.95 at first; ticket 82
   found `/` wider, ADR-0016.)*
 - Segoe UI on Windows is not measured.
 
@@ -610,10 +615,11 @@ then decides (ADR-0047's rule).
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
 - **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done.
-- **Tickets** 44 to 58, 76 and 77, in `docs/specs/exsheet/issues/`:
+- **Tickets** 44 to 58 and 81 to 85, in `docs/specs/exsheet/issues/`:
   - ticket 55 was added by the eleventh run;
   - 56 by ticket 51's Server fix;
   - 57 and 58 by the twelfth run;
-  - 76 and 77 by ticket 47.
+  - 81 and 82 by ticket 47, 83 by ticket 82, and 84 and 85 by ticket 81.
 
-  59 to 75 are `claude/exsheet-start-8cx3v1`'s.
+  59 to 75 are `claude/exsheet-start-8cx3v1`'s, and 76 to 80 are Pointing Scope's line
+  (`docs/agents/numbering.md`).

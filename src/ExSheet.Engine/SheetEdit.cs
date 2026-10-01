@@ -66,7 +66,7 @@ public abstract class SheetEdit
 
     /// <summary>
     /// The parts <paramref name="change"/> names set on several ranges as one step (ADR-0046,
-    /// ADR-0063), such as a selection of several rectangles, whole columns and whole rows among
+    /// ADR-0071), such as a selection of several rectangles, whole columns and whole rows among
     /// them; each range is recorded as <see cref="SetNumberFormat(CellRange, NumberFormat?)"/>
     /// records one, and every part the change does not name stays as each cell has it. The change's
     /// Borders are relative to each range, so each range gets its own outline. Undoing the step puts
@@ -113,7 +113,7 @@ public abstract class SheetEdit
     /// <summary>
     /// A block copied inside ExSheet, pasted with its top-left cell at <paramref name="origin"/>:
     /// Entries with their relative References shifted by the distance pasted (a Reference shifted
-    /// off the Sheet is <c>#REF!</c>, as in Excel), Cell Formats with them (ADR-0048, ADR-0063). A
+    /// off the Sheet is <c>#REF!</c>, as in Excel), Cell Formats with them (ADR-0048, ADR-0071). A
     /// block that would run past the Sheet's edge is refused by name (ADR-0050).
     /// </summary>
     public static SheetEdit Paste(SheetBlock block, CellAddress origin)

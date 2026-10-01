@@ -18,7 +18,7 @@ namespace ExSheet.Engine;
 /// colour named at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, …) is kept in the code,
 /// so the format goes back to Excel intact, and formatting a Value answers it with the text when
 /// that section shows the Value, to be painted over the Font colour
-/// (<see cref="NumberFormatColour"/>, ADR-0063). A numbered colour (<c>[Color10]</c>, in any case
+/// (<see cref="NumberFormatColour"/>, ADR-0071). A numbered colour (<c>[Color10]</c>, in any case
 /// and any section) is refused, as Excel refused it (FMT-075..077, ADR-0047 third run). A code
 /// outside the subset — conditions,
 /// locales and elapsed time in brackets, fractions, fractional seconds, <c>*</c> fill, era codes,
@@ -202,7 +202,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
     /// <summary>
     /// The built-ins 15 and 20 in <paramref name="culture"/>'s own form, as the twelfth Windows run
-    /// read them (ADR-0063, case 19); <see langword="null"/> for any other format, or where the
+    /// read them (ADR-0071, case 19); <see langword="null"/> for any other format, or where the
     /// culture's form is the code itself. Like the built-in short date and currency, each is
     /// recorded in its invariant code and is not the pattern it spells.
     /// <list type="bullet">
@@ -246,7 +246,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
     /// <summary>
     /// Excel's built-in currency format under <paramref name="culture"/>: what Ctrl+Shift+$
-    /// records (ADR-0063; the eleventh Windows run, cases 18 and 20). It is format 8,
+    /// records (ADR-0071; the eleventh Windows run, cases 18 and 20). It is format 8,
     /// <c>$#,##0.00_);[Red]($#,##0.00)</c> in the invariant codes, or format 6,
     /// <c>$#,##0_);[Red]($#,##0)</c>, where the culture's currency has no decimals, as Excel chose
     /// under ja-JP. Like the built-in short date, it is recorded in those codes and is not the
@@ -339,7 +339,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
     /// <summary>
     /// A Value as this format shows it under <paramref name="culture"/>, and the colour the
-    /// section that showed it names (ADR-0063, SH-40), or <see langword="null"/> where it names
+    /// section that showed it names (ADR-0071, SH-40), or <see langword="null"/> where it names
     /// none or no section showed the Value: General, booleans and Error Values, which show as
     /// themselves, and text in a format with no text section.
     /// </summary>
@@ -574,7 +574,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                         }
                         if (bracketEnd > i && NumberFormatColours.Named(text[(i + 1)..bracketEnd]) is { } named)
                         {
-                            // The section's colour (ADR-0063). Excel reads one at the start of a
+                            // The section's colour (ADR-0071). Excel reads one at the start of a
                             // section; anywhere else it is refused.
                             if (parts.Count > 0 || colour is not null)
                             {

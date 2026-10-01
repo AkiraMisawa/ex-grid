@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The one direction there is (ADR-0019's note of 2026-09-30, ADR-0063): this package
+    <!-- The one direction there is (ADR-0019's note of 2026-09-30, ADR-0071): this package
          references ExSheet and ExGrid.MudBlazor, and nothing references it but the demo pages
          and its tests. ExGrid.MudBlazor references no ExSheet package, and neither ExSheet nor
          the core knows MudBlazor (SH-47). -->

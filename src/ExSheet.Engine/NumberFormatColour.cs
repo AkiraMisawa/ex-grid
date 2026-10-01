@@ -3,7 +3,7 @@ namespace ExSheet.Engine;
 /// <summary>
 /// A colour a Number Format names at the start of a section — <c>[Red]</c> and the seven others,
 /// in any case (ADR-0047). The text of a Value that section shows is painted in it, and it takes
-/// precedence over the cell's Font colour, as Excel's does (ADR-0063; a reading until the eleventh
+/// precedence over the cell's Font colour, as Excel's does (ADR-0071; a reading until the eleventh
 /// Windows run, case 2). What each name paints is <see cref="NumberFormatColours.Rgb"/>. A numbered
 /// colour (<c>[Color10]</c>) is not one of these: it is refused, as Excel refused it.
 /// </summary>
@@ -34,13 +34,13 @@ public enum NumberFormatColour
     Yellow,
 }
 
-/// <summary>Excel's colour for each name a Number Format may give (ADR-0063).</summary>
+/// <summary>Excel's colour for each name a Number Format may give (ADR-0071).</summary>
 public static class NumberFormatColours
 {
     /// <summary>
     /// The RGB Excel paints the name in, as <c>0xRRGGBB</c>: Excel's legacy palette, the one table
     /// of it. This is a reading until the eleventh Windows run, case 1, which samples what Excel
-    /// draws for each name (ADR-0063).
+    /// draws for each name (ADR-0071).
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The value is not one of the eight names.</exception>
     public static int Rgb(this NumberFormatColour colour) => colour switch

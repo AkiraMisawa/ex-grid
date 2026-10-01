@@ -97,7 +97,7 @@ Formula and anything else that never widens a column. Which of these rules Micro
 and which are still to be observed in Excel, the case corpus says per case. It is read under the
 cell's Number Format as it is now, so a component asks it again after setting a Number Format, for
 each cell of `Sheet.EntryAddressesIn(range)`: Excel's formatting keys widen a column as an entry
-does (ADR-0063).
+does (ADR-0071).
 
 ## Functions
 

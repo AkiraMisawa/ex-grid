@@ -68,7 +68,7 @@ private static readonly MudSheetChrome Chrome = new() { Grid = new MudGridChrome
 ## More
 
 The seam is recorded in
-[ADR-0063](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
+[ADR-0071](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
 and why it is a package of its own in
 [ADR-0019](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/adr/0019-one-repository-many-packages.md).
 

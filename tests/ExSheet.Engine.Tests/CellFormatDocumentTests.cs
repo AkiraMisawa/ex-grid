@@ -5,7 +5,7 @@ using static ExSheet.Engine.Tests.SheetTestExtensions;
 namespace ExSheet.Engine.Tests;
 
 /// <summary>
-/// ADR-0063, ADR-0048 (SH-38): the Sheet Document records Font, Fill and Borders for cells, rows and
+/// ADR-0071, ADR-0048 (SH-38): the Sheet Document records Font, Fill and Borders for cells, rows and
 /// columns at version 8; an older version reads with none of them; a colour of any other kind than
 /// Automatic or RGB is refused by name.
 /// </summary>
@@ -18,7 +18,7 @@ public class CellFormatDocumentTests
     private static SheetStep Set(Sheet sheet, CellFormatChange change, params string[] ranges) =>
         sheet.Do(SheetEdit.SetCellFormat([.. ranges.Select(CellRange.Parse)], change));
 
-    [Fact] // ADR-0063, ADR-0048 (SH-38): Font, Fill and Borders are recorded for cells, rows and columns, and round-trip
+    [Fact] // ADR-0071, ADR-0048 (SH-38): Font, Fill and Borders are recorded for cells, rows and columns, and round-trip
     public void Font_fill_and_borders_round_trip()
     {
         var sheet = NewSheet();
@@ -48,7 +48,7 @@ public class CellFormatDocumentTests
         }
     }
 
-    [Fact] // ADR-0063, ADR-0048 (SH-38): every line style is written by the name Excel's own file gives it, and reads back
+    [Fact] // ADR-0071, ADR-0048 (SH-38): every line style is written by the name Excel's own file gives it, and reads back
     public void Every_line_style_round_trips()
     {
         var sheet = NewSheet();
@@ -73,7 +73,7 @@ public class CellFormatDocumentTests
         }
     }
 
-    [Fact] // ADR-0063, ADR-0048 (SH-38), the twelfth Windows run: a document ticket 55's code wrote records both sides of each edge it set, and they agree, so it shows the same edges from either side under Excel's rule, at every level, and reads back unchanged
+    [Fact] // ADR-0071, ADR-0048 (SH-38), the twelfth Windows run: a document ticket 55's code wrote records both sides of each edge it set, and they agree, so it shows the same edges from either side under Excel's rule, at every level, and reads back unchanged
     public void A_document_recording_both_sides_of_an_edge_shows_the_same_edges()
     {
         // B2's bottom and B3's top, C5's right and D5's left, row 7's bottom and row 8's top, and
@@ -101,7 +101,7 @@ public class CellFormatDocumentTests
         Assert.Equal(json, sheet.ToDocument().ToJson());
     }
 
-    [Fact] // ADR-0063 (SH-38): a part recorded at its default is written, so it still hides the level under it
+    [Fact] // ADR-0071 (SH-38): a part recorded at its default is written, so it still hides the level under it
     public void A_part_recorded_at_its_default_round_trips()
     {
         var json = Head + ""","columns":[{"at":"B:B","font":{"bold":true},"borders":{"left":{"style":"thin"}}}],"cells":[{"at":"B2","font":{},"borders":{}}]}""";
@@ -151,7 +151,7 @@ public class CellFormatDocumentTests
         Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
     }
 
-    [Theory] // ADR-0063, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at
+    [Theory] // ADR-0071, ADR-0048 (SH-38): a colour of any kind but Automatic or RGB is refused by name, never guessed at
     [InlineData(""","cells":[{"at":"A1","font":{"color":{"theme":4,"tint":0.4}}}]}""", "theme")]
     [InlineData(""","cells":[{"at":"A1","font":{"color":"red"}}]}""", "red")]
     [InlineData(""","cells":[{"at":"A1","font":{"color":"#F00"}}]}""", "#F00")]
@@ -168,7 +168,7 @@ public class CellFormatDocumentTests
         Assert.Contains(named, refusal.Message, StringComparison.Ordinal);
     }
 
-    [Theory] // ADR-0063, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused
+    [Theory] // ADR-0071, ADR-0048 (SH-38): anything else version 8 does not define in a Font, Fill or Borders is refused
     [InlineData(""","cells":[{"at":"A1","font":{"size":14}}]}""")]
     [InlineData(""","cells":[{"at":"A1","font":{"bold":"yes"}}]}""")]
     [InlineData(""","cells":[{"at":"A1","font":{"underline":"double"}}]}""")]

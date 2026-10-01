@@ -1,6 +1,6 @@
 /* ExSheet's stylesheet, beside ExGrid's ex-grid.css.
 
-   Format Cells under the built-in Chrome (ADR-0063): the contents ExSheet shows in the grid's
+   Format Cells under the built-in Chrome (ADR-0071): the contents ExSheet shows in the grid's
    popover frame (ADR-0050 item 16). It frames the Paper rather than lying on it, so it follows the
    colour scheme as every popover does, through the grid's own Visual Tokens (ADR-0027/0063). Its
    classes are implementation detail (ADR-0029): a Consumer restyles Format Cells by substituting
@@ -81,7 +81,7 @@
 }
 
 /* The palette (case 23): ten swatches across. Each is a radio button drawn as its colour, which is
-   written inline as the user's choice of document data, never a Visual Token (ADR-0063). */
+   written inline as the user's choice of document data, never a Visual Token (ADR-0071). */
 .ex-format-cells-palette {
     display: flex;
     flex-direction: column;

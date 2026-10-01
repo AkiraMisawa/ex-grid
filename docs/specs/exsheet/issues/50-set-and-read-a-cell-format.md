@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the commands of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "The commands".
+**What to build:** the commands of [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "The commands".
 
 **Blocked by:** 45
 
@@ -18,7 +18,7 @@ Status: done
 
 ## Comments
 
-*(2026-10-01, built.)* The commands of ADR-0063 on the `ExSheet` component.
+*(2026-10-01, built.)* The commands of ADR-0071 on the `ExSheet` component.
 
 - **`Task<bool> SetCellFormatAsync(CellFormatChange change)`** sets the parts the change names on
   every range of the Selection, as one engine step and one undo step, through the engine's
@@ -54,7 +54,7 @@ Status: done
   range over a Selection of two ranges, the shorthands against the change they abbreviate (a theory
   of 3), the argument errors, and `CellFormatAt` cell over row over column.
   `RefusedWhileEditingTests` gains `SetCellFormatAsync_is_refused` and
-  `CellFormatAt_answers_while_an_edit_is_open`. Each is named with ADR-0063 and SH-43 or SH-44.
+  `CellFormatAt_answers_while_an_edit_is_open`. Each is named with ADR-0071 and SH-43 or SH-44.
   Formatting only the Selection's first range fails 5 of them. ExSheet.Components.Tests 310,
   ExSheet.Engine.Tests 2081, ExGrid.Tests 826, ExGrid.Components 1062 (one skipped), and
   ExGrid.MudBlazor.Tests 88, all passing.

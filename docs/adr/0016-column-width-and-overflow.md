@@ -409,16 +409,16 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   did **not** cover weight 600 (9.058px), and `%` at 13.836px broke the single-width contract
   outright, which is what moved the estimate to per-class widths rather than a retuned
   constant.)*
-  *(2026-10-01, ticket 77: "the boldest weight" is wrong for a variable face.)*
+  *(2026-10-01, ticket 82: "the boldest weight" is wrong for a variable face.)*
   - Roboto, which `ExGrid.MudBlazor` paints, is variable. Its `/`, `#`, `+` and `−` get narrower as
     the weight rises: `/` measured 5.781px at 400 and 5.328 at 600.
   - So each class's width is **the widest of its glyphs at every weight painted**, not at the
     boldest one.
   - Roboto's digit class also missed `£`, which measured 8.281px at 600 against 8.0. The class now
     declares 8.3, and its narrow class 5.8 (bold 5.25).
-- **No glyph a Number Format can emit is charged below its width** *(2026-10-01, from ticket 77's
+- **No glyph a Number Format can emit is charged below its width** *(2026-10-01, from ticket 82's
   measurement; principle 1).*
-  - Ticket 77 measured 3,015 strings that ExSheet's built-in formats produce across 24 cultures.
+  - Ticket 82 measured 3,015 strings that ExSheet's built-in formats produce across 24 cultures.
     After its fix, 63 were still estimated as fitting when they did not.
   - Every one of them held a glyph wider than its class: the currency signs `₼ ₽ ¤ ₱ ₩ ₦ ₪`, or a
     letter such as `M` in `AM`/`PM` or in a month's name. `₪` measured 12.22px against a wide class
@@ -426,7 +426,7 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   - A date or a number is then cut instead of shown as `####`, and reads as another value. That is
     what principle 1 forbids.
   - So the estimate gains a class for those glyphs, or charges them at a width that covers them.
-    Ticket 78 measures and builds it. It errs towards `####`, never towards a cut number.
+    Ticket 83 measures and builds it. It errs towards `####`, never towards a cut number.
 - **Alignment is a closed enum, not a stylesheet hook** *(added with the tiered-header design)*.
   `CellAlign { Auto, Left, Center, Right }` on the column (`Align`, and `HeaderAlign` for its
   header cell): `Auto` derives from the type — Number/Date right, Text/Boolean left, exactly

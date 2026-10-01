@@ -189,7 +189,7 @@ back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
 behaviour. Each of those places is a **Chrome seam**: the core owns its frame — where it appears,
 how it opens and closes — and hands the Chrome the contents to draw. One seam, ExSheet's **Format
-Cells**, leaves its frame to the Chrome ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+Cells**, leaves its frame to the Chrome ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
 
 **Inner Popup**:
@@ -666,7 +666,7 @@ How a Sheet's cell is shown, recorded apart from its Entry: its **Number Format*
 formatting a whole column records one thing, and a cell may hold a Cell Format and no Entry. It is
 document data, recorded in the Sheet Document: a colour in it is the user's choice and is painted
 as recorded. Not ExGrid's Column `Format`, which turns a value into the text shown for it
-([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: style (Excel's named Cell Styles, and the CSS attribute), formatting (the act of setting
 one), format on its own
 
@@ -686,11 +686,11 @@ _Avoid_: justification, text-align
 **Font**:
 The colour and emphasis of a cell's text: its colour, bold, italic, underline and strikethrough.
 Not its size or typeface: every row has one height, and one digit width decides what fits. An
-**Automatic** colour is the **Ink**, not a recorded colour ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+**Automatic** colour is the **Ink**, not a recorded colour ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: text style, typeface
 
 **Fill**:
-The one solid colour behind a cell's text. No patterns and no gradients ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+The one solid colour behind a cell's text. No patterns and no gradients ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: background, shading, highlight
 
 **Border**:
@@ -698,7 +698,7 @@ A line on one side of a cell — top, bottom, left or right — in one of Excel'
 colour. Each cell records its own four sides, as Excel's files do, but the line between two cells is
 one line: setting it from either cell replaces it for both, and the later setting wins. Where both
 cells still record a line, after a copy or a deletion, the upper or left cell's is the one shown.
-No diagonals ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+No diagonals ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: gridline (the Sheet's own faint lines, which are not recorded), outline (that is a
 **Reference Outline**), frame
 
@@ -709,14 +709,14 @@ white under its Black theme, so a colour a user recorded reads as it did when it
 lies on the Paper — the Focus, the Selection, Reference Outlines, the editor in the cell — takes
 its light-scheme appearance; what frames it — the Headings, the Name Box, the Formula Bar,
 popovers — follows the colour scheme. Both are Visual Tokens: a Consumer may change them, and
-takes on what that does to recorded colours ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+takes on what that does to recorded colours ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: background, canvas
 
 **Format Cells**:
 Excel's dialog for setting a Cell Format, opened by Ctrl+1 or from the Context Menu: Number,
 Alignment, Font, Border and Fill. ExSheet decides what it offers and what OK means, and OK sets only
 what the user touched. It is the one Chrome seam whose frame is the Chrome's: a popover inside the
-Sheet's box under the built-in Chrome, a page-level dialog under MudBlazor's ([ADR-0063](./docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+Sheet's box under the built-in Chrome, a page-level dialog under MudBlazor's ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: format dialog, properties, style editor
 
 ## Flagged ambiguities

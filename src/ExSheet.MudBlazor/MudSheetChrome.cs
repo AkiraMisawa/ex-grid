@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components;
 namespace ExSheet.MudBlazor;
 
 /// <summary>
-/// MudBlazor for a Sheet (ADR-0063, ADR-0019's note of 2026-09-30): ExSheet's Format Cells drawn
+/// MudBlazor for a Sheet (ADR-0071, ADR-0019's note of 2026-09-30): ExSheet's Format Cells drawn
 /// as a <c>MudDialog</c>, a page-level modal MudBlazor already draws, and every seam of the grid
 /// filled by <see cref="Grid"/>, ExGrid.MudBlazor's Chrome. Hand it to <c>ExSheet.Chrome</c>.
 ///
@@ -98,7 +98,7 @@ public sealed class MudSheetChrome : ISheetChrome
     public RenderFragment? EditorCompletion(EditorCompletionContext context) => GridSeams.EditorCompletion(context);
 
     /// <summary>
-    /// Format Cells as a <c>MudDialog</c> (ADR-0063). ExSheet renders the fragment beside the grid
+    /// Format Cells as a <c>MudDialog</c> (ADR-0071). ExSheet renders the fragment beside the grid
     /// from the opening until OK or Cancel; each opening is a dialog of its own.
     /// </summary>
     public RenderFragment? FormatCells(FormatCellsContext context)

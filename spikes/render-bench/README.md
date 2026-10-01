@@ -29,7 +29,7 @@ The bar is **16.6 ms** (one frame at 60fps). A median past that is what "sluggis
 ## Per-cell appearance (`/format`, ticket 44)
 
 A second page, <http://localhost:5199/format>, measures what a Cell Format costs per painted cell
-([ADR-0063](../../docs/adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
+([ADR-0071](../../docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
 "How it is painted: measured first"). Every mode is built on `RowComponent`: the row is the
 memoisation boundary, cells are plain markup, and a row's appearance travels in an immutable object
 per row, whose reference is the row's change signal.

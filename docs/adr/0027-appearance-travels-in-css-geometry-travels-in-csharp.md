@@ -192,7 +192,7 @@ root, the header or a popover are fine; inside `.ex-viewport` they are not.
 **The defaults above stay on CSS system colours, so an untouched grid follows the host into dark
 mode. A Sheet's Paper and Ink are the one deliberate exception.**
 - The tokens are `--ex-sheet-paper` and `--ex-sheet-ink`. Their default is Excel's white and black
-  in every scheme ([ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+  in every scheme ([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 - **Why**: a Sheet's colours are document data a user recorded. On a ground that changes with the
   scheme, some of them become unreadable.
 - **Excel does the same**: its cells stayed white under Office Theme "Black" (the tenth Windows run).

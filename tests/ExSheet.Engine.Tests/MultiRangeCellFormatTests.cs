@@ -103,7 +103,7 @@ public class MultiRangeCellFormatTests
         Assert.Equal([1], change.Rows);
     }
 
-    [Fact] // ADR-0046, ADR-0063: a change on no range, or one setting nothing, is a mistake the caller made
+    [Fact] // ADR-0046, ADR-0071: a change on no range, or one setting nothing, is a mistake the caller made
     public void A_change_on_nothing_or_of_nothing_is_refused()
     {
         var twoPlaces = new CellFormatChange { NumberFormat = TwoPlaces };

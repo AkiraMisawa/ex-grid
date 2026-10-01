@@ -2,7 +2,7 @@
 @inject IDialogService Dialogs
 
 @*
-    Where ExSheet renders the MudBlazor Chrome's Format Cells (ADR-0063, ADR-0010's note of
+    Where ExSheet renders the MudBlazor Chrome's Format Cells (ADR-0071, ADR-0010's note of
     2026-09-30): beside the grid, outside its root, from the opening until OK or Cancel. It shows
     MudFormatCellsDialog through MudBlazor's dialog service, at page level, and draws nothing of
     its own but the place the keyboard leaves from.
@@ -59,7 +59,7 @@
     // Completed by the render that follows the dialog's closing, once the browser has drawn it.
     private TaskCompletionSource? _drawnAfterClosing;
 
-    /// <summary>ExSheet's Format Cells, as it opened (ADR-0063).</summary>
+    /// <summary>ExSheet's Format Cells, as it opened (ADR-0071).</summary>
     [Parameter, EditorRequired] public FormatCellsContext Context { get; set; } = default!;
 
     /// <inheritdoc />

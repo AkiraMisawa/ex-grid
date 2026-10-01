@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** the engine's half of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). A Cell Format holds Font, Fill and Border beside the
+**What to build:** the engine's half of [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). A Cell Format holds Font, Fill and Border beside the
 Number Format and the Alignment. The new parts follow every rule the first two follow. The names
 follow the glossary.
 
@@ -38,7 +38,7 @@ follow the glossary.
   - A document of an older version reads with none.
   - A colour of another kind is refused by name.
   - Version 7 is taken on `claude/exsheet-pointing-scope`, so take the next free number at merge.
-- [x] Layer 1 tests, named with ADR-0063 and SH-38 or SH-44.
+- [x] Layer 1 tests, named with ADR-0071 and SH-38 or SH-44.
 
 ## Comments
 
@@ -92,7 +92,7 @@ Alignment, and each new part follows the rules the first two follow.
   column's or row's Fill or Borders paints empty cells too, so the painting tickets need the window
   repainted when a level changes.
 - **Tests:** 67 new cases in `CellFormatTests`, `CellFormatCarryTests` and
-  `CellFormatDocumentTests` (layer 1), named with ADR-0063 and SH-38 or SH-44. ExSheet.Engine.Tests
+  `CellFormatDocumentTests` (layer 1), named with ADR-0071 and SH-38 or SH-44. ExSheet.Engine.Tests
   2036, ExSheet.Components.Tests 290, ExGrid.Tests 826, ExGrid.Components 1062 (one skipped) and
   ExGrid.MudBlazor.Tests 88, all passing.
 

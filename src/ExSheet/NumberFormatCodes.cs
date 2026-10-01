@@ -5,7 +5,7 @@ namespace ExSheet;
 
 /// <summary>
 /// The format codes the Number tab's categories write, and how a code is recognised as one of them
-/// when Format Cells opens (ADR-0063). Every code here is one the engine reads; a code that matches
+/// when Format Cells opens (ADR-0071). Every code here is one the engine reads; a code that matches
 /// none of them opens under Custom, as it is.
 /// </summary>
 internal static class NumberFormatCodes

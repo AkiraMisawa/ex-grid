@@ -43,7 +43,7 @@
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
         DeclaredKeys="SheetFormatKeys.Declared" OnDeclaredKey="_formatKey" />
-@* Format Cells in a frame of the Chrome's own (ADR-0063, ADR-0010's note of 2026-09-30): beside the
+@* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
 @if (_formatCellsFrame is { } formatCellsFrame)
@@ -109,7 +109,7 @@
     private readonly Func<Task> _returnKeyboard;
     private readonly Func<Task> _formatCellsFromMenu;
 
-    // Format Cells (ADR-0063): the tab it reopens on, this Sheet's own and Number at first (case
+    // Format Cells (ADR-0071): the tab it reopens on, this Sheet's own and Number at first (case
     // 22); the context while it is open; and the fragment of a Chrome that draws it in a frame of
     // its own, rendered beside the grid.
     private FormatCellsTab _formatCellsTab = FormatCellsTab.Number;
@@ -233,10 +233,10 @@
             return Task.CompletedTask;
         }));
         // Excel's formatting keys, which the grid claims for this Sheet and raises with whether an
-        // edit is open (ADR-0063, ADR-0050 item 14). No receiver: a format re-renders what its
+        // edit is open (ADR-0071, ADR-0050 item 14). No receiver: a format re-renders what its
         // change names, and a refusal renders its notice itself.
         _formatKey = new EventCallback<GridDeclaredKeyPress>(null, (Func<GridDeclaredKeyPress, Task>)(press => OnFormatKeyAsync(press)));
-        // Format Cells (ADR-0063): the tab each opening reopens on, and the core's focus function a
+        // Format Cells (ADR-0071): the tab each opening reopens on, and the core's focus function a
         // Chrome whose frame lies outside the grid calls on closing (ADR-0021's note of 2026-09-30).
         _formatCellsTabShown = tab => _formatCellsTab = tab;
         _returnKeyboard = () => _grid?.ReturnKeyboardAsync() ?? Task.CompletedTask;
@@ -339,7 +339,7 @@
 
     /// <summary>
     /// The grid's Chrome, passed to ExGrid as is (ADR-0010). A Chrome that is also an
-    /// <see cref="ISheetChrome"/> may draw Format Cells in a frame of its own (ADR-0063); otherwise
+    /// <see cref="ISheetChrome"/> may draw Format Cells in a frame of its own (ADR-0071); otherwise
     /// the built-in Format Cells stands in the grid's popover frame.
     /// </summary>
     [Parameter] public IGridChrome? Chrome { get; set; }
@@ -353,7 +353,7 @@
     [Parameter] public EventCallback<bool> EditingChanged { get; set; }
 
     /// <summary>
-    /// Raised when one of Excel's formatting keys is pressed while an edit is open (ADR-0063): the
+    /// Raised when one of Excel's formatting keys is pressed while an edit is open (ADR-0071): the
     /// key changed nothing, and its reason is said in ExSheet's notice. In that state Excel formats
     /// the selected characters, and a Cell Format is per cell. The key is still claimed, so the
     /// browser's own meaning does not run either: Ctrl+U opens no page source.
@@ -367,7 +367,7 @@
     /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
     /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/>,
     /// <see cref="SetAlignmentAsync"/> and <see cref="OpenFormatCellsAsync"/> are refused by name
-    /// (ADR-0048, ADR-0063), and Excel's formatting keys change nothing
+    /// (ADR-0048, ADR-0071), and Excel's formatting keys change nothing
     /// (<see cref="OnFormatKeyRefused"/>).
     /// <see cref="CellFormatAt"/> is a read, and answers. ExSheet learns it from its grid
     /// (ADR-0050 section 6).
@@ -479,7 +479,7 @@
     /// <summary>
     /// Sets the parts of a Cell Format that <paramref name="change"/> names on the Selection as the
     /// grid holds it when the command runs, which on Blazor Server can be ahead of the last
-    /// <see cref="SelectionChanged"/>, as one operation on the undo stack (ADR-0063, ADR-0048,
+    /// <see cref="SelectionChanged"/>, as one operation on the undo stack (ADR-0071, ADR-0048,
     /// ADR-0050 item 14's note of 2026-10-01). Every part it does not name stays as
     /// each cell has it, each Font emphasis on its own: a change that sets bold keeps each cell's
     /// italic, Fill and Number Format. A Cell Format lives at three levels, as in Excel (ADR-0047):
@@ -494,7 +494,7 @@
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     /// <remarks>
     /// A Number Format widens each column whose numbers it no longer fits, in the same operation,
-    /// as Excel's formatting keys do (ADR-0063, case 17): a column the user has not sized, to hold
+    /// as Excel's formatting keys do (ADR-0071, case 17): a column the user has not sized, to hold
     /// the widest of them, recorded as a width an entry widened (SH-26). A column the user sized
     /// never widens (case 18). Format Cells' OK does the same. <see cref="DoAsync"/> does an edit
     /// exactly as it is written, and widens nothing.
@@ -518,7 +518,7 @@
     /// <summary>
     /// Sets the Number Format of the Selection; <see langword="null"/> is General. A shorthand for
     /// <see cref="SetCellFormatAsync"/> with a change that names the Number Format alone
-    /// (ADR-0063), so it acts, refuses and answers as that change does.
+    /// (ADR-0071), so it acts, refuses and answers as that change does.
     /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
     public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
@@ -526,7 +526,7 @@
 
     /// <summary>
     /// Sets the horizontal alignment of the Selection. A shorthand for
-    /// <see cref="SetCellFormatAsync"/> with a change that names the Alignment alone (ADR-0063), so
+    /// <see cref="SetCellFormatAsync"/> with a change that names the Alignment alone (ADR-0071), so
     /// it acts, refuses and answers as that change does.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
@@ -535,7 +535,7 @@
         SetCellFormatAsync(new CellFormatChange { Alignment = alignment });
 
     /// <summary>
-    /// The Cell Format of the cell at <paramref name="address"/> as it shows (ADR-0063): each part
+    /// The Cell Format of the cell at <paramref name="address"/> as it shows (ADR-0071): each part
     /// the cell's own, else its row's, else its column's, else the part's default — cell over row
     /// over column, as in Excel — and each Border side the edge as shown, which reads the same from
     /// the cell beside it (<see cref="Sheet.GetBorders"/>). What a toolbar reads for the Focus cell
@@ -545,14 +545,14 @@
     public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
 
     /// <summary>
-    /// One of Excel's formatting keys (ADR-0063, "Keys"), claimed by the grid and raised with
+    /// One of Excel's formatting keys (ADR-0071, "Keys"), claimed by the grid and raised with
     /// whether an edit is open (ADR-0050 item 14). With no edit open it sets what Excel sets under
     /// the Sheet's culture on the Selection, as one step on the undo stack, a toggle in the
     /// direction the Focus cell gives it (<see cref="SheetFormatKeys.ChangeFor"/>). While an edit is
     /// open it changes nothing, says why, and is raised through <see cref="OnFormatKeyRefused"/>
     /// (SH-43). Ctrl+1 opens Format Cells instead of setting anything, and while an edit is open it
     /// is refused as the others are: Excel opens a Font-only Format Cells there, for rich text
-    /// ExSheet does not have (ADR-0063, case 21). ExSheet hears an edit end a render late when a
+    /// ExSheet does not have (ADR-0071, case 21). ExSheet hears an edit end a render late when a
     /// parameter change discarded it (ADR-0050 section 6), so its own word counts as well as the
     /// grid's. The key acts on the Selection the grid held at the key, which it carries: the grid
     /// raises a move after the render that shows it, a round trip later on a circuit, and a key
@@ -573,7 +573,7 @@
             return;
         }
         if (_selection.IsEmpty) return;
-        // Ctrl+1 opens Format Cells and sets nothing itself (ADR-0063, case 22).
+        // Ctrl+1 opens Format Cells and sets nothing itself (ADR-0071, case 22).
         if (kind == SheetFormatKeys.Kind.FormatCells)
         {
             await ShowFormatCellsAsync();
@@ -586,7 +586,7 @@
 
     /// <summary>
     /// Opens Format Cells over the Selection as the grid holds it when the command runs, as
-    /// <see cref="SetCellFormatAsync"/> reads it, from the Consumer's own button (ADR-0063). It opens on
+    /// <see cref="SetCellFormatAsync"/> reads it, from the Consumer's own button (ADR-0071). It opens on
     /// the Focus cell's Cell Format, with the parts that differ across the Selection shown as Excel
     /// shows them, and on the tab shown last in this Sheet — Number the first time. OK sets the
     /// parts the user touched as one undo step, as <see cref="SetCellFormatAsync"/> does, and Cancel
@@ -602,7 +602,7 @@
         return ShowFormatCellsAsync();
     });
 
-    // The Context Menu's "Format Cells…" (ADR-0036, ADR-0063). The menu stands only while no edit is
+    // The Context Menu's "Format Cells…" (ADR-0036, ADR-0071). The menu stands only while no edit is
     // open; one opened in between is refused in words rather than thrown into the menu's handler.
     // It opens over the Selection the menu was opened on, which the grid still holds: a move closes
     // the menu. That Selection's notification waits behind the menu's own focus, a round trip on a
@@ -644,7 +644,7 @@
         ClearNotice();
         if ((Chrome as ISheetChrome)?.FormatCells(context) is { } frame)
         {
-            // The frame is the Chrome's (ADR-0063): a built-in one standing from an earlier opening goes.
+            // The frame is the Chrome's (ADR-0071): a built-in one standing from an earlier opening goes.
             if (_formatCells is not null && _formatCellsFrame is null) await grid.ClosePopoverAsync();
             _formatCells = context;
             _formatCellsFrame = frame;
@@ -664,7 +664,7 @@
         @<FormatCellsPanel FormatCells="context" Popover="popover" />;
 
     /// <summary>
-    /// Format Cells' OK (ADR-0063, SH-45): the parts the user touched, set on the Selection as one
+    /// Format Cells' OK (ADR-0071, SH-45): the parts the user touched, set on the Selection as one
     /// undo step, and Format Cells ends. With nothing touched nothing is set and no step recorded. A
     /// draft holding a refusal — a Custom code the engine does not read, text that is not a colour —
     /// sets nothing and leaves Format Cells open, for the Chrome to show why.
@@ -690,7 +690,7 @@
         return true;
     }
 
-    // Cancel sets nothing (ADR-0063).
+    // Cancel sets nothing (ADR-0071).
     private void CancelFormatCells(FormatCellsContext context)
     {
         if (ReferenceEquals(context, _formatCells)) _ = InvokeAsync(EndFormatCellsAsync);
@@ -967,7 +967,7 @@
 
     /// <summary>
     /// ExSheet's Context Menu commands (ADR-0036): inserting and deleting the rows or columns the
-    /// Selection spans, and Format Cells (ADR-0063). Rows and columns are places, so the Row Sequence Version does not move
+    /// Selection spans, and Format Cells (ADR-0071). Rows and columns are places, so the Row Sequence Version does not move
     /// and the Selection stays where it was (ADR-0046); each command is one step on the undo
     /// stack (ADR-0048). A Selection of several ranges has no one span to act on, so the
     /// commands are unavailable for it rather than guessing one.
@@ -1317,12 +1317,12 @@
     }
 
     /// <summary>
-    /// A formatting command on the Selection, as one step (ADR-0046, ADR-0048, ADR-0063): every
+    /// A formatting command on the Selection, as one step (ADR-0046, ADR-0048, ADR-0071): every
     /// range goes to the engine as a range, so whole columns and whole rows are recorded as one
     /// entry each (ADR-0047, SH-21), any other range sets its cells, and Borders are set relative
     /// to each range; nothing is capped (principle 5). A part the change does not name is left as
     /// it is. A Number Format widens the columns whose numbers it no longer fits, in the same
-    /// step (ADR-0063, case 17).
+    /// step (ADR-0071, case 17).
     /// </summary>
     private async Task<bool> FormatSelectionAsync(CellFormatChange change)
     {
@@ -1337,7 +1337,7 @@
     {
         var step = CurrentSheet.Do(edit);
         // The operation and the widths it widens its columns to are one operation: one undo puts
-        // back both (ADR-0048; ADR-0063, case 17).
+        // back both (ADR-0048; ADR-0071, case 17).
         if (widenOver is not null && Widen(widenOver) is { Count: > 0 } widened)
         {
             SheetStep[] steps = [step, .. widened];
@@ -1382,7 +1382,7 @@
     /// The columns a number widens, as Excel's do (<see cref="SheetWidening"/>): a number or date
     /// the user typed into a column that does not fit (ADR-0047, second round; SH-20), a typed
     /// Formula whose result is a number, as Excel was observed to widen it (WD-007), and the
-    /// numbers a Number Format no longer fits (ADR-0063, case 17), in a column the user has not
+    /// numbers a Number Format no longer fits (ADR-0071, case 17), in a column the user has not
     /// sized (SH-26; case 18). Each width is recorded in the Sheet like any other (ADR-0046), as a
     /// step of the operation's own; none where no column is widened.
     /// </summary>

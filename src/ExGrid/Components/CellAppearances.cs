@@ -5,7 +5,7 @@ namespace ExGrid.Components;
 
 /// <summary>
 /// Resolves each painted row's <see cref="RowAppearance"/> once, outside the row's render
-/// (ADR-0050, item 15; ADR-0063, "What the measurement chose"). A cell's lines come from both cells
+/// (ADR-0050, item 15; ADR-0071, "What the measurement chose"). A cell's lines come from both cells
 /// of each edge — its top line is the edge it shares with the row above, and a thick line there
 /// reaches into it — so a row is resolved from its own answers and those of the rows either side.
 ///

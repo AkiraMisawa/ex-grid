@@ -66,7 +66,7 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// The core's focus function for a Chrome whose frame lies outside the grid (ADR-0010's note
-    /// of 2026-09-30, ADR-0063): the keyboard goes back to the grid's root, granted only while it
+    /// of 2026-09-30, ADR-0071): the keyboard goes back to the grid's root, granted only while it
     /// is still this grid's — DOM focus inside the root or on nothing — as every hand-back is
     /// (ADR-0021's note of 2026-09-30). A grid or a control of the page's that the user has moved
     /// to keeps the keyboard. A Chrome calls it once its frame has closed, so that the next arrow

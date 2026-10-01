@@ -8,7 +8,7 @@ using Xunit;
 namespace ExSheet.Components.Tests;
 
 /// <summary>
-/// Setting and reading a Cell Format (ticket 50, ADR-0063 "The commands"; SH-44):
+/// Setting and reading a Cell Format (ticket 50, ADR-0071 "The commands"; SH-44):
 /// <c>SetCellFormatAsync</c> sets only the parts its change names over every range of the
 /// Selection, as one undo step, with Borders relative to each range; <c>SetNumberFormatAsync</c>
 /// and <c>SetAlignmentAsync</c> are shorthands that behave as the change they abbreviate; and
@@ -50,7 +50,7 @@ public class CellFormatCommandTests : SheetTestContext
 
     // ---- Only the parts the change names (SH-44) ----
 
-    [Theory] // ADR-0063, SH-44: a change sets the part it names, and every other part stays as the cell has it
+    [Theory] // ADR-0071, SH-44: a change sets the part it names, and every other part stays as the cell has it
     [InlineData("NumberFormat")]
     [InlineData("Alignment")]
     [InlineData("FontColour")]
@@ -93,7 +93,7 @@ public class CellFormatCommandTests : SheetTestContext
         _ => throw new ArgumentOutOfRangeException(nameof(part), part, "Not a part of a Cell Format."),
     };
 
-    [Fact] // ADR-0063, SH-44: setting bold keeps each cell's own italic, Fill and Number Format, cell by cell
+    [Fact] // ADR-0071, SH-44: setting bold keeps each cell's own italic, Fill and Number Format, cell by cell
     public async Task A_change_keeps_what_differs_from_cell_to_cell()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(sheet =>
@@ -114,7 +114,7 @@ public class CellFormatCommandTests : SheetTestContext
 
     // ---- One undo step (SH-44, ADR-0048) ----
 
-    [Fact] // ADR-0063 / ADR-0048, SH-44: a change over several ranges is one operation, and one undo puts every cell back
+    [Fact] // ADR-0071 / ADR-0048, SH-44: a change over several ranges is one operation, and one undo puts every cell back
     public async Task A_change_over_several_ranges_is_one_undo_step()
     {
         var raised = new List<SheetDocument>();
@@ -146,7 +146,7 @@ public class CellFormatCommandTests : SheetTestContext
 
     // ---- Borders relative to each range (SH-44) ----
 
-    [Fact] // ADR-0063, SH-44: over a Selection of several ranges, each range gets its own outline, read from the cells beside it too (the eleventh Windows run, cases 13 and 14), as in Excel
+    [Fact] // ADR-0071, SH-44: over a Selection of several ranges, each range gets its own outline, read from the cells beside it too (the eleventh Windows run, cases 13 and 14), as in Excel
     public async Task Each_selected_range_gets_its_own_outline()
     {
         GridSelection? selection = null;
@@ -183,7 +183,7 @@ public class CellFormatCommandTests : SheetTestContext
 
     // ---- The shorthands (SH-44) ----
 
-    [Theory] // ADR-0063, SH-44: SetNumberFormatAsync and SetAlignmentAsync behave as the change they abbreviate
+    [Theory] // ADR-0071, SH-44: SetNumberFormatAsync and SetAlignmentAsync behave as the change they abbreviate
     [InlineData("NumberFormat")]
     [InlineData("General")]
     [InlineData("Alignment")]
@@ -230,7 +230,7 @@ public class CellFormatCommandTests : SheetTestContext
 
     // ---- What a change must name ----
 
-    [Fact] // ADR-0063: a change that names no part is the caller's error, and changes nothing
+    [Fact] // ADR-0071: a change that names no part is the caller's error, and changes nothing
     public async Task A_change_that_names_nothing_is_an_argument_error()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(null, ("A1", "1"))));
@@ -247,7 +247,7 @@ public class CellFormatCommandTests : SheetTestContext
 
     // ---- Reading it back (SH-44) ----
 
-    [Fact] // ADR-0063 / ADR-0047, SH-44: CellFormatAt answers each part from the cell, else its row, else its column, else the default
+    [Fact] // ADR-0071 / ADR-0047, SH-44: CellFormatAt answers each part from the cell, else its row, else its column, else the default
     public async Task CellFormatAt_answers_cell_over_row_over_column()
     {
         var cut = RenderSheet();

@@ -89,7 +89,7 @@ public sealed partial class Sheet
     /// The Sheet as a Sheet Document: its culture, its name, its Linked Tables' declarations, its
     /// Entries, the Cell Formats recorded on its columns, rows and cells, and the widths set on its
     /// columns — never its Values, nor a table's rows (ADR-0046, ADR-0047, ADR-0048, ADR-0049,
-    /// ADR-0063). Adjacent columns or rows formatted alike, and adjacent columns of one width, are
+    /// ADR-0071). Adjacent columns or rows formatted alike, and adjacent columns of one width, are
     /// recorded as one entry; a column at the default width records none.
     /// </summary>
     public SheetDocument ToDocument() =>
@@ -532,13 +532,13 @@ public sealed partial class Sheet
         /// <summary>The cell's own alignment; <see langword="null"/> when it takes its row's or column's (ADR-0047).</summary>
         public HorizontalAlignment? Alignment { get; set; }
 
-        /// <summary>The cell's own Font; <see langword="null"/> when it takes its row's or column's (ADR-0063).</summary>
+        /// <summary>The cell's own Font; <see langword="null"/> when it takes its row's or column's (ADR-0071).</summary>
         public CellFont? Font { get; set; }
 
-        /// <summary>The cell's own Fill; <see langword="null"/> when it takes its row's or column's (ADR-0063).</summary>
+        /// <summary>The cell's own Fill; <see langword="null"/> when it takes its row's or column's (ADR-0071).</summary>
         public CellFill? Fill { get; set; }
 
-        /// <summary>The cell's own four sides; <see langword="null"/> when it takes its row's or column's (ADR-0063).</summary>
+        /// <summary>The cell's own four sides; <see langword="null"/> when it takes its row's or column's (ADR-0071).</summary>
         public CellBorders? Borders { get; set; }
 
         /// <summary>Whether the cell records any part of a Cell Format of its own.</summary>

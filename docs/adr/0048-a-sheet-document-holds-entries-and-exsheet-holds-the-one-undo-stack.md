@@ -73,7 +73,7 @@ refuses everything it will not do: `DoAsync` (an insertion, a deletion, any edit
 the open edit. This is Excel's behaviour: its ribbon greys out while a cell is being edited.
 *(2026-09-30: `SetCellFormatAsync` and `OpenFormatCellsAsync` join the list, and a formatting key
 changes nothing and says why
-([ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).)*
+([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).)*
 **ExSheet says whether an edit is open, and when that changes**, so the application can grey out its
 own buttons in the same way. It learns this from its grid
 ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), section 6).
@@ -140,7 +140,7 @@ so this is no difference at all.)*
 
 ## The Sheet Document records Cell Format whole *(2026-09-30, decided with the user)*
 
-[ADR-0063](./0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) adds Font, Fill
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) adds Font, Fill
 and Border to a Sheet's Cell Format.
 - **The Sheet Document records them** for each cell, row and column, beside the Number Format and
   the Alignment, at a new version.

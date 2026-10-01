@@ -1,7 +1,7 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, editor, nameBox, pressCell } from './sheet-helpers.mjs';
 
-// Excel's formatting keys on /sheet (ticket 51; ADR-0063 "Keys", ADR-0050 item 14), with real keys:
+// Excel's formatting keys on /sheet (ticket 51; ADR-0071 "Keys", ADR-0050 item 14), with real keys:
 // each toggle and Number Format key reaching the Sheet before the browser's own meaning, and with
 // an edit open changing nothing and saying why (SH-42, SH-43). The keys are ExGrid's declared
 // keys: the capture listener takes them from the browser, in both states, from the list C# hands
@@ -41,7 +41,7 @@ async function noteTakenKeys(grid) {
     }, true));
 }
 
-test('SH-42/ADR-0063: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each toggle the Focus cell, taken from the browser, one Ctrl+Z a press', async ({ page }) => {
+test('SH-42/ADR-0071: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each toggle the Focus cell, taken from the browser, one Ctrl+Z a press', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'A2');
     await expect(font(page)).toHaveText('regular');
@@ -70,7 +70,7 @@ test('SH-42/ADR-0063: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each t
     expect(page.context().pages()).toHaveLength(pages);
 });
 
-test('SH-42/ADR-0063: the toggle follows the Focus cell over a range', async ({ page }) => {
+test('SH-42/ADR-0071: the toggle follows the Focus cell over a range', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'A2');
     await page.keyboard.press('ControlOrMeta+b');
@@ -112,7 +112,7 @@ test('ADR-0050 item 14 (note of 2026-10-01)/ticket 56: the page\'s button presse
     await expect(cell(grid, 'B3')).toHaveText('7');
 });
 
-test('SH-42/ADR-0063: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel\'s Number Formats under en-US, by the character typed', async ({ page }) => {
+test('SH-42/ADR-0071: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel\'s Number Formats under en-US, by the character typed', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'C2');
     await expect(numberFormat(page)).toHaveText('General');
@@ -138,7 +138,7 @@ test('SH-42/ADR-0063: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel\'s Number Form
     await expect(cell(grid, 'C2')).toHaveText(/^\$0\.50\s*$/);
 });
 
-test('SH-43/ADR-0063: with an edit open, Ctrl+U changes nothing, is taken from the browser, and says why', async ({ page }) => {
+test('SH-43/ADR-0071: with an edit open, Ctrl+U changes nothing, is taken from the browser, and says why', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'F2');
     await page.keyboard.type('abc');

@@ -1,7 +1,7 @@
 # What to verify on Windows, twelfth run
 
 Status: done. **Part A was run on 2026-10-01 at a0ed1e6** (`verification/2026-10-01-windows-excel-12/`;
-what it settled is in ADR-0063). (Part C of the
+what it settled is in ADR-0071). (Part C of the
 [eleventh run](verify-on-windows-11.md) still waits for tickets 48, 49 and 51.)
 
 This is for the Claude Code session on the Windows desktop of the earlier runs.
@@ -11,7 +11,7 @@ This is for the Claude Code session on the Windows desktop of the earlier runs.
   `docs/definition-of-done.md`.
 
 Part A settles the readings in
-[ADR-0063](../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Readings
+[ADR-0071](../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Readings
 until the twelfth Windows run". Those readings are about Borders, which ticket 49 is to paint. They
 cover three things:
 - what other operations do to the line between two cells;
@@ -56,7 +56,7 @@ as setting an edge does (case 7 of the eleventh run).
 
 | # | Set up (COM) | Keys | What is asked | Reading |
 |---|---|---|---|---|
-| 6 | B2's bottom edge thick black (B3's top edge reads it). B4's top edge thin blue (B3's bottom edge reads it) | Select row 3 (A3, Shift+Space), Ctrl+`-` | B2's bottom and the new B3's top, read from both; the line drawn | unknown: record. ADR-0063 reads the upper row's line as winning until this answer |
+| 6 | B2's bottom edge thick black (B3's top edge reads it). B4's top edge thin blue (B3's bottom edge reads it) | Select row 3 (A3, Shift+Space), Ctrl+`-` | B2's bottom and the new B3's top, read from both; the line drawn | unknown: record. ADR-0071 reads the upper row's line as winning until this answer |
 | 7 | The same with columns: B2's right edge thick black, D2's left edge thin blue | Select column C (C1, Ctrl+Space), Ctrl+`-` | B2's right and the new C2's left; the line drawn | unknown: record |
 | 8 | B2's bottom edge thick black only | Delete row 3 as in 6 | The new B3's top edge, read from both | thick black, read from both |
 | 9 | B3's top edge thin blue, set from B3; nothing on B2 | Delete row 2 (A2, Shift+Space, Ctrl+`-`) | B1's bottom and the new B2's top | unknown: record |

@@ -12,7 +12,7 @@ This is for the Claude Code session on the Windows desktop of the earlier runs. 
   `docs/definition-of-done.md`.
 
 Part A settles the readings in
-[ADR-0063](../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Readings
+[ADR-0071](../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Readings
 until the fourteenth Windows run". Ticket 58 built ExSheet on those readings, so each answer either
 confirms the code or names what to change. The readings cover three things:
 - when a formatting key widens a column that is no longer at the standard width;
@@ -73,7 +73,7 @@ Restore en-GB after group 3, and say so.
 
 ### Group 4 — what each cell records, where the runs saw only the edge
 
-Ticket 57 built Excel's edge model (ADR-0063, "What the twelfth Windows run settled"). These cases read
+Ticket 57 built Excel's edge model (ADR-0071, "What the twelfth Windows run settled"). These cases read
 what the model says each cell keeps for itself. **Save as `.xlsx` and read the file**: unzip it, then
 record each named cell's `s` index in `xl/worksheets/sheet1.xml`, its `cellXfs` entry and the `border`
 it points to in `xl/styles.xml`.

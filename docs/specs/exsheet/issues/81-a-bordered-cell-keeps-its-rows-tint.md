@@ -1,4 +1,4 @@
-# 76: A bordered cell keeps a group or total row's tint, and a pinned cell's stripe
+# 81: A bordered cell keeps a group or total row's tint, and a pinned cell's stripe
 
 Status: done
 
@@ -51,7 +51,7 @@ ExSheet uses neither, but an ExGrid Consumer may use both.
     row's.
   - a Missing cell's tint lies over a filled right neighbour's cover pixel. The neighbour itself is
     not Missing.
-  - double's middle pixel stays the grid's ground over a tint, as it does over a Fill (ADR-0063).
+  - double's middle pixel stays the grid's ground over a tint, as it does over a Fill (ADR-0071).
 - **The `/appearance` page has a fourth grid, `#appearance-tints`.** Columns A–E are pinned and F–J
   scroll. In each block the first cell is plain, the second has a dashed bottom line, the third a
   yellow Fill, the fourth the Fill beside it over its gridline, and the fifth the Fill and the line.

@@ -1,7 +1,7 @@
 namespace ExSheet.Engine;
 
 /// <summary>
-/// Excel's thirteen line styles for a Border (ADR-0063), and <see cref="None"/>. No diagonals.
+/// Excel's thirteen line styles for a Border (ADR-0071), and <see cref="None"/>. No diagonals.
 /// </summary>
 public enum BorderLineStyle
 {
@@ -49,7 +49,7 @@ public enum BorderLineStyle
 }
 
 /// <summary>
-/// A Border (<c>CONTEXT.md</c>; ADR-0063): the line on one side of a cell, in one of Excel's
+/// A Border (<c>CONTEXT.md</c>; ADR-0071): the line on one side of a cell, in one of Excel's
 /// thirteen line styles and a colour, or <see cref="None"/>. The default value is <see cref="None"/>.
 /// </summary>
 public readonly record struct BorderLine
@@ -77,7 +77,7 @@ public readonly record struct BorderLine
 }
 
 /// <summary>
-/// A cell's Borders (ADR-0063): the line on each of its four sides. Each cell records its own four
+/// A cell's Borders (ADR-0071): the line on each of its four sides. Each cell records its own four
 /// sides, as Excel's files do, and the edge two cells share shows one line from either side: the
 /// upper cell's, or the left cell's for a vertical edge, where both record one, and otherwise
 /// whichever does (the twelfth Windows run). A border command records the edge on the cells it sets

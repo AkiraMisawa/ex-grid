@@ -3,7 +3,7 @@ using System.Globalization;
 namespace ExSheet.Engine;
 
 /// <summary>
-/// A colour a Cell Format records (ADR-0063): <see cref="Automatic"/>, or an RGB value. A colour
+/// A colour a Cell Format records (ADR-0071): <see cref="Automatic"/>, or an RGB value. A colour
 /// picked from the theme part of a palette is recorded as its RGB value; Excel's theme colours (a
 /// theme slot and a tint) come with <c>.xlsx</c> reading. Automatic is not a recorded colour: a
 /// Font's Automatic is the Ink (<c>CONTEXT.md</c>). The default value is <see cref="Automatic"/>.

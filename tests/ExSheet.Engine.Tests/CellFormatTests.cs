@@ -5,7 +5,7 @@ using static ExSheet.Engine.Tests.SheetTestExtensions;
 namespace ExSheet.Engine.Tests;
 
 /// <summary>
-/// ADR-0063 (SH-38, SH-44): a Cell Format holds Font, Fill and Borders beside the Number Format and
+/// ADR-0071 (SH-38, SH-44): a Cell Format holds Font, Fill and Borders beside the Number Format and
 /// the Alignment, recorded at cell, row and column level, and set by a change that names only the
 /// parts it sets, its Borders relative to each range. Each cell records its own four sides, and the
 /// edge two cells share shows one line from either side, as the eleventh and twelfth Windows runs
@@ -24,7 +24,7 @@ public class CellFormatTests
     private static SheetStep Set(Sheet sheet, CellFormatChange change, params string[] ranges) =>
         sheet.Do(SheetEdit.SetCellFormat([.. ranges.Select(CellRange.Parse)], change));
 
-    [Fact] // ADR-0063 (SH-38): a cell no level formats shows the default of every part
+    [Fact] // ADR-0071 (SH-38): a cell no level formats shows the default of every part
     public void A_cell_nothing_formats_shows_the_defaults()
     {
         var sheet = NewSheet();
@@ -36,7 +36,7 @@ public class CellFormatTests
         Assert.Equal(CellBorders.None, sheet.GetBorders(At("C3")));
     }
 
-    [Fact] // ADR-0063 (SH-38): Font, Fill and Borders are recorded at three levels, cell over row over column, null inheriting
+    [Fact] // ADR-0071 (SH-38): Font, Fill and Borders are recorded at three levels, cell over row over column, null inheriting
     public void Cell_over_row_over_column()
     {
         var sheet = NewSheet();
@@ -68,7 +68,7 @@ public class CellFormatTests
         Assert.Equal(new CellFormat(NumberFormat.General, HorizontalAlignment.General, new CellFont(Bold: true, Italic: true), CellFill.None, new CellBorders(Left: Thin, Right: Thin)), sheet.GetCellFormat(At("B3")));
     }
 
-    [Fact] // ADR-0063 (SH-44): a change sets only the parts it names, each Font emphasis on its own; every other part stays
+    [Fact] // ADR-0071 (SH-44): a change sets only the parts it names, each Font emphasis on its own; every other part stays
     public void A_change_sets_only_what_it_names()
     {
         var sheet = NewSheet();
@@ -91,7 +91,7 @@ public class CellFormatTests
         Assert.Equal(Yellow, sheet.GetFill(At("B2")));
     }
 
-    [Fact] // ADR-0063 (SH-44): a change that sets Font, Fill or Borders changes no Value, and names the rows it repaints
+    [Fact] // ADR-0071 (SH-44): a change that sets Font, Fill or Borders changes no Value, and names the rows it repaints
     public void A_change_names_its_rows_and_changes_no_value()
     {
         var sheet = NewSheet();
@@ -104,7 +104,7 @@ public class CellFormatTests
         Assert.Equal(7, sheet.Number("B2"));
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44): bold on a whole column keeps each cell's own emphasis, and a row's Font with it
+    [Fact] // ADR-0071 (SH-38, SH-44): bold on a whole column keeps each cell's own emphasis, and a row's Font with it
     public void Bold_on_a_whole_column_keeps_each_cells_own_emphasis()
     {
         var sheet = NewSheet();
@@ -120,7 +120,7 @@ public class CellFormatTests
         Assert.Equal(new CellFont(Bold: true), Assert.Single(sheet.ToDocument().Columns).Font);
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44): bold on whole rows keeps the Font a column gives a cell, and taking it away gives the column's back
+    [Fact] // ADR-0071 (SH-38, SH-44): bold on whole rows keeps the Font a column gives a cell, and taking it away gives the column's back
     public void Bold_on_whole_rows_keeps_a_columns_font()
     {
         var sheet = NewSheet();
@@ -142,7 +142,7 @@ public class CellFormatTests
         Assert.Empty(document.Cells);
     }
 
-    [Fact] // ADR-0063 (SH-38): no Fill on whole rows is recorded where a column's Fill would otherwise show through
+    [Fact] // ADR-0071 (SH-38): no Fill on whole rows is recorded where a column's Fill would otherwise show through
     public void No_fill_on_whole_rows_hides_a_columns_fill()
     {
         var sheet = NewSheet();
@@ -155,7 +155,7 @@ public class CellFormatTests
         Assert.Equal(CellFill.None, Assert.Single(sheet.ToDocument().Rows).Fill);
     }
 
-    [Fact] // ADR-0063 (SH-38): over the whole Sheet a row's own Font is patched, not lost, and its Fill gives way
+    [Fact] // ADR-0071 (SH-38): over the whole Sheet a row's own Font is patched, not lost, and its Fill gives way
     public void The_whole_sheet_patches_a_rows_font()
     {
         var sheet = NewSheet();
@@ -174,7 +174,7 @@ public class CellFormatTests
         Assert.Equal((2, new CellFont(Bold: true, Italic: true), (CellFill?)null), (row.First, row.Font, row.Fill));
     }
 
-    [Fact] // ADR-0063 (SH-44): borders apply to each range, so several ranges get their own outlines
+    [Fact] // ADR-0071 (SH-44): borders apply to each range, so several ranges get their own outlines
     public void Each_range_gets_its_own_outline()
     {
         var sheet = NewSheet();
@@ -200,7 +200,7 @@ public class CellFormatTests
         Assert.Empty(sheet.ToDocument().Cells);
     }
 
-    [Fact] // ADR-0063 (SH-44): a single cell's outline is its four sides
+    [Fact] // ADR-0071 (SH-44): a single cell's outline is its four sides
     public void A_cells_outline_is_its_four_sides()
     {
         var sheet = NewSheet();
@@ -210,7 +210,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(ThickRed, ThickRed, ThickRed, ThickRed), sheet.GetBorders(At("C3")));
     }
 
-    [Fact] // ADR-0063 (SH-44): Inside sets every edge between the range's cells, and none of its outer edges
+    [Fact] // ADR-0071 (SH-44): Inside sets every edge between the range's cells, and none of its outer edges
     public void Inside_sets_the_inner_edges()
     {
         var sheet = NewSheet();
@@ -223,7 +223,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Top: ThickRed, Left: ThickRed), sheet.GetBorders(At("C3")));
     }
 
-    [Fact] // ADR-0063 (SH-44): each edge is set on its own, an edge the change does not name stays, and inside horizontal and vertical are separate
+    [Fact] // ADR-0071 (SH-44): each edge is set on its own, an edge the change does not name stays, and inside horizontal and vertical are separate
     public void Each_edge_is_set_on_its_own()
     {
         var sheet = NewSheet();
@@ -240,7 +240,7 @@ public class CellFormatTests
         Assert.Equal(CellBorders.None, sheet.GetBorders(At("D5")));
     }
 
-    [Fact] // ADR-0063 (SH-44), case 11-7: a border command records the edge on the cell it sets and clears the neighbour's record of it, so the later setting is the line shown from either side; undo puts back both
+    [Fact] // ADR-0071 (SH-44), case 11-7: a border command records the edge on the cell it sets and clears the neighbour's record of it, so the later setting is the line shown from either side; undo puts back both
     public void The_later_setting_of_an_edge_wins_from_either_side_case_11_7()
     {
         var sheet = NewSheet();
@@ -266,7 +266,7 @@ public class CellFormatTests
         Assert.Equal(["B2"], sheet.ToDocument().Cells.Select(c => c.Address).Addresses());
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44), case 11-7: on whole columns and whole rows too, a side is recorded on the level it is set on and the neighbour's record of the edge is cleared, the later setting wins from either side, and undo puts back both
+    [Fact] // ADR-0071 (SH-38, SH-44), case 11-7: on whole columns and whole rows too, a side is recorded on the level it is set on and the neighbour's record of the edge is cleared, the later setting wins from either side, and undo puts back both
     public void The_later_setting_of_an_edge_wins_at_every_level_case_11_7()
     {
         var sheet = NewSheet();
@@ -307,7 +307,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Left: ThickRed), sheet.GetBorders(At("B4")));
     }
 
-    [Fact] // ADR-0063 (SH-44), case 11-13: an outline records the range's outer edges on its own cells, the cells outside it show them, and no edge inside it is set; no borders clears them all
+    [Fact] // ADR-0071 (SH-44), case 11-13: an outline records the range's outer edges on its own cells, the cells outside it show them, and no edge inside it is set; no borders clears them all
     public void An_outline_is_shown_from_the_cells_outside_it_case_11_13()
     {
         var sheet = NewSheet();
@@ -334,7 +334,7 @@ public class CellFormatTests
         Assert.Empty(sheet.ToDocument().Cells);
     }
 
-    [Fact] // ADR-0063 (SH-44), case 11-13: no borders takes every line of the range away, inner edges too, and the cells outside it lose their record of the same edges
+    [Fact] // ADR-0071 (SH-44), case 11-13: no borders takes every line of the range away, inner edges too, and the cells outside it lose their record of the same edges
     public void No_borders_clears_the_edges_the_cells_outside_record_case_11_13()
     {
         var sheet = NewSheet();
@@ -353,7 +353,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Thin, BorderLine.None, Thin, Thin), cells["B1"].Borders);
     }
 
-    [Fact] // ADR-0063 (SH-44), case 11-13: the cells beside an outline record nothing of it and show it, and a side on the Sheet's outer edge has no cell beside it
+    [Fact] // ADR-0071 (SH-44), case 11-13: the cells beside an outline record nothing of it and show it, and a side on the Sheet's outer edge has no cell beside it
     public void An_outline_is_recorded_on_the_ranges_own_cells_case_11_13()
     {
         var sheet = NewSheet();
@@ -367,7 +367,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Bottom: Thin), sheet.GetBorders(At("XFD1048575")));
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44), case 11-15: an outline over a whole column sets only its left and right edges, recorded on the column; no top of row 1 and no bottom of row 1048576
+    [Fact] // ADR-0071 (SH-38, SH-44), case 11-15: an outline over a whole column sets only its left and right edges, recorded on the column; no top of row 1 and no bottom of row 1048576
     public void A_whole_columns_outline_sets_only_its_sides_case_11_15()
     {
         var sheet = NewSheet();
@@ -384,7 +384,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Left: Thin), sheet.GetBorders(At("C5")));
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44), case 12-14: an outline over whole rows sets their top and bottom, recorded on the rows, and the left of column A, recorded on its cells; not the right of column XFD
+    [Fact] // ADR-0071 (SH-38, SH-44), case 12-14: an outline over whole rows sets their top and bottom, recorded on the rows, and the left of column A, recorded on its cells; not the right of column XFD
     public void An_outline_over_whole_rows_sets_their_top_and_bottom_and_the_left_of_column_A_case_12_14()
     {
         var sheet = NewSheet();
@@ -406,7 +406,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Top: Thin), sheet.GetBorders(At("C5")));
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44), case 12-15: an outline over the whole Sheet sets nothing, and what the rows and cells record stays
+    [Fact] // ADR-0071 (SH-38, SH-44), case 12-15: an outline over the whole Sheet sets nothing, and what the rows and cells record stays
     public void An_outline_over_the_whole_sheet_sets_nothing_case_12_15()
     {
         var sheet = NewSheet();
@@ -421,7 +421,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Top: ThickRed), sheet.GetBorders(At("A3")));
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44), case 12-16: Inside over whole columns is recorded on the columns, so it also shows on the top of row 1 and the bottom of row 1048576, and nothing outside them
+    [Fact] // ADR-0071 (SH-38, SH-44), case 12-16: Inside over whole columns is recorded on the columns, so it also shows on the top of row 1 and the bottom of row 1048576, and nothing outside them
     public void Inside_over_whole_columns_shows_on_row_1_and_the_last_row_case_12_16()
     {
         var sheet = NewSheet();
@@ -440,7 +440,7 @@ public class CellFormatTests
         }
     }
 
-    [Fact] // ADR-0063, ADR-0050 item 15 (SH-44): a changed top or bottom side names the row across that edge as well, which shows the line; so do its undo, a paste and a fill
+    [Fact] // ADR-0071, ADR-0050 item 15 (SH-44): a changed top or bottom side names the row across that edge as well, which shows the line; so do its undo, a paste and a fill
     public void A_changed_edge_names_the_row_across_it()
     {
         var sheet = NewSheet();
@@ -458,7 +458,7 @@ public class CellFormatTests
         Assert.Equal([1, 2, 3, 4], sheet.Do(SheetEdit.FillCopy(CellRange.Parse("B2"), CellRange.Parse("B3:B4"), FillDirection.Down)).Change.Rows);
     }
 
-    [Fact] // ADR-0063 (SH-38, SH-44): Borders on whole rows keep the sides a column gives a cell
+    [Fact] // ADR-0071 (SH-38, SH-44): Borders on whole rows keep the sides a column gives a cell
     public void Borders_on_whole_rows_keep_a_columns_sides()
     {
         var sheet = NewSheet();
@@ -472,7 +472,7 @@ public class CellFormatTests
         Assert.Equal(new CellBorders(Left: ThickRed), sheet.GetBorders(At("C6")));
     }
 
-    [Fact] // ADR-0063: a colour is Automatic or RGB; a Fill is RGB; no line has no colour; nothing else is constructed
+    [Fact] // ADR-0071: a colour is Automatic or RGB; a Fill is RGB; no line has no colour; nothing else is constructed
     public void The_parts_hold_only_what_they_may()
     {
         Assert.True(default(CellColour).IsAutomatic);

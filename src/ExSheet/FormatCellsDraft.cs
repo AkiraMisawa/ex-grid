@@ -4,7 +4,7 @@ using ExSheet.Engine;
 namespace ExSheet;
 
 /// <summary>
-/// What Format Cells opens on, and what the user has touched since (ADR-0063, SH-45): the rules
+/// What Format Cells opens on, and what the user has touched since (ADR-0071, SH-45): the rules
 /// every Chrome's Format Cells sets its controls by, so that what a choice means and what OK sets
 /// are ExSheet's under every Chrome.
 ///
@@ -468,7 +468,7 @@ public sealed class FormatCellsDraft
 
     /// <summary>
     /// Format Cells' draft over <paramref name="ranges"/>, opening on the Focus cell at
-    /// <paramref name="focus"/> (ADR-0063): what differs across the ranges is read from what the
+    /// <paramref name="focus"/> (ADR-0071): what differs across the ranges is read from what the
     /// Sheet records (<see cref="Sheet.GetCellFormats"/>), so a Selection of whole columns opens as
     /// quickly as one cell.
     /// </summary>
@@ -480,7 +480,7 @@ public sealed class FormatCellsDraft
 }
 
 /// <summary>
-/// What differs across a Selection, as Format Cells shows it (ADR-0063; the eleventh Windows run,
+/// What differs across a Selection, as Format Cells shows it (ADR-0071; the eleventh Windows run,
 /// case 24): whether bold or italic differs, whether the Fill does, and each edge's one line, or
 /// <see langword="null"/> where its cells' sides differ.
 /// </summary>

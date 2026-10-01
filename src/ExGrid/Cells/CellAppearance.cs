@@ -5,7 +5,7 @@ namespace ExGrid.Cells;
 /// <summary>
 /// A colour a Consumer records on a cell (ADR-0050, item 15): an RGB value, painted as recorded.
 /// It is document data, not a Visual Token — a Sheet's red for a breach is the user's choice and
-/// reads as chosen (ADR-0063) — so it is the one kind of colour that travels from C# to the
+/// reads as chosen (ADR-0071) — so it is the one kind of colour that travels from C# to the
 /// stylesheet, and it travels only as the six hex digits of a class the core generates. The default
 /// value is black.
 /// </summary>
@@ -37,7 +37,7 @@ public readonly record struct RgbColour
 }
 
 /// <summary>
-/// Excel's thirteen line styles for a <see cref="Border"/> (ADR-0063), and <see cref="None"/>. Each
+/// Excel's thirteen line styles for a <see cref="Border"/> (ADR-0071), and <see cref="None"/>. Each
 /// is drawn at the eleventh Windows run's geometry (case 9): centred on the gridline, in device
 /// pixels, so a thin line is one device pixel at every zoom (ADR-0050, item 15).
 /// </summary>
@@ -123,7 +123,7 @@ public readonly record struct Border
 /// default value is <see cref="None"/>, which paints the cell exactly as a grid without the
 /// declaration does.
 ///
-/// <para>Each part is painted as Excel paints it (ADR-0063). The Font gives way on a Stale or Error
+/// <para>Each part is painted as Excel paints it (ADR-0071). The Font gives way on a Stale or Error
 /// cell, whose Cell State must never be the one that disappears (ADR-0006), and outranks a column's
 /// tone, which is the column's rule and not the cell's own. A Fill covers the gridlines at the
 /// cell's edges. A Border is centred on its gridline, a thick line
@@ -144,7 +144,7 @@ public readonly record struct CellAppearance
     public bool Bold { get; init; }
 
     /// <summary>Italic text, judged by the regular widths: its slant leans past a glyph's advance
-    /// by less than the cell's padding (ADR-0063).</summary>
+    /// by less than the cell's padding (ADR-0071).</summary>
     public bool Italic { get; init; }
 
     /// <summary>A single underline.</summary>

@@ -41,7 +41,7 @@ public enum HorizontalAlignment
 /// The colour the Number Format names for the section that showed the Value (<c>[Red]</c> and the
 /// seven others), kept where the number cannot be shown; <see langword="null"/> where that section
 /// names none, or where no section showed it — General, booleans, Error Values, text in a format
-/// with no text section, and a blank cell (ADR-0063, SH-40). <b>It takes precedence over the
+/// with no text section, and a blank cell (ADR-0071, SH-40). <b>It takes precedence over the
 /// cell's Font colour</b>, as Excel's does (a reading until the eleventh Windows run, case 2): the
 /// text is painted in <see cref="NumberFormatColours.Rgb"/> of it, and in the Font colour only
 /// where this is <see langword="null"/>.

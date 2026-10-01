@@ -13,7 +13,7 @@ using HorizontalAlignment = ExSheet.Engine.HorizontalAlignment;
 namespace ExSheet.Components.Tests;
 
 /// <summary>
-/// Format Cells (ticket 52, ADR-0063 "Format Cells, a Chrome seam whose frame the Chrome chooses";
+/// Format Cells (ticket 52, ADR-0071 "Format Cells, a Chrome seam whose frame the Chrome chooses";
 /// SH-45, DC-60): what ExSheet offers and what OK means, the built-in Chrome's popover in the grid's
 /// frame (ADR-0050 item 16), what opens it, and what the eleventh Windows run found (cases 22–26).
 /// </summary>
@@ -88,7 +88,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- What opens it ----
 
-    [Fact] // ADR-0063 / SH-45 / DC-60: OpenFormatCellsAsync shows Format Cells as a popover in the grid's frame, inside the Sheet's box
+    [Fact] // ADR-0071 / SH-45 / DC-60: OpenFormatCellsAsync shows Format Cells as a popover in the grid's frame, inside the Sheet's box
     public async Task Open_format_cells_shows_it_in_the_grids_popover_frame()
     {
         var cut = RenderSheet();
@@ -102,7 +102,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Contains("max-height:", frame.GetAttribute("style"));
     }
 
-    [Fact] // ADR-0063 / ADR-0050 item 14 / SH-45, case 22: Ctrl+1 opens it, and sets nothing itself
+    [Fact] // ADR-0071 / ADR-0050 item 14 / SH-45, case 22: Ctrl+1 opens it, and sets nothing itself
     public async Task Ctrl_1_opens_it()
     {
         var cut = RenderSheet();
@@ -114,7 +114,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063 / ADR-0036 / SH-45: the Context Menu's "Format Cells…" opens it
+    [Fact] // ADR-0071 / ADR-0036 / SH-45: the Context Menu's "Format Cells…" opens it
     public async Task The_context_menu_opens_it()
     {
         var cut = RenderSheet();
@@ -127,7 +127,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Empty(cut.FindAll("[role=menu]"));
     }
 
-    [Fact] // ADR-0063 / SH-43 / SH-29: while an edit is open OpenFormatCellsAsync is refused by name, and nothing opens
+    [Fact] // ADR-0071 / SH-43 / SH-29: while an edit is open OpenFormatCellsAsync is refused by name, and nothing opens
     public async Task Open_format_cells_is_refused_while_an_edit_is_open()
     {
         var cut = RenderSheet();
@@ -142,7 +142,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal("42", EditorText(cut));
     }
 
-    [Fact] // ADR-0063: with nothing selected there is nothing to format, and nothing opens
+    [Fact] // ADR-0071: with nothing selected there is nothing to format, and nothing opens
     public async Task With_nothing_selected_nothing_opens()
     {
         var cut = RenderSheet();
@@ -154,7 +154,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- The tabs (case 22, case 26) ----
 
-    [Fact] // ADR-0063 / SH-45, case 22: the tabs are Number, Alignment, Font, Border and Fill, in Excel's order, and the first opening is on Number
+    [Fact] // ADR-0071 / SH-45, case 22: the tabs are Number, Alignment, Font, Border and Fill, in Excel's order, and the first opening is on Number
     public async Task The_tabs_are_excels_order_and_the_first_opening_is_on_number()
     {
         var cut = RenderSheet();
@@ -168,7 +168,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal(["0", "-1", "-1", "-1", "-1"], cut.FindAll(".ex-format-cells-tab").Select(t => t.GetAttribute("tabindex")));
     }
 
-    [Fact] // ADR-0063 / SH-45, case 22: a later opening reopens on the last tab shown, per Sheet instance
+    [Fact] // ADR-0071 / SH-45, case 22: a later opening reopens on the last tab shown, per Sheet instance
     public async Task A_later_opening_reopens_on_the_last_tab_shown_in_this_sheet()
     {
         var cut = RenderSheet();
@@ -186,7 +186,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal("Number", SelectedTab(other));
     }
 
-    [Theory] // ADR-0063 / SH-45: the tabs switch with the arrow keys, wrapping, and Home and End (ARIA's tabs pattern); Ctrl+Tab is the browser's
+    [Theory] // ADR-0071 / SH-45: the tabs switch with the arrow keys, wrapping, and Home and End (ARIA's tabs pattern); Ctrl+Tab is the browser's
     [InlineData("ArrowRight", "Alignment")]
     [InlineData("ArrowLeft", "Fill")]
     [InlineData("End", "Fill")]
@@ -204,7 +204,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- The Number tab (case 22) ----
 
-    [Fact] // ADR-0063 / SH-45, case 22: the categories in Excel's order; Accounting, Fraction and Special shown disabled, each with its reason
+    [Fact] // ADR-0071 / SH-45, case 22: the categories in Excel's order; Accounting, Fraction and Special shown disabled, each with its reason
     public async Task The_categories_are_excels_and_three_are_disabled_with_the_reason()
     {
         var cut = RenderSheet();
@@ -223,7 +223,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.False(Choice(cut, ".ex-format-cells-categories", "Custom").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0063 / SH-45: a Custom code ExSheet does not read is refused by name, Format Cells stays open, and nothing is set
+    [Fact] // ADR-0071 / SH-45: a Custom code ExSheet does not read is refused by name, Format Cells stays open, and nothing is set
     public async Task A_custom_code_the_engine_does_not_read_is_refused_by_name()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
@@ -242,7 +242,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063 / SH-45: a Custom code the engine reads is set
+    [Fact] // ADR-0071 / SH-45: a Custom code the engine reads is set
     public async Task A_custom_code_the_engine_reads_is_set()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
@@ -257,7 +257,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal("12.000", CellText(cut, "B2"));
     }
 
-    [Fact] // ADR-0063 / SH-45: Format Cells opens on the Focus cell's Number Format, its category and its options
+    [Fact] // ADR-0071 / SH-45: Format Cells opens on the Focus cell's Number Format, its category and its options
     public async Task It_opens_on_the_focus_cells_number_format()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
@@ -269,7 +269,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal("1", cut.Find(".ex-format-cells-places").GetAttribute("value"));
     }
 
-    [Fact] // ADR-0063 / SH-45: Number with three places and the thousands separator sets #,##0.000
+    [Fact] // ADR-0071 / SH-45: Number with three places and the thousands separator sets #,##0.000
     public async Task Number_with_places_and_a_separator_sets_its_code()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(cells: ("B2", "1234.5"))));
@@ -286,7 +286,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- The Alignment tab ----
 
-    [Fact] // ADR-0063 / SH-45: Alignment is horizontal only, and OK sets the one chosen
+    [Fact] // ADR-0071 / SH-45: Alignment is horizontal only, and OK sets the one chosen
     public async Task Alignment_is_horizontal_only()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
@@ -304,7 +304,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- What differs across the Selection (case 24) ----
 
-    [Fact] // ADR-0063 / SH-45, case 24: a differing bold shows the Font style empty, and a differing Fill as No Colour
+    [Fact] // ADR-0071 / SH-45, case 24: a differing bold shows the Font style empty, and a differing Fill as No Colour
     public async Task Differing_parts_are_shown_as_excel_shows_them()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(sheet =>
@@ -319,7 +319,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.DoesNotContain(cut.FindAll(".ex-format-cells-swatch"), s => s.HasAttribute("checked"));
     }
 
-    [Fact] // ADR-0063 / SH-45, case 24: an inside edge whose cells' sides differ is drawn as a grey dotted line, its button mixed
+    [Fact] // ADR-0071 / SH-45, case 24: an inside edge whose cells' sides differ is drawn as a grey dotted line, its button mixed
     public async Task A_differing_inside_edge_is_a_grey_dotted_line()
     {
         // A1's bottom is thick and A2's is not: whatever A2's top records, the inside edges of A1:A3 differ.
@@ -339,7 +339,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- OK, Cancel and Escape (cases 25 and 26) ----
 
-    [Fact] // ADR-0063 / SH-45, case 25: OK sets only the part touched — the colour — and each cell keeps its own emphasis
+    [Fact] // ADR-0071 / SH-45, case 25: OK sets only the part touched — the colour — and each cell keeps its own emphasis
     public async Task Ok_sets_only_what_was_touched()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(sheet =>
@@ -357,7 +357,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal(new CellFont(Red, Italic: true), FormatAt(cut, "A2").Font);
     }
 
-    [Fact] // ADR-0063 / ADR-0048 / SH-45: what OK sets is one undo step, however many parts and tabs it spans
+    [Fact] // ADR-0071 / ADR-0048 / SH-45: what OK sets is one undo step, however many parts and tabs it spans
     public async Task Ok_is_one_undo_step()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
@@ -382,7 +382,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063 / SH-45: OK with nothing touched sets nothing, raises nothing and records no step, and closes
+    [Fact] // ADR-0071 / SH-45: OK with nothing touched sets nothing, raises nothing and records no step, and closes
     public async Task Ok_with_nothing_touched_calls_nothing()
     {
         var raised = new List<SheetDocument>();
@@ -398,7 +398,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.False(cut.Instance.CanUndo);
     }
 
-    [Fact] // ADR-0063 / SH-45: Cancel sets nothing, whatever was touched, and the keyboard is the Sheet's again
+    [Fact] // ADR-0071 / SH-45: Cancel sets nothing, whatever was touched, and the keyboard is the Sheet's again
     public async Task Cancel_sets_nothing_and_returns_the_keyboard()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
@@ -415,7 +415,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.True(ReclaimCount > reclaims);
     }
 
-    [Fact] // ADR-0063 / SH-45 / DC-60: Escape sets nothing, closes Format Cells, and the keyboard is the Sheet's again
+    [Fact] // ADR-0071 / SH-45 / DC-60: Escape sets nothing, closes Format Cells, and the keyboard is the Sheet's again
     public async Task Escape_sets_nothing()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(cells: ("B2", "12"))));
@@ -433,7 +433,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.True(ReclaimCount > reclaims);
     }
 
-    [Fact] // ADR-0063: a Selection moved under Format Cells — by the Name Box — ends it, as its OK would set the other cells
+    [Fact] // ADR-0071: a Selection moved under Format Cells — by the Name Box — ends it, as its OK would set the other cells
     public async Task A_selection_moved_under_it_ends_it()
     {
         var cut = RenderSheet();
@@ -446,7 +446,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- The palette (case 23) ----
 
-    [Fact] // ADR-0063 / SH-45, case 23: the Fill tab offers No Colour, the theme's sixty and the ten standard colours, as the Fill tab names them
+    [Fact] // ADR-0071 / SH-45, case 23: the Fill tab offers No Colour, the theme's sixty and the ten standard colours, as the Fill tab names them
     public async Task The_fill_palette_is_case_23s()
     {
         var cut = RenderSheet();
@@ -466,7 +466,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal("#002060", Rgb("Dark Blue"));
     }
 
-    [Fact] // ADR-0063 / SH-45, case 23: the Font tab offers Automatic, not No Colour
+    [Fact] // ADR-0071 / SH-45, case 23: the Font tab offers Automatic, not No Colour
     public async Task The_font_palette_offers_automatic()
     {
         var cut = RenderSheet();
@@ -477,7 +477,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.DoesNotContain(cut.FindAll(".ex-format-cells-palette label"), l => l.TextContent.Trim() == "No Colour");
     }
 
-    [Fact] // ADR-0063 / SH-45: More Colours takes a hex value
+    [Fact] // ADR-0071 / SH-45: More Colours takes a hex value
     public async Task More_colours_takes_a_hex_value()
     {
         var cut = RenderSheet();
@@ -490,7 +490,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal(CellFill.Solid(CellColour.FromRgb(0x1F4E79)), FormatAt(cut, "B2").Fill);
     }
 
-    [Fact] // ADR-0063 / SH-45: text under More Colours that is not a colour is refused by name, and nothing is set
+    [Fact] // ADR-0071 / SH-45: text under More Colours that is not a colour is refused by name, and nothing is set
     public async Task More_colours_refuses_text_that_is_not_a_colour()
     {
         var cut = RenderSheet();
@@ -507,7 +507,7 @@ public class FormatCellsTests : SheetTestContext
 
     // ---- The Border tab (case 22) ----
 
-    [Fact] // ADR-0063 / SH-45, case 22: the thirteen styles and None in Excel's two columns, Thin chosen on opening
+    [Fact] // ADR-0071 / SH-45, case 22: the thirteen styles and None in Excel's two columns, Thin chosen on opening
     public async Task The_line_styles_are_excels_two_columns()
     {
         var cut = RenderSheet();
@@ -523,7 +523,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal("Thin", chosen.GetAttribute("aria-label"));
     }
 
-    [Fact] // ADR-0063 / SH-45, case 22: for one cell Inside, Horizontal and Vertical are disabled, and there are no diagonals
+    [Fact] // ADR-0071 / SH-45, case 22: for one cell Inside, Horizontal and Vertical are disabled, and there are no diagonals
     public async Task For_one_cell_the_inside_edges_are_disabled()
     {
         var cut = RenderSheet();
@@ -538,7 +538,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.False(cut.Find(".ex-format-cells-edge[data-edge=Top]").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0063 / SH-45, case 22: over several rows Inside and Horizontal are offered, and over one column Vertical is not
+    [Fact] // ADR-0071 / SH-45, case 22: over several rows Inside and Horizontal are offered, and over one column Vertical is not
     public async Task Over_a_column_of_cells_horizontal_is_offered_and_vertical_is_not()
     {
         var cut = RenderSheet();
@@ -550,7 +550,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.True(cut.Find(".ex-format-cells-edge[data-edge=InsideVertical]").HasAttribute("disabled"));
     }
 
-    [Fact] // ADR-0063 / SH-45: an edge's button sets the chosen style and colour on that edge of the cell
+    [Fact] // ADR-0071 / SH-45: an edge's button sets the chosen style and colour on that edge of the cell
     public async Task An_edge_button_sets_the_chosen_line()
     {
         var cut = RenderSheet();
@@ -567,7 +567,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal(BorderLine.None, FormatAt(cut, "B2").Borders.Top);
     }
 
-    // ---- A Chrome that draws it in a frame of its own (ADR-0063, ADR-0010's note of 2026-09-30) ----
+    // ---- A Chrome that draws it in a frame of its own (ADR-0071, ADR-0010's note of 2026-09-30) ----
 
     private sealed class OwnFrameChrome : ISheetChrome
     {
@@ -594,7 +594,7 @@ public class FormatCellsTests : SheetTestContext
         }
     }
 
-    [Fact] // ADR-0063 / ADR-0010's note of 2026-09-30: a Chrome that takes the frame draws Format Cells beside the grid, and OK and Cancel end it
+    [Fact] // ADR-0071 / ADR-0010's note of 2026-09-30: a Chrome that takes the frame draws Format Cells beside the grid, and OK and Cancel end it
     public async Task A_chrome_with_a_frame_of_its_own_draws_it_beside_the_grid()
     {
         var chrome = new OwnFrameChrome();

@@ -2,7 +2,7 @@
 
 Status: done
 
-**What to build:** [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
+**What to build:** [ADR-0071](../../../adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md),
 "What the twelfth Windows run settled", cases 17 to 19
 (`verification/2026-10-01-windows-excel-12/cell-format-12.md`).
 
@@ -23,7 +23,7 @@ Status: done
 - [x] **Recording**: both are recorded as culture-localised built-ins, as the short date and the
       currency key's format are (ticket 51).
 - [x] **Tests**: layer 1 for the localised built-ins; layer 2 for the widening and its undo. Name
-      each with ADR-0063 and case 17, 18 or 19.
+      each with ADR-0071 and case 17, 18 or 19.
 
 ## Comments
 
@@ -73,7 +73,7 @@ Status: done
     FMT-052 and FMT-072 enter a General number and then set `Range.NumberFormat` through COM, and
     Excel's column then read 17.09 and 10.82 against a standard 8.09.
   - **An observation the ADR does not explain.** The eleventh run's case 20 recorded `$` under
-    en-US as `########` at the standard width, which means the column did not widen. ADR-0063
+    en-US as `########` at the standard width, which means the column did not widen. ADR-0071
     says every key widens a column at the standard width. This ticket follows the ADR. The
     eleventh run's procedure should be checked, or the case asked again.
   - **`mmm` under ja-JP.** Excel's own local code for 15 under ja-JP reads `dd-mmm-yy`, yet it

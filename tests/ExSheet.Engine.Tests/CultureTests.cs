@@ -68,7 +68,7 @@ public class CultureTests
         Assert.Equal(["9/26/2026", "26/09/2026", "26.09.2026", "2026/09/26"], shown);
     }
 
-    [Theory] // ADR-0063, SH-42 (the eleventh Windows run, case 20): Ctrl+Shift+$ records Excel's built-in currency, 8 or 6 as the culture's currency has decimals
+    [Theory] // ADR-0071, SH-42 (the eleventh Windows run, case 20): Ctrl+Shift+$ records Excel's built-in currency, 8 or 6 as the culture's currency has decimals
     [InlineData("en-US", "$#,##0.00_);[Red]($#,##0.00)")]
     [InlineData("en-GB", "$#,##0.00_);[Red]($#,##0.00)")]
     [InlineData("ja-JP", "$#,##0_);[Red]($#,##0)")]
@@ -77,7 +77,7 @@ public class CultureTests
         Assert.Equal(code, NumberFormat.BuiltInCurrency(CultureInfo.GetCultureInfo(culture)).Code);
     }
 
-    [Theory] // ADR-0063, SH-42 (case 20): the built-in currency shows in the Sheet culture's own currency, as the built-in short date shows in its date, its negative section red
+    [Theory] // ADR-0071, SH-42 (case 20): the built-in currency shows in the Sheet culture's own currency, as the built-in short date shows in its date, its negative section red
     [InlineData("en-US", 1234.5, "$1,234.50 ", null)]
     [InlineData("en-US", -1234.5, "($1,234.50)", NumberFormatColour.Red)]
     [InlineData("en-GB", 1234.5, "£1,234.50", null)]
@@ -100,7 +100,7 @@ public class CultureTests
         Assert.Contains(JsonEncoded(currency.Code), sheet.ToDocument().ToJson(), StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0063: a currency whose symbol is letters is quoted, so it shows rather than being read as format codes
+    [Fact] // ADR-0071: a currency whose symbol is letters is quoted, so it shows rather than being read as format codes
     public void A_lettered_currency_symbol_shows_as_text()
     {
         var sheet = In("sv-SE");
@@ -113,7 +113,7 @@ public class CultureTests
         Assert.Contains("5", sheet.GetDisplay(a1).Text, StringComparison.Ordinal);
     }
 
-    [Theory] // ADR-0063 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled
+    [Theory] // ADR-0071 case 19 (the twelfth Windows run): Excel's built-ins 15 and 20 show in the Sheet culture's own form, and the AM/PM built-in as it is spelled
     [InlineData("en-GB", "d-mmm-yy", "05-Jan-26")]
     [InlineData("en-US", "d-mmm-yy", "5-Jan-26")]
     [InlineData("ja-JP", "d-mmm-yy", "05-1-26")]   // the month as a number, as Excel showed it there
@@ -136,7 +136,7 @@ public class CultureTests
         Assert.Contains($"\"{JsonEncoded(code)}\"", sheet.ToDocument().ToJson(), StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0063 case 19: the built-ins open under another culture in that culture's form, as Excel's do
+    [Fact] // ADR-0071 case 19: the built-ins open under another culture in that culture's form, as Excel's do
     public void The_built_in_date_and_time_follow_the_culture_a_document_is_opened_in()
     {
         var sheet = In("en-US");
@@ -154,7 +154,7 @@ public class CultureTests
         Assert.Equal("09:05", british.GetDisplay(CellAddress.Parse("A2")).Text);
     }
 
-    [Theory] // ADR-0063 case 19, ADR-0047: a date typed with a month name and a year records built-in 15, so it too shows in the culture's form
+    [Theory] // ADR-0071 case 19, ADR-0047: a date typed with a month name and a year records built-in 15, so it too shows in the culture's form
     [InlineData("en-GB", "05-Jan-26")]
     [InlineData("en-US", "5-Jan-26")]
     public void A_date_typed_with_a_month_name_shows_built_in_15_in_the_cultures_form(string culture, string shown)
@@ -168,7 +168,7 @@ public class CultureTests
         Assert.Equal(shown, sheet.GetDisplay(a1).Text);
     }
 
-    [Theory] // ADR-0063 case 17, ADR-0047: the width a number needs is read in the culture's form of its built-in, so a key widens its column to the text it shows
+    [Theory] // ADR-0071 case 17, ADR-0047: the width a number needs is read in the culture's form of its built-in, so a key widens its column to the text it shows
     [InlineData("en-GB", "d-mmm-yy", 9)]   // 05-Jan-26
     [InlineData("en-US", "d-mmm-yy", 8)]   // 5-Jan-26
     [InlineData("en-GB", "h:mm", 5)]       // 09:05

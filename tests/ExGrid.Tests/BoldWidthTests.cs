@@ -5,7 +5,7 @@ using Xunit;
 namespace ExGrid.Tests;
 
 /// <summary>
-/// A bold cell is judged by bold widths (ADR-0050 item 15; ADR-0063, "Bold, and what fits"; DC-58):
+/// A bold cell is judged by bold widths (ADR-0050 item 15; ADR-0071, "Bold, and what fits"; DC-58):
 /// <c>CellTextMetrics</c> carries each character class at the bold weight, the core's defaults are
 /// measured as §21.7a measured the regular ones, and a bold number that fits at the regular widths
 /// and not at the bold ones is <c>####</c>.

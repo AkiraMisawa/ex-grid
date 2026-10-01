@@ -7,7 +7,7 @@ namespace ExGrid.Components;
 
 /// <summary>
 /// The classes a per-cell appearance is painted with, and the stylesheet that gives them their
-/// meaning (ADR-0050, item 15; ADR-0063, "What the measurement chose"). One grid's, so its strings
+/// meaning (ADR-0050, item 15; ADR-0071, "What the measurement chose"). One grid's, so its strings
 /// and rules go with it.
 ///
 /// <para><b>Interned per part, never per combination of parts.</b> Each distinct Font, each Fill
@@ -145,7 +145,7 @@ internal sealed class AppearanceStyles
             return name;
         name = $"ex-fill-{Hex(rgb)}";
         _fills[rgb] = name;
-        // The Fill covers the gridlines at its edges (ADR-0063; the eleventh run, cases 4–6): its own
+        // The Fill covers the gridlines at its edges (ADR-0071; the eleventh run, cases 4–6): its own
         // colour covers the row's rule beneath it, and the column rule on its right edge goes. The
         // gridlines its neighbours paint are covered by their shares (Share.Cover).
         _rules.Append(".ex-cell.").Append(name).Append("{background-color:#").Append(Hex(rgb))

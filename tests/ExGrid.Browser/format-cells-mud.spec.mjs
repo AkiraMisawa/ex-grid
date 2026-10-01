@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
 
-// Format Cells under ExSheet.MudBlazor's Chrome (ADR-0063, ticket 53; SH-45, SH-47): a MudDialog at
+// Format Cells under ExSheet.MudBlazor's Chrome (ADR-0071, ticket 53; SH-45, SH-47): a MudDialog at
 // page level, outside the Sheet's root and its box, which MudBlazor draws. What it offers and what
 // OK sets are ExSheet's, as under the built-in Chrome (format-cells.spec.mjs); what this file holds
 // the Chrome to is the frame: the keyboard taken and handed back however the dialog closes, the
@@ -38,7 +38,7 @@ test.describe('on /sheet?chrome=mud', () => {
         await openSheet(page, 'mud');
     });
 
-    test('SH-45/ADR-0063: the Context Menu opens Format Cells as a MudDialog outside the Sheet, with the keyboard on its tab, and the arrows switch the tabs', async ({ page }) => {
+    test('SH-45/ADR-0071: the Context Menu opens Format Cells as a MudDialog outside the Sheet, with the keyboard on its tab, and the arrows switch the tabs', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(page, grid, 'C2');
 
@@ -110,7 +110,7 @@ test.describe('on /sheet?chrome=mud', () => {
         await expectFocusAt(grid, 'C3');
     });
 
-    test('SH-45/ADR-0063: Escape in an open dropdown closes only its list; the next Escape cancels Format Cells', async ({ page }) => {
+    test('SH-45/ADR-0071: Escape in an open dropdown closes only its list; the next Escape cancels Format Cells', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(page, grid, 'C2');
         // Touched, so that the Cancel below has something it must not set.
@@ -197,7 +197,7 @@ test.describe('on /sheet?chrome=mud', () => {
         await expect(formatCells(page)).toBeVisible();
     });
 
-    test('SH-45/ADR-0063: More Colours is MudBlazor\'s colour picker, and the colour it picks is what OK sets', async ({ page }) => {
+    test('SH-45/ADR-0071: More Colours is MudBlazor\'s colour picker, and the colour it picks is what OK sets', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(page, grid, 'C2');
         await tab(page, 'Fill').click();
@@ -235,7 +235,7 @@ test.describe('two Sheets on /sheets?chrome=mud', () => {
         await expect(page.locator('.mud-ex-name-box')).toHaveCount(2);
     });
 
-    test('ADR-0018/ADR-0063: each Sheet\'s Format Cells is its own, and closing it hands the keyboard to that Sheet', async ({ page }) => {
+    test('ADR-0018/ADR-0071: each Sheet\'s Format Cells is its own, and closing it hands the keyboard to that Sheet', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
 
