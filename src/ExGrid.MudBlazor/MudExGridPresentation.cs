@@ -29,8 +29,8 @@ public static class MudExGridPresentation
     /// <summary>
     /// Roboto's digit class: a tabular digit is 8.0px at 600, and <c>£</c>, the widest glyph
     /// the class holds, 8.281px at 600 (<c>₺</c> 8.188, <c>₫</c> 8.109, <c>¥</c> 7.484). The
-    /// currency signs wider than it — <c>₼</c> <c>₽</c> <c>¤</c> <c>₱</c> <c>₩</c> <c>₦</c>
-    /// <c>₪</c> — and the letters are the other class's (<see cref="RobotoOtherPx"/>).
+    /// letters and the other currency signs are charged their own widths
+    /// (<see cref="RobotoGlyphWidths"/>), or the other class (<see cref="RobotoOtherPx"/>).
     /// </summary>
     public const double RobotoDigitPx = 8.3;
 
@@ -39,12 +39,13 @@ public static class MudExGridPresentation
     public const double RobotoNarrowPx = 5.8;
 
     /// <summary>
-    /// Roboto's other class (ADR-0016; ticket 83): every glyph outside the measured classes —
-    /// letters, and the currency signs wider than a digit. Measured with the others from the
-    /// corpus in <c>tests/GlyphWidths</c>, in this package's family stack, at 400, 500 and 600:
-    /// the widest is <c>W</c>, 12.422px at 400 (<c>m</c> 12.281, <c>M</c> 12.250, <c>₪</c>
-    /// 11.891 at 600, <c>ж</c> 11.719, <c>₦</c> 11.328). At 12px <c>W</c> is 10.656, which is
-    /// 12.432 at this size, so the declaration covers both sizes the core scales it to.
+    /// Roboto's other class (ADR-0016; ticket 83): what a glyph outside the measured classes
+    /// costs when <see cref="RobotoGlyphWidths"/> does not hold it — a glyph Roboto lacks, painted
+    /// in a fallback, or one nobody foresaw. Measured with the others in <c>tests/GlyphWidths</c>,
+    /// in this package's family stack, at 400, 500 and 600: the widest letter is <c>W</c>,
+    /// 12.422px at 400 (<c>m</c> 12.281, <c>M</c> 12.250). At 12px <c>W</c> is 10.656, which is
+    /// 12.432 at this size. The glyphs Roboto lacks are narrower: <c>₴</c> 12.031 in DejaVu Sans
+    /// Bold, which a Linux system without Arial paints it in, and Hebrew at most 10.318.
     /// </summary>
     public const double RobotoOtherPx = 12.44;
 
@@ -73,10 +74,19 @@ public static class MudExGridPresentation
     /// at this size.</summary>
     public const double RobotoBoldOtherPx = 12.28;
 
+    /// <summary>
+    /// The letters and currency signs Roboto draws, each at its own width (ADR-0016; ticket 83),
+    /// generated from <c>tests/GlyphWidths</c>' measurement: at 14px, covering 12px scaled, regular
+    /// over 400 to 600 and bold at 700. A month name or a currency symbol is charged what it paints
+    /// rather than <see cref="RobotoOtherPx"/>, so a date shows <c>####</c> no earlier than it must.
+    /// </summary>
+    public static GlyphWidthTable RobotoGlyphWidths => RobotoGlyphTable.At14;
+
     /// <summary>The widths alone — no density, no hover — for a bare grid.</summary>
     public static GridPresentationDefaults Roboto { get; } =
         new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx,
-            RobotoBoldWidePx, RobotoBoldDigitPx, RobotoBoldNarrowPx, RobotoOtherPx, RobotoBoldOtherPx);
+            RobotoBoldWidePx, RobotoBoldDigitPx, RobotoBoldNarrowPx, RobotoOtherPx, RobotoBoldOtherPx,
+            glyphWidths: RobotoGlyphTable.At14);
 
     // One instance per combination: an allocation-free lookup, and a cascaded value
     // that only changes when Dense, Hover or Striped do. Identity buys nothing beyond
@@ -93,7 +103,7 @@ public static class MudExGridPresentation
             all[flags] = new(RobotoWidePx, RobotoDigitPx, RobotoNarrowPx, RobotoMeasuredAtPx,
                 RobotoBoldWidePx, RobotoBoldDigitPx, RobotoBoldNarrowPx, RobotoOtherPx, RobotoBoldOtherPx,
                 DensityFor(dense: (flags & 4) != 0), highlightHoverRow: (flags & 2) != 0,
-                stripeRows: (flags & 1) != 0);
+                stripeRows: (flags & 1) != 0, glyphWidths: RobotoGlyphTable.At14);
         }
         return all;
     }
@@ -136,7 +146,7 @@ public static class MudExGridPresentation
             boldWide, boldDigit, boldNarrow,
             font.OtherWidthPx ?? font.DigitWidthPx * CellTextMetrics.OtherWidthAllowance,
             font.BoldOtherWidthPx ?? boldDigit * CellTextMetrics.OtherWidthAllowance,
-            DensityFor(dense), hover, striped);
+            DensityFor(dense), hover, striped, font.GlyphWidths);
     }
 }
 
@@ -168,10 +178,13 @@ public static class MudExGridPresentation
 /// the digit (<see cref="CellTextMetrics.OtherWidthAllowance"/>).</param>
 /// <param name="BoldOtherWidthPx">The other class at the bold weight, or null: then the core's
 /// allowance over the bold digit.</param>
+/// <param name="GlyphWidths">The letters and currency signs this font draws, each at its own width,
+/// or null to charge them the other class (ticket 83). Only glyphs the font draws itself belong in
+/// it: a glyph it lacks is painted in a fallback the platform chooses.</param>
 public sealed record MudExGridFont(
     string Family, double WideWidthPx, double DigitWidthPx, double NarrowWidthPx, double MeasuredAtPx,
     double? BoldWideWidthPx = null, double? BoldDigitWidthPx = null, double? BoldNarrowWidthPx = null,
-    double? OtherWidthPx = null, double? BoldOtherWidthPx = null)
+    double? OtherWidthPx = null, double? BoldOtherWidthPx = null, GlyphWidthTable? GlyphWidths = null)
 {
     /// <summary>Roboto, as this package measured it.</summary>
     public static MudExGridFont Roboto { get; } = new(
@@ -180,5 +193,5 @@ public sealed record MudExGridFont(
         MudExGridPresentation.RobotoNarrowPx, MudExGridPresentation.RobotoMeasuredAtPx,
         MudExGridPresentation.RobotoBoldWidePx, MudExGridPresentation.RobotoBoldDigitPx,
         MudExGridPresentation.RobotoBoldNarrowPx, MudExGridPresentation.RobotoOtherPx,
-        MudExGridPresentation.RobotoBoldOtherPx);
+        MudExGridPresentation.RobotoBoldOtherPx, MudExGridPresentation.RobotoGlyphWidths);
 }

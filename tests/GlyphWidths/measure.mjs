@@ -8,12 +8,14 @@
 //   node tests/GlyphWidths/measure.mjs dejavu-sans --dejavu "$(nix build --no-link --print-out-paths nixpkgs#dejavu_fonts)/share/fonts/truetype"
 //
 // Writes <face>.<platform>.json here. `--chrome <path>` names the browser; otherwise Google
-// Chrome is looked for where it installs itself.
+// Chrome is looked for where it installs itself. `--text <string>`, given once or more, measures
+// those strings instead and prints them, writing nothing.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { classed } from './classes.mjs';
 
 const here = path.dirname(new URL(import.meta.url).pathname);
 const repo = path.resolve(here, '..', '..');
@@ -56,11 +58,22 @@ const faces = {
 if (!faces[face]) throw new Error(`Unknown face '${face}'. One of: ${Object.keys(faces).join(', ')}.`);
 const { css, family } = faces[face]();
 
-const corpus = JSON.parse(fs.readFileSync(path.join(here, 'corpus.json'), 'utf8'));
-const latin = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'];
-// Every glyph CellTextMetrics names in a class, so each claim it makes is measured in every face.
-const classed = [...'%€\u2212+#', ...'.,()/: ', ...'0123456789$£¥\u20B9\u20BA\u20ABE-\'\u2019\u00A0\u202F\u200E\u200F\u061C'];
-const glyphs = [...new Set([...corpus.flatMap((s) => [...s]), ...latin, ...classed])]
+const texts = args.flatMap((a, i) => (a === '--text' ? [args[i + 1]] : []));
+const corpus = texts.length > 0 ? texts : JSON.parse(fs.readFileSync(path.join(here, 'corpus.json'), 'utf8'));
+const range = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => String.fromCodePoint(from + i));
+const isLetter = (g) => /\p{L}/u.test(g);
+// The glyphs a table may charge on their own (ticket 83): the Latin, Greek and Cyrillic letters
+// month names and currency symbols are written in, and the single-glyph currency signs .NET's
+// cultures use. Signs no culture uses (₯, ₧ …) are left out: a face that lacks one paints it in a
+// fallback as wide as 1.4em, and the other class would have to cover it.
+const tabled = [
+  ...range(0x41, 0x5A), ...range(0x61, 0x7A), ...range(0xC0, 0x17F).filter(isLetter),
+  ...range(0x386, 0x3CE).filter(isLetter), ...range(0x400, 0x45F),
+  ...'¢¤ƒ֏؋৳฿៛₡₦₩₪₫₭₮₱₲₴₵₸₹₺₼₽₾₿',
+];
+// Every glyph CellTextMetrics names in a class is measured too, so each claim it makes is held to
+// every face.
+const glyphs = [...new Set([...corpus.flatMap((s) => [...s]), ...(texts.length > 0 ? [] : [...tabled, ...classed])])]
   .sort((a, b) => a.codePointAt(0) - b.codePointAt(0));
 
 const work = fs.mkdtempSync(path.join(os.tmpdir(), 'glyph-widths-'));
@@ -164,26 +177,35 @@ try {
   }
   socket.close();
 
-  const out = {
-    face,
-    family,
-    platform,
-    userAgent: measured.userAgent,
-    measured: new Date().toISOString().slice(0, 10),
-    unit: '1/64 px, rounded up',
-    corpus: corpus.length,
-    // Which corpus: GlyphWidthRecord.cs refuses a record measured from another one.
-    corpusSha256: createHash('sha256').update(corpus.join('\n'), 'utf8').digest('hex'),
-    glyphs,
-    painters,
-    sizes: measured.sizes,
-  };
-  // One line per array, so a re-measurement diffs by weight and size rather than by number.
-  const json = JSON.stringify(out, null, 1).replace(/\[\n\s*([^\][{}]*?)\n\s*\]/g,
-    (_, inner) => `[${inner.split(/,\n\s*/).join(',')}]`);
-  const file = path.join(here, `${face}.${platform}.json`);
-  fs.writeFileSync(file, json + '\n');
-  console.log(`${path.relative(repo, file)}: ${glyphs.length} glyphs, ${corpus.length} strings, ${measured.userAgent}`);
+  if (texts.length > 0) {
+    for (const [i, text] of texts.entries()) {
+      for (const size of sizes) {
+        const px = weights.map((w) => (measured.sizes[size].strings[w][i] / 64).toFixed(3)).join(' ');
+        console.log(`${JSON.stringify(text)} ${face} ${size}px, weights ${weights.join('/')}: ${px}`);
+      }
+    }
+  } else {
+    const out = {
+      face,
+      family,
+      platform,
+      userAgent: measured.userAgent,
+      measured: new Date().toISOString().slice(0, 10),
+      unit: '1/64 px, rounded up',
+      corpus: corpus.length,
+      // Which corpus: GlyphWidthRecord.cs refuses a record measured from another one.
+      corpusSha256: createHash('sha256').update(corpus.join('\n'), 'utf8').digest('hex'),
+      glyphs,
+      painters,
+      sizes: measured.sizes,
+    };
+    // One line per array, so a re-measurement diffs by weight and size rather than by number.
+    const json = JSON.stringify(out, null, 1).replace(/\[\n\s*([^\][{}]*?)\n\s*\]/g,
+      (_, inner) => `[${inner.split(/,\n\s*/).join(',')}]`);
+    const file = path.join(here, `${face}.${platform}.json`);
+    fs.writeFileSync(file, json + '\n');
+    console.log(`${path.relative(repo, file)}: ${glyphs.length} glyphs, ${corpus.length} strings, ${measured.userAgent}`);
+  }
 } finally {
   const exited = new Promise((r) => browser.once('exit', r));
   browser.kill();

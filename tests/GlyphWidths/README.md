@@ -8,8 +8,10 @@ tickets 82 and 83). This folder holds the evidence and the tool that makes it.
 | File | What it is |
 |---|---|
 | `corpus.json` | The 3,015 strings ExSheet's built-in formats paint: Number and Currency in each negative style at 0 and 2 places, Percentage, Scientific, General, each culture's built-in currency, and the Date and Time types, under 24 cultures, for amounts, fractions, every month and times either side of noon |
-| `measure.mjs` | Measures one face in Chrome: every corpus string, and every glyph the corpus holds, the Latin letters and every glyph `CellTextMetrics` names in a class, at 14px and 12px, weights 400, 500, 600 and 700, tabular digits |
+| `measure.mjs` | Measures one face in Chrome: every corpus string, and every glyph the corpus holds, the letters and currency signs a table may hold, and every glyph `CellTextMetrics` names in a class, at 14px and 12px, weights 400, 500, 600 and 700, tabular digits. `--text <string>` measures a string and prints it |
 | `<face>.<platform>.json` | One face as `measure.mjs` measured it, on one platform |
+| `tables.mjs` | Writes the per-glyph tables from the records: `src/ExGrid/Columns/DefaultGlyphWidths.cs` and `src/ExGrid.MudBlazor/RobotoGlyphTable.cs` |
+| `classes.mjs` | The glyphs `CellTextMetrics` names in a class, which a table leaves out |
 | `GlyphWidthRecord.cs` | Reads a record; compiled into the test projects below |
 
 ## What reads them
@@ -42,10 +44,25 @@ has not been measured yet:
 
    Each writes `<face>.<platform>.json` here. `system-ui` is whatever the platform resolves it to,
    so a run on Linux or Windows adds a record of its own, and the core's tests read it too.
-3. Run layer 1. A failure names each string or glyph charged under its width, the face that painted
-   it, and the size and weight. Raise the class width that charges it — the preset table in
-   `GridMetrics.Resolve`, or `MudExGridPresentation`'s constants — to a shade over the widest
-   reading, at both sizes (`MudExGridPresentation`'s widths are scaled from 14px to 12px).
+3. Write the tables again: `node tests/GlyphWidths/tables.mjs`.
+4. Run layer 1. A failure names each string or glyph charged under its width, the face that painted
+   it, and the size and weight. A glyph a table holds is fixed by step 3. Otherwise raise the
+   class width that charges it — the preset table in `GridMetrics.Resolve`, or
+   `MudExGridPresentation`'s constants — to a shade over the widest reading, at both sizes
+   (`MudExGridPresentation`'s widths are scaled from 14px to 12px).
+
+## The tables
+
+A letter or currency sign is charged its own measured width where a table holds it, and the other
+class otherwise (ticket 83). A table holds only glyphs its face draws itself in every record:
+- **the core's** a glyph DejaVu Sans draws, which is what Linux paints `system-ui` in, at the
+  widest any core record shows — macOS's `system-ui`, whatever font of the stack painted it, and
+  DejaVu Sans — measured at 14px and at 12px apart;
+- **Roboto's** a glyph Roboto draws, at the wider of its 14px width and its 12px one scaled to 14,
+  because the core scales the table.
+
+Each width is the widest at 400, 500 and 600 (regular) or at 700 (bold), a shade over. A glyph a face
+lacks is painted in a fallback the platform chooses, so it stays the other class's.
 
 ## How a width is read
 
@@ -64,14 +81,17 @@ has not been measured yet:
 
 ## What stays out
 
-- **Glyphs only a Custom format emits**, such as quoted text or `‰`. The other class charges them
-  the widest glyph measured, so they are covered as far as they are no wider than it, but they
-  are not measured. `‰` is 20.17px in DejaVu Sans Bold (ticket 82), past every class.
-- **Cultures outside the 24.** Their month names and currency signs are charged the other class
-  too, and are covered as far as the widest glyph measured covers them.
+- **Glyphs only a Custom format emits**, such as quoted text or `‰`. A letter a table holds is
+  charged its width, and anything else the other class, so they are covered as far as the other
+  class covers them, but they are not measured. `‰` is 20.17px in DejaVu Sans Bold (ticket 82),
+  past every class.
+- **Cultures outside the 24.** Their letters in the Latin, Greek and Cyrillic ranges are in the
+  tables, but their strings are not in the corpus. Letters of other scripts are the other class's.
 - **Fallback faces on another platform.** A glyph the face does not draw is measured in the
-  fallback this platform chose. Linux and Windows choose others.
-- **Windows' `system-ui`**, Segoe UI, until a record from Windows is added.
+  fallback this platform chose, and left out of the tables. Linux and Windows choose others.
+- **Windows' `system-ui`**, Segoe UI, until a record from Windows is added. Running `measure.mjs`
+  there and then `tables.mjs` folds it into the core's table.
 - **A Consumer's own font.** Whoever sets `--ex-font-family` owes the widths (ADR-0027's
-  metrics-bearing obligation, ADR-0030). This tool can measure it: add a face to `measure.mjs`
-  and a test that holds the Consumer's widths to its record.
+  metrics-bearing obligation, ADR-0030), and a table if they want letters charged their own widths
+  (`GlyphWidthTable`). Without one, a letter is charged the other class. This tool can measure a
+  font: add a face to `measure.mjs` and a test that holds the Consumer's widths to its record.

@@ -62,12 +62,15 @@ public sealed record GridPresentationDefaults
     /// same three at the bold weight, as the other form takes them, and the other class —
     /// the widest glyph outside the measured classes the formats emit, letters included —
     /// at the regular and the bold weight. Optionally the Density, hover band and Row
-    /// Stripes, as the other forms take them.</summary>
+    /// Stripes, as the other forms take them, and the font's <paramref name="glyphWidths"/>:
+    /// letters and currency signs charged their own widths, scaled to the resolved font size
+    /// from the size the table was measured at.</summary>
     public GridPresentationDefaults(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fontSizePx,
         double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx,
         double otherWidthPx, double boldOtherWidthPx,
-        GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null)
+        GridDensity? density = null, bool? highlightHoverRow = null, bool? stripeRows = null,
+        GlyphWidthTable? glyphWidths = null)
     {
         if (!double.IsFinite(fontSizePx) || fontSizePx <= 0)
         {
@@ -87,6 +90,7 @@ public sealed record GridPresentationDefaults
         BoldNarrowWidthPx = boldNarrowWidthPx;
         OtherWidthPx = otherWidthPx;
         BoldOtherWidthPx = boldOtherWidthPx;
+        GlyphWidths = glyphWidths;
         FontSizePx = fontSizePx;
         Density = density;
         HighlightHoverRow = highlightHoverRow;
@@ -117,6 +121,10 @@ public sealed record GridPresentationDefaults
 
     /// <summary>The other class at the bold weight.</summary>
     public double BoldOtherWidthPx { get; }
+
+    /// <summary>The font's letters and currency signs at their own widths (ticket 83), or null
+    /// to charge them the other class.</summary>
+    public GlyphWidthTable? GlyphWidths { get; }
 
     /// <summary>The font size the widths are true at.</summary>
     public double FontSizePx { get; }
@@ -156,6 +164,7 @@ public sealed record GridPresentationDefaults
             WideWidthPx * scale, DigitWidthPx * scale, NarrowWidthPx * scale,
             Math.Max(fontSizePx, DigitWidthPx * scale), cellHorizontalPaddingPx,
             BoldWideWidthPx * scale, BoldDigitWidthPx * scale, BoldNarrowWidthPx * scale,
-            OtherWidthPx * scale, BoldOtherWidthPx * scale);
+            OtherWidthPx * scale, BoldOtherWidthPx * scale)
+            .WithGlyphWidths(GlyphWidths, fontSizePx);
     }
 }

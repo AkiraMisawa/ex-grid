@@ -20,9 +20,12 @@ public class OtherClassWidthTests : GridTestContext
     private static readonly CellTextMetrics Metrics = ExGrid<TestRow>.DefaultCellMetrics;
 
     private static readonly Func<object, string> LongDate =
-        static v => ((DateTime)v).ToString("MMMM d, yyyy", CultureInfo.InvariantCulture);
+        static v => ((DateTime)v).ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
 
-    private static readonly TestRow[] Rows = [new() { Book = "September 30, 2026", AsOf = new DateTime(2026, 9, 30) }];
+    // "May": its M is charged 13.95px from the core's table, past the digit's 9.75.
+    private const string Shown = "May 30, 2026";
+
+    private static readonly TestRow[] Rows = [new() { Book = Shown, AsOf = new DateTime(2026, 5, 30) }];
 
     private static double CellWidth(IRenderedComponent<ExGrid<TestRow>> cut)
     {
@@ -33,14 +36,15 @@ public class OtherClassWidthTests : GridTestContext
     private IRenderedComponent<ExGrid<TestRow>> RenderGrid(GridColumn<TestRow> column)
         => Render<ExGrid<TestRow>>(ps => ps.Add(g => g.Window, Rows).Add(g => g.Columns, [column]));
 
-    [Fact] // ADR-0016, principle 1: an Auto Date column holds its month name at the other class's charge, and paints it
-    public void An_auto_date_column_is_sized_with_the_other_class()
+    [Fact] // ADR-0016, principle 1: an Auto Date column holds its month name at its measured charge, and paints it
+    public void An_auto_date_column_is_sized_with_the_measured_letters()
     {
         var cut = RenderGrid(new GridColumn<TestRow>(Header, ColumnType.Date, r => r.AsOf, format: LongDate));
 
-        Assert.Equal(Metrics.EstimatePx("September 30, 2026"), CellWidth(cut), 9);
-        Assert.True(Metrics.EstimatePx("September 30, 2026") > Metrics.For(ColumnType.Text).EstimatePx("September 30, 2026"));
-        Assert.Equal("September 30, 2026", cut.Find(".ex-cell").TextContent);
+        Assert.NotNull(Metrics.GlyphWidths);
+        Assert.Equal(Metrics.EstimatePx(Shown), CellWidth(cut), 9);
+        Assert.True(Metrics.EstimatePx(Shown) > Metrics.For(ColumnType.Text).EstimatePx(Shown));
+        Assert.Equal(Shown, cut.Find(".ex-cell").TextContent);
     }
 
     [Fact] // ADR-0016: an Auto Text column charges the same letters at the digit, as before ticket 83
@@ -48,13 +52,13 @@ public class OtherClassWidthTests : GridTestContext
     {
         var cut = RenderGrid(new GridColumn<TestRow>(Header, ColumnType.Text, r => r.Book));
 
-        Assert.Equal(Metrics.For(ColumnType.Text).EstimatePx("September 30, 2026"), CellWidth(cut), 9);
+        Assert.Equal(Metrics.For(ColumnType.Text).EstimatePx(Shown), CellWidth(cut), 9);
     }
 
     [Fact] // ADR-0016, principle 1: a date that fits only with its letters charged as digits is ####, not cut
     public void A_date_that_fits_only_at_a_digits_charge_is_hashed()
     {
-        var width = Metrics.For(ColumnType.Text).EstimatePx("September 30, 2026");
+        var width = Metrics.For(ColumnType.Text).EstimatePx(Shown);
         var cut = RenderGrid(new GridColumn<TestRow>(Header, ColumnType.Date, r => r.AsOf, format: LongDate,
             width: new ColumnWidthSpec(ColumnWidth.Fixed(width))));
 

@@ -201,6 +201,22 @@ public class MudExGridPaperTests : MudTestContext
         Assert.Equal(MudExGridPresentation.Roboto.OtherWidthPx, MudExGridPresentation.For(dense: true, hover: true).OtherWidthPx);
     }
 
+    [Fact] // ADR-0016 / ADR-0030 / ticket 83: Roboto's glyph table is cascaded with its widths, and a font's own with it
+    public void The_glyph_table_is_cascaded_with_the_widths()
+    {
+        var table = new GlyphWidthTable(14, [("M", 13, 14)]);
+        var withTable = new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14, GlyphWidths: table);
+
+        Assert.Same(MudExGridPresentation.RobotoGlyphWidths, MudExGridPresentation.Roboto.GlyphWidths);
+        Assert.Same(MudExGridPresentation.RobotoGlyphWidths, MudExGridPresentation.For(dense: true, hover: false).GlyphWidths);
+        Assert.Same(MudExGridPresentation.RobotoGlyphWidths, MudExGridPresentation.For(MudExGridFont.Roboto, false, false).GlyphWidths);
+        Assert.Same(table, MudExGridPresentation.For(withTable, false, false).GlyphWidths);
+        Assert.Null(MudExGridPresentation.For(new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14), false, false).GlyphWidths);
+        var metrics = GridMetrics.Resolve(GridDensity.Standard, defaults: MudExGridPresentation.Roboto).CellMetrics;
+        Assert.True(metrics.WidthOf('i') < metrics.DigitWidthPx);
+        Assert.True(metrics.WidthOf('M') < MudExGridPresentation.RobotoOtherPx);
+    }
+
     [Fact] // ADR-0030: an elevation MudBlazor does not have is refused, not silently clamped
     public void An_impossible_elevation_is_refused()
     {

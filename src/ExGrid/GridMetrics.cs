@@ -170,6 +170,9 @@ public sealed record GridMetrics
         // sized: its 12px % is 12.438 at 700 where the 14px one scales to 12.308.
         // The bold widths (ADR-0050, item 15) are the same measurement at weight 700: SF's %
         // is the widest wide glyph (14.359; 12.438 at 12px), and DejaVu Sans Bold the rest.
+        // Letters and currency signs DejaVu Sans draws are charged their own widths from the
+        // generated tables (DefaultGlyphWidths, at 14px and 12px), so the other class's 15.46 is
+        // only the fallback for a glyph no table holds.
         var (row, header, font, wide, digit, narrow, other, padding, actionPad, actionBorder, actionGap, menuWidth, menuInset, sortMark)
             = density switch
         {
@@ -207,7 +210,8 @@ public sealed record GridMetrics
             // size this grid emits, so explicit metrics too are charged at least that for
             // it — the uniform and three-class forms cannot know it (ADR-0016).
             (cellMetrics ?? defaults?.CellMetricsAt(font, padding)
-                ?? new CellTextMetrics(wide, digit, narrow, font, padding, boldWide, boldDigit, boldNarrow, other, boldOther))
+                ?? new CellTextMetrics(wide, digit, narrow, font, padding, boldWide, boldDigit, boldNarrow, other, boldOther)
+                    .WithGlyphWidths(density == GridDensity.Excel ? DefaultGlyphWidths.At12 : DefaultGlyphWidths.At14, font))
                 .WithFullWidthAtLeast(font),
             actionPad, actionBorder, actionGap,
             menuWidth, menuInset, sortMark);

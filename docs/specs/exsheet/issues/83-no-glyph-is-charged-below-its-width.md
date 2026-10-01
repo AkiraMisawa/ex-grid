@@ -31,6 +31,9 @@ its width". This comes from ticket 82's measurement (see its comment).
 
 2026-10-01, agent cf-83.
 
+*(Superseded in part by the second round below. The other class stays, but only as the fallback for a
+glyph no table holds. A letter or currency sign the face draws is now charged its own measured width.)*
+
 ### The mechanism: an other class, charged at the widest glyph outside the measured ones
 
 `CellTextMetrics` gains a fifth class, **other**: every glyph that is not wide, narrow or
@@ -256,3 +259,159 @@ pull request (#42). The specs this change bears on are:
   the theme's digit covers every glyph its formats emit.
 - It quotes 14.028 / 9.742 / 6.398, and "Excel's 12px set is that measurement scaled".
 - ADR-0071 records Roboto's bold digit as 8.33.
+
+2026-10-01, agent cf-83, second round.
+
+The orchestrator asked what the other class costs against Excel, and for a tighter mechanism that
+still never cuts. The user's criterion is "as close to Excel as possible", and an early `####` or a
+wider widening than Excel's counts as a cost.
+
+### The mechanism now: a per-glyph table, with the other class as its fallback
+
+- **`GlyphWidthTable`** holds single glyphs, each with its regular and bold width, at the size they
+  were measured at.
+- **`CellTextMetrics.WithGlyphWidths(table, fontSizePx)`** charges a glyph the table holds its own
+  width, scaled to the metrics' size.
+  - The classes still come first. A digit-class glyph such as `E` or `$` keeps its class.
+  - A glyph no class names and no table holds is the other class: 15.46px in the core, 12.44 in
+    Roboto.
+  - `For(ColumnType.Text)` takes the table away, so text and labels are charged as before.
+- **The tables** are generated from the records by `tests/GlyphWidths/tables.mjs`:
+  - the core's (`DefaultGlyphWidths`): 438 glyphs, at 14px and at 12px;
+  - Roboto's (`MudExGridPresentation.RobotoGlyphWidths`): 415 glyphs.
+
+  They cover the Latin letters with Latin-1 and Latin Extended-A, Greek, Cyrillic, and the
+  single-glyph currency signs .NET's cultures use.
+- **A table holds only glyphs its face draws itself.**
+  - The core's table holds a glyph DejaVu Sans draws, which is what Linux paints `system-ui` in. Its
+    width is the widest any core record shows: macOS's `system-ui` stack, fallback included, and
+    DejaVu Sans.
+  - Roboto's table holds a glyph Roboto draws, at the wider of its 14px width and its 12px one
+    scaled to 14.
+  - A glyph the face lacks stays the other class. That is Thai everywhere, `₼` in DejaVu Sans, and
+    Hebrew, `₴` and `฿` in Roboto, because the platform chooses its fallback. The other class
+    covers every such glyph measured: the widest is `₴` in Roboto's stack, 12.031px, in DejaVu Sans
+    Bold standing in for a Linux system without Arial.
+- **Signs no culture uses are not measured**, for example `₯` and `₧`. A face that lacks one paints
+  it in a fallback up to 1.4em wide, and the other class would have to grow to cover it.
+
+### Nothing is cut
+
+The corpus tests pass with the tables, at 14px and 12px and at every weight, in all three faces.
+No string paints past its estimate, and no glyph past its charge. That covers 3,015 strings and 523
+glyphs.
+
+### Early `####`s, out of 3,015
+
+Each row is counted against the same class widths with every letter charged as a digit, which was
+how letters were charged before ticket 83:
+
+| | number formats (1,389): earlier / later | dates and times (1,626): earlier / later |
+|---|---|---|
+| other class (first round), core and Roboto | 703 / 0 | 1,120 / 0 |
+| table, core | 503 / 200 | 379 / 741 |
+| table, Roboto | 503 / 200 | 250 / 870 |
+
+- **Number formats, earlier under the table:**
+  - the 400 amounts in `₩ ₪ ₦ ₱ ₽ ₼ ₴ ฿`. These signs are as wide as that: `₩` is 15.45px in DejaVu
+    Sans Bold;
+  - the 103 in `CHF` and `R$`, whose capitals are wider than a digit.
+- **Number formats, later:** the 200 in `Ft`, `kr`, `zł` and `Kč`, whose letters are narrower than a
+  digit.
+- **On average:** a string that rises rises 3.8px in the core and 5.5px in Roboto. One that falls
+  falls 4.7px.
+- **Distance from Excel.** Excel decides on what is painted, so the distance is the estimate minus
+  the widest painting across faces and weights, at 14px and weight 600:
+
+  | | core: median / 90th percentile | Roboto: median / 90th percentile |
+  |---|---|---|
+  | before ticket 83 (132 strings cut in the core, 63 in Roboto) | 5.41 / 14.40 | 9.02 / 18.26 |
+  | other class | 12.45 / 41.85 | 15.66 / 37.55 |
+  | table | 4.36 / 11.92 | 8.10 / 17.74 |
+
+  The table is closer than before ticket 83, and never cuts.
+
+### 1. ExSheet's own defaults
+
+A standard-width column is 99px, with 83 for the text, in both the core and the Wrapper. Ticket
+58's widening takes the wider of the characters the text needs (one digit each) and the estimate.
+
+**Core:**
+
+| text (culture) | Excel | before ticket 83 | other class | table |
+|---|---|---|---|---|
+| `09-Dec-25` (en-GB, date key) | widened 8.09 → 8.73 | widened to 104px, 9.03 characters | widened to 121px, 10.77 | widened to 104px, 9.03 |
+| `05-Jan-26` (en-GB) | fitted 8.09 | widened to 104px, 9.03 | widened to 121px, 10.77 | widened to 104px, 9.03 |
+| `5-Jan-26` (en-US) | fitted 8.09 | fits (estimate 93.9px) | `####`, or widened to 112px, 9.85 | fits (92.2px) |
+| `9:05 AM` (en-US, time key) | fitted | fits (77.5px) | fits (89.0px) | fits (82.9px) |
+
+- **The table restores pre-83 widening.** It gives the same widened widths as before ticket 83, and
+  `5-Jan-26` fits again, as in Excel.
+- **One pre-existing difference from Excel remains: the en-GB `05-Jan-26`.** ExSheet widens to 9.03
+  characters under every mechanism, where Excel fitted it at 8.09.
+  - The cause is ticket 58's rule: nine characters at a digit each need 103.75px, past 99.
+  - Excel widens on the text it paints, in Aptos Narrow. That is also why it gave `09-Dec-25` 8.73,
+    against ExSheet's 9.03.
+  - This ticket's estimate does not decide it.
+- **Pinned in layer 2.** `FormatWideningTests.Under_en_us_the_date_and_time_keys_texts_fit_the_default_width`
+  checks case 19 under en-US: the column stays at the default width. Under the other class, it failed.
+
+**Roboto (ExSheet in the Wrapper):** nine Roboto digits need only 90.7px, so the character rule does
+not widen.
+
+| text | before ticket 83 | other class | table |
+|---|---|---|---|
+| `09-Dec-25` | fits (74.7px) | widened to 104px | fits (73.9px) |
+| `05-Jan-26` | fits (74.7px) | widened to 104px | fits (73.1px) |
+| `9:05 AM` | fits | fits | fits |
+
+### 2. Typical ExGrid date columns
+
+The `####` threshold is the estimate, in px of text; a cell adds 16. The change against before
+ticket 83 is in brackets:
+
+| text | core: before / other class / table | widest painting, core | Roboto: before / other class / table | widest painting, Roboto |
+|---|---|---|---|---|
+| `Sep 30, 2026` | 106.87 / 124.11 (+17.24) / 107.38 (+0.51) | 103.13 | 92.10 / 104.52 (+12.42) / 91.21 (−0.89) | 82.69 |
+| `30 Sep 2026` | 100.47 / 117.70 (+17.23) / 100.97 (+0.50) | 97.80 | 86.30 / 98.72 (+12.42) / 85.41 (−0.89) | 79.23 |
+| `Dec 9, 2025` | 97.13 / 114.36 (+17.23) / 97.44 (+0.31) | 93.19 | 83.80 / 96.22 (+12.42) / 83.00 (−0.80) | 74.55 |
+| `September 30, 2026` | 165.32 / 216.87 (+51.55) / 164.67 (−0.65) | 160.31 | 141.90 / 179.16 (+37.26) / 136.28 (−5.62) | 127.67 |
+
+- **The core's widest painting is DejaVu Sans Bold.** On macOS at weight 400, SF paints
+  `Sep 30, 2026` at 88.61px, so a Mac shows `####` about 19px before the text would fill the cell.
+  That gap is the core's one set of widths for every platform (ADR-0016), not this mechanism.
+- **Under the table, the core's `####` for a short month comes at most 0.51px earlier than before.**
+
+### Layer 3
+
+Targeted, on port 5481, headless, project chrome, WebAssembly host: `appearance.spec.mjs`,
+`mud.spec.mjs` (which also matches `format-cells-mud.spec.mjs`) and `format-keys.spec.mjs`. 58 passed.
+The host was stopped afterwards.
+
+### Layers 1 and 2
+
+ExGrid.Tests 998, ExGrid.Components 1259 (one skipped), ExGrid.MudBlazor.Tests 165,
+ExSheet.Engine.Tests 2304, ExSheet.Components.Tests 541, ExSheet.MudBlazor.Tests 35.
+
+- **New:** `GlyphWidthTableTests` (ExGrid.Tests, 14 cases). It covers the charge, the class's
+  precedence, the fallback, the scaling, text and bold, the refusals, the core's tables per density,
+  and a Wrapper's table through its defaults.
+- **New:** a Mud test that the table is cascaded with the widths, and a font's own with it.
+- **New:** the case-19 test above.
+- **Changed:** `OtherClassWidthTests` now uses `May 30, 2026`. Under the table, `September` costs
+  less than nine digits.
+
+### Public shape, for ADR-0016
+
+These are additions to the first round's:
+- `GlyphWidthTable`:
+  - `(double measuredAtPx, IEnumerable<(string Glyph, double RegularPx, double BoldPx)>)`;
+  - `MeasuredAtPx`, `Count` and `TryGetWidthPx(int codePoint, bool bold, out double)`.
+- `CellTextMetrics`:
+  - `GlyphWidths`;
+  - `WithGlyphWidths(GlyphWidthTable?, double fontSizePx)`;
+  - `For(ColumnType.Text)` drops the table, and `Bold` reads its bold widths.
+- `GridPresentationDefaults`: an optional `glyphWidths` on the measured constructor, and `GlyphWidths`.
+- `MudExGridPresentation.RobotoGlyphWidths`, and `MudExGridFont`'s optional `GlyphWidths`.
+- The core's presets carry `DefaultGlyphWidths.At14`, or `At12` for Excel.
+- A Consumer's explicit `CellMetrics` carry no table unless the Consumer adds one.

@@ -79,8 +79,8 @@ internal sealed class GlyphWidthRecord
     /// when it is still the corpus.</summary>
     public string MeasuredCorpusSha256 { get; }
 
-    /// <summary>Every glyph of the corpus, the Latin letters and every glyph
-    /// <c>CellTextMetrics</c> names in a class, by code point.</summary>
+    /// <summary>Every glyph of the corpus, the letters and currency signs a table may hold, and
+    /// every glyph <c>CellTextMetrics</c> names in a class, by code point.</summary>
     public IReadOnlyList<string> Glyphs { get; }
 
     /// <summary>The face that painted each glyph at each weight: the family, or a fallback.</summary>

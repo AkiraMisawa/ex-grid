@@ -17,11 +17,12 @@ namespace ExGrid.Columns;
 /// and <c>−</c>, <c>+</c> and <c>#</c> at 11.734px.</para>
 ///
 /// <para><b>The other class</b> (ADR-0016; ticket 83) is every glyph outside the four measured
-/// ones: letters, the currency signs wider than a digit, and anything not foreseen. It is
-/// charged at the widest of them measured, so a glyph nobody listed errs toward
-/// <c>####</c>, never toward a cut number. Only a value that can become <c>####</c> is charged
-/// it: a Text value or a label is estimated with the other class at the digit, as before
-/// (<see cref="For"/>), because what never hashes is cut visibly.</para>
+/// ones: letters, the currency signs wider than a digit, and anything not foreseen. A letter or
+/// currency sign the face draws itself is charged its own measured width from a
+/// <see cref="GlyphWidthTable"/>; everything else is charged the widest glyph measured, so a glyph
+/// nobody listed errs toward <c>####</c>, never toward a cut number. Only a value that can become
+/// <c>####</c> is charged either: a Text value or a label is estimated with them at the digit, as
+/// before (<see cref="For"/>), because what never hashes is cut visibly.</para>
 ///
 /// <para><b>Bold widths</b> (ADR-0050, item 15; ADR-0071) are the wide, digit, narrow and other
 /// classes measured at the bold weight a Consumer's per-cell Font paints, and a bold cell is
@@ -84,12 +85,25 @@ public readonly record struct CellTextMetrics
     /// <summary>Every class, measured (ADR-0016; ticket 83): the four-class form with the bold
     /// widths, and the other class at the regular and the bold weight — the widest glyph outside
     /// the four classes the column's formats emit, at every weight painted. The other widths are
-    /// refused narrower than their digit.</summary>
+    /// refused narrower than their digit. A table of single glyphs is added with
+    /// <see cref="WithGlyphWidths"/>.</summary>
     public CellTextMetrics(
         double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fullWidthPx,
         double cellHorizontalPaddingPx,
         double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx,
         double otherWidthPx, double boldOtherWidthPx)
+        : this(wideWidthPx, digitWidthPx, narrowWidthPx, fullWidthPx, cellHorizontalPaddingPx,
+            boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx, otherWidthPx, boldOtherWidthPx,
+            glyphs: null, glyphScale: 1, glyphBold: false)
+    {
+    }
+
+    private CellTextMetrics(
+        double wideWidthPx, double digitWidthPx, double narrowWidthPx, double fullWidthPx,
+        double cellHorizontalPaddingPx,
+        double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx,
+        double otherWidthPx, double boldOtherWidthPx,
+        GlyphWidthTable? glyphs, double glyphScale, bool glyphBold)
     {
         if (!double.IsFinite(digitWidthPx) || digitWidthPx <= 0)
             throw new ArgumentOutOfRangeException(nameof(digitWidthPx), digitWidthPx,
@@ -133,7 +147,15 @@ public readonly record struct CellTextMetrics
         BoldNarrowWidthPx = boldNarrowWidthPx;
         OtherWidthPx = otherWidthPx;
         BoldOtherWidthPx = boldOtherWidthPx;
+        GlyphWidths = glyphs;
+        _glyphScale = glyphScale;
+        _glyphBold = glyphBold;
     }
+
+    // What the table's widths are multiplied by (the resolved font size over the size it was
+    // measured at), and whether its bold widths are read.
+    private readonly double _glyphScale;
+    private readonly bool _glyphBold;
 
     /// <summary>
     /// What metrics built without bold widths charge a bold character, over its regular class
@@ -196,6 +218,14 @@ public readonly record struct CellTextMetrics
     public double BoldOtherWidthPx { get; }
 
     /// <summary>
+    /// Single glyphs charged their own measured width instead of their class's (ticket 83):
+    /// letters and currency signs the face draws itself, so a month name or a currency symbol is
+    /// charged what it paints. Null charges every glyph by its class. The classes come first: a
+    /// glyph a class names is charged the class, whatever the table holds.
+    /// </summary>
+    public GlyphWidthTable? GlyphWidths { get; }
+
+    /// <summary>
     /// The metrics a bold cell is judged by (ADR-0050, item 15): the bold widths in the regular
     /// widths' place, with the same full-width class — no narrower than the bold digit, which the
     /// uniform form's em would be — and the same padding. Its own bold widths are the same ones, so
@@ -205,7 +235,7 @@ public readonly record struct CellTextMetrics
     public CellTextMetrics Bold => new(
         BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, Math.Max(FullWidthPx, BoldDigitWidthPx),
         CellHorizontalPaddingPx, BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx,
-        BoldOtherWidthPx, BoldOtherWidthPx);
+        BoldOtherWidthPx, BoldOtherWidthPx, GlyphWidths, _glyphScale, glyphBold: true);
 
     /// <summary>These metrics with measured bold widths in place of whatever they carried —
     /// derived, or another theme's (ADR-0050, item 15). The bold other class goes with them: it is
@@ -213,26 +243,46 @@ public readonly record struct CellTextMetrics
     public CellTextMetrics WithBoldWidths(double boldWideWidthPx, double boldDigitWidthPx, double boldNarrowWidthPx)
         => new(WideWidthPx, DigitWidthPx, NarrowWidthPx, FullWidthPx, CellHorizontalPaddingPx,
             boldWideWidthPx, boldDigitWidthPx, boldNarrowWidthPx,
-            OtherWidthPx, boldDigitWidthPx * OtherWidthAllowance);
+            OtherWidthPx, boldDigitWidthPx * OtherWidthAllowance, GlyphWidths, _glyphScale, _glyphBold);
+
+    /// <summary>
+    /// These metrics charging the glyphs <paramref name="table"/> holds their own widths (ticket
+    /// 83), scaled from the size the table was measured at to <paramref name="fontSizePx"/>, the
+    /// size these metrics are true at. Null takes a table away. The bold widths are read when the
+    /// metrics are <see cref="Bold"/>.
+    /// </summary>
+    public CellTextMetrics WithGlyphWidths(GlyphWidthTable? table, double fontSizePx)
+    {
+        if (!double.IsFinite(fontSizePx) || fontSizePx <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(fontSizePx), fontSizePx,
+                "A font size is a finite, positive number of pixels.");
+        }
+        return new(WideWidthPx, DigitWidthPx, NarrowWidthPx, FullWidthPx, CellHorizontalPaddingPx,
+            BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, OtherWidthPx, BoldOtherWidthPx,
+            table, table is null ? 1 : fontSizePx / table.MeasuredAtPx, _glyphBold);
+    }
 
     /// <summary>
     /// The metrics a value of <paramref name="type"/> is estimated with (ADR-0016; ticket 83).
     /// A Number or Date becomes <c>####</c> when it does not fit, so it is charged every class,
-    /// the other class included: these metrics. A Text or Boolean value never does — it is cut
-    /// with a visible ellipsis — so it, and a label, is charged the other class at the digit,
-    /// as every glyph outside the measured classes was before ticket 83: an Auto width or a
-    /// header sized for text does not widen for it. The bold widths follow, so
-    /// <see cref="Bold"/> composes with this either way round.
+    /// the other class and the glyph table included: these metrics. A Text or Boolean value never
+    /// does — it is cut with a visible ellipsis — so it, and a label, is charged every glyph
+    /// outside the measured classes at the digit, as before ticket 83: an Auto width or a header
+    /// sized for text does not move. The bold widths follow, so <see cref="Bold"/> composes with
+    /// this either way round.
     /// </summary>
     public CellTextMetrics For(ColumnType type) => OverflowRules.HashesWhenOverflowing(type)
         ? this
         : new(WideWidthPx, DigitWidthPx, NarrowWidthPx, FullWidthPx, CellHorizontalPaddingPx,
-            BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, DigitWidthPx, BoldDigitWidthPx);
+            BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, DigitWidthPx, BoldDigitWidthPx,
+            glyphs: null, glyphScale: 1, _glyphBold);
 
-    /// <summary>One character's charge, by class (ADR-0016). Anything outside the four measured
-    /// classes is the other class — the widest glyph measured, so a glyph nobody listed errs
-    /// toward <c>####</c> (ticket 83). A surrogate half is charged as the other class;
-    /// <see cref="TextWidthPx"/> charges the pair as the one character it encodes.</summary>
+    /// <summary>One character's charge (ADR-0016): its class's, or its own width where the glyph
+    /// table holds it (ticket 83). Anything no class names and no table holds is the other class —
+    /// the widest glyph measured, so a glyph nobody listed errs toward <c>####</c>. A surrogate
+    /// half is charged as the other class; <see cref="TextWidthPx"/> charges the pair as the one
+    /// character it encodes.</summary>
     public double WidthOf(char c) => WidthOf((int)c);
 
     private double WidthOf(int codePoint) => codePoint switch
@@ -241,6 +291,7 @@ public readonly record struct CellTextMetrics
         '.' or ',' or '(' or ')' or '/' or ':' or ' ' => NarrowWidthPx,
         _ when IsFullWidth(codePoint) => FullWidthPx,
         _ when IsDigitClass(codePoint) => DigitWidthPx,
+        _ when GlyphWidths is { } table && table.TryGetWidthPx(codePoint, _glyphBold, out var px) => px * _glyphScale,
         _ => OtherWidthPx,
     };
 
@@ -318,7 +369,8 @@ public readonly record struct CellTextMetrics
     internal CellTextMetrics WithFullWidthAtLeast(double emPx) => FullWidthPx >= emPx
         ? this
         : new CellTextMetrics(WideWidthPx, DigitWidthPx, NarrowWidthPx, emPx, CellHorizontalPaddingPx,
-            BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, OtherWidthPx, BoldOtherWidthPx);
+            BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx, OtherWidthPx, BoldOtherWidthPx,
+            GlyphWidths, _glyphScale, _glyphBold);
 
     /// <summary>The width left for content after padding; can be zero or negative in a
     /// crushed column.</summary>

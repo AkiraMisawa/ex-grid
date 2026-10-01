@@ -263,4 +263,23 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal(dateCode, FormatAt(cut, "A1").NumberFormat.Code);
         Assert.Equal(timeCode, FormatAt(cut, "A2").NumberFormat.Code);
     }
+
+    [Fact] // ADR-0071 case 19, ADR-0016 (ticket 83): under en-US the date key's 5-Jan-26 and the time key's 9:05 AM fit the default width, which stays, as Excel's did
+    public async Task Under_en_us_the_date_and_time_keys_texts_fit_the_default_width()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-US", ("A1", "=46027"), ("A2", "=545/1440"))));
+
+        await GoToAsync(cut, "A1");
+        await PressAsync(cut, "#", ctrl: true, shift: true);
+        await GoToAsync(cut, "A2");
+        await PressAsync(cut, "@", ctrl: true, shift: true);
+
+        // Their letters are charged their measured widths: as the other class, J, a and n came to
+        // 46.38px and widened the column to 112px.
+        Assert.Equal("5-Jan-26", CellText(cut, "A1"));
+        Assert.Equal("9:05 AM", CellText(cut, "A2"));
+        Assert.True(Metrics.EstimatePx("5-Jan-26") <= SheetColumns.DefaultWidthPx);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
+    }
 }
