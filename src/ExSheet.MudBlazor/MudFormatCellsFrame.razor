@@ -26,11 +26,16 @@
     once more and waits for that render's OnAfterRenderAsync, which Blazor runs once the browser
     has applied the render, the dialog's removal with it. Only then does it set OK's change or the
     Cancel, and hand the keyboard back.
+
+    The element holds the keys typed while the keyboard waits on it (KeysOnTheirWay): on a circuit
+    the dialog is drawn, and its tabs take the keyboard, round trips after the gesture, and an End
+    typed as the dialog appeared was lost (layer 3, CI). They reach the tab shown once the tabs hold
+    the keyboard. Their defaults are the element's, prevented: an End there would scroll the page.
 *@
 @if (_leaving)
 {
     <span class="mud-ex-sheet-format-cells-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" aria-hidden="true"
-          @ref="_leavingFrom"></span>
+          @onkeydown="_keyOnTheWay" @onkeydown:preventDefault @ref="_leavingFrom"></span>
 }
 
 @code {
@@ -47,9 +52,13 @@
         DefaultFocus = DefaultFocus.None,
     };
 
-    // Whether the element the keyboard leaves from stands, and that element.
+    // Whether the element the keyboard leaves from stands, and that element; and the keys typed
+    // on it, on their way to the dialog.
     private bool _leaving = true;
     private ElementReference _leavingFrom;
+    private readonly KeysOnTheirWay _keys = new();
+    private readonly Func<KeyboardEventArgs, Task> _keyOnTheWay;
+    private readonly Func<Func<KeyboardEventArgs, Task<bool>>, Task> _keysArrive;
     // ExSheet renders this frame whenever it renders, the grid's scrolling included; it draws
     // again only when the element goes (ADR-0003's rule: skip what has not changed).
     private bool _changed;
@@ -61,6 +70,13 @@
 
     /// <summary>ExSheet's Format Cells, as it opened (ADR-0071).</summary>
     [Parameter, EditorRequired] public FormatCellsContext Context { get; set; } = default!;
+
+    /// <summary>Where the keys typed on the element go, held in a field (AGENTS.md, the Blazor traps).</summary>
+    public MudFormatCellsFrame()
+    {
+        _keyOnTheWay = _keys.TypedAsync;
+        _keysArrive = _keys.ArrivedAsync;
+    }
 
     /// <inheritdoc />
     protected override bool ShouldRender()
@@ -92,6 +108,7 @@
             { d => d.Context, Context },
             { d => d.KeyboardTaken, (Action)KeyboardTaken },
             { d => d.Drawn, (Action)(() => _drawn.TrySetResult()) },
+            { d => d.KeysArrive, _keysArrive },
         };
         var dialog = await Dialogs.ShowAsync<MudFormatCellsDialog>(MudFormatCellsDialog.Title, parameters, Options);
         if (_disposed)

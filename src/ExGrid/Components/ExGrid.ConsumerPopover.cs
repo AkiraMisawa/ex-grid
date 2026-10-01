@@ -20,6 +20,13 @@ public partial class ExGrid<TRow>
     private int _consumerFocusRequest;
     private int _consumerFocusLastRequest;
 
+    // Whether the contents have held the keyboard since this opening. Until they have, a sentinel
+    // that takes it was reached from outside the popover, not off its contents' first or last
+    // control: on a circuit the contents take the keyboard a round trip after the popover is drawn,
+    // and the page has it meanwhile — on nothing, where a command run by a press closed the menu
+    // the popover replaced. Shift+Tab there lands on the trailing sentinel, from behind.
+    private bool _consumerContentsHeld;
+
     private sealed record ConsumerPopover(RenderFragment<GridPopoverContext> Content, string Label);
 
     /// <summary>
@@ -85,6 +92,7 @@ public partial class ExGrid<TRow>
         _popoverFocusPending = PopoverFocus.None;
         _consumerFocusRequest++;
         _consumerFocusLastRequest = 0;
+        _consumerContentsHeld = false;
         _suppressRender = false;
         StateHasChanged();
         return true;
@@ -94,14 +102,41 @@ public partial class ExGrid<TRow>
     private GridPopoverContext BuildConsumerPopoverContext()
         => new(CloseFromChrome, _consumerFocusRequest, _consumerFocusLastRequest, InnerPopupChangedFromChrome);
 
-    /// <summary>Tab off the contents' last control lands on the trailing sentinel, which hands
-    /// the keyboard back to their first (ADR-0039): this handler is the grid's own, so the
-    /// render that carries the count follows.</summary>
-    private void WrapConsumerPopoverToFirst() => _consumerFocusRequest++;
+    /// <summary>The contents hold the keyboard: the sentinels wrap from here on. Nothing is drawn
+    /// for it.</summary>
+    private void ConsumerContentsHeld()
+    {
+        _consumerContentsHeld = true;
+        _suppressRender = true;
+    }
 
-    /// <summary>Shift+Tab off the contents' first control lands on the leading sentinel, which
-    /// hands the keyboard on to their last.</summary>
-    private void WrapConsumerPopoverToLast() => _consumerFocusLastRequest++;
+    /// <summary>
+    /// The trailing sentinel takes the keyboard (ADR-0039). Tab off the contents' last control
+    /// lands here, and it hands the keyboard back to their first: this handler is the grid's own,
+    /// so the render that carries the count follows. Reached before the contents have held the
+    /// keyboard, it was entered from behind — Shift+Tab from the page — and the keyboard enters
+    /// the contents at their last control, as Shift+Tab would.
+    /// </summary>
+    private void OnConsumerTrailingSentinel()
+    {
+        if (_consumerContentsHeld)
+            _consumerFocusRequest++;
+        else
+            _consumerFocusLastRequest++;
+    }
+
+    /// <summary>
+    /// The leading sentinel takes the keyboard. Shift+Tab off the contents' first control lands
+    /// here, and it hands the keyboard on to their last. Reached before the contents have held the
+    /// keyboard, it was entered from in front, and the keyboard enters at their first control.
+    /// </summary>
+    private void OnConsumerLeadingSentinel()
+    {
+        if (_consumerContentsHeld)
+            _consumerFocusLastRequest++;
+        else
+            _consumerFocusRequest++;
+    }
 
     /// <summary>
     /// Where a Consumer's popover stands (ADR-0040): under the header band, as a column's popover

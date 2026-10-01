@@ -18,6 +18,13 @@ internal sealed class MudFormatCellsTabs : MudTabs
     /// <summary>Takes the keyboard to the tab shown, once, as soon as the tabs are drawn: Format Cells opens with the keyboard on its tab.</summary>
     [Parameter] public bool FocusOnOpen { get; set; }
 
+    /// <summary>Called once the tab shown holds the keyboard after <see cref="FocusOnOpen"/>.</summary>
+    [Parameter] public Func<Task>? Focused { get; set; }
+
+    /// <summary>A key, as if pressed on the tab shown.</summary>
+    internal Task KeyAsync(KeyboardEventArgs key) =>
+        ActivePanel is { } shown ? HandleTabKeyDownAsync(key, shown) : Task.CompletedTask;
+
     /// <inheritdoc />
     protected override async Task HandleTabKeyDownAsync(KeyboardEventArgs e, MudTabPanel panel)
     {
@@ -53,6 +60,7 @@ internal sealed class MudFormatCellsTabs : MudTabs
         if (!FocusOnOpen || _focused || ActivePanel is not { } shown || shown.PanelRef.Context is null) return;
         _focused = true;
         await FocusAsync(shown);
+        if (Focused is { } focused) await focused();
     }
 
     private static async Task FocusAsync(MudTabPanel panel)

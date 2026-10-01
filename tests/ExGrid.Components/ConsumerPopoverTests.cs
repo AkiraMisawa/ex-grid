@@ -166,6 +166,8 @@ public class ConsumerPopoverTests : GridTestContext
         var probe = new Probe();
         await OpenAsync(cut, probe);
         var opening = probe.Context!.FocusRequest;
+        // The contents take the keyboard, as they do on their count.
+        await cut.Find(".ex-popover-consumer > .ex-popover-body").FocusInAsync(new FocusEventArgs());
         var sentinels = cut.FindAll(".ex-popover-consumer > .ex-focus-wrap");
 
         await sentinels[1].FocusAsync(new FocusEventArgs());
@@ -174,6 +176,31 @@ public class ConsumerPopoverTests : GridTestContext
         await cut.FindAll(".ex-popover-consumer > .ex-focus-wrap")[0].FocusAsync(new FocusEventArgs());
         Assert.Equal(1, probe.Context!.FocusLastRequest);
         Assert.Equal(opening + 1, probe.Context.FocusRequest);
+    }
+
+    [Fact] // ADR-0050 item 16 / DC-60 / ADR-0039: a sentinel reached before the contents hold the keyboard was entered from outside, and the keyboard enters at the near end
+    public async Task A_sentinel_entered_from_outside_enters_at_the_near_end()
+    {
+        var cut = RenderGrid();
+        await Report(cut, 300);
+        var probe = new Probe();
+        await OpenAsync(cut, probe);
+        var opening = probe.Context!.FocusRequest;
+
+        // Shift+Tab from the page, while the contents' first focus is still on its way: from behind,
+        // onto the trailing sentinel — the last control, not a wrap to the first.
+        await cut.FindAll(".ex-popover-consumer > .ex-focus-wrap")[1].FocusAsync(new FocusEventArgs());
+
+        Assert.Equal(1, probe.Context!.FocusLastRequest);
+        Assert.Equal(opening, probe.Context.FocusRequest);
+
+        // Tab from in front, onto the leading sentinel: the first control.
+        await OpenAsync(cut, probe);
+        opening = probe.Context!.FocusRequest;
+        await cut.FindAll(".ex-popover-consumer > .ex-focus-wrap")[0].FocusAsync(new FocusEventArgs());
+
+        Assert.Equal(opening + 1, probe.Context!.FocusRequest);
+        Assert.Equal(0, probe.Context.FocusLastRequest);
     }
 
     [Fact] // ADR-0050 item 16 / DC-60 / ADR-0039: Escape from inside closes it, and the root takes the keyboard

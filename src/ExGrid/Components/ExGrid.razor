@@ -694,12 +694,13 @@
         @* A Consumer's popover (ADR-0050, item 16): the Consumer's contents in the core's frame,
            a popover by every popover rule (ADR-0039/0040) and keyed by its opening like the
            others. A sentinel either side wraps Tab inside it: the trailing one asks the contents
-           for their first control, the leading one for their last. *@
+           for their first control, the leading one for their last — once the contents have held
+           the keyboard; before, a sentinel was entered from outside, and asks for the near end. *@
         <div class="ex-popover ex-popover-consumer" style="@ConsumerPopoverStyle()" role="dialog"
              aria-label="@consumerPopover.Label" @key="_popoverFocusRequest">
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="WrapConsumerPopoverToLast"></span>
-            <div class="ex-popover-body">@consumerPopover.Content(BuildConsumerPopoverContext())</div>
-            <span class="ex-focus-wrap" tabindex="0" @onfocus="WrapConsumerPopoverToFirst"></span>
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerLeadingSentinel"></span>
+            <div class="ex-popover-body" @onfocusin="ConsumerContentsHeld">@consumerPopover.Content(BuildConsumerPopoverContext())</div>
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerTrailingSentinel"></span>
         </div>
     }
     @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
