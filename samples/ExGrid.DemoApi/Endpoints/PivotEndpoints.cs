@@ -48,9 +48,23 @@ internal static class PivotEndpoints
             Answer(request, store, PivotJson.ReadItemsQuery,
                 async (query, token) => PivotJson.Write(await source.ItemsAsync(query, token)), cancellationToken));
         app.MapPost("/api/pivot/details", (HttpRequest request, TradePivotSource source, TradeStore store, CancellationToken cancellationToken) =>
-            Answer(request, store, PivotJson.ReadDetailsQuery,
+            Answer(request, store, ReadDetailsPage,
                 async (query, token) => PivotJson.Write(await source.DetailsAsync(query, token)), cancellationToken));
         return app;
+    }
+
+    /// <summary>The most records one Details page may ask for. A page is what a grid paints and
+    /// reads ahead; a million records in one answer is not something to build (principle 5), so a
+    /// larger page is refused, naming the cap, and the caller asks in pages.</summary>
+    public const int MaxDetailsPage = 10_000;
+
+    private static PivotDetailsQuery ReadDetailsPage(string document)
+    {
+        var query = PivotJson.ReadDetailsQuery(document);
+        if (query.Count > MaxDetailsPage)
+            throw new FormatException(
+                $"A Details page holds at most {MaxDetailsPage:N0} records, and this one asks for {query.Count:N0}; ask for the records in pages.");
+        return query;
     }
 
     // Reads the question's document, asks the source, and answers with the answer's document.

@@ -148,9 +148,12 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
             {
                 if (row.ValueAt(column) is not { } value)
                     continue;
-                // The whole cell, then a page from inside it: the same records, and the same total.
-                var all = await sources.Sql.DetailsAsync(report.DetailsQuery(row, column), Token);
-                SameDetails(await sources.ReferenceDetails(report.DetailsQuery(row, column)), all);
+                // The whole cell — one page holds it, under the server's cap on a page — then a
+                // page from inside it: the same records, and the same total.
+                var whole = report.DetailsQuery(row, column, count: PivotEndpoints.MaxDetailsPage);
+                var all = await sources.Sql.DetailsAsync(whole, Token);
+                Assert.True(all.Total <= PivotEndpoints.MaxDetailsPage, "a cell this test reads whole fits one page");
+                SameDetails(await sources.ReferenceDetails(whole), all);
                 Assert.Equal(value.Exact, all.Records.Sum(record => (decimal)record.Values[9]!));
                 Assert.All(all.Records, record => Assert.NotEqual("GBP", record.Values[5]));
                 var page = report.DetailsQuery(row, column, start: 3, count: 4);
@@ -304,7 +307,7 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
         foreach (var (path, document) in new[]
                  {
                      ("/api/pivot/items", PivotJson.Write(new PivotItemsQuery("Nope", sources.Version))),
-                     ("/api/pivot/details", PivotJson.Write(new PivotDetailsQuery(sources.Version, [new("Region", T("EMEA"))], [], [F("Nope", T("x"))]))),
+                     ("/api/pivot/details", PivotJson.Write(new PivotDetailsQuery(sources.Version, [new("Region", T("EMEA"))], [], [F("Nope", T("x"))], count: 100))),
                  })
         {
             var refusal = JsonDocument.Parse(await Post(client, path, document, null, Token)).RootElement.GetProperty("refusal");
@@ -356,7 +359,7 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
 
             var stale = PivotSourceRefusal.SourceVersionNotHeld(before.Version);
             Assert.Equal(stale, (await after.Sql.ItemsAsync(new PivotItemsQuery("Region", before.Version), Token)).Refusal);
-            Assert.Equal(stale, (await after.Sql.DetailsAsync(new PivotDetailsQuery(before.Version, [new("Region", T("EMEA"))]), Token)).Refusal);
+            Assert.Equal(stale, (await after.Sql.DetailsAsync(new PivotDetailsQuery(before.Version, [new("Region", T("EMEA"))], count: 100), Token)).Refusal);
             // As the reference refuses a version it does not hold, in the same words.
             Assert.Equal((await after.ReferenceItems(new PivotItemsQuery("Region", before.Version))).Refusal, stale);
             Assert.Equal((await after.ReferenceDetails(new PivotDetailsQuery(before.Version))).Refusal, stale);
@@ -375,6 +378,7 @@ public sealed class PivotSourceTests(PivotApiServer server) : IClassFixture<Pivo
     [InlineData("/api/pivot/aggregate", "{\"version\":1,\"type\":\"query\",\"rows\":[{\"field\":\"Region\"}],\"columns\":[{\"field\":\"Region\"}],\"maxLeaves\":10}", "places 'Region' twice")]
     [InlineData("/api/pivot/items", "{\"version\":1,\"type\":\"itemsQuery\",\"field\":\"Region\"}", "'sourceVersion' is a string")]
     [InlineData("/api/pivot/details", "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"x\",\"start\":-1,\"count\":5}", "cannot be")]
+    [InlineData("/api/pivot/details", "{\"version\":1,\"type\":\"detailsQuery\",\"sourceVersion\":\"x\",\"start\":0,\"count\":10001}", "at most 10,000 records")]
     public async Task ADR0068_a_document_that_cannot_be_read_is_answered_400(string path, string document, string detail)
     {
         using var client = server.Factory.CreateClient();

@@ -103,6 +103,30 @@ by the build, each for a reason a later reader would otherwise have to re-derive
   allowed. The server has no cookies and no sign-in, so allowing them costs nothing, and pages
   connect with the client's defaults.
 
+*(2026-10-01, when its endpoints were built.)*
+
+- **The SQL groups by the stored values, and C# folds the groups into Items** with the engine's
+  own comparison. Folding in SQL (`COLLATE NOCASE` on the `GROUP BY`) measured 2.0 s at a million
+  trades against 1.4 s. Hidden Items and a cell's Items are matched with `COLLATE NOCASE` when
+  the Item is ASCII, and through a collation registered with .NET's ordinal comparison ignoring
+  case otherwise. No character outside ASCII equals an ASCII one ignoring case, so both match the
+  engine. A Blank that is not hidden is kept with `IS NULL OR …`, avoiding `NOT IN`'s trap.
+- **`MaxLeaves` stops the reading at the leaf past the cap**, not with `LIMIT max + 1`. Folding can
+  merge groups, so a `LIMIT` on groups could refuse a question whose leaves fit.
+- **An Item stored in two spellings is labelled by the first group read**, not by the data's
+  first spelling as the reference labels it. The numbers always agree, and the generated trades
+  spell each Item once (a test pins it); matching the reference measured 8–35% more per
+  aggregate.
+- **A Details page holds at most 10,000 records**, and a larger one is refused by name (principle
+  5). A grid pages far below that; a million records in one answer is not something to build.
+- **The Arrow stream carries the Month**, so a pivot over the Snapshot on `/pivot-db` offers the
+  same fields as the SQL source. **`/api/trades/by-id` also takes a POST**, because a URL with a
+  thousand ids passes Kestrel's request-line limit. **`/api/reset` also turns live updates off.**
+- **Measured at a million trades**: an aggregate takes 1.2 s, almost all of it SQLite's sort, so
+  the bundled source over a Snapshot remains the fast path the demo shows beside it. The first
+  Arrow build takes 6 s; half of it is reading the rows through `Microsoft.Data.Sqlite`, and later
+  requests at the same version are served from the cache.
+
 ## Consequences
 
 - **ADR-0019's tree gains `samples/ExGrid.DemoApi`**, a Consumer's server that nothing references.
