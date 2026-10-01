@@ -324,6 +324,15 @@ Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift
   2026-10-01: Ctrl+B straight after Shift+Up formatted the Focus cell alone. The version is carried
   for the reason every positional notification carries one,
   [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md).)*
+- **A Consumer can read the Selection as the grid holds it now.** *(2026-10-01, ticket 56.)*
+  `ReadSelection()` returns the grid's Held Selection, with the Row Sequence Version it is written in.
+  - It is a synchronous read on the renderer's context. It is opt-in by being called, and nothing
+    reaches JavaScript.
+  - A Consumer reconciles it with `HeldSelection.Under(version)`, as ADR-0011 asks of positions.
+  - ExSheet adopts it at each command that acts on the Selection: `SetCellFormatAsync`,
+    `OpenFormatCellsAsync`, the Context Menu's "Format Cells…" and a whole-column resize's undo
+    step. So a command run within a round trip of a keyboard move acts on the cells the user sees
+    selected. The late `SelectionChanged` then names the same Selection, and is no move.
 
 **15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
 underline and strikethrough), its Fill, and its four Border sides.

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, editor, nameBox, pressCell } from './sheet-helpers.mjs';
 
 // Excel's formatting keys on /sheet (ticket 51; ADR-0063 "Keys", ADR-0050 item 14), with real keys:
@@ -12,6 +12,9 @@ import { sheet, openSheet, cell, editor, nameBox, pressCell } from './sheet-help
 // ask; what it can see is that the grid took the key — its default prevented — and that no page
 // opened. The eleventh Windows run's Part B showed, with real input, that the page receives these
 // keys before Chrome and Edge act on them (verification/2026-10-01-windows-browser-11/keys.md).
+//
+// The page's own formatting button acts on the Selection as the keys do, including straight after
+// a move the Sheet has not heard yet (ticket 56; ADR-0050 item 14's note of 2026-10-01).
 
 test.use({ viewport: { width: 1280, height: 1000 } });
 
@@ -86,6 +89,27 @@ test('SH-42/ADR-0063: the toggle follows the Focus cell over a range', async ({ 
     await expect(font(page)).toHaveText('bold');
     await pressCell(grid, 'A2');
     await expect(font(page)).toHaveText('bold');
+});
+
+test('ADR-0050 item 14 (note of 2026-10-01)/ticket 56: the page\'s button pressed straight after Shift+ArrowDown formats the extended range, as one step', async ({ page }) => {
+    const grid = sheet(page);
+    await pressCell(grid, 'B2');
+    await expect(cell(grid, 'B3')).toHaveText('7');
+    await setRoundTrip(150);
+
+    // On the Server host the grid raises the move a round trip after the key, from after the render
+    // that shows it; the button's click, sent straight after the key, reaches the Sheet first. On
+    // WebAssembly this is the case without a round trip.
+    await page.keyboard.press('Shift+ArrowDown');
+    await page.locator('#sheet-money').click();
+
+    await expect(cell(grid, 'B2')).toHaveText('12.00');
+    await expect(cell(grid, 'B3')).toHaveText('7.00');
+    await expect(cell(grid, 'B4')).toHaveText('20');
+    await setRoundTrip(0);
+    await page.locator('#sheet-undo').click();
+    await expect(cell(grid, 'B2')).toHaveText('12');
+    await expect(cell(grid, 'B3')).toHaveText('7');
 });
 
 test('SH-42/ADR-0063: Ctrl+Shift with ~ ! @ # $ % ^ applies Excel\'s Number Formats under en-US, by the character typed', async ({ page }) => {

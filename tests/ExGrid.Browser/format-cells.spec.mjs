@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
 
 // Format Cells under the built-in Chrome (ADR-0063, ticket 52; SH-45, DC-60): a popover in the
@@ -173,6 +173,56 @@ test.describe('on /sheet', () => {
         for (const style of ['Regular', 'Italic', 'Bold', 'Bold Italic']) {
             await expect(choice(grid, style)).not.toBeChecked();
         }
+    });
+
+    // On the Server host the grid raises a move a round trip after it, from after the render that
+    // shows it (ADR-0050 item 14's note of 2026-10-01). Format Cells opens over the Selection the
+    // grid holds when it is asked, and the move's notification, landing after, names that same
+    // Selection and leaves it standing (ticket 56). On WebAssembly these are the cases without a
+    // round trip.
+
+    test('ticket 56: the page\'s Format Cells pressed straight after Shift+ArrowDown opens over the extended range, and stands when the move is heard', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await setRoundTrip(150);
+
+        await page.keyboard.press('Shift+ArrowDown');
+        await page.locator('#sheet-format-cells').click();
+        await expect(formatCells(grid)).toBeVisible();
+        // Past the move's notification, a round trip after the key's render.
+        await page.waitForTimeout(600);
+        await expect(formatCells(grid)).toBeVisible();
+        await setRoundTrip(0);
+
+        await choice(grid, 'Percentage').check();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+        await expect(cell(grid, 'C2')).toHaveText('50.00%');
+        await expect(cell(grid, 'C3')).toHaveText('75.00%');
+    });
+
+    test('ticket 56: the Context Menu\'s Format Cells…, chosen as soon as the menu opens on another cell, opens over that cell', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await setRoundTrip(150);
+
+        // Outside the Selection, the secondary click moves it to C3 and opens the menu there.
+        // This pins the outcome on a real circuit; it does not hold the order. At 150 ms and at
+        // 600 ms this test passed with ExSheet still reading the Selection last heard: by the time
+        // the click on the item reached the Sheet, the move had been heard (why was not traced).
+        // The order in which it has not is staged in layer 2 (CommandSelectionTests).
+        await cell(grid, 'C3').click({ force: true, button: 'right' });
+        await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
+        await expect(formatCells(grid)).toBeVisible();
+        await page.waitForTimeout(600);
+        await expect(formatCells(grid)).toBeVisible();
+        await setRoundTrip(0);
+
+        await choice(grid, 'Percentage').check();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+        await expect(cell(grid, 'C3')).toHaveText('75.00%');
+        await expect(cell(grid, 'C2')).toHaveText('0.5');
     });
 });
 

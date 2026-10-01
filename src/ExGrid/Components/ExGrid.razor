@@ -6190,6 +6190,19 @@
     }
 
     /// <summary>
+    /// The Selection as the grid holds it now, with the Row Sequence Version it is written in: the
+    /// grid's Held Selection (ADR-0011; ADR-0050, item 14's note of 2026-10-01). A read the
+    /// Consumer opts into, for a command of its own that acts on the Selection.
+    /// <see cref="SelectionChanged"/> is raised after the render that shows a move, which on a
+    /// circuit is a round trip later, so a toolbar button pressed straight after Shift+arrow
+    /// reaches the Consumer before the move does; acting on the Selection it last heard, the
+    /// command would act on fewer cells than are selected, or on others. Read on the renderer's
+    /// context, where the Consumer's handlers run. The positions mean something only under the
+    /// version they carry: <see cref="HeldSelection.Under"/> drops them under any other.
+    /// </summary>
+    public HeldSelection ReadSelection() => _selection;
+
+    /// <summary>
     /// Discards the open edit for a reason of the Consumer's own (ADR-0050 section 6): what
     /// was typed is thrown away and nothing is committed. For a change under the editor the
     /// grid cannot see — ExSheet's whole Sheet Document replaced, where the edit would

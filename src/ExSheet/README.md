@@ -226,6 +226,10 @@ part from the cell, its row or its column. Its borders are the edges as shown, w
 from the cell on either side: where both cells record a line on an edge, the upper cell's is shown,
 or the left cell's for a vertical edge. It is a read, and answers while an edit is open.
 
+These commands, and `OpenFormatCellsAsync`, act on the selection as the grid holds it when they
+run. On Blazor Server, `SelectionChanged` arrives a round trip after a move, so a button pressed
+straight after Shift+arrow still formats the extended range, not the one your page last heard.
+
 While an edit is open — a cell or the Formula Bar typed in, and not yet committed or cancelled —
 these commands, `RedoAsync`, `SetCellFormatAsync` and `SetAlignmentAsync` among them, are refused with
 `SheetRefusalReason.EditIsOpen` and change nothing, as Excel greys out its ribbon while a cell is
