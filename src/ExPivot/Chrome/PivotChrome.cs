@@ -485,8 +485,9 @@ public sealed record PivotDetailsTabsContext(
 public sealed record PivotDetailsTab(string Id, string Title, bool IsSelected, Action Select, Action? Close, string? CloseLabel)
 {
     /// <summary>Changes when the tab's button should take DOM focus: a tab Show Details has just
-    /// opened — the report under it is covered, and keeps no keyboard — and the tab selected when
-    /// the one holding the keyboard closed. Zero asks nothing.</summary>
+    /// opened — the report under it is covered, and keeps no keyboard — and the details tab selected
+    /// when the one holding the keyboard closed. The report's tab is not asked then: the report's
+    /// grid takes the keyboard back itself (ADR-0069). Zero asks nothing.</summary>
     public int FocusRequest { get; init; }
 }
 

@@ -43,7 +43,12 @@ internal sealed class PivotDetailsGrid : ComponentBase
     /// <summary>The Cell Metrics, or null for a Wrapper's, or the Density's.</summary>
     [Parameter] public CellTextMetrics? CellMetrics { get; set; }
 
-    private object State => (Sheet, Version, Problem, Chrome, CommandLabel, RowHeight, Density, CellMetrics);
+    /// <summary>The grid's <c>OnLeave</c> (ADR-0069): the dialog's way out, raised by an Escape the
+    /// grid has nothing left to dismiss. A tab's grid declares none: Escape does not close a sheet.
+    /// Held in a field by ExPivot, so it is the same callback on every render.</summary>
+    [Parameter] public EventCallback OnLeave { get; set; }
+
+    private object State => (Sheet, Version, Problem, Chrome, CommandLabel, RowHeight, Density, CellMetrics, OnLeave);
 
     protected override bool ShouldRender() => !Equals(State, _rendered);
 
@@ -81,6 +86,8 @@ internal sealed class PivotDetailsGrid : ComponentBase
             builder.AddComponentParameter(15, nameof(ExGrid<PivotDetailRecord>.Density), density);
         if (CellMetrics is { } metrics)
             builder.AddComponentParameter(16, nameof(ExGrid<PivotDetailRecord>.CellMetrics), metrics);
+        if (OnLeave.HasDelegate)
+            builder.AddComponentParameter(17, nameof(ExGrid<PivotDetailRecord>.OnLeave), OnLeave);
         builder.CloseComponent();
     }
 }

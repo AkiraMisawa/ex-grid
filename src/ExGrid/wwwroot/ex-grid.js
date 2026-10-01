@@ -314,12 +314,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // every Reference a selection covers, and so does whether the user moved the caret in that
     // very text: until the core's placement lands, the browser's own caret there is not the
     // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29).
+    // Whether the key is a held key's repeat goes with it too: auto-repeat is visible only here,
+    // and by the time a key reaches .NET a repeat looks like a press. The core raises a
+    // Consumer's OnLeave once per press, however long Escape is held (ADR-0069). A field of the
+    // event the listener already reads; no listener is added and no layout is read.
     const forward = (k) => {
         const input = editing !== 'none' ? editorInput() : null;
         return core.invokeMethodAsync(
             'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
             input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
-            input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false)
+            input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false,
+            k.repeat === true)
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
