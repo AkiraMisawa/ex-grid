@@ -414,7 +414,9 @@ nobody had asked for. What that means when writing a test:
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or
-  nothing takes the keyboard, and the other grid's keys its own; a press back on the rows
+  nothing takes the keyboard — the positions grid is in the Sheet's Pointing Scope, so the keyboard
+  leaves for a page button first and the grid is an ordinary grid when it is pressed — and the other
+  grid's keys its own; a press back on the rows
   pointing with the keyboard back in the Cell Editor or the Formula Bar, or committing and
   giving the root the keyboard; a press back on a column heading or a Row Heading; a committing
   press on the rows taking the keyboard out of the bar the edit was typed in; and, with 150 ms
@@ -429,8 +431,24 @@ nobody had asked for. What that means when writing a test:
   Chromes (`?chrome=mud` puts each Sheet on the Wrapper's paper): the computed outline of each
   Sheet's Cell Editor is 1px wide while DOM focus is outside its root, and at the token's full
   width, in the same colour, while the keyboard is its own.
+- `pointing-scope.spec.mjs` — a Pointing Scope (ADR-0058, SH-32/SH-35, ticket 37 of
+  docs/specs/exsheet) on `/sheet` and `/sheets`: `=`, a press on a PV cell, `*2` and Enter showing
+  that row's PV doubled; `=SUM(`, a press on the PV header, `)` and Enter showing the column's sum;
+  the keyboard staying in the Sheet and the positions grid keeping no Selection; a further press
+  on the grid or the Sheet replacing what the last wrote; F4 changing nothing and the Name Box
+  empty after a press; a Shift+press and a drag writing nothing, the drag taking back what its
+  press wrote, and the page's status line saying why; the keyboard leaving for a page button making
+  the positions grid ordinary, with the edit standing and pointing going on once a press brings it
+  back; on `/sheets`, a press on the right's grid while the left Sheet points being an ordinary
+  press; and, on the Server host with 150 ms, a press within the round trip after `=` being an
+  ordinary press with the edit standing. On `/pointing` (ticket 41, SH-35, DC-55), the arrow keys
+  after a press: ↓ from R-1's PV writing R-2's lookup and moving the dashes, and ↑ back; → from an
+  Id cell passing over Book, the grid's own column, to PV; ↓ past the painted rows scrolling the
+  positions grid with the pointed cell in view; Shift+↓ and Ctrl+↓ writing nothing, with the page
+  saying why; ↓ after a press on the PV header writing nothing, with the page saying to press a cell;
+  and ↓ and `*2` typed at once, 150 ms injected on the Server host, keeping their order.
 
-`sheet-helpers.mjs` is what those four share: opening `/sheet` under either Chrome and waiting
+`sheet-helpers.mjs` is what those five share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the
 editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
 

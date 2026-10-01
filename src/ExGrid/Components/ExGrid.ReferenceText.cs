@@ -51,9 +51,11 @@ public partial class ExGrid<TRow>
     private string BarReferenceText => BarShowsTheEdit ? _editText : "";
 
     /// <summary>
-    /// Where the Reference Point is writing stands in the edit's text, to be shown selected
-    /// (ADR-0051, "The Reference being written is shown selected"; ADR-0057, "What cases 24–32
-    /// settled"): while pointing, unless it starts right after the text's first character. Excel
+    /// Where what Point wrote stands in the edit's text, to be shown selected (ADR-0051, "The
+    /// Reference being written is shown selected"; ADR-0057, "What cases 24–32 settled"): the
+    /// Reference Point is writing, or the text a press outside the grid wrote (ADR-0058,
+    /// <c>XLOOKUP("R-4471", Positions[Id], Positions[PV])</c>) — exactly what a further press would
+    /// replace — while pointing, unless it starts right after the text's first character. Excel
     /// shows <c>=D11</c>, pointed straight after the <c>=</c>, without the look however often it
     /// was pointed, and <c>=SUM(D11</c>, <c>=1+D11</c> and <c>=D11+D12</c> with it; the core
     /// reads no Formula, and says so of the first character whatever it is. Null while nothing
@@ -113,28 +115,81 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// The text, each Reference a span in its colour and the rest as it stands — nothing added,
     /// nothing left out, so the layer's characters stand where the field's do. The colouring is
-    /// always of this very text (<see cref="Colouring"/>), and so is the pointed span: the
-    /// Reference standing exactly there wears the pointed look beside its colour. Only the layer
-    /// of the surface the edit is in shows, so only there is it seen.
+    /// always of this very text (<see cref="Colouring"/>), and so is the pointed span, which wears
+    /// the pointed look: a Reference standing exactly there wears it beside its colour; anything
+    /// longer — a lookup a press outside the grid wrote, holding References of its own — wears it
+    /// as one span, with its References inside in their colours (ADR-0058, "What is drawn"). A
+    /// pointed span that cuts through a Reference — one the Consumer reads as beginning before
+    /// what Point wrote, or running on past it — wears none, as before: half of a Reference on the
+    /// grey would say that half alone was pointed. Only the layer of the surface the edit is in
+    /// shows, so only there is it seen.
     /// </summary>
     private static void AddReferenceSpans(RenderTreeBuilder builder, string text, ReferenceColouring colouring, (int Start, int Length)? pointed)
     {
-        var at = 0;
-        for (var i = 0; i < colouring.References.Count; i++)
+        if (pointed is { Length: > 0 } span && !IsOneReference(colouring, span) && !CutsAReference(colouring, span))
         {
-            var reference = colouring.References[i];
+            var (at, next) = AddReferenceRun(builder, text, colouring, 0, 0, span.Start, pointed: null);
+            builder.OpenElement(5, "span");
+            builder.AddAttribute(6, "class", "ex-reference-pointed");
+            (at, next) = AddReferenceRun(builder, text, colouring, at, next, span.Start + span.Length, pointed: null);
+            builder.CloseElement();
+            AddReferenceRun(builder, text, colouring, at, next, text.Length, pointed: null);
+            return;
+        }
+        AddReferenceRun(builder, text, colouring, 0, 0, text.Length, pointed);
+    }
+
+    /// <summary>
+    /// The text from <paramref name="at"/> to <paramref name="end"/>, each Reference in it — from
+    /// the <paramref name="next"/>th on — a span in its colour, and the one standing exactly over
+    /// <paramref name="pointed"/> with the pointed look beside it. No Reference crosses
+    /// <paramref name="end"/>.
+    /// </summary>
+    /// <returns>Where the run ended, and the first Reference after it.</returns>
+    private static (int At, int Next) AddReferenceRun(
+        RenderTreeBuilder builder, string text, ReferenceColouring colouring, int at, int next, int end, (int Start, int Length)? pointed)
+    {
+        for (; next < colouring.References.Count && colouring.References[next].Start < end; next++)
+        {
+            var reference = colouring.References[next];
             if (reference.Start > at)
                 builder.AddContent(0, text[at..reference.Start]);
             var classes = pointed is { } span && span.Start == reference.Start && span.Length == reference.Length
                 ? PointedReferenceTextClasses
                 : ReferenceTextClasses;
             builder.OpenElement(1, "span");
-            builder.AddAttribute(2, "class", classes[colouring.Colours[i].Place]);
+            builder.AddAttribute(2, "class", classes[colouring.Colours[next].Place]);
             builder.AddContent(3, text.Substring(reference.Start, reference.Length));
             builder.CloseElement();
             at = reference.Start + reference.Length;
         }
-        if (at < text.Length)
-            builder.AddContent(4, at == 0 ? text : text[at..]);
+        if (at < end)
+            builder.AddContent(4, at == 0 && end == text.Length ? text : text[at..end]);
+        return (end, next);
+    }
+
+    /// <summary>Whether one Reference stands exactly over the span.</summary>
+    private static bool IsOneReference(ReferenceColouring colouring, (int Start, int Length) span)
+    {
+        foreach (var reference in colouring.References)
+        {
+            if (reference.Start == span.Start && reference.Length == span.Length)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>Whether a Reference begins on one side of an end of the span and finishes on the
+    /// other.</summary>
+    private static bool CutsAReference(ReferenceColouring colouring, (int Start, int Length) span)
+    {
+        var end = span.Start + span.Length;
+        foreach (var reference in colouring.References)
+        {
+            var referenceEnd = reference.Start + reference.Length;
+            if ((reference.Start < span.Start && referenceEnd > span.Start) || (reference.Start < end && referenceEnd > end))
+                return true;
+        }
+        return false;
     }
 }

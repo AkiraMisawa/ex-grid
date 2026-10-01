@@ -181,6 +181,18 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void OnHeaderDragMove(MouseEventArgs e)
     {
+        // A press handed over from a grid pointed at (ADR-0058) grows into no Heading drag.
+        if (_pointedDrag is not null)
+        {
+            if ((e.Buttons & 1) == 0)
+            {
+                _suppressRender = true;
+                SetDragging(false);
+                return;
+            }
+            MovePointedDrag(e);
+            return;
+        }
         if (!_dragging || _headingDrag == HeadingAxis.None)
         {
             _suppressRender = true;
@@ -207,7 +219,9 @@ public partial class ExGrid<TRow>
     /// </summary>
     private void OnHeaderDragUp(MouseEventArgs e)
     {
-        if (_headingDrag == HeadingAxis.Columns)
+        if (_pointedDrag is not null)
+            MovePointedDrag(e);
+        else if (_headingDrag == HeadingAxis.Columns)
             MoveHeadingDrag(e);
         _suppressRender = true;
         SetDragging(false);

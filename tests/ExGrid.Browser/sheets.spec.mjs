@@ -148,10 +148,10 @@ test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other o
     await expect(cell(left, 'D1')).toHaveText('');
 });
 
-// ExSheet never reaches another instance (ADR-0018, ADR-0049): it tells its own Consumer which
-// Linked Table columns its Formula reads, and the page passes each Sheet's word to the grid beneath
-// that Sheet only (SH-31, DC-25, ADR-0057).
-test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid its page wired to it', async ({ page }) => {
+// ExSheet never reaches another instance (ADR-0018, ADR-0049): it tells which Linked Table columns
+// its Formula reads, and the Pointing Scope the page put it in outlines them in the grid beneath that
+// Sheet only, the one grid registered in that Scope (SH-31, DC-25, ADR-0057, ADR-0058).
+test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid of its own Pointing Scope', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
     const leftPositions = page.locator('#sheet-left-positions .ex-grid');

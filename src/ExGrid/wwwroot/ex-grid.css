@@ -411,6 +411,19 @@
    Excel lays its active-cell green over the pointed Reference's own line, just inside that line
    so both show (the eighth Windows run). */
 .ex-point.ex-point-on-reference { outline-offset: -4px; }
+/* The dashes a grid pointed at from outside draws where its Consumer asks (ADR-0058): over the
+   cell, or down the body of the column, whose press was handed on. In the Focus outline's colour,
+   as Point's dashes over its Reference's outline are, and as far inside the box, so that the line
+   of a column outline beneath them still shows. No outline of their own, and no token of their own
+   (ADR-0029's note of 2026-09-30). Paint only, like every rectangle here. */
+.ex-point-dashes { position: absolute; outline: 2px dashed var(--ex-focus-outline, CanvasText); outline-offset: -4px; }
+/* A grid pointed at from outside (ADR-0058, ADR-0029's note of 2026-09-30): a press on its rows or
+   its column headers is handed on, and the pointer over them is `cell`. The controls that take
+   their own presses there — the column menu's button, a resize grip, a checkbox, an action, a
+   Template's control — let the press through to the rows or the header, which hand it on as the
+   cell or the column it landed on. Nothing else marks the grid. */
+.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) { cursor: cell; }
+.ex-pointed-at > .ex-scroller > .ex-spacer > :is(.ex-viewport, .ex-header) :is(.ex-menu-button, .ex-resize-grip, .ex-mark, .ex-action, .ex-interactive) { pointer-events: none; }
 .ex-reference-1 { color: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white))); }
 .ex-reference-2 { color: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white))); }
 .ex-reference-3 { color: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white))); }
@@ -642,8 +655,11 @@
    run), #44007c, #003600, #550059, #531c00 and #00323f (the tenth run). Excel keeps its cells white
    under its Black theme, with the same shades, so it has no dark ground to take them from; over a
    dark ground the grey stands as far from the dark Canvas as #c6c6c6 does from white, and all seven
-   shades are the Reference's colour mixed 55% toward white. The shade is the text's fill, so the span's color stays its Reference's,
-   and currentColor reads it. */
+   shades are the Reference's colour mixed 55% toward white. The shade is the text's fill, so the
+   span's color stays its Reference's, and currentColor reads it. Text a press on another grid wrote,
+   such as XLOOKUP("R-4471", Positions[Id], Positions[PV]), is shown selected as a whole (ADR-0058):
+   one span on the grey, and the References inside it, each in a span of its own colour, take the
+   shade of their place in the palette. */
 .ex-reference-text .ex-reference-pointed { background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b)); }
 .ex-reference-text .ex-reference-1.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, currentColor 55%, white))); }
 .ex-reference-text .ex-reference-2.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, currentColor 55%, white))); }
@@ -652,6 +668,13 @@
 .ex-reference-text .ex-reference-5.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, currentColor 55%, white))); }
 .ex-reference-text .ex-reference-6.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, currentColor 55%, white))); }
 .ex-reference-text .ex-reference-7.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-pointed .ex-reference-1 { -webkit-text-fill-color: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-pointed .ex-reference-2 { -webkit-text-fill-color: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-pointed .ex-reference-3 { -webkit-text-fill-color: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-pointed .ex-reference-4 { -webkit-text-fill-color: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-pointed .ex-reference-5 { -webkit-text-fill-color: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-pointed .ex-reference-6 { -webkit-text-fill-color: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, currentColor 55%, white))); }
+.ex-reference-text .ex-reference-pointed .ex-reference-7 { -webkit-text-fill-color: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, currentColor 55%, white))); }
 /* A Chrome places the layer inside the core's box, before its control, which fills the box's
    content (IGridChrome): the layer stands over that content, inside the padding the box has from
    .ex-editor and .ex-formula-bar-text, with none of its own, as the control has none. The bar's

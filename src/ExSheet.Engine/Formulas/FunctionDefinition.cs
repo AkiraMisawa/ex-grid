@@ -15,6 +15,15 @@ internal sealed class FunctionDefinition(string name, int minimum, int maximum, 
 
     public string Description { get; } = description;
 
+    /// <summary>
+    /// The arguments that take one of a fixed list of values, by index, each list in Excel's order
+    /// with Excel's texts (ADR-0058): what completion lists at that argument. An argument absent
+    /// here takes any value.
+    /// </summary>
+    public IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> Values { get; init; } = NoValues;
+
+    private static readonly IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> NoValues = new Dictionary<int, IReadOnlyList<ArgumentValue>>();
+
     public Operand Invoke(FunctionCall call) => invoke(call);
 }
 

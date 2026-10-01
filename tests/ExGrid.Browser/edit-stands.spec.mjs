@@ -14,15 +14,31 @@ import {
 // that last held it before the press is handled, so the press points, or commits and hands
 // the keyboard to the root, as if the keyboard had never left.
 //
-// /sheet: the positions grid beside the Sheet declares nothing, and a page button stands for a
-// control of the Consumer's. /sheets: two Sheets, each able to hold an edit of its own.
+// /sheet: the positions grid beside the Sheet is in its Pointing Scope (ADR-0058), and is an
+// ordinary grid once the keyboard has left the Sheet; a page button stands for a control of the
+// Consumer's. /sheets: two Sheets, each able to hold an edit of its own.
 
 // Tall enough that every Sheet on the page, Formula Bar to horizontal scrollbar, is inside the
 // window: a pointer below the window's edge reaches nothing, and the edge band sits there.
 test.use({ viewport: { width: 1280, height: 1000 } });
 
-/** Presses the positions grid's FX cell: the keyboard is that grid's once its root has it. */
+/**
+ * Presses the positions grid's FX cell: the keyboard is that grid's once its root has it. The
+ * positions grid is in the Sheet's Pointing Scope (ADR-0058): while the Sheet points, a press on it
+ * would point, and the keyboard would stay in the Sheet. So the keyboard first leaves the Sheet for a
+ * control on the page, and once the Scope has stopped pointing the grid is an ordinary grid, as any
+ * other grid on the page is.
+ */
 async function pressPositions(page) {
+    // Revalue replaces every position's row, and the render that lands it replaces the cells: a
+    // press aimed at FX's cell while it lands found that cell detached (found on CI, the Server
+    // host, 2026-10-01). So the press waits until FX's row shows its new PV.
+    const pv = positions(page).locator('.ex-row', { has: page.locator('.ex-cell', { hasText: /^FX$/ }) })
+        .first().locator('.ex-cell').nth(2);
+    const before = await pv.textContent();
+    await page.locator('#sheet-revalue').click();
+    await expect(positions(page)).not.toHaveClass(/\bex-pointed-at\b/);
+    await expect(pv).not.toHaveText(before);
     const fx = positions(page).locator('.ex-cell', { hasText: /^FX$/ }).first();
     await expect(fx).toBeVisible();
     // Cells are pointer-events: none; the press lands on the Viewport (ADR-0004).

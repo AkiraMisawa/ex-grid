@@ -11,22 +11,35 @@ public enum CompletionKind
 
     /// <summary>A Linked Table declared on the Sheet (ADR-0049).</summary>
     LinkedTable,
+
+    /// <summary>A column of the Linked Table named before <c>[</c> (ADR-0058).</summary>
+    LinkedTableColumn,
+
+    /// <summary>One of the values an argument takes from a fixed list (<see cref="T:ExSheet.Engine.ArgumentValue"/>, ADR-0058).</summary>
+    ArgumentValue,
 }
 
-/// <summary>One name completion offers (ADR-0051).</summary>
-/// <param name="Name">The name, as declared.</param>
+/// <summary>One candidate completion offers (ADR-0051, ADR-0058).</summary>
+/// <param name="Name">What the list shows: the name as declared, or for an argument's value, Excel's text for it (<c>0 - Exact match</c>).</param>
 /// <param name="Kind">What it names.</param>
-/// <param name="InsertText">What accepting it writes in place of what was typed: a function's name and its <c>(</c>, a table's name.</param>
-/// <param name="Description">One sentence for a function; <see langword="null"/> for a table.</param>
+/// <param name="InsertText">
+/// What accepting it writes in place of what was typed: a function's name and its <c>(</c>, a
+/// table's name, a column's name with any character the grammar reads specially escaped by
+/// <c>'</c>, an argument's value (<c>0</c>).
+/// </param>
+/// <param name="Description">One sentence for a function; <see langword="null"/> for the others.</param>
 public sealed record CompletionCandidate(string Name, CompletionKind Kind, string InsertText, string? Description);
 
 /// <summary>
-/// The candidates for the name being typed at the caret (ADR-0051): accepting one replaces the
+/// The candidates for what is being typed at the caret (ADR-0051): accepting one replaces the
 /// <see cref="Length"/> characters from <see cref="Start"/> with its <see cref="CompletionCandidate.InsertText"/>.
 /// </summary>
-/// <param name="Start">Where the name being typed starts in the text.</param>
+/// <param name="Start">Where what is being typed starts in the text: a name, a column after <c>[</c>, an argument's value.</param>
 /// <param name="Length">How long it is, including any part of it after the caret.</param>
-/// <param name="Candidates">The names that begin with what was typed, in alphabetical order; never empty.</param>
+/// <param name="Candidates">
+/// The candidates, in the order to list them; never empty. Names are in alphabetical order, a
+/// table's columns in the table's order, and an argument's values in Excel's.
+/// </param>
 public sealed record FormulaCompletion(int Start, int Length, IReadOnlyList<CompletionCandidate> Candidates);
 
 /// <summary>The argument hint (ADR-0051): the function whose argument list holds the caret, and which argument it is in.</summary>
@@ -96,20 +109,56 @@ public readonly record struct FormulaReference(int Start, int Length, CellRange?
 public static partial class FormulaEntry
 {
     /// <summary>
-    /// The names beginning with the name being typed at the caret, without regard to case: the
-    /// declared functions and <paramref name="linkedTables"/>. <see langword="null"/> when the caret
-    /// is not at the end of a name standing where an operand can start (inside text in quotes, a
-    /// Reference with <c>$</c>, a number, a column in brackets), or when nothing matches.
+    /// What completion offers at the caret (ADR-0051, ADR-0058), as
+    /// <see cref="Complete(string, int, IEnumerable{string}, Func{string, IReadOnlyList{string}?})"/>
+    /// offers it where no table's columns are known: nothing is listed after <c>Table[</c>.
     /// </summary>
-    public static FormulaCompletion? Complete(string text, int caret, IEnumerable<string> linkedTables)
+    public static FormulaCompletion? Complete(string text, int caret, IEnumerable<string> linkedTables) =>
+        Complete(text, caret, linkedTables, static _ => null);
+
+    /// <summary>
+    /// What completion offers at the caret, following Excel's triggers (ADR-0051, ADR-0058):
+    /// <list type="bullet">
+    /// <item>at the end of a name standing where an operand can start, the declared functions and
+    /// <paramref name="linkedTables"/> beginning with it, without regard to case;</item>
+    /// <item>inside the brackets of <c>Table[</c>, the columns of that table beginning with the column
+    /// typed so far, in the table's order, and nothing else: not <c>@</c> or <c>#All</c>, which the
+    /// grammar refuses (ADR-0047);</item>
+    /// <item>at an argument that takes one of a fixed list of values (<see cref="DeclaredFunction.ValuesOf"/>),
+    /// holding nothing yet or the beginning of a value, those values, in Excel's order, before
+    /// anything is typed. A value typed whole, with the caret after it, lists that value alone
+    /// (<c>0</c> lists <c>0 - Exact match</c>); any other beginning lists every value, as Excel
+    /// does not narrow a value list by what is typed (<c>-</c> lists all five of
+    /// <c>match_mode</c>'s; the tenth Windows run).</item>
+    /// </list>
+    /// <see langword="null"/> anywhere else — after <c>=</c>, an operator, <c>(</c> or <c>,</c> at any
+    /// other argument, inside text in quotes, a Reference, a number — and when nothing matches.
+    /// </summary>
+    /// <param name="text">The text being edited.</param>
+    /// <param name="caret">Where the caret stands in it.</param>
+    /// <param name="linkedTables">The Linked Tables' names.</param>
+    /// <param name="columnsOf">
+    /// The columns of the Linked Table a name names, found without regard to case, in the table's
+    /// order; <see langword="null"/> for a name no table has.
+    /// </param>
+    public static FormulaCompletion? Complete(string text, int caret, IEnumerable<string> linkedTables, Func<string, IReadOnlyList<string>?> columnsOf)
     {
         ArgumentNullException.ThrowIfNull(linkedTables);
+        ArgumentNullException.ThrowIfNull(columnsOf);
         if (!IsFormula(text, caret)) return null;
         var tokens = Scan(text);
         var index = tokens.FindIndex(t => t.Start < caret && caret <= t.End);
-        if (index < 0) return null;
+        if (index >= 0 && tokens[index] is { Kind: TokenKind.Operand, HasBrackets: true } bracketed)
+            return OperandMayStart(tokens, index) ? CompleteColumn(text, caret, bracketed, columnsOf) : null;
+        return (index >= 0 ? CompleteName(text, caret, tokens, index, linkedTables) : null)
+            ?? CompleteValue(text, caret, tokens);
+    }
+
+    /// <summary>The functions and tables beginning with the name that ends at the caret.</summary>
+    private static FormulaCompletion? CompleteName(string text, int caret, List<Token> tokens, int index, IEnumerable<string> linkedTables)
+    {
         var token = tokens[index];
-        if (token.Kind != TokenKind.Operand || token.Unterminated || token.HasBrackets) return null;
+        if (token.Kind != TokenKind.Operand || token.Unterminated) return null;
         var prefix = text[token.Start..caret];
         if (!NamePattern().IsMatch(prefix) || !OperandMayStart(tokens, index)) return null;
 
@@ -125,6 +174,101 @@ public static partial class FormulaEntry
     }
 
     /// <summary>
+    /// The columns after <c>Table[</c> (ADR-0058): the caret stands inside the one pair of brackets
+    /// the grammar reads, after a declared table's name, and what is typed before it is the
+    /// beginning of a column, <c>'</c> escapes read. Accepting a column writes its name, escaped,
+    /// over the column typed — up to the closing bracket when there is one — and leaves the
+    /// closing bracket to the user, as for a table's name.
+    /// </summary>
+    private static FormulaCompletion? CompleteColumn(string text, int caret, Token token, Func<string, IReadOnlyList<string>?> columnsOf)
+    {
+        var open = text.IndexOf('[', token.Start, token.End - token.Start);
+        if (open < 0 || caret <= open) return null;
+        var table = text[token.Start..open];
+        if (!NamePattern().IsMatch(table) || columnsOf(table) is not { Count: > 0 } columns) return null;
+
+        var typed = new StringBuilder();
+        var end = -1;
+        for (var i = open + 1; i < token.End; i++)
+        {
+            var c = text[i];
+            if (c == '\'')
+            {
+                // An escape the caret splits leaves no column typed that can be read.
+                if (i < caret && i + 1 >= caret) return null;
+                if (i < caret) typed.Append(text[i + 1]);
+                i++;
+                continue;
+            }
+            if (c == ']')
+            {
+                end = i;
+                break;
+            }
+            // A second bracket, #All and @ are forms the grammar refuses (ADR-0047). Past the
+            // caret, only a second bracket matters: the first ] would not close this one.
+            if (c == '[' || (i < caret && c is '#' or '@')) return null;
+            if (i < caret) typed.Append(c);
+        }
+        if (end >= 0 && end < caret) return null;
+        var prefix = typed.ToString();
+        var candidates = columns
+            .Where(column => column.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .Select(column => new CompletionCandidate(column, CompletionKind.LinkedTableColumn, EscapeColumn(column), null))
+            .ToList();
+        var start = open + 1;
+        return candidates.Count == 0 ? null : new FormulaCompletion(start, (end >= 0 ? end : caret) - start, candidates);
+    }
+
+    /// <summary>A column's name as a structured reference writes it: <c>'</c> before each character the grammar reads specially.</summary>
+    private static string EscapeColumn(string column)
+    {
+        if (column.IndexOfAny(ColumnSpecials) < 0) return column;
+        var escaped = new StringBuilder(column.Length + 2);
+        foreach (var c in column)
+        {
+            if (Array.IndexOf(ColumnSpecials, c) >= 0) escaped.Append('\'');
+            escaped.Append(c);
+        }
+        return escaped.ToString();
+    }
+
+    private static readonly char[] ColumnSpecials = ['[', ']', '#', '@', '\''];
+
+    /// <summary>
+    /// The values of the argument the caret stands at, when it takes one of a fixed list (ADR-0058):
+    /// the argument holds nothing yet, or the beginning of a value and nothing else. A value typed
+    /// whole before the caret, with nothing of it after the caret, is listed alone; anything else
+    /// lists every value, the first to be chosen (ADR-0058, "What the tenth Windows run settled").
+    /// Accepting one writes it over the whole of the value being typed.
+    /// </summary>
+    private static FormulaCompletion? CompleteValue(string text, int caret, List<Token> tokens)
+    {
+        if (FramesAt(text, tokens, caret) is not { Count: > 0 } frames) return null;
+        var call = frames.Peek();
+        if (call.Function is null || DeclaredFunction.Find(call.Function) is not { } function) return null;
+        var values = function.ValuesOf(call.Commas);
+        if (values.Count == 0) return null;
+
+        var start = call.ArgumentStart;
+        while (start < caret && char.IsWhiteSpace(text[start])) start++;
+        var typed = text[start..caret];
+        bool Begins(int length) => values.Any(v => v.Value.Length >= length && string.CompareOrdinal(v.Value, 0, text, start, length) == 0);
+        if (!Begins(typed.Length)) return null;
+        var end = caret;
+        while (end < text.Length && Begins(end + 1 - start)) end++;
+        var after = end;
+        while (after < text.Length && char.IsWhiteSpace(text[after])) after++;
+        if (after < text.Length && text[after] is not (',' or ')')) return null;
+
+        var whole = end == caret ? values.Where(v => v.Value == typed).ToList() : [];
+        var candidates = (whole.Count > 0 ? whole : values)
+            .Select(v => new CompletionCandidate(v.Text, CompletionKind.ArgumentValue, v.Value, null))
+            .ToList();
+        return new FormulaCompletion(start, end - start, candidates);
+    }
+
+    /// <summary>
     /// The hint for the innermost function call whose argument list holds the caret, counting
     /// arguments by the commas at its own depth; grouping parentheses inside it belong to it, and
     /// text in quotes is one argument whatever it holds. <see langword="null"/> outside any call,
@@ -133,8 +277,22 @@ public static partial class FormulaEntry
     public static ArgumentHint? HintAt(string text, int caret)
     {
         if (!IsFormula(text, caret)) return null;
-        var tokens = Scan(text);
-        var frames = new Stack<(string? Function, int Commas)>();
+        foreach (var (function, commas, _) in FramesAt(text, Scan(text), caret))
+        {
+            if (function is null) continue;
+            if (DeclaredFunction.Find(function) is not { } declared) return null;
+            return new ArgumentHint(declared, commas, ArgumentName(declared, commas));
+        }
+        return null;
+    }
+
+    /// <summary>A parenthesis open at the caret: the function it calls (<see langword="null"/> for a grouping one), how many of its commas stand before the caret, and where the argument the caret is in starts.</summary>
+    private readonly record struct Frame(string? Function, int Commas, int ArgumentStart);
+
+    /// <summary>The parentheses open at the caret, the innermost on top.</summary>
+    private static Stack<Frame> FramesAt(string text, List<Token> tokens, int caret)
+    {
+        var frames = new Stack<Frame>();
         for (var i = 0; i < tokens.Count && tokens[i].End <= caret; i++)
         {
             var token = tokens[i];
@@ -144,7 +302,7 @@ public static partial class FormulaEntry
                     var callee = i > 0 && tokens[i - 1].Kind == TokenKind.Operand && tokens[i - 1].End == token.Start && NamePattern().IsMatch(text[tokens[i - 1].Start..tokens[i - 1].End])
                         ? text[tokens[i - 1].Start..tokens[i - 1].End]
                         : null;
-                    frames.Push((callee, 0));
+                    frames.Push(new Frame(callee, 0, token.End));
                     break;
                 case TokenKind.Close:
                     if (frames.Count > 0) frames.Pop();
@@ -152,19 +310,13 @@ public static partial class FormulaEntry
                 case TokenKind.Comma:
                     if (frames.Count > 0)
                     {
-                        var (function, commas) = frames.Pop();
-                        frames.Push((function, commas + 1));
+                        var frame = frames.Pop();
+                        frames.Push(new Frame(frame.Function, frame.Commas + 1, token.End));
                     }
                     break;
             }
         }
-        foreach (var (function, commas) in frames)
-        {
-            if (function is null) continue;
-            if (DeclaredFunction.Find(function) is not { } declared) return null;
-            return new ArgumentHint(declared, commas, ArgumentName(declared, commas));
-        }
-        return null;
+        return frames;
     }
 
     private static string? ArgumentName(DeclaredFunction function, int index)
@@ -209,6 +361,72 @@ public static partial class FormulaEntry
 
     /// <summary>The Reference Point mode writes for a pointed range: <c>B7</c> for one cell, <c>B7:C9</c> from its top-left otherwise.</summary>
     public static string ReferenceText(CellRange range) => range.ToString();
+
+    /// <summary>
+    /// What Point writes for a pressed column of a Linked Table, through a Pointing Scope
+    /// (ADR-0058): Excel's structured reference, <c>Positions[PV]</c>, written as the engine writes
+    /// one back — single brackets, with <c>'</c> before each of <c>[ ] # '</c> in the column's name.
+    /// </summary>
+    /// <param name="table">The table's name, as declared.</param>
+    /// <param name="column">The column's name, as declared.</param>
+    /// <exception cref="ArgumentException">Either name is null or empty.</exception>
+    public static string StructuredReferenceText(string table, string column)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(table);
+        ArgumentException.ThrowIfNullOrEmpty(column);
+        var text = new StringBuilder();
+        Formulas.FormulaText.WriteStructuredReference(text, table, column);
+        return text.ToString();
+    }
+
+    /// <summary>
+    /// A Value written as a Formula writes a constant of its kind (ADR-0058): text in double quotes,
+    /// with any <c>"</c> in it doubled (<c>"R-4471"</c>); a number in the invariant form the engine
+    /// writes a number constant in (<c>1250</c>, <c>-0.5</c>); a boolean as <c>TRUE</c> or
+    /// <c>FALSE</c>. <see langword="null"/> for an Error Value: a lookup by one finds nothing, so
+    /// nothing is written for it.
+    /// </summary>
+    public static string? ConstantText(Value value) => value.Kind switch
+    {
+        ValueKind.Text => "\"" + value.Text.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"",
+        ValueKind.Number => NumberText.Written(value.Number, System.Globalization.CultureInfo.InvariantCulture, NumberText.FormulaConstantLongest),
+        ValueKind.Boolean => value.Boolean ? "TRUE" : "FALSE",
+        _ => null,
+    };
+
+    /// <summary>
+    /// What Point writes for a pressed cell of a Linked Table, through a Pointing Scope (ADR-0058):
+    /// the lookup that reads the cell by its row's key,
+    /// <c>XLOOKUP("R-4471", Positions[Id], Positions[PV])</c> — the key as a constant of its kind
+    /// (<see cref="ConstantText"/>), then the key column and the pressed column as structured
+    /// references (<see cref="StructuredReferenceText"/>). It names no position, so the Formula
+    /// reads the same row after the grid that showed it is sorted (ADR-0049, rule 2).
+    /// </summary>
+    /// <param name="table">The table's name, as declared.</param>
+    /// <param name="keyColumn">The table's key column, as declared.</param>
+    /// <param name="key">The row's key: text, a number or a boolean.</param>
+    /// <param name="column">The pressed column, as declared.</param>
+    /// <exception cref="ArgumentException">A name is null or empty, or the key is an Error Value,
+    /// which no lookup finds.</exception>
+    public static string LookupText(string table, string keyColumn, Value key, string column)
+    {
+        var constant = ConstantText(key)
+            ?? throw new ArgumentException("An Error Value is not a key a lookup finds (ADR-0058).", nameof(key));
+        return "XLOOKUP(" + constant + ", " + StructuredReferenceText(table, keyColumn) + ", " + StructuredReferenceText(table, column) + ")";
+    }
+
+    /// <summary>
+    /// Whether the lookup <see cref="LookupText"/> writes for <paramref name="key"/> finds a row whose
+    /// key is <paramref name="candidate"/>: <c>XLOOKUP</c>'s exact match, which tells a number from
+    /// text and text apart without regard to case, and never matches a blank or an Error Value. A
+    /// Pointing Scope finds the row a press was written for by it, wherever the grid that shows the
+    /// table has sorted that row to, and in a Window of new row instances alike (ADR-0058, "What is
+    /// drawn").
+    /// </summary>
+    /// <param name="key">The key the lookup was written for.</param>
+    /// <param name="candidate">A row's key; <see langword="null"/> is a blank.</param>
+    public static bool LookupFinds(Value key, Value? candidate) =>
+        candidate is { } value && value.Kind == key.Kind && !key.IsError && Formulas.Evaluator.Compare(value, key) == 0;
 
     /// <summary>
     /// F4 (ADR-0051, 2026-09-29): the Reference at the caret cycled to its next form —
@@ -541,11 +759,17 @@ public static partial class FormulaEntry
 public sealed partial class Sheet
 {
     /// <summary>
-    /// Completion for the Formula being typed (ADR-0051): the declared functions and this Sheet's
-    /// Linked Tables whose names begin with the name at the caret (<see cref="FormulaEntry.Complete"/>).
+    /// Completion for the Formula being typed (ADR-0051, ADR-0058): the declared functions and this
+    /// Sheet's Linked Tables whose names begin with the name at the caret, the columns of one of its
+    /// tables after <c>Table[</c>, and an argument's values where it takes one of a fixed list
+    /// (<see cref="FormulaEntry.Complete(string, int, IEnumerable{string}, Func{string, IReadOnlyList{string}?})"/>).
     /// </summary>
     public FormulaCompletion? Complete(string text, int caret) =>
-        FormulaEntry.Complete(text, caret, _tables.Values.OrderBy(t => t.Order).Select(t => t.Name));
+        FormulaEntry.Complete(
+            text,
+            caret,
+            _tables.Values.OrderBy(t => t.Order).Select(t => t.Name),
+            name => _tables.TryGetValue(name, out var table) ? table.Columns : null);
 
     /// <summary>
     /// The References in the Formula being edited (ADR-0057), a qualifier naming this Sheet by its

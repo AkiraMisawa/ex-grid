@@ -165,6 +165,24 @@ too.
   - Found by CI, not by a user: ED-26's test on `/sheets` failed once on the Server host, and the
     same race failed 9 runs in 40 on the base with 40 ms injected.
 
+## 7. A Pointing Scope joins only what the Consumer put in it *(decided with the user, 2026-09-29 and 2026-09-30)*
+
+[ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md) lets a Formula point at
+another grid on the page. At a press, that grid keeps DOM focus off itself and hands the press to
+the Sheet that points. That is one instance acting on another's behalf, and it is not the coupling
+this ADR rules out:
+
+- **The Consumer declares it**, naming each Sheet and grid in a Pointing Scope. Nothing on a page is
+  joined implicitly, and a grid in no Scope is untouched.
+- **The key capture stays on each root** (section 1). The keyboard stays with the Sheet that points.
+  The grid pointed at receives no key.
+- **The script shares no state between instances** (section 3). A grid that is pointed at learns from
+  its own render which root to tell of a press, and it tells that root by one DOM event
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), note of 2026-09-30).
+- **When the keyboard leaves the Sheet that points, the Scope stops pointing**, and section 6 applies
+  unchanged. A registered grid with an open edit of its own is never pointed at, so a press on it
+  brings the keyboard to its edit, as section 6 says.
+
 ## Consequences
 
 - **The selection overlay and the cell editor live in the same coordinate space as the root**

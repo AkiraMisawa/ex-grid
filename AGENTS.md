@@ -49,7 +49,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 56 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 58 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 

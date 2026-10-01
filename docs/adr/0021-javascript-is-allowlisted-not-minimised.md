@@ -384,3 +384,30 @@ runs when the browser acknowledges that render, a round trip after it.
 - **Open, not decided here:** a popover's opening focus (the column menu, the filter, Find) and a
   Template cell's own focus. Each is taken a round trip after a gesture in this grid too, so the same
   race exists there in principle. Nothing has been seen to fail there. It is recorded, not built.
+
+*(Added 2026-09-30, decided with the user, with
+[ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md): a press handed on
+through a Pointing Scope keeps its place among the keys of the Sheet that points.)* While a grid is
+pointed at, the render that says so names the root of the Sheet that points. For each primary press
+the grid hands on, its capture-phase `mousedown`, the listener above, dispatches one event on that
+root. The Sheet hears the event through one listener for it on its own root. It then starts the hold
+it starts for a press on its own rows: the keys typed after it are held, in order, until the Sheet's
+core has answered the press, and are then replayed
+([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s hold). *(Widened the same day,
+when ticket 37 was built:)* the press also waits behind the keys typed before it that the Sheet still
+holds. The pressed grid sends its press to the core itself, so it can reach the core ahead of them:
+on the Server host at 0 ms, `=1+` typed and the positions grid pressed at once gave
+`=XLOOKUP(...)` in 2 runs of 4, the `1+` lost. The Scope therefore answers a handed-on press only
+once the Sheet's listener has passed the place the event took in its queue.
+
+- **Why script: the ground is the first, technically required.** On a circuit, the text Point writes
+  reaches the Sheet's field a round trip after the press. A key typed meanwhile reaches the field
+  first, and the field's text is the newest the core hears of (ADR-0051), so the written text would
+  be lost. Only the browser sees the press and the key in the order the user made them.
+- **Nothing is shared between instances.** The module keeps no registry of instances. The pressed
+  grid finds the Sheet's root from what its own render named, and the DOM event is the whole message.
+  No listener is added on `document` or `window`, and no layout is read.
+- **Nothing else in the Scope is script.** The press's default is suppressed by the grid's Blazor
+  handler, as it already is for a press that points (ADR-0051), so DOM focus stays in the Sheet. The
+  `cell` pointer is a class on the root. Whether a grid is pointed at is decided in C#, and it reaches
+  the grid with a render. The round trip that leaves is accepted (ADR-0058, "On a circuit").

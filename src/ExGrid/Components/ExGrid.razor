@@ -44,9 +44,11 @@
 @* A reveal moves the scroller in the render that paints where it is going (ADR-0012,
    2026-09-29): the slice below is computed at the offset the write asks for. *@
 @{ StageReveal(); }
+@* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
+   script tells of each press handed over (ADR-0058, "On a circuit"). *@
 <div class="@RootClass" style="@RootStyle()" tabindex="@(Prerendered ? null : "0")" dir="ltr" @ref="_root"
-     role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
-     data-ex-reveal="@_revealToken"
+     id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
+     data-ex-reveal="@_revealToken" data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
      aria-activedescendant="@ActiveDescendant()"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
@@ -76,9 +78,11 @@
                and release handlers are splatted only while one runs (ADR-0050 item 1, ADR-0008). *@
             @* A Consumer may hide the header (ADR-0050): the band goes, and the rows start
                at the Viewport's top — BandHeightPx is zero, so the arithmetic follows. *@
+            @* Pointed at from outside (ADR-0058), a press here is handed over instead, and its
+               default is suppressed so DOM focus stays where it is; so is a press on the rows. *@
             @if (!HideHeader)
             {
-            <div class="ex-header" role="row" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="OnHeaderMouseDown">
+            <div class="ex-header" role="row" style="@HeaderBandStyle()" @attributes="_headerDragHandler" @onclick="OnHeaderClickAsync" @onmousedown="HeaderPressHandler" @onmousedown:preventDefault="PointedAtNow">
                 @if (_rowHeadingStyle is not null)
                 {
                     @* Where the two Headings meet (ADR-0050): held at the left edge as the
@@ -164,12 +168,13 @@
                report's row-change test (ADR-0021's fifth entry). The transform no longer
                says it once the height is compressed (ADR-0053). *@
             <div class="ex-viewport" style="@ViewportStyle()" data-ex-first-row="@(_visible?.Start)"
-                 role="presentation" @attributes="_dragHandler" @onmousedown="OnMouseDown" @onmousedown:preventDefault="PressKeepsTheEditor" @onmouseup="OnMouseUp"
+                 role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
                 @if (_visible is { } visible)
                 {
-                    @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0)
+                    var pointDashes = PointDashesRange(visible);
+                    @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
                         @* One element per range, so what selection costs to paint depends
                            on how many rectangles there are and never on how many cells
@@ -243,6 +248,13 @@
                                     <div class="@_columnOutlines[c].Class" style="@pinnedColumn"></div>
                                 }
                             }
+                            @* The dashes a Consumer pointing from outside asks for (ADR-0058): one
+                               rectangle, over a cell or down a column's body, over the column outlines
+                               and cut to the painted rows as they are. *@
+                            @if (pointDashes is { } pinnedDashesRange && SelectionStyles.Pinned(pinnedDashesRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedDashes)
+                            {
+                                <div class="ex-point-dashes" style="@pinnedDashes"></div>
+                            }
                             @* The pointing outline (ADR-0051): one more rectangle, over the
                                ranges; the Selection and the Focus beneath it do not move.
                                It is the Reference Outline of the range it points at, in that
@@ -296,6 +308,10 @@
                                 {
                                     <div class="@_columnOutlines[c].Class" style="@column"></div>
                                 }
+                            }
+                            @if (pointDashes is { } dashesRange && SelectionStyles.Scrollable(dashesRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } dashes)
+                            {
+                                <div class="ex-point-dashes" style="@dashes"></div>
                             }
                             @if (!_selection.Selection.IsEmpty && PointRange is { } pointRange && SelectionStyles.Scrollable(pointRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } point)
                             {
@@ -698,8 +714,10 @@
            listener as the editor's keys. Chrome paints the contents (ADR-0010/0030). *@
         @* data-ex-list marks a list of candidates, as against a hint alone: the key gate reads
            it, so ← and → are the editor's from the render that paints the list, not from the
-           later message that tells the gate (ADR-0051, ADR-0010). *@
+           later message that tells the gate (ADR-0051, ADR-0010). data-ex-over-point marks a
+           list open over Point, where ← and → point instead, from the same render (ADR-0058). *@
         <div class="ex-completion" style="@CompletionStyle()" role="presentation" data-ex-list="@(completion.Candidates.Count > 0)"
+             data-ex-over-point="@CompletionListOverPoint"
              @onmousedown:preventDefault @onmousedown:stopPropagation>
             @if (Chrome?.EditorCompletion(completionContext) is { } completionFragment)
             {
@@ -2023,12 +2041,18 @@
     // attach, whose render lifts the Prerendered state.
     private bool _listening;
 
-    private string RootClass => (_loading || Prerendered, _editMode != EditMode.None) switch
+    // Interned per combination, as the header cells' classes are (ADR-0027 P5). ex-pointed-at is
+    // the grid pointed at from outside (ADR-0058, ADR-0029's note of 2026-09-30).
+    private string RootClass => (_loading || Prerendered, _editMode != EditMode.None, PointedAtNow) switch
     {
-        (true, true) => "ex-grid ex-loading ex-editing",
-        (true, false) => "ex-grid ex-loading",
-        (false, true) => "ex-grid ex-editing",
-        _ => "ex-grid",
+        (true, true, false) => "ex-grid ex-loading ex-editing",
+        (true, false, false) => "ex-grid ex-loading",
+        (false, true, false) => "ex-grid ex-editing",
+        (false, false, false) => "ex-grid",
+        (true, true, true) => "ex-grid ex-loading ex-editing ex-pointed-at",
+        (true, false, true) => "ex-grid ex-loading ex-pointed-at",
+        (false, true, true) => "ex-grid ex-editing ex-pointed-at",
+        (false, false, true) => "ex-grid ex-pointed-at",
     };
 
     /// <summary>The bounds every selection transition is checked against: rows after
@@ -2143,6 +2167,7 @@
     protected override void OnParametersSet()
     {
         ValidatePointDeclaration();
+        BindPointedAt();
         ResolveOutlinedColumns();
         // The Source's own change notification lands in the same pipeline (ApplyState),
         // so a re-entrant one raised by the column push below would run it twice.
@@ -2784,6 +2809,8 @@
         // that changed the edit without either.
         if (_jsEditingDirty || (_editMode != EditMode.None) != _consumerHeardEditOpen)
             await PushEditingStateAsync();
+        // The net under any path that changed the edit's Point without telling (ADR-0058).
+        TellConsumerPointState();
         await PushPointerReportingAsync();
         // A display-only grid must not take printable keys away from the page
         // (ADR-0010/0020), nor a grid nobody listens to take Ctrl+Z (ADR-0007) — the
@@ -3146,6 +3173,8 @@
     /// </summary>
     private async Task AnswerPressAsync(MouseEventArgs e)
     {
+        // The grid's own press, whatever the one before it was (ADR-0058).
+        _pressHandedOver = false;
         // Read before anything below changes what is painted: the handle is grabbed where
         // the user saw it (ADR-0050, item 5).
         var onFillHandle = e.Button == 0 && !e.ShiftKey && !e.CtrlKey && !e.MetaKey && IsOnFillHandle(e);
@@ -3275,6 +3304,12 @@
         {
             _suppressRender = true;
             SetDragging(false);
+            return;
+        }
+        // A press handed over selects nothing it is dragged across (ADR-0058).
+        if (_pointedDrag is not null)
+        {
+            MovePointedDrag(e);
             return;
         }
         // A Heading drag over the cells: only the pointer's column (row) counts (ADR-0050).
@@ -3581,8 +3616,11 @@
             return;
         }
         // Where a Heading drag is released counts as a move: a fast release reaches another
-        // column or row without a move between (ADR-0050, item 1; ADR-0012).
-        if (_headingDrag != HeadingAxis.None)
+        // column or row without a move between (ADR-0050, item 1; ADR-0012). So it does for a
+        // press handed over (ADR-0058).
+        if (_pointedDrag is not null)
+            MovePointedDrag(e);
+        else if (_headingDrag != HeadingAxis.None)
             MoveHeadingDrag(e);
         _suppressRender = true;
         SetDragging(false);
@@ -3597,7 +3635,10 @@
     /// every painted row's markup on every move.</summary>
     private void OnResizeGripDown(int column, MouseEventArgs e)
     {
-        if (e.Button != 0)
+        _pressHandedOver = false;
+        // Pointed at from outside, the header does nothing of its own (ADR-0058). The stylesheet
+        // lets such a press through to the header, which hands it over; this is the guard behind it.
+        if (e.Button != 0 || PointedAtNow)
             return;
         _resizeColumn = column;
         _resizeStartClientX = e.ClientX;
@@ -3621,6 +3662,7 @@
         // gesture's own click — but a release outside the header raises no header
         // click at all, and a flag left standing would eat the NEXT genuine sort.
         _gestureConsumedClick = false;
+        _pressHandedOver = false;
         // The same dismissal rule as the body: pressing the header past an open
         // popover closes it, and whatever the press also meant still happens.
         if (AnyPopoverOpen)
@@ -3660,27 +3702,12 @@
         // decides whether that is the leaf or a rectangle standing over it.
         var unitFirst = column;
         var unitCount = 1;
-        if (_headerLayout.TierCount > 0)
+        if (IsAboveLeaf(e, column, out var grabbed))
         {
-            var leafTopPx = BandHeightPx - (_headerLayout.LeafTierSpanOf(column) * _metrics.HeaderHeightPx);
-            if (e.OffsetY < leafTopPx)
-            {
-                var tier = _headerLayout.TierCount - (int)Math.Floor(e.OffsetY / _metrics.HeaderHeightPx);
-                ResolvedHeaderGroup? grabbed = null;
-                foreach (var group in _headerLayout.Groups)
-                {
-                    if (column >= group.FirstColumn && column < group.FirstColumn + group.MemberCount
-                        && tier >= group.BottomTier && tier <= group.TopTier)
-                    {
-                        grabbed = group;
-                        break;
-                    }
-                }
-                if (grabbed is null)
-                    return; // an empty tier above a leaf that does not stretch there
-                unitFirst = grabbed.FirstColumn;
-                unitCount = grabbed.MemberCount;
-            }
+            if (grabbed is null)
+                return; // an empty tier above a leaf that does not stretch there
+            unitFirst = grabbed.FirstColumn;
+            unitCount = grabbed.MemberCount;
         }
 
         _dragUnitFirst = unitFirst;
@@ -3819,6 +3846,15 @@
     /// </summary>
     private async Task OnHeaderClickAsync(MouseEventArgs e)
     {
+        // A press handed over from a grid pointed at (ADR-0058): its click is the same gesture,
+        // and the header does nothing of its own. A drag whose release was not heard ends here.
+        if (_pressHandedOver)
+        {
+            _suppressRender = true;
+            if (_pointedDrag is not null)
+                SetDragging(false);
+            return;
+        }
         // A resize or reorder just released here: the click is the gesture's tail, not
         // a sort (ADR-0016/0011). So is the click after a Heading drag, and after a press
         // that selected at once (ADR-0050, item 1). The button is up, so a Heading drag
@@ -3991,6 +4027,13 @@
         // rule exists to prevent.
         if (_editMode != EditMode.None)
             return;
+        // A secondary press on a grid pointed at from outside (ADR-0058) moves neither the
+        // Selection nor DOM focus, which a menu would take: it is not handed over, and does nothing.
+        if (_pressHandedOver)
+        {
+            _suppressRender = true;
+            return;
+        }
 
         if (CellUnder(e) is not { } cell)
         {
@@ -4409,7 +4452,7 @@
 
     /// <summary>A double-click on a grip is Size to fit, the column menu's command
     /// (ADR-0016, FN-12a).</summary>
-    private Func<Task> GripFitterFor(int column) => () => OnColumnWidthChanged.HasDelegate
+    private Func<Task> GripFitterFor(int column) => () => OnColumnWidthChanged.HasDelegate && !PointedAtNow
         ? SizeToFitAsync(ColumnsResizedWith(column))
         : Task.CompletedTask;
 
@@ -4418,6 +4461,10 @@
     /// popover in the way.</summary>
     private async Task OpenMenuAsync(int column)
     {
+        // Pointed at from outside, no column menu opens (ADR-0058): the stylesheet lets the press
+        // through to the header, which hands it over, and this is the guard behind it.
+        if (PointedAtNow)
+            return;
         // The button stops the press from reaching the header, so the click-away commit
         // never ran for it — it has to run here, and a Reject holds the editor and keeps
         // this press meaningless like every other (ADR-0010/0034). Without it "Sort
@@ -5076,6 +5123,7 @@
             _dragHandler.Remove("onmousemove");
             StopEdgeTimer();
             _pointDragging = false;
+            _pointedDrag = null;
             ForgetHeadingDrag();
             // A fill drag ends with the drag, however it ends; a release outside the grid
             // is not seen, so it raises nothing rather than fill to a guessed cell.
@@ -5178,7 +5226,9 @@
 
     private async Task RaiseActionAsync(GridActionEventArgs<TRow> args)
     {
-        if (_disposed)
+        // Pointed at from outside, a press on the rows is handed over instead of acting (ADR-0058):
+        // the stylesheet lets it through to the rows, and this is the guard behind it.
+        if (_disposed || PointedAtNow)
             return;
         // A press on any action ends Interactive (ADR-0037), by pointer as by Space — and
         // the pointer's press arrives through the row's handler, which renders the row but
@@ -6456,9 +6506,13 @@
     /// Focus instead, as Excel's does in Point — the Focus itself has not moved — and it
     /// names the edited cell again the moment the outline goes. While a selecting drag holds
     /// the button over more than one cell, the Consumer's label for the range's size, as
-    /// Excel's shows <c>4R x 3C</c> (ADR-0052).</summary>
+    /// Excel's shows <c>4R x 3C</c> (ADR-0052). While what Point wrote came from outside the
+    /// grid, nothing: the cell pressed there has no name here, and naming the edited cell would
+    /// read as pointing at it (ADR-0058).</summary>
     private string NameBoxText()
     {
+        if (PointedFromOutside)
+            return "";
         if (_editMode != EditMode.None && _pointer is { IsEmpty: false } pointer)
             return NameBoxLabel?.Invoke(pointer.Focus) ?? "";
         if (_selection.Selection.IsEmpty)
@@ -6585,6 +6639,7 @@
         if (endedIn is not null)
             await endedIn();
         TellConsumerWhetherEditOpen();
+        TellConsumerPointState();
         // An ending waits for no reply (see above). Its two tasks are safe to leave: each catches
         // the browser's failures itself, so neither can fault unobserved.
         if (_editMode == EditMode.None)
@@ -6665,6 +6720,9 @@
             _suppressRender = false;
             return;
         }
+        // After a press outside the grid wrote, the arrows are the Consumer's that wrote (ADR-0058).
+        if (await HandOnPointArrowAsync(canonical))
+            return;
         // Where the Consumer says a Reference can go, the arrows point (ADR-0051).
         if (OnPointKey(canonical))
             return;
@@ -7177,7 +7235,8 @@
     /// cell — the original value stays, with the caret inside it.</summary>
     private async Task OnViewportDoubleClickAsync(MouseEventArgs e)
     {
-        if (_editMode != EditMode.None || CellUnder(e) is not { } cell || !IsEditableCell(cell))
+        // The second press of a double click handed over (ADR-0058) opens no edit either.
+        if (_pressHandedOver || _editMode != EditMode.None || CellUnder(e) is not { } cell || !IsEditableCell(cell))
         {
             _suppressRender = true;
             return;
@@ -7508,10 +7567,11 @@
         _revealRowStart = false;
         _revealStepRows = 0;
         // The Extent while extending (ADR-0052), or the pointing outline's moving end
-        // (ADR-0051), where one asked; the Focus otherwise.
+        // (ADR-0051), where one asked; the Focus otherwise. A cell pointed at from outside is
+        // revealed whether or not this grid has a Selection of its own (ADR-0058, DC-55).
         var target = _revealTarget;
         _revealTarget = null;
-        if (_disposed || _scrollHandle is null || _selection.Selection.IsEmpty)
+        if (_disposed || _scrollHandle is null || (target is null && _selection.Selection.IsEmpty))
             return;
 
         var focus = target?.Cell ?? _selection.Selection.Focus;
@@ -7934,8 +7994,10 @@
     /// exists, so a grid without one asks nothing.</summary>
     private bool MarkedAt(TRow row) => _marks is not null && _marks.IsMarked(row);
 
+    // Pointed at from outside, neither checkbox marks anything (ADR-0058): as for an action.
     private Task RaiseRowMarkAsync(TRow row, bool marked)
-        => _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(row, marked)) ?? Task.CompletedTask;
+        => PointedAtNow ? Task.CompletedTask
+            : _marks?.OnMarkIntentAsync(new RowMarkIntent<TRow>.OneRow(row, marked)) ?? Task.CompletedTask;
 
     /// <summary>The Detail rows "Mark all N rows" offers: the Consumer's count where it
     /// has answered, the result's row count until then.</summary>
@@ -8029,7 +8091,7 @@
     /// </summary>
     private Task PressHeaderMarkAsync()
     {
-        if (_marks is null)
+        if (_marks is null || PointedAtNow)
             return Task.CompletedTask;
         if (PageSize is not null)
         {
@@ -8106,6 +8168,8 @@
             _boundMarks.Changed -= OnMarksChanged;
             _boundMarks = null;
         }
+        UnbindPointedAt();
+        ReleaseHandedOnPresses();
         try
         {
             try

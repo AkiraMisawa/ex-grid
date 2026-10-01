@@ -18,10 +18,13 @@ internal static class SheetFormulaAids
 {
     /// <summary>
     /// Completion and the argument hint for the editor's text at the caret: the declared
-    /// functions and the Sheet's Linked Tables beginning with the name being typed, each
-    /// replacing the engine's span with what the engine writes (<c>SUM(</c>, or a table's name),
-    /// and the signature of the function whose argument list holds the caret, the argument the
-    /// caret is in set off. Null for text that is not a Formula, and when there is neither.
+    /// functions and the Sheet's Linked Tables beginning with the name being typed, a table's
+    /// columns after <c>Table[</c>, or an argument's values where it takes one of a fixed list
+    /// (ADR-0058), each shown as the engine names it and replacing the engine's span with what
+    /// the engine writes (<c>SUM(</c>, a table's or a column's name, or <c>0</c> for
+    /// <c>0 - Exact match</c>); and the signature of the function whose argument list holds the
+    /// caret, the argument the caret is in set off. Null for text that is not a Formula, and
+    /// when there is neither.
     /// </summary>
     internal static EditorCompletion? Complete(Sheet sheet, string text, int caret)
     {

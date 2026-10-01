@@ -32,13 +32,15 @@
 
 <p>
     The grid on the right shows this page's positions, and the Sheet reads the same data as the
-    Linked Table <code>Positions</code> (ADR-0049): by key in B12, by column in B11. The page pushes
-    its first snapshot a moment after the Sheet opens, so those cells show <code>#GETTING_DATA</code>
+    Linked Table <code>Positions</code> (ADR-0049): by key in B12, by column in B11. Its key column is
+    <code>Id</code>, so a snapshot in which an Id repeats would be refused and its readers would wait
+    again. The page pushes its first snapshot a moment after the Sheet opens, so those cells show <code>#GETTING_DATA</code>
     until it lands; <i>Revalue</i> changes the data both show, and only the Formulas reading the
     table recalculate. Type <code>=SUM(Po</code> into a cell to see the table offered, and finish it as
     <code>=SUM(Positions[PV])</code>: while the Formula is edited, the PV column of the grid on the right
-    is outlined in the colour its Reference wears (ADR-0057). The Sheet tells the page which columns it
-    reads; the page, which knows where the table is shown, passes them to that grid.
+    is outlined in the colour its Reference wears (ADR-0057). The Sheet tells which columns it reads,
+    and the Pointing Scope the page put the Sheet and that grid in, which knows that the grid shows the
+    table, outlines them there (ADR-0058). Click a header of the grid on the right to sort it.
 </p>
 
 <div class="demo-toolbar">
@@ -63,13 +65,30 @@
         @Sheet
     }
     <div id="sheet-positions">
-        <ExGrid TRow="Position" Window="_positions" Columns="PositionColumns" RowHeight="28"
-                ViewportHeight="420" ViewportWidth="330" OutlinedColumns="_outlinedPositions" />
+        <ExGrid TRow="Position" Source="_positionsShown" Columns="PositionColumns" RowHeight="28"
+                ViewportHeight="420" ViewportWidth="330" PointedAt="_positionsPointedAt" />
     </div>
 </div>
 
+@* Why a press on the positions grid wrote nothing into the Formula, as the Sheet tells the page
+   (ADR-0058). Below the grids, for the reason the paragraph below gives. *@
+<p class="demo-status">
+    <span id="sheet-pointing">@_pointingStatus</span>
+</p>
+
 @* Below the Sheet, not above it: the page's tests press cells by where the grid stands in a
    720 px window, and text above the grid moves every row down. *@
+<p>
+    The Sheet and the positions grid are in one Pointing Scope (ADR-0058). While a Formula is typed,
+    wherever a Reference can go — after <code>=</code>, an operator, <code>(</code> or <code>,</code>
+    — a press on a positions cell writes what reads it by its key,
+    <code>XLOOKUP("R-4471", Positions[Id], Positions[PV])</code>, and a press on a column's header
+    writes <code>Positions[PV]</code>. The positions grid keeps neither the keyboard nor a Selection for
+    it: the pressed cell or column is dashed until something is typed after what the press wrote, and
+    the dashes stay on that position's row wherever a sort puts it. A press that stands for more than
+    one cell writes nothing, and the line above says why.
+</p>
+
 <p>
     While a cell is being edited, the commands that change the Sheet are greyed out, as Excel greys
     out its ribbon: ExSheet refuses them until the edit is committed or cancelled, so a row inserted
@@ -86,7 +105,8 @@
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
     private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />;
+                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720"
+                                              PointingScope="_scope" OnPointingRefused="ShowPointingRefusal" />;
 
     protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
 
@@ -94,6 +114,8 @@
 
     private const string Table = "Positions";
     private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+    // A row is read by its Id, and no Id appears twice in a snapshot (ADR-0049, 2026-09-30).
+    private const string TableKey = "Id";
 
     // The page's own data: what the positions grid shows and what the Sheet reads, from one
     // source (ADR-0049's first rule: ExSheet never reads the grid).
@@ -108,7 +130,7 @@
     ];
 
     private readonly CancellationTokenSource _closing = new();
-    private Position[] _positions =
+    private static readonly Position[] OpeningPositions =
     [
         new("R-1102", "Rates", 1_250),
         new("R-2210", "Rates", -420.5),
@@ -116,13 +138,22 @@
         new("R-5093", "Credit", 97.4),
         new("R-6120", "FX", -55.75),
     ];
+    private Position[] _positions = OpeningPositions;
+    // The positions as the grid on the right shows them, sorted as its headers ask; the Sheet reads
+    // the table by key, whatever order the grid shows (ADR-0049's second rule).
+    private readonly InMemoryGridSource<Position> _positionsShown = GridSource.From(OpeningPositions);
 
     private ExSheet? _sheet;
     private SheetDocument? _document = Opening();
-    // The columns of the table the Formula being edited reads, as the positions grid outlines
-    // them (ADR-0057): the Sheet tells the page, and only the page knows which grid shows the
-    // table (ADR-0049's first rule, ADR-0018).
-    private IReadOnlyList<OutlinedColumn> _outlinedPositions = [];
+    // The Sheet and the positions grid, pointed at while the Sheet points (ADR-0058). The grid is
+    // registered with the table it shows and how its rows are the table's rows: its columns are
+    // named as the table's are declared, so no column needs an entry. The Scope also outlines there
+    // the columns of the table the Formula being edited reads (ADR-0057): only the page knows which
+    // grid shows the table (ADR-0049's first rule, ADR-0018), and it says so once, here.
+    private readonly PointingScope _scope = new();
+    private GridPointedAt<Position>? _positionsPointedAt;
+    // Why the last press on the positions grid wrote nothing, until the edit opens or ends.
+    private string _pointingStatus = "";
     private string _status = "";
     // Whether an edit is open in the Sheet, as ExSheet raises it: the toolbar's commands are
     // greyed out while it is (ADR-0048).
@@ -148,13 +179,14 @@
             ("A13", "Count"), ("B13", $"=COUNTA({Table}[Id])"),
         ];
         // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
-        sheet.DeclareLinkedTable(Table, TableColumns);
+        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
         foreach (var (address, typed) in cells) sheet.Enter(CellAddress.Parse(address), typed);
         return sheet.ToDocument();
     }
 
     protected override void OnInitialized()
     {
+        _positionsPointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
         // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
         // the Blazor traps).
         _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
@@ -166,7 +198,7 @@
         if (!firstRender || _sheet is null) return;
         // Declaring what the document already declares changes nothing; a page that opens a
         // document without it declares it here.
-        await _sheet.DeclareLinkedTableAsync(Table, TableColumns);
+        await _sheet.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
         try
         {
             // Long enough to see #GETTING_DATA: the data is "on its way".
@@ -179,23 +211,25 @@
         await PushAsync();
     }
 
-    // The grid's columns are named as the table's are declared (TableColumns), so a column the
-    // Sheet names is the grid's column of the same name. Another table is not in this grid.
-    private void OutlinePositions(LinkedColumnColours columns) =>
-        _outlinedPositions = [.. columns
-            .Where(c => c.Column.Table == Table)
-            .Select(c => new OutlinedColumn(c.Column.Column, c.Colour))];
-
     private async Task RevalueAsync()
     {
-        _positions = [.. _positions.Select(p => p with { PV = Math.Round(p.PV * 1.01, 2) })];
+        Position[] revalued = [.. _positions.Select(p => p with { PV = Math.Round(p.PV * 1.01, 2) })];
+        // Each position is a new instance, where the grid shows it in the order it is sorted.
+        for (var i = 0; i < revalued.Length; i++) _positionsShown.ReplaceRow(_positions[i], revalued[i]);
+        _positions = revalued;
         await PushAsync();
     }
 
     private Task PushAsync() =>
         _sheet is null
             ? Task.CompletedTask
-            : _sheet.PushLinkedTableAsync(Table, _positions.Select(p => (IReadOnlyList<Value?>)[Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)]));
+            : _sheet.PushLinkedTableAsync(Table, _positions.Select(TableRow));
+
+    // A position as the table's row, in the declared column order: what the page pushes, and what
+    // the Scope reads a pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) => [Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+
+    private void ShowPointingRefusal(PointingRefusal refusal) => _pointingStatus = refusal.Message;
 
     public void Dispose()
     {
@@ -203,7 +237,11 @@
         _closing.Dispose();
     }
 
-    private void OnEditingChanged(bool open) => _editing = open;
+    private void OnEditingChanged(bool open)
+    {
+        _editing = open;
+        _pointingStatus = "";
+    }
 
     private Task UndoAsync() => CommandAsync(sheet => sheet.UndoAsync());
 
