@@ -265,6 +265,9 @@ when the answer comes.
 - Excel's default palette.
 - How Format Cells shows a part that differs across the Selection.
 - What an inserted row takes from a bordered row above.
+- An outline over whole columns. Ticket 45 reads it as left and right recorded at column level, and
+  the top of row 1 and the bottom of row 1048576 recorded on those cells, because a level is
+  uniform along its length. Whole rows mirror this.
 - Does a page receive Ctrl+1 to Ctrl+5 in Chrome and in Edge? This is part B, in the browser.
 
 ## Consequences
