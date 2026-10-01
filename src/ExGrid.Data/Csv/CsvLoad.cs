@@ -10,8 +10,13 @@ namespace ExGrid.Data.Csv;
 /// </summary>
 internal static class CsvLoad
 {
-    /// <summary>The bytes read at a time. A record longer than this grows the buffer.</summary>
-    public const int DefaultBufferSize = 1 << 18;
+    /// <summary>
+    /// The bytes read at a time, at most. A record longer than this grows the buffer. Large, because a
+    /// browser application's file comes through InputFile's stream, which makes a call into JavaScript
+    /// for every read: measured, a million-row file of 89.7 MiB took 1.1 s to copy in reads of
+    /// 256 KiB, and 0.45 s in reads of 4 MiB (ticket 07).
+    /// </summary>
+    public const int DefaultBufferSize = 1 << 22;
 
     /// <summary>The longest record read. Excel holds at most 32,767 characters in a cell, so a record
     /// this long is a quote left open, and the buffer is not grown to the size of the file to find it.</summary>
@@ -28,7 +33,10 @@ internal static class CsvLoad
         var read = new CsvRead(plan, builder);
         var total = Remaining(stream);
 
-        var buffer = new byte[Math.Max(4, bufferSize)];
+        // A stream that knows its length gets no larger a buffer than it needs, and a byte more, so
+        // that the read that fills it finds the end too.
+        var size = total is { } known && known < bufferSize ? (int)known + 1 : bufferSize;
+        var buffer = new byte[Math.Max(4, size)];
         var (end, eof) = await FillAsync(stream, buffer, 0, cancellationToken).ConfigureAwait(false);
         var start = Preamble(buffer.AsSpan(0, end), plan.Schema.Encoding, out var encoding);
         read.Begin(encoding);
