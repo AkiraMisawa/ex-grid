@@ -1,0 +1,1484 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:5298",
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1578,
+   959
+  ],
+  "forcedColors": false,
+  "dark": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0"
+ },
+ "label": "server-150",
+ "mode": "cases",
+ "rtt": 150,
+ "started": "2026-10-01T00:17:57.235Z",
+ "cases": [
+  {
+   "case": "g2w",
+   "what": "As g2, then a wait of 6 s",
+   "started": "2026-10-01T00:17:59.779Z",
+   "states": [
+    {
+     "state": "scrolled-back",
+     "did": [],
+     "readAtMs": 900,
+     "settled": true,
+     "read": {
+      "active": "sheet:div.ex-grid",
+      "editing": false,
+      "focus": "C3",
+      "nameBox": "C3",
+      "cell": null,
+      "bar": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 211.54,
+        "w": 446.58,
+        "h": 28
+       },
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 211.54,
+         "w": 446.58,
+         "h": 28
+        },
+        "spans": []
+       }
+      },
+      "completion": null,
+      "completionElement": null,
+      "hints": [],
+      "sheetOutlines": [],
+      "sheetPoints": [],
+      "positions": {
+       "pointedAt": false,
+       "activeDescendant": null,
+       "selectionDrawn": 0,
+       "sort": [
+        "Id none",
+        "Book none",
+        "PV none"
+       ],
+       "outlines": [],
+       "dashes": [],
+       "scroller": {
+        "top": 0,
+        "left": 0,
+        "clientWidth": 318,
+        "clientHeight": 280,
+        "offsetWidth": 330,
+        "offsetHeight": 280,
+        "scrollWidth": 318,
+        "scrollHeight": 1148,
+        "client": {
+         "l": 624,
+         "t": 211.5416717529297,
+         "w": 318,
+         "h": 280
+        }
+       },
+       "headers": [
+        {
+         "name": "Id",
+         "box": {
+          "l": 624,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "Book",
+         "box": {
+          "l": 714,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "PV",
+         "box": {
+          "l": 804,
+          "t": 211.54,
+          "w": 120,
+          "h": 28
+         }
+        }
+       ],
+       "firstRow": "R-1",
+       "lastRow": "R-10"
+      },
+      "other": null,
+      "refusal": "",
+      "targetText": "",
+      "focusLog": []
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": []
+     },
+     "shot": "pointing-g2w-scrolled-back-server-150-msedge.png",
+     "tookMs": 1323
+    },
+    {
+     "state": "pressed",
+     "did": [
+      "keys =",
+      "the positions grid pointed at after 128 ms",
+      "a press at (1373, 854), the middle of positions C8"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "read": {
+      "active": "sheet:cell",
+      "editing": true,
+      "focus": "C3",
+      "nameBox": "",
+      "cell": {
+       "value": "=XLOOKUP(\"R-8\", Positions[Id], Positions[PV])",
+       "selection": [
+        45,
+        45
+       ],
+       "box": {
+        "l": 314.19,
+        "t": 323.54,
+        "w": 99,
+        "h": 28
+       },
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=XLOOKUP(\"R-8\", Positions[Id], Positions[PV])",
+        "visibility": "visible",
+        "box": {
+         "l": 314.19,
+         "t": 323.54,
+         "w": 99,
+         "h": 28
+        },
+        "spans": [
+         {
+          "text": "Positions[Id]",
+          "pointed": false,
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 436.42,
+           "t": 328.21,
+           "w": 75.48,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "Positions[PV]",
+          "pointed": false,
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 518.77,
+           "t": 328.21,
+           "w": 80.05,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=XLOOKUP(\"R-8\", Positions[Id], Positions[PV])",
+       "selection": [
+        45,
+        45
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 211.54,
+        "w": 446.58,
+        "h": 28
+       },
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=XLOOKUP(\"R-8\", Positions[Id], Positions[PV])",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 211.54,
+         "w": 446.58,
+         "h": 28
+        },
+        "spans": [
+         {
+          "text": "Positions[Id]",
+          "pointed": false,
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 267.65,
+           "t": 216.21,
+           "w": 75.48,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "Positions[PV]",
+          "pointed": false,
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 350,
+           "t": 216.21,
+           "w": 80.05,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "completion": null,
+      "completionElement": null,
+      "hints": [],
+      "sheetOutlines": [],
+      "sheetPoints": [],
+      "positions": {
+       "pointedAt": true,
+       "activeDescendant": null,
+       "selectionDrawn": 0,
+       "sort": [
+        "Id none",
+        "Book none",
+        "PV none"
+       ],
+       "outlines": [
+        {
+         "cls": "ex-reference-outline ex-reference-1",
+         "color": "#326ac7",
+         "lineColour": "#326ac7",
+         "outline": "solid 2px #326ac7 offset -2px",
+         "border": "none 0px #326ac7",
+         "background": "#326ac7/0.1",
+         "box": {
+          "l": 624,
+          "t": 239.54,
+          "w": 90,
+          "h": 308
+         },
+         "covers": {
+          "columns": [
+           "Id"
+          ],
+          "rows": "R-1..R-10 (10)"
+         },
+         "insideClient": false
+        },
+        {
+         "cls": "ex-reference-outline ex-reference-2",
+         "color": "#c0353e",
+         "lineColour": "#c0353e",
+         "outline": "solid 2px #c0353e offset -2px",
+         "border": "none 0px #c0353e",
+         "background": "#c0353e/0.1",
+         "box": {
+          "l": 804,
+          "t": 239.54,
+          "w": 120,
+          "h": 308
+         },
+         "covers": {
+          "columns": [
+           "PV"
+          ],
+          "rows": "R-1..R-10 (10)"
+         },
+         "insideClient": false
+        }
+       ],
+       "dashes": [
+        {
+         "cls": "ex-point-dashes",
+         "color": "#000000",
+         "lineColour": "#000000",
+         "outline": "dashed 2px #000000 offset -4px",
+         "border": "none 0px #000000",
+         "background": "#000000/0",
+         "box": {
+          "l": 804,
+          "t": 435.54,
+          "w": 120,
+          "h": 28
+         },
+         "covers": {
+          "columns": [
+           "PV"
+          ],
+          "rows": "R-8"
+         },
+         "insideClient": true
+        }
+       ],
+       "scroller": {
+        "top": 0,
+        "left": 0,
+        "clientWidth": 318,
+        "clientHeight": 280,
+        "offsetWidth": 330,
+        "offsetHeight": 280,
+        "scrollWidth": 318,
+        "scrollHeight": 1148,
+        "client": {
+         "l": 624,
+         "t": 211.5416717529297,
+         "w": 318,
+         "h": 280
+        }
+       },
+       "headers": [
+        {
+         "name": "Id",
+         "box": {
+          "l": 624,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "Book",
+         "box": {
+          "l": 714,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "PV",
+         "box": {
+          "l": 804,
+          "t": 211.54,
+          "w": 120,
+          "h": 28
+         }
+        }
+       ],
+       "firstRow": "R-1",
+       "lastRow": "R-10"
+      },
+      "other": null,
+      "refusal": "",
+      "targetText": "",
+      "focusLog": [
+       {
+        "t": 5439,
+        "grid": "sheet0",
+        "el": "input.ex-editor"
+       }
+      ]
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "Positions[Id]",
+        "ground": null,
+        "saturated": [],
+        "darkest": null
+       },
+       {
+        "kind": "text",
+        "text": "Positions[PV]",
+        "ground": null,
+        "saturated": [],
+        "darkest": null
+       },
+       {
+        "kind": "outline",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "Id"
+         ],
+         "rows": "R-1..R-10 (10)"
+        },
+        "px": {
+         "x0": 894,
+         "y0": 49,
+         "x1": 1029,
+         "y1": 511
+        },
+        "line": [
+         "#326ac7:2520",
+         "#ffffff:1026"
+        ],
+        "fill": [
+         "#eaf0f9:41160",
+         "#ffffff:8892"
+        ]
+       },
+       {
+        "kind": "outline",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "PV"
+         ],
+         "rows": "R-1..R-10 (10)"
+        },
+        "px": {
+         "x0": 1164,
+         "y0": 49,
+         "x1": 1344,
+         "y1": 511
+        },
+        "line": [
+         "#c0353e:2610",
+         "#ffffff:1206"
+        ],
+        "fill": [
+         "#f8eaeb:55110",
+         "#ffffff:12312"
+        ]
+       },
+       {
+        "kind": "dashes",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "PV"
+         ],
+         "rows": "R-8"
+        },
+        "px": {
+         "x0": 1164,
+         "y0": 343,
+         "x1": 1344,
+         "y1": 385
+        },
+        "line": [
+         "#f8eaeb:891",
+         "#c0353e:252",
+         "#000000:102"
+        ],
+        "fill": [
+         "#f8eaeb:3444",
+         "#130506:28"
+        ],
+        "sides": {
+         "top": {
+          "colour": "#000000",
+          "inset": 2,
+          "runs": 20,
+          "pixels": 106,
+          "reach": "3-176 of 180"
+         },
+         "right": {
+          "colour": "#000000",
+          "inset": 3,
+          "runs": 4,
+          "pixels": 24,
+          "reach": "2-37 of 42"
+         },
+         "bottom": {
+          "colour": "#000000",
+          "inset": 4,
+          "runs": 20,
+          "pixels": 106,
+          "reach": "3-176 of 180"
+         },
+         "left": {
+          "colour": "#000000",
+          "inset": 3,
+          "runs": 4,
+          "pixels": 24,
+          "reach": "2-37 of 42"
+         }
+        },
+        "changedIn300ms": 0
+       }
+      ]
+     },
+     "shot": "pointing-g2w-pressed-server-150-msedge.png",
+     "tookMs": 1303
+    },
+    {
+     "state": "down-32",
+     "did": [
+      "keys {DOWN 32}"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "read": {
+      "active": "sheet:cell",
+      "editing": true,
+      "focus": "C3",
+      "nameBox": "",
+      "cell": {
+       "value": "=XLOOKUP(\"R-18\", Positions[Id], Positions[PV])",
+       "selection": [
+        46,
+        46
+       ],
+       "box": {
+        "l": 314.19,
+        "t": 323.54,
+        "w": 99,
+        "h": 28
+       },
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=XLOOKUP(\"R-18\", Positions[Id], Positions[PV])",
+        "visibility": "visible",
+        "box": {
+         "l": 314.19,
+         "t": 323.54,
+         "w": 99,
+         "h": 28
+        },
+        "spans": [
+         {
+          "text": "Positions[Id]",
+          "pointed": false,
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 443.97,
+           "t": 328.21,
+           "w": 75.48,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "Positions[PV]",
+          "pointed": false,
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 526.32,
+           "t": 328.21,
+           "w": 80.05,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=XLOOKUP(\"R-18\", Positions[Id], Positions[PV])",
+       "selection": [
+        46,
+        46
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 211.54,
+        "w": 446.58,
+        "h": 28
+       },
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=XLOOKUP(\"R-18\", Positions[Id], Positions[PV])",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 211.54,
+         "w": 446.58,
+         "h": 28
+        },
+        "spans": [
+         {
+          "text": "Positions[Id]",
+          "pointed": false,
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 275.2,
+           "t": 216.21,
+           "w": 75.48,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "Positions[PV]",
+          "pointed": false,
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 357.55,
+           "t": 216.21,
+           "w": 80.05,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "completion": null,
+      "completionElement": null,
+      "hints": [],
+      "sheetOutlines": [],
+      "sheetPoints": [],
+      "positions": {
+       "pointedAt": true,
+       "activeDescendant": null,
+       "selectionDrawn": 0,
+       "sort": [
+        "Id none",
+        "Book none",
+        "PV none"
+       ],
+       "outlines": [
+        {
+         "cls": "ex-reference-outline ex-reference-1",
+         "color": "#326ac7",
+         "lineColour": "#326ac7",
+         "outline": "solid 2px #326ac7 offset -2px",
+         "border": "none 0px #326ac7",
+         "background": "#326ac7/0.1",
+         "box": {
+          "l": 624,
+          "t": 211.54,
+          "w": 90,
+          "h": 336
+         },
+         "covers": {
+          "columns": [
+           "Id"
+          ],
+          "rows": "R-10..R-19 (10)"
+         },
+         "insideClient": false
+        },
+        {
+         "cls": "ex-reference-outline ex-reference-2",
+         "color": "#c0353e",
+         "lineColour": "#c0353e",
+         "outline": "solid 2px #c0353e offset -2px",
+         "border": "none 0px #c0353e",
+         "background": "#c0353e/0.1",
+         "box": {
+          "l": 804,
+          "t": 211.54,
+          "w": 120,
+          "h": 336
+         },
+         "covers": {
+          "columns": [
+           "PV"
+          ],
+          "rows": "R-10..R-19 (10)"
+         },
+         "insideClient": false
+        }
+       ],
+       "dashes": [
+        {
+         "cls": "ex-point-dashes",
+         "color": "#000000",
+         "lineColour": "#000000",
+         "outline": "dashed 2px #000000 offset -4px",
+         "border": "none 0px #000000",
+         "background": "#000000/0",
+         "box": {
+          "l": 804,
+          "t": 463.54,
+          "w": 120,
+          "h": 28
+         },
+         "covers": {
+          "columns": [
+           "PV"
+          ],
+          "rows": "R-18"
+         },
+         "insideClient": true
+        }
+       ],
+       "scroller": {
+        "top": 252,
+        "left": 0,
+        "clientWidth": 318,
+        "clientHeight": 280,
+        "offsetWidth": 330,
+        "offsetHeight": 280,
+        "scrollWidth": 318,
+        "scrollHeight": 1148,
+        "client": {
+         "l": 624,
+         "t": 211.5416717529297,
+         "w": 318,
+         "h": 280
+        }
+       },
+       "headers": [
+        {
+         "name": "Id",
+         "box": {
+          "l": 624,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "Book",
+         "box": {
+          "l": 714,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "PV",
+         "box": {
+          "l": 804,
+          "t": 211.54,
+          "w": 120,
+          "h": 28
+         }
+        }
+       ],
+       "firstRow": "R-10",
+       "lastRow": "R-19"
+      },
+      "other": null,
+      "refusal": "",
+      "targetText": "",
+      "focusLog": []
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "Positions[Id]",
+        "ground": null,
+        "saturated": [],
+        "darkest": null
+       },
+       {
+        "kind": "text",
+        "text": "Positions[PV]",
+        "ground": null,
+        "saturated": [],
+        "darkest": null
+       },
+       {
+        "kind": "outline",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "Id"
+         ],
+         "rows": "R-10..R-19 (10)"
+        },
+        "px": {
+         "x0": 894,
+         "y0": 7,
+         "x1": 1029,
+         "y1": 511
+        },
+        "line": [
+         "#326ac7:2268",
+         "#ffffff:1524",
+         "#c6c6c6:6"
+        ],
+        "fill": [
+         "#eaf0f9:41829",
+         "#ffffff:12336"
+        ]
+       },
+       {
+        "kind": "outline",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "PV"
+         ],
+         "rows": "R-10..R-19 (10)"
+        },
+        "px": {
+         "x0": 1164,
+         "y0": 7,
+         "x1": 1344,
+         "y1": 511
+        },
+        "line": [
+         "#c0353e:2268",
+         "#ffffff:1794",
+         "#c6c6c6:6"
+        ],
+        "fill": [
+         "#f8eaeb:56229",
+         "#ffffff:17112"
+        ]
+       },
+       {
+        "kind": "dashes",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "PV"
+         ],
+         "rows": "R-18"
+        },
+        "px": {
+         "x0": 1164,
+         "y0": 385,
+         "x1": 1344,
+         "y1": 427
+        },
+        "line": [
+         "#f8eaeb:720",
+         "#c0353e:246",
+         "#ffffff:192"
+        ],
+        "fill": [
+         "#f8eaeb:3389",
+         "#130506:44"
+        ],
+        "sides": {
+         "top": {
+          "colour": "#000000",
+          "inset": 2,
+          "runs": 20,
+          "pixels": 106,
+          "reach": "3-176 of 180"
+         },
+         "right": {
+          "colour": "#000000",
+          "inset": 3,
+          "runs": 4,
+          "pixels": 24,
+          "reach": "2-37 of 42"
+         },
+         "bottom": {
+          "colour": "#000000",
+          "inset": 4,
+          "runs": 20,
+          "pixels": 106,
+          "reach": "3-176 of 180"
+         },
+         "left": {
+          "colour": "#000000",
+          "inset": 3,
+          "runs": 4,
+          "pixels": 24,
+          "reach": "2-37 of 42"
+         }
+        },
+        "changedIn300ms": 224
+       }
+      ]
+     },
+     "shot": "pointing-g2w-down-32-server-150-msedge.png",
+     "tookMs": 1323
+    },
+    {
+     "state": "after-6s",
+     "did": [
+      "a wait of 6000 ms"
+     ],
+     "readAtMs": 900,
+     "settled": true,
+     "read": {
+      "active": "sheet:cell",
+      "editing": true,
+      "focus": "C3",
+      "nameBox": "",
+      "cell": {
+       "value": "=XLOOKUP(\"R-40\", Positions[Id], Positions[PV])",
+       "selection": [
+        46,
+        46
+       ],
+       "box": {
+        "l": 314.19,
+        "t": 323.54,
+        "w": 99,
+        "h": 28
+       },
+       "shown": true,
+       "fill": "#000000/0",
+       "color": "#000000",
+       "layer": {
+        "text": "=XLOOKUP(\"R-40\", Positions[Id], Positions[PV])",
+        "visibility": "visible",
+        "box": {
+         "l": 314.19,
+         "t": 323.54,
+         "w": 99,
+         "h": 28
+        },
+        "spans": [
+         {
+          "text": "Positions[Id]",
+          "pointed": false,
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 443.97,
+           "t": 328.21,
+           "w": 75.48,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "Positions[PV]",
+          "pointed": false,
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 526.32,
+           "t": 328.21,
+           "w": 80.05,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "bar": {
+       "value": "=XLOOKUP(\"R-40\", Positions[Id], Positions[PV])",
+       "selection": [
+        46,
+        46
+       ],
+       "box": {
+        "l": 145.42,
+        "t": 211.54,
+        "w": 446.58,
+        "h": 28
+       },
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": {
+        "text": "=XLOOKUP(\"R-40\", Positions[Id], Positions[PV])",
+        "visibility": "hidden",
+        "box": {
+         "l": 145.42,
+         "t": 211.54,
+         "w": 446.58,
+         "h": 28
+        },
+        "spans": [
+         {
+          "text": "Positions[Id]",
+          "pointed": false,
+          "cls": "ex-reference-1",
+          "color": "#326ac7",
+          "fill": "#326ac7",
+          "background": "#000000/0",
+          "box": {
+           "l": 275.2,
+           "t": 216.21,
+           "w": 75.48,
+           "h": 18.67
+          }
+         },
+         {
+          "text": "Positions[PV]",
+          "pointed": false,
+          "cls": "ex-reference-2",
+          "color": "#c0353e",
+          "fill": "#c0353e",
+          "background": "#000000/0",
+          "box": {
+           "l": 357.55,
+           "t": 216.21,
+           "w": 80.05,
+           "h": 18.67
+          }
+         }
+        ]
+       }
+      },
+      "completion": null,
+      "completionElement": null,
+      "hints": [],
+      "sheetOutlines": [],
+      "sheetPoints": [],
+      "positions": {
+       "pointedAt": true,
+       "activeDescendant": null,
+       "selectionDrawn": 0,
+       "sort": [
+        "Id none",
+        "Book none",
+        "PV none"
+       ],
+       "outlines": [
+        {
+         "cls": "ex-reference-outline ex-reference-1",
+         "color": "#326ac7",
+         "lineColour": "#326ac7",
+         "outline": "solid 2px #326ac7 offset -2px",
+         "border": "none 0px #326ac7",
+         "background": "#326ac7/0.1",
+         "box": {
+          "l": 624,
+          "t": 183.54,
+          "w": 90,
+          "h": 308
+         },
+         "covers": {
+          "columns": [
+           "Id"
+          ],
+          "rows": "R-31..R-40 (10)"
+         },
+         "insideClient": false
+        },
+        {
+         "cls": "ex-reference-outline ex-reference-2",
+         "color": "#c0353e",
+         "lineColour": "#c0353e",
+         "outline": "solid 2px #c0353e offset -2px",
+         "border": "none 0px #c0353e",
+         "background": "#c0353e/0.1",
+         "box": {
+          "l": 804,
+          "t": 183.54,
+          "w": 120,
+          "h": 308
+         },
+         "covers": {
+          "columns": [
+           "PV"
+          ],
+          "rows": "R-31..R-40 (10)"
+         },
+         "insideClient": false
+        }
+       ],
+       "dashes": [
+        {
+         "cls": "ex-point-dashes",
+         "color": "#000000",
+         "lineColour": "#000000",
+         "outline": "dashed 2px #000000 offset -4px",
+         "border": "none 0px #000000",
+         "background": "#000000/0",
+         "box": {
+          "l": 804,
+          "t": 463.54,
+          "w": 120,
+          "h": 28
+         },
+         "covers": {
+          "columns": [
+           "PV"
+          ],
+          "rows": "R-40"
+         },
+         "insideClient": true
+        }
+       ],
+       "scroller": {
+        "top": 868,
+        "left": 0,
+        "clientWidth": 318,
+        "clientHeight": 280,
+        "offsetWidth": 330,
+        "offsetHeight": 280,
+        "scrollWidth": 318,
+        "scrollHeight": 1148,
+        "client": {
+         "l": 624,
+         "t": 211.5416717529297,
+         "w": 318,
+         "h": 280
+        }
+       },
+       "headers": [
+        {
+         "name": "Id",
+         "box": {
+          "l": 624,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "Book",
+         "box": {
+          "l": 714,
+          "t": 211.54,
+          "w": 90,
+          "h": 28
+         }
+        },
+        {
+         "name": "PV",
+         "box": {
+          "l": 804,
+          "t": 211.54,
+          "w": 120,
+          "h": 28
+         }
+        }
+       ],
+       "firstRow": "R-31",
+       "lastRow": "R-40"
+      },
+      "other": null,
+      "refusal": "",
+      "targetText": "",
+      "focusLog": []
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "kind": "text",
+        "text": "Positions[Id]",
+        "ground": null,
+        "saturated": [],
+        "darkest": null
+       },
+       {
+        "kind": "text",
+        "text": "Positions[PV]",
+        "ground": null,
+        "saturated": [],
+        "darkest": null
+       },
+       {
+        "kind": "outline",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "Id"
+         ],
+         "rows": "R-31..R-40 (10)"
+        },
+        "px": {
+         "x0": 894,
+         "y0": -35,
+         "x1": 1029,
+         "y1": 427
+        },
+        "line": [
+         "#326ac7:2526",
+         "#ffffff:417",
+         "#c6c6c6:6"
+        ],
+        "fill": [
+         "#eaf0f9:40571",
+         "#ffffff:5316"
+        ]
+       },
+       {
+        "kind": "outline",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "PV"
+         ],
+         "rows": "R-31..R-40 (10)"
+        },
+        "px": {
+         "x0": 1164,
+         "y0": -35,
+         "x1": 1344,
+         "y1": 427
+        },
+        "line": [
+         "#c0353e:2616",
+         "#ffffff:462",
+         "#c6c6c6:6"
+        ],
+        "fill": [
+         "#f8eaeb:55004",
+         "#ffffff:7392"
+        ]
+       },
+       {
+        "kind": "dashes",
+        "grid": "positions",
+        "covers": {
+         "columns": [
+          "PV"
+         ],
+         "rows": "R-40"
+        },
+        "px": {
+         "x0": 1164,
+         "y0": 385,
+         "x1": 1344,
+         "y1": 427
+        },
+        "line": [
+         "#c0353e:594",
+         "#f8eaeb:378",
+         "#ffffff:186"
+        ],
+        "fill": [
+         "#f8eaeb:3363",
+         "#130506:36"
+        ],
+        "sides": {
+         "top": {
+          "colour": "#000000",
+          "inset": 2,
+          "runs": 20,
+          "pixels": 106,
+          "reach": "3-176 of 180"
+         },
+         "right": {
+          "colour": "#000000",
+          "inset": 3,
+          "runs": 4,
+          "pixels": 24,
+          "reach": "2-37 of 42"
+         },
+         "bottom": {
+          "colour": "#000000",
+          "inset": 4,
+          "runs": 20,
+          "pixels": 106,
+          "reach": "3-176 of 180"
+         },
+         "left": {
+          "colour": "#000000",
+          "inset": 3,
+          "runs": 4,
+          "pixels": 24,
+          "reach": "2-37 of 42"
+         }
+        },
+        "changedIn300ms": 0
+       }
+      ]
+     },
+     "shot": "pointing-g2w-after-6s-server-150-msedge.png",
+     "tookMs": 1301
+    }
+   ],
+   "before": {
+    "escapes": 0,
+    "keyboardBroughtBack": false
+   },
+   "headers": [
+    {
+     "name": "Id",
+     "width": 90,
+     "grip": false
+    },
+    {
+     "name": "Book",
+     "width": 90,
+     "grip": false
+    },
+    {
+     "name": "PV",
+     "width": 120,
+     "grip": false
+    }
+   ],
+   "scrolled": "the wheel turned 15 times up over (1163, 677) in the positions grid; the pointer then moved off it",
+   "focusMs": 103,
+   "targetBefore": "",
+   "after": {
+    "escapes": 1,
+    "keyboardBroughtBack": false
+   },
+   "afterRead": {
+    "active": "sheet:div.ex-grid",
+    "editing": false,
+    "focus": "C3",
+    "nameBox": "C3",
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 211.54,
+      "w": 446.58,
+      "h": 28
+     },
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 211.54,
+       "w": 446.58,
+       "h": 28
+      },
+      "spans": []
+     }
+    },
+    "completion": null,
+    "completionElement": null,
+    "hints": [],
+    "sheetOutlines": [],
+    "sheetPoints": [],
+    "positions": {
+     "pointedAt": false,
+     "activeDescendant": null,
+     "selectionDrawn": 0,
+     "sort": [
+      "Id none",
+      "Book none",
+      "PV none"
+     ],
+     "outlines": [],
+     "dashes": [],
+     "scroller": {
+      "top": 868,
+      "left": 0,
+      "clientWidth": 318,
+      "clientHeight": 280,
+      "offsetWidth": 330,
+      "offsetHeight": 280,
+      "scrollWidth": 318,
+      "scrollHeight": 1148,
+      "client": {
+       "l": 624,
+       "t": 211.5416717529297,
+       "w": 318,
+       "h": 280
+      }
+     },
+     "headers": [
+      {
+       "name": "Id",
+       "box": {
+        "l": 624,
+        "t": 211.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "Book",
+       "box": {
+        "l": 714,
+        "t": 211.54,
+        "w": 90,
+        "h": 28
+       }
+      },
+      {
+       "name": "PV",
+       "box": {
+        "l": 804,
+        "t": 211.54,
+        "w": 120,
+        "h": 28
+       }
+      }
+     ],
+     "firstRow": "R-31",
+     "lastRow": "R-40"
+    },
+    "other": null,
+    "refusal": "",
+    "targetText": "",
+    "focusLog": [
+     {
+      "t": 16481,
+      "grid": "sheet0",
+      "el": "div.ex-grid"
+     }
+    ]
+   }
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-01T00:17:58.150Z",
+   "type": "info",
+   "text": "[2026-10-01T00:17:58.149Z] Information: Normalizing '_blazor' to 'http://localhost:5298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T00:17:58.161Z",
+   "type": "info",
+   "text": "[2026-10-01T00:17:58.162Z] Information: WebSocket connected to ws://localhost:5298/_blazor?id=w4uwx45vl_0PGsxs1E1-YQ."
+  }
+ ],
+ "browserVersion": "154.0.4258.37",
+ "emulation": "playwright",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok layout 0x08090809"
+ },
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 677,
+    "py": 360,
+    "client": {
+     "x": 400,
+     "y": 120
+    }
+   }
+  ]
+ },
+ "roundTripSet": {
+  "status": 200,
+  "now": "rtt=150\n"
+ },
+ "clip": {
+  "x": 28,
+  "y": 207,
+  "width": 930,
+  "height": 369
+ },
+ "finished": "2026-10-01T00:18:14.938Z"
+}
