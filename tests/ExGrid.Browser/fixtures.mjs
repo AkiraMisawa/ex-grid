@@ -681,9 +681,16 @@ export async function layoutCeilingTold(grid) {
 // pixels, so the offset is rounded up and nudged while the browser holds it short. Returns the
 // offset the browser holds and k. The spacer read is the one the told ceiling gives, so this
 // waits for it (layoutCeilingTold): read before, k would come out 1 at 150%.
+//
+// And it returns once the grid has painted the row there. The browser scrolls the rows it has at
+// once; the grid paints the new slice when it is told of the scroll, over the circuit on the
+// Server host, and compressed it moves the rows then, by up to (1 − 1/k) of the content offset.
+// Until it has, a row stands where the old slice put it: a box read in that moment and a picture
+// taken after it were rows apart, and at 150% on the Server host the Sheet's lines read nothing
+// where they were (CI, 2026-10-01; locally behind an 80 ms round trip, 22 of 26 line tests).
 export async function scrollRowToTop(grid, row) {
     await layoutCeilingTold(grid);
-    return grid.evaluate((root, row) => {
+    const scrolled = await grid.evaluate((root, row) => {
         const px = (style, name) => {
             const m = new RegExp(`(?:^|[;\\s])${name}:\\s*([\\d.]+)px`).exec(style ?? '');
             if (!m) throw new Error(`no ${name} in the style attribute "${style}"`);
@@ -705,4 +712,20 @@ export async function scrollRowToTop(grid, row) {
         }
         return { scrollTop: scroller.scrollTop, k };
     }, row);
+    // Where the row stands is no witness: scrolled to row 0 at 150% it moves 0.42 px, and the slice
+    // is rounded to a device pixel, a third of a pixel either way. The grid's own word is: the
+    // offset it wrote on the Viewport before rounding (ExGrid.razor, ViewportStyle), which with the
+    // row's place inside the Viewport is ADR-0053's r × h − c(s) + s for the offset it painted.
+    await expect.poll(() => grid.evaluate((root, { row, k }) => {
+        const scroller = root.querySelector(':scope > .ex-scroller');
+        const viewport = scroller.querySelector(':scope > .ex-spacer > .ex-viewport');
+        const painted = viewport?.querySelector(`.ex-row[aria-rowindex="${row + 1}"]`);
+        const written = /translateY\(round\(nearest,\s*(-?[\d.]+(?:[eE][-+]?\d+)?)px/.exec(viewport?.getAttribute('style') ?? '');
+        if (!painted || !written) return false;
+        const rowHeight = Number(/(?:^|[;\s])--ex-row-height:\s*([\d.]+)px/.exec(root.getAttribute('style'))[1]);
+        const inside = painted.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+        const s = scroller.scrollTop;
+        return Math.abs(Number(written[1]) + inside - (row * rowHeight - s * k + s)) < 0.1;
+    }, { row, k: scrolled.k }), { message: `the grid never painted row ${row} for the offset the browser holds (ADR-0053)`, timeout: 10_000 }).toBe(true);
+    return scrolled;
 }

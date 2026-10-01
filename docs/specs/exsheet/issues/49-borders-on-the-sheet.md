@@ -239,3 +239,26 @@ medium dash-dot-dot on D13's right as off pattern, where Excel's are 2, 2, 2, 2 
 - **Ticket 90's pinned-cell test** read case 4's A2 as a pinned cell. Case pages stopped pinning column A
   with case 11. `/sheet` gains `?pin=N`, and that test opens `?case=4&pin=1`. Part C's pages still pin
   nothing.
+
+2026-10-01, agent cf-48: CI's line tests failing at 150% on the Server host (run 36929390859) were the
+tests reading too early. The page was not putting the lines off a device pixel.
+- **What failed.** It was the per-style test, not the shifted-Sheet one. Eleven styles and sides read no
+  line at all, or a neighbouring row's style. Locally, the spec passed on the Server host at 150% with
+  the Sheet moved by every fifteenth of a pixel, down and across. Behind an 80 ms round trip, 22 of 26
+  line tests failed with CI's messages.
+- **Why.** At 150% the Sheet is compressed (k = 1.31), so its rows move when the grid is told of the
+  scroll: a round trip later on the Server host. `scrollRowToTop` returned before that. The box was read
+  from the old slice and the picture taken of the new one. On WebAssembly the grid is told in-process.
+- **The fix.** `scrollRowToTop` (fixtures.mjs) now waits until the grid has painted for the offset the
+  browser holds. The offset the grid writes on the Viewport, before rounding, plus the row's place in
+  the Viewport, must equal ADR-0053's r × h − c(s) + s. The row's position alone is no witness: scrolled
+  to row 0 it moves 0.42 px, within the third of a pixel the slice is rounded by. Behind 80 ms and
+  300 ms round trips, 30 of 30 pass. No line or pattern was loosened.
+- **The shifted-Sheet test never moved the Sheet down.** A margin of a third of a pixel collapsed into
+  its neighbour's. It now uses padding, which moves the cells (measured).
+- **Results.** `sheet-borders.spec.mjs`: 30 of 30 at 150% and 35 of 35 at 100%, on both hosts.
+  `scrollRowToTop`'s other callers pass on both hosts: MK-6, the Sheet's items 3 and 5, active-cell
+  cases 7 and 8, and UX-15. Layers 1 and 2: ExGrid.Tests 1011, ExSheet.Engine.Tests 2334,
+  ExGrid.MudBlazor.Tests 168, ExGrid.Components 1322 (one skipped), ExSheet.MudBlazor.Tests 44,
+  ExSheet.Components.Tests 594. ExGrid.Components failed once on MEM-1's allocation measurement
+  (25.7 MB against 27.2 MB) with every suite running at once. It passed twice alone.

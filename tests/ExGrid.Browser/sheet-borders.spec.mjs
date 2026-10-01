@@ -91,10 +91,12 @@ test.describe('DC-59: lines on the Sheet', () => {
     // line on a right edge read 2, 1, 3, 1. The lines are still on the device pixels there.
     test('DC-59: the lines stay on the device pixels wherever the page puts the Sheet, a third of a pixel across and down (ADR-0071, case 9)', async ({ page }) => {
         await openCase(page, 'lines');
-        // The page's own element around the Sheet, which leaves with the page.
+        // The page's own element around the Sheet, which leaves with the page. Padding, not a
+        // margin: a margin of a third of a pixel collapses into its neighbour's, and the Sheet stayed
+        // where it was down the page.
         await page.locator('.demo-side-by-side').evaluate((el) => {
-            el.style.marginTop = '0.33px';
-            el.style.marginLeft = '0.33px';
+            el.style.paddingTop = '0.33px';
+            el.style.paddingLeft = '0.33px';
         });
         for (const style of ['Thin', 'Thick', 'Double', 'Dotted', 'MediumDashDotDot']) {
             for (const side of ['bottom', 'right']) {
