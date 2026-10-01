@@ -131,6 +131,14 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   what a screen reader then says is still owed a real one, like the wording below). Only a
   Template's control takes DOM focus, which it already did when clicked; leaving it by Escape
   puts both back.)*
+- **On a grid that edits, the tab stop and `aria-activedescendant` are the Keyboard Field's**
+  *(decided with the user, 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md))*. So that an IME can start on a selected cell, a
+  text field of the grid's own inside the root holds the keyboard. It is the one tab stop
+  (`tabindex="0"`, the root `-1`), because Shift+Tab from it would otherwise land on the root, which
+  passes focus back to it: a trap. And the element holding the keyboard carries
+  `aria-activedescendant`, with every rule above. The root keeps `role="grid"` and the rest of the
+  table. Chromium's resolution of the field's active descendant is checked over CDP; what a screen
+  reader says is still owed a real one. A display-only grid keeps both on its root.
 - **The scroller is not a tab stop either** *(found while implementing, 2026-09-26)*. Chrome makes
   a scroll container with no tabbable content a tab stop of its own once it overflows, so every
   overflowing display-only grid had a second stop inside it — `/wide` at any size, and `/cells`
