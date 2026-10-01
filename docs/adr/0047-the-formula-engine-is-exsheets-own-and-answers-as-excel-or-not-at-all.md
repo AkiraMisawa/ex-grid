@@ -149,6 +149,17 @@ places.
   default). The component converts from the grid's resolved pixels and digit metrics. Every
   character counts as one digit width. That is exact for digits and an estimate for other
   characters until the case corpus has observed Excel.
+  *(2026-10-01, ticket 91: the unit stands, and fitting is charged glyph by glyph.)*
+  - The engine and the Sheet Document still count in characters of the grid's digit. The default
+    column is still 8.43.
+  - What fits inside a width is charged as the grid charges it: each glyph at its own measured
+    width (ADR-0016, ticket 83), bold for a bold cell. That covers General's fitting, `####` and a
+    key's widening.
+  - The twelfth run's case 17 widenings now land within 0.4 characters of Excel's. Before, they
+    were up to 1.2 over.
+  - **Still apart:** under the core's widths, en-GB's `05-Jan-26` widens to 8.82 where Excel fits it
+    at 8.09 (case 19). The core's regular widths cover weight 600, because group and total rows
+    paint at 600.
 - **The text fitted to a column is for painting only.** The accessible name and a copy take the
   Value as the engine gives it unfitted, as [ADR-0016](./0016-column-width-and-overflow.md) gives
   a screen reader the real value behind `####`.
