@@ -66,6 +66,9 @@
         <div class="ex-pivot-dialog-backdrop" @onclick="CloseDialog" aria-hidden="true"></div>
         <PivotDialogFrame Label="@dialog.Details.Title" OnEscape="_closeDialog">@DialogContent(dialog)</PivotDialogFrame>
     }
+    @* The report's grid takes the keyboard back once the dialog, or the last details tab, has gone
+       (ADR-0069): asked after the render that removes it, when the report can take focus again. *@
+    @KeyboardReturn()
 </div>
 
 @code {
