@@ -48,10 +48,10 @@ const LOAD_WATCHES = {
         ['read', { kind: 'matches', selector: DB_STATUS, pattern: '^Read [\\d,]+ trades' }],
         ['first report', { kind: 'exists', selector: `${DB_REPORT} .ex-row` }, 'read'],
     ],
-    '/pivot-live': [
-        ['first report', { kind: 'exists', selector: `${LIVE_REPORT} .ex-row` }],
-    ],
 };
+
+// The answer to a gesture that changes the report's rows: the grid's row count moves.
+const ROW_COUNT = { kind: 'attribute-changes', selector: REPORT, name: 'aria-rowcount' };
 
 /**
  * The probe, an init script: what the page is asked to time, in its own clock. A watch is a
@@ -266,7 +266,6 @@ test('PV-21/DA-17: a million trades read from objects on /pivot, and the gesture
     const runs = {};
     const add = (name, result) => (runs[name] ??= []).push(result);
     const report = { kind: 'changes', selector: VIEWPORT };
-    const rowCount = { kind: 'attribute-changes', selector: REPORT, name: 'aria-rowcount' };
     const menu = { kind: 'exists', selector: '[role=menu]' };
 
     for (let round = 0; round < 5; round++) {
@@ -291,8 +290,8 @@ test('PV-21/DA-17: a million trades read from objects on /pivot, and the gesture
         add('change of form: Compact', await timed(page, report, () => compact.click(), compact));
 
         // Changes that need a new question: Book ticked into Rows and unticked again.
-        add('new question: tick Book', await timed(page, rowCount, () => tick(page, 'Book').check(), tick(page, 'Book')));
-        add('new question: untick Book', await timed(page, rowCount, () => tick(page, 'Book').uncheck(), tick(page, 'Book')));
+        add('new question: tick Book', await timed(page, ROW_COUNT, () => tick(page, 'Book').check(), tick(page, 'Book')));
+        add('new question: untick Book', await timed(page, ROW_COUNT, () => tick(page, 'Book').uncheck(), tick(page, 'Book')));
 
         // And through the report filter band: USD alone, then (All) again.
         const band = toolbarButton(page, 'Filter Currency');
@@ -330,8 +329,6 @@ async function moveEntry(page, caption, command) {
     await menuItem(page, command).click();
     await expect(page.getByRole('menu')).toHaveCount(0);
 }
-
-const ROW_COUNT = { kind: 'attribute-changes', selector: REPORT, name: 'aria-rowcount' };
 
 /** Waits until no long task has ended for half a second. */
 const quiet = (page) => page.waitForFunction(() => {
@@ -416,7 +413,6 @@ test('PV-21: questions of a thousand to thirty thousand leaves, over a million t
 
 test('PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
-    const rowCount = ROW_COUNT;
     // The trades' 270 dates, 49 quantities, 499 notionals, five products, five currencies and three
     // regions are drawn independently, so a million of them fill nearly every combination of a few:
     // these are the combinations, and the leaves are nearly as many.
@@ -430,7 +426,6 @@ test('PV-21: a question near the 200,000-leaf cap, and past it, over a million t
                 await tick(page, 'Quantity').check();
                 await moveEntry(page, 'Sum of Quantity', 'Move to Row Labels');
             },
-            answer: rowCount,
         },
         {
             name: 'Rows TradeDate, Notional: 134,730 combinations',
@@ -442,7 +437,6 @@ test('PV-21: a question near the 200,000-leaf cap, and past it, over a million t
                 await tick(page, 'Notional').check();
                 await moveEntry(page, 'Sum of Notional', 'Move to Row Labels');
             },
-            answer: rowCount,
         },
         {
             name: 'Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations',
@@ -453,7 +447,6 @@ test('PV-21: a question near the 200,000-leaf cap, and past it, over a million t
                 await tick(page, 'Quantity').check();
                 await moveEntry(page, 'Sum of Quantity', 'Move to Row Labels');
             },
-            answer: rowCount,
         },
         {
             name: 'Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused',
