@@ -297,6 +297,10 @@ rules that make this safe:
   worktree's code and passing. The suite is also single-worker: the OS clipboard is one
   per display, the records are read-modify-written, and on the Server host the latency
   proxy and the host log belong to the whole process (ADR-0056).
+- **Numbers come from a reserved block.** An ADR, an ExSheet ticket, a Windows run and a Sheet
+  Document version each take a number that another branch may be taking at the same time, and git
+  will not notice. Take them only from your branch's block in `docs/agents/numbering.md`, and
+  reserve a block there first.
 - **Remove a worktree when its agent is done.** `git worktree list` shows the leftovers; a
   stale one starts the next agent from an old tip.
 
