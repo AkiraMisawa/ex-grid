@@ -371,6 +371,14 @@ nobody had asked for. What that means when writing a test:
   at XFD1048576 with the DOM no larger than at A1 (SH-2); Home, End, Shift+Home and Shift+End in
   Caret in the Cell Editor and the Formula Bar moving and extending the caret with nothing
   scrolled and the edit kept, which on macOS the listener answers (ticket 32).
+- `format-keys.spec.mjs` — Excel's formatting keys on `/sheet` (ADR-0063, ADR-0050 item 14;
+  ticket 51), with real keys: Ctrl+B, Ctrl+I, Ctrl+U, Ctrl+5 and Ctrl+2 to Ctrl+4 each toggling the
+  Focus cell, taken from the browser, one Ctrl+Z a press, and following the Focus cell over a range;
+  Ctrl+Shift with `~ ! @ # $ % ^` applying Excel's Number Formats under en-US, `#` also without
+  Shift as a UK layout types it (SH-42); with an edit open, Ctrl+U, Ctrl+B and Ctrl+Shift+$
+  changing nothing, taken from the browser — no page opened — said in ExSheet's notice and in the
+  page's status line, and the edit committing as typed (SH-43). A Font is not painted yet, so the
+  page's line under the Sheet reads the Focus cell's Cell Format back.
 - `declarations.spec.mjs` — the declarations of ADR-0050/0051/0057 (§26) as ExSheet makes them on
   `/sheet`: completion under the built-in Chrome and `ExGrid.MudBlazor`'s (`/sheet?chrome=mud`)
   — the list inside the grid's box, ↑/↓, Tab, Escape, ←/→ with the list open, `=SS` completed

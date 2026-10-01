@@ -108,6 +108,105 @@ public static class GridKeys
     private static GridKeyAction Resolve(string canonical)
         => Table.TryGetValue(canonical, out var action) ? action : GridKeyAction.None;
 
+    /// <summary>
+    /// A Consumer's declared keys, checked (ADR-0050, item 14): each in <see cref="Canonical"/>'s
+    /// form, and none a key the core answers itself. The core claims a declared key whether or
+    /// not an edit is open, and raises it with whether one is; a key the core already answers
+    /// would then mean two things, so a declaration naming one is refused by name, with what the
+    /// core does with it (ADR-0010). A key is matched exactly as declared: a letter claims the
+    /// case it names, so a Consumer that wants a key under CapsLock too declares both cases, as
+    /// this table does for its own letters; and a character the layout may type with or without
+    /// Shift is declared in both forms.
+    /// </summary>
+    /// <param name="keys">The declared keys, in the canonical form; null declares none.</param>
+    /// <returns>The keys, as a set; empty when none are declared.</returns>
+    /// <exception cref="ArgumentException">A key is not in the canonical form — no key press
+    /// would ever match it — or is one the core answers itself.</exception>
+    public static IReadOnlySet<string> Declare(IEnumerable<string>? keys)
+    {
+        if (keys is null)
+            return NoneDeclared;
+        var declared = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var key in keys)
+        {
+            if (!IsCanonicalForm(key, out var control, out var meta, out var alt, out var name))
+            {
+                throw new ArgumentException(
+                    $"The declared key '{key}' is not in the canonical form [Control+][Meta+][Shift+][Alt+]{{key}}, " +
+                    "with the key as KeyboardEvent.key reports it, so no key press would ever match it (ADR-0050, item 14).",
+                    nameof(keys));
+            }
+            if (CoreAnswer(key, control, meta, alt, name) is { } answer)
+            {
+                throw new ArgumentException(
+                    $"The declared key '{key}' is one the core answers itself: {answer}. A declared key never takes a " +
+                    "key the core answers, or the key would mean two things (ADR-0050, item 14; ADR-0010).",
+                    nameof(keys));
+            }
+            declared.Add(key);
+        }
+        return declared.Count == 0 ? NoneDeclared : declared;
+    }
+
+    private static readonly IReadOnlySet<string> NoneDeclared = new HashSet<string>(StringComparer.Ordinal);
+
+    // The keys the core answers that are not in Table: two the editor claims while an edit is
+    // open (ex-grid.js's editingKeys and the F4 a Consumer's CycleReference adds), and the
+    // clipboard's, which the core answers through the browser's own copy and paste events —
+    // taken, the key would suppress the very event (ADR-0005).
+    private static readonly Dictionary<string, string> AnsweredOutsideTable = new(StringComparer.Ordinal)
+    {
+        ["Control+Enter"] = "while an edit is open it fills the selection (ADR-0007)",
+        ["F4"] = "while an edit is open it cycles the Reference at the caret, where CycleReference is declared (ADR-0051)",
+        ["Control+c"] = "the browser's copy event, which the core answers (ADR-0005)",
+        ["Control+C"] = "the browser's copy event, which the core answers (ADR-0005)",
+        ["Control+Insert"] = "the browser's copy event, which the core answers (ADR-0005)",
+        ["Control+v"] = "the browser's paste event, which the core answers (ADR-0014)",
+        ["Control+V"] = "the browser's paste event, which the core answers (ADR-0014)",
+        ["Shift+Insert"] = "the browser's paste event, which the core answers (ADR-0014)",
+    };
+
+    /// <summary>What the core does with a key, in words, or null when the core leaves it alone.</summary>
+    private static string? CoreAnswer(string canonical, bool control, bool meta, bool alt, string key)
+    {
+        if (Table.TryGetValue(canonical, out var action))
+            return $"the core's {action.Kind}";
+        if (AnsweredOutsideTable.TryGetValue(canonical, out var answer))
+            return answer;
+        // The gate's typing rules (ADR-0010): a character, or F2, with nothing but Shift opens the
+        // Cell Editor on a grid that edits, and Control with Alt together is AltGr typing one.
+        if (!control && !meta && !alt && (key.Length == 1 || key == "F2"))
+            return "typing, which opens the Cell Editor (ADR-0010)";
+        if (control && alt && key.Length == 1)
+            return "typing with AltGr, which opens the Cell Editor (ADR-0010)";
+        return null;
+    }
+
+    /// <summary>Whether <paramref name="declared"/> is in <see cref="Canonical"/>'s form: the
+    /// modifiers in its order, each at most once, then a key that is not a modifier. A key's own
+    /// name holds no <c>+</c> unless it is <c>+</c> itself.</summary>
+    private static bool IsCanonicalForm(
+        string? declared, out bool control, out bool meta, out bool alt, out string key)
+    {
+        var rest = declared ?? "";
+        control = TakePrefix(ref rest, "Control+");
+        meta = TakePrefix(ref rest, "Meta+");
+        TakePrefix(ref rest, "Shift+");
+        alt = TakePrefix(ref rest, "Alt+");
+        key = rest;
+        return rest.Length > 0
+            && (rest == "+" || !rest.Contains('+', StringComparison.Ordinal))
+            && rest is not ("Control" or "Meta" or "Shift" or "Alt");
+    }
+
+    private static bool TakePrefix(ref string rest, string prefix)
+    {
+        if (!rest.StartsWith(prefix, StringComparison.Ordinal) || rest.Length == prefix.Length)
+            return false;
+        rest = rest[prefix.Length..];
+        return true;
+    }
+
     private static Dictionary<string, GridKeyAction> BuildTable()
     {
         var table = new Dictionary<string, GridKeyAction>(StringComparer.Ordinal);

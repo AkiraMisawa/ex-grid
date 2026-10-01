@@ -190,6 +190,99 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>
+    /// Excel's built-in currency format under <paramref name="culture"/>: what Ctrl+Shift+$
+    /// records (ADR-0063; the eleventh Windows run, cases 18 and 20). It is format 8,
+    /// <c>$#,##0.00_);[Red]($#,##0.00)</c> in the invariant codes, or format 6,
+    /// <c>$#,##0_);[Red]($#,##0)</c>, where the culture's currency has no decimals, as Excel chose
+    /// under ja-JP. Like the built-in short date, it is recorded in those codes and is not the
+    /// pattern they spell: it shows in the culture's own currency, <c>£1,234.50</c> under en-GB
+    /// and <c>¥1,235</c> under ja-JP, its negative section red.
+    /// </summary>
+    public static NumberFormat BuiltInCurrency(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        return culture.NumberFormat.CurrencyDecimalDigits == 0 ? WholeCurrency : Currency;
+    }
+
+    private const string CurrencyCode = "$#,##0.00_);[Red]($#,##0.00)";
+    private const string WholeCurrencyCode = "$#,##0_);[Red]($#,##0)";
+    private static readonly NumberFormat Currency = Parse(CurrencyCode);
+    private static readonly NumberFormat WholeCurrency = Parse(WholeCurrencyCode);
+    private static readonly Dictionary<(string Culture, bool Decimals), NumberFormat> Currencies = [];
+
+    /// <summary>
+    /// The built-in currency format (<see cref="BuiltInCurrency"/>) in <paramref name="culture"/>'s
+    /// own form; <see langword="null"/> for any other format, or where the culture's form is the
+    /// code itself (en-US).
+    /// </summary>
+    private NumberFormat? CurrencyIn(CultureInfo culture)
+    {
+        var decimals = string.Equals(Code, CurrencyCode, StringComparison.OrdinalIgnoreCase);
+        if (!decimals && !string.Equals(Code, WholeCurrencyCode, StringComparison.OrdinalIgnoreCase)) return null;
+        lock (Currencies)
+        {
+            if (!Currencies.TryGetValue((culture.Name, decimals), out var local))
+            {
+                var code = LocalCurrencyCode(culture, decimals);
+                local = string.Equals(code, Code, StringComparison.Ordinal) || !TryParse(code, out var parsed, out _) ? this : parsed;
+                Currencies[(culture.Name, decimals)] = local;
+            }
+            return ReferenceEquals(local, this) || string.Equals(local.Code, Code, StringComparison.Ordinal) ? null : local;
+        }
+    }
+
+    /// <summary>
+    /// The built-in currency format as Excel spells it under <paramref name="culture"/>, built from
+    /// the culture's currency symbol and where it puts the symbol and the sign, as Windows' regional
+    /// settings give Excel the same three: <c>£#,##0.00;[Red]-£#,##0.00</c> under en-GB and
+    /// <c>¥#,##0;[Red]-¥#,##0</c> under ja-JP, as the eleventh Windows run read them (case 20). A
+    /// negative amount in parentheses pads the positive one by a parenthesis, as the invariant code
+    /// does. A symbol holding anything but currency signs is quoted, so its letters are not read as
+    /// codes.
+    /// </summary>
+    private static string LocalCurrencyCode(CultureInfo culture, bool decimals)
+    {
+        var info = culture.NumberFormat;
+        var symbol = info.CurrencySymbol.All(c => char.GetUnicodeCategory(c) == UnicodeCategory.CurrencySymbol)
+            ? info.CurrencySymbol
+            : "\"" + info.CurrencySymbol.Replace("\"", "", StringComparison.Ordinal) + "\"";
+        var n = decimals ? "#,##0.00" : "#,##0";
+        // Windows' regional default for en-US writes a negative amount in parentheses, and Excel
+        // follows it (case 20: $#,##0.00_);[Red]($#,##0.00)). .NET's ICU data writes it with a
+        // minus. Elsewhere .NET's data is read, and it agreed with Excel under en-GB and ja-JP.
+        var negativePattern = culture.Name == "en-US" ? 0 : info.CurrencyNegativePattern;
+        var negative = negativePattern switch
+        {
+            0 => $"({symbol}{n})",
+            2 => $"{symbol}-{n}",
+            3 => $"{symbol}{n}-",
+            4 => $"({n}{symbol})",
+            5 => $"-{n}{symbol}",
+            6 => $"{n}-{symbol}",
+            7 => $"{n}{symbol}-",
+            8 => $"-{n} {symbol}",
+            9 => $"-{symbol} {n}",
+            10 => $"{n} {symbol}-",
+            11 => $"{symbol} {n}-",
+            12 => $"{symbol} -{n}",
+            13 => $"{n}- {symbol}",
+            14 => $"({symbol} {n})",
+            15 => $"({n} {symbol})",
+            16 => $"{symbol}- {n}",
+            _ => $"-{symbol}{n}",
+        };
+        var positive = info.CurrencyPositivePattern switch
+        {
+            0 => $"{symbol}{n}",
+            1 => $"{n}{symbol}",
+            2 => $"{symbol} {n}",
+            _ => $"{n} {symbol}",
+        };
+        if (negative.EndsWith(')')) positive += "_)";
+        return $"{positive};[Red]{negative}";
+    }
+
+    /// <summary>
     /// A Value as this format shows it under <paramref name="culture"/>, and the colour the
     /// section that showed it names (ADR-0063, SH-40), or <see langword="null"/> where it names
     /// none or no section showed the Value: General, booleans and Error Values, which show as
@@ -197,7 +290,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// </summary>
     internal (string Text, bool CannotShow, NumberFormatColour? Colour) Format(Value value, CultureInfo culture)
     {
-        if (value.Kind == ValueKind.Number && ShortDateIn(culture) is { } local) return local.Format(value, culture);
+        if (value.Kind == ValueKind.Number && (ShortDateIn(culture) ?? CurrencyIn(culture)) is { } local) return local.Format(value, culture);
         switch (value.Kind)
         {
             case ValueKind.Boolean:

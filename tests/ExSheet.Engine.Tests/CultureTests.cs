@@ -68,6 +68,53 @@ public class CultureTests
         Assert.Equal(["9/26/2026", "26/09/2026", "26.09.2026", "2026/09/26"], shown);
     }
 
+    [Theory] // ADR-0063, SH-42 (the eleventh Windows run, case 20): Ctrl+Shift+$ records Excel's built-in currency, 8 or 6 as the culture's currency has decimals
+    [InlineData("en-US", "$#,##0.00_);[Red]($#,##0.00)")]
+    [InlineData("en-GB", "$#,##0.00_);[Red]($#,##0.00)")]
+    [InlineData("ja-JP", "$#,##0_);[Red]($#,##0)")]
+    public void The_built_in_currency_is_recorded_in_its_invariant_code(string culture, string code)
+    {
+        Assert.Equal(code, NumberFormat.BuiltInCurrency(CultureInfo.GetCultureInfo(culture)).Code);
+    }
+
+    [Theory] // ADR-0063, SH-42 (case 20): the built-in currency shows in the Sheet culture's own currency, as the built-in short date shows in its date, its negative section red
+    [InlineData("en-US", 1234.5, "$1,234.50 ", null)]
+    [InlineData("en-US", -1234.5, "($1,234.50)", NumberFormatColour.Red)]
+    [InlineData("en-GB", 1234.5, "£1,234.50", null)]
+    [InlineData("en-GB", -1234.5, "-£1,234.50", NumberFormatColour.Red)]
+    [InlineData("ja-JP", 1234.5, "¥1,235", null)]
+    [InlineData("ja-JP", -1234.5, "-¥1,235", NumberFormatColour.Red)]
+    public void The_built_in_currency_shows_in_the_sheets_culture(string culture, double number, string shown, NumberFormatColour? colour)
+    {
+        var sheet = In(culture);
+        var a1 = CellAddress.Parse("A1");
+        sheet.Enter(a1, "=" + number.ToString(CultureInfo.InvariantCulture));
+        var currency = NumberFormat.BuiltInCurrency(sheet.Culture);
+
+        sheet.SetNumberFormat(a1, currency);
+
+        Assert.Equal(shown, sheet.GetDisplay(a1).Text);
+        Assert.Equal(colour, sheet.GetDisplay(a1).Colour);
+        // Recorded as the built-in, not as the form it shows in.
+        Assert.Equal(currency.Code, sheet.GetNumberFormat(a1).Code);
+        Assert.Contains(JsonEncoded(currency.Code), sheet.ToDocument().ToJson(), StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0063: a currency whose symbol is letters is quoted, so it shows rather than being read as format codes
+    public void A_lettered_currency_symbol_shows_as_text()
+    {
+        var sheet = In("sv-SE");
+        var a1 = CellAddress.Parse("A1");
+        sheet.Enter(a1, "=5");
+
+        sheet.SetNumberFormat(a1, NumberFormat.BuiltInCurrency(sheet.Culture));
+
+        Assert.Contains("kr", sheet.GetDisplay(a1).Text, StringComparison.Ordinal);
+        Assert.Contains("5", sheet.GetDisplay(a1).Text, StringComparison.Ordinal);
+    }
+
+    private static string JsonEncoded(string text) => System.Text.Json.JsonSerializer.Serialize(text)[1..^1];
+
     [Fact] // ADR-0048: a percentage typed reopens in the Cell Editor as a percentage (its Value is in ExcelCases/typed-constants.json)
     public void A_typed_percentage_reopens_as_a_percentage()
     {

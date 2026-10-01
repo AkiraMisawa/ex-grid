@@ -2143,6 +2143,7 @@
     protected override void OnParametersSet()
     {
         ValidatePointDeclaration();
+        ResolveDeclaredKeys();
         ResolveOutlinedColumns();
         // The Source's own change notification lands in the same pipeline (ApplyState),
         // so a re-entrant one raised by the column push below would run it twice.
@@ -2789,14 +2790,16 @@
         // (ADR-0010/0020), nor a grid nobody listens to take Ctrl+Z (ADR-0007) — the
         // gate is told which keys this grid takes, and re-told when a parameter change
         // changes the answer.
+        // A Consumer's declared keys are re-told the same way (ADR-0050, item 14).
         var claims = KeyClaims();
-        if (_scrollHandle is not null && !_disposed && claims != _jsClaims)
+        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared)))
         {
             _jsClaims = claims;
+            _jsDeclared = _declared;
             try
             {
                 await _scrollHandle.InvokeVoidAsync(
-                    "setClaims", GridKeys.TakenFor(claims), claims.CanEdit, claims.CanFind);
+                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate());
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -2889,9 +2892,10 @@
             _self ??= DotNetObjectReference.Create(this);
             var claims = KeyClaims();
             _jsClaims = claims;
+            _jsDeclared = _declared;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.TakenFor(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind);
+                "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate());
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -5674,6 +5678,10 @@
         {
             AdoptKeyText(editorText, editorCaret);
             var canonical = GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary);
+            // A declared key is the Consumer's to answer, told that an edit is open; the edit
+            // stays as it is (ADR-0050, item 14).
+            if (await RaiseDeclaredKeyAsync(canonical, editOpen: true))
+                return;
             // F4 is claimed only where the Consumer declared what it does (ADR-0051,
             // 2026-09-29), and is decided from the selection its own message carries.
             if (canonical == "F4" && CycleReference is not null)
@@ -5715,6 +5723,12 @@
                 StateHasChanged();
             }
         }
+
+        // A declared key is the Consumer's, and resolves to nothing of the core's (ADR-0050,
+        // item 14): raised, and it moves nothing.
+        if (action.Kind == GridKeyKind.None
+            && await RaiseDeclaredKeyAsync(GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary), editOpen: false))
+            return;
 
         switch (action.Kind)
         {

@@ -70,6 +70,21 @@
 
 @* Below the Sheet, not above it: the page's tests press cells by where the grid stands in a
    720 px window, and text above the grid moves every row down. *@
+<p class="demo-status">
+    Focus cell: <span id="sheet-focus-font">@_focusFont</span>,
+    <span id="sheet-focus-number-format">@_focusNumberFormat</span>
+</p>
+
+<p>
+    Excel's formatting keys work on the Selection, each as one step Ctrl+Z undoes (ADR-0063): Ctrl+B,
+    Ctrl+I, Ctrl+U and Ctrl+5 (or Ctrl+2 to Ctrl+4) toggle bold, italic, underline and
+    strikethrough from the Focus cell's state, and Ctrl+Shift with <code>~ ! @@ # $ % ^</code> applies
+    General, <code>#,##0.00</code>, a time, a date, the currency, a percentage and scientific; with
+    <code>&amp;</code> an outline, and with <code>_</code> no borders. The line above reads the
+    Focus cell's Cell Format back. While a cell is being edited the keys change nothing, and the
+    Sheet says why.
+</p>
+
 <p>
     While a cell is being edited, the commands that change the Sheet are greyed out, as Excel greys
     out its ribbon: ExSheet refuses them until the edit is committed or cancelled, so a row inserted
@@ -86,7 +101,8 @@
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
     private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions" />;
+                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions"
+                                              SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused" />;
 
     protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
 
@@ -128,6 +144,14 @@
     // greyed out while it is (ADR-0048).
     private bool _editing;
     private EventCallback<bool> _editingChanged;
+    // The Focus cell's Cell Format, read back from the Sheet whenever the Selection or the Sheet
+    // changes (ADR-0063's CellFormatAt), and a formatting key the Sheet refused, said in the status
+    // line as the page says a refused command (ADR-0063, SH-43).
+    private EventCallback<GridSelection> _selectionChanged;
+    private EventCallback<SheetRefusal> _formatKeyRefused;
+    private GridSelection _selection = GridSelection.Empty;
+    private string _focusFont = "";
+    private string _focusNumberFormat = "";
 
     // A few values, Formulas over them, and a date: the tracer's A1 + B1 and a little more.
     private static SheetDocument Opening()
@@ -158,6 +182,8 @@
         // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
         // the Blazor traps).
         _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
+        _selectionChanged = EventCallback.Factory.Create<GridSelection>(this, OnSelectionChanged);
+        _formatKeyRefused = EventCallback.Factory.Create<SheetRefusal>(this, refusal => _status = refusal.Message);
         Count();
     }
 
@@ -230,5 +256,34 @@
         }
     }
 
-    private void Count() => _status = $"{_document?.Cells.Count ?? 0} cells in the Sheet Document.";
+    private void Count()
+    {
+        _status = $"{_document?.Cells.Count ?? 0} cells in the Sheet Document.";
+        ReadFocus();
+    }
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        ReadFocus();
+    }
+
+    private void ReadFocus()
+    {
+        if (_sheet is null || _selection.IsEmpty)
+        {
+            _focusFont = _focusNumberFormat = "";
+            return;
+        }
+        var format = _sheet.CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        string[] emphases =
+        [
+            .. format.Font.Bold ? ["bold"] : Array.Empty<string>(),
+            .. format.Font.Italic ? ["italic"] : Array.Empty<string>(),
+            .. format.Font.Underline ? ["underline"] : Array.Empty<string>(),
+            .. format.Font.Strikethrough ? ["strikethrough"] : Array.Empty<string>(),
+        ];
+        _focusFont = emphases.Length == 0 ? "regular" : string.Join(" ", emphases);
+        _focusNumberFormat = format.NumberFormat.Code;
+    }
 }
