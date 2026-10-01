@@ -144,12 +144,12 @@ amended note on ADR-0021, and DC-51 widened.
 
 Nothing is committed for this ticket except this comment.
 
-*(2026-10-01, orchestrator.)* **Decided with the user: the drift stays accepted, as ADR-0057 says.** The
-Highlight API is not taken. ADR-0057's note of this date records why.
-- [ ] `reference-text.spec.mjs`'s DC-48 tests check what DC-48 states: the offsets and the computed font
-      properties are equal.
-- [ ] Their pixel comparison allows ADR-0057's accepted drift and nothing more, under both Chromes. For
-      example, compare after a shift by the measured bound for the Formula's span count, or allow edge pixels
-      only where a glyph's edge falls.
-- [ ] Show that a real misalignment still fails: a shift of half a pixel, a different font, or a different
-      letter spacing.
+*(2026-10-01, orchestrator.)* **Decided with the user: the CSS Custom Highlight API.** This replaces a short-lived
+decision, taken the same day, to keep accepting the drift.
+- ADR-0057's note, ADR-0021's note and DC-51 of this date say what the script may do.
+- The layer becomes one text node, and its References are coloured by highlights named per instance, which carry
+  the grid's id. The grid's generated stylesheet paints them (ADR-0018).
+- [ ] DC-48 passes at its unchanged threshold under both Chromes, at both ends, on both hosts.
+- [ ] Two grids on a page each keep their colours while the other edits (ADR-0018).
+- [ ] An IME composition still recolours on `compositionend`. Dark-scheme, pointed and forced-colours shades are
+      unchanged.

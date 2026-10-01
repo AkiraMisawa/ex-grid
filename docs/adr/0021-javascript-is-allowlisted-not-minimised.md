@@ -326,6 +326,19 @@ next key. It re-runs the same comparison, and nothing else.)* The ground is the 
 Blazor cannot know that the browser's value is ahead of the value the server rendered for. Neither
 addition reads layout. They are the editor listener and the scroll offsets, not a new entry.)*
 
+*(Extended 2026-10-01 by ADR-0057's note of that date, decided with the user, ticket 86: the layer is
+coloured by the CSS Custom Highlight API.)*
+- When the editor listener shows the layer, as it already decides, it also builds one `Range` per
+  Reference over the layer's single text node. It adds each `Range` to the highlight its colour
+  names, and clears them when the layer hides.
+- The positions come from data the core renders on the layer: start, length and colour. The script
+  reads no layout and hears no new event.
+- **Each grid registers highlights under names of its own**, carrying its instance's id. Its
+  generated stylesheet paints `::highlight()` for those names from the existing colour tokens.
+  `CSS.highlights` is one registry per document, so shared names would let one grid clear another's
+  colours. Names of its own keep the instances independent (ADR-0018).
+- It is still the editor listener, not a new entry.
+
 *(Added 2026-09-29, decided with the user, with
 [ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6: the capture-phase `mousedown`
 on the root also brings the keyboard back to an edit left standing. When a press lands on this
