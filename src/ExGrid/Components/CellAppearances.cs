@@ -131,16 +131,16 @@ internal sealed class CellAppearances<TRow> where TRow : class
             var topLine = Choose(cellAbove.Bottom, cell.Top);
             var leftLine = Choose(left.Right, cell.Left);
 
-            // This cell holds the gridline of its bottom and right edges: a line there is its share,
-            // and with no line a neighbour's Fill covers it, as that Fill covers its own edges.
-            var bottom = !bottomLine.IsNone ? Share.Line(bottomLine)
-                : cell.Fill is null && cellBelow.Fill is { } fillBelow ? Share.Cover(fillBelow) : Share.None;
-            var rightShare = !rightLine.IsNone ? Share.Line(rightLine)
-                : cell.Fill is null && right.Fill is { } fillRight ? Share.Cover(fillRight) : Share.None;
+            // This cell holds the gridline of its bottom and right edges: a line there is its share.
+            // Beneath any line a Fill covers that gridline, as a Fill covers all four of its own: the
+            // lower (right) cell's where it has one, which Excel paints over the upper (left) cell's
+            // (the fourteenth Windows run, case 16), else this cell's own, which its ground paints.
             var top = AppearanceStyles.ReachesPast(topLine.Style) ? Share.Line(topLine) : Share.None;
             var leftShare = AppearanceStyles.ReachesPast(leftLine.Style) ? Share.Line(leftLine) : Share.None;
+            var bottomCover = cellBelow.Fill != cell.Fill ? cellBelow.Fill : null;
+            var rightCover = right.Fill != cell.Fill ? right.Fill : null;
 
-            classes[slot] = Styles.ClassFor(cell, top, rightShare, bottom, leftShare);
+            classes[slot] = Styles.ClassFor(cell, top, Share.Line(rightLine), Share.Line(bottomLine), leftShare, rightCover, bottomCover);
             bold[slot] = cell.Bold;
             any |= classes[slot] is not null || cell.Bold;
         }

@@ -7,7 +7,7 @@ namespace ExGrid.DemoPages;
 /// The Sheets <c>/sheet?case=</c> opens in place of the page's own: the set-ups of the eleventh
 /// Windows run's Part A (<c>docs/specs/exsheet/verify-on-windows-11.md</c>), so that its Part C can
 /// put the DemoHost beside Excel's screenshots of the same cells, and the browser suite reads them
-/// too. A case's keys are not pressed here: Part C presses them, as Part A did. Three are not one
+/// too. A case's keys are not pressed here: Part C presses them, as Part A did. These are not one
 /// of that run's cases:
 /// <list type="bullet">
 /// <item><c>paper</c> gathers recorded colours and emphases on the Paper, the ones a row or a
@@ -18,7 +18,14 @@ namespace ExGrid.DemoPages;
 /// records a thin blue left, so both cells record a line on the edge between them, and the left
 /// cell's is the one shown;</item>
 /// <item><c>12-14</c> is the twelfth run's case 14: an outline set on row 3, which records the left
-/// of A3 as well.</item>
+/// of A3 as well;</item>
+/// <item><c>14-16</c>, <c>14-17</c> and <c>14-18</c> are the fourteenth run's cases 16 to 18: two
+/// Fills one above the other, a double bottom on a filled cell, and medium dashed and dashed
+/// bottoms;</item>
+/// <item><c>fills</c> is where no run looked, read from the fourteenth's cases 16 and 17: two Fills
+/// side by side on row 2, and a double line between Fills in each arrangement — E2's bottom over
+/// E3's Fill, B5's right between two, E5's right beside F5's Fill, and B8's bottom between
+/// two.</item>
 /// </list>
 /// </summary>
 public static class SheetCases
@@ -29,6 +36,7 @@ public static class SheetCases
     private static readonly CellFill LightBlue = CellFill.Solid(CellColour.FromRgb(0x00B0F0));
     private static readonly BorderLine Thin = new(BorderLineStyle.Thin);
     private static readonly BorderLine ThickBlack = new(BorderLineStyle.Thick);
+    private static readonly BorderLine DoubleBlack = new(BorderLineStyle.Double);
 
     /// <summary>Excel's thirteen line styles, in the order case 9 set them on B2:B14.</summary>
     public static IReadOnlyList<BorderLineStyle> LineStyles { get; } =
@@ -40,7 +48,8 @@ public static class SheetCases
 
     /// <summary>The names <see cref="Document"/> knows, in the order the run numbers them.</summary>
     public static IReadOnlyList<string> Names { get; } =
-        ["1", "2", "3b", "3c", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "16", "17", "18", "paper", "lines", "12-1", "12-14"];
+        ["1", "2", "3b", "3c", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "16", "17", "18", "paper", "lines", "12-1", "12-14",
+            "14-16", "14-17", "14-18", "fills"];
 
     /// <summary>
     /// Case <paramref name="name"/>'s Sheet, in <paramref name="culture"/>; null when no case is
@@ -140,6 +149,29 @@ public static class SheetCases
                 break;
             case "12-14":
                 Format(sheet, new CellFormatChange { Borders = BorderChange.Outline(Thin) }, "3:3");
+                break;
+            case "14-16":
+                Format(sheet, new CellFormatChange { Fill = Yellow }, "B2");
+                Format(sheet, new CellFormatChange { Fill = LightBlue }, "B3");
+                break;
+            case "14-17":
+                Format(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Bottom = DoubleBlack } }, "B2");
+                break;
+            case "14-18":
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = new BorderLine(BorderLineStyle.MediumDashed) } }, "B2");
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = new BorderLine(BorderLineStyle.Dashed) } }, "B4");
+                break;
+            case "fills":
+                Format(sheet, new CellFormatChange { Fill = Yellow }, "B2");
+                Format(sheet, new CellFormatChange { Fill = LightBlue }, "C2");
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Bottom = DoubleBlack } }, "E2");
+                Format(sheet, new CellFormatChange { Fill = Yellow }, "E3");
+                Format(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Right = DoubleBlack } }, "B5");
+                Format(sheet, new CellFormatChange { Fill = LightBlue }, "C5");
+                Format(sheet, new CellFormatChange { Borders = new BorderChange { Right = DoubleBlack } }, "E5");
+                Format(sheet, new CellFormatChange { Fill = Yellow }, "F5");
+                Format(sheet, new CellFormatChange { Fill = Yellow, Borders = new BorderChange { Bottom = DoubleBlack } }, "B8");
+                Format(sheet, new CellFormatChange { Fill = LightBlue }, "B9");
                 break;
             case "16":
                 Enter(sheet, "A1", "abc");

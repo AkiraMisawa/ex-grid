@@ -129,11 +129,45 @@ public class CellAppearanceTests : GridTestContext
 
         Assert.Contains("ex-fill-ffff00", Cell(cut, 1, 1).ClassList);
         Assert.Single(cut.FindAll("[class*='ex-fill-']"));
-        Assert.Contains(".ex-cell.ex-fill-ffff00{background-color:#ffff00;--ex-column-rule-color:transparent;--ex-row-rule:none}", Css(cut));
+        Assert.Contains(".ex-cell.ex-fill-ffff00{background-color:#ffff00;--ex-fill-color:#ffff00;--ex-column-rule-color:transparent;--ex-row-rule:none}", Css(cut));
         // The gridlines above it and left of it are the neighbours' pixels: they cover them.
         Assert.Contains("ex-lb-cover-ffff00", Cell(cut, 0, 1).ClassList);
         Assert.Contains("ex-lr-cover-ffff00", Cell(cut, 1, 0).ClassList);
+        Assert.Contains(".ex-lb-cover-ffff00{--ex-cover-b:linear-gradient(to top,#ffff00 0 var(--ex-rule-width, 1px),transparent 0);--ex-cover-b-color:#ffff00}", Css(cut));
         Assert.DoesNotContain("ex-lined", Cell(cut, 2, 1).ClassList);
+    }
+
+    [Fact] // ADR-0071, the fourteenth Windows run's case 16: between two filled cells the gridline takes the lower cell's Fill, and the right cell's side by side
+    public void Between_two_fills_the_gridline_takes_the_lower_or_right_cells()
+    {
+        var cut = RenderGrid(TestRows.Window(), From(
+            ("Alpha", "Book", new CellAppearance { Fill = Yellow }),
+            ("Alpha", "Amount", new CellAppearance { Fill = Blue }),
+            ("Beta", "Book", new CellAppearance { Fill = Red }),
+            ("Beta", "Amount", new CellAppearance { Fill = Blue })));
+
+        // Alpha's Book holds the gridline below it and the one on its right: Beta's Book's red and
+        // Alpha's Amount's blue cover them, over its own yellow.
+        Assert.Contains("ex-lb-cover-ff0000", Cell(cut, 0, 0).ClassList);
+        Assert.Contains("ex-lr-cover-0000ff", Cell(cut, 0, 0).ClassList);
+        Assert.Contains("ex-fill-ffff00", Cell(cut, 0, 0).ClassList);
+        // The same Fill below it is its own colour: nothing to cover.
+        Assert.DoesNotContain("ex-lb-cover-", Cell(cut, 0, 1).ClassName);
+        // Beta's Book holds the gridline left of Beta's Amount, and takes its blue.
+        Assert.Contains("ex-lr-cover-0000ff", Cell(cut, 1, 0).ClassList);
+        // With no Fill below, a filled cell's own covers the gridline it holds, as before.
+        Assert.DoesNotContain("ex-lined", Cell(cut, 1, 1).ClassList);
+    }
+
+    [Fact] // ADR-0071 / DC-59: a Fill covers its gridline beneath a line there, so a dashed line's gaps and a double line's middle show it
+    public void A_fill_covers_its_gridline_beneath_a_line()
+    {
+        var cut = RenderGrid(TestRows.Window(), From(
+            ("Alpha", "Amount", new CellAppearance { Bottom = new Border(BorderStyle.Double) }),
+            ("Beta", "Amount", new CellAppearance { Fill = Yellow })));
+
+        Assert.Contains("ex-lb-double-000000", Cell(cut, 0, 1).ClassList);
+        Assert.Contains("ex-lb-cover-ffff00", Cell(cut, 0, 1).ClassList);
     }
 
     [Fact] // DC-59: a thin line lies on the gridline, which the upper cell holds
@@ -166,26 +200,50 @@ public class CellAppearanceTests : GridTestContext
         Assert.Contains(".ex-cell.ex-lr-thick-ff0000{border-right:calc(2 * var(--ex-dp)) solid #ff0000;padding-right:calc(var(--ex-cell-padding-x, 8px) - calc(2 * var(--ex-dp)))}", Css(cut));
     }
 
-    [Fact] // DC-59: double is a line either side of its gridline, whose own pixel shows the ground
-    public void A_double_line_shows_the_ground_on_its_gridline()
+    [Fact] // DC-59 / ADR-0071, the fourteenth Windows run's case 17: double is a line either side of its gridline, whose own pixel shows what the gridline would — the lower Fill, else the upper, else the ground
+    public void A_double_lines_middle_shows_what_its_gridline_would()
     {
-        var cut = RenderGrid(TestRows.Window(), From(("Alpha", "Amount", new CellAppearance { Bottom = new Border(BorderStyle.Double) })));
+        var cut = RenderGrid(TestRows.Window(), From(
+            ("Alpha", "Amount", new CellAppearance { Bottom = new Border(BorderStyle.Double) }),
+            ("Alpha", "Book", new CellAppearance { Right = new Border(BorderStyle.Double, Red) })));
 
         Assert.Contains("ex-lt-double-000000", Cell(cut, 1, 1).ClassList);
+        // One rule per side, style and colour, whichever Fills lie beneath it: the middle pixel names
+        // the cover's colour, then the cell's own Fill's, then the ground.
         Assert.Contains(
-            "--ex-line-b:linear-gradient(to top,var(--ex-background, Canvas) 0 var(--ex-dp),#000000 0 calc(2 * var(--ex-dp)),transparent 0)",
+            "--ex-line-b:linear-gradient(to top,var(--ex-cover-b-color,var(--ex-fill-color,var(--ex-background, Canvas))) 0 var(--ex-dp),#000000 0 calc(2 * var(--ex-dp)),transparent 0)",
+            Css(cut));
+        Assert.Contains(
+            "--ex-line-r:linear-gradient(to left,var(--ex-cover-r-color,var(--ex-fill-color,var(--ex-background, Canvas))) 0 var(--ex-dp),#ff0000 0 calc(2 * var(--ex-dp)),transparent 0)",
             Css(cut));
     }
 
-    [Fact] // DC-59 / case 9: a dash pattern is a tile as high as its line, its long dash Excel's
+    [Fact] // DC-59 / ADR-0071, the fourteenth Windows run's case 18: a dash pattern is a tile as high as its line, its long dash 9 device pixels at every scale
     public void A_dashed_line_is_a_tile_of_its_pattern()
     {
         var cut = RenderGrid(TestRows.Window(), From(("Alpha", "Amount", new CellAppearance { Bottom = new Border(BorderStyle.MediumDashDot) })));
 
         var css = Css(cut);
-        Assert.Contains("--ex-line-b:repeating-linear-gradient(to right,#000000 0px calc(1 * var(--ex-dash) * var(--ex-dp))", css);
+        Assert.Contains(
+            "--ex-line-b:repeating-linear-gradient(to right,#000000 0px calc(9 * var(--ex-dp)),transparent calc(9 * var(--ex-dp)) calc(12 * var(--ex-dp)),"
+            + "#000000 calc(12 * var(--ex-dp)) calc(15 * var(--ex-dp)),transparent calc(15 * var(--ex-dp)) calc(18 * var(--ex-dp)))",
+            css);
         Assert.Contains("--ex-line-b-size:100% calc(2 * var(--ex-dp))", css);
         Assert.DoesNotContain("ex-lt-", Cell(cut, 1, 1).ClassName);
+    }
+
+    [Theory] // DC-59 / ADR-0071, the fourteenth Windows run's case 18: every style with a long dash takes 9 device pixels, and nothing reads a scale for it
+    [InlineData(BorderStyle.DashDot, "calc(9 * var(--ex-dp)),transparent calc(9 * var(--ex-dp)) calc(12 * var(--ex-dp)),#000000 calc(12 * var(--ex-dp)) calc(15 * var(--ex-dp)),transparent calc(15 * var(--ex-dp)) calc(18 * var(--ex-dp)))")]
+    [InlineData(BorderStyle.DashDotDot, "calc(9 * var(--ex-dp)),transparent calc(9 * var(--ex-dp)) calc(12 * var(--ex-dp)),#000000 calc(12 * var(--ex-dp)) calc(15 * var(--ex-dp)),transparent calc(15 * var(--ex-dp)) calc(18 * var(--ex-dp)),#000000 calc(18 * var(--ex-dp)) calc(21 * var(--ex-dp)),transparent calc(21 * var(--ex-dp)) calc(24 * var(--ex-dp)))")]
+    [InlineData(BorderStyle.MediumDashed, "calc(9 * var(--ex-dp)),transparent calc(9 * var(--ex-dp)) calc(12 * var(--ex-dp)))")]
+    [InlineData(BorderStyle.MediumDashDotDot, "calc(9 * var(--ex-dp)),transparent calc(9 * var(--ex-dp)) calc(12 * var(--ex-dp)),#000000 calc(12 * var(--ex-dp)) calc(15 * var(--ex-dp)),transparent calc(15 * var(--ex-dp)) calc(18 * var(--ex-dp)),#000000 calc(18 * var(--ex-dp)) calc(21 * var(--ex-dp)),transparent calc(21 * var(--ex-dp)) calc(24 * var(--ex-dp)))")]
+    public void Every_long_dash_is_nine_device_pixels(BorderStyle style, string afterTheFirstStop)
+    {
+        var cut = RenderGrid(TestRows.Window(), From(("Alpha", "Amount", new CellAppearance { Bottom = new Border(style) })));
+
+        var css = Css(cut);
+        Assert.Contains("--ex-line-b:repeating-linear-gradient(to right,#000000 0px " + afterTheFirstStop, css);
+        Assert.DoesNotContain("--ex-dash", css);
     }
 
     [Fact] // ADR-0050 item 15: a line recorded by the lower cell alone is drawn on the shared edge
