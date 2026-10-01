@@ -2,7 +2,7 @@ import { test, expect, alterPage, setRoundTrip, record, watchNextKey, keySeenUnt
 import { SERVER } from './hosting.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
-    expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell,
+    expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell, expectCaretShown,
 } from './sheet-helpers.mjs';
 
 // The ExGrid declarations of ADR-0050, ADR-0051 and ADR-0057 (§26, DC-*), as ExSheet declares them on
@@ -491,6 +491,95 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Escape');
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+    });
+}
+
+// ---------------------------------------------------------------------------------------------
+// What Point writes is shown (ADR-0058, "What the thirteenth Windows run settled", the defect seen
+// and not asked; ticket 75). After Home or Shift+→ over Point wrote A10 or D10:E10 into D10's Cell
+// Editor, the field's own scroll stayed where it was, and the caret and the Reference lay 24–50 px
+// past its right edge: the browser does not bring a caret placed from script into view. Every way
+// Point writes at the end of the text — an arrow, Home, a Shift+arrow, a press on the Sheet — in the
+// Cell Editor and in the Formula Bar, leaves the caret inside the field, and the coloured layer
+// scrolled with it (DC-48). A press on the positions grid is pointing-scope.spec.mjs's.
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`ticket 75 under the ${chrome} Chrome`, () => {
+        test.beforeEach(async ({ page }) => {
+            await underChrome(page, chrome);
+        });
+
+        test('ticket 75 / SH-36: Home, and Shift+→ instead, at an open value list after =XLOOKUP(1,A2:A4,B2:B4,, in D10 show what they wrote (the thirteenth run, b3 and b5)', async ({ page }) => {
+            const grid = sheet(page);
+            for (const [key, written] of [['Home', 'A10'], ['Shift+ArrowRight', 'D10:E10']]) {
+                await pressCell(grid, 'D10');
+                await page.keyboard.type(AT_MATCH_MODE);
+                await expect(items(grid)).toHaveText(MATCH_MODES);
+                // Typed, the field shows its end, as the run saw it before the key — on a circuit too,
+                // where the keys typed while the edit opened are held and replayed into the field
+                // from script (found by this test on the Server host).
+                await expectCaretShown(editor(grid), { scrolled: true }, `${AT_MATCH_MODE} typed`);
+
+                await page.keyboard.press(key);
+
+                await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}${written}`);
+                await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + written.length);
+                await expectCaretShown(editor(grid), { scrolled: true }, `${key} wrote ${written}`);
+                await page.keyboard.press('Escape');
+                await expect(editor(grid)).toHaveCount(0);
+            }
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
+        test('ticket 75: ↓ and a press on the Sheet show what they wrote at the end of a Formula longer than the Cell Editor', async ({ page }) => {
+            const grid = sheet(page);
+            const typed = '=SUM(A2:A4,B2:B4,C2:C4,';
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(typed);
+            await expect(editor(grid)).toHaveValue(typed);
+            await expect(items(grid)).toHaveCount(0);
+            await page.waitForTimeout(150); // the gate is told a message after the names typed are no longer listed
+
+            // An arrow, at the end of the text.
+            await page.keyboard.press('ArrowDown');
+            await expect(editor(grid)).toHaveValue(`${typed}D11`);
+            await expectCaretShown(editor(grid), { scrolled: true }, '↓ wrote D11');
+            // A press on the Sheet replaces it.
+            await clickCell(grid, 'F12');
+            await expect(editor(grid)).toHaveValue(`${typed}F12`);
+            await expectCaretShown(editor(grid), { scrolled: true }, 'a press wrote F12');
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
+        test('ticket 75: ↓ and a press on the Sheet show what they wrote in the Formula Bar, at the end of a Formula longer than the bar', async ({ page }) => {
+            const grid = sheet(page);
+            // Longer than the bar on a 1280 px page: forty ranges.
+            const typed = `=SUM(${'A2:A4,'.repeat(40)}`;
+            await pressCell(grid, 'D10');
+            await clickBarEnd(grid);
+            await expect(bar(grid)).toBeFocused();
+            await page.keyboard.insertText(typed);
+            await expect(bar(grid)).toHaveValue(typed);
+            await expectCaretShown(bar(grid), { scrolled: true }, 'typed into the bar');
+
+            // A press into the bar opens Caret, where the arrows move the caret; F2 points (DC-34).
+            await page.keyboard.press('F2');
+            await page.keyboard.press('ArrowDown');
+            await expect(bar(grid)).toHaveValue(`${typed}D11`);
+            await expect(bar(grid)).toBeFocused();
+            await expectCaretShown(bar(grid), { scrolled: true }, '↓ wrote D11 in the bar');
+
+            await clickCell(grid, 'F12');
+
+            await expect(bar(grid)).toHaveValue(`${typed}F12`);
+            await expect(bar(grid)).toBeFocused();
+            await expectCaretShown(bar(grid), { scrolled: true }, 'a press wrote F12 in the bar');
+            await page.keyboard.press('Escape');
+            await expect(bar(grid)).toHaveValue('');
             await expect(cell(grid, 'D10')).toHaveText('');
         });
     });
