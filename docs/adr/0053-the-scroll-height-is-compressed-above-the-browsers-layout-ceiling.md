@@ -197,3 +197,14 @@ line in it blurred: a Sheet's thin borders became two half-dark rows.
   slice.
 - Ticket 49's 150% border tests failed 18 of 29 without it and pass 29 of 29 with it. Ticket 47's
   150% check had read only the top of a small grid, where the offset is 0.
+- *(Later the same day, CI.)* **The viewport is no longer composited on its own.** On CI's Linux
+  fonts, the Sheet sat at a fraction of a device pixel on the page. The composited `.ex-viewport`
+  (`will-change: transform`, there since the first virtualisation commit with no measurement behind
+  it) was rasterised at that offset, and dotted lines read [2,1,3,1].
+  - Painted with its parent, the slice snaps to device pixels as any box does. Its inline transform
+    still makes it the stacking context ADR-0008's selection layers need.
+  - The rounding above is still needed: without it, 17 of 26 lines fail at 150% once scrolled.
+  - Scrolling measured the same either way: medians of 16.7 against 16.7 ms on `/wide`, 23.5 against
+    23.5 ms on `/sheet` at 100%, and 24.4 against 24.6 ms at 150%. These were headless runs with a
+    scratch frame-interval script, alternated, so only the comparison counts.
+  - A test moves the Sheet 0.33 px across and down, and reads the lines at 100% and 150%.
