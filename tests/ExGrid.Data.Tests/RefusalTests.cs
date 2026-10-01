@@ -80,6 +80,23 @@ public class RefusalTests
         Assert.Equal(1, Assert.Throws<SnapshotException>(() => decimals.Build([new("1")])).Row);
     }
 
+    [Theory] // ADR-0063: a string handed to an untyped column of any kind but Text fails the build, naming the row and the column
+    [InlineData(SnapshotKind.Decimal)]
+    [InlineData(SnapshotKind.Double)]
+    [InlineData(SnapshotKind.Integer)]
+    [InlineData(SnapshotKind.Date)]
+    [InlineData(SnapshotKind.Boolean)]
+    public void A_string_is_refused_by_every_kind_but_text(SnapshotKind kind)
+    {
+        var builder = new SnapshotBuilder<Cell<object?>>().Column("V", kind, c => c.Value);
+
+        var refusal = Assert.Throws<SnapshotException>(() => builder.Build([new(null), new("1")]));
+
+        Assert.Equal(2, refusal.Row);
+        Assert.Equal("V", refusal.Column);
+        Assert.Equal($"Row 2, column 'V': the value '1' (String) is not of the column's kind, {kind}.", refusal.Message);
+    }
+
     [Fact] // ADR-0063: an integer beyond a long's range is refused by name
     public void An_integer_beyond_a_long_is_refused()
     {

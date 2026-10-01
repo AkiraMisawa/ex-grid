@@ -246,6 +246,29 @@ public class KindTests
         Assert.Equal([true, null, null], Values(snapshot, "Boolean"));
     }
 
+    [Fact] // ADR-0063/0059: an untyped Text column takes any other value as its invariant text — an enum by its name, a Guid in its D form
+    public void An_untyped_text_column_takes_any_value_by_its_invariant_text()
+    {
+        var guid = new Guid("0f8fad5b-d9cb-469f-a165-70867728950e");
+        object?[] values = [DayOfWeek.Friday, guid, 1234.5, 1.5m, -7L, new DateTime(2026, 9, 30, 13, 5, 0), true, 'x', "as written", null];
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        Snapshot snapshot;
+        try
+        {
+            // A culture that writes 1234,5 and a day before its month: none of it reaches the Snapshot.
+            System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
+            snapshot = new SnapshotBuilder<Cell<object?>>().Column("V", SnapshotKind.Text, c => c.Value).Build([.. values.Select(v => new Cell<object?>(v))]);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = culture;
+        }
+
+        Assert.Equal(
+            ["Friday", "0f8fad5b-d9cb-469f-a165-70867728950e", "1234.5", "1.5", "-7", "09/30/2026 13:05:00", "True", "x", "as written", null],
+            Values(snapshot, "V"));
+    }
+
     [Fact] // ADR-0063: a column's caption is the data's own, and the name unless one is declared
     public void Captions_default_to_names()
     {

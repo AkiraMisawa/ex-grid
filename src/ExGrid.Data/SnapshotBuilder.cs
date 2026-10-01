@@ -65,12 +65,14 @@ public sealed class SnapshotBuilder<T>
 
     /// <summary>
     /// Declares a column known only at run time, whose accessor returns <see cref="object"/> under a
-    /// declared kind. A value is taken when it is of the kind, or converts to it exactly — any integer
-    /// type for Decimal and Integer, a <see cref="float"/> for Double, a <see cref="char"/> for Text,
-    /// and <see cref="DateTime"/>, <see cref="DateOnly"/> and <see cref="DateTimeOffset"/> for Date.
-    /// <see langword="null"/> and <see cref="DBNull"/> are Blanks. A value of any other type fails the
-    /// build, naming the row and the column. Each value comes boxed; a typed accessor is the way to
-    /// read many.
+    /// declared kind. A Text column takes any value: a value that is not a string is Text by its
+    /// invariant text (ADR-0059) — an enum by its name, a <see cref="Guid"/> in its D form, a number
+    /// or a date as the invariant culture writes it. The other kinds take a value of the kind, or one
+    /// that converts to it exactly — any integer type for Decimal and Integer, a <see cref="float"/>
+    /// for Double, and <see cref="DateTime"/>, <see cref="DateOnly"/> and <see cref="DateTimeOffset"/>
+    /// for Date; a value of any other type, a string included, fails the build, naming the row and the
+    /// column. <see langword="null"/> and <see cref="DBNull"/> are Blanks. Each value comes boxed; a
+    /// typed accessor is the way to read many.
     /// </summary>
     public SnapshotBuilder<T> Column(string name, SnapshotKind kind, Func<T, object?> value, string? caption = null)
     {
