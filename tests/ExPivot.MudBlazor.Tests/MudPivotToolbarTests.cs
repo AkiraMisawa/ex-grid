@@ -89,7 +89,10 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.All(items, item => Assert.Equal("menuitemradio", item.GetAttribute("role")));
         Assert.Equal(["Show all Subtotals at Top of Group", "On for Rows and Columns", "Show in Compact Form"],
             items.Where(i => i.GetAttribute("aria-checked") == "true").Select(i => i.TextContent.Trim()));
-        Assert.Equal(["Show all Subtotals at Top of Group", "On for Rows and Columns", "Show in Compact Form"],
+        // The Compact form has no outer label columns to repeat into, so both label choices would
+        // change nothing (ADR-0060).
+        Assert.Equal(
+            ["Show all Subtotals at Top of Group", "On for Rows and Columns", "Show in Compact Form", "Repeat All Item Labels", "Do Not Repeat Item Labels"],
             items.Where(i => i.HasAttribute("disabled")).Select(i => i.TextContent.Trim()));
         Assert.DoesNotContain(items, i => i.TextContent.Contains("Blank", StringComparison.Ordinal));
         Assert.Single(cut.FindAll(".ex-pivot-backdrop"));
@@ -141,7 +144,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Single(cut.FindAll(".mud-ex-pivot-pane"));
     }
 
-    [Fact] // ADR-0061/0065 (PV-23): an Aggregation the source does not answer is offered disabled in the Mud panel, with the reason, and never asked for
+    [Fact] // ADR-0061/0065 (PV-24): an Aggregation the source does not answer is offered disabled in the Mud panel, with the reason, and never asked for
     public async Task Value_field_settings_offer_unanswered_aggregations_disabled()
     {
         var source = new LimitedSource(PivotSource.From(Sales, Fields), new PivotSourceFeatures([PivotAggregation.Sum, PivotAggregation.Count]));
@@ -152,13 +155,17 @@ public class MudPivotToolbarTests : MudPivotTestContext
         var reasons = cut.FindAll(".mud-ex-pivot-not-offered").Select(r => r.TextContent.Trim()).ToArray();
         Assert.Equal(9, reasons.Length);
         Assert.Equal("The source does not answer Average.", reasons[0]);
+        var items = cut.FindComponents<MudSelectItem<PivotAggregation>>();
+        Assert.Equal([PivotAggregation.Sum, PivotAggregation.Count], items.Where(i => !i.Instance.Disabled).Select(i => i.Instance.Value));
         var asked = source.Questions;
 
+        // Chosen anyway — a Chrome that does not honour the disabled state — it changes nothing,
+        // and OK asks nothing for it.
         await cut.InvokeAsync(() => cut.FindComponent<MudSelect<PivotAggregation>>().Instance.ValueChanged.InvokeAsync(PivotAggregation.Average));
+        Assert.Equal(PivotAggregation.Sum, cut.FindComponent<MudSelect<PivotAggregation>>().Instance.GetState(x => x.Value));
         await cut.Find(".mud-ex-pivot-ok").ClickAsync(new MouseEventArgs());
 
-        Assert.Equal("The source does not answer Average.", cut.Find(".mud-ex-pivot-refusal").TextContent.Trim());
-        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Empty(cut.FindAll(".ex-pivot-popup"));
         Assert.Equal(PivotAggregation.Sum, cut.Instance.CurrentLayout.Values[0].Aggregation);
         Assert.Equal(asked, source.Questions);
     }
