@@ -130,7 +130,8 @@ public sealed class SnapshotColumnsBuilder
 
     /// <summary>
     /// Builds the Snapshot, indexing its Record Keys in slices and yielding between them, once every
-    /// column holds the same number of rows.
+    /// column holds the same number of rows. While the keys are indexed, the progress it reports stays
+    /// at every row read, as a build from objects does, so that it never goes back.
     /// </summary>
     /// <exception cref="SnapshotException">A Record Key is Blank or carried twice.</exception>
     /// <exception cref="OperationCanceledException">The load was cancelled.</exception>
@@ -141,7 +142,7 @@ public sealed class SnapshotColumnsBuilder
         cancellationToken.ThrowIfCancellationRequested();
         var finish = Finish();
         while (!finish.Step(pacer.Deadline))
-            await pacer.EndSliceAsync(new SnapshotProgress(finish.IndexedRows, finish.Rows)).ConfigureAwait(false);
+            await pacer.EndSliceAsync(new SnapshotProgress(finish.Rows, finish.Rows)).ConfigureAwait(false);
         pacer.Report(new SnapshotProgress(finish.Rows, finish.Rows));
         return finish.Snapshot();
     }
@@ -221,8 +222,6 @@ public sealed class SnapshotColumnsBuilder
             : new KeyIndexer(shape, segments, rows) { TextOf = code => stores[shape.KeyOrdinal]!.Text(code) };
 
         public int Rows => rows;
-
-        public int IndexedRows => keys?.Rows ?? rows;
 
         public bool Step(long deadline) => keys is null || keys.Step(deadline);
 

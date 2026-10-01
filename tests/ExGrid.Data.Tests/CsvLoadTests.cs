@@ -44,7 +44,8 @@ public class CsvLoadTests
         Assert.True(reading.Count >= 19);
         Assert.All(reading, p => Assert.Equal(bytes.Length, p.TotalBytes));
         Assert.Equal(reading.Select(p => p.Bytes), reading.Select(p => p.Bytes).Order());
-        Assert.Equal(reading.Select(p => p.Rows), reading.Select(p => p.Rows).Order());
+        // The rows never go back, through the reading and the indexing of the Record Keys after it.
+        Assert.Equal(reports.Select(p => p.Rows), reports.Select(p => p.Rows).Order());
         Assert.Contains(new SnapshotProgress(20_000, 20_000, bytes.Length, bytes.Length), reports);
         Assert.Equal(new SnapshotProgress(20_000, 20_000), reports[^1]);
     }
