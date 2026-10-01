@@ -132,25 +132,17 @@ public class PivotField
     /// <param name="name">What a Pivot Layout addresses it by; unique among the fields.</param>
     /// <param name="column">The Date column it is a part of.</param>
     /// <param name="part">The part.</param>
-    /// <param name="caption">What the Field List and the report call it; <c>Months (Trade date)</c>,
-    /// as Excel calls its own, when left out — the part's English and the column's name.</param>
+    /// <param name="caption">What the Field List and the report call it; the name when left out, as
+    /// for any field.</param>
     public static PivotField DatePartOf(string name, string column, PivotDatePart part, string? caption = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(column);
-        return new PivotField(name, PivotFieldType.Date, caption ?? DefaultCaption(part, column))
+        return new PivotField(name, PivotFieldType.Date, caption)
         {
             Column = column,
             DatePart = part,
         };
     }
-
-    /// <summary>The caption a date part takes when it is given none: Excel's <c>Months (Trade date)</c>.</summary>
-    internal static string DefaultCaption(PivotDatePart part, string column) => part switch
-    {
-        PivotDatePart.Year => $"Years ({column})",
-        PivotDatePart.Quarter => $"Quarters ({column})",
-        _ => $"Months ({column})",
-    };
 
     // A number's format is held to what a Value Field's is (PivotNumberFormat); a date's needs
     // only to format a date, and cannot run away the way a standard number format's precision

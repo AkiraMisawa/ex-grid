@@ -136,17 +136,6 @@ internal sealed class ItemSpace
     public ItemKey SpelledKeyOf(int item)
         => _firstCode[item] < 0 ? _keys[item] : ItemKey.OfText(Spelling(item));
 
-    /// <summary>Whether some held row carries the text Item: one of its codes is present.</summary>
-    public bool IsPresentText(int item)
-    {
-        for (var code = _firstCode[item]; code >= 0; code = _nextCode[code])
-        {
-            if (_presence[code] > 0)
-                return true;
-        }
-        return false;
-    }
-
     private string Spelling(int item)
     {
         for (var code = _firstCode[item]; code >= 0; code = _nextCode[code])
@@ -191,31 +180,6 @@ internal sealed class ItemSpace
             var code = slice.Codes((TextColumn)column.Column)[offset];
             if (code >= 0)
                 _presence[code]--;
-        }
-    }
-
-    /// <summary>The Item <paramref name="key"/> names: the one the space holds, or a new one that no
-    /// row maps to until one does.</summary>
-    public int Intern(ItemKey key)
-    {
-        switch (key.Kind)
-        {
-            case PivotItemKind.Blank:
-                return Blank();
-            case PivotItemKind.Error:
-                return Error();
-            case PivotItemKind.Boolean:
-                return Boolean(key.Ticks == 1);
-            case PivotItemKind.Date:
-                return Date(key.Ticks);
-            case PivotItemKind.Number:
-                return _binding.Part is not null && PivotDateWords.Takes(_binding.Part.Value, key.Number)
-                    ? Part((int)key.Number)
-                    : Number(key.Number);
-            default:
-                if (_itemOfText is not null && _itemOfText.TryGetValue(key.Text!, out var item))
-                    return item;
-                return Add(key);
         }
     }
 

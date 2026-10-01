@@ -40,7 +40,7 @@ public static class PivotFields
 public sealed class PivotFields<T>
 {
     private readonly List<PivotField> _fields = [];
-    private readonly Dictionary<string, (SnapshotKind Kind, string Caption)> _columns = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, SnapshotKind> _columns = new(StringComparer.Ordinal);
 
     internal PivotFields()
     {
@@ -191,24 +191,21 @@ public sealed class PivotFields<T>
     /// <c>2026</c>, ordered by the calendar.</summary>
     /// <param name="name">What a Pivot Layout addresses the field by.</param>
     /// <param name="of">The date field it is a part of.</param>
-    /// <param name="caption">What the Field List and the report call it; <c>Years (Trade date)</c>
-    /// when left out, as Excel calls its own.</param>
+    /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     public PivotFields<T> Year(string name, string of, string? caption = null) => AddPart(name, of, PivotDatePart.Year, caption);
 
     /// <summary>Declares a field that is the quarter of a date field declared before it (ADR-0059):
     /// <c>Qtr3</c> in the report's words, ordered by the calendar.</summary>
     /// <param name="name">What a Pivot Layout addresses the field by.</param>
     /// <param name="of">The date field it is a part of.</param>
-    /// <param name="caption">What the Field List and the report call it; <c>Quarters (Trade date)</c>
-    /// when left out.</param>
+    /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     public PivotFields<T> Quarter(string name, string of, string? caption = null) => AddPart(name, of, PivotDatePart.Quarter, caption);
 
     /// <summary>Declares a field that is the month of a date field declared before it (ADR-0059):
     /// <c>Sep</c> in the report's words, ordered by the calendar, January first.</summary>
     /// <param name="name">What a Pivot Layout addresses the field by.</param>
     /// <param name="of">The date field it is a part of.</param>
-    /// <param name="caption">What the Field List and the report call it; <c>Months (Trade date)</c>
-    /// when left out.</param>
+    /// <param name="caption">What the Field List and the report call it; the name when left out.</param>
     public PivotFields<T> Month(string name, string of, string? caption = null) => AddPart(name, of, PivotDatePart.Month, caption);
 
     /// <summary>
@@ -231,7 +228,7 @@ public sealed class PivotFields<T>
     {
         Claim(name);
         Columns.Text(name, value);
-        _columns.Add(name, (SnapshotKind.Text, name));
+        _columns.Add(name, SnapshotKind.Text);
         return Key(name);
     }
 
@@ -243,7 +240,7 @@ public sealed class PivotFields<T>
     {
         Claim(name);
         Columns.Integer(name, value);
-        _columns.Add(name, (SnapshotKind.Integer, name));
+        _columns.Add(name, SnapshotKind.Integer);
         return Key(name);
     }
 
@@ -274,11 +271,11 @@ public sealed class PivotFields<T>
     private PivotFields<T> AddPart(string name, string of, PivotDatePart part, string? caption)
     {
         ArgumentException.ThrowIfNullOrEmpty(of);
-        if (!_columns.TryGetValue(of, out var column))
+        if (!_columns.TryGetValue(of, out var kind))
             throw new ArgumentException($"No date field named '{of}' is declared; declare it before its {part}.", nameof(of));
-        if (column.Kind != SnapshotKind.Date)
-            throw new ArgumentException($"'{of}' is a {column.Kind} field; a {part} is a part of a Date field.", nameof(of));
-        var field = PivotField.DatePartOf(name, of, part, caption ?? PivotField.DefaultCaption(part, column.Caption));
+        if (kind != SnapshotKind.Date)
+            throw new ArgumentException($"'{of}' is a {kind} field; a {part} is a part of a Date field.", nameof(of));
+        var field = PivotField.DatePartOf(name, of, part, caption);
         Claim(name);
         _fields.Add(field);
         return this;
@@ -295,7 +292,7 @@ public sealed class PivotFields<T>
 
     private PivotFields<T> Add(SnapshotKind kind, PivotField field)
     {
-        _columns.Add(field.Name, (kind, field.Caption));
+        _columns.Add(field.Name, kind);
         _fields.Add(field);
         return this;
     }

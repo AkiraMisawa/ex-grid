@@ -198,38 +198,6 @@ internal sealed class LeafIndex
         return leaves.Length;
     }
 
-    /// <summary>The leaf of one combination of Items, or −1 when there is none.</summary>
-    public int Find(ReadOnlySpan<int> items)
-    {
-        if (_levels.Length == 0)
-            return Count > 0 ? 0 : -1;
-        if (_trie is null)
-        {
-            // An Item past a level's bits is one no leaf has.
-            for (var level = 0; level < _levels.Length; level++)
-            {
-                if ((ulong)items[level] >= 1UL << _bits[level])
-                    return -1;
-            }
-        }
-        if (_trie is { } trie)
-        {
-            var node = 0;
-            for (var level = 0; level < _levels.Length - 1; level++)
-            {
-                if (!trie.TryGetValue(CellKey.Of(node, items[level]), out node))
-                    return -1;
-            }
-            return trie.TryGetValue(CellKey.Of(node, items[^1]) | long.MinValue, out var leaf) ? leaf : -1;
-        }
-        long key = 0;
-        for (var level = 0; level < _levels.Length; level++)
-            key |= (long)items[level] << _shift[level];
-        if (_direct is { } direct)
-            return direct[key] - 1;
-        return _hashed!.TryGetValue(key, out var found) ? found : -1;
-    }
-
     private bool TryNewLeaf(int[][] items, int row, out int leaf)
     {
         if (Count >= _maxLeaves)
