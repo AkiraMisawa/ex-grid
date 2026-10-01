@@ -185,3 +185,21 @@ table assumed the popover itself could not be clipped, and inside a dialog it co
 - **ADR-0036**: the Context Menu's keyboard trigger now leads somewhere — its items take the
   keyboard.
 - **CONTEXT.md** gains **Inner Popup**.
+
+## Keys typed while a popover opens on a circuit *(2026-10-01, PR #42's CI, Format Cells)*
+
+On the Server host, a popover opened by a click takes the keyboard a round trip after the click.
+Until then, focus is on `body`, and a key typed in that gap lands wherever the browser sends it.
+- **The core's Tab wrap tells "entered from outside" from "Tab off the last control".** A focus-in on
+  the popover's body records that its contents have held the keyboard since the opening.
+  - Until they have, a focus on a sentinel means the keyboard came in from outside. The trailing
+    sentinel goes to the last control, and the leading one to the first.
+  - After that, the wrap works as before.
+  - Without this, a Shift+Tab typed in the gap reached the trailing sentinel from behind, and
+    wrapped to the first control (`format-cells.spec.mjs`, 3 of 4 at 80 ms).
+- **A Chrome whose frame is its own holds keys typed in the gap,** in order, and acts on them once
+  its contents have the keyboard. `ExSheet.MudBlazor`'s Format Cells does this on the element that
+  holds the keyboard before its tabs do. It uses no script.
+- **Still open** (ticket 93): keys typed between the menu command and that element taking focus
+  still reach the grid. The core returns the keyboard to its root after a command, and does not
+  know the Consumer is opening a frame of its own.
