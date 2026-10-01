@@ -175,6 +175,35 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+for (const chrome of ['builtin', 'mud']) {
+    test(`a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, ${chrome})`, async ({ page }) => {
+        await page.goto(`/features?chrome=${chrome}`);
+        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        const all = await grid(page).getAttribute('aria-rowcount');
+        await clickCell(page, 1, 0);
+        await page.keyboard.press('Alt+ArrowDown');
+        const search = grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input');
+        await expect(search).toBeVisible();
+        await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
+        await setRoundTrip(150);
+
+        // E sends the keyboard to the search box a round trip later, and the keys typed
+        // meanwhile are held and handed on: the text typed at the caret, the Enter as the
+        // form's submission. "Alpha " is what a replay once left in the box when a held Tab
+        // went through (ticket 75): it matches no value, so nothing is chosen among the
+        // matches — an In with no values, which the engine refuses (ADR-0023). The panel
+        // stands rather than hand it on.
+        await page.keyboard.press('e');
+        await page.keyboard.type('Alpha ');
+        await page.keyboard.press('Enter');
+
+        await expect(search).toHaveValue('Alpha ');
+        await page.waitForTimeout(600);
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+        expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+    });
+}
+
 test('a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5)', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page)).toHaveAttribute('tabindex', '0');
