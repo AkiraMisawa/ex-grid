@@ -156,7 +156,7 @@ public partial class ExPivot
         for (var i = 0; i < report.LabelColumns.Count; i++)
         {
             var label = report.LabelColumns[i];
-            var width = _userWidths.TryGetValue(label.Name, out var user) ? user : LabelWidth(report, i);
+            var width = _userWidths.TryGetValue(label.Name, out var user) ? user : LabelWidthsOf(report)[i];
             var index = i;
             columns.Add(Cached(Key(label.Name, label.Header, i, width), () => GridColumn<PivotReportRow>.TemplateColumn(
                 label.Name, ColumnType.Text, LabelValue(index), LabelTemplate(index), label.Header, FixedWidth(width))));
@@ -235,24 +235,88 @@ public partial class ExPivot
         return true;
     }
 
-    /// <summary>A label column's width, from its labels (ADR-0058): each label's text as the grid
-    /// estimates it, plus its indent and its button, and the header's own need; bounded so one
-    /// long label does not push the values off screen.</summary>
-    private double LabelWidth(PivotReport report, int column)
+    // The label columns' widths from their labels, for the report and the metrics they were sized
+    // under: measured as the report was laid out, in slices (PV-40), and again only when the
+    // metrics moved since — never on a width the user drags.
+    private PivotReport? _labelWidthsOf;
+    private GridMetrics? _labelWidthsMetrics;
+    private double[] _labelWidths = [];
+
+    /// <summary>How many rows' labels are measured between two looks at the clock.</summary>
+    private const int LabelRowsPerLook = 1024;
+
+    private void KeepLabelWidths(PivotReport report, GridMetrics metrics, double[] widths)
     {
-        var metrics = _metrics.CellMetrics;
-        var indent = IndentPx;
-        var widest = _metrics.HeaderRequiredPx(report.LabelColumns[column].Header, menuButton: false, sortable: false);
-        foreach (var row in report.Rows)
+        _labelWidthsOf = report;
+        _labelWidthsMetrics = metrics;
+        _labelWidths = widths;
+    }
+
+    /// <summary>The label columns' widths of <paramref name="report"/> under the metrics now: those
+    /// kept, or measured now when there are none for them.</summary>
+    private double[] LabelWidthsOf(PivotReport report)
+    {
+        if (!ReferenceEquals(_labelWidthsOf, report) || _labelWidthsMetrics != _metrics)
         {
-            var label = row.Labels[column];
-            if (label.Text is null && label.Toggle is null)
-                continue;
-            var px = metrics.EstimatePx(label.Text ?? "") + (label.Indent * indent) + (label.Toggle is null ? 0 : indent);
-            if (px > widest)
-                widest = px;
+            var widths = HeaderWidths(report, _metrics);
+            MeasureLabels(report, _metrics, 0, report.Rows.Count, widths);
+            KeepLabelWidths(report, _metrics, Bounded(widths));
         }
-        return Math.Clamp(Math.Ceiling(widest), MinLabelWidthPx, MaxLabelWidthPx);
+        return _labelWidths;
+    }
+
+    /// <summary><see cref="LabelWidthsOf"/>'s widths, measured a piece of rows at a time, yielding
+    /// whenever the work's slice is spent (PV-40).</summary>
+    private async Task<double[]> LabelWidthsAsync(PivotReport report, GridMetrics metrics, Pace pace)
+    {
+        var widths = HeaderWidths(report, metrics);
+        var rows = report.Rows.Count;
+        for (var from = 0; from < rows; from += LabelRowsPerLook)
+        {
+            if (from > 0 && pace.Spent)
+                await pace.YieldAsync();
+            MeasureLabels(report, metrics, from, Math.Min(rows, from + LabelRowsPerLook), widths);
+        }
+        return Bounded(widths);
+    }
+
+    /// <summary>What each label column's header needs, which its labels can only widen.</summary>
+    private static double[] HeaderWidths(PivotReport report, GridMetrics metrics)
+    {
+        var widths = new double[report.LabelColumns.Count];
+        for (var column = 0; column < widths.Length; column++)
+            widths[column] = metrics.HeaderRequiredPx(report.LabelColumns[column].Header, menuButton: false, sortable: false);
+        return widths;
+    }
+
+    /// <summary>A label column's width, from its labels (ADR-0058): each label's text as the grid
+    /// estimates it, plus its indent and its button — over rows [<paramref name="from"/>,
+    /// <paramref name="to"/>), widening <paramref name="widths"/>.</summary>
+    private static void MeasureLabels(PivotReport report, GridMetrics metrics, int from, int to, double[] widths)
+    {
+        var text = metrics.CellMetrics;
+        var indent = Math.Round(text.FullWidthPx);
+        for (var i = from; i < to; i++)
+        {
+            var labels = report.Rows[i].Labels;
+            for (var column = 0; column < widths.Length; column++)
+            {
+                var label = labels[column];
+                if (label.Text is null && label.Toggle is null)
+                    continue;
+                var px = text.EstimatePx(label.Text ?? "") + (label.Indent * indent) + (label.Toggle is null ? 0 : indent);
+                if (px > widths[column])
+                    widths[column] = px;
+            }
+        }
+    }
+
+    /// <summary>The widths, bounded so one long label does not push the values off screen.</summary>
+    private static double[] Bounded(double[] widths)
+    {
+        for (var column = 0; column < widths.Length; column++)
+            widths[column] = Math.Clamp(Math.Ceiling(widths[column]), MinLabelWidthPx, MaxLabelWidthPx);
+        return widths;
     }
 
     private Func<PivotReportRow, object?> LabelValue(int column)
