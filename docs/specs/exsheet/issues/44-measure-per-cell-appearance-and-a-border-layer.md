@@ -1,6 +1,6 @@
 # 44: Measure per-cell appearance and a border layer
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "How it is painted: measured first", which keeps ADR-0046's precondition.
 Add modes to `spikes/render-bench` that measure what a Fill, a Font and Borders cost per painted

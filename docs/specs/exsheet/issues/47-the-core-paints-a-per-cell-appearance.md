@@ -6,7 +6,11 @@ Status: ready-for-agent
 [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). A Consumer can supply a cell's Font, Fill and four Border sides. A bold cell is judged by bold
 widths.
 
-**Blocked by:** 44, and the user's decision on its result.
+**Blocked by:** None. Ticket 44's measurement decided the painting (ADR-0063, "What the measurement
+chose"): interned classes for Font and Fill, and Borders drawn inside each cell, each painting its
+share of Excel's centred line from edges resolved once per row outside the render. The spike is
+`spikes/render-bench/Bench.Client/` (`CellFormatModel.cs`, `Components/FormatRow.razor`, mode
+`BorderInCellExcel`).
 
 - [ ] **The declaration**: a per-cell appearance (Font colour, bold, italic, underline,
       strikethrough; Fill; four Border sides), off by default (DC-1).
@@ -24,6 +28,11 @@ widths.
     its own font are measured as §21.7a measured the regular ones.
   - A bold cell's `####` decision, and the width handed to painted text, use them.
 - [ ] `ExGrid.MudBlazor` supplies bold widths for its font (ADR-0030).
+- [ ] **Measure two variants in `spikes/render-bench`** (ADR-0063, "Still owed").
+  - The hybrid: solid lines as the cell's own `border`, with background layers only for dashes,
+    double and the pixel past the gridline. Interning stays per side, style and colour, never per
+    combination of four sides. Take it if it draws the same pixels and costs less.
+  - A Fill and a border on the same cell.
 - [ ] **Tests.**
   - Layer 2: render counts and markup.
   - Layer 3 pixels:

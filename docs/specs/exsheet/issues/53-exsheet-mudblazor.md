@@ -4,7 +4,7 @@ Status: ready-for-agent
 
 **What to build:** the package of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) and ADR-0019's note of 2026-09-30.
 
-**Blocked by:** 52
+**Blocked by:** None (52 is in)
 
 - [ ] **A new project, `src/ExSheet.MudBlazor`** (SH-47).
   - It references `ExSheet`, `ExGrid.MudBlazor` and MudBlazor.

@@ -1,6 +1,6 @@
 # 45: The engine holds Font, Fill and Border
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the engine's half of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). A Cell Format holds Font, Fill and Border beside the
 Number Format and the Alignment. The new parts follow every rule the first two follow. The names

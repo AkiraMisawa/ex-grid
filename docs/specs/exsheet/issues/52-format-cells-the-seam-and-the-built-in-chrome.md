@@ -1,6 +1,6 @@
 # 52: Format Cells: the seam, the built-in Chrome, and the Context Menu
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Format Cells, a Chrome seam whose frame the Chrome chooses", and
 [ADR-0050](../../../adr/0050-what-exsheet-asks-of-exgrids-core.md) item 16.

@@ -337,7 +337,12 @@ underline and strikethrough), its Fill, and its four Border sides.
   the rows or lines inside each cell for the Border. Whatever is chosen must keep P1–P9
   ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)). A row repaints when
   its appearance changes and skips otherwise. Nothing per cell reaches JavaScript. The DOM does not
-  grow with the extent.
+  grow with the extent. *(Decided on 2026-10-01 from ticket 44's measurement; ADR-0063, "What the
+  measurement chose".)*
+  - Font and Fill use interned classes in a generated stylesheet.
+  - Borders are drawn inside each cell. Each cell paints its own share of Excel's centred line,
+    from edges resolved once per row, outside the render. So a border change repaints the rows
+    either side of the edge as well.
 - **Borders are drawn as Excel draws them.** Each line is centred on the gridline. A thick line
   reaches into both cells. Lines lie above Fills and below the Focus, the Selection and the
   Reference Outlines. Which of two lines recorded on one edge is drawn is the Consumer's answer, so

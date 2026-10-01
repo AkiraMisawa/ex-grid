@@ -1,6 +1,6 @@
 # 46: A Number Format's colour reaches the display
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) and ADR-0047's note of 2026-09-30. A named colour in a Number Format
 (`[Red]` and the seven others) is painted, and it wins over the Font colour.

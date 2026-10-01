@@ -1,6 +1,6 @@
 # 50: Set and read a Cell Format
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the commands of [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "The commands".
 

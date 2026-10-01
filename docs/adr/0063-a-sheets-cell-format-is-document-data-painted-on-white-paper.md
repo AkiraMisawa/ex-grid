@@ -231,12 +231,76 @@ buttons.
   - Lines are drawn above Fills, and below the Focus and the Selection.
   - A layer is the likely way to do this. If the measurement shows the layer is too costly, the
     choice comes back to the user: lines inside each cell's box sit 1–2px away from Excel's.
+    *(Both predictions were wrong. The layer was the costliest mode, and a mode inside each cell
+    matched Excel's pixels, so nothing came back. See "What the measurement chose", below.)*
 - **A line recorded on both sides of the same edge** is drawn by Excel's rule, as observed.
 - **A Fill covers the gridlines at the cell's edges**, as Excel's does. This is a reading.
 - **Whatever mechanism is chosen, P1–P9 hold** (ADR-0027): rows skip their render, nothing per
   cell reaches JavaScript, and the DOM does not grow.
 - **The core's hook is opt-in** (ADR-0050, item 15).
 - The measurement and the choice are recorded here as an addendum.
+
+### What the measurement chose *(2026-10-01)*
+
+Ticket 44 measured the candidates. Its comment holds the tables. The result files are
+`spikes/render-bench/results/20261001-113322-829.json` and `-133041-335.json` for Font and Fill,
+`-153002-709.json` and `-160808-773.json` for Borders, and `20261001-geometry/` for the pixels.
+- All of it ran in headless Chrome 154 on an Apple M4 Pro, so the deltas against a baseline measured
+  in the same sweep are what count.
+- A fling frame paints 40 new rows of 20 cells. The baseline frame was 13 to 15 ms.
+- The user's standing criterion (2026-10-01) decides between the modes: as close to Excel as
+  possible, and rows keep one height. Between modes equally close to Excel, the cheaper one is
+  taken.
+
+**Font and Fill: interned classes.**
+- Each distinct Font and Fill gets one rule in a generated stylesheet, and a cell names its class.
+- Every candidate paints the same pixels, so cost decides. Classes were the cheapest at every share
+  and every number of distinct formats, in both runs: +0.6 to +1.5 ms at the median.
+- Their tail was the tightest: a maximum of 17.5 ms, where an inline `style` reached 26.9 and a
+  per-cell custom property 23.5.
+- A new format rewrites the stylesheet. That cost the same as the other modes, within 0.5 ms.
+
+**Borders: inside each cell, each cell painting its own share of Excel's centred line.**
+- Each edge is resolved once per row, outside the render, from both cells' records. The Consumer
+  answers which line wins (ADR-0050, item 15). The cell then names interned classes, one per side,
+  line style and colour, and draws its share as background layers.
+- **It is the only mode that matched Excel's pixels for all thirteen line styles at 100%**:
+  - thin on the gridline;
+  - medium on the gridline and the pixel above it;
+  - thick on the gridline and a pixel either side;
+  - double as two lines either side of a white gridline;
+  - the dash patterns, though their phase differs from Excel's.
+- It changes no row's height, moves no text, and paints nothing outside its row, so the rows stay
+  the boundary that skips renders (P1–P9 held in every configuration).
+- **Its cost grows with the number of distinct lines on screen.** That is style recalculation and
+  the rasterising of gradients, not the number of elements:
+  - +0.4 to +2.3 ms a frame with 1 to 16 distinct lines, which covers how sheets are made;
+  - +4.6 to +5.0 ms (a median of 18.2 to 19.2 ms) when half or all of the visible cells each carry
+    one of 256 random lines, which is a sheet nobody makes.
+  - The geometry is the product's claim, so the cost is taken. Performance never gates (AGENTS.md).
+- **The layer over the rows is rejected.** It cost +2.5 to +12.6 ms a frame, and up to 1600
+  elements for 800 cells, because every line moves with the painted slice. Splitting it into one
+  strip per row cut the slow-scroll cost but not the fling's.
+- **Lines inside each cell's box, without the shares, are rejected.** They cost +0.1 to +1.1 ms, but
+  thick and double sit a pixel high, and a wider right border moves the text.
+
+**Still owed, and where it is owed.**
+- **150% is not yet settled.**
+  - Under CDP's device-scale emulation, the chosen mode drew its 1-px parts and its dashes in
+    place. A 2-px part (medium, and the upper part of thick and double) came out at about 1.5 device
+    pixels, with an antialiased row.
+  - A real browser zoomed to 150%, and Windows, were not tried.
+  - Ticket 49's pixel tests at 100% and 150% settle it (DC-59). If Excel's pixels cannot be had at
+    150%, that is the trade that goes back to the user.
+- **Ticket 47 measures two more things in `spikes/render-bench`.**
+  - A hybrid that keeps the geometry: solid lines as the cell's own `border`, and background layers
+    only for dashes, double and the pixel past the gridline. Interning stays per side, style and
+    colour, never per combination of four sides; the variant that interned combinations grew its
+    stylesheet with every one.
+  - A Fill and a border on the same cell.
+
+  The hybrid is taken if it draws the same pixels and costs less.
+- **A run on real hardware and one on the Server host** are owed by hand. Neither gates.
 
 ## Not in it
 

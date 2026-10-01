@@ -1,6 +1,6 @@
 # 51: Excel's formatting keys
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** [ADR-0050](../../../adr/0050-what-exsheet-asks-of-exgrids-core.md) item 14, and
 [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md), "Keys".
