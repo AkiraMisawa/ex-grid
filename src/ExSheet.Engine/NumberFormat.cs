@@ -298,6 +298,24 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>
+    /// The abbreviated month names Excel shows under <paramref name="culture"/>: the culture's own,
+    /// with the one difference found between the data .NET reads and Windows' regional settings.
+    /// The ICU data on Linux (Ubuntu 24.04's) abbreviates September as <c>Sept</c> under en-GB and
+    /// its kin, where Windows, which Excel reads, and macOS write <c>Sep</c>. Windows' is taken
+    /// everywhere, so a Sheet's text does not differ by the machine it ran on.
+    /// </summary>
+    public static string[] AbbreviatedMonthNamesOf(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        var names = (string[])culture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+        for (var i = 0; i < names.Length; i++)
+        {
+            if (names[i] == "Sept") names[i] = "Sep";
+        }
+        return names;
+    }
+
+    /// <summary>
     /// The currency symbol Excel shows under <paramref name="culture"/>: the culture's own, with
     /// the one difference the runs found between the data .NET reads and Windows' regional
     /// settings. Windows' ja-JP symbol, which Excel shows (the eleventh Windows run, case 20), is
@@ -1027,7 +1045,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                                 {
                                     1 => month.ToString(CultureInfo.InvariantCulture),
                                     2 => month.ToString("00", CultureInfo.InvariantCulture),
-                                    3 => names.AbbreviatedMonthNames[month - 1],
+                                    3 => AbbreviatedMonthNamesOf(culture)[month - 1],
                                     4 => names.MonthNames[month - 1],
                                     _ => names.MonthNames[month - 1][..1],
                                 });

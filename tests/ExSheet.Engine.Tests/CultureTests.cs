@@ -296,4 +296,16 @@ public class CultureTests
 
         Assert.Equal("\u00A5", NumberFormat.CurrencySymbolOf(culture));
     }
+
+    [Fact] // ADR-0071 (the twelfth Windows run, case 19): September abbreviates as Windows writes it, Sep, whatever ICU data the machine holds
+    public void September_abbreviates_as_Sep_on_every_platform()
+    {
+        var culture = (CultureInfo)CultureInfo.GetCultureInfo("en-GB").Clone();
+        var names = (string[])culture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+        names[8] = "Sept";
+        culture.DateTimeFormat.AbbreviatedMonthNames = names;
+
+        Assert.Equal("Sep", NumberFormat.AbbreviatedMonthNamesOf(culture)[8]);
+        Assert.Equal("Jan", NumberFormat.AbbreviatedMonthNamesOf(culture)[0]);
+    }
 }

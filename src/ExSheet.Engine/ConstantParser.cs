@@ -389,9 +389,10 @@ internal static partial class ConstantParser
     {
         var wanted = name.TrimEnd('.');
         var names = culture.DateTimeFormat;
+        var abbreviated = NumberFormat.AbbreviatedMonthNamesOf(culture);
         for (var m = 0; m < 12; m++)
         {
-            if (string.Equals(wanted, names.AbbreviatedMonthNames[m].TrimEnd('.'), StringComparison.OrdinalIgnoreCase)
+            if (string.Equals(wanted, abbreviated[m].TrimEnd('.'), StringComparison.OrdinalIgnoreCase)
                 || string.Equals(wanted, names.MonthNames[m], StringComparison.OrdinalIgnoreCase))
             {
                 return m + 1;

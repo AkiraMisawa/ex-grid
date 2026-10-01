@@ -242,7 +242,7 @@ public sealed partial class Sheet
     {
         var format = culture.DateTimeFormat;
         return new HashSet<string>(
-            format.DayNames.Concat(format.AbbreviatedDayNames).Concat(format.MonthNames).Concat(format.AbbreviatedMonthNames).Where(n => n.Length > 0),
+            format.DayNames.Concat(format.AbbreviatedDayNames).Concat(format.MonthNames).Concat(NumberFormat.AbbreviatedMonthNamesOf(culture)).Where(n => n.Length > 0),
             StringComparer.Create(culture, ignoreCase: true));
     }
 }
