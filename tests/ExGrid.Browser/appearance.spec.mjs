@@ -274,3 +274,100 @@ test('DC-58: italic text is not cut at either edge of its cell (ADR-0063, "Bold,
         expect(last, `r${row}c${column}: clear of the right edge`).toBeLessThan(columns - 1);
     }
 });
+
+// Lines keep a row's tint (ADR-0050 item 15 with ADR-0024, ADR-0038 and ADR-0006), on
+// #appearance-tints: columns A to E pinned and F to J scrolling. In each block the first cell is
+// plain, the second has a dashed bottom line, the third a yellow Fill, the fourth no line of its own
+// but the Fill beside it over its gridline, and the fifth the Fill and the dashed line. Rows 1
+// (striped), 3 (group), 5 (total) and 7 (Missing, striped) carry them; the even rows between are
+// plain. A cell with lines must paint exactly what its twin without them paints, away from them.
+
+const TINTS = 'appearance-tints';
+const [PLAIN, LINED, FILLED, BESIDE, BOTH] = [0, 1, 2, 3, 4];
+const BLOCKS = { pinned: 0, scrolling: 5 };
+const [STRIPED_ROW, PLAIN_ROW, GROUP_ROW, TOTAL_ROW, MISSING_ROW] = [1, 2, 3, 5, 7];
+
+/** Reads #appearance-tints as painted: a cell's centre; the device pixels down through its top
+ * edge, from the last of the row above to its own third; and the left half of the device rows
+ * through its bottom edge, where its dashed line lies (its right edge may be a cover). Read across
+ * the edges rather than at them, because a box is snapped to device pixels where its edge is not. */
+async function tintGrounds(page) {
+    const grid = page.locator(`#${TINTS} .ex-grid`);
+    await expect(cellOf(page, TINTS, MISSING_ROW, 9)).toBeVisible();
+    await grid.scrollIntoViewIfNeeded();
+    await page.mouse.move(0, 0);
+    const region = await painted(page, await grid.boundingBox());
+    const device = (n) => n / region.scale;
+    return async (row, column) => {
+        const box = await cellOf(page, TINTS, row, column).boundingBox();
+        const middle = box.x + box.width / 2;
+        const bottom = box.y + box.height;
+        return {
+            centre: region.at(middle, box.y + box.height / 2),
+            top: region.down(middle, box.y - device(0.5), box.y + device(2.5)),
+            bottom: [2.5, 1.5, 0.5].flatMap((up) => region.across(bottom - device(up), box.x, middle)),
+        };
+    };
+}
+
+/** In one row and block, each cell with lines (or a cover) paints its twin's ground beneath them,
+ * and a dashed line is still the line's own black, over the tint. */
+async function expectTwins(read, row, block, what) {
+    const at = (offset) => read(row, BLOCKS[block] + offset);
+    const plain = await at(PLAIN);
+    const filled = await at(FILLED);
+    for (const [offset, twin, cell] of [[LINED, plain, 'a dashed line'], [BESIDE, plain, 'the Fill beside it'], [BOTH, filled, 'a Fill and a dashed line']]) {
+        const lined = await at(offset);
+        expect(sameColour(lined.centre, twin.centre, 1), `${what}, ${block}: ${cell} keeps the ground ${twin.centre} (${lined.centre})`).toBe(true);
+        expect(lined.top.every((pixel, i) => sameColour(pixel, twin.top[i], 1)),
+            `${what}, ${block}: ${cell} keeps the top edge ${JSON.stringify(twin.top)} (${JSON.stringify(lined.top)})`).toBe(true);
+    }
+    for (const offset of [LINED, BOTH]) {
+        const { bottom } = await at(offset);
+        expect(bottom.some((pixel) => sameColour(pixel, BLACK, 2)), `${what}, ${block}: the dashes are black, over the tint`).toBe(true);
+    }
+    return { plain, filled };
+}
+
+test('ADR-0050 item 15 / ADR-0024: a lined cell of a group or total row keeps the row\'s tint, beneath its lines and above its Fill', async ({ page }) => {
+    await open(page);
+    const read = await tintGrounds(page);
+    const unstriped = await read(PLAIN_ROW, BLOCKS.pinned + PLAIN);
+
+    for (const block of Object.keys(BLOCKS)) {
+        const group = await expectTwins(read, GROUP_ROW, block, 'a group row');
+        // There is a tint to keep: the group's ground is not a plain row's, and lies over the Fill.
+        expect(sameColour(group.plain.centre, unstriped.centre, 2), `${block}: the group's ground`).toBe(false);
+        expect(sameColour(group.filled.centre, YELLOW, 2), `${block}: the group's tint over the Fill`).toBe(false);
+
+        const total = await expectTwins(read, TOTAL_ROW, block, 'a total row');
+        // A total row's tint is its rule, along its top edge, over the Fill as well.
+        expect(total.plain.top.some((pixel) => !sameColour(pixel, total.plain.centre, 2)), `${block}: the total row's rule`).toBe(true);
+        expect(total.filled.top.some((pixel) => !sameColour(pixel, YELLOW, 2)), `${block}: the total row's rule over the Fill`).toBe(true);
+    }
+});
+
+test('ADR-0050 item 15 / ADR-0038 (UX-15): a lined pinned cell of a striped row keeps the stripe, beneath its lines and above its Fill', async ({ page }) => {
+    await open(page);
+    const read = await tintGrounds(page);
+    const unstriped = await read(PLAIN_ROW, BLOCKS.pinned + PLAIN);
+
+    const pinned = await expectTwins(read, STRIPED_ROW, 'pinned', 'a striped row');
+    expect(sameColour(pinned.plain.centre, unstriped.centre, 2), 'the pinned stripe').toBe(false);
+    expect(sameColour(pinned.filled.centre, YELLOW, 2), 'the pinned stripe over the Fill').toBe(false);
+    // The scrolling cells are transparent over the row's own stripe, with lines as without them.
+    await expectTwins(read, STRIPED_ROW, 'scrolling', 'a striped row');
+});
+
+test('ADR-0050 item 15 / ADR-0006: a lined Missing cell keeps its state\'s tint, beneath its lines and above its Fill', async ({ page }) => {
+    await open(page);
+    const read = await tintGrounds(page);
+
+    for (const block of Object.keys(BLOCKS)) {
+        const missing = await expectTwins(read, MISSING_ROW, block, 'a Missing row');
+        // The state's tint is there to keep: the row is striped like row 1, and Missing paints over that.
+        const striped = await read(STRIPED_ROW, BLOCKS[block] + PLAIN);
+        expect(sameColour(missing.plain.centre, striped.centre, 2), `${block}: Missing's ground`).toBe(false);
+        expect(sameColour(missing.filled.centre, YELLOW, 2), `${block}: Missing's tint over the Fill`).toBe(false);
+    }
+});

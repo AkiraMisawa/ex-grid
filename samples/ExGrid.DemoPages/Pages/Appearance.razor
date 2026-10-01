@@ -50,6 +50,21 @@
             Density="GridDensity.Excel" ViewportHeight="120" ViewportWidth="320" />
 </div>
 
+<h2>Lines keep a row's tint</h2>
+<p>
+    Row Stripes, a group row, a total row and a Missing state, on cells with and without lines and a
+    Fill. <i>A</i> to <i>E</i> are pinned, <i>F</i> to <i>J</i> scroll: in each, the first cell is plain,
+    the second has a dashed bottom line, the third a yellow Fill, the fourth no line of its own but
+    the Fill beside it over its gridline, and the fifth the Fill and the dashed line. The tint lies
+    beneath the lines and over the Fill, on every cell alike. Rows 1, 3, 5 and 7 carry them; the rows
+    between are plain, so no Fill reaches across from one of them to the next.
+</p>
+<div id="appearance-tints">
+    <ExGrid TRow="AppearanceRow" Window="TintRows" Columns="TintColumns" CellAppearance="TintOf"
+            RowKind="TintKindOf" CellState="TintStateOf" StripeRows="true" PinnedColumnCount="5"
+            Density="GridDensity.Excel" ViewportHeight="220" ViewportWidth="480" />
+</div>
+
 <style>
     .demo-roboto { --ex-font-family: Roboto, "Helvetica Neue", Arial, sans-serif; }
 </style>
@@ -140,4 +155,38 @@
             _ => default,
         };
     };
+
+    // The rows that carry a tint, at odd positions, so the detail rows among them (1, and 7 with
+    // its Missing state) are striped.
+    private const int GroupRow = 3;
+    private const int TotalRow = 5;
+    private const int MissingRow = 7;
+
+    private static readonly AppearanceRow[] TintRows =
+        [.. Enumerable.Range(0, 9).Select(i => new AppearanceRow { Index = i })];
+
+    private static readonly GridColumn<AppearanceRow>[] TintColumns =
+        [.. "ABCDEFGHIJ".Select(name => new GridColumn<AppearanceRow>(
+            name.ToString(), ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(44))))];
+
+    private static readonly Func<AppearanceRow, RowKind> TintKindOf = row => row.Index switch
+    {
+        GroupRow => RowKind.Group,
+        TotalRow => RowKind.Total,
+        _ => RowKind.Detail,
+    };
+
+    private static readonly CellStateOf<AppearanceRow> TintStateOf = (row, _) =>
+        row.Index == MissingRow ? CellState.Missing : CellState.Normal;
+
+    private static readonly CellAppearanceOf<AppearanceRow> TintOf = (row, column) =>
+        row.Index % 2 == 0
+            ? default
+            : column.Name switch
+            {
+                "B" or "G" => new CellAppearance { Bottom = new Border(BorderStyle.Dashed) },
+                "C" or "H" => new CellAppearance { Fill = Yellow },
+                "E" or "J" => new CellAppearance { Fill = Yellow, Bottom = new Border(BorderStyle.Dashed) },
+                _ => default,
+            };
 }

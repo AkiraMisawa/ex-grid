@@ -1,8 +1,10 @@
+using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using Bunit;
 using ExGrid.Cells;
 using ExGrid.Columns;
 using ExGrid.Components.Tests.Support;
+using ExGrid.Rows;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -442,6 +444,155 @@ public class CellAppearanceTests : GridTestContext
         var filled = Assert.Single(cut.FindAll(".ex-fill-ffff00"));
         Assert.EndsWith("/30", filled.TextContent);
         Assert.Single(cut.FindAll(".ex-lr-cover-ffff00"));
+    }
+
+    /// <summary>A dashed bottom line on every cell, a pinned Book, and a row for each tint: a group
+    /// row, a striped detail row whose Amount is Missing, a total row, and a group row at a striped
+    /// position.</summary>
+    private IRenderedComponent<ExGrid<TestRow>> RenderTinted()
+    {
+        TestRow[] rows = [new() { Book = "Group" }, new() { Book = "Striped" }, new() { Book = "Total" }, new() { Book = "Striped group" }];
+        GridColumn<TestRow>[] columns = [.. Columns(), new("Note", ColumnType.Text, _ => "", width: new ColumnWidthSpec(ColumnWidth.Fixed(80)))];
+        return Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, rows)
+            .Add(g => g.Columns, columns)
+            .Add(g => g.PinnedColumnCount, 1)
+            .Add(g => g.StripeRows, true)
+            .Add(g => g.RowKind, row => row.Book switch
+            {
+                "Group" or "Striped group" => RowKind.Group,
+                "Total" => RowKind.Total,
+                _ => RowKind.Detail,
+            })
+            .Add(g => g.CellState, (row, column) =>
+                row.Book == "Striped" && column.Name == "Amount" ? CellState.Missing : CellState.Normal)
+            .Add(g => g.CellAppearance, (_, _) => new CellAppearance { Bottom = new Border(BorderStyle.Dashed) }));
+    }
+
+    /// <summary>The selector of the shipped rule that names a cell's tint in <c>--ex-tint</c>, as the
+    /// cascade picks it — every such selector is two classes, so the last one declared — or null.</summary>
+    private static string? TintRuleOf(IElement cell)
+        => ShippedStylesheetTests.CoreStylesheet().Rules
+            .Where(rule => Regex.IsMatch(rule.Body, @"--ex-tint\s*:"))
+            .SelectMany(rule => rule.Selectors)
+            .LastOrDefault(cell.Matches);
+
+    /// <summary>The selectors of the shipped rules declared after <c>.ex-cell.ex-lined</c> that set a
+    /// background image on a cell — at equal specificity, each would take every layer the lines paint.
+    /// A pseudo-element's rule paints the pseudo-element, never the cell.</summary>
+    private static IEnumerable<string> BackgroundsAfterTheLines(IElement cell)
+    {
+        var rules = ShippedStylesheetTests.CoreStylesheet().Rules.ToList();
+        var lined = rules.FindIndex(rule => rule.Selectors is [".ex-cell.ex-lined"]);
+        Assert.True(lined >= 0, "no .ex-cell.ex-lined rule");
+        return rules.Skip(lined + 1)
+            .Where(rule => Regex.IsMatch(rule.Body, @"(?<![\w-])background(-image)?\s*:"))
+            .SelectMany(rule => rule.Selectors)
+            .Where(selector => !selector.Contains("::", StringComparison.Ordinal))
+            .Where(cell.Matches)
+            .ToList();
+    }
+
+    /// <summary>A comma-separated list of layers, split where no parenthesis is open.</summary>
+    private static List<string> Layers(string value)
+    {
+        var layers = new List<string>();
+        var (depth, start) = (0, 0);
+        for (var i = 0; i < value.Length; i++)
+        {
+            if (value[i] == '(') depth++;
+            else if (value[i] == ')') depth--;
+            else if (value[i] == ',' && depth == 0)
+            {
+                layers.Add(value[start..i].Trim());
+                start = i + 1;
+            }
+        }
+        layers.Add(value[start..].Trim());
+        return layers;
+    }
+
+    private static string Declared(string body, string property)
+    {
+        var declaration = Regex.Match(body, $@"(?<![\w-]){Regex.Escape(property)}\s*:(?<value>[^;]*);");
+        Assert.True(declaration.Success, $"no {property}");
+        return declaration.Groups["value"].Value;
+    }
+
+    [Fact] // ADR-0050 item 15 / ADR-0024: a lined cell of a group or total row is named its row's tint, and its lines paint over it
+    public void A_lined_cell_keeps_its_group_or_total_rows_tint()
+    {
+        var cut = RenderTinted();
+
+        foreach (var (row, tint) in new[] { (0, ".ex-row-group .ex-cell"), (2, ".ex-row-total .ex-cell"), (3, ".ex-row-group .ex-cell") })
+        {
+            for (var column = 0; column < 3; column++)
+            {
+                var cell = Cell(cut, row, column);
+                Assert.Contains("ex-lined", cell.ClassList);
+                Assert.Equal(tint, TintRuleOf(cell));
+                Assert.Empty(BackgroundsAfterTheLines(cell));
+            }
+        }
+    }
+
+    [Fact] // ADR-0050 item 15 / ADR-0038: a lined pinned cell of a striped row is named the stripe, and its lines paint over it
+    public void A_lined_pinned_cell_keeps_its_rows_stripe()
+    {
+        var cut = RenderTinted();
+
+        var pinned = Cell(cut, 1, 0);
+        Assert.Contains("ex-pinned", pinned.ClassList);
+        Assert.Contains("ex-lined", pinned.ClassList);
+        Assert.Equal(".ex-row-stripe .ex-pinned", TintRuleOf(pinned));
+        Assert.Empty(BackgroundsAfterTheLines(pinned));
+        // A scrollable cell is transparent over the row's own stripe, with lines as without them.
+        var scrollable = Cell(cut, 1, 2);
+        Assert.Contains("ex-lined", scrollable.ClassList);
+        Assert.Null(TintRuleOf(scrollable));
+        // UX-16: a group row at a striped position wears the group's tint, not the stripe.
+        Assert.Equal(".ex-row-group .ex-cell", TintRuleOf(Cell(cut, 3, 0)));
+    }
+
+    [Fact] // ADR-0050 item 15 / ADR-0006: a lined Missing cell is named its state's tint, and keeps its lines
+    public void A_lined_missing_cell_keeps_its_states_tint_and_its_lines()
+    {
+        var cut = RenderTinted();
+
+        var missing = Cell(cut, 1, 1);
+        Assert.Contains("ex-state-missing", missing.ClassList);
+        Assert.Contains("ex-lined", missing.ClassList);
+        Assert.Equal(".ex-cell.ex-state-missing", TintRuleOf(missing));
+        // The state's own background, declared after the lines, would take every layer they paint.
+        Assert.Empty(BackgroundsAfterTheLines(missing));
+    }
+
+    [Fact] // ADR-0050 item 15 / ADR-0024, ADR-0038, ADR-0006: .ex-lined paints the cell's tint beneath its lines and over its Fill
+    public void The_lined_rule_paints_the_tint_beneath_the_lines()
+    {
+        var rules = ShippedStylesheetTests.CoreStylesheet().Rules;
+        var (_, body) = Assert.Single(rules, rule => rule.Selectors is [".ex-cell.ex-lined"]);
+
+        var images = Layers(Declared(body, "background-image"));
+        Assert.Equal(
+            ["var(--ex-line-t, none)", "var(--ex-line-r, none)", "var(--ex-line-b, none)", "var(--ex-line-l, none)", "var(--ex-tint, none)"],
+            images.Take(5));
+        // A size and a place for every layer: a list one short would size the last layer as the
+        // first, and a top line's absent size is 0 0, which paints nothing.
+        var sizes = Layers(Declared(body, "background-size"));
+        var places = Layers(Declared(body, "background-position"));
+        Assert.Equal(images.Count, sizes.Count);
+        Assert.Equal(images.Count, places.Count);
+        Assert.Equal(("100% 100%", "0 0"), (sizes[4], places[4]));
+        // The Fill is the cell's background colour, beneath every layer.
+        Assert.DoesNotContain("background-color", body, StringComparison.Ordinal);
+
+        // Every rule that names a tint and paints a background paints that tint.
+        foreach (var (selectors, tinted) in rules.Where(rule => Regex.IsMatch(rule.Body, @"--ex-tint\s*:")))
+        {
+            if (Regex.IsMatch(tinted, @"background-image\s*:"))
+                Assert.Equal("var(--ex-tint)", Declared(tinted, "background-image").Trim());
+        }
     }
 
     [Fact] // DC-58 / P4: nothing per cell reaches JavaScript — the same calls with the declaration as without

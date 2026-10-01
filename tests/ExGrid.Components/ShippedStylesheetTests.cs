@@ -100,7 +100,7 @@ public class ShippedStylesheetTests
 
     /// <summary>The shipped core stylesheet without its comments, and its innermost rules — a
     /// rule inside an at-rule is read as its own — each as its selectors and its body.</summary>
-    private static (string Css, IReadOnlyList<(string[] Selectors, string Body)> Rules) CoreStylesheet()
+    internal static (string Css, IReadOnlyList<(string[] Selectors, string Body)> Rules) CoreStylesheet()
     {
         var css = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
         css = Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
