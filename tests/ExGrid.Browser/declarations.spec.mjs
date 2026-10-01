@@ -180,7 +180,10 @@ for (const chrome of ['builtin', 'mud']) {
 // Reference can go at the caret, → points and closes the list; Tab closes any list, and it is not
 // opened again on what Tab wrote. The cases are the run's group 1 (excel-only.md), on D10. And as
 // Part B of the ninth run saw it (ADR-0058, Q49 and Q51; pointing-scope.md, x1–x6): with the caret
-// before a value nothing is listed, and Home and the Shift+arrows at an open value list point.
+// before a value nothing is listed, and Home and the Shift+arrows at an open value list point. And
+// as the thirteenth run saw it (ADR-0058, Q54 and Q55; pointing-scope.md, Part A's groups 1 and 2):
+// a letter there lists every value, a number that is no value nothing, and with the caret before
+// white space nothing is listed.
 
 const AT_MATCH_MODE = '=XLOOKUP(1,A2:A4,B2:B4,,';
 const MATCH_MODES = [
@@ -325,6 +328,66 @@ for (const chrome of ['builtin', 'mud']) {
 
             // F2 to Caret, then ←← to stand between ,, and 1.
             await page.keyboard.press('F2');
+            await page.keyboard.press('ArrowLeft');
+            await page.keyboard.press('ArrowLeft');
+
+            await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for a list asked about this caret to come back
+            await expect(items(grid)).toHaveCount(0);
+
+            await page.keyboard.press('Tab');
+
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(nameBox(grid)).toHaveValue('E10');
+            await pressCell(grid, 'D10');
+            await expect(bar(grid)).toHaveValue(typed);
+        });
+
+        test('SH-36: a letter at match_mode lists every value, 0 selected, and Tab writes 0 over it; 4 lists nothing (the thirteenth run, Q54)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(`${AT_MATCH_MODE}X`);
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}X`);
+            // The list for X, not the one for ,, before it: no Reference can go after X, so this
+            // list is not open over Point.
+            await expect(completion(grid)).not.toHaveAttribute('data-ex-over-point');
+            await expect(items(grid)).toHaveText(MATCH_MODES);
+            await expect(items(grid).first()).toHaveAttribute('aria-selected', 'true');
+
+            await page.keyboard.press('Tab');
+
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}0`);
+            await expect(bar(grid)).toHaveValue(`${AT_MATCH_MODE}0`);
+            await expect.poll(() => caret(editor(grid))).toBe(AT_MATCH_MODE.length + 1);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for a list asked again to come back
+            await expect(items(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+
+            // A number that is no value lists nothing; the hint stays.
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(`${AT_MATCH_MODE}4`);
+            await expect(editor(grid)).toHaveValue(`${AT_MATCH_MODE}4`);
+            await expect(completion(grid)).toContainText('match_mode');
+            await page.waitForTimeout(300); // long enough for the list for 4 to replace the one for ,,
+            await expect(items(grid)).toHaveCount(0);
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('');
+        });
+
+        test('SH-36: with the caret before two spaces nothing is listed, and Tab commits the Formula with the spaces kept (the thirteenth run, Q55; 11a)', async ({ page }) => {
+            const grid = sheet(page);
+            const typed = `${AT_MATCH_MODE}  )`;
+            await pressCell(grid, 'D10');
+            await page.keyboard.type(typed);
+            await expect(editor(grid)).toHaveValue(typed);
+
+            // F2 to Caret, then ←←← to stand straight after ,, before the two spaces.
+            await page.keyboard.press('F2');
+            await page.keyboard.press('ArrowLeft');
             await page.keyboard.press('ArrowLeft');
             await page.keyboard.press('ArrowLeft');
 
