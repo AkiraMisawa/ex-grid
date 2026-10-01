@@ -18,12 +18,8 @@ internal static class BatchApplier
 
         if (shape.Key is not { } key)
         {
-            var changedCount = batch.Changed?.RowCount ?? 0;
-            if (changedCount > 0 || batch.RemovedKeys.Count > 0)
-            {
-                throw new SnapshotException(string.Create(CultureInfo.InvariantCulture,
-                    $"The Snapshot has no Record Key, so it takes only a batch that adds; this batch changes {changedCount:N0} records and removes {batch.RemovedKeys.Count:N0} keys."));
-            }
+            if (batch.Changed?.RowCount > 0 || batch.RemovedKeys.Count > 0)
+                throw new SnapshotException("The Snapshot has no Record Key, so it takes only a batch that adds, and this batch changes or removes records.");
             return Execute(before, [], [], added);
         }
 

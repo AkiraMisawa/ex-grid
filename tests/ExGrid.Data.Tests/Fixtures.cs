@@ -35,16 +35,16 @@ internal static class Fixtures
             .Text("Desk", t => t.Desk)
             .Decimal("Notional", t => t.Notional);
 
-    public static Trade Trade(long id) => new(
+    public static Trade Make(long id) => new(
         id,
-        Desks[(int)(id % Desks.Length)],
+        Desks[(int)(((id % Desks.Length) + Desks.Length) % Desks.Length)],
         id % 11 == 0 ? null : (id * 25) / 100m,
         id % 13 == 0 ? null : id * 1.5,
         id % 17 == 0 ? null : Epoch.AddMinutes(id * 7),
         id % 19 == 0 ? null : id % 2 == 0);
 
     public static Trade[] Trades(int count, long first = 0)
-        => [.. Enumerable.Range(0, count).Select(i => Trade(first + i))];
+        => [.. Enumerable.Range(0, count).Select(i => Make(first + i))];
 
     /// <summary>A one-column Snapshot of <paramref name="values"/>, declared by <paramref name="declare"/>.</summary>
     public static Snapshot Column<TValue>(Func<SnapshotBuilder<Cell<TValue>>, SnapshotBuilder<Cell<TValue>>> declare, params TValue[] values)
