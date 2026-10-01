@@ -14,10 +14,18 @@
     closed and the next arrow went nowhere. So the keyboard is first put on this frame's own empty
     element, which the dialog then takes it from; the element goes once the dialog has the
     keyboard, so what the dialog hands it back to on closing is no longer on the page, and DOM
-    focus is on nothing. The core's focus function is called after the dialog has left the page,
-    however it closed, and decides as it does for every Chrome. No script is added: the element is
-    focused with Blazor's own FocusAsync (ADR-0021). It is fixed to the viewport, so that neither
-    focusing it nor handing the keyboard back to it scrolls the page.
+    focus is on nothing. No script is added: the element is focused with Blazor's own FocusAsync
+    (ADR-0021). It is fixed to the viewport, so that neither focusing it nor handing the keyboard
+    back to it scrolls the page.
+
+    The core's focus function is called once the dialog has left the page, however it closed, and
+    decides as it does for every Chrome. "Left the page" is in the browser, not on the server: on a
+    circuit a request sent behind the dialog's removal still reached the browser before it, while
+    the keyboard was inside the dialog, and was declined (layer 3, Server: six in ten). So the
+    dialog closes itself first — on OK too, unless the draft holds a refusal — and this frame draws
+    once more and waits for that render's OnAfterRenderAsync, which Blazor runs once the browser
+    has applied the render, the dialog's removal with it. Only then does it set OK's change or the
+    Cancel, and hand the keyboard back.
 *@
 @if (_leaving)
 {
@@ -48,6 +56,8 @@
     private bool _disposed;
     private IDialogReference? _dialog;
     private readonly TaskCompletionSource _drawn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    // Completed by the render that follows the dialog's closing, once the browser has drawn it.
+    private TaskCompletionSource? _drawnAfterClosing;
 
     /// <summary>ExSheet's Format Cells, as it opened (ADR-0063).</summary>
     [Parameter, EditorRequired] public FormatCellsContext Context { get; set; } = default!;
@@ -63,7 +73,11 @@
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            _drawnAfterClosing?.TrySetResult();
+            return;
+        }
         try
         {
             await _leavingFrom.FocusAsync(preventScroll: true);
@@ -110,22 +124,35 @@
         StateHasChanged();
     }
 
-    // However the dialog closed: anything but OK is a Cancel, which sets nothing (ExSheet ignores
-    // it once OK or Cancel has already ended this opening). The keyboard is handed back once the
-    // dialog has left the page: the provider removes it in the render its dismissal causes, and
-    // the yield puts the request behind that render, on either host.
+    // However the dialog closed. The yield puts what follows behind the render in which the
+    // provider removes the dialog; then this frame draws, and waits until the browser has drawn it
+    // too. OK sets what was touched (the dialog closes on OK only when the draft holds no
+    // refusal); anything else is a Cancel, which sets nothing, and which ExSheet ignores once this
+    // opening has ended another way. The keyboard is handed back last.
     private async Task EndedAsync(IDialogReference dialog)
     {
         var result = await dialog.Result;
-        if (result is not { Canceled: false, Data: true }) Context.Cancel();
         await Task.Yield();
+        if (!_disposed)
+        {
+            var drawn = _drawnAfterClosing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _changed = true;
+            StateHasChanged();
+            await drawn.Task;
+        }
+        if (result is { Canceled: false, Data: true }) await Context.Ok();
+        else Context.Cancel();
         await Context.ReturnKeyboard();
     }
 
-    /// <summary>ExSheet ended Format Cells — by OK, by Cancel, or because the Selection moved under it — and the dialog closes with it.</summary>
+    /// <summary>
+    /// ExSheet ended Format Cells — by OK or Cancel, by the Selection moving under it, by a new
+    /// opening — and the dialog closes with it, as a Cancel.
+    /// </summary>
     public void Dispose()
     {
         _disposed = true;
         if (_dialog is { Result.IsCompleted: false } dialog) dialog.Close(DialogResult.Cancel());
+        _drawnAfterClosing?.TrySetResult();
     }
 }

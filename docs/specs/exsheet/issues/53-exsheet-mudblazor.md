@@ -76,3 +76,28 @@ Status: done
   - Package smoke passed, run before the tab fix (a C# change only).
 - **Left open.** A real IME in the Custom code field under MudBlazor was not tried.
   (`format-cells.spec.mjs` is now listed in `tests/ExGrid.Browser/README.md`.)
+
+*(2026-10-01, agent cf-53, follow-up.)* Horizontal and Underline are dropdowns (`MudSelect`), as
+Excel's and the built-in Chrome's are. The first build drew them as radio groups, on the expectation
+that Escape in an open list would also reach the dialog and close it. That expectation was never
+tried, and MudBlazor's source shows it to be wrong: while its list is open, `MudSelect` stops Escape
+at its own element (`stopDown`), so the dialog does not hear it, and the next Escape is the dialog's
+Cancel. Layer 3 holds it to that on both hosts (`format-cells-mud.spec.mjs`). ExSheet.MudBlazor.Tests
+has 35 tests (one new: the two dropdowns list Excel's choices and open on the Focus cell's).
+
+*(2026-10-01, agent cf-53, follow-up.)* The keyboard's hand-back on closing is ordered by the
+browser, not by the server. The follow-up's layer-3 run caught a Custom code entered with Enter
+leaving the keyboard on nothing on the Server host (three runs in five). The core's focus function
+reached the browser before the render that removed the dialog, while DOM focus was still inside
+the dialog, and was declined. A yield on the server does not order a request behind a render's
+arrival on a circuit.
+- The dialog now closes itself first: on OK too, unless the draft holds a refusal, which still
+  keeps it open with the reason.
+- The frame then draws once more and waits for that render's `OnAfterRenderAsync`. Blazor runs it
+  once the browser has applied the render, so the dialog's removal is applied by then.
+- Only then does the frame set OK's change (or the Cancel) and hand the keyboard back.
+- After the fix, the failing test passed ten runs in ten on Server, and `format-cells-mud.spec.mjs`
+  passed three times over (33 of 33). WebAssembly: 21 of 21 with `format-cells.spec.mjs`.
+- Closings that ExSheet starts itself (the Selection moved under Format Cells, a new opening) still
+  hand back after a yield only. No user gesture reaches them while the modal dialog stands.
+

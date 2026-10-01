@@ -110,6 +110,36 @@ test.describe('on /sheet?chrome=mud', () => {
         await expectFocusAt(grid, 'C3');
     });
 
+    test('SH-45/ADR-0063: Escape in an open dropdown closes only its list; the next Escape cancels Format Cells', async ({ page }) => {
+        const grid = sheet(page);
+        await openFromMenu(page, grid, 'C2');
+        // Touched, so that the Cancel below has something it must not set.
+        await choice(page, 'Percentage').check();
+        await tab(page, 'Alignment').click();
+        const horizontal = formatCells(page).locator('.mud-ex-sheet-format-cells-alignment');
+        const list = page.locator('.mud-popover-open .mud-list-item');
+
+        // Horizontal is a dropdown, as Excel's.
+        await horizontal.click();
+        await expect(list).toHaveText(['General', 'Left', 'Centre', 'Right']);
+        await page.keyboard.press('Escape');
+
+        // The list closed; the dialog stands, the alignment as it was.
+        await expect(list).toHaveCount(0);
+        await expect(formatCells(page)).toBeVisible();
+        await expect(horizontal.locator('input')).toHaveValue('General');
+
+        // The next Escape, from the select the keyboard is back on, is the dialog's Cancel: the
+        // Percentage touched before is not set.
+        await page.keyboard.press('Escape');
+
+        await expect(formatCells(page)).toHaveCount(0);
+        await expect(cell(grid, 'C2')).toHaveText('0.5');
+        await expect(grid).toBeFocused();
+        await page.keyboard.press('ArrowDown');
+        await expectFocusAt(grid, 'C3');
+    });
+
     test('SH-45: a press on the dialog\'s backdrop is a Cancel, and the keyboard is the Sheet\'s again', async ({ page }) => {
         const grid = sheet(page);
         await openFromMenu(page, grid, 'C2');
