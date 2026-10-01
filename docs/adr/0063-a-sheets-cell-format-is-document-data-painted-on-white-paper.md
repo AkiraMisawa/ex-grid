@@ -146,7 +146,10 @@ cell's padding. A layer-3 check confirms that nothing is cut.
   - A toolbar reads it for the Focus cell whenever the Selection changes.
   - Format Cells reads it when it opens.
 - **`OpenFormatCellsAsync()`** opens Format Cells from the Consumer's own button.
-- **All of them are refused while an edit is open** (ADR-0048, SH-29).
+- **The commands that change the Sheet, and `OpenFormatCellsAsync`, are refused while an edit is
+  open** (ADR-0048, SH-29). `CellFormatAt` is a read, and it answers in any state. *(Clarified
+  2026-10-01 by ticket 50. The bullet first said "all of them", which would have taken in the
+  read.)*
 
 ### Format Cells, a Chrome seam whose frame the Chrome chooses
 

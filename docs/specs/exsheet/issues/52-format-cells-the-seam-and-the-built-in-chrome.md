@@ -24,6 +24,8 @@ Status: ready-for-agent
     Selection are shown as case 24 found.
   - **How it closes.** OK is a `CellFormatChange` of the parts the user touched, as one undo step.
     Cancel and Esc set nothing.
+  - **OK with nothing touched** calls nothing. `SetCellFormatAsync` throws on a change that names
+    no part (found by ticket 50).
   - The frame is the Chrome's. The seam hands the Chrome the core's focus function, for returning
     the keyboard on closing.
 - [ ] **The built-in Chrome.**
