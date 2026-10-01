@@ -7,9 +7,10 @@ public sealed partial class Sheet
     /// <summary>
     /// Inserts <paramref name="count"/> rows at <paramref name="row"/>; what was there and below
     /// moves down, and every Reference is rewritten to keep naming the same cells (ADR-0046/0047).
-    /// The new rows hold no Entries; each of their cells takes the number format and alignment of
-    /// the cell above it, and each row the format set on the row above, as Excel's default does
-    /// (ADR-0046, ADR-0047). Rows inserted at the top take none. A format set on a row moves with
+    /// The new rows hold no Entries; each of their cells takes the Cell Format of the cell above it,
+    /// and each row the Cell Format recorded on the row above, as Excel's default does (ADR-0046,
+    /// ADR-0047, ADR-0063); that it takes the Borders too is a reading until the eleventh Windows
+    /// run, case 12. Rows inserted at the top take none. A Cell Format recorded on a row moves with
     /// it, and one pushed off the bottom edge is dropped. A Reference whose cells are pushed off
     /// the bottom edge is cut at it, or becomes <c>#REF!</c> when none of its cells remain, as in
     /// Excel.
@@ -27,9 +28,9 @@ public sealed partial class Sheet
     public SheetChange DeleteRows(int row, int count = 1) => Restructure(new StructuralEdit(SheetAxis.Rows, row, count, false)).Change;
 
     /// <summary>
-    /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the number format
-    /// and alignment of the cell to its left, and each column the format and the width set on the
-    /// column to its left, automatic or custom as it is (ADR-0046, ADR-0047); columns inserted at
+    /// Inserts columns, as <see cref="InsertRows"/> does rows: each new cell takes the Cell Format of
+    /// the cell to its left, and each column the Cell Format and the width recorded on the column to
+    /// its left, automatic or custom as it is (ADR-0046, ADR-0047, ADR-0063); columns inserted at
     /// <c>A</c> take none. A width set on a column moves with it, and one pushed off the right edge
     /// is dropped.
     /// </summary>
@@ -44,8 +45,8 @@ public sealed partial class Sheet
         SheetChange Change,
         IReadOnlyList<(CellAddress Address, CellState State)> Dropped,
         IReadOnlyList<(CellAddress Address, Entry Entry)> Rewritten,
-        Dictionary<int, AxisStyle> RowsBefore,
-        Dictionary<int, AxisStyle> ColumnsBefore,
+        Dictionary<int, AxisFormat> RowsBefore,
+        Dictionary<int, AxisFormat> ColumnsBefore,
         Dictionary<int, SheetColumnWidth> WidthsBefore);
 
     /// <summary>Whether <paramref name="edit"/> would be refused, and why; nothing changes either way.</summary>
@@ -55,7 +56,7 @@ public sealed partial class Sheet
         if (!edit.IsInsert) return null;
         foreach (var cell in _cells.Values)
         {
-            // Only an Entry stops an insertion, as in Excel: a format pushed off is dropped, and a
+            // Only an Entry stops an insertion, as in Excel: a Cell Format pushed off is dropped, and a
             // Reference pushed off is cut at the edge or made #REF! (StructuralEdit.Map).
             if (cell.Entry is not null && edit.Move(cell.Address) is null)
             {
@@ -67,8 +68,8 @@ public sealed partial class Sheet
     }
 
     /// <summary>
-    /// Gives each cell of the inserted rows (columns) the number format and alignment of the cell
-    /// above (to the left of) the insertion — never its Entry (ADR-0046).
+    /// Gives each cell of the inserted rows (columns) the Cell Format of the cell above (to the left
+    /// of) the insertion, every part of it — never its Entry (ADR-0046, ADR-0063).
     /// </summary>
     private void FormatInserted(StructuralEdit edit, List<Cell> moved)
     {
@@ -76,11 +77,12 @@ public sealed partial class Sheet
         foreach (var source in moved)
         {
             if ((rows ? source.Address.Row : source.Address.Column) != edit.Start - 1) continue;
-            if (source.Format is null && source.Alignment is null) continue;
+            if (!source.IsFormatted) continue;
             for (var i = 0; i < edit.Count; i++)
             {
                 var at = rows ? new CellAddress(edit.Start + i, source.Address.Column) : new CellAddress(source.Address.Row, edit.Start + i);
-                _cells[at] = new Cell(at) { Format = source.Format, Alignment = source.Alignment };
+                var cell = _cells[at] = new Cell(at);
+                cell.TakeFormatOf(source);
             }
         }
     }
@@ -89,7 +91,7 @@ public sealed partial class Sheet
 
     /// <param name="edit">The insertion or deletion.</param>
     /// <param name="formatInserted">
-    /// Whether inserted rows or columns take the formatting of the one before them (ADR-0046). An
+    /// Whether inserted rows or columns take the Cell Format of the one before them (ADR-0046). An
     /// undo's inverse insertion does not: it puts back what was deleted, exactly.
     /// </param>
     internal StructuralOutcome Restructure(StructuralEdit edit, bool formatInserted = true)
@@ -98,8 +100,8 @@ public sealed partial class Sheet
 
         var before = Snapshot();
         var shownBefore = ShownSnapshot();
-        var rowsBefore = new Dictionary<int, AxisStyle>(_rowStyles);
-        var columnsBefore = new Dictionary<int, AxisStyle>(_columnStyles);
+        var rowsBefore = new Dictionary<int, AxisFormat>(_rowFormats);
+        var columnsBefore = new Dictionary<int, AxisFormat>(_columnFormats);
         var widthsBefore = ColumnWidthsNow();
         var dropped = new List<(CellAddress, CellState)>();
         var rewritten = new List<(CellAddress, Entry)>();
@@ -128,13 +130,15 @@ public sealed partial class Sheet
                 }
                 entry = mapped;
             }
-            moved.Add(new Cell(to) { Entry = entry, Value = cell.Value, Format = cell.Format, Alignment = cell.Alignment });
+            var movedCell = new Cell(to) { Entry = entry, Value = cell.Value };
+            movedCell.TakeFormatOf(cell);
+            moved.Add(movedCell);
         }
 
         _cells.Clear();
         foreach (var cell in moved) _cells[cell.Address] = cell;
         if (edit.IsInsert && formatInserted && edit.Start > 0) FormatInserted(edit, moved);
-        ShiftAxisStyles(edit, formatInserted);
+        ShiftAxisFormats(edit, formatInserted);
         ShiftColumnWidths(edit, formatInserted);
         RebuildDependencies();
         var recalculated = dirty.Count == 0 ? [] : Recalculate(dirty, []).Recalculated;

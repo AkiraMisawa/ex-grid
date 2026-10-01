@@ -47,16 +47,16 @@ public class StructureTests
     {
         var sheet = NewSheet();
         sheet.Enter("A2", "1.5");
-        sheet.SetFormat(CellAddress.Parse("A2"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(CellAddress.Parse("A2"), NumberFormat.Parse("0.00"));
         sheet.SetAlignment(CellAddress.Parse("B2"), HorizontalAlignment.Center);
-        sheet.SetFormat(CellAddress.Parse("C3"), NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat(CellAddress.Parse("C3"), NumberFormat.Parse("0%"));
 
         var change = sheet.InsertRows(2, 2);
 
         foreach (var name in new[] { "A3", "A4" })
         {
             var at = CellAddress.Parse(name);
-            Assert.Equal("0.00", sheet.GetFormat(at).Code);
+            Assert.Equal("0.00", sheet.GetNumberFormat(at).Code);
             Assert.Equal(HorizontalAlignment.General, sheet.GetAlignment(at));
             Assert.Null(sheet.GetEntry(at));
             Assert.Null(sheet.GetValue(at));
@@ -64,8 +64,8 @@ public class StructureTests
         Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(CellAddress.Parse("B3")));
         Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(CellAddress.Parse("B4")));
         // The row that was below keeps its own formatting, moved down; it lends nothing upwards.
-        Assert.True(sheet.GetFormat(CellAddress.Parse("C3")).IsGeneral);
-        Assert.Equal("0%", sheet.GetFormat(CellAddress.Parse("C5")).Code);
+        Assert.True(sheet.GetNumberFormat(CellAddress.Parse("C3")).IsGeneral);
+        Assert.Equal("0%", sheet.GetNumberFormat(CellAddress.Parse("C5")).Code);
         Assert.Equal(1.5, sheet.Number("A2"));
         Assert.Contains(2, change.Rows);
         Assert.Contains(3, change.Rows);
@@ -79,7 +79,7 @@ public class StructureTests
         var sheet = NewSheet();
         sheet.Enter("B1", "x");
         sheet.SetAlignment(CellAddress.Parse("B1"), HorizontalAlignment.Right);
-        sheet.SetFormat(CellAddress.Parse("B7"), NumberFormat.Parse("#,##0"));
+        sheet.SetNumberFormat(CellAddress.Parse("B7"), NumberFormat.Parse("#,##0"));
 
         sheet.InsertColumns(2, 3);
 
@@ -88,7 +88,7 @@ public class StructureTests
             Assert.Equal(HorizontalAlignment.Right, sheet.GetAlignment(CellAddress.Parse(name)));
             Assert.Null(sheet.GetEntry(CellAddress.Parse(name)));
         }
-        foreach (var name in new[] { "C7", "D7", "E7" }) Assert.Equal("#,##0", sheet.GetFormat(CellAddress.Parse(name)).Code);
+        foreach (var name in new[] { "C7", "D7", "E7" }) Assert.Equal("#,##0", sheet.GetNumberFormat(CellAddress.Parse(name)).Code);
         Assert.Equal("x", sheet.Value("B1")!.Value.Text);
     }
 
@@ -97,11 +97,11 @@ public class StructureTests
     {
         var sheet = NewSheet();
         sheet.Enter("A2", "1");
-        sheet.SetFormat(CellAddress.Parse("A2"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(CellAddress.Parse("A2"), NumberFormat.Parse("0.00"));
         var before = sheet.ToDocument().ToJson();
 
         var step = sheet.Do(SheetEdit.InsertRows(2, 3));
-        Assert.Equal("0.00", sheet.GetFormat(CellAddress.Parse("A5")).Code);
+        Assert.Equal("0.00", sheet.GetNumberFormat(CellAddress.Parse("A5")).Code);
 
         step.Undo();
         Assert.Equal(before, sheet.ToDocument().ToJson());
@@ -112,14 +112,14 @@ public class StructureTests
     {
         var sheet = NewSheet();
         sheet.Enter("A5", "1.5");
-        sheet.SetFormat(CellAddress.Parse("A5"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(CellAddress.Parse("A5"), NumberFormat.Parse("0.00"));
         sheet.SetAlignment(CellAddress.Parse("B5"), HorizontalAlignment.Center);
 
         sheet.InsertRows(1, 3);
 
         Assert.Equal("1.50", sheet.GetDisplay(CellAddress.Parse("A8")).Text);
         Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(CellAddress.Parse("B8")));
-        Assert.True(sheet.GetFormat(CellAddress.Parse("A5")).IsGeneral);
+        Assert.True(sheet.GetNumberFormat(CellAddress.Parse("A5")).IsGeneral);
         Assert.Equal(HorizontalAlignment.General, sheet.GetAlignment(CellAddress.Parse("B5")));
     }
 

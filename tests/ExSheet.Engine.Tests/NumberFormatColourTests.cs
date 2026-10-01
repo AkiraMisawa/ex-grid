@@ -11,7 +11,7 @@ public class NumberFormatColourTests
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         var a1 = CellAddress.Parse("A1");
         sheet.SetEntry(a1, Entry.FromValue(value));
-        sheet.SetFormat(a1, NumberFormat.Parse(code));
+        sheet.SetNumberFormat(a1, NumberFormat.Parse(code));
         return width is { } w ? sheet.GetDisplay(a1, w) : sheet.GetDisplay(a1);
     }
 
@@ -82,7 +82,7 @@ public class NumberFormatColourTests
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         var a1 = CellAddress.Parse("A1");
-        sheet.SetFormat(a1, NumberFormat.Parse("[Red]0"));
+        sheet.SetNumberFormat(a1, NumberFormat.Parse("[Red]0"));
 
         Assert.Null(sheet.GetDisplay(a1).Colour);
         Assert.Null(sheet.GetDisplay(a1, 10).Colour);
@@ -175,7 +175,7 @@ public class NumberFormatColourTests
         var b1 = CellAddress.Parse("B1");
         sheet.Enter(a1, "-5");
         sheet.Enter(b1, "5");
-        sheet.SetFormat(new CellRange(a1, b1), NumberFormat.Parse("0;[Red]-0"));
+        sheet.SetNumberFormat(new CellRange(a1, b1), NumberFormat.Parse("0;[Red]-0"));
 
         Assert.Equal(NumberFormatColour.Red, sheet.GetDisplay(a1).Colour);
         Assert.Null(sheet.GetDisplay(b1).Colour);

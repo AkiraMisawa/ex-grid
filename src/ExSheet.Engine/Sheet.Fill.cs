@@ -38,7 +38,7 @@ public sealed partial class Sheet
     /// Anything else is refused, never filled with copies: text Excel would continue (holding a
     /// digit, like <c>Item 1</c>, or a day or month name), two or more dates (Excel may step them
     /// by month or year), a time of day, and numbers mixed with anything else.
-    /// Formats and alignment are repeated from the source. With <paramref name="copyOnly"/>, Excel's
+    /// Cell Formats are repeated from the source. With <paramref name="copyOnly"/>, Excel's
     /// fill keys (Ctrl+D, Ctrl+R): every line is a copy, and no pattern is continued or refused.
     /// </summary>
     internal (SheetRefusal? Refusal, List<(CellAddress Address, CellState State)> States) PlanFill(CellRange source, CellRange target, FillDirection direction, bool copyOnly = false)
@@ -113,7 +113,7 @@ public sealed partial class Sheet
             if (constant.Kind == ValueKind.Number)
             {
                 numbers++;
-                var format = cells[i].Format!;
+                var format = cells[i].NumberFormat!;
                 if (format.IsDate)
                 {
                     if (!format.IsDateOnly || cells.Length > 1)

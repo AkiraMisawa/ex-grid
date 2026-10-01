@@ -238,7 +238,7 @@ public class ExcelKeyWiringTests : SheetTestContext
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         sheet.Enter(CellAddress.Parse("A1"), "1");
         sheet.Enter(CellAddress.Parse("A900000"), "2");
-        sheet.SetFormat(CellAddress.Parse("A1"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(CellAddress.Parse("A1"), NumberFormat.Parse("0.00"));
         var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
         await GoToAsync(cut, "A:A");
 

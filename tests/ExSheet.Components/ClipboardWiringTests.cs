@@ -291,11 +291,11 @@ public class ClipboardWiringTests : SheetTestContext
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         sheet.Enter(CellAddress.Parse("A1"), "9/26/2026");
         sheet.Enter(CellAddress.Parse("B1"), "1234.5");
-        sheet.SetFormat([CellAddress.Parse("B1")], NumberFormat.Parse("#,##0.00"));
+        sheet.SetNumberFormat([CellAddress.Parse("B1")], NumberFormat.Parse("#,##0.00"));
         sheet.Enter(CellAddress.Parse("C1"), "$5");
         sheet.Enter(CellAddress.Parse("D1"), "a <b> & c");
         sheet.Enter(CellAddress.Parse("E1"), "7");
-        sheet.SetFormat([CellAddress.Parse("E1")], NumberFormat.Parse("0 \"it's\""));
+        sheet.SetNumberFormat([CellAddress.Parse("E1")], NumberFormat.Parse("0 \"it's\""));
         var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
         await GoToAsync(cut, "A1:E1");
 
@@ -394,7 +394,7 @@ public class ClipboardWiringTests : SheetTestContext
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         sheet.Enter(CellAddress.Parse("A1"), "-5");
-        sheet.SetFormat([CellAddress.Parse("A1")], NumberFormat.Parse("yyyy-mm-dd"));
+        sheet.SetNumberFormat([CellAddress.Parse("A1")], NumberFormat.Parse("yyyy-mm-dd"));
         var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
         await GoToAsync(cut, "A1");
 
@@ -445,7 +445,7 @@ public class ClipboardWiringTests : SheetTestContext
     {
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         sheet.Enter(CellAddress.Parse("A1"), "0.25");
-        sheet.SetFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat([CellAddress.Parse("A1")], NumberFormat.Parse("0%"));
         sheet.Enter(CellAddress.Parse("B1"), "=A1*2");
         var selections = new List<GridSelection>();
         var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()).Add(s => s.SelectionChanged, selections.Add));

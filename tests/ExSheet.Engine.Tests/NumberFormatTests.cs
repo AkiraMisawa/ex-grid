@@ -11,7 +11,7 @@ public class NumberFormatTests
         var sheet = new Sheet(CultureInfo.GetCultureInfo(culture));
         var a1 = CellAddress.Parse("A1");
         sheet.SetEntry(a1, Entry.FromValue(Value.FromNumber(number)));
-        sheet.SetFormat(a1, NumberFormat.Parse(code));
+        sheet.SetNumberFormat(a1, NumberFormat.Parse(code));
         return sheet.GetDisplay(a1);
     }
 
@@ -20,7 +20,7 @@ public class NumberFormatTests
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         var a1 = CellAddress.Parse("A1");
         sheet.SetEntry(a1, Entry.FromValue(Value.FromText(text)));
-        sheet.SetFormat(a1, NumberFormat.Parse(code));
+        sheet.SetNumberFormat(a1, NumberFormat.Parse(code));
         return sheet.GetDisplay(a1);
     }
 
@@ -82,7 +82,7 @@ public class NumberFormatTests
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         var a1 = CellAddress.Parse("A1");
 
-        var change = sheet.SetFormat(a1, NumberFormat.Parse("0.00"));
+        var change = sheet.SetNumberFormat(a1, NumberFormat.Parse("0.00"));
         sheet.Enter(a1, "3");
 
         Assert.Equal([0], change.Rows);
@@ -141,7 +141,7 @@ public class NumberFormatTests
         sheet.Enter(a1, "$5");
 
         Assert.Equal(5, sheet.GetValue(a1)!.Value.Number);
-        Assert.Equal("$#,##0_);[Red]($#,##0)", sheet.GetFormat(a1).Code);
+        Assert.Equal("$#,##0_);[Red]($#,##0)", sheet.GetNumberFormat(a1).Code);
         Assert.Equal("$5 ", sheet.GetDisplay(a1).Text);
     }
 }
