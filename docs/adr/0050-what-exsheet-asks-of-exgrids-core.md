@@ -406,10 +406,15 @@ the built-in Chrome.
     click on a menu item starts the hold as Enter does.
   - **A frame of the Consumer's own:** the core gains `HandKeyboardToFrameAsync()`. ExSheet calls it
     whenever it opens Format Cells in a frame of the Chrome's own. The core then:
-    - does not return the keyboard to its root after the command;
-    - holds keys typed on the root, a menu or `body` until DOM focus leaves the root;
-    - replays them, in order, to the element that took focus;
-    - drops them if focus never leaves within the hold's fallback.
+    - keeps the keyboard on its root after the command, until the frame takes it, and holds keys
+      typed on the root or a menu meanwhile;
+    - replays them, in order, to the element that took focus. A frame's element takes every key
+      but Tab; a tab takes its arrows, Home and End;
+    - drops them if the keyboard never arrives within the hold's fallback, or goes to another grid.
     The keys are never the grid's.
+    *(As built: the note first said the root would not take the keyboard back. Keys typed on `body`
+    are heard only by a listener on `document`, which ADR-0021 does not allow, so the root keeps it
+    and its hold holds the keys. A key typed while focus is briefly on `body`, after a click, is lost
+    and never the grid's.)*
   - A dynamic call was chosen over a fixed flag on the command, because the same command opens the
     core's popover under one Chrome and a frame of its own under another.
