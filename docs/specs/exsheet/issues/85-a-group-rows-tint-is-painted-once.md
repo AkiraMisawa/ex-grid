@@ -119,3 +119,27 @@ read from the screen. Nothing compares the two today.
   painted on the cells, and on the row only where no cell is. The reason the ADR gives, a pinned
   cell's opaque ground, is unchanged, so this is a wording note for the ADR's owner, not a changed
   decision.
+
+2026-10-01, agent cf-84, after CI on PR #42 (run 36921156631).
+
+- **What failed.** The hover-band test failed on Linux, headed, under Chrome and Edge on the
+  WebAssembly host and under Chrome on the Server host: "the band paints over the group row
+  (245,245,245 → 245,245,245)".
+- **The cause was the test's own read, not the stylesheet.** The trace shows it:
+  - the screencast frame taken after the pointer moved shows the band over all of row 12, pinned
+    and scrollable cells alike, darker than the group tint past the last column;
+  - the bands stood on row 12 in the DOM when the screenshot was asked for;
+  - the frame recorded during the screenshot shows no band on any row. That screenshot was clipped
+    to the grid, at a fractional y (216.875). The frame shows the page laid out from the grid's top,
+    as if the pointer, left where it was on the screen, were over another part of the page.
+  - UX-16's hover test, which captures the whole viewport, passes in the same run. Headless Chrome on
+    macOS kept the band under the clipped capture, so a headless run hid it. I had not run the test
+    with the fix before this; the earlier local run was on the stylesheet before the fix.
+- **The fix is in the test.** `edgesOf` reads from a capture of the whole viewport, as `groundsOf`
+  does. The hover test also checks that the bands still stand on row 12 after the read, so a capture
+  that moves the pointer is told apart from cells that cover the band. Nothing in `ex-grid.css`
+  changed: the band lies in the selection layers, above every cell.
+- **Runs.** `stripes.spec.mjs`, headless on macOS, WebAssembly, port 5451: 6 passed, and 1 failed,
+  the vertical-scrollbar thumb test (ADR-0029, UX-10), with a gutter of 0, macOS headless's known
+  limit, which CI judges. Headed was not run on the Mac (the user's standing request), so the headed
+  pass is CI's to confirm. Layers 1 and 2: 874 + 2317 + 133 + 1272 (1 skipped) + 38 + 583 passed.
