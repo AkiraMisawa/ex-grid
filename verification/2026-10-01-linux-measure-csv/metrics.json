@@ -1,0 +1,781 @@
+{
+  "machine": {
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz (family 6, model 207, stepping 2), a Firecracker guest",
+    "vcpus": 4,
+    "memoryGiB": 15.7,
+    "os": "Ubuntu 24.04.4 LTS, Linux 6.18.44",
+    "dotnet": "SDK 10.0.401, runtime 10.0.12 (CoreCLR, workstation GC); browser-wasm runtime pack 10.0.12",
+    "browser": "Chromium 141.0.7390.37 (Playwright build 1194), headed under Xvfb 2560x1600x24; Playwright 1.62.1, Node 22.22.2",
+    "webassembly": "samples/ExGrid.DemoHost published in Release, trimmed, without the wasm-tools workload: no AOT",
+    "shared": "Two other agents built and tested on this machine until about 09:57 UTC, and the coordinator after; every comparison alternated its before and after under the same conditions",
+    "differs from the first record": "verification/2026-10-01-linux-measure ran on a 2.8 GHz Xeon (model 85); there the base read 955 ms on CoreCLR and 14.6 s in the browser, here 692 ms and 12.9 s"
+  },
+  "builds": {
+    "before": "9959cee (the base: ExGrid.Data as verification/2026-10-01-linux-measure measured it)",
+    "after": "02d0139 (ticket 07's twelve changes; src/ExGrid.Data otherwise as at the base)"
+  },
+  "coreclr": {
+    "how": "tests/ExGrid.Data.Tests MeasureTests.DA17_a_million_rows_read_from_a_CSV, Release, -explicit only; the same test assembly against the base and the current ExGrid.Data.dll, alternately, three rounds; each line the median of 7 after 2 warm-ups",
+    "Read from memory, 1,000,000 rows, 12 columns, keyed by Id": {
+      "before": {
+        "passMediansMs": [
+          755,
+          671,
+          692
+        ],
+        "medianMs": 692,
+        "bestMs": 634,
+        "allocatedMiB": 195.9
+      },
+      "after": {
+        "passMediansMs": [
+          474,
+          509,
+          491
+        ],
+        "medianMs": 491,
+        "bestMs": 414,
+        "allocatedMiB": 191.9
+      }
+    },
+    "Read from a file (in the page cache), 1,000,000 rows": {
+      "before": {
+        "passMediansMs": [
+          779,
+          780,
+          703
+        ],
+        "medianMs": 779,
+        "bestMs": 633
+      },
+      "after": {
+        "passMediansMs": [
+          429,
+          456,
+          468
+        ],
+        "medianMs": 456,
+        "bestMs": 421
+      }
+    },
+    "an earlier alternation, at change 11": {
+      "memory": {
+        "before": [
+          703,
+          694,
+          739
+        ],
+        "after": [
+          451,
+          497,
+          542
+        ]
+      },
+      "file": {
+        "before": [
+          765,
+          837,
+          694
+        ],
+        "after": [
+          462,
+          458,
+          478
+        ]
+      }
+    }
+  },
+  "chromium-local": {
+    "how": "tests/ExGrid.Browser/measure-pivot.spec.mjs with EXGRID_MEASURE=pivot, --grep the CSV tests, against a published DemoHost served statically on 5799; each invocation reads the file three times, each on a fresh document, and the sample three times",
+    "before": {
+      "9959cee, invocation 1": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 12.8,
+            "min": 12,
+            "max": 13.5
+          },
+          "readMs": {
+            "median": 12957,
+            "min": 12162,
+            "max": 13696
+          },
+          "firstQuestionMs": {
+            "median": 420,
+            "min": 381,
+            "max": 489
+          },
+          "reportMs": {
+            "median": 13377,
+            "min": 12543,
+            "max": 14185
+          },
+          "firstVisualAnswerMs": {
+            "median": 153,
+            "min": 119,
+            "max": 170
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 152,
+            "min": 119,
+            "max": 171
+          },
+          "longestTaskUntilReportMs": {
+            "median": 152,
+            "min": 124,
+            "max": 171
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 12.8 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 1.2,
+            "min": 1.2,
+            "max": 1.3
+          }
+        }
+      },
+      "9959cee, invocation 2": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 12.9,
+            "min": 12,
+            "max": 12.9
+          },
+          "readMs": {
+            "median": 13061,
+            "min": 12113,
+            "max": 13069
+          },
+          "firstQuestionMs": {
+            "median": 406,
+            "min": 387,
+            "max": 485
+          },
+          "reportMs": {
+            "median": 13456,
+            "min": 12519,
+            "max": 13546
+          },
+          "firstVisualAnswerMs": {
+            "median": 113,
+            "min": 105,
+            "max": 137
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 126,
+            "min": 124,
+            "max": 137
+          },
+          "longestTaskUntilReportMs": {
+            "median": 136,
+            "min": 133,
+            "max": 137
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 12.0 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.3
+          }
+        }
+      },
+      "9959cee, invocation 3": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 13.9,
+            "min": 13.6,
+            "max": 13.9
+          },
+          "readMs": {
+            "median": 14069,
+            "min": 13765,
+            "max": 14070
+          },
+          "firstQuestionMs": {
+            "median": 439,
+            "min": 374,
+            "max": 454
+          },
+          "reportMs": {
+            "median": 14445,
+            "min": 14204,
+            "max": 14523
+          },
+          "firstVisualAnswerMs": {
+            "median": 140,
+            "min": 117,
+            "max": 179
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 156,
+            "min": 155,
+            "max": 179
+          },
+          "longestTaskUntilReportMs": {
+            "median": 156,
+            "min": 155,
+            "max": 179
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 13.9 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 1.3,
+            "min": 1.2,
+            "max": 1.4
+          }
+        }
+      }
+    },
+    "after": {
+      "02d0139, invocation 1": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 3.9,
+            "min": 3.9,
+            "max": 4.9
+          },
+          "readMs": {
+            "median": 4062,
+            "min": 4043,
+            "max": 5038
+          },
+          "firstQuestionMs": {
+            "median": 373,
+            "min": 346,
+            "max": 403
+          },
+          "reportMs": {
+            "median": 4446,
+            "min": 4408,
+            "max": 5411
+          },
+          "firstVisualAnswerMs": {
+            "median": 127,
+            "min": 108,
+            "max": 137
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 127,
+            "min": 108,
+            "max": 137
+          },
+          "longestTaskUntilReportMs": {
+            "median": 137,
+            "min": 129,
+            "max": 139
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 3.9 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 0.5,
+            "min": 0.5,
+            "max": 0.5
+          }
+        }
+      },
+      "02d0139, invocation 2": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 4.1,
+            "min": 4,
+            "max": 4.6
+          },
+          "readMs": {
+            "median": 4270,
+            "min": 4104,
+            "max": 4746
+          },
+          "firstQuestionMs": {
+            "median": 363,
+            "min": 348,
+            "max": 566
+          },
+          "reportMs": {
+            "median": 4837,
+            "min": 4452,
+            "max": 5109
+          },
+          "firstVisualAnswerMs": {
+            "median": 128,
+            "min": 111,
+            "max": 221
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 128,
+            "min": 111,
+            "max": 221
+          },
+          "longestTaskUntilReportMs": {
+            "median": 172,
+            "min": 116,
+            "max": 221
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 4.0 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 0.5,
+            "min": 0.5,
+            "max": 0.6
+          }
+        }
+      }
+    },
+    "on the way": {
+      "at change 8 (ab5417a)": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 6.3,
+            "min": 6.2,
+            "max": 6.4
+          },
+          "readMs": {
+            "median": 6455,
+            "min": 6386,
+            "max": 6528
+          },
+          "firstQuestionMs": {
+            "median": 368,
+            "min": 368,
+            "max": 398
+          },
+          "reportMs": {
+            "median": 6824,
+            "min": 6784,
+            "max": 6896
+          },
+          "firstVisualAnswerMs": {
+            "median": 132,
+            "min": 120,
+            "max": 140
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 132,
+            "min": 127,
+            "max": 139
+          },
+          "longestTaskUntilReportMs": {
+            "median": 142,
+            "min": 132,
+            "max": 171
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 6.3 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 0.6,
+            "min": 0.6,
+            "max": 0.6
+          }
+        }
+      },
+      "at change 10 (50efec4)": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 4,
+            "min": 4,
+            "max": 4
+          },
+          "readMs": {
+            "median": 4161,
+            "min": 4131,
+            "max": 4184
+          },
+          "firstQuestionMs": {
+            "median": 372,
+            "min": 359,
+            "max": 374
+          },
+          "reportMs": {
+            "median": 4535,
+            "min": 4491,
+            "max": 4556
+          },
+          "firstVisualAnswerMs": {
+            "median": 122,
+            "min": 102,
+            "max": 127
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 122,
+            "min": 112,
+            "max": 127
+          },
+          "longestTaskUntilReportMs": {
+            "median": 144,
+            "min": 122,
+            "max": 158
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 4.0 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 0.5,
+            "min": 0.5,
+            "max": 0.6
+          }
+        }
+      },
+      "at change 11 (1e60535)": {
+        "csv": {
+          "rows": 1000000,
+          "fileMiB": 89.7,
+          "runs": 3,
+          "pageSeconds": {
+            "median": 4.1,
+            "min": 4,
+            "max": 4.4
+          },
+          "readMs": {
+            "median": 4308,
+            "min": 4144,
+            "max": 4501
+          },
+          "firstQuestionMs": {
+            "median": 418,
+            "min": 390,
+            "max": 446
+          },
+          "reportMs": {
+            "median": 4753,
+            "min": 4533,
+            "max": 4919
+          },
+          "firstVisualAnswerMs": {
+            "median": 120,
+            "min": 111,
+            "max": 123
+          },
+          "longestTaskWhileReadingMs": {
+            "median": 123,
+            "min": 120,
+            "max": 129
+          },
+          "longestTaskUntilReportMs": {
+            "median": 144,
+            "min": 133,
+            "max": 212
+          },
+          "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 4.4 s."
+        },
+        "sample": {
+          "rows": 100000,
+          "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+          "pageSeconds": {
+            "median": 0.5,
+            "min": 0.4,
+            "max": 0.6
+          }
+        }
+      }
+    }
+  },
+  "profile": {
+    "coreclr phases": {
+      "how": "a scratch profiler outside the repository reading MeasureTests' trade export from memory: the whole read, the tokenizer alone, and one declared column at a time; median of 7 after 2 warm-ups, ms",
+      "before (9959cee)": {
+        "full, keyed": 697.5,
+        "full, no key": 754.5,
+        "tokenizer alone": 150.1,
+        "Id": 373.5,
+        "Account": 180.0,
+        "Region": 172.2,
+        "Desk": 178.4,
+        "Book": 170.5,
+        "Product": 202.5,
+        "Currency": 180.3,
+        "TradeDate": 198.1,
+        "Notional": 209.6,
+        "Pnl": 207.0,
+        "Quantity": 170.7,
+        "Confirmed": 172.6,
+        "all but Id, no key": 469.8,
+        "text columns only, no key": 449.7,
+        "Id alone, keyed": 376.4
+      },
+      "after (1e60535, change 11)": {
+        "full, keyed": 451.9,
+        "full, no key": 447.6,
+        "tokenizer alone": 100.8,
+        "Id": 233.4,
+        "Account": 130.1,
+        "Region": 127.3,
+        "Desk": 133.5,
+        "Book": 120.2,
+        "Product": 132.9,
+        "Currency": 123.8,
+        "TradeDate": 143.5,
+        "Notional": 136.8,
+        "Pnl": 169.6,
+        "Quantity": 124.9,
+        "Confirmed": 116.4,
+        "all but Id, no key": 325.0,
+        "text columns only, no key": 328.2,
+        "Id alone, keyed": 251.5,
+        "tokenizer alone after change 12": 73.3
+      }
+    },
+    "coreclr sampled": {
+      "how": "dotnet-trace's sampled thread time (about 100 Hz) over 30 reads at the base, with JIT inlining off so that each method keeps its own samples; self time",
+      "share": {
+        "CsvTokenizer.Cut": 12.0,
+        "Dictionary alternate lookup FindValue (interning)": 8.9,
+        "threads stopped for collections": 6.8,
+        "NumberText.Parse": 5.4,
+        "TextFieldReader.ReadValue": 4.6,
+        "Dictionary.TryInsert (interning)": 4.0,
+        "CsvRead.Field": 3.7,
+        "FieldReader.Read": 3.2,
+        "IndexOfAny (line breaks in quotes)": 3.1,
+        "ByteTextCache.TryGet": 3.1,
+        "CsvRead.Commit": 2.6,
+        "DateFormat.TryRead": 2.3,
+        "DecimalColumnWriter.TryAdd": 2.3
+      }
+    },
+    "browser phases": {
+      "how": "a scratch Blazor WebAssembly page outside the repository, published as the DemoHost is, reading /pivot-csv's trade export (89.7 MiB) from memory with no yields unless said; median of 2, ms",
+      "before (9959cee)": {
+        "full, the page's yields": 11112,
+        "full, no yields": 9840,
+        "full, no yields, no key": 9386,
+        "tokenizer alone": 1170,
+        "Id": 2516,
+        "Account": 1480,
+        "Region": 1528,
+        "Desk": 1607,
+        "Book": 1555,
+        "Product": 1610,
+        "Currency": 1463,
+        "TradeDate": 1967,
+        "Notional": 1832,
+        "Pnl": 1989,
+        "Quantity": 1741,
+        "Confirmed": 1895,
+        "all but Id, no key": 7121,
+        "Id alone, keyed": 2990
+      },
+      "after (1e60535, change 11)": {
+        "full, the page's yields": 3632,
+        "full, no yields": 3013,
+        "full, no yields, no key": 2686,
+        "tokenizer alone": 437,
+        "Id": 1354,
+        "Account": 579,
+        "Region": 574,
+        "Desk": 666,
+        "Book": 608,
+        "Product": 538,
+        "Currency": 610,
+        "TradeDate": 933,
+        "Notional": 733,
+        "Pnl": 814,
+        "Quantity": 576,
+        "Confirmed": 664,
+        "all but Id, no key": 2090,
+        "Id alone, keyed": 1196,
+        "tokenizer alone after change 12": 355
+      }
+    },
+    "browser micro": {
+      "how": "the scratch page, median of 3, ms over the trade export (94 MB) or a million operations; CoreCLR beside it",
+      "a call, static / virtual (ns)": {
+        "browser": [
+          16,
+          24
+        ],
+        "coreclr": [
+          1.7,
+          1.2
+        ]
+      },
+      "a 60-byte helper, called / AggressiveInlining (ms for 12M)": {
+        "browser": [
+          599,
+          415
+        ]
+      },
+      "scalar loop over every byte": {
+        "browser": 318,
+        "coreclr": 95
+      },
+      "IndexOfAny(SearchValues) per field": {
+        "browser": 1463,
+        "coreclr": 166
+      },
+      "Vector128 compare of 16 bytes": {
+        "browser": 186,
+        "coreclr": 51
+      },
+      "1M distinct texts: decode, look up, add to Dictionary<string, int>": {
+        "browser": 806,
+        "coreclr": 186
+      },
+      "1M strings made from ASCII bytes": {
+        "browser": 256,
+        "coreclr": 39
+      },
+      "1M distinct texts into ByteTextCache": {
+        "browser": 462,
+        "coreclr": 112
+      }
+    },
+    "browser yield": {
+      "how": "60 slices of 30 ms in the scratch page, each followed by the yield; frames counted by requestAnimationFrame",
+      "Task.Delay(1)": {
+        "msPerYield": [
+          4.3,
+          4.4,
+          4.4
+        ],
+        "frames": [
+          124,
+          124,
+          124
+        ]
+      },
+      "Task.Yield()": {
+        "msPerYield": [
+          0.5,
+          0.6,
+          0.4
+        ],
+        "frames": [
+          61,
+          61,
+          59
+        ]
+      }
+    },
+    "browser InputFile": {
+      "how": "the scratch page, the file chosen through InputFile as /pivot-csv chooses it; ms",
+      "copy of the stream, by read size": {
+        "80 KiB": [
+          2581,
+          2101
+        ],
+        "256 KiB": [
+          1223,
+          1103
+        ],
+        "1 MiB": [
+          580,
+          557
+        ],
+        "4 MiB": [
+          424,
+          485
+        ],
+        "16 MiB": [
+          377,
+          407
+        ]
+      },
+      "read, rendering progress after every slice, by buffer": {
+        "256 KiB": [
+          4487,
+          4673
+        ],
+        "1 MiB": [
+          3748,
+          4101
+        ],
+        "4 MiB": [
+          3741,
+          3603
+        ],
+        "16 MiB": [
+          3530,
+          3358
+        ]
+      },
+      "23 reads of 4 MiB alone / each followed by 30 ms of work": {
+        "totalMs": [
+          [
+            295,
+            300
+          ],
+          [
+            1003,
+            992
+          ]
+        ],
+        "workMs": [
+          0,
+          720
+        ]
+      }
+    },
+    "first lookup by text after a read": {
+      "how": "TextDictionary.TryGetCode on the Id column (a million distinct texts) of a CSV just read, which change 7 left unindexed; then a second lookup",
+      "coreclr": {
+        "firstMs": [
+          73.6,
+          73.3,
+          206.0,
+          88.9,
+          60.5
+        ],
+        "thenMicroseconds": [
+          399.7,
+          33.2,
+          34.0,
+          35.9,
+          41.2
+        ]
+      },
+      "browser": {
+        "firstMs": [
+          278,
+          229,
+          270
+        ],
+        "thenMs": [
+          0.1,
+          0.0,
+          0.2
+        ]
+      }
+    }
+  }
+}
