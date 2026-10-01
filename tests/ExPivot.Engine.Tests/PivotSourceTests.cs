@@ -151,7 +151,9 @@ public class PivotSourceTests
         Assert.Contains(answer.SourceVersion, details.Refusal.Message);
         // A refusal is not an empty page.
         Assert.Throws<InvalidOperationException>(() => items.Items);
+        Assert.Throws<InvalidOperationException>(() => items.Total);
         Assert.Throws<InvalidOperationException>(() => details.Records);
+        Assert.Throws<InvalidOperationException>(() => details.Total);
         Assert.NotEqual(answer.SourceVersion, (await refreshed.AggregateAsync(new PivotQuery(), Ct)).SourceVersion);
     }
 

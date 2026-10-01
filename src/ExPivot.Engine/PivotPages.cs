@@ -26,7 +26,7 @@ public sealed class PivotItemPage
         if (total < _items.Length)
             throw new ArgumentOutOfRangeException(nameof(total), total, $"A page of {_items.Length} Items has at least that many in total.");
         _sourceVersion = sourceVersion;
-        Total = total;
+        _total = total;
     }
 
     private PivotItemPage(PivotSourceRefusal refusal)
@@ -56,8 +56,10 @@ public sealed class PivotItemPage
     /// an empty list.</summary>
     public IReadOnlyList<PivotItemKey> Items => IsRefused ? throw RefusedError() : _items;
 
-    /// <summary>How many Items match, the ones on the page included.</summary>
-    public int Total { get; }
+    /// <summary>How many Items match, the ones on the page included. Refused on a refusal.</summary>
+    public int Total => IsRefused ? throw RefusedError() : _total;
+
+    private readonly int _total;
 
     private InvalidOperationException RefusedError() => new($"The source refused to list Items: {Refusal!.Message}");
 }
@@ -100,8 +102,8 @@ public sealed class PivotDetailPage
                 throw new ArgumentException($"A record carries {record.Values.Count} values, and the page has {_fields.Length} fields.", nameof(records));
         }
         _sourceVersion = sourceVersion;
-        Start = start;
-        Total = total;
+        _start = start;
+        _total = total;
     }
 
     private PivotDetailPage(PivotSourceRefusal refusal)
@@ -131,11 +133,15 @@ public sealed class PivotDetailPage
     /// <summary>The fields each record's values are in, in order.</summary>
     public IReadOnlyList<PivotField> Fields => IsRefused ? throw RefusedError() : _fields;
 
-    /// <summary>The first record's position among the records behind the cell.</summary>
-    public int Start { get; }
+    /// <summary>The first record's position among the records behind the cell. Refused on a
+    /// refusal.</summary>
+    public int Start => IsRefused ? throw RefusedError() : _start;
 
-    /// <summary>How many records are behind the cell.</summary>
-    public long Total { get; }
+    /// <summary>How many records are behind the cell. Refused on a refusal.</summary>
+    public long Total => IsRefused ? throw RefusedError() : _total;
+
+    private readonly int _start;
+    private readonly long _total;
 
     /// <summary>The page's records, in the data's order. Refused on a refusal, which is not an
     /// empty page.</summary>
