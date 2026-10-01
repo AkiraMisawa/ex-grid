@@ -17,6 +17,12 @@ namespace ExPivot.MudBlazor;
 /// is an Inner Popup of its panel, reported so that Escape closes the list first (ADR-0039). The
 /// words are ExPivot's, by id: one <c>Label</c> written on ExPivot words the pane, its panels and
 /// the report's Context Menu alike.</para>
+///
+/// <para>The Layout menu is a menu, so it is drawn by <see cref="MudPivotMenu"/>, with the group
+/// headings and the marked choice ExPivot hands it. The toolbar above the report, Show Details'
+/// tabs and the content of its dialog are not drawn here yet: those members are left at null, so
+/// ExPivot draws its built-in markup for them, the report filter band inside the toolbar drawn by
+/// <see cref="MudPivotReportFilters"/> all the same.</para>
 /// </summary>
 public sealed class MudPivotChrome : IPivotChrome
 {
