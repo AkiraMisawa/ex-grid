@@ -112,3 +112,18 @@ runs on across the Pinned Column" failed in the dark scheme, on both hosts. The 
   - CI is the judge of the Linux pixels.
 - **If CI still parts them**, the paths could not be made one. The next step is then a tolerance of
   one level, for this half-level blend, and nothing wider.
+
+2026-10-01, agent cf-88, after CI run 36934151352, at 523c0b9, which includes the opaque row ground.
+- **The split is unchanged.** The pinned cell is still 79 and the scrollable cell 78, on chrome and
+  msedge and on both hosts. So the reading above was wrong: the split is not the compositing of a
+  transparent row. Both lines are now a translucent rule painted onto an opaque ground as the element
+  paints, and Linux's Chrome still rounds the half-level blend two ways. I could not find which part
+  of the two paths does it, because no Mac path reproduces it.
+- **The opaque row ground is reverted.** It did not change what it was added for. It would also have
+  repainted the rows of a Consumer that sets the grid's ground other than through `--ex-background`,
+  for no gain. Its layer-2 test goes with it.
+- **The test takes the fallback named above:** the two lines compared within one level on each
+  channel, and nothing wider. The blend is 78.53, half a level from both 78 and 79. A rule missing
+  from the pinned cell would leave its ground, about 23 levels away, so the check still catches the
+  defect this ticket fixed. The grounds above the line are still compared exactly. The test's comment
+  says all of this.
