@@ -109,6 +109,24 @@ public class MudFormatCellsTests : MudSheetTestContext
         page.WaitForAssertion(() => Assert.Equal("Fill", SelectedTab(page).TextContent.Trim()));
     }
 
+    [Fact] // ADR-0063 / SH-45 / ADR-0018: two arrows typed together on a circuit — the second pressed on the tab the keyboard has not yet left — move two tabs
+    public async Task Two_arrows_typed_together_move_two_tabs()
+    {
+        var page = RenderPage();
+        await OpenAsync(page, "B2");
+        await SelectedTab(page).KeyDownAsync(new KeyboardEventArgs { Key = "ArrowRight" });
+        page.WaitForAssertion(() => Assert.Equal("Alignment", SelectedTab(page).TextContent.Trim()));
+
+        // Both on Alignment, where DOM focus still was when the second was typed.
+        await AlignmentTab(page).KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
+        await AlignmentTab(page).KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
+
+        page.WaitForAssertion(() => Assert.Equal("Fill", SelectedTab(page).TextContent.Trim()));
+
+        static AngleSharp.Dom.IElement AlignmentTab(Bunit.IRenderedComponent<Bunit.Rendering.ContainerFragment> page) =>
+            page.FindAll(".mud-ex-sheet-format-cells [role=tab]").Single(t => t.TextContent.Trim() == "Alignment");
+    }
+
     [Fact] // ADR-0063 / SH-45, case 22: a later opening reopens on the last tab shown
     public async Task A_later_opening_reopens_on_the_last_tab_shown()
     {

@@ -22,7 +22,11 @@ internal sealed class MudFormatCellsTabs : MudTabs
     protected override async Task HandleTabKeyDownAsync(KeyboardEventArgs e, MudTabPanel panel)
     {
         var panels = Panels.Where(p => !p.Disabled).ToList();
-        var at = panels.IndexOf(panel);
+        // From the tab shown, not the tab the key was pressed on: on a circuit, a second arrow
+        // typed with the first is pressed on the tab the keyboard has not yet left, a round trip
+        // before the first is answered. The tab shown is where the keyboard is going, as the
+        // built-in Chrome counts from it.
+        var at = panels.IndexOf(ActivePanel ?? panel);
         int? to = at < 0 ? null : e.Key switch
         {
             "ArrowRight" => (at + 1) % panels.Count,
