@@ -602,6 +602,10 @@
                                     }
                                 </select>
                                 <input @bind="_panelValueText" @bind:event="oninput" @ref="_panelValueField" />
+                                @if (PanelRefusal(panelColumn, _panelValueText) is { } refusedFirst)
+                                {
+                                    <p class="ex-popover-refusal" role="alert">@refusedFirst</p>
+                                }
                                 @* A second condition, joined by And or Or, as Excel's Custom AutoFilter
                                    (ADR-0009). Left at "(none)" it applies nothing of its own. *@
                                 <div class="ex-popover-join" role="radiogroup">
@@ -621,6 +625,10 @@
                                 @if (_panelSecondOperator is { } second && FilterPanelChoices.TakesOperand(second))
                                 {
                                     <input class="ex-popover-second" @bind="_panelSecondValueText" @bind:event="oninput" />
+                                    @if (PanelRefusal(panelColumn, _panelSecondValueText) is { } refusedSecond)
+                                    {
+                                        <p class="ex-popover-refusal" role="alert">@refusedSecond</p>
+                                    }
                                 }
                             }
                             <div class="ex-popover-actions">
@@ -5067,13 +5075,13 @@
         // substituted panel starts from (ADR-0009/0010).
         var current = CurrentSpecOf(declared.Name);
         _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: false);
-        // A date operand is written as the cell shows it, in its ISO form, which ParseOperand
-        // reads back in the invariant culture first: a culture's own text would read a day
-        // and a month the other way round there (ADR-0006, note of 2026-10-01).
-        _panelValueText = FilterPanelChoices.InitialOperand(current) is { } first ? DisplayText.Of(first) : "";
+        // An operand reopens in a text that reads back as itself (ADR-0006, note of
+        // 2026-10-01): a date in its ISO form, a number in the current culture's own
+        // separators, ungrouped (tickets 94 and 96).
+        _panelValueText = FilterPanelChoices.OperandText(FilterPanelChoices.InitialOperand(current), CultureInfo.CurrentCulture);
         var (secondOperator, secondOperand, combinator) = FilterPanelChoices.InitialSecond(current);
         _panelSecondOperator = secondOperator;
-        _panelSecondValueText = secondOperand is { } second ? DisplayText.Of(second) : "";
+        _panelSecondValueText = FilterPanelChoices.OperandText(secondOperand, CultureInfo.CurrentCulture);
         _panelCombinator = combinator;
         var startedOn = _panelOperator;
 
@@ -5111,9 +5119,20 @@
         operand = null;
         if (!FilterPanelChoices.TakesOperand(op) || string.IsNullOrEmpty(text))
             return true;
-        operand = FilterPanelChoices.ParseOperand(type, text);
-        return operand is not null;
+        var reading = FilterPanelChoices.ReadOperand(type, text, CultureInfo.CurrentCulture);
+        operand = reading.Value;
+        return !reading.IsRefused;
     }
+
+    /// <summary>Why the operand typed in the built-in condition form is refused, in the
+    /// built-in Chrome's words, or null where it reads (ADR-0023; ticket 96): a text that is
+    /// not the column's type as the current culture writes it, or that reads as two numbers,
+    /// is said so by name, never guessed.</summary>
+    private string? PanelRefusal(int column, string text)
+        => text.Length == 0
+            ? null
+            : FilterPanelChoices.RefusalText(
+                FilterPanelChoices.ReadOperand(Columns[column].Type, text, CultureInfo.CurrentCulture), text, CultureInfo.CurrentCulture);
 
     /// <summary>A value as the built-in panel lists it, and as its search matches it: the text
     /// its cell shows — the column's own format, or a date's ISO form (ADR-0006) — and Blank in
@@ -5227,7 +5246,8 @@
 
     /// <summary>Whether OK shows it can apply: not while the value list's answer keeps
     /// nothing (ADR-0009, as Excel's OK). The condition form's OK stays available, and an
-    /// operand that does not read applies nothing when it is pressed.</summary>
+    /// operand that does not read applies nothing when it is pressed, while the form says why
+    /// (<see cref="PanelRefusal"/>).</summary>
     private bool PanelCanApply(int column)
         => !TryValueListAnswer(column, out var answer) || FilterPanelChoices.CanApply(answer);
 
@@ -6749,7 +6769,8 @@
     /// What the Formula Bar shows for the Focus cell (ADR-0051/0016): the uncommitted text
     /// while it is being edited — the bar is the editor's second surface — and otherwise the
     /// Consumer's opening text where it supplies one, or the full value: never the
-    /// <c>####</c> and never a rounding format, in the current culture's own spelling.
+    /// <c>####</c> and never a rounding format, in the current culture's own spelling — except
+    /// an unformatted date or time, which reads in its cell's ISO form (ADR-0006, ticket 95).
     /// Empty with no Focus, or over a row not in hand.
     /// </summary>
     private string FormulaBarText()
@@ -6771,6 +6792,11 @@
         return column.Value(row) switch
         {
             null => "",
+            // An unformatted date or time reads as its cell does, in its ISO form by type
+            // (ADR-0006, note of 2026-10-01; ticket 95): the current culture is the server's on
+            // the Server host, and a day and a month read the wrong way round are quietly wrong.
+            var date when column.Format is null && date is DateOnly or DateTime or DateTimeOffset or TimeOnly
+                => DisplayText.Of(date),
             IFormattable formattable => formattable.ToString(null, CultureInfo.CurrentCulture),
             var value => value.ToString() ?? "",
         };
