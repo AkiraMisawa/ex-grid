@@ -87,12 +87,14 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
     {
         // A file ends with its footer and the magic again; one without them was cut short.
         var tail = new byte[FileMagic.Length];
-        if (file.Length < 2 * FileMagic.Length)
-            throw IpcFrames.CutShort();
-        file.Seek(-tail.Length, SeekOrigin.End);
-        await file.ReadExactlyAsync(tail, cancellationToken).ConfigureAwait(false);
-        file.Position = 0;
-        if (!tail.AsSpan().SequenceEqual(FileMagic))
+        var whole = file.Length >= 2 * FileMagic.Length;
+        if (whole)
+        {
+            file.Seek(-tail.Length, SeekOrigin.End);
+            await file.ReadExactlyAsync(tail, cancellationToken).ConfigureAwait(false);
+            file.Position = 0;
+        }
+        if (!whole || !tail.AsSpan().SequenceEqual(FileMagic))
             throw new SnapshotException("The Arrow file ends without its footer, so it may have been cut short; a file is read only whole.");
         using var reader = new ArrowFileReader(file, ManagedMemory.Instance, codecs, leaveOpen: true);
         return await ReadBatchesAsync(reader, null, null, null, null).ConfigureAwait(false);
@@ -186,6 +188,12 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
         {
             throw new SnapshotException(string.Create(CultureInfo.InvariantCulture,
                 $"The Arrow stream is malformed: a record batch holds {batch.ColumnCount} columns, and its schema {columns.Length}."));
+        }
+        // A Snapshot's rows are its columns' values: rows with no column would be read as none.
+        if (columns.Length == 0 && batch.Length > 0)
+        {
+            throw new SnapshotException(string.Create(CultureInfo.InvariantCulture,
+                $"The Arrow stream holds {batch.Length:N0} rows and no column, and a Snapshot holds rows only in its columns."));
         }
         var arrays = new ArrayData[columns.Length];
         for (var c = 0; c < arrays.Length; c++)

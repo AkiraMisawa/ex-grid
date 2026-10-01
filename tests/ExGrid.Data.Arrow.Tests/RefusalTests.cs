@@ -338,14 +338,26 @@ public class RefusalTests
         Assert.Equal("The Arrow stream ends before its end-of-stream marker, so it may have been cut short; a stream is read only whole.", refusal.Message);
     }
 
-    [Fact] // ADR-0063: an Arrow file cut short, its footer gone, is refused
-    public async Task A_file_cut_short_is_refused()
+    [Theory] // ADR-0063: an Arrow file cut short, its footer gone, is refused
+    [InlineData(10)]
+    [InlineData(8)]
+    public async Task A_file_cut_short_is_refused(int kept)
     {
         var file = File(new IpcOptions(), Batch(("N", Raw<long>(Int64Type.Default, 1L, 2L))));
 
-        var refusal = await RefusalAsync(file[..^10]);
+        var refusal = await RefusalAsync(kept == 8 ? file[..8] : file[..^kept]);
 
         Assert.Equal("The Arrow file ends without its footer, so it may have been cut short; a file is read only whole.", refusal.Message);
+    }
+
+    [Fact] // ADR-0063: rows with no column are refused, as a Snapshot holds rows only in its columns and would read them as none
+    public async Task Rows_without_a_column_are_refused()
+    {
+        var payload = Stream(new RecordBatch(new Schema([], null), [], 3));
+
+        var refusal = await RefusalAsync(payload);
+
+        Assert.Equal("The Arrow stream holds 3 rows and no column, and a Snapshot holds rows only in its columns.", refusal.Message);
     }
 
     [Fact] // ADR-0063: a refused read throws, and yields no Snapshot
