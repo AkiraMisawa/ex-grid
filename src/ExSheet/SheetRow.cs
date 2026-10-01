@@ -18,7 +18,7 @@ public sealed class SheetRow
 {
     private readonly Sheet _sheet;
     private Dictionary<int, SheetCellText?>? _cells;
-    private Dictionary<int, (int Characters, string? Text)>? _painted;
+    private Dictionary<int, (double ContentWidthPx, global::ExGrid.Columns.CellTextMetrics Metrics, string? Text)>? _painted;
     private Dictionary<int, global::ExGrid.Cells.CellAppearance>? _appearances;
     private int _appearancesRead;
 
@@ -43,31 +43,51 @@ public sealed class SheetRow
     }
 
     /// <summary>
-    /// What the cell paints in a column <paramref name="characters"/> wide, in Excel's unit
-    /// (ADR-0047, third round; ADR-0050 item 11): for a number in General, the engine's text
-    /// fitted to the width — <c>=1/3</c> reads <c>0.333333</c> in a default column — or the run
-    /// of <c>#</c> that becomes <c>####</c> where not even the shortest form fits. Null where the
-    /// cell paints its value's own text: text, booleans, Error Values, blanks, any other format
-    /// (the grid's <c>####</c> rule decides those), and a General number the width does not
-    /// shorten. The value's own text stays the accessible name and the copy.
+    /// What the cell paints in a column whose content is <paramref name="contentWidthPx"/> wide
+    /// (ADR-0047, third round; ADR-0050 item 11; ticket 91): for a number in General, the widest
+    /// text the engine fits to a width in characters that <paramref name="metrics"/> — the Cell
+    /// Metrics the grid judges the cell with, bold where the cell is — charge no wider than the
+    /// content, so <c>=1/3</c> reads <c>0.333333</c> in a default column; or the run of <c>#</c>
+    /// that becomes <c>####</c> where not even the shortest form fits. Null where the cell paints
+    /// its value's own text: text, booleans, Error Values, blanks, any other format (the grid's
+    /// <c>####</c> rule decides those), and a General number the width does not shorten. The
+    /// value's own text stays the accessible name and the copy.
     /// </summary>
-    internal string? PaintedAt(int column, double characters)
+    internal string? PaintedAt(int column, double contentWidthPx, global::ExGrid.Columns.CellTextMetrics metrics)
     {
         if (At(column) is not { IsNumber: true } shown || ReferenceEquals(shown.Text, SheetCellText.Unshowable)) return null;
-        // The engine counts whole characters; a width that is 8 may arrive as 7.9999999.
-        var whole = (int)Math.Min(int.MaxValue, Math.Floor(Math.Max(0, characters) + 1e-9));
         _painted ??= [];
-        if (_painted.TryGetValue(column, out var cached) && cached.Characters == whole) return cached.Text;
+        if (_painted.TryGetValue(column, out var cached) && cached.ContentWidthPx == contentWidthPx && cached.Metrics == metrics)
+            return cached.Text;
         var address = new CellAddress(Index, column);
         string? painted = null;
         if (_sheet.GetNumberFormat(address).IsGeneral)
         {
-            var display = _sheet.GetDisplay(address, whole);
-            var text = display.CannotShow ? SheetCellText.Unshowable : display.Text;
+            var text = FittedGeneral(address, contentWidthPx, metrics);
             painted = string.Equals(text, shown.Text, StringComparison.Ordinal) ? null : text;
         }
-        _painted[column] = (whole, painted);
+        _painted[column] = (contentWidthPx, metrics, painted);
         return painted;
+    }
+
+    /// <summary>
+    /// The widest text the engine writes for a General number at a width in characters
+    /// (ADR-0047) that <paramref name="metrics"/> charge no wider than the content, each glyph at
+    /// its own width (ADR-0016; ticket 91) — so a decimal point, narrower than a digit, can leave
+    /// room for one more digit, and an exponent's wide <c>+</c> can take one away. The search
+    /// starts one character past the digits that fit: General's text holds at most one glyph
+    /// narrower than a digit, its decimal separator.
+    /// </summary>
+    private string FittedGeneral(CellAddress address, double contentWidthPx, global::ExGrid.Columns.CellTextMetrics metrics)
+    {
+        var digits = Math.Min(Sheet.MaxColumnWidth, Math.Max(0, SheetColumns.CharactersIn(contentWidthPx, metrics)));
+        // The engine counts whole characters; a width that is 8 may arrive as 7.9999999.
+        for (var characters = (int)Math.Floor(digits + 1e-9) + 1; characters > 0; characters--)
+        {
+            var display = _sheet.GetDisplay(address, characters);
+            if (!display.CannotShow && metrics.TextWidthPx(display.Text) <= contentWidthPx) return display.Text;
+        }
+        return SheetCellText.Unshowable;
     }
 
     /// <summary>

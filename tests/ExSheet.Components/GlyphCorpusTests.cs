@@ -43,8 +43,10 @@ public class GlyphCorpusTests
 
     /// <summary>
     /// Every text the built-in formats paint for the values above: Number and Currency in each
-    /// negative style, at 0 and 2 places, Percentage, Scientific, General, the culture's built-in
-    /// currency, and the Date and Time types. Ordinal order, no duplicates.
+    /// negative style, at 0 and 2 places, Percentage, Scientific, General — whole, and fitted to
+    /// every width from 1 to 12 characters, since ExSheet paints the widest fitted text the grid's
+    /// estimate holds (ticket 91) — the culture's built-in currency, and the Date and Time types.
+    /// Ordinal order, no duplicates.
     /// </summary>
     internal static SortedSet<string> Generate()
     {
@@ -62,6 +64,12 @@ public class GlyphCorpusTests
                     sheet.SetEntry(address, Entry.FromValue(Value.FromNumber(value)));
                     var shown = sheet.GetDisplay(address);
                     if (!shown.CannotShow && shown.Text.Length > 0) all.Add(shown.Text);
+                    if (code != "General") continue;
+                    for (var characters = 1; characters <= 12; characters++)
+                    {
+                        var fitted = sheet.GetDisplay(address, characters);
+                        if (!fitted.CannotShow && fitted.Text.Length > 0) all.Add(fitted.Text);
+                    }
                 }
             }
             foreach (var places in new[] { 0, 2 })

@@ -21,12 +21,14 @@ internal static class SheetWidening
     /// <summary>
     /// The columns the numbers in <paramref name="cells"/> widen, ascending, each with the width in
     /// characters it is widened to. The engine says how many characters each number needs under
-    /// its Number Format as it is now (<see cref="Sheet.GetWidthOnEntry"/>); the width in pixels is
-    /// what the grid's own estimate charges for the text the cell shows at that many characters,
-    /// in the Cell Metrics the grid resolves, so the widened column holds it and the grid does not
-    /// hash it (ADR-0016). A column whose width in <paramref name="columns"/> already holds the
-    /// widest of its numbers is left as it is. A whole column or row costs what the Sheet holds,
-    /// not its million cells.
+    /// its Number Format as it is now (<see cref="Sheet.GetWidthOnEntry"/>), and so which text the
+    /// cell shows; the width in pixels is what the grid's own estimate charges for that text, each
+    /// glyph at its own width and bold where the cell's Font is, so the widened column holds it and
+    /// the grid does not hash it (ADR-0016). It is not floored at a digit a character: a date's
+    /// letters and separators are charged what they paint, as Excel widens to the text its font
+    /// paints (ticket 91; the twelfth run's case 19). A column whose width in
+    /// <paramref name="columns"/> already holds the widest of its numbers is left as it is. A
+    /// whole column or row costs what the Sheet holds, not its million cells.
     /// </summary>
     internal static IReadOnlyList<(int Column, double Characters)> Of(Sheet sheet, IEnumerable<CellRange> cells, SheetColumnList columns, CellTextMetrics metrics)
     {
@@ -39,7 +41,8 @@ internal static class SheetWidening
                 if (sheet.GetColumnWidth(column) is { IsSetByUser: true }) continue;
                 if (sheet.GetWidthOnEntry(address) is not { } characters) continue;
                 var shown = sheet.GetDisplay(address, characters);
-                var px = Math.Ceiling(Math.Max(SheetColumns.PxOf(characters, metrics), metrics.EstimatePx(shown.Text)));
+                var charged = sheet.GetFont(address).Bold ? metrics.Bold : metrics;
+                var px = Math.Ceiling(charged.EstimatePx(shown.Text));
                 if (px > columns.WidthPxOf(column) && px > needed.GetValueOrDefault(column)) needed[column] = px;
             }
         }
