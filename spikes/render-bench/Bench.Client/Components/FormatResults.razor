@@ -1,0 +1,58 @@
+@* The results table of the cell format bench, as its own component so that the measured renders of
+   the page do not diff it: it renders only when a run is added. *@
+@if (Runs.Count > 0)
+{
+    <table class="results">
+        <thead>
+            <tr>
+                <th>Mode</th><th>Share</th><th>N</th>
+                <th>Fling render<br />p50 / p95 / max</th>
+                <th>Fling frame<br />p50 / p95 / max</th>
+                <th>Slow frame<br />p50 / p95 / max</th>
+                <th>Row renders / step<br />fling · slow</th>
+                <th>Layer renders<br />/ slow step</th>
+                <th>Layer<br />elements</th>
+                <th>Column change frame<br />p50 / p95 / max</th>
+                <th>Column change<br />rows · layer</th>
+                <th>One cell, max<br />rows · layer</th>
+                <th>Rows skip</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Runs)
+            {
+                <tr class="@(r.Fling.Frame.P50 > 16.6 ? "bad" : r.Fling.Frame.P95 > 16.6 ? "warn" : "ok")">
+                    <td><b>@r.Mode</b></td>
+                    <td>@(r.SharePct)%</td>
+                    <td>@r.Distinct</td>
+                    <td>@Three(r.Fling.Render)</td>
+                    <td>@Three(r.Fling.Frame)</td>
+                    <td>@Three(r.Slow.Frame)</td>
+                    <td>@r.Fling.RowRendersPerStep.ToString("F1") · @r.Slow.RowRendersPerStep.ToString("F1")</td>
+                    <td>@r.Slow.LayerRendersPerStep.ToString("F1")</td>
+                    <td>@r.Fling.LayerElements.ToString("F0")</td>
+                    <td>@Three(r.ColumnChange.Frame)</td>
+                    <td>@r.ColumnChange.RowRendersPerStep.ToString("F1") · @r.ColumnChange.LayerRendersPerStep.ToString("F1")</td>
+                    <td>@r.OneCell.MaxRowRenders · @r.OneCell.MaxLayerRenders</td>
+                    <td>@(r.RowsSkip ? "yes" : "NO: " + r.SkipNote)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter] public List<FormatRunResult> Runs { get; set; } = [];
+    [Parameter] public int Version { get; set; }
+
+    private int _renderedVersion = -1;
+
+    protected override bool ShouldRender()
+    {
+        if (_renderedVersion == Version) return false;
+        _renderedVersion = Version;
+        return true;
+    }
+
+    private static string Three(Stats s) => $"{s.P50:F1} / {s.P95:F1} / {s.Max:F1}";
+}

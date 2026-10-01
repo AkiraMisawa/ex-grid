@@ -1,0 +1,693 @@
+@page "/format"
+@using System.Diagnostics
+@using Bench.Client.Components
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>cell format bench</PageTitle>
+
+<h3>ExSheet — per-cell appearance (ticket 44)</h3>
+<p class="muted">
+    What a Font, a Fill and Borders cost per painted cell, on the settled row boundary
+    (<a href="">RowComponent</a>: the row is a component, cells are plain markup). ADR-0063,
+    "How it is painted: measured first". Each step records Blazor's render and DOM update (as the
+    other page does), the style and layout it caused, and the next frame's paint.
+</p>
+
+<div class="controls">
+    <label>Visible rows <input type="number" @bind="VisibleRows" min="5" max="120" /></label>
+    <label>Visible cols <input type="number" @bind="VisibleCols" min="1" max="80" /></label>
+    <label>Rows moved per step <input type="number" @bind="Step" min="1" max="200" /></label>
+    <label>Iterations <input type="number" @bind="Iterations" min="20" max="2000" /></label>
+    <span class="cells">= @(VisibleRows * VisibleCols) cells/render</span>
+    <button @onclick="RunFullAsync" disabled="@_running">@(_running ? "measuring…" : "Measure cell format")</button>
+    <button @onclick="RunQuickAsync" disabled="@_running">@(_running ? "measuring…" : "Measure cell format (quick: 50%, N 16)")</button>
+    <button @onclick="RunBordersAsync" disabled="@_running">@(_running ? "measuring…" : "Measure borders (each share and N beside its own baseline)")</button>
+    <button @onclick="RunInCellAsync" disabled="@_running">@(_running ? "measuring…" : "Measure in-cell borders (the Excel variants)")</button>
+</div>
+
+@if (_error is not null)
+{
+    <pre class="err-box">@_error</pre>
+}
+
+@if (_status is not null)
+{
+    <p class="muted">@_status</p>
+}
+
+<FormatResults Runs="_runs" Version="_runsVersion" />
+@if (_runs.Count > 0 && !_running)
+{
+    <p class="muted">
+        <b>Frame</b> = render + style and layout + the next frame's paint, all on the main thread;
+        rasterisation and compositing run elsewhere and are not in it. <b>Slow</b> scrolls one row per
+        step, so every row but the entering one must skip. <b>Column change</b> gives a new format to
+        a whole column, so a generated stylesheet grows by a rule.
+    </p>
+    <button @onclick="PostResultsAsync" disabled="@_posting">@_postLabel</button>
+}
+
+<h4>Look at one configuration, or scroll it by hand</h4>
+<div class="controls">
+    <select @bind="_showMode">
+        @foreach (var m in Enum.GetValues<CellFormatMode>())
+        {
+            <option value="@m">@m</option>
+        }
+    </select>
+    <select @bind="_showShare">
+        @foreach (var s in Shares) { <option value="@s">@s%</option> }
+    </select>
+    <select @bind="_showDistinct">
+        @foreach (var n in Distincts) { <option value="@n">N @n</option> }
+    </select>
+    <button @onclick="Show" disabled="@_running">Show</button>
+    <button @onclick="ShowStyles" disabled="@_running">Show the thirteen line styles</button>
+    <button @onclick="StartFpsAsync">Start frame measurement</button>
+    <button @onclick="StopFpsAsync">Stop and summarise</button>
+    @if (_manualStats is not null)
+    {
+        <span>Frame interval median @_manualStats.P50.ToString("F1")ms / p95 @_manualStats.P95.ToString("F1")ms
+            (@_manualStats.OverBudgetPct.ToString("F0")% over 16.6ms)</span>
+    }
+    <span class="muted">Showing @_mode@(_mode == CellFormatMode.RowComponent ? "" : $", {_share}%, N {_distinct}")</span>
+</div>
+
+<FormatStyles Css="@_css" Version="_cssVersion" />
+
+<div class="@ScrollerClass" @ref="_scrollerEl" @onscroll="OnScrollAsync">
+    <div class="spacer" style="height:@(TotalRows * RowHeight)px">
+        @* Pinned to the top while running, as on the other page, so the rows being measured are on
+           screen and the browser lays out and paints them. *@
+        <div class="window" @ref="_windowEl" style="transform: translateY(@(_running ? 0 : _startRow * RowHeight)px)">
+            @for (var r = 0; r < VisibleRows; r++)
+            {
+                var abs = (_startRow + r) % TotalRows;
+                var row = _rows[abs];
+                <FormatRow @key="row.Id" RowData="row" Cols="_cols" VisibleCols="VisibleCols" Mode="_mode" Table="_table"
+                           Format="@(_fontRows?[abs])" Borders="@(_mode is CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox ? _borders!.Rows[abs] : null)" />
+            }
+            @if (_mode == CellFormatMode.BorderLayer)
+            {
+                <BorderOverlay Sheet="_borders!" Table="_borderTable!" StartRow="_startRow" VisibleRows="VisibleRows"
+                               VisibleCols="VisibleCols" Version="_borderVersion"
+                               RowHeight="RowHeight" CellWidth="CellWidth" Left="KeyColWidth" />
+            }
+            @if (_mode == CellFormatMode.BorderLayerPerRow)
+            {
+                <div class="blayer">
+                    @for (var r = 0; r < VisibleRows; r++)
+                    {
+                        var abs = (_startRow + r) % TotalRows;
+                        <BorderStrip @key="_rows[abs].Id" Borders="_borders!.Rows[abs]" Table="_borderTable!" VisibleCols="VisibleCols"
+                                     RowHeight="RowHeight" CellWidth="CellWidth" Left="KeyColWidth" />
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private const int TotalRows = 5000;
+    private const int MaxCols = 80;
+    private const int RowHeight = 24;
+    private const int CellWidth = 90;
+    private const int KeyColWidth = 90;
+
+    private static readonly int[] Shares = [10, 50, 100];
+    private static readonly int[] Distincts = [1, 16, 256];
+
+    private int VisibleRows = 40;
+    private int VisibleCols = 20;
+    private int Step = 50;
+    private int Iterations = 200;
+
+    private Row[] _rows = [];
+    private Col[] _cols = [];
+
+    // The configuration on screen.
+    private CellFormatMode _mode = CellFormatMode.RowComponent;
+    private int _share, _distinct;
+    private FormatTable? _table;
+    private RowFormat[]? _fontRows;
+    private BorderTable? _borderTable;
+    private BorderSheet? _borders;
+    private int _borderVersion;
+    private string _css = "";
+    private int _cssVersion;
+
+    private CellFormatMode _showMode = CellFormatMode.CellFormatClasses;
+    private int _showShare = 50;
+    private int _showDistinct = 16;
+
+    private int _startRow;
+    private bool _running;
+    private string? _error;
+    private string? _status;
+    private bool _posting;
+    private string _postLabel = "Save results to the server";
+    private readonly List<FormatRunResult> _runs = [];
+    private int _runsVersion;
+    private Stats? _manualStats;
+    private Dictionary<string, object> _env = new();
+
+    private ElementReference _scrollerEl;
+    private ElementReference _windowEl;
+    private TaskCompletionSource? _renderTcs;
+    private long _renderedAt;
+    private double _layoutMs;
+
+    protected override void OnInitialized()
+    {
+        var rnd = new Random(42);
+        _rows = new Row[TotalRows];
+        for (var i = 0; i < TotalRows; i++)
+        {
+            var values = new decimal[MaxCols];
+            for (var c = 0; c < MaxCols; c++)
+                values[c] = (decimal)((rnd.NextDouble() - 0.5) * 2_000_000);
+            _rows[i] = new Row { Id = i, BookId = i % 120, Book = $"BK{i % 120:D3}", Values = values };
+        }
+
+        _cols = new Col[MaxCols];
+        for (var c = 0; c < MaxCols; c++)
+        {
+            var ci = c;
+            _cols[c] = new Col { Header = $"M{ci}", Get = row => row.Values[ci] };
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var tcs = _renderTcs;
+        _renderTcs = null;
+        if (tcs is not null)
+        {
+            // The DOM has just been updated and the browser has not had a frame since, so the style
+            // and layout forced here are exactly the ones this render caused.
+            _renderedAt = Stopwatch.GetTimestamp();
+            _layoutMs = ((IJSInProcessRuntime)JS).Invoke<double>("bench.layout", _windowEl);
+            tcs.TrySetResult();
+        }
+
+        if (firstRender)
+        {
+            try { _env = await JS.InvokeAsync<Dictionary<string, object>>("bench.env"); }
+            catch { /* spike: environment capture is best-effort */ }
+        }
+    }
+
+    private Task RenderOnceAsync()
+    {
+        // StateHasChanged() can complete the render, and OnAfterRenderAsync, synchronously: hold the
+        // TCS in a local.
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _renderTcs = tcs;
+        StateHasChanged();
+        return tcs.Task;
+    }
+
+    // ---- configurations ----
+
+    /// <param name="specimen">Border modes only: no random cells, and black lines, so that ShowStyles
+    /// can place one box of each of the thirteen styles to check the geometry against Excel's.</param>
+    private void Setup(CellFormatMode mode, int share, int distinct, bool specimen = false)
+    {
+        _mode = mode;
+        _share = share;
+        _distinct = distinct;
+        _table = null;
+        _fontRows = null;
+        _borderTable = null;
+        _borders = null;
+        _startRow = 0;
+
+        var rnd = new Random(44);
+        switch (mode)
+        {
+            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses:
+                _table = new FormatTable();
+                for (var i = 0; i < distinct; i++) _table.Add();
+                _fontRows = new RowFormat[TotalRows];
+                for (var r = 0; r < TotalRows; r++)
+                {
+                    var ids = new ushort[MaxCols];
+                    for (var c = 0; c < MaxCols; c++)
+                        if (rnd.Next(100) < share) ids[c] = (ushort)(1 + rnd.Next(distinct));
+                    _fontRows[r] = new RowFormat(ids);
+                }
+                _css = mode == CellFormatMode.CellFormatClasses ? _table.Rules : "";
+                break;
+
+            case CellFormatMode.BorderLayer or CellFormatMode.BorderInCell or CellFormatMode.BorderLayerPerRow
+                or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+                _borderTable = new BorderTable();
+                for (var i = 0; i < distinct; i++) _borderTable.Add(specimen ? "#000000" : null);
+                var recorded = new ushort[TotalRows][];
+                for (var r = 0; r < TotalRows; r++)
+                {
+                    recorded[r] = new ushort[MaxCols];
+                    for (var c = 0; c < MaxCols; c++)
+                        if (!specimen && rnd.Next(100) < share) recorded[r][c] = (ushort)(1 + rnd.Next(distinct));
+                }
+                _borders = new BorderSheet(recorded, _borderTable, mode switch
+                {
+                    CellFormatMode.BorderInCell => BorderPaint.InCell,
+                    CellFormatMode.BorderInCellExcel => BorderPaint.InCellExcel,
+                    CellFormatMode.BorderInCellExcelBox => BorderPaint.InCellExcelBox,
+                    _ => BorderPaint.Layer,
+                });
+                _borderVersion++;
+                _css = BorderRules();
+                break;
+
+            default:
+                _css = "";
+                break;
+        }
+        _cssVersion++;
+    }
+
+    /// <summary>The modes interleave within each share and N, so that anything else the machine does
+    /// during a run lands on every mode alike rather than on one mode's block. The baseline runs
+    /// first and last, so a drift across the run shows.</summary>
+    // The modes whose static rule reads per-cell custom properties scope it by a class on the grid.
+    private string ScrollerClass => _mode switch
+    {
+        CellFormatMode.CellFormatVars => "scroller fx vars",
+        CellFormatMode.BorderInCellExcel => "scroller fx xcell",
+        _ => "scroller fx",
+    };
+
+    private string BorderRules() => _mode switch
+    {
+        CellFormatMode.BorderInCell => _borderTable!.CellRules,
+        CellFormatMode.BorderInCellExcel => _borderTable!.ExcelRules,
+        CellFormatMode.BorderInCellExcelBox => _borderTable!.BoxRules,
+        _ => _borderTable!.LayerRules,
+    };
+
+    private enum Sweep { Full, Quick, Borders, InCell }
+
+    private static IEnumerable<(CellFormatMode Mode, int Share, int Distinct)> Configs(Sweep sweep)
+    {
+        if (sweep == Sweep.InCell)
+        {
+            // The in-cell modes against each other, each share and N beside a baseline of its own:
+            // the worst cases of the border sweep, and the two that bracket them.
+            CellFormatMode[] inCell =
+            [
+                CellFormatMode.RowComponent, CellFormatMode.BorderInCell, CellFormatMode.BorderInCellExcel,
+                CellFormatMode.BorderInCellExcelBox,
+            ];
+            foreach (var (share, distinct) in new[] { (10, 1), (50, 16), (50, 256), (100, 1), (100, 16), (100, 256) })
+                foreach (var mode in inCell)
+                    yield return (mode, share, distinct);
+            yield break;
+        }
+
+        if (sweep == Sweep.Borders)
+        {
+            // Each share and N gets a baseline of its own, measured beside it, so a mode is read as a
+            // delta against the RowComponent next to it rather than against one at the far end.
+            CellFormatMode[] borders =
+            [
+                CellFormatMode.RowComponent, CellFormatMode.BorderInCell, CellFormatMode.BorderInCellExcel,
+                CellFormatMode.BorderLayer, CellFormatMode.BorderLayerPerRow,
+            ];
+            foreach (var share in Shares)
+                foreach (var distinct in Distincts)
+                    foreach (var mode in borders)
+                        yield return (mode, share, distinct);
+            yield break;
+        }
+
+        var quick = sweep == Sweep.Quick;
+        yield return (CellFormatMode.RowComponent, 0, 0);
+        CellFormatMode[] modes =
+        [
+            CellFormatMode.CellFormatInline, CellFormatMode.CellFormatVars, CellFormatMode.CellFormatClasses,
+            CellFormatMode.BorderLayer, CellFormatMode.BorderInCell, CellFormatMode.BorderLayerPerRow,
+            CellFormatMode.BorderInCellExcel,
+        ];
+        foreach (var share in quick ? [50] : Shares)
+            foreach (var distinct in quick ? [16] : Distincts)
+                foreach (var mode in modes)
+                    yield return (mode, share, distinct);
+        yield return (CellFormatMode.RowComponent, 0, 0);
+    }
+
+    // ---- the changes a step makes, outside the timed region ----
+
+    private void ChangeColumn(int column)
+    {
+        switch (_mode)
+        {
+            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses:
+            {
+                var id = _table!.Add();
+                for (var r = 0; r < TotalRows; r++)
+                {
+                    var ids = (ushort[])_fontRows![r].Ids.Clone();
+                    ids[column] = id;
+                    _fontRows[r] = new RowFormat(ids);
+                }
+                if (_mode == CellFormatMode.CellFormatClasses)
+                {
+                    _css = _table.Rules;
+                    _cssVersion++;
+                }
+                break;
+            }
+
+            case CellFormatMode.BorderLayer or CellFormatMode.BorderInCell or CellFormatMode.BorderLayerPerRow
+                or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+            {
+                var k = _borderTable!.Add();
+                for (var r = 0; r < TotalRows; r++) _borders!.Recorded[r][column] = k;
+                for (var r = 0; r < TotalRows; r++) _borders!.Resolve(r);
+                _borderVersion++;
+                _css = BorderRules();
+                _cssVersion++;
+                break;
+            }
+
+            default:
+                // No format to change: a whole column of new values instead, the floor of "every
+                // painted row renders again". Row identity is the change signal (ADR-0003).
+                for (var r = 0; r < TotalRows; r++)
+                {
+                    var old = _rows[r];
+                    var values = (decimal[])old.Values.Clone();
+                    values[column] = -values[column];
+                    _rows[r] = new Row { Id = old.Id, BookId = old.BookId, Book = old.Book, Values = values };
+                }
+                break;
+        }
+    }
+
+    private void ChangeOneCell(int i)
+    {
+        var abs = (_startRow + 10 + i) % TotalRows;
+        var column = (3 + i) % VisibleCols;
+        switch (_mode)
+        {
+            case CellFormatMode.CellFormatInline or CellFormatMode.CellFormatVars or CellFormatMode.CellFormatClasses:
+            {
+                var ids = (ushort[])_fontRows![abs].Ids.Clone();
+                ids[column] = Next(ids[column], _distinct);
+                _fontRows[abs] = new RowFormat(ids);
+                break;
+            }
+
+            case CellFormatMode.BorderLayer or CellFormatMode.BorderInCell or CellFormatMode.BorderLayerPerRow
+                or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+            {
+                var recorded = _borders!.Recorded[abs];
+                recorded[column] = Next(recorded[column], _distinct);
+                // The cell's top side is the bottom edge of the row above, and in BorderInCellExcel
+                // the row below paints the part of a thick or double line that reaches into it.
+                var rules = _borderTable!.Version;
+                if (_borders.Resolve(abs - 1) | _borders.Resolve(abs) | _borders.Resolve(abs + 1)) _borderVersion++;
+                // BorderInCellExcelBox adds a shadow rule the first time a combination appears.
+                if (_borderTable.Version != rules)
+                {
+                    _css = BorderRules();
+                    _cssVersion++;
+                }
+                break;
+            }
+
+            default:
+            {
+                var old = _rows[abs];
+                var values = (decimal[])old.Values.Clone();
+                values[column] = -values[column];
+                _rows[abs] = new Row { Id = old.Id, BookId = old.BookId, Book = old.Book, Values = values };
+                break;
+            }
+        }
+
+        static ushort Next(ushort current, int distinct) =>
+            current == 0 ? (ushort)1 : distinct > 1 ? (ushort)(current % distinct + 1) : (ushort)0;
+    }
+
+    // ---- measuring ----
+
+    private readonly record struct Sample(double Render, double Layout, double Paint, int Rows, int Layer, int Sheet, int Elements);
+
+    private async Task<Sample> MeasureAsync(Action? change)
+    {
+        FormatRow.Renders = 0;
+        BorderOverlay.Renders = 0;
+        BorderStrip.Renders = 0;
+        FormatStyles.Renders = 0;
+
+        var t0 = Stopwatch.GetTimestamp();
+        change?.Invoke();
+        await RenderOnceAsync();
+        var render = (_renderedAt - t0) * 1000.0 / Stopwatch.Frequency;
+        var layout = _layoutMs;
+        var elements = _mode switch
+        {
+            CellFormatMode.BorderLayer => BorderOverlay.LastElements,
+            CellFormatMode.BorderLayerPerRow => BorderStrip.Elements,
+            _ => 0,
+        };
+        var sample = new Sample(render, layout, 0, FormatRow.Renders, BorderOverlay.Renders + BorderStrip.Renders,
+            FormatStyles.Renders, elements);
+
+        // The frame after the render: its main-thread paint and commit.
+        var paint = await JS.InvokeAsync<double>("bench.paint");
+        return sample with { Paint = paint };
+    }
+
+    /// <param name="prepare">The step's model change, made before the clock starts; returns what the
+    /// timed region itself changes (the scroll position), or null.</param>
+    private async Task<PhaseResult> PhaseAsync(int steps, int warmUp, Func<int, Action?> prepare)
+    {
+        for (var w = 0; w < warmUp; w++) await MeasureAsync(prepare(-1 - w));
+        GC.Collect();
+        await Task.Delay(50);
+
+        var samples = new List<Sample>(steps);
+        for (var i = 0; i < steps; i++)
+        {
+            var change = prepare(i);
+            samples.Add(await MeasureAsync(change));
+        }
+
+        return new PhaseResult
+        {
+            Steps = steps,
+            Render = Stats.From(samples.Select(s => s.Render).ToList()),
+            Layout = Stats.From(samples.Select(s => s.Layout).ToList()),
+            Paint = Stats.From(samples.Select(s => s.Paint).ToList()),
+            Frame = Stats.From(samples.Select(s => s.Render + s.Layout + s.Paint).ToList()),
+            RowRendersPerStep = samples.Average(s => s.Rows),
+            MaxRowRenders = samples.Max(s => s.Rows),
+            LayerRendersPerStep = samples.Average(s => s.Layer),
+            MaxLayerRenders = samples.Max(s => s.Layer),
+            StyleSheetRendersPerStep = samples.Average(s => s.Sheet),
+            LayerElements = samples.Average(s => s.Elements),
+        };
+    }
+
+    private Func<int, Action?> Scroll(int step) =>
+        _ => () => _startRow = (_startRow + step) % (TotalRows - VisibleRows);
+
+    private async Task<FormatRunResult> MeasureConfigAsync(CellFormatMode mode, int share, int distinct)
+    {
+        Setup(mode, share, distinct);
+        await RenderOnceAsync();
+        await Task.Delay(100);
+
+        var fling = await PhaseAsync(Iterations, 5, Scroll(Step));
+        var slow = await PhaseAsync(Math.Max(20, Iterations / 2), 5, Scroll(1));
+        var noChange = await PhaseAsync(5, 1, _ => null);
+        var oneCell = await PhaseAsync(5, 0, i =>
+        {
+            if (i >= 0) ChangeOneCell(i);
+            return null;
+        });
+        var column = await PhaseAsync(Math.Max(10, Iterations / 5), 1, i =>
+        {
+            ChangeColumn((i + VisibleCols) % VisibleCols);
+            GC.Collect();   // the model's garbage is not the painting's cost
+            return null;
+        });
+
+        var (skip, note) = Skips(mode, slow, noChange, oneCell, column);
+        return new FormatRunResult
+        {
+            Mode = mode.ToString(),
+            SharePct = share,
+            Distinct = distinct,
+            VisibleRows = VisibleRows,
+            VisibleCols = VisibleCols,
+            Cells = VisibleRows * VisibleCols,
+            Step = Step,
+            Fling = fling,
+            Slow = slow,
+            ColumnChange = column,
+            NoChange = noChange,
+            OneCell = oneCell,
+            RowsSkip = skip,
+            SkipNote = note,
+        };
+    }
+
+    /// <summary>P2/P3 as this bench can see them: a row renders only when something it paints from
+    /// changed. Slow scrolling mounts exactly the entering row; a render with nothing changed renders
+    /// nothing; one cell's change renders its row (and, for a border, the row above, whose bottom edge
+    /// is that cell's top side); and a border layer takes border changes without any row.</summary>
+    private (bool, string?) Skips(CellFormatMode mode, PhaseResult slow, PhaseResult noChange, PhaseResult oneCell, PhaseResult column)
+    {
+        var layer = mode == CellFormatMode.BorderLayer;
+        var strips = mode == CellFormatMode.BorderLayerPerRow;
+        var problems = new List<string>();
+        if (slow.MaxRowRenders != 1) problems.Add($"slow scroll rendered up to {slow.MaxRowRenders} rows a step");
+        if (strips && slow.MaxLayerRenders != 1) problems.Add($"slow scroll rendered up to {slow.MaxLayerRenders} strips a step");
+        if (noChange.MaxRowRenders != 0 || noChange.MaxLayerRenders != 0) problems.Add("a render with nothing changed rendered something");
+
+        // A border toggle can leave every resolved edge as it was (a neighbour's side still draws it),
+        // so for borders the bound is an upper one.
+        if (layer || strips)
+        {
+            if (oneCell.MaxRowRenders != 0) problems.Add($"one cell's border rendered {oneCell.MaxRowRenders} rows");
+            if (oneCell.MaxLayerRenders > (strips ? 2 : 1)) problems.Add($"one cell's border rendered {oneCell.MaxLayerRenders} layer components");
+        }
+        else if (mode is CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox)
+        {
+            // In the cell's box, the row above paints the shared edge; Excel's geometry also has the
+            // row below paint the part of a thick or double line that reaches into it.
+            var bound = mode == CellFormatMode.BorderInCell ? 2 : 3;
+            if (oneCell.MaxRowRenders > bound) problems.Add($"one cell's border rendered {oneCell.MaxRowRenders} rows");
+        }
+        else if (oneCell.MaxRowRenders != 1 || oneCell.RowRendersPerStep != 1)
+        {
+            problems.Add($"one cell's change rendered {oneCell.MaxRowRenders} rows, not its own");
+        }
+
+        var columnRows = layer || strips ? 0 : VisibleRows;
+        if (column.MaxRowRenders != columnRows) problems.Add($"a column change rendered {column.MaxRowRenders} rows");
+        if (layer && column.MaxLayerRenders != 1) problems.Add("a column change did not render the layer once");
+        if (strips && column.MaxLayerRenders != VisibleRows) problems.Add($"a column change rendered {column.MaxLayerRenders} strips");
+        return (problems.Count == 0, problems.Count == 0 ? null : string.Join("; ", problems));
+    }
+
+    private Task RunFullAsync() => RunAsync(Sweep.Full);
+
+    private Task RunQuickAsync() => RunAsync(Sweep.Quick);
+
+    private Task RunBordersAsync() => RunAsync(Sweep.Borders);
+
+    private Task RunInCellAsync() => RunAsync(Sweep.InCell);
+
+    private async Task RunAsync(Sweep sweep)
+    {
+        try
+        {
+            _running = true;
+            _error = null;
+            _runs.Clear();
+            _runsVersion++;
+            _postLabel = "Save results to the server";
+            StateHasChanged();
+            await Task.Delay(100);
+
+            var configs = Configs(sweep).ToList();
+            for (var i = 0; i < configs.Count; i++)
+            {
+                var (mode, share, distinct) = configs[i];
+                _status = $"{i + 1} / {configs.Count}: {mode} {share}% N {distinct}";
+                _runs.Add(await MeasureConfigAsync(mode, share, distinct));
+                _runsVersion++;
+                StateHasChanged();
+                await Task.Delay(150);
+            }
+            _status = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.ToString();
+        }
+        finally
+        {
+            _running = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Show()
+    {
+        Setup(_showMode, _showShare, _showDistinct);
+    }
+
+    private void ShowStyles()
+    {
+        var mode = _showMode is CellFormatMode.BorderLayer or CellFormatMode.BorderInCell
+            or CellFormatMode.BorderLayerPerRow or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox
+            ? _showMode
+            : CellFormatMode.BorderInCellExcel;
+        Setup(mode, 0, 13, specimen: true);
+        // Two columns of boxes, so all thirteen fit the 600px Viewport: B3 … B15, then E3 … E15.
+        for (var k = 0; k < 13; k++) _borders!.Recorded[2 + 2 * (k % 7)][k < 7 ? 1 : 4] = (ushort)(k + 1);
+        for (var r = 0; r < 30; r++) _borders!.Resolve(r);
+        _borderVersion++;
+        _css = BorderRules();
+        _cssVersion++;
+    }
+
+    private async Task OnScrollAsync()
+    {
+        try
+        {
+            var top = await JS.InvokeAsync<double>("bench.scrollTop", _scrollerEl);
+            var start = Math.Clamp((int)(top / RowHeight), 0, TotalRows - VisibleRows);
+            if (start != _startRow) _startRow = start;
+        }
+        catch { /* spike */ }
+    }
+
+    private async Task StartFpsAsync()
+    {
+        _manualStats = null;
+        await JS.InvokeVoidAsync("bench.startFps");
+    }
+
+    private async Task StopFpsAsync()
+    {
+        var frames = await JS.InvokeAsync<double[]>("bench.stopFps");
+        _manualStats = frames is { Length: > 0 } ? Stats.From(frames) : null;
+    }
+
+    private async Task PostResultsAsync()
+    {
+        _posting = true;
+        try
+        {
+            var report = new FormatReport
+            {
+                TimestampLocal = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                Environment = _env,
+                Runs = _runs,
+                ManualScrollFrames = _manualStats,
+                Note = "ticket 44: per-cell appearance (Font, Fill, Borders) on RowComponent. "
+                    + "Render as the other page measures it; Layout forced right after; Paint from the next frame.",
+            };
+            var res = await Http.PostAsJsonAsync("api/results", report);
+            _postLabel = res.IsSuccessStatusCode ? "saved ✓" : $"failed ({(int)res.StatusCode})";
+        }
+        catch (Exception ex)
+        {
+            _postLabel = $"failed: {ex.Message}";
+        }
+        finally
+        {
+            _posting = false;
+        }
+    }
+}

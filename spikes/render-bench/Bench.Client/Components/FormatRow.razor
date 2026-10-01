@@ -1,0 +1,112 @@
+@* BenchRow's boundary (RowComponent) with a Cell Format painted per cell, by the mechanism the mode
+   names (ticket 44). The row's appearance travels in Format or Borders, each immutable per row: a
+   change hands this row a new instance, and a row whose instances did not change skips its render,
+   exactly as BenchRow does for its data (ADR-0003, P2).
+
+   BorderLayer and BorderLayerPerRow pass neither: the layer draws the lines and the rows are never
+   told about them.
+
+   The per-cell strings are all interned before the render (P5): the style or class of a format id,
+   and BorderInCell's class per cell, composed once in RowBorders when the row's edges changed. *@
+
+<div class="r">
+    <div class="c key">@RowData.Book</div>
+    @switch (Mode)
+    {
+        case CellFormatMode.CellFormatInline:
+            @for (var c = 0; c < VisibleCols; c++)
+            {
+                <div class="c num" style="@Table!.Inline[Format!.Ids[c]]">@CellFormat.Value(Cols[c].Get(RowData))</div>
+            }
+            break;
+
+        case CellFormatMode.CellFormatVars:
+            @for (var c = 0; c < VisibleCols; c++)
+            {
+                <div class="c num" style="@Table!.Vars[Format!.Ids[c]]">@CellFormat.Value(Cols[c].Get(RowData))</div>
+            }
+            break;
+
+        case CellFormatMode.CellFormatClasses:
+            @for (var c = 0; c < VisibleCols; c++)
+            {
+                <div class="@Table!.Classes[Format!.Ids[c]]">@CellFormat.Value(Cols[c].Get(RowData))</div>
+            }
+            break;
+
+        case CellFormatMode.BorderInCell or CellFormatMode.BorderInCellExcel or CellFormatMode.BorderInCellExcelBox:
+            @for (var c = 0; c < VisibleCols; c++)
+            {
+                <div class="@Borders!.CellClass![c]">@CellFormat.Value(Cols[c].Get(RowData))</div>
+            }
+            break;
+
+        default:
+            @for (var c = 0; c < VisibleCols; c++)
+            {
+                <div class="c num">@CellFormat.Value(Cols[c].Get(RowData))</div>
+            }
+            break;
+    }
+</div>
+
+@code {
+    /// <summary>Renders of every FormatRow since the page last reset it. A static because the bench
+    /// has one grid; this is the disposable spike's shortcut, not a pattern (ADR-0018).</summary>
+    public static int Renders;
+
+    [Parameter] public Row RowData { get; set; } = default!;
+    [Parameter] public Col[] Cols { get; set; } = [];
+    [Parameter] public int VisibleCols { get; set; }
+    [Parameter] public CellFormatMode Mode { get; set; }
+    /// <summary>The run's format table. Formats are only ever added, and a row paints the ids it
+    /// holds, so a growing table does not change what an existing row paints.</summary>
+    [Parameter] public FormatTable? Table { get; set; }
+    [Parameter] public RowFormat? Format { get; set; }
+    [Parameter] public RowBorders? Borders { get; set; }
+
+    private Row? _renderedRow;
+    private Col[]? _renderedCols;
+    private int _renderedVisibleCols = -1;
+    private CellFormatMode _renderedMode;
+    private FormatTable? _renderedTable;
+    private RowFormat? _renderedFormat;
+    private RowBorders? _renderedBorders;
+
+    protected override bool ShouldRender()
+    {
+        if (ReferenceEquals(_renderedRow, RowData)
+            && ReferenceEquals(_renderedCols, Cols)
+            && _renderedVisibleCols == VisibleCols
+            && _renderedMode == Mode
+            && ReferenceEquals(_renderedTable, Table)
+            && ReferenceEquals(_renderedFormat, Format)
+            && ReferenceEquals(_renderedBorders, Borders))
+        {
+            return false;
+        }
+
+        _renderedRow = RowData;
+        _renderedCols = Cols;
+        _renderedVisibleCols = VisibleCols;
+        _renderedMode = Mode;
+        _renderedTable = Table;
+        _renderedFormat = Format;
+        _renderedBorders = Borders;
+        return true;
+    }
+
+    // ShouldRender is not consulted for the first render, so the mount is recorded here too.
+    protected override void OnInitialized()
+    {
+        _renderedRow = RowData;
+        _renderedCols = Cols;
+        _renderedVisibleCols = VisibleCols;
+        _renderedMode = Mode;
+        _renderedTable = Table;
+        _renderedFormat = Format;
+        _renderedBorders = Borders;
+    }
+
+    protected override void OnAfterRender(bool firstRender) => Renders++;
+}

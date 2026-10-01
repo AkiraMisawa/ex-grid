@@ -24,6 +24,24 @@
 
             scrollTop: (el) => (el ? el.scrollTop : 0),
 
+            // The cell format page (ticket 44). Called synchronously right after a render: reading
+            // a laid-out size forces the style recalculation and layout that render caused.
+            layout: (el) => {
+                const t = performance.now();
+                void (el ? el.offsetWidth : document.body.offsetWidth);
+                return performance.now() - t;
+            },
+
+            // The next frame's main-thread paint and commit: from its animation frame callback to
+            // the first task after the frame. Style and layout were already forced, so what is left
+            // is paint. Rasterisation runs on other threads and is not in it.
+            paint: () => new Promise((resolve) => requestAnimationFrame(() => {
+                const t = performance.now();
+                const channel = new MessageChannel();
+                channel.port1.onmessage = () => resolve(performance.now() - t);
+                channel.port2.postMessage(0);
+            })),
+
             _fps: null,
             startFps: function () {
                 const s = { deltas: [], last: performance.now(), running: true };

@@ -1,0 +1,117 @@
+@* BorderLayer (ticket 44): the Borders drawn by a layer over the rows, as ADR-0008's selection
+   overlay draws ranges. One element per run of the same line: along a painted row for the bottom
+   edges, down a painted column for the right edges. Each run sits on its gridline's pixel, and its
+   line's class backs a thick line up by half its extra width, so the line is centred on the
+   gridline and reaches into both cells, as Excel's does. Being after the rows, it is drawn above
+   their Fills; the selection overlay would come after it.
+
+   The rows are never told about borders, so a border change renders this layer and no row. The
+   price is that the runs are positioned against the painted slice, as the product's overlay is
+   (ADR-0008, "refined while implementing"), so every run moves when the slice does: the layer
+   renders on every scroll step, however few rows entered.
+
+   The geometry strings are cached per (edge, line, start, length) (P5), which is bounded by the
+   Viewport, so after the first screens a scroll composes none. *@
+
+<div class="blayer">
+    @{ _elements = 0; }
+    @for (var i = 0; i < VisibleRows; i++)
+    {
+        var edges = Sheet.Rows[(StartRow + i) % Sheet.Rows.Length].Bottom;
+        var c = 0;
+        while (c < VisibleCols)
+        {
+            var k = edges[c];
+            var c0 = c++;
+            while (c < VisibleCols && edges[c] == k) c++;
+            if (k == 0) continue;
+            _elements++;
+            <div class="@Table.Horizontal[k]" style="@Geometry(false, i, c0, c - c0)"></div>
+        }
+    }
+    @for (var c = 0; c < VisibleCols; c++)
+    {
+        var i = 0;
+        while (i < VisibleRows)
+        {
+            var k = Sheet.Rows[(StartRow + i) % Sheet.Rows.Length].Right[c];
+            var i0 = i++;
+            while (i < VisibleRows && Sheet.Rows[(StartRow + i) % Sheet.Rows.Length].Right[c] == k) i++;
+            if (k == 0) continue;
+            _elements++;
+            <div class="@Table.Vertical[k]" style="@Geometry(true, c, i0, i - i0)"></div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>Renders since the page last reset it (see FormatRow.Renders).</summary>
+    public static int Renders;
+    /// <summary>The number of run elements the last render drew.</summary>
+    public static int LastElements;
+
+    [Parameter] public BorderSheet Sheet { get; set; } = default!;
+    [Parameter] public BorderTable Table { get; set; } = default!;
+    [Parameter] public int StartRow { get; set; }
+    [Parameter] public int VisibleRows { get; set; }
+    [Parameter] public int VisibleCols { get; set; }
+    /// <summary>Bumped by the page whenever a border changed.</summary>
+    [Parameter] public int Version { get; set; }
+    [Parameter] public int RowHeight { get; set; }
+    [Parameter] public int CellWidth { get; set; }
+    /// <summary>Where the first data column starts: the key column's width.</summary>
+    [Parameter] public int Left { get; set; }
+
+    private int _elements;
+    private readonly Dictionary<(bool Vertical, int Line, int Start, int Length), string> _geometry = new();
+
+    private BorderSheet? _renderedSheet;
+    private int _renderedStart = -1, _renderedRows = -1, _renderedCols = -1, _renderedVersion = -1;
+
+    private string Geometry(bool vertical, int line, int start, int length)
+    {
+        if (!_geometry.TryGetValue((vertical, line, start, length), out var style))
+        {
+            style = vertical
+                ? $"transform:translate({Left + (line + 1) * CellWidth - 1}px,{start * RowHeight}px);height:{length * RowHeight}px"
+                : $"transform:translate({Left + start * CellWidth}px,{(line + 1) * RowHeight - 1}px);width:{length * CellWidth}px";
+            _geometry[(vertical, line, start, length)] = style;
+        }
+        return style;
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (ReferenceEquals(_renderedSheet, Sheet)
+            && _renderedStart == StartRow
+            && _renderedRows == VisibleRows
+            && _renderedCols == VisibleCols
+            && _renderedVersion == Version)
+        {
+            return false;
+        }
+
+        _renderedSheet = Sheet;
+        _renderedStart = StartRow;
+        _renderedRows = VisibleRows;
+        _renderedCols = VisibleCols;
+        _renderedVersion = Version;
+        return true;
+    }
+
+    // ShouldRender is not consulted for the first render, so the mount is recorded here too.
+    protected override void OnInitialized()
+    {
+        _renderedSheet = Sheet;
+        _renderedStart = StartRow;
+        _renderedRows = VisibleRows;
+        _renderedCols = VisibleCols;
+        _renderedVersion = Version;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        Renders++;
+        LastElements = _elements;
+    }
+}
