@@ -115,9 +115,65 @@ public class HiddenItemAndCubeTests
         Assert.False(cube.Holds(layout with { Rows = [P("Product"), P("Region")] }));
         Assert.False(cube.Holds(layout with { Rows = [P("Region") with { HiddenItems = [PivotItemKey.Blank] }, P("Product")] }));
         Assert.False(cube.Holds(layout with { Values = [Sum("Quantity")] }));
-        Assert.False(cube.Holds(layout with { Filters = [P("Date")] }));
+        Assert.False(cube.Holds(layout with { Filters = [P("Date") with { HiddenItems = [PivotItemKey.Blank] }] }));
         Assert.False(PivotEngine.CanReuse(cube, Sales.ToArray(), Fields, layout));
         Assert.Throws<InvalidOperationException>(() => PivotEngine.Report(cube, layout with { Values = [Sum("Quantity")] }));
+    }
+
+    [Fact] // ADR-0065 (refined): a field in Filters that hides nothing does not travel in a question
+    public void A_filters_field_that_hides_nothing_does_not_travel()
+    {
+        var layout = new PivotLayout
+        {
+            Filters = [P("Date"), P("Online") with { HiddenItems = [PivotItemKey.Boolean(false)] }],
+            Rows = [P("Region")],
+            Values = [Sum("Amount")],
+        };
+
+        var query = PivotQuery.For(layout);
+
+        Assert.Equal(["Online"], query.Filters.Select(f => f.Field));
+        Assert.Equal([PivotItemKey.Boolean(false)], query.Filters[0].HiddenItems);
+        Assert.False(query.Places("Date"));
+    }
+
+    [Fact] // ADR-0065 (refined): placing a field in Filters, or moving it there, while it hides nothing asks nothing new
+    public void Placing_a_filters_field_that_hides_nothing_needs_no_new_answer()
+    {
+        var layout = new PivotLayout { Rows = [P("Region")], Columns = [P("Online")], Values = [Sum("Amount")] };
+        var cube = PivotEngine.Aggregate(Sales, Fields, layout);
+
+        Assert.True(cube.Holds(layout with { Filters = [P("Date")] }));
+        Assert.True(cube.Holds(layout with { Filters = [P("Date"), P("Product")] }));
+        Assert.False(cube.Holds(layout with { Filters = [P("Product") with { HiddenItems = [PivotItemKey.Text("Pears")] }] }));
+        // A layout laid out from it reads the same report as one computed with the field in place.
+        var placed = layout with { Filters = [P("Date")] };
+        Assert.Equal(Lines(Report(placed)), Lines(PivotEngine.Report(cube, placed, EnUs)));
+    }
+
+    [Fact] // ADR-0065 (refined): a cube asked with a hiding filter holds the layout once the filter stops hiding, and not before
+    public void A_filter_that_stops_hiding_changes_the_question()
+    {
+        var hiding = new PivotLayout
+        {
+            Filters = [P("Product") with { HiddenItems = [PivotItemKey.Text("Pears")] }],
+            Rows = [P("Region")],
+            Values = [Sum("Amount")],
+        };
+        var cube = PivotEngine.Aggregate(Sales, Fields, hiding);
+
+        Assert.True(cube.Holds(hiding));
+        Assert.False(cube.Holds(hiding with { Filters = [P("Product")] }));
+        Assert.False(cube.Holds(hiding with { Filters = [] }));
+    }
+
+    [Fact] // ADR-0060/0065: Filter… lists the Items of a field in Filters that hides nothing, though it is not in the question
+    public void The_items_of_a_filters_field_that_hides_nothing_are_listed()
+    {
+        var layout = new PivotLayout { Filters = [P("Product")], Rows = [P("Region")], Values = [Sum("Amount")] };
+        var cube = PivotEngine.Aggregate(Sales, Fields, layout);
+
+        Assert.Equal(["Apples", "Pears", "Plums"], PivotEngine.ItemsOf(cube, layout, "Product", EnUs).Select(i => i.Label));
     }
 
     [Fact] // ADR-0059: a report laid out from a kept cube is the report computed from scratch

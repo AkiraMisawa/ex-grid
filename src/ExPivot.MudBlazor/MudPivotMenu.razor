@@ -1,14 +1,21 @@
-@* A placed field's menu under MudBlazor (ADR-0060/0061): exactly ExPivot's commands, in its order,
-   each with its Enabled state, as text MudButtons with role="menuitem" and a Material icon — the
-   frame around them is ExPivot's, and so are what closes it and what each command does. The first
-   enabled command takes DOM focus when the menu opens, scrolled into view: a menu opened at the
-   foot of the pane is shown. *@
+@* A menu under MudBlazor (ADR-0060/0061): a placed field's, or the toolbar's Layout menu —
+   exactly ExPivot's commands, in its order, each with its Enabled state, as text MudButtons with
+   role="menuitem" and a Material icon. A choice among others is a menuitemradio, the current one
+   marked as a checked radio button, and a group of them stands under its heading. The frame around them is
+   ExPivot's, and so are what closes it and what each command does. The first enabled command takes
+   DOM focus when the menu opens, scrolled into view: a menu opened at the foot of the pane is shown. *@
 <div class="mud-ex-pivot-menu" role="none">
     @for (var i = 0; i < Context.Commands.Count; i++)
     {
         var command = Context.Commands[i];
-        <MudPivotButton @key="command.Id" role="menuitem" Variant="Variant.Text" Size="Size.Small" FullWidth="true"
-                        Disabled="!command.Enabled" StartIcon="@Chrome.IconFor(command.Id)" OnClick="command.Invoke"
+        @if (command.GroupHeading is { } heading)
+        {
+            <MudText Typo="Typo.caption" Class="mud-ex-pivot-menu-heading" aria-hidden="true">@heading</MudText>
+        }
+        <MudPivotButton @key="command.Id" role="@(command.Checked is null ? "menuitem" : "menuitemradio")"
+                        aria-checked="@(command.Checked is { } chosen ? (chosen ? "true" : "false") : null)"
+                        Variant="Variant.Text" Size="Size.Small" FullWidth="true"
+                        Disabled="!command.Enabled" StartIcon="@IconOf(command)" OnClick="command.Invoke"
                         FocusRequest="@(i == FirstEnabled ? Context.FocusRequest : 0)"
                         Class="mud-ex-pivot-menu-item">@command.Label</MudPivotButton>
     }
@@ -20,6 +27,15 @@
 
     /// <summary>Where the icons come from.</summary>
     [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+
+    // A choice is a radio button, checked where it is the current one, so the labels of a group
+    // stand aligned and the mark reads as one choice among several.
+    private string? IconOf(PivotCommand command) => command.Checked switch
+    {
+        true => Icons.Material.Filled.RadioButtonChecked,
+        false => Icons.Material.Filled.RadioButtonUnchecked,
+        null => Chrome.IconFor(command.Id),
+    };
 
     private int FirstEnabled
     {

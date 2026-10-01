@@ -159,6 +159,30 @@ they hold for every reader.**
   handed what the batch removed and what it added. ExPivot does this
   ([ADR-0066](./0066-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
 
+## Refined while building the ways in
+
+*(2026-10-01, when the CSV reader and the `DbDataReader` builder were built.)*
+
+- **`ExGrid.Data` is marked trimmable.** Without the mark, a published Blazor WebAssembly
+  application that read only UTF-8 still shipped the code pages, 686 KB (170 KB with Brotli),
+  because an assembly that is not marked trimmable is kept whole. With it, only an application
+  that asks for Shift-JIS downloads them. A test reads the package's metadata and finds the code
+  pages referred to by the Shift-JIS encoding alone.
+- **The CSV reader is strict, by design.**
+  - Headers are matched exactly. A refusal names the near spelling it found ("the header has
+    'notional'").
+  - An Integer column refuses `12.0`.
+  - An empty line among records is refused.
+  - A file that starts with a UTF-16 byte-order mark is refused by name. The decision lists UTF-8
+    and Shift-JIS, and a file in another encoding is better refused than misread.
+- **Each date is read in its culture's own calendar**, so a Thai `2569` is the year 2026. A date
+  is the clock it shows: a format with `Z` or `GMT` keeps the clock, and never converts to the
+  machine's zone. A format with no year, or an offset with no date, is refused when the Schema is
+  checked, because it would otherwise fill in today's date.
+- **A `TimeOnly` read from a database is a Date on the first day.** The decision says "a date or a
+  time is Date". A `TimeSpan` is refused unless declared, because it is a duration as often as a
+  time of day.
+
 ## One package, family-wide, adopted one product at a time
 
 - **`ExGrid.Data` has no dependency outside the framework.** It carries the family's published

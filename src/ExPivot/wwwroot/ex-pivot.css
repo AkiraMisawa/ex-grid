@@ -37,7 +37,104 @@
     border: 1px dashed var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
     background: var(--ex-pivot-empty-background, Canvas);
 }
-.ex-pivot-notice { color: var(--ex-pivot-refusal-color, CanvasText); padding: 4px 0; }
+/* The box the report and a details tab's records share: the records stand over the report, which
+   stays where it is, measured and with its state, while a details tab is selected (ADR-0058). A
+   Stretch height makes it the flex item the grid stretches in, written inline from C#. */
+.ex-pivot-sheet { position: relative; min-width: 0; }
+.ex-pivot-details-panel {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--ex-pivot-details-background, Canvas);
+}
+.ex-pivot-details-status, .ex-pivot-refusal-notice {
+    color: var(--ex-pivot-refusal-color, CanvasText);
+    font-weight: 600;
+}
+.ex-pivot-details-status { padding: 16px; }
+
+/* The toolbar above the report (ADR-0060): the report filter band on its left, Layout ▾, Refresh
+   and the Field List's toggle on its right. Its popups open under the button that opened them,
+   over the report. */
+.ex-pivot-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding: 0 0 6px;
+}
+.ex-pivot-toolbar-start { flex: 1 1 auto; min-width: 0; }
+.ex-pivot-toolbar-end { display: flex; flex: none; align-items: center; gap: 6px; }
+.ex-pivot-toolbar-anchor { position: relative; }
+.ex-pivot-toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font: inherit;
+    padding: 1px 8px;
+    cursor: pointer;
+    color: var(--ex-pivot-entry-color, ButtonText);
+    background: var(--ex-pivot-entry-background, ButtonFace);
+    border: 1px solid var(--ex-pivot-entry-border-color, ButtonBorder);
+}
+.ex-pivot-toolbar-button[aria-pressed="true"] { border-color: var(--ex-pivot-accent-color, Highlight); }
+.ex-pivot-refusal-notice { padding: 0 0 6px; }
+
+/* The tabs at the report's foot, where Excel's sheet tabs are (ADR-0058). */
+.ex-pivot-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    border-top: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+}
+.ex-pivot-tab {
+    display: inline-flex;
+    align-items: center;
+    max-width: 320px;
+    background: var(--ex-pivot-tab-background, ButtonFace);
+    border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+    border-top: none;
+}
+.ex-pivot-tab-selected { background: var(--ex-pivot-tab-selected-background, Canvas); font-weight: 600; }
+.ex-pivot-tab-button, .ex-pivot-tab-close {
+    font: inherit;
+    padding: 2px 8px;
+    color: inherit;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+.ex-pivot-tab-button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ex-pivot-tab-close { padding: 2px 6px; }
+
+/* Show Details' dialog, ExPivot's frame (ADR-0058): over the page, with a backdrop that closes it. */
+.ex-pivot-dialog-backdrop { position: fixed; inset: 0; z-index: 30; background: var(--ex-pivot-dialog-backdrop, rgba(0, 0, 0, 0.32)); }
+.ex-pivot-dialog {
+    position: fixed;
+    z-index: 31;
+    top: 10vh;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: min(960px, 92vw);
+    height: 70vh;
+    padding: 8px;
+    color: var(--ex-pivot-popup-color, CanvasText);
+    background: var(--ex-pivot-popup-background, Canvas);
+    border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
+    box-shadow: var(--ex-pivot-popup-shadow, 0 2px 8px rgba(0, 0, 0, 0.2));
+}
+.ex-pivot-dialog:focus { outline: none; }
+.ex-pivot-dialog-content { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-height: 0; }
+.ex-pivot-dialog-title { font-weight: 600; }
+.ex-pivot-dialog-records { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.ex-pivot-close { font: inherit; padding: 2px 12px; }
 
 /* The Field List: its width from C#, as tall as the report — its content scrolls inside it and
    never makes the pivot taller. */
@@ -126,6 +223,11 @@
     border: 1px solid var(--ex-pivot-entry-border-color, ButtonBorder);
 }
 .ex-pivot-entry-values .ex-pivot-entry-button { font-style: italic; }
+
+/* Defer Layout Update and Update, at the pane's foot (ADR-0060). */
+.ex-pivot-defer { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.ex-pivot-defer-label { display: flex; align-items: center; gap: 6px; }
+.ex-pivot-update { font: inherit; padding: 1px 10px; }
 .ex-pivot-entry-caption, .ex-pivot-filter-summary { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ex-pivot-entry-arrow { flex: none; }
 
@@ -160,8 +262,17 @@
     max-height: 60vh;
     overflow: auto;
 }
+.ex-pivot-popup-overlay.ex-pivot-popup-end { left: auto; right: 0; }
 .ex-pivot-backdrop { position: fixed; inset: 0; z-index: 20; background: transparent; }
 .ex-pivot-menu { display: flex; flex-direction: column; }
+.ex-pivot-menu-group { display: flex; flex-direction: column; }
+.ex-pivot-menu-heading {
+    padding: 4px 8px 2px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: var(--ex-pivot-muted-color, GrayText);
+}
+.ex-pivot-menu-mark { display: inline-block; width: 1.2em; }
 .ex-pivot-menu-item {
     font: inherit;
     text-align: left;
@@ -189,8 +300,8 @@
 .ex-pivot-panel-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .ex-pivot-ok, .ex-pivot-cancel { font: inherit; padding: 2px 12px; }
 
-/* The report filter band, above the report. */
-.ex-pivot-filters { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 0 0 6px; }
+/* The report filter band, on the toolbar's left. */
+.ex-pivot-filters { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .ex-pivot-filter { display: flex; align-items: center; gap: 6px; }
 .ex-pivot-filter-caption { font-weight: 600; }
 .ex-pivot-filter-anchor { position: relative; min-width: 140px; }

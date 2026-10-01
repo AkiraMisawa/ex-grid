@@ -74,6 +74,16 @@
             </div>
         }
     </div>
+    @* Excel's Defer Layout Update at the pane's foot (ADR-0060/0061): a MudCheckBox with a
+       MudButton beside it. While it is ticked the pane's changes build ExPivot's pending layout,
+       and Update applies it in one change. *@
+    <div class="mud-ex-pivot-defer">
+        <MudCheckBox T="bool" Value="Context.DeferLayoutUpdate" ValueChanged="@(on => Context.DeferLayoutUpdateChanged(on))"
+                     Label="@Context.Word("defer-layout-update")" Dense="true" Size="Size.Small" Color="Color.Primary"
+                     Class="mud-ex-pivot-defer-check" />
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" Disabled="!Context.CanUpdate"
+                   OnClick="Context.Update" Class="mud-ex-pivot-update">@Context.Word("update")</MudButton>
+    </div>
 </div>
 
 @code {

@@ -4,6 +4,7 @@ using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests;
 
@@ -11,10 +12,10 @@ namespace ExPivot.Components.Tests;
 /// drafts held by ExPivot until OK, refusals said in the panel.</summary>
 public class PanelTests : PivotTestContext
 {
-    private static Task ClickAsync(IRenderedComponent<ExPivot<Sale>> cut, string selector)
+    private static Task ClickAsync(IRenderedComponent<PivotComponent> cut, string selector)
         => cut.Find(selector).ClickAsync(new MouseEventArgs());
 
-    private static Task TickAsync(IRenderedComponent<ExPivot<Sale>> cut, string label, bool tick)
+    private static Task TickAsync(IRenderedComponent<PivotComponent> cut, string label, bool tick)
         => cut.FindAll(".ex-pivot-item").Single(i => i.TextContent.Trim() == label).QuerySelector("input")!
             .ChangeAsync(new ChangeEventArgs { Value = tick });
 

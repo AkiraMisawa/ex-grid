@@ -14,9 +14,15 @@
                OpenChanged="Context.InnerPopupChanged" Class="mud-ex-pivot-aggregation">
         @foreach (var choice in Context.Aggregations)
         {
-            <MudSelectItem T="PivotAggregation" Value="choice.Value">@choice.Label</MudSelectItem>
+            <MudSelectItem T="PivotAggregation" Value="choice.Value" Disabled="!choice.Enabled">@choice.Label</MudSelectItem>
         }
     </MudSelect>
+    @* An Aggregation the source does not answer is offered disabled, and the reason is said
+       (ADR-0065). *@
+    @foreach (var reason in Context.Aggregations.Where(c => !c.Enabled && c.Reason is not null).Select(c => c.Reason))
+    {
+        <MudText Typo="Typo.caption" Class="mud-ex-pivot-not-offered">@reason</MudText>
+    }
     <MudSelect T="PivotShowValuesAs" Value="Context.ShowValuesAs" ValueChanged="Context.ShowValuesAsChanged" ToStringFunc="ShowValuesAsLabel"
                Label="@Context.Word("show-values-as")" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true"
                OpenChanged="Context.InnerPopupChanged" Class="mud-ex-pivot-show-values-as">

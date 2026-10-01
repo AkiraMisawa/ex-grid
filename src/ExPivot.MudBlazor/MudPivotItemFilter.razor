@@ -8,27 +8,39 @@
                   Label="@Context.Word("search-items")" Variant="Variant.Outlined" Margin="Margin.Dense"
                   Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                   Class="mud-ex-pivot-search" />
-    <div class="mud-ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption">
-        @if (Context.MatchCount > 0)
+    <div class="mud-ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption" aria-busy="@(Context.IsLoading ? "true" : null)">
+        @if (Context.Unavailable is { } unavailable)
         {
-            @* Pressed while some or none are ticked, it ticks every Item the search leaves; pressed
-               while all are, it unticks them — whatever state MudBlazor's own cycle would go to. *@
-            <MudCheckBox T="bool?" TriState="true" Value="Context.AllTicked" ValueChanged="@(_ => Context.SetAll(Context.AllTicked != true))"
-                         Label="@Context.Word("select-all")" Dense="true" Size="Size.Small" Color="Color.Primary"
-                         Class="mud-ex-pivot-select-all" />
+            @* The source can no longer list the Items under the report's Source Version (ADR-0065). *@
+            <MudText Typo="Typo.body2" Color="Color.Error" Class="mud-ex-pivot-unavailable" role="alert">@unavailable</MudText>
         }
-        @foreach (var item in Context.Items)
+        else if (Context.IsLoading)
         {
-            <MudCheckBox @key="item.Key" T="bool" Value="item.Ticked" ValueChanged="@(on => Context.SetTicked(item.Key, on))"
-                         Label="@item.Label" Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-item" />
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mud-ex-pivot-loading" />
         }
-        @if (Context.MatchCount > Context.Items.Count)
+        else
         {
-            <MudText Typo="Typo.caption" Class="mud-ex-pivot-note">@PivotWords.Fill(Context.Word("too-many-items"), Context.ListCap.ToString("N0", CultureInfo.CurrentCulture))</MudText>
-        }
-        @if (Context.MatchCount == 0)
-        {
-            <MudText Typo="Typo.caption" Class="mud-ex-pivot-note">@Context.Word("no-items-match")</MudText>
+            @if (Context.Items.Count > 0)
+            {
+                @* Pressed while some or none are ticked, it ticks every Item the search leaves; pressed
+                   while all are, it unticks them — whatever state MudBlazor's own cycle would go to. *@
+                <MudCheckBox T="bool?" TriState="true" Value="Context.AllTicked" ValueChanged="@(_ => Context.SetAll(Context.AllTicked != true))"
+                             Label="@Context.Word("select-all")" Dense="true" Size="Size.Small" Color="Color.Primary"
+                             Class="mud-ex-pivot-select-all" />
+            }
+            @foreach (var item in Context.Items)
+            {
+                <MudCheckBox @key="item.Key" T="bool" Value="item.Ticked" ValueChanged="@(on => Context.SetTicked(item.Key, on))"
+                             Label="@item.Label" Dense="true" Size="Size.Small" Color="Color.Primary" Class="mud-ex-pivot-item" />
+            }
+            @if (Context.MatchCount > Context.Items.Count)
+            {
+                <MudText Typo="Typo.caption" Class="mud-ex-pivot-note">@PivotWords.Fill(Context.Word("too-many-items"), Context.ListCap.ToString("N0", CultureInfo.CurrentCulture))</MudText>
+            }
+            @if (Context.Items.Count == 0)
+            {
+                <MudText Typo="Typo.caption" Class="mud-ex-pivot-note">@Context.Word("no-items-match")</MudText>
+            }
         }
     </div>
     @if (Context.Refusal is { } refusal)

@@ -1,32 +1,46 @@
 @using System.Globalization
 @* The built-in Filter… (ADR-0060): the field's Items, each ticked while shown, (Select All), a
-   search that narrows the list, and OK / Cancel. The ticks are ExPivot's draft. *@
+   search that narrows the list, and OK / Cancel. The ticks are ExPivot's draft. The Items come from
+   the Pivot Source under the report's Source Version (ADR-0065): while they are on their way the
+   panel says so, and when the source can no longer list them under it, the panel says the data
+   has changed instead of listing Items that are not the report's. *@
 <div class="ex-pivot-panel ex-pivot-item-filter">
     <input @ref="_search" type="search" class="ex-pivot-search" placeholder="@Context.Word("search-items")"
            aria-label="@Context.Word("search-items")"
            @bind:get="Context.Search" @bind:set="Context.SearchChanged" @bind:event="oninput" />
-    <div class="ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption">
-        @if (Context.MatchCount > 0)
+    <div class="ex-pivot-item-list" role="group" aria-label="@Context.FieldCaption" aria-busy="@(Context.IsLoading ? "true" : null)">
+        @if (Context.Unavailable is { } unavailable)
         {
-            <label class="ex-pivot-item ex-pivot-select-all">
-                <input type="checkbox" checked="@(Context.AllTicked == true)" @onchange="e => Context.SetAll(e.Value is true)" />
-                <span>@Context.Word("select-all")</span>
-            </label>
+            <div class="ex-pivot-refusal ex-pivot-unavailable" role="alert">@unavailable</div>
         }
-        @foreach (var item in Context.Items)
+        else if (Context.IsLoading)
         {
-            <label @key="item.Key" class="ex-pivot-item">
-                <input type="checkbox" checked="@item.Ticked" @onchange="e => Context.SetTicked(item.Key, e.Value is true)" />
-                <span>@item.Label</span>
-            </label>
+            <div class="ex-pivot-note ex-pivot-loading" role="status">@Context.Word("loading")</div>
         }
-        @if (Context.MatchCount > Context.Items.Count)
+        else
         {
-            <div class="ex-pivot-note">@PivotWords.Fill(Context.Word("too-many-items"), Context.ListCap.ToString("N0", CultureInfo.CurrentCulture))</div>
-        }
-        @if (Context.MatchCount == 0)
-        {
-            <div class="ex-pivot-note">@Context.Word("no-items-match")</div>
+            @if (Context.Items.Count > 0)
+            {
+                <label class="ex-pivot-item ex-pivot-select-all">
+                    <input type="checkbox" checked="@(Context.AllTicked == true)" @onchange="e => Context.SetAll(e.Value is true)" />
+                    <span>@Context.Word("select-all")</span>
+                </label>
+            }
+            @foreach (var item in Context.Items)
+            {
+                <label @key="item.Key" class="ex-pivot-item">
+                    <input type="checkbox" checked="@item.Ticked" @onchange="e => Context.SetTicked(item.Key, e.Value is true)" />
+                    <span>@item.Label</span>
+                </label>
+            }
+            @if (Context.MatchCount > Context.Items.Count)
+            {
+                <div class="ex-pivot-note">@PivotWords.Fill(Context.Word("too-many-items"), Context.ListCap.ToString("N0", CultureInfo.CurrentCulture))</div>
+            }
+            @if (Context.Items.Count == 0)
+            {
+                <div class="ex-pivot-note">@Context.Word("no-items-match")</div>
+            }
         }
     </div>
     @if (Context.Refusal is { } refusal)

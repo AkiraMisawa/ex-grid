@@ -20,10 +20,12 @@ structure or state.
 
 ```razor
 <MudExGridPaper Elevation="1" Dense="true" Hover="true">
-    <ExPivot TRecord="Sale" Records="_sales" Fields="_fields" @bind-Layout="_layout"
-             PivotChrome="MudPivotChrome.Default" />
+    <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="MudPivotChrome.Default" />
 </MudExGridPaper>
 ```
+
+*(Sample updated 2026-10-01: ExPivot takes a Pivot Source instead of records and fields,
+[ADR-0065](./0065-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md).)*
 
 - **The outer element is `ExGrid.MudBlazor`'s `MudExGridPaper`, unchanged.** The report is an
   ExGrid, and the paper already does for it everything ADR-0030 says a Wrapper does for a grid: the

@@ -129,29 +129,32 @@ public class PivotRenderingTests : PivotTestContext
         var cut = RenderPivot(RegionProduct);
         var version = Grid(cut).Instance.RowSequenceVersion;
 
-        cut.Render(ps => ps.Add(p => p.Records, Sales.Select(s => s with { Amount = s.Amount + 1 }).ToArray()));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales.Select(s => s with { Amount = s.Amount + 1 }).ToArray())));
 
         Assert.Equal(version, Grid(cut).Instance.RowSequenceVersion);
         Assert.Equal("−East | 183", RowTexts(cut)[0]);
-        cut.Render(ps => ps.Add(p => p.Records, Sales[..6]));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled(Sales[..6])));
         Assert.NotEqual(version, Grid(cut).Instance.RowSequenceVersion);
     }
 
-    [Fact] // ADR-0058/0003: a list changed in place is not seen; a new list is a refresh
-    public void A_list_changed_in_place_is_not_seen()
+    [Fact] // ADR-0058/0065: a new source is a refresh, and asks again; the same source handed back asks nothing
+    public void A_new_source_is_a_refresh()
     {
-        var records = Sales.ToList();
-        var cut = RenderPivot(new PivotLayout { Values = [Sum("Amount")] }, records: records);
-        records.Add(new Sale("South", "Apples", 1000m, 1, true));
+        var first = new OnDemandSource(Bundled()) { AnswersAtOnce = true };
+        var cut = RenderPivot(new PivotLayout { Values = [Sum("Amount")] }, source: first);
+        Assert.Single(first.Questions);
 
-        cut.Render(ps => ps.Add(p => p.Records, records));
-
+        cut.Render(ps => ps.Add(p => p.Source, first));
+        Assert.Single(first.Questions);
         Assert.Equal("285", RowTexts(cut)[0]);
-        cut.Render(ps => ps.Add(p => p.Records, records.ToList()));
+
+        var second = new OnDemandSource(Bundled([.. Sales, new Sale("South", "Apples", 1000m, 1, true)])) { AnswersAtOnce = true };
+        cut.Render(ps => ps.Add(p => p.Source, second));
+        Assert.Single(second.Questions);
         Assert.Equal("1285", RowTexts(cut)[0]);
     }
 
-    [Fact] // ADR-0058: a layout naming a field nobody declared is refused by name
+    [Fact] // ADR-0058: a layout naming a field the source does not offer is refused by name
     public void A_layout_naming_an_undeclared_field_is_refused()
     {
         var refusal = Assert.Throws<InvalidOperationException>(() => RenderPivot(new PivotLayout { Rows = [P("Desk")] }));
@@ -180,7 +183,7 @@ public class PivotRenderingTests : PivotTestContext
         var name = Grid(cut).Instance.Columns[1].Name;
 
         await cut.InvokeAsync(() => Grid(cut).Instance.OnColumnWidthChanged.InvokeAsync(new ExGrid.ColumnWidthChange(name, 150)));
-        cut.Render(ps => ps.Add(p => p.Records, Sales.ToArray()));
+        cut.Render(ps => ps.Add(p => p.Source, Bundled()));
 
         var column = Grid(cut).Instance.Columns[1];
         Assert.Equal(150, column.Width.Width.FixedPx);

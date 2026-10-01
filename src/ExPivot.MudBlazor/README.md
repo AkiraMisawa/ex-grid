@@ -3,10 +3,12 @@
 [ExPivot](https://www.nuget.org/packages/ExPivot), Excel's PivotTable for Blazor, inside a
 MudBlazor application:
 
-- **`MudPivotChrome`** draws the PivotTable Fields pane, each field's menu, Filter…, Field
-  Settings…, Value Field Settings… and the report filter band with MudBlazor's own controls:
-  checkboxes, text fields, selects, radio groups, buttons and Material icons. It also dresses the
-  report's grid with `ExGrid.MudBlazor`'s `MudGridChrome`, so you set one parameter for both.
+- **`MudPivotChrome`** draws the PivotTable Fields pane with its Defer Layout Update, each
+  field's menu and the toolbar's Layout menu, Filter…, Field Settings…, Value Field Settings… and
+  the report filter band with MudBlazor's own controls: checkboxes, text fields, selects, radio
+  groups, buttons and Material icons. It also dresses the report's grid with `ExGrid.MudBlazor`'s
+  `MudGridChrome`, so you set one parameter for both. The toolbar and Show Details' tabs and
+  dialog are still ExPivot's own markup inside the paper, holding the Mud band and grids.
 - **`mud-ex-pivot.css`** maps ExPivot's Visual Tokens onto MudBlazor's palette variables and
   lays out the Chrome's controls. It follows the theme, dark mode included.
 - The surface is `ExGrid.MudBlazor`'s **`MudExGridPaper`**, unchanged. It brings the Material
@@ -51,12 +53,12 @@ Then add the four stylesheets:
 @using ExPivot.MudBlazor
 
 <MudExGridPaper Elevation="1" Hover="true">
-    <ExPivot TRecord="Sale" Records="_sales" Fields="_fields" @bind-Layout="_layout"
+    <ExPivot Source="_source" @bind-Layout="_layout"
              PivotChrome="MudPivotChrome.Default" ViewportHeight="420" />
 </MudExGridPaper>
 ```
 
-The records, fields and layout are the same as for a plain ExPivot. See the ExPivot README.
+The source and the layout are the same as for a plain ExPivot. See the ExPivot README.
 
 - **Words.** Every word comes from ExPivot and is replaced through ExPivot's `Label` parameter.
   That one function covers the pane, the panels and the report's Context Menu drawn by

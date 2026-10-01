@@ -431,11 +431,23 @@ nobody had asked for. What that means when writing a test:
   which both give the same. A field dragged from the list of fields onto an Area with the
   browser's own drag and drop, an entry dropped before another and back onto the list (PV-10);
   the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
-  listing the trades behind it (PV-14, DC-52); the keyboard into a field's menu and back to its
-  entry, a menu dropping down under its entry as wide as the pane, and a command moving the field
-  (PV-11); the report filter band filtering (PV-12). Under MudBlazor alone, a MudSelect's list
+  opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
+  the keyboard on the tab, a second tab beside it, and closing them; a dialog when the page asks
+  for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the
+  page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-52); the
+  keyboard into a field's menu and back to its entry, a menu dropping down under its entry as
+  wide as the pane, and a command moving the field (PV-11); the toolbar above the report — the
+  report filter band on its left, Layout and the pane's toggle on its right, no Refresh for the
+  bundled source (PV-30) — the band filtering, and its Filter… opening under the toolbar over the
+  report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
+  Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
+  giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by
+  the page; Defer Layout Update holding the report until Update (PV-28); and the words switch
+  speaking Excel's Japanese edition and back (PV-33). Under MudBlazor alone, a MudSelect's list
   in Value Field Settings… taking Escape before its panel (PV-11), and the palette reaching the
-  pane, the entries and the `−` button in both schemes (PV-18).
+  pane, the entries and the `−` button in both schemes (PV-18). Not asserted: where the keyboard
+  goes when the dialog closes, nor Escape pressed inside the dialog's own grid — both wait on a
+  decision about ExGrid's core (ticket 14 of docs/specs/expivot).
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or

@@ -14,7 +14,17 @@ Status: ready-for-agent
 
 **Blocked by:** 12
 
-- [ ] PV-30, PV-12
-- [ ] The Layout menu's choices, as layer-1 tests against `PivotLayoutEdits`
+- [x] PV-30, PV-12
+- [x] The Layout menu's choices, as layer-1 tests against `PivotLayoutEdits`
 
 ## Comments
+
+2026-10-01: Built. The toolbar stands above the report: the report filter band on its left;
+Layout ▾, Refresh (only when the source's features say it can be refreshed) and the Field List's
+toggle (`@bind-ShowFieldList`) on its right. Its popups open under it, over the report, with a
+backdrop; Escape, Cancel and the backdrop close them, and the keyboard goes back to the button.
+The Layout menu's choices are `PivotLayoutChoice`, applied by `PivotLayoutEdits.Choose`, marked
+by `IsChosen` and disabled where `Changes` says they would change nothing (layer 1:
+`LayoutMenuTests`). The Chrome draws the toolbar through `IPivotChrome.Toolbar`, and the Layout
+menu through the menu surface. The Context Menu keeps Show / Hide Field List. Layer 3 runs the
+toolbar, the band, the Layout menu and the toggle on the WebAssembly host under both Chromes.
