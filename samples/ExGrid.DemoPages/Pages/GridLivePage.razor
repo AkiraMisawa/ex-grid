@@ -109,6 +109,8 @@ else
     private long _notices;
     private long _named;
     private long _changedInView;
+    private string? _heardVersion;
+    private string? _appliedVersion;
 
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
@@ -264,7 +266,7 @@ else
     {
         var hub = _hub = new HubConnectionBuilder().WithUrl(Api.Hub).WithAutomaticReconnect().Build();
         // "These trades changed": heard on a thread of SignalR's, and handed to the page's own.
-        hub.On<string, string[]>("TradesChanged", (version, tradeIds) => InvokeAsync(() => Heard(tradeIds)));
+        hub.On<string, string[]>("TradesChanged", (version, tradeIds) => InvokeAsync(() => Heard(version, tradeIds)));
         // Not cancelled by the page's going: a connection cut off while it opens is an error in the
         // browser's console. DisposeAsync waits for it instead.
         await (_hubStarting = hub.StartAsync());
@@ -274,8 +276,9 @@ else
     }
 
     // Notices that arrive while trades are being read are gathered into the next read.
-    private void Heard(string[] tradeIds)
+    private void Heard(string version, string[] tradeIds)
     {
+        _heardVersion = version;
         _notices++;
         _named += tradeIds.Length;
         _heard.UnionWith(tradeIds);
@@ -290,9 +293,12 @@ else
         {
             while (_heard.Count > 0)
             {
+                var version = _heardVersion;
                 string[] named = [.. _heard];
                 _heard.Clear();
                 await ApplyAsync(named, token);
+                _appliedVersion = version;
+                Describe();
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -319,25 +325,29 @@ else
             var atEnd = _windowStart + _window.Count >= _total;
             string[] asked = [.. named.Where(id => atEnd || string.CompareOrdinal(id, last) <= 0)];
             if (asked.Length == 0)
-            {
-                Describe();
                 return;
-            }
             var read = await ByIdAsync(asked, token);
             var now = DateTimeOffset.UtcNow;
             var before = _window;
             var beforeAt = _at;
-            if (read.Missing.Count > 0 || read.Trades.Any(t => !beforeAt.ContainsKey(t.TradeId)))
+            // A trade cancelled moves every row after it up one, and a trade booked after the last
+            // one comes into view while the Window reaches it: either way the Window is read again.
+            // (The server books a trade only as it cancels one, and a reset that puts a cancelled
+            // trade back takes the booked one away, so a trade put back comes with one missing.)
+            if (read.Missing.Count > 0
+                || read.Trades.Any(t => !beforeAt.ContainsKey(t.TradeId) && string.CompareOrdinal(t.TradeId, last) > 0))
             {
-                // A trade cancelled, booked or put back moves rows: the Window is read again.
                 Show(await PageAsync(_windowStart, Math.Max(before.Count, 1), token));
             }
             else
             {
+                // Otherwise the trades in view are replaced, each by a new instance; a trade before
+                // the Window that only changed is read again when the grid scrolls to it.
                 var rows = before.ToArray();
-                foreach (var trade in read.Trades)
+                foreach (var trade in read.Trades.Where(t => beforeAt.ContainsKey(t.TradeId)))
                     rows[beforeAt[trade.TradeId]] = trade;
                 _window = rows;
+                _version = read.Version;
             }
             // The cells of the named trades in view whose values differ from what was shown; every
             // cell of a trade booked into view, a row that appears.
@@ -363,14 +373,12 @@ else
                 }
             }
             _changedInView += changed;
-            _version = read.Version;
             Forget(now);
         }
         finally
         {
             _turn.Release();
         }
-        Describe();
         StateHasChanged();
     }
 
@@ -410,7 +418,7 @@ else
                                             RowSequenceVersion="_rowSequenceVersion" IsLoading="_loading"
                                             OnRangeNeeded="_onRangeNeeded" Columns="Columns" PinnedColumnCount="1"
                                             CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"
-                                            ViewportHeight="480" ViewportWidth="1180" Chrome="_chrome" />;
+                                            ViewportHeight="480" ViewportWidth="1270" Chrome="_chrome" />;
 
     private TimeSpan Highlight => TimeSpan.FromMilliseconds(_highlightMs);
 
@@ -423,10 +431,12 @@ else
         new("Book", ColumnType.Text, t => t.Book, width: Fixed(170)),
         new("Product", ColumnType.Text, t => t.Product, width: Fixed(90)),
         new("Currency", ColumnType.Text, t => t.Currency, width: Fixed(90)),
-        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(110), align: CellAlign.Left,
+        // A number or a date that does not fit is #### rather than cut short (ADR-0016): the widths
+        // leave room for every digit the live updates can bring.
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(120), align: CellAlign.Left,
             format: value => ((DateTime)value).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
-        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(130), format: Money),
-        new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L", width: Fixed(120), format: Money),
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(150), format: Money),
+        new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L", width: Fixed(140), format: Money),
         new("Quantity", ColumnType.Number, t => t.Quantity, width: Fixed(90)),
         new("Confirmed", ColumnType.Boolean, t => t.Confirmed, width: Fixed(100)),
     ];
@@ -493,8 +503,9 @@ else
     private void Describe()
     {
         var live = _liveOn ? $"on, {_rate.ToString("N0", Culture)} trades every 250 ms" : "off";
+        var heard = _appliedVersion is null ? "" : $" Read again up to version {_appliedVersion}.";
         _noticesLine?.Show($"Live updates {live}. Heard {_notices.ToString("N0", Culture)} notices naming "
-            + $"{_named.ToString("N0", Culture)} trades; {_changedInView.ToString("N0", Culture)} cells in view changed.");
+            + $"{_named.ToString("N0", Culture)} trades; {_changedInView.ToString("N0", Culture)} cells in view changed.{heard}");
     }
 
     private void Unavailable(HttpRequestException error)
