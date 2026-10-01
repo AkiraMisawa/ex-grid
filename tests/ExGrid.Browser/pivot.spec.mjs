@@ -261,9 +261,12 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(details).toHaveCount(1);
             await expect(panel).toBeVisible();
 
-            // A second tab, from the report; closed while selected, it hands the keyboard to the
-            // tab selected next.
+            // A second tab, from the report once it is shown again (on Server, a round trip after
+            // its tab is pressed); closed while selected, it hands the keyboard to the tab selected
+            // next.
             await tabs.getByRole('tab', { name: 'PivotTable', exact: true }).click();
+            await expect(panel).toHaveCount(0);
+            await expect(rows(page).first()).toBeVisible();
             await rows(page).nth(2).locator('[role=gridcell]').nth(2).dblclick({ force: true });
             await expect(details).toHaveCount(2);
             await expect(details.nth(1)).toBeFocused();
