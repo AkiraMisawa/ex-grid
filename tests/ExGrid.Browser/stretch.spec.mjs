@@ -16,6 +16,14 @@ async function rowsIn(page, container) {
     return page.locator(`${container} .ex-row`).count();
 }
 
+// A Stretch grid paints its rows once the browser has told it its size (ADR-0028), a round trip
+// after its box is laid out on the Server host. The beforeEach waits for one grid of the page;
+// each of the others is waited for here, by its own rows.
+async function expectRowsPainted(page, container, atLeast) {
+    await expect.poll(() => rowsIn(page, container), { message: `rows painted in ${container}` })
+        .toBeGreaterThan(atLeast);
+}
+
 test.describe('in parents with a definite height', () => {
     test.beforeEach(async ({ page }) => {
         await page.setViewportSize({ width: 1280, height: 1400 });
@@ -41,7 +49,7 @@ test.describe('in parents with a definite height', () => {
         const grid = await box(page, '#flex-box .ex-grid');
         expect(grid.y).toBeCloseTo(toolbar.y + toolbar.height, 0);
         expect(grid.y + grid.height).toBeCloseTo(column.y + column.height, 0);
-        expect(await rowsIn(page, '#flex-box')).toBeGreaterThan(5);
+        await expectRowsPainted(page, '#flex-box', 5);
     });
 
     test('inside the paper: the Stretch grid takes what the toolbar leaves; a declared grid is unchanged (WR-7a, ADR-0030)', async ({ page }) => {
@@ -52,7 +60,7 @@ test.describe('in parents with a definite height', () => {
         });
         const grid = await box(page, '#stretch-paper .ex-grid');
         expect(grid.y + grid.height).toBeCloseTo(paper.bottom, 0);
-        expect(await rowsIn(page, '#stretch-paper')).toBeGreaterThan(5);
+        await expectRowsPainted(page, '#stretch-paper', 5);
 
         const declared = await box(page, '#declared-paper .ex-scroller');
         expect(declared.height).toBeCloseTo(200, 0);
