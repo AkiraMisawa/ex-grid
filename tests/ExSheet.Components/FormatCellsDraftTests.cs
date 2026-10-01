@@ -194,14 +194,69 @@ public class FormatCellsDraftTests
         Assert.Equal(BorderLine.None, draft.EdgeLine(BorderEdge.InsideVertical));
     }
 
-    [Fact] // ADR-0071 / SH-45, case 11-24: Format Cells compares each cell's own sides, so a thick bottom over a plain cell is an inside edge that differs, drawn grey and dotted, though the edge shows the line from either cell
+    [Fact] // ADR-0071 / SH-45, case 11-24: Format Cells compares each cell's own sides inside a range, so a thick bottom over a plain cell is an inside edge that differs, drawn grey and dotted, though the edge shows the line from either cell
     public void A_thick_bottom_over_a_plain_cell_is_an_edge_that_differs_case_11_24()
     {
-        var thick = new BorderLine(BorderLineStyle.Thick);
-        void Prepare(Sheet sheet) => Format(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = thick } });
+        Assert.Null(Open(ThickBottomOnA1, "A1", "A1:A2").EdgeLine(BorderEdge.InsideHorizontal));
+    }
 
-        Assert.Null(Open(Prepare, "A1", "A1:A2").EdgeLine(BorderEdge.InsideHorizontal));
-        // A2 alone records no top: a reading, since case 24 saw only the inside edge.
-        Assert.Equal(BorderLine.None, Open(Prepare, "A2", "A2").EdgeLine(BorderEdge.Top));
+    // ---- A range's outer edges show as drawn (the fourteenth Windows run, case 13) ----
+
+    private static readonly BorderLine Thick = new(BorderLineStyle.Thick);
+
+    private static void ThickBottomOnA1(Sheet sheet) => Format(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+
+    [Fact] // ADR-0071 / SH-45, case 14-13: A2 under A1's thick bottom opens with a thick top, though A2 records nothing; A1 opens with its own thick bottom. This corrects the reading that the dialog shows A2's own sides
+    public void A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13()
+    {
+        var a2 = Open(ThickBottomOnA1, "A2", "A2");
+        Assert.Equal(Thick, a2.EdgeLine(BorderEdge.Top));
+        Assert.Equal(BorderLine.None, a2.EdgeLine(BorderEdge.Bottom));
+        Assert.True(a2.Change.IsEmpty);
+
+        Assert.Equal(Thick, Open(ThickBottomOnA1, "A1", "A1").EdgeLine(BorderEdge.Bottom));
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-13: over several ranges, each range's outer edges show as drawn, and differ where the lines drawn there do
+    public void Each_ranges_outer_edges_show_as_drawn_case_14_13()
+    {
+        void Prepare(Sheet sheet)
+        {
+            ThickBottomOnA1(sheet);
+            Format(sheet, "C1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+        }
+
+        Assert.Equal(Thick, Open(Prepare, "A2", "A2", "C2").EdgeLine(BorderEdge.Top));
+        Assert.Null(Open(Prepare, "A2", "A2", "E2").EdgeLine(BorderEdge.Top));
+        // A2:B2's top is thick over A2 and drawn nowhere over B2.
+        Assert.Null(Open(Prepare, "A2", "A2:B2").EdgeLine(BorderEdge.Top));
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-13: an edge shown from the neighbour and left alone is not touched, so OK sets nothing and A2 still records no top
+    public void A_shown_edge_left_alone_sets_nothing_case_14_13()
+    {
+        var sheet = new Sheet(EnUs);
+        ThickBottomOnA1(sheet);
+        var draft = FormatCellsDraft.Open(sheet, CellAddress.Parse("A2"), [CellRange.Parse("A2")]);
+
+        draft.ToggleEdge(BorderEdge.Bottom);
+
+        Assert.Equal(new BorderChange { Bottom = Thin }, draft.Change.Borders);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears that edge on both sides, as clearing an edge does
+    public void Taking_a_shown_edge_away_clears_it_on_both_sides_case_14_13()
+    {
+        var sheet = new Sheet(EnUs);
+        ThickBottomOnA1(sheet);
+        var draft = FormatCellsDraft.Open(sheet, CellAddress.Parse("A2"), [CellRange.Parse("A2")]);
+
+        draft.SetLineStyle(BorderLineStyle.Thick);
+        draft.ToggleEdge(BorderEdge.Top);
+        Assert.Equal(new BorderChange { Top = BorderLine.None }, draft.Change.Borders);
+        sheet.SetCellFormat([CellRange.Parse("A2")], draft.Change);
+
+        Assert.Equal(CellBorders.None, sheet.GetBorders(CellAddress.Parse("A1")));
+        Assert.Equal(CellBorders.None, sheet.GetBorders(CellAddress.Parse("A2")));
     }
 }

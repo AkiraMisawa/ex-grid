@@ -412,7 +412,8 @@ nobody had asked for. What that means when writing a test:
   Context Menu and Ctrl+1 (case 22) with the keyboard on its tab; the arrows switching the tabs; OK as
   one undo step; Escape and a refused Custom code each setting nothing; a Custom code typed at full
   speed arriving whole, Enter as OK; Tab and Shift+Tab wrapping inside; cells that differ showing an
-  empty Font style and No Colour (case 24); scrolling inside a small box and closing as a Cancel when
+  empty Font style and No Colour (case 24); a cell under a neighbour's thick bottom opening with its
+  top pressed, as drawn (case 14-13); scrolling inside a small box and closing as a Cancel when
   the box shrinks below one row; and two Sheets each with their own. On a 150 ms circuit on the
   Server host, the page's *Format Cells…* pressed straight after Shift+ArrowDown, and the Context
   Menu's item chosen as soon as the menu opens on another cell, each open over the Selection the grid

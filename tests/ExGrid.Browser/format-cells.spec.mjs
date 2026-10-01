@@ -175,6 +175,25 @@ test.describe('on /sheet', () => {
         }
     });
 
+    test('SH-45, case 14-13: A2 under A1\'s thick bottom opens with a thick top, its button pressed', async ({ page }) => {
+        const grid = sheet(page);
+        // A1's bottom thick, set through Format Cells itself; A2 records nothing.
+        await openFromMenu(grid, 'A1');
+        await tab(grid, 'Border').click();
+        await choice(grid, 'Thick').check();
+        await formatCells(grid).getByRole('button', { name: 'Bottom', exact: true }).click();
+        await formatCells(grid).getByRole('button', { name: 'OK' }).click();
+        await expect(formatCells(grid)).toHaveCount(0);
+
+        await openFromMenu(grid, 'A2');
+
+        // It reopens on the last tab shown (case 22).
+        await expect(tab(grid, 'Border')).toHaveAttribute('aria-selected', 'true');
+        await expect(formatCells(grid).getByRole('button', { name: 'Top', exact: true })).toHaveAttribute('aria-pressed', 'true');
+        await expect(formatCells(grid).locator('.ex-format-cells-preview line[data-edge=Top]')).toHaveAttribute('stroke-width', '3');
+        await expect(formatCells(grid).getByRole('button', { name: 'Bottom', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    });
+
     // On the Server host the grid raises a move a round trip after it, from after the render that
     // shows it (ADR-0050 item 14's note of 2026-10-01). Format Cells opens over the Selection the
     // grid holds when it is asked, and the move's notification, landing after, names that same

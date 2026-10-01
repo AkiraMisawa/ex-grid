@@ -444,6 +444,63 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.Equal(BorderLine.None, FormatAt(page, "B2").Borders.Top);
     }
 
+    // ---- A range's outer edges show as drawn (the fourteenth Windows run, case 13) ----
+
+    private static readonly BorderLine Thick = new(BorderLineStyle.Thick);
+
+    private static SheetDocument ThickBottomOnA1() =>
+        DocumentOf(sheet => sheet.SetCellFormat([CellRange.Parse("A1")], new CellFormatChange { Borders = new BorderChange { Bottom = Thick } }));
+
+    // What a cell records of its own, read back from the document: GetCellFormats answers each cell's own sides.
+    private static IReadOnlySet<CellFormat> RecordedAt(IRenderedComponent<Bunit.Rendering.ContainerFragment> page, string range) =>
+        global::ExSheet.Engine.Sheet.Open(Sheet(page).ToDocument()).GetCellFormats(CellRange.Parse(range));
+
+    [Fact] // ADR-0071 / SH-45, case 14-13: under this Chrome too, A2 under A1's thick bottom opens with a thick top, its button pressed
+    public async Task A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13()
+    {
+        var page = RenderPage(ThickBottomOnA1());
+
+        await OpenAsync(page, "A2");
+        await ShowTabAsync(page, "Border");
+
+        Assert.Equal("true", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
+        Assert.Equal("3", page.Find(".mud-ex-sheet-format-cells-preview line[data-edge=Top]").GetAttribute("stroke-width"));
+        Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Bottom]").GetAttribute("aria-pressed"));
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-13: OK with the shown top left alone sets nothing: A2 still records no top, and no undo step is added
+    public async Task Ok_with_the_shown_top_left_alone_sets_nothing_case_14_13()
+    {
+        var page = RenderPage(ThickBottomOnA1());
+        await OpenAsync(page, "A2");
+        await ShowTabAsync(page, "Border");
+
+        await OkAsync(page);
+
+        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        Assert.False(Sheet(page).CanUndo);
+        Assert.Equal([CellFormat.Default], RecordedAt(page, "A2"));
+        Assert.Equal(Thick, FormatAt(page, "A1").Borders.Bottom);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears A1's bottom too, so no line is drawn there
+    public async Task Taking_the_shown_top_away_clears_a1s_bottom_case_14_13()
+    {
+        var page = RenderPage(ThickBottomOnA1());
+        await OpenAsync(page, "A2");
+        await ShowTabAsync(page, "Border");
+
+        await ChooseAsync(page, "Thick");
+        await page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").ClickAsync(new MouseEventArgs());
+        Assert.Equal("false", page.Find(".mud-ex-sheet-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
+        await OkAsync(page);
+
+        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        Assert.Equal(CellBorders.None, FormatAt(page, "A1").Borders);
+        Assert.Equal(CellBorders.None, FormatAt(page, "A2").Borders);
+        Assert.True(Sheet(page).CanUndo);
+    }
+
     // ---- The keyboard ----
 
     [Fact] // ADR-0071 / ADR-0021's note of 2026-09-30: the dialog takes the keyboard from an element of the frame's own, which goes once the dialog has it

@@ -12,10 +12,14 @@ namespace ExSheet;
 /// shown as Excel shows it (the eleventh Windows run, case 24): the Font style empty
 /// (<see cref="FontStyle"/> is <see langword="null"/>), a Fill as No Colour, and an edge as a grey
 /// dotted line (<see cref="EdgeLine"/> is <see langword="null"/>). Every other part shows the Focus
-/// cell's. The Border tab's line opens as Thin and Automatic.</para>
+/// cell's. A range's outer edges show as they are drawn, a neighbour's line where the cell records
+/// none (the fourteenth run, case 13); an edge inside a range shows the cells' own sides. The Border
+/// tab's line opens as Thin and Automatic.</para>
 ///
 /// <para><see cref="Change"/> names only the parts the user touched, so OK leaves every other part
-/// as each cell has it; with nothing touched it is empty, and OK sets nothing. A choice that
+/// as each cell has it; with nothing touched it is empty, and OK sets nothing. An edge shown from a
+/// neighbour and left alone writes nothing; taken away, it is cleared on both sides, as clearing an
+/// edge is (SH-45; a reading, since no run pressed it). A choice that
 /// cannot be set — a Custom code ExSheet does not read, More Colours text that is not a colour — is
 /// held as <see cref="Refusal"/>, by name, and OK sets nothing until it is put right.</para>
 /// </summary>
@@ -480,9 +484,11 @@ public sealed class FormatCellsDraft
 }
 
 /// <summary>
-/// What differs across a Selection, as Format Cells shows it (ADR-0071; the eleventh Windows run,
-/// case 24): whether bold or italic differs, whether the Fill does, and each edge's one line, or
-/// <see langword="null"/> where its cells' sides differ.
+/// What differs across a Selection, as Format Cells shows it (ADR-0071): whether bold or italic
+/// differs, whether the Fill does, and each edge's one line, or <see langword="null"/> where it
+/// differs. An outer edge is read as it is drawn, so a neighbour's line shows where the cell records
+/// none (the fourteenth Windows run, case 13); an edge inside a range is read from its cells' own
+/// sides, so a thick bottom over a plain cell differs (the eleventh run, case 24).
 /// </summary>
 internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers, BorderLine?[] Edges, bool InsideHorizontal, bool InsideVertical)
 {
@@ -495,12 +501,16 @@ internal sealed record FormatCellsSpread(bool FontStyleDiffers, bool FillDiffers
         foreach (var range in ranges)
         {
             var (first, last) = (range.First, range.Last);
-            Add(BorderEdge.Top, new CellRange(first, new CellAddress(first.Row, last.Column)), b => b.Top);
-            Add(BorderEdge.Bottom, new CellRange(new CellAddress(last.Row, first.Column), last), b => b.Bottom);
-            Add(BorderEdge.Left, new CellRange(first, new CellAddress(last.Row, first.Column)), b => b.Left);
-            Add(BorderEdge.Right, new CellRange(new CellAddress(first.Row, last.Column), last), b => b.Right);
-            // An edge inside the range is the lower side of every row but the last and the upper
-            // side of every row but the first; and the same across columns.
+            // An outer edge shows as it is drawn: a neighbour's line where the cell records none
+            // (the fourteenth Windows run, case 13).
+            var outer = sheet.GetEdgeLines(range);
+            sides[(int)BorderEdge.Top].UnionWith(outer.Top);
+            sides[(int)BorderEdge.Bottom].UnionWith(outer.Bottom);
+            sides[(int)BorderEdge.Left].UnionWith(outer.Left);
+            sides[(int)BorderEdge.Right].UnionWith(outer.Right);
+            // An edge inside the range compares the cells' own sides (the eleventh run, case 24):
+            // the lower side of every row but the last and the upper side of every row but the
+            // first; and the same across columns.
             if (range.RowCount > 1)
             {
                 Add(BorderEdge.InsideHorizontal, new CellRange(first, new CellAddress(last.Row - 1, last.Column)), b => b.Bottom);

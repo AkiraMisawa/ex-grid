@@ -191,7 +191,9 @@ step.Undo();                                         // Entries, formats and Ref
   `GetBorders` one part of it. Its Borders are the edges as shown, the same from either cell:
   where both cells record a line on an edge, the upper cell's (the left cell's) is shown, and
   otherwise whichever records one. `GetCellFormats(range)`, what Format Cells reads, answers each
-  cell's own sides instead, as Excel's Format Cells compares them. `GetRowNumberFormat`, `GetColumnNumberFormat` and their
+  cell's own sides instead, as Excel's Format Cells compares them inside a range, and
+  `GetEdgeLines(range)` the lines drawn along the range's outer edges, as Excel's Format Cells shows
+  them. `GetRowNumberFormat`, `GetColumnNumberFormat` and their
   alignment counterparts answer what a level records. A colour (`CellColour`) is Automatic or RGB; a Fill is RGB or none; a Border
   is one of Excel's thirteen line styles and a colour. The per-cell forms taking addresses keep
   working.
