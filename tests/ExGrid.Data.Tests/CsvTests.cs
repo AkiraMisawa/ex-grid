@@ -294,6 +294,16 @@ public class CsvTests
         Assert.Equal([new DateTime(2026, 9, 30), new DateTime(2026, 10, 1)], Values(snapshot, "When"));
     }
 
+    [Fact] // ADR-0063: a date is read in its culture's calendar: a Thai 2569 is 2026, and so is a Persian 1405
+    public void A_date_is_read_in_its_cultures_calendar()
+    {
+        var thai = new CsvSchema([new("When", SnapshotKind.Date) { DateFormats = ["yyyy-MM-dd"], Culture = CultureInfo.GetCultureInfo("th-TH") }]);
+        var persian = new CsvSchema([new("When", SnapshotKind.Date) { DateFormats = ["yyyy-MM-dd"], Culture = CultureInfo.GetCultureInfo("fa-IR") }]);
+
+        Assert.Equal([new DateTime(2026, 9, 30)], Values(Read(thai, "When\n2569-09-30\n"), "When"));
+        Assert.Equal([new PersianCalendar().ToDateTime(1405, 6, 31, 0, 0, 0, 0)], Values(Read(persian, "When\n1405-06-31\n"), "When"));
+    }
+
     [Fact] // ADR-0063: a time without a date is read on the first day, never on the day it is read
     public void A_time_without_a_date_is_read_on_the_first_day()
     {

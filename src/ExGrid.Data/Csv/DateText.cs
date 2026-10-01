@@ -175,9 +175,12 @@ internal sealed class DateFormat
     }
 
     /// <summary>Compiles a format of digit fields and single ASCII literals; <see langword="null"/> for
-    /// any other, which is then read from the decoded text.</summary>
+    /// any other, which is then read from the decoded text. Only a culture that writes dates in the
+    /// Gregorian calendar is compiled: Thai writes 2026 as 2569, which .NET reads in its own calendar.</summary>
     private static Piece[]? Compile(string format, CultureInfo culture)
     {
+        if (culture.DateTimeFormat.Calendar is not GregorianCalendar)
+            return null;
         if (format.Length < 2)
             return null; // a one-letter format is a standard format, not a custom one
         var pieces = new List<Piece>();
