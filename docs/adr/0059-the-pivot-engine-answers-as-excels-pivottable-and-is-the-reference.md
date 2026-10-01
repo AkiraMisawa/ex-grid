@@ -53,8 +53,11 @@ are. The Item rules that follow from those definitions are:
   - Read from objects, a Blank is an accessor that returned null, and **an empty string is a
     value**: an Item with an empty label, as ADR-0023 has it for filters.
   - Read from a CSV, an empty field is a Blank in every kind (ADR-0063, Q55).
-- **A value of any other type is Text, by its culture-formatted text**, when an untyped accessor
-  declares the column Text. An enum is its name.
+- **A value of any other type is Text, by its invariant text**, when an untyped accessor declares
+  the column Text. An enum is its name. *(Refined 2026-10-01: the proposal said the
+  culture-formatted text. A Snapshot holds the text, and it is read independently of any
+  report's culture, so the text is the invariant one. Two reports in two cultures show the same
+  Items.)*
 
 **The declared type decides only defaults**: where a ticked field goes, which Aggregation a new
 Value Field takes, and how an Item is labelled. A Decimal, Double or Integer column is declared as a

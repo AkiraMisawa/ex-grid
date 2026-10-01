@@ -178,6 +178,31 @@ A source that can be asked again, such as a server's, says so in its features (Q
 - **Engines such as DuckDB behind a source** are documented, not bundled (Q36), because they bring
   native libraries.
 
+## Refined while building it
+
+*(2026-10-01, when the contract was built.)*
+
+- **A field's Items come in no promised order, and a source's search matches an Item's invariant
+  text, ignoring case.** A source knows neither the report's culture nor its formats, so it cannot
+  order or search painted labels. Filter… orders the Items itself, as it orders any field's, and
+  narrows the painted labels among the Items it holds. It asks the source with the typed search
+  only when a field has more Items than it lists (10,000, ADR-0060).
+- **A field in Filters that hides nothing does not travel in a question.** It changes no leaf, so
+  placing it, or moving it while it hides nothing, asks no new question. Only the row fields, the
+  column fields and the Filters fields with Hidden Items are part of what the answer was computed
+  from.
+- **An answer may carry more parts than were asked for**, and ExPivot uses what it is given.
+  `PivotSource.Fetch` refuses on its own, without asking the server, a question that names an
+  unknown field or asks for a part no Aggregation it offers reads. It refuses an answer to a
+  different question than the one asked.
+- **The bundled source's Source Version is new for each source**, so handing ExPivot a new source
+  is a refresh that no older question survives.
+- **`PivotJson` is written by hand**, not through `JsonSerializer`, so trimming a browser
+  application cannot break it. Each document names its format version and its type. In a sum or
+  an extreme, a JSON number is an exact decimal and a string is a `double`, so `0.1 + 0.2` travels
+  as the `double` it is, and a sum of money as the decimal it is.
+- **Counts are 64-bit throughout**, because a server's data is not bounded by a process's.
+
 ## Consequences
 
 - **ExPivot's entry point is now `PivotSource.From`, not `PivotEngine`.** The engine is what the

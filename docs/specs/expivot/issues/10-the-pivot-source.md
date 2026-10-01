@@ -28,3 +28,11 @@ Status: ready-for-agent
 - [ ] PV-29: `MaxLeaves` refused, with the bound
 
 ## Comments
+
+2026-10-01: The contract is built over records: `PivotSource`, the questions and answers,
+`PivotJson`, `PivotSource.From(records, fields)` in slices, `PivotSource.Fetch`, and the report
+laid out from Leaf Aggregates, with the cell index's hash fixed (8.0 s → 1.2 s for 270 dates in
+Columns at a million records). PV-16, PV-22, PV-23, PV-27 and PV-29's engine side pass. What
+remains for this ticket is `From(snapshot)`, which ticket 09 brings, and leaving Filters fields
+that hide nothing out of a question (ADR-0065, refined).
+
