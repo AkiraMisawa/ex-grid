@@ -208,10 +208,11 @@ internal sealed class AppearanceStyles
         name = $"ex-fill-{Hex(rgb)}";
         _fills[rgb] = name;
         // The Fill covers the gridlines at its edges (ADR-0071; the eleventh run, cases 4–6): its own
-        // colour covers the row's rule beneath it, and the column rule on its right edge goes. The
-        // gridlines its neighbours paint are covered by their shares (Share.Cover).
+        // colour covers the row's rule beneath it, a Pinned Column's cell paints that rule no more,
+        // and the column rule on its right edge goes. The gridlines its neighbours paint are
+        // covered by their shares (Share.Cover).
         _rules.Append(".ex-cell.").Append(name).Append("{background-color:#").Append(Hex(rgb))
-            .Append(";--ex-column-rule-color:transparent}\n");
+            .Append(";--ex-column-rule-color:transparent;--ex-row-rule:none}\n");
         Version++;
         return name;
     }

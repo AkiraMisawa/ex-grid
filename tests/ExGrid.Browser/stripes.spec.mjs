@@ -281,3 +281,48 @@ test('the vertical scrollbar paints a thumb in its gutter (ADR-0029, UX-10)', as
     const [thumb, track] = await pixelsAt(page, [[x, box.y + 12], [x, box.y + box.height - gutter - 4]]);
     expect(thumb, 'the thumb is painted: it differs from the empty track below it').not.toBe(track);
 });
+
+/** The device pixel on a row's last line near each cell's right edge — where the row's rule is
+ * drawn, inside the padding, clear of the text — and the one four pixels above it, the ground. */
+async function ruleLineOf(page, row, columns) {
+    const rowBox = await rowOf(page, row).boundingBox();
+    const region = await painted(page, rowBox);
+    const last = rowBox.y + rowBox.height - 0.5;
+    const out = [];
+    for (const column of columns) {
+        const box = await cell(page, row, column).boundingBox();
+        const x = box.x + box.width - 4;
+        out.push({ rule: region.at(x, last), ground: region.at(x, last - 4) });
+    }
+    return out;
+}
+
+test('a pinned cell paints its row\'s rule as the scrollable cells show it, and none while the rule is off (ticket 92, ADR-0029, ADR-0038)', async ({ page }) => {
+    // Rows 9 (striped) and 10 (not) are detail rows; 12 is a group row, which paints no rule.
+    expect(await isStriped(page, 9)).toBe(true);
+    expect(await isStriped(page, 10)).toBe(false);
+
+    // Off, the default: the pinned cell paints its ground on the rule's line, as the row does.
+    for (const row of [9, 10]) {
+        const [pinned, desk] = await ruleLineOf(page, row, [0, 3]);
+        expect(sameColour(pinned.rule, pinned.ground, 1), `row ${row}, pinned: no rule (${pinned.rule} over ${pinned.ground})`).toBe(true);
+        expect(sameColour(desk.rule, desk.ground, 1), `row ${row}, scrollable: no rule`).toBe(true);
+    }
+
+    // A theme turns the rule on, on this grid's own element, which leaves with the page.
+    const RULE = [200, 0, 0];
+    await page.locator('.ex-grid').evaluate((grid) => grid.style.setProperty('--ex-row-rule-color', 'rgb(200, 0, 0)'));
+    await expect.poll(async () => (await ruleLineOf(page, 10, [3]))[0].rule).toEqual(RULE);
+    for (const row of [9, 10]) {
+        const [pinned, amount, desk] = await ruleLineOf(page, row, [0, 1, 3]);
+        for (const [name, read] of [['the pinned Name', pinned], ['Amount', amount], ['Desk', desk]]) {
+            expect(sameColour(read.rule, RULE, 2), `row ${row}, ${name}: the rule (${read.rule})`).toBe(true);
+        }
+        // Above the line, each keeps its own ground: the stripe, or none.
+        expect(pinned.ground, `row ${row}: the pinned ground above the rule`).toEqual(desk.ground);
+    }
+    // A group row paints no rule, on its pinned cell as on the row.
+    const [groupPinned, groupDesk] = await ruleLineOf(page, 12, [0, 3]);
+    expect(sameColour(groupPinned.rule, RULE, 40), `the group row's pinned cell (${groupPinned.rule})`).toBe(false);
+    expect(groupPinned.rule).toEqual(groupDesk.rule);
+});

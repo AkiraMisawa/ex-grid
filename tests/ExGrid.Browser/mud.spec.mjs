@@ -281,3 +281,38 @@ test("the paper's corners: rounded with an inset, square flush; the grid's own b
     await expect.poll(async () => paperA(page).evaluate((p) => getComputedStyle(p).borderTopLeftRadius)).toBe('0px');
     expect(await paperA(page).evaluate((p) => getComputedStyle(p).paddingLeft)).toBe('0px');
 });
+
+test('the Wrapper\'s row rule runs on across the Pinned Column, light and dark (ticket 92, ADR-0030)', async ({ page }) => {
+    await open(page);
+    await page.mouse.move(0, 0);
+    // The rule's line and the ground four pixels above it, near the right edge of the pinned Book
+    // and of a scrollable cell — inside the padding, clear of the text — on a few rows.
+    const lines = async () => {
+        const out = [];
+        for (const n of [1, 2, 3]) {
+            const row = gridA(page).locator('.ex-viewport .ex-row').nth(n);
+            const rowBox = await row.boundingBox();
+            const region = await painted(page, rowBox);
+            const last = rowBox.y + rowBox.height - 0.5;
+            const at = async (locator) => {
+                const box = await locator.boundingBox();
+                return { rule: region.at(box.x + box.width - 4, last), ground: region.at(box.x + box.width - 4, last - 4) };
+            };
+            out.push({ pinned: await at(row.locator('.ex-pinned').first()), scrollable: await at(row.locator('.ex-cell:not(.ex-pinned)').nth(1)) });
+        }
+        return out;
+    };
+    for (const dark of [false, true]) {
+        if (dark) {
+            await page.locator('#toggle-dark').click();
+            await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+            await page.mouse.move(0, 0);
+        }
+        for (const [n, { pinned, scrollable }] of (await lines()).entries()) {
+            // There is a rule to carry: the scrollable cell's line differs from its ground.
+            expect(scrollable.rule, `dark=${dark}, row ${n + 1}: the Wrapper's rule shows`).not.toEqual(scrollable.ground);
+            expect(pinned.rule, `dark=${dark}, row ${n + 1}: the pinned cell's line is the rule`).toEqual(scrollable.rule);
+            expect(pinned.ground, `dark=${dark}, row ${n + 1}: the grounds above it`).toEqual(scrollable.ground);
+        }
+    }
+});

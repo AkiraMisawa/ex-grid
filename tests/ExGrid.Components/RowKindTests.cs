@@ -104,20 +104,7 @@ public class RowKindTests : GridTestContext
         Assert.Contains("Beta", cut.Find(".ex-row-total").TextContent);
     }
 
-    /// <summary>What the shipped stylesheet's unconditional rules give an element's property, as the
-    /// cascade picks it — the most specific matching selector, then the last declared — or null when
-    /// none sets it. A pseudo-element's rule styles the pseudo-element, never the element.</summary>
-    private static string? Winning(IElement element, string property)
-        => ShippedStylesheetTests.UnconditionalRules()
-            .SelectMany((rule, order) => ShippedStylesheetTests.Declarations(rule.Body)
-                .Where(declared => declared.Property == property)
-                .SelectMany(declared => rule.Selectors
-                    .Where(selector => !selector.Contains("::", StringComparison.Ordinal) && element.Matches(selector))
-                    .Select(selector => (Specificity: ShippedStylesheetTests.Specificity(selector), Order: order, declared.Value))))
-            .OrderBy(candidate => candidate.Specificity)
-            .ThenBy(candidate => candidate.Order)
-            .Select(candidate => candidate.Value)
-            .LastOrDefault();
+    private static string? Winning(IElement element, string property) => ShippedStylesheetTests.Winning(element, property);
 
     /// <summary>The declarations of the unconditional rules that style an element's ::after.</summary>
     private static List<(string Property, string Value)> AfterOf(IElement element)
