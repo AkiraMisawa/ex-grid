@@ -461,9 +461,9 @@ editor surfaces under either Chrome, the Name Box, and painted-box comparisons.
 `keyboard.mjs` says where a grid's keyboard is (ADR-0080). A grid that edits holds the keyboard,
 with no edit open, in its Keyboard Field, which is also its one tab stop and carries
 `aria-activedescendant`; a display-only grid holds it on its root. So "the root holds DOM focus"
-is asserted as `expectKeyboardOn(grid)` — the root or its own field — and never as
-`expect(grid).toBeFocused()`, which on a grid that edits is false whenever the keyboard is the
-grid's; the Focus is read with `expectActiveDescendant` or `activeDescendant`, from whichever
+is asserted as `expectKeyboardOn(grid)` — its own field, or its root where it has none, never the
+root of a grid that has a field — and never as `expect(grid).toBeFocused()`, which on a grid that
+edits is false whenever the keyboard is the grid's; the Focus is read with `expectActiveDescendant` or `activeDescendant`, from whichever
 element carries it; and "the grid is interactive" is `expectTabStopTaken`. A grid's root is still
 asserted directly where the root is the point: a display-only grid's tab stop (A11Y-17), a
 Prerendered root's attributes (A11Y-20).

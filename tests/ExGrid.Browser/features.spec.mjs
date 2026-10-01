@@ -75,8 +75,7 @@ test('Escape cancels the editor and never blurs the grid mid-edit (ED-3)', async
 
     await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     await expect(page.locator('#edit-status')).toContainText('Edited: —');
-    // The grid still holds the keyboard: its root, or its Keyboard Field, has DOM focus again
-    // (ADR-0080).
+    // The grid still holds the keyboard: its Keyboard Field has DOM focus again (ADR-0080).
     await expectKeyboardOn(grid(page));
 });
 
@@ -121,9 +120,13 @@ test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shi
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 
-    // Back in the grid the release is spent: Tab cycles inside the selection again. Focus put on
-    // the root by script is passed on to its Keyboard Field (ADR-0080).
-    await grid(page).focus();
+    // Shift+Tab from the element after the grid lands in the grid, on its Keyboard Field, the one
+    // tab stop: no ▾ is reached on the way in either (A11Y-4, ADR-0080).
+    await page.keyboard.press('Shift+Tab');
+    await expect(keyField(grid(page))).toBeFocused();
+
+    // Back in the grid the release is spent — it ended when DOM focus left the grid — and Tab
+    // cycles inside the selection again (ADR-0012, ADR-0080).
     await page.keyboard.press('Tab');
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c2$/);
@@ -534,24 +537,14 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
 });
 
 test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4, KB-12, ADR-0080)', async ({ page }) => {
-    // Tab from the address bar territory: focus the body first.
-    await page.evaluate(() => document.body.focus());
-    await page.keyboard.press('Tab');
+    await aButtonEitherSide(page);
+    await page.locator('#before-grid').focus();
 
-    // The first grid edits, so its tab stop is its Keyboard Field, and its root is not one
-    // (ADR-0080).
+    // One Tab from the element before the grid reaches its tab stop. The first grid edits, so that
+    // is its Keyboard Field, and its root is not one; and the header's ▾ buttons are not tab stops,
+    // on any grid, so none comes first (ADR-0080, 2026-10-02).
     const first = grid(page);
-    // Walk tabs until the first grid's keyboard is reached: nav links precede it. The header's ▾
-    // buttons are not tab stops, on any grid, so the walk reaches the field without passing one
-    // (ADR-0080, 2026-10-02).
-    const passed = [];
-    for (let i = 0; i < 20; i++) {
-        const on = await keyboardIsOn(first);
-        if (on === true) break;
-        passed.push(on);
-        await page.keyboard.press('Tab');
-    }
-    expect(passed.filter((holder) => holder.includes('ex-menu-button')), 'a ▾ reached by Tab').toEqual([]);
+    await page.keyboard.press('Tab');
     await expect(keyField(first)).toBeFocused();
     await expect(keyField(first)).toHaveAttribute('tabindex', '0');
     await expect(first).toHaveAttribute('tabindex', '-1');

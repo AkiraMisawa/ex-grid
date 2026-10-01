@@ -8,27 +8,37 @@ import { expect } from './fixtures.mjs';
 // field, and keeps all of that on its root, as before.
 //
 // So an assertion that a grid's root holds DOM focus means "the keyboard is this grid's", and reads
-// "the root or its own Keyboard Field" (expectKeyboardOn); aria-activedescendant is read from the
-// element that carries it (keyboardCarrier); and a grid's tab stop is taken where it stands
-// (expectTabStopTaken). A grid's own field is the first in its markup: it stands at the start of the
-// Viewport, ahead of every cell and so of any grid nested in one, whose field is that grid's
-// (ADR-0018). Every read is made in the page, so it answers for the grid as it is at that moment.
+// "its own Keyboard Field, or its root where it has none" (expectKeyboardOn). The root alone is not
+// enough on a grid that edits: focus landing there is handed to the field in the same task, so the
+// root is never seen holding it, and a root that kept it would leave an IME nowhere to start.
+// aria-activedescendant is read from the element that carries it (keyboardCarrier), and a grid's tab
+// stop is taken where it stands (expectTabStopTaken). A grid's own field is found by its place,
+// KEY_FIELD below, never by its class alone: a grid nested in a cell has a field of its own, which is
+// that grid's (ADR-0018). Every read is made in the page, so it answers for the grid as it is at that
+// moment.
+
+/** Where a grid's own Keyboard Field stands, from its root: in its own Viewport's field layer. */
+const KEY_FIELD = ':scope > .ex-scroller > .ex-spacer > .ex-viewport > .ex-key-field-layer > input.ex-key-field';
 
 /** This grid's own Keyboard Field (ADR-0080), on a grid that edits: a display-only grid has none. */
 export function keyField(grid) {
-    return grid.locator('input.ex-key-field').first();
+    return grid.locator(KEY_FIELD);
 }
 
 /**
- * Whether the keyboard is this grid's with no edit open — DOM focus on its root, or on its own
- * Keyboard Field — at this moment: true, or where the keyboard is instead, for a failure to name.
+ * Whether the keyboard is this grid's with no edit open at this moment — DOM focus on its own
+ * Keyboard Field, or on its root where it has none: true, or where the keyboard is instead, for a
+ * failure to name.
  */
 export function keyboardIsOn(grid) {
-    return grid.evaluate((root) => {
+    return grid.evaluate((root, path) => {
         const active = document.activeElement;
-        if (active === root || (active instanceof HTMLInputElement && active.classList.contains('ex-key-field')
-            && active.closest('.ex-grid') === root)) {
+        const field = root.querySelector(path);
+        if (active !== null && active === (field ?? root)) {
             return true;
+        }
+        if (active === root) {
+            return 'the root, though this grid has a Keyboard Field (ADR-0080)';
         }
         if (active === null || active === document.body) {
             return 'the page body';
@@ -36,14 +46,14 @@ export function keyboardIsOn(grid) {
         const name = active.tagName.toLowerCase() + (active.id ? `#${active.id}` : '')
             + [...active.classList].map((c) => `.${c}`).join('');
         return root.contains(active) ? `${name}, inside this grid` : name;
-    });
+    }, KEY_FIELD);
 }
 
 /**
- * Asserts the keyboard is this grid's with no edit open: DOM focus is on its root, or on its own
- * Keyboard Field, never a nested grid's (ADR-0080).
+ * Asserts the keyboard is this grid's with no edit open: DOM focus is on its own Keyboard Field —
+ * never a nested grid's — or, on a display-only grid, which has none, on its root (ADR-0080).
  */
-export async function expectKeyboardOn(grid, message = 'the keyboard is this grid\'s: its root or its own Keyboard Field holds DOM focus (ADR-0080)') {
+export async function expectKeyboardOn(grid, message = 'the keyboard is this grid\'s: its own Keyboard Field holds DOM focus, or its root where it has none (ADR-0080)') {
     await expect.poll(() => keyboardIsOn(grid), { message }).toBe(true);
 }
 
@@ -54,8 +64,7 @@ export async function expectKeyboardOn(grid, message = 'the keyboard is this gri
  */
 export async function keyboardCarrier(grid) {
     await expect(grid).not.toHaveAttribute('aria-busy', /.*/);
-    const ownField = await grid.evaluate((root) => root.querySelector('input.ex-key-field')?.closest('.ex-grid') === root);
-    return ownField ? keyField(grid) : grid;
+    return await keyField(grid).count() > 0 ? keyField(grid) : grid;
 }
 
 /**
@@ -63,10 +72,7 @@ export async function keyboardCarrier(grid) {
  * (keyboardCarrier): for `expect.poll`, and for a value kept to compare with a later one.
  */
 export function activeDescendant(grid) {
-    return grid.evaluate((root) => {
-        const field = root.querySelector('input.ex-key-field');
-        return (field !== null && field.closest('.ex-grid') === root ? field : root).getAttribute('aria-activedescendant');
-    });
+    return grid.evaluate((root, path) => (root.querySelector(path) ?? root).getAttribute('aria-activedescendant'), KEY_FIELD);
 }
 
 /** Asserts the grid's aria-activedescendant, on the element that carries it (keyboardCarrier). */
@@ -80,11 +86,11 @@ export async function expectActiveDescendant(grid, expected) {
  * that edits, and on its root on a display-only grid (A11Y-4, ADR-0080).
  */
 export async function expectTabStopTaken(grid) {
-    await expect.poll(() => grid.evaluate((root) => {
-        const field = root.querySelector('input.ex-key-field');
-        return field !== null && field.closest('.ex-grid') === root
+    await expect.poll(() => grid.evaluate((root, path) => {
+        const field = root.querySelector(path);
+        return field !== null
             ? `field ${field.getAttribute('tabindex')}, root ${root.getAttribute('tabindex')}`
             : `root ${root.getAttribute('tabindex')}`;
-    }), { message: 'the grid has taken its one tab stop: its Keyboard Field\'s where it has one, its root\'s otherwise (A11Y-4, A11Y-20, ADR-0080)' })
+    }, KEY_FIELD), { message: 'the grid has taken its one tab stop: its Keyboard Field\'s where it has one, its root\'s otherwise (A11Y-4, A11Y-20, ADR-0080)' })
         .toMatch(/^(field 0, root -1|root 0)$/);
 }
