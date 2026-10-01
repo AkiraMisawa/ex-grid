@@ -2,8 +2,8 @@
 
   <!-- An application that takes ExGrid the way a Consumer does: from the packages, never from
        the projects (ADR-0042). It is outside the solution, and check.sh is the only way in:
-       it packs ExGrid's packages into .feed/, ExSheet's into .sheet-feed/ and ExPivot's into
-       .pivot-feed/, and passes the
+       it packs ExGrid's packages into .feed/, ExSheet's into .sheet-feed/ and ExPivot's — with
+       ExGrid.Data, which ships beside ExPivot (ADR-0063) — into .pivot-feed/, and passes the
        version it packed. Everything the DemoHost gets from a ProjectReference — the static web
        assets, the dependency ranges, the READMEs' examples compiling at all — is exercised here
        as a package delivers it.
@@ -22,6 +22,7 @@
     <PackageReference Include="ExGrid.MudBlazor" Version="$(ExGridVersion)" />
     <PackageReference Include="ExSheet.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExSheet" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExGrid.Data" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.MudBlazor" Version="$(ExGridVersion)" />
