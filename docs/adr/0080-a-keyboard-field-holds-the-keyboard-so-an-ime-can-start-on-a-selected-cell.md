@@ -96,7 +96,9 @@ display-only grid has none, and keeps the keyboard on its root, as before.
   Shift+Tab leaves for the page's next or previous element. **The release also ends when DOM focus
   leaves the grid**, which the root's `focusout` now tells, on every grid, with a field or not. This
   closes the gap ticket 77 recorded: Escape, a press elsewhere on the page, then Tab back into the grid
-  had left the release standing, so the next Tab left again.
+  had left the release standing, so the next Tab left again. A switch to another window is not
+  leaving: the browser sends `focusout` with no next holder, but DOM focus stays where it was, and
+  the release stands *(found while building, 2026-10-02)*.
 
 ## What assistive technology is given *(decided with the user)*
 
