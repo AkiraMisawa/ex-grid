@@ -527,7 +527,9 @@ heading (`$B$2`, then `$B$3`). Three things were decided with the user.
     never changes the number. `--1`, `- 1`, `50%` and `1e` are not numbers, and list every value. A
     grouping parenthesis opens an expression of its own, as inside `SUM(`: `,,(` lists nothing and
     `,,(A` lists `AVERAGE`. So does `[` after a table's name: `,,Positions[` lists the table's columns,
-    as `Table[` does anywhere, while `,,Positions` lists the values.
+    as `Table[` does anywhere, while `,,Positions` lists the values. Once the bracket or the
+    parenthesis closes, the caret is at the argument again: `,,Positions[Id]` and `,,(1)` are text
+    that is not a number, and list every value.
 - **White space after the caret is something of the argument** *(decided with the user, Q55)*. With
   the caret before two spaces (`,,|  )`), Excel listed nothing, and Tab entered the Formula with the
   spaces kept. ExSheet had counted them as nothing, listed the five values, and written `,,0  )` with
