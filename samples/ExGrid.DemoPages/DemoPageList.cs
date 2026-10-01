@@ -53,7 +53,7 @@ public static class DemoPageList
         new("sheet", "Sheet", "ExSheet",
             "ExSheet drawn by ExGrid: Formulas with completion and pointing, the Formula Bar, fill, paste, insertion, and a Linked Table read from the positions grid beside it (ADR-0046, ADR-0049, ADR-0051)."),
         new("pointing", "Pointing", "ExSheet",
-            "A Sheet pointing into a positions grid through a Pointing Scope: a press writes a lookup by key, and the arrow keys move it inside the grid, which scrolls to follow (ADR-0058)."),
+            "A Sheet pointing into a positions grid through a Pointing Scope: a press writes a lookup by key, and the arrow keys move it inside the grid, which scrolls to follow (ADR-0058). With ?narrow the grid is laid out narrower than its columns, and shows both of its own scrollbars."),
         new("sheets", "Two sheets", "ExSheet",
             "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard, and each outlines a Linked Table's columns only in the grid its page wired to it (ADR-0018, ADR-0048, ADR-0057)."),
     ];

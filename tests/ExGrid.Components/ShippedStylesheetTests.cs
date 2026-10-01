@@ -403,7 +403,7 @@ public class ShippedStylesheetTests
     public void The_open_edits_focus_is_granted_only_while_the_keyboard_is_this_grids()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
-        var method = Regex.Match(script.Text, @"focusEditor: \(bar\) => \{.*?\n        \},", RegexOptions.Singleline);
+        var method = Regex.Match(script.Text, @"focusEditor: \(bar, fromField\) => \{.*?\n        \},", RegexOptions.Singleline);
         Assert.True(method.Success, "focusEditor is not in the handle");
         var body = method.Value;
 
@@ -413,6 +413,12 @@ public class ShippedStylesheetTests
         Assert.Contains("surfaceField(box)", body, StringComparison.Ordinal);
         // Granted only while DOM focus is inside this root or on nothing: reclaimFocus's condition.
         Assert.Contains("!active || active === document.body || active === document.documentElement || root.contains(active)", body, StringComparison.Ordinal);
+        // Nor from a field beside the rows with focus of its own, a field a press on the rows left
+        // standing aside, unless the core means to take the keyboard out of it, as the hand-back
+        // leaves those fields (ADR-0021, 2026-09-28).
+        Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
+        Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
+        Assert.Contains("fromField !== true", body, StringComparison.Ordinal);
         // Scrolled into view as Blazor's FocusAsync did: no preventScroll here.
         Assert.Contains("field.focus();", body, StringComparison.Ordinal);
         Assert.DoesNotContain("preventScroll", body, StringComparison.Ordinal);
@@ -663,7 +669,7 @@ public class ShippedStylesheetTests
         Assert.All(ShippedAssets(), asset => Assert.DoesNotContain("--ex-reference-pointed-color", asset.Text, StringComparison.Ordinal));
     }
 
-    [Fact] // ADR-0051 second round / DC-31, ADR-0058 / SH-36: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys, and ← and → too while it is open over Point
+    [Fact] // ADR-0051 second round / DC-31, ADR-0058 / SH-36: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys, and ←, →, Home, End and the Shift+arrows too while it is open over Point
     public void The_gate_has_a_point_set_and_a_completion_set()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
@@ -671,9 +677,13 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"const pointKeys = new Set\(\[\s*\.\.\.overwriteKeys, 'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
             script.Text);
         Assert.Matches(new Regex(@"const completionKeys = new Set\(\[\.\.\.editingKeys, 'ArrowUp', 'ArrowDown'\]\);"), script.Text);
-        // ADR-0058 (the tenth Windows run) / SH-36: a list open over Point takes only ↑, ↓, Tab and
-        // Escape, and ← and → are claimed beside them, to point; Shift and Home and End are not.
-        Assert.Matches(new Regex(@"const completionOverPointKeys = new Set\(\[\.\.\.completionKeys, 'ArrowLeft', 'ArrowRight'\]\);"), script.Text);
+        // ADR-0058 (the tenth Windows run; Part B of the ninth, Q51) / SH-36: a list open over Point
+        // takes only ↑, ↓, Tab and Escape, and ←, →, Home, End and the four Shift+arrows are claimed
+        // beside them, to point; nothing else.
+        Assert.Matches(new Regex(
+            @"const completionOverPointKeys = new Set\(\[\s*\.\.\.completionKeys, 'ArrowLeft', 'ArrowRight', 'Home', 'End',\s*"
+            + @"'Shift\+ArrowUp', 'Shift\+ArrowDown', 'Shift\+ArrowLeft', 'Shift\+ArrowRight'\]\);"),
+            script.Text);
         // ADR-0058 ("The keyboard") / SH-35: Point written from outside has a set of its own beside them.
         Assert.Matches(new Regex(@"const claimedWhile = \{\s*overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,\s*completionOverPoint: completionOverPointKeys,\s*\};"), script.Text);
         // A list painted is open from its own render, before the gate is told (ADR-0051/0010):

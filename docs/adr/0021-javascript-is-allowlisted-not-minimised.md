@@ -384,6 +384,17 @@ runs when the browser acknowledges that render, a round trip after it.
 - **Open, not decided here:** a popover's opening focus (the column menu, the filter, Find) and a
   Template cell's own focus. Each is taken a round trip after a gesture in this grid too, so the same
   race exists there in principle. Nothing has been seen to fail there. It is recorded, not built.
+- **Narrowed as the hand-back was** *(2026-10-01, decided with the user)*. The request also leaves a
+  field beside the rows that holds the keyboard of its own, the Formula Bar's text or the Name Box (the
+  band `reclaimFocus` checks, a Chrome's control inside it included), unless the core means to take the
+  keyboard out of that field, which only a Reject met by a press into the Name Box does. Found on CI,
+  msedge against the Server host, in two runs of four: `x` typed onto F2, a press on F5 and a press
+  into the Formula Bar at once, then `7`. The core asked the Cell Editor to take the keyboard in the
+  after-render of the edit `x` opened, before it had heard the press into the bar; the request landed
+  after that press, DOM focus was inside the root, and the keyboard went from the bar to the Cell
+  Editor. `7` then opened an edit in F5's cell, not in the bar the user had pressed. The race was on
+  the base before the Pointing Scope (6 of 6 at a920922 with the bar pressed in the task that paints
+  the Cell Editor). A field a press on the rows left standing is still taken.
 
 *(Added 2026-09-30, decided with the user, with
 [ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md): a press handed on

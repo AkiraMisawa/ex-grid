@@ -441,7 +441,11 @@ nobody had asked for. What that means when writing a test:
   the positions grid ordinary, with the edit standing and pointing going on once a press brings it
   back; on `/sheets`, a press on the right's grid while the left Sheet points being an ordinary
   press; and, on the Server host with 150 ms, a press within the round trip after `=` being an
-  ordinary press with the edit standing. On `/pointing` (ticket 41, SH-35, DC-55), the arrow keys
+  ordinary press with the edit standing, a press on the grid still painted pointed at after the text
+  stopped pointing writing nothing and saying why, with the keys after it going on, and one still
+  painted otherwise after the text began to point being an ordinary press. A press follows a text
+  only once the Formula Bar shows it: until then `ex-pointed-at` can be left from an earlier text
+  (`=` points, `=S` does not), and a press can land on the grid painted otherwise. On `/pointing` (ticket 41, SH-35, DC-55), the arrow keys
   after a press: ↓ from R-1's PV writing R-2's lookup and moving the dashes, and ↑ back; → from an
   Id cell passing over Book, the grid's own column, to PV; ↓ past the painted rows scrolling the
   positions grid with the pointed cell in view; Shift+↓ and Ctrl+↓ writing nothing, with the page
