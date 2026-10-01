@@ -129,7 +129,7 @@ public class CellAppearanceTests : GridTestContext
 
         Assert.Contains("ex-fill-ffff00", Cell(cut, 1, 1).ClassList);
         Assert.Single(cut.FindAll("[class*='ex-fill-']"));
-        Assert.Contains(".ex-cell.ex-fill-ffff00{background-color:#ffff00;--ex-column-rule-color:transparent}", Css(cut));
+        Assert.Contains(".ex-cell.ex-fill-ffff00{background-color:#ffff00;--ex-column-rule-color:transparent;--ex-row-rule:none}", Css(cut));
         // The gridlines above it and left of it are the neighbours' pixels: they cover them.
         Assert.Contains("ex-lb-cover-ffff00", Cell(cut, 0, 1).ClassList);
         Assert.Contains("ex-lr-cover-ffff00", Cell(cut, 1, 0).ClassList);
@@ -587,15 +587,20 @@ public class CellAppearanceTests : GridTestContext
         // The Fill is the cell's background colour, beneath every layer.
         Assert.DoesNotContain("background-color", body, StringComparison.Ordinal);
 
-        // Every rule that names a tint and paints a background paints that tint.
+        // Every rule that names a tint and paints a background paints that tint, with at most the
+        // row's rule a Pinned Column's cell names (ticket 92) beside it.
         foreach (var (selectors, tinted) in rules.Where(rule => Regex.IsMatch(rule.Body, @"--ex-tint\s*:")))
         {
             if (Regex.IsMatch(tinted, @"background-image\s*:"))
-                Assert.Equal("var(--ex-tint)", Declared(tinted, "background-image").Trim());
+            {
+                var layers = Layers(Declared(tinted, "background-image"));
+                Assert.Contains("var(--ex-tint)", layers);
+                Assert.All(layers, layer => Assert.Contains(layer, new[] { "var(--ex-tint)", "var(--ex-row-rule, none)" }));
+            }
         }
     }
 
-    [Fact] // ADR-0050 item 15 / ADR-0071 (ticket 90): .ex-lined paints a row rule a cell names in --ex-row-rule beneath every other layer, and the core names none
+    [Fact] // ADR-0050 item 15 / ADR-0071 (ticket 90): .ex-lined paints a row rule a cell names in --ex-row-rule beneath every other layer, which a Pinned Column's cell names (ticket 92)
     public void The_lined_rule_paints_a_named_row_rule_beneath_every_layer()
     {
         var rules = ShippedStylesheetTests.CoreStylesheet().Rules;
@@ -605,8 +610,10 @@ public class CellAppearanceTests : GridTestContext
         Assert.Equal("var(--ex-row-rule, none)", Layers(Declared(body, "background-image"))[^1]);
         Assert.Equal("100% 100%", Layers(Declared(body, "background-size"))[^1]);
         Assert.Equal("0 0", Layers(Declared(body, "background-position"))[^1]);
-        // A grid whose Consumer names none paints its lined cells as before: no core rule names one.
-        Assert.DoesNotContain(rules, rule => Regex.IsMatch(rule.Body, @"--ex-row-rule\s*:"));
+        // A Pinned Column's cell names one (ticket 92), and a group or total row names none.
+        Assert.Equal(
+            [[".ex-pinned:where(.ex-cell)"], [".ex-row-group", ".ex-row-group .ex-cell"], [".ex-row-total", ".ex-row-total .ex-cell"]],
+            rules.Where(rule => Regex.IsMatch(rule.Body, @"--ex-row-rule\s*:")).Select(rule => rule.Selectors));
     }
 
     [Fact] // DC-58 / P4: nothing per cell reaches JavaScript — the same calls with the declaration as without

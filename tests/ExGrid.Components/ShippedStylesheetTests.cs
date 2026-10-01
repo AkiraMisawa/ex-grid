@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using AngleSharp.Css;
 using AngleSharp.Css.Parser;
+using AngleSharp.Dom;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -153,6 +154,21 @@ public class ShippedStylesheetTests
             .Select(declaration => declaration.Split(':', 2))
             .Where(parts => parts.Length == 2)
             .Select(parts => (parts[0].Trim(), parts[1].Trim()));
+
+    /// <summary>What the shipped stylesheet's unconditional rules give an element's property, as the
+    /// cascade picks it — the most specific matching selector, then the last declared — or null when
+    /// none sets it. A pseudo-element's rule styles the pseudo-element, never the element.</summary>
+    internal static string? Winning(IElement element, string property)
+        => UnconditionalRules()
+            .SelectMany((rule, order) => Declarations(rule.Body)
+                .Where(declared => declared.Property == property)
+                .SelectMany(declared => rule.Selectors
+                    .Where(selector => !selector.Contains("::", StringComparison.Ordinal) && element.Matches(selector))
+                    .Select(selector => (Specificity: Specificity(selector), Order: order, declared.Value))))
+            .OrderBy(candidate => candidate.Specificity)
+            .ThenBy(candidate => candidate.Order)
+            .Select(candidate => candidate.Value)
+            .LastOrDefault();
 
     private static readonly CssSelectorParser SelectorParser = new();
 
