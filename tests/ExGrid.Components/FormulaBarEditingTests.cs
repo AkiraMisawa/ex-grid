@@ -184,7 +184,7 @@ public class FormulaBarEditingTests : GridTestContext
 
         Assert.Empty(intents);
         Assert.Empty(discarded);
-        Assert.Equal(0, Js.BlurCount);
+        Assert.Equal(0, Js.TabReleases);
     }
 
     // What each hand-back asked of the handle: whether the keyboard is taken from the Formula

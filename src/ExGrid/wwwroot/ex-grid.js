@@ -108,6 +108,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     let cycleReferences = false;
     // Whether a popover's contents have a popup of their own open (ADR-0039), told by C#.
     let innerPopup = false;
+    // Whether Escape with nothing to dismiss has released Tab (ADR-0012, rewritten 2026-10-01),
+    // told by C#: the next Tab or Shift+Tab on the root is the browser's. Spent by that Tab, and
+    // ended by any other key (gate) or a press on the grid (onPress). The presses this root has
+    // heard, and how many it had heard when the last Escape was forwarded: a press the hold does
+    // not take — on a heading, in the Name Box — reaches the core at once, and a release answered
+    // for an Escape that press came after is not granted (releaseTab).
+    let tabReleased = false;
+    let pressesHeard = 0;
+    let pressesAtEscape = 0;
     // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
     // edited, and the browser's own find would search only the painted rows (ADR-0055).
     const editingKeys = new Set(
@@ -167,7 +176,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // core's, and it can change the editing mode, so the keys after it are held until it is
     // answered;
     // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded; 'caret' —
-    // Home or End on an Apple platform, taken and answered here (ticket 32);
+    // Home or End on an Apple platform, taken and answered here (ticket 32); 'out' — a Tab
+    // released by Escape, the browser's, which takes the keyboard out of the grid (ADR-0012);
     // null — the browser's, or a control's inside the grid. Read from a snapshot of the
     // event rather than the event itself, so a held key can be gated again, against the
     // mode its predecessor's answer left.
@@ -191,6 +201,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const canonical = canonicalOf(k);
         const control = k.ctrlKey || (k.metaKey && metaIsPrimary);
         const foreign = k.metaKey && !metaIsPrimary;
+
+        // Escape with nothing to dismiss released Tab (ADR-0012, rewritten 2026-10-01): the next
+        // Tab or Shift+Tab on the root is left to the browser, which moves to the page's next or
+        // previous element, so a keyboard user is never trapped. Any other key ends the release
+        // and keeps its meaning; a modifier's own keydown — the Shift of Shift+Tab — is not a
+        // key. Counted here rather than at the keydown, as an Inner Popup's Escape is: a key held
+        // behind the Escape ends the release in its turn, after the answer that granted it.
+        if (tabReleased && !modifierKeys.has(k.key)) {
+            if (editing === 'none' && k.onRoot && (canonical === 'Tab' || canonical === 'Shift+Tab')) {
+                return 'out';
+            }
+            tabReleased = false;
+        }
 
         if (editing === 'none') {
             if (!k.onRoot) {
@@ -263,6 +286,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             if (!taken.has(canonical)) {
                 return null;
+            }
+            // Escape may release Tab, which changes the keys this gate claims (ADR-0012,
+            // rewritten 2026-10-01): a mode change, so the keys after it wait for its answer.
+            if (canonical === 'Escape') {
+                pressesAtEscape = pressesHeard;
+                return 'mode';
             }
             if (popoverOpeners.has(canonical)) {
                 return 'popover';
@@ -958,6 +987,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 ...k, onRoot: editing === 'none', inEditor: editing !== 'none', inPopover: false, inFindField: false,
             };
             const verdict = gate(rebased);
+            if (verdict === 'out') {
+                // A released Tab held behind its Escape: the browser's move of DOM focus cannot be
+                // made from script (ADR-0021), so it is dropped with every key behind it, as a held
+                // Tab is in a popover, rather than hand the grid keys meant for the page's next
+                // element. The release stands, for the Tab the user presses again.
+                held.length = 0;
+                break;
+            }
             if (verdict === 'mode' || verdict === 'popover') {
                 awaitingPopover = verdict === 'popover';
                 await forward(rebased);
@@ -1054,6 +1091,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         const verdict = gate(k);
+        if (verdict === 'out') {
+            // The browser takes the keyboard out of the grid with it, and the release is spent.
+            tabReleased = false;
+            return;
+        }
         if (verdict === null) {
             // A caret key left to an editor surface moves the caret there: the user's move.
             if (k.inEditor && caretMoveKeys.has(event.key) && isTextField(event.target) && root.contains(event.target)) {
@@ -1394,6 +1436,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     root.addEventListener('ex-press-handed-on', onPressHandedOn);
 
     const onPress = (event) => {
+        // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012,
+        // 2026-10-01). A held press ends it again at its replay, after the answer it waited for.
+        tabReleased = false;
+        if (!replaying) {
+            pressesHeard++;
+        }
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
         if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
@@ -1985,16 +2033,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 focusDeclined = true;
             }
         },
-        // Escape's way out of Enter/Tab cycling. Setting focus is Blazor's FocusAsync;
-        // releasing it has no Blazor API, and it is this instance's own root either way.
-        blur: () => {
-            // Whatever inside the grid holds the keyboard, not only the root itself: an
-            // action button that was clicked has DOM focus, and blurring the root would
-            // do nothing at all.
-            const active = document.activeElement;
-            if (root && active instanceof HTMLElement && root.contains(active)) {
-                active.blur();
-            }
+        // Escape's way out of Enter/Tab cycling (ADR-0012, rewritten 2026-10-01): the next Tab
+        // or Shift+Tab is the browser's, and DOM focus stays where it is meanwhile. Told before
+        // the Escape's answer, so the keys held behind it meet the release.
+        releaseTab: () => {
+            tabReleased = pressesHeard === pressesAtEscape;
         },
         dispose: () => {
             // Left attached, a grid that is gone goes on eating every key its root still
