@@ -500,6 +500,35 @@ every setting).
 
 Ticket 57 takes the model. Ticket 58 takes the keys' widening and the localised built-ins.
 
+## Readings until the thirteenth Windows run *(2026-10-01)*
+
+Ticket 58 built the widening and the localised built-ins. Building them meant reading some things that
+neither run observed, and one earlier answer may contradict them. ExSheet follows each reading below
+until [`verify-on-windows-13.md`](../specs/exsheet/verify-on-windows-13.md) observes it. Excel's answer
+then decides (ADR-0047's rule).
+
+- **A column that has already left the standard width widens again** when a key's text no longer fits,
+  provided an entry or an earlier key widened it. A column the user sized never widens, as for
+  entries (SH-26).
+  - **The eleventh run's case 20 may contradict this.** Under en-US, `$` showed `########` at what the
+    record calls the standard width.
+  - That case pressed the keys on one cell in turn, so the date key had probably widened column A to
+    8.73 first. If so, `$1,234.50` with its `_)` padding did not fit 8.73, and Excel did not widen
+    again.
+- **What widens.**
+  - Only a Number Format widens.
+  - General widens as typing the number would.
+  - A Font, a Fill or a Border never widens, and a bold number that no longer fits shows `####`.
+- **Format Cells' OK and `SetCellFormatAsync` widen as a key does.** Two cases in the corpus (FMT-052
+  and FMT-072) set the format through COM after the number was typed, and Excel widened the column.
+  The dialog itself is not observed.
+- **Under ja-JP only built-in 15 shows the month as a number.** Excel's own local code for 15 reads
+  `dd-mmm-yy`, yet it shows `05-1-26`. So Excel may show `mmm` as a number in every format under ja-JP.
+  ExSheet shows .NET's `1月` there.
+- **Not a reading but an estimate.** ExSheet widens column A for `05-Jan-26`, which fitted Excel's 8.09
+  in case 19. ExSheet's fitting charges every character one digit width (ADR-0047). That is the same
+  estimate that otherwise decides `####`, and it errs towards widening, never towards hiding text.
+
 ## Consequences
 
 - **Notes on other ADRs**, each saying what changed:
