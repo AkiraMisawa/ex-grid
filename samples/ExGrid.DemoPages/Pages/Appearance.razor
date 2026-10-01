@@ -16,6 +16,17 @@
     Excel paints them (ADR-0063). The browser layer reads these grids' pixels.
 </p>
 
+<h2>Borders</h2>
+<p>
+    Excel's thirteen line styles, black: each on the bottom of a cell in <i>B</i> and on the right
+    of a cell in <i>D</i>. In <i>C</i>, a red thick line over a yellow Fill, for the Fill below it
+    and the Focus above it.
+</p>
+<div id="appearance-borders">
+    <ExGrid TRow="AppearanceRow" Window="BorderRows" Columns="BorderColumns" CellAppearance="BorderOf"
+            Density="GridDensity.Excel" ViewportHeight="320" ViewportWidth="360" />
+</div>
+
 <h2>Bold is judged by bold widths</h2>
 <p>
     Roboto, with the widths ExGrid.MudBlazor measured for it, regular and bold. The same number in
@@ -37,17 +48,6 @@
 <div id="appearance-italic">
     <ExGrid TRow="AppearanceRow" Window="ItalicRows" Columns="ItalicColumns" CellAppearance="ItalicOf"
             Density="GridDensity.Excel" ViewportHeight="120" ViewportWidth="320" />
-</div>
-
-<h2>Borders</h2>
-<p>
-    Excel's thirteen line styles, black: each on the bottom of a cell in <i>B</i> and on the right
-    of a cell in <i>D</i>. In <i>C</i>, a red thick line over a yellow Fill, for the Fill below it
-    and the Focus above it.
-</p>
-<div id="appearance-borders">
-    <ExGrid TRow="AppearanceRow" Window="BorderRows" Columns="BorderColumns" CellAppearance="BorderOf"
-            Density="GridDensity.Excel" ViewportHeight="320" ViewportWidth="360" />
 </div>
 
 <style>

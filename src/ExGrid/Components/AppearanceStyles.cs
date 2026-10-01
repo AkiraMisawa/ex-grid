@@ -20,11 +20,12 @@ namespace ExGrid.Components;
 /// <para><b>Lines are drawn inside each cell</b>, each cell painting its own share of Excel's centred
 /// line (the eleventh Windows run, case 9): the upper (left) cell the gridline's pixel and the
 /// pixels above it (left of it), the lower (right) cell what lies below (right of) it, which only
-/// thick and double have. Each share is a background layer, over the Fill and under the text, read
-/// by one static rule in <c>ex-grid.css</c> (<c>.ex-lined</c>) from the custom properties a part's
-/// class sets. Lengths are device pixels (<c>--ex-dp</c>), as Excel's are; a solid share is a
-/// gradient over the whole cell whose hard stop falls on a device pixel, and a dash pattern a tile
-/// as high as its line.</para>
+/// thick and double have. A solid share on the gridline is the cell's own bottom or right border —
+/// ticket 47 measured this hybrid beside layers alone, and it drew the same pixels for a little less.
+/// Every other share — dashes, double, the pixel past the gridline, a neighbour's Fill over it — is a
+/// background layer over the Fill and under the text, read by one static rule in
+/// <c>ex-grid.css</c> (<c>.ex-lined</c>) from the custom properties a part's class sets. Lengths are
+/// device pixels (<c>--ex-dp</c>), as Excel's are.</para>
 /// </summary>
 internal sealed class AppearanceStyles
 {
@@ -175,6 +176,28 @@ internal sealed class AppearanceStyles
             return;
         }
 
+        if (fromFar && Dashes(share.Style) is null && share.Style != BorderStyle.Double)
+        {
+            // A solid line on and above (left of) the gridline is the cell's own border (ticket 47's
+            // measurement: it draws case 9's pixels, as the layer does, and costs a little less). A
+            // right border gives its width back out of the right padding, so no text moves and the
+            // content box the #### decision assumes stays where it was (ADR-0016).
+            var width = Device(UpPixels(share.Style));
+            _rules.Append(".ex-cell.").Append(name).Append('{');
+            if (horizontal)
+            {
+                _rules.Append("border-bottom:").Append(width).Append(" solid ").Append(colour);
+            }
+            else
+            {
+                _rules.Append("border-right:").Append(width).Append(" solid ").Append(colour)
+                    .Append(";padding-right:calc(var(--ex-cell-padding-x, 8px) - ").Append(width).Append(')');
+            }
+            _rules.Append("}\n");
+            Version++;
+            return;
+        }
+
         string image, size, at;
         if (!fromFar)
         {
@@ -205,9 +228,8 @@ internal sealed class AppearanceStyles
         }
         else
         {
-            image = share.Style == BorderStyle.Double
-                ? $"linear-gradient(to {toward},var(--ex-background, Canvas) 0 var(--ex-dp),{colour} 0 calc(2 * var(--ex-dp)),transparent 0)"
-                : $"linear-gradient(to {toward},{colour} 0 {Device(UpPixels(share.Style))},transparent 0)";
+            // Double: a line above (left of) the gridline, whose own pixel shows the ground.
+            image = $"linear-gradient(to {toward},var(--ex-background, Canvas) 0 var(--ex-dp),{colour} 0 calc(2 * var(--ex-dp)),transparent 0)";
             size = "100% 100%";
             at = "0 0";
         }

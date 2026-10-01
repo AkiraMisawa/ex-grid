@@ -142,7 +142,8 @@ public class CellAppearanceTests : GridTestContext
         Assert.Contains("ex-lined", Cell(cut, 0, 1).ClassList);
         Assert.Contains("ex-lb-thin-000000", Cell(cut, 0, 1).ClassList);
         Assert.DoesNotContain("ex-lined", Cell(cut, 1, 1).ClassList);
-        Assert.Contains(".ex-lb-thin-000000{--ex-line-b:linear-gradient(to top,#000000 0 var(--ex-dp),transparent 0);", Css(cut));
+        // On the gridline: the cell's own bottom border, one device pixel.
+        Assert.Contains(".ex-cell.ex-lb-thin-000000{border-bottom:var(--ex-dp) solid #000000}", Css(cut));
     }
 
     [Fact] // DC-59: a thick line is centred on its gridline and reaches into both cells
@@ -156,9 +157,11 @@ public class CellAppearanceTests : GridTestContext
         Assert.Contains("ex-lt-thick-000000", Cell(cut, 1, 1).ClassList);
         Assert.Contains("ex-lr-thick-ff0000", Cell(cut, 0, 0).ClassList);
         Assert.Contains("ex-ll-thick-ff0000", Cell(cut, 0, 1).ClassList);
-        // Two pixels on and above the gridline, and one past it.
-        Assert.Contains(".ex-lb-thick-000000{--ex-line-b:linear-gradient(to top,#000000 0 calc(2 * var(--ex-dp)),transparent 0);", Css(cut));
+        // Two pixels on and above the gridline, as the upper cell's border, and one past it as a layer.
+        Assert.Contains(".ex-cell.ex-lb-thick-000000{border-bottom:calc(2 * var(--ex-dp)) solid #000000}", Css(cut));
         Assert.Contains(".ex-lt-thick-000000{--ex-line-t:linear-gradient(to bottom,#000000 0 var(--ex-dp),transparent 0);", Css(cut));
+        // A right border gives its width back out of the padding, so the text stays where it was.
+        Assert.Contains(".ex-cell.ex-lr-thick-ff0000{border-right:calc(2 * var(--ex-dp)) solid #ff0000;padding-right:calc(var(--ex-cell-padding-x, 8px) - calc(2 * var(--ex-dp)))}", Css(cut));
     }
 
     [Fact] // DC-59: double is a line either side of its gridline, whose own pixel shows the ground

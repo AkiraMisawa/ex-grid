@@ -209,11 +209,13 @@
 .ex-action-chosen { outline-style: solid; outline-color: var(--ex-focus-outline, CanvasText); }
 /* Borders (ADR-0050 item 15; ADR-0063, "What the measurement chose"): each cell draws its own share
    of Excel's centred line — the upper (left) cell the gridline's pixel and what lies above (left
-   of) it, the lower (right) cell the pixel a thick or double line reaches past it — as background
-   layers over its Fill and under its text, so nothing is painted outside a row and no box changes
-   size. The grid's generated stylesheet names each share in custom properties (an image, its size,
-   where it stands; per side t, r, b, l), one class per side, line style and colour, and this one
-   rule reads them, so the sheet grows with the lines and never with their combinations. Beneath the
+   of) it, the lower (right) cell the pixel a thick or double line reaches past it — so nothing is
+   painted outside a row and no row changes height. A solid line on the gridline is the cell's own
+   bottom or right border (its generated class gives a right border's width back out of the
+   padding); everything else is a background layer over the Fill and under the text. The grid's
+   generated stylesheet names each layer in custom properties (an image, its size, where it stands;
+   per side t, r, b, l), one class per side, line style and colour, and this one rule reads them, so
+   the sheet grows with the lines and never with their combinations. Beneath the
    lines, a neighbour's Fill covering the gridline this cell holds (--ex-cover-r, --ex-cover-b), and
    beneath that the column rule, an inset shadow everywhere else, which would lie over the lines.
    Declared before the Cell States, so a Modified cell's mark still wins its box-shadow. */

@@ -121,7 +121,9 @@ test.describe('DC-59: lines', () => {
         for (const side of ['bottom', 'right']) {
             test(`DC-59: a ${style} line on a cell's ${side} edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9)`, async ({ page }) => {
                 await open(page);
-                const box = await cellOf(page, 'appearance-borders', index, side === 'bottom' ? 1 : 3).boundingBox();
+                const cell = cellOf(page, 'appearance-borders', index, side === 'bottom' ? 1 : 3);
+                await cell.scrollIntoViewIfNeeded();
+                const box = await cell.boundingBox();
                 const { scale, pixel } = await across(page, box, side, 0.5);
                 const want = expected(style, scale);
                 for (const offset of want.light) {
@@ -151,7 +153,9 @@ test.describe('DC-59: lines', () => {
 
     test('DC-59: a line lies above the Fill, and a thick one reaches one pixel into the filled cell below (ADR-0063, case 10)', async ({ page }) => {
         await open(page);
-        const box = await cellOf(page, 'appearance-borders', 3, 2).boundingBox();
+        const cell = cellOf(page, 'appearance-borders', 3, 2);
+        await cell.scrollIntoViewIfNeeded();
+        const box = await cell.boundingBox();
         const { pixel } = await across(page, box, 'bottom', 0.5);
         expect(sameColour(pixel(-2), RED)).toBe(true);
         expect(sameColour(pixel(-1), RED)).toBe(true);
@@ -164,6 +168,7 @@ test.describe('DC-59: lines', () => {
         const grid = page.locator('#appearance-borders .ex-grid');
         const lined = cellOf(page, 'appearance-borders', 3, 2);
         const filled = cellOf(page, 'appearance-borders', 4, 2);
+        await lined.scrollIntoViewIfNeeded();
         await lined.click({ force: true });
         await expect(grid.locator('.ex-focus')).toHaveCount(1);
         await page.mouse.move(0, 0);
@@ -193,6 +198,7 @@ test('DC-58: a bold number that fits at the regular widths and not at the bold o
     const bold = cellOf(page, 'appearance-bold', 1, 1);
     const boldWide = cellOf(page, 'appearance-bold', 1, 2);
     const regularWide = cellOf(page, 'appearance-bold', 0, 2);
+    await boldWide.scrollIntoViewIfNeeded();
 
     await expect(regular).toHaveText('1234567890');
     await expect(bold).toHaveText(/^#+$/);
@@ -242,6 +248,7 @@ test('DC-58: italic text is not cut at either edge of its cell (ADR-0063, "Bold,
     await open(page);
     for (const [row, column] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
         const cell = cellOf(page, 'appearance-italic', row, column);
+        await cell.scrollIntoViewIfNeeded();
         expect(await cell.evaluate((e) => getComputedStyle(e).fontStyle)).toBe('italic');
         const box = await cell.boundingBox();
         const region = await painted(page, box);
