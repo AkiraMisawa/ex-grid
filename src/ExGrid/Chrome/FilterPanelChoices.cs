@@ -30,8 +30,9 @@ public static class FilterPanelChoices
     /// A value list's filter: the chosen values as one <c>In</c> clause, in the domain's
     /// order — or null, no filter at all, when every value is chosen. Set membership, never
     /// a count: a count drifts when the domain shifts under another column's filter, and a
-    /// count test once removed a filter the user was looking at. Nothing chosen is a filter
-    /// that keeps nothing, which is what was asked for.
+    /// count test once removed a filter the user was looking at. Nothing chosen is an
+    /// <c>In</c> with no values, never no filter, which would show every row; it is no filter
+    /// a panel may apply (<see cref="CanApply"/>).
     /// </summary>
     public static FilterSpec? FromValueList(DistinctValues domain, IReadOnlySet<object?> chosen)
     {
@@ -78,6 +79,19 @@ public static class FilterPanelChoices
             return null;
         return new FilterSpec([new FilterClause(FilterOperator.In, Values: [.. applied])]);
     }
+
+    /// <summary>
+    /// Whether a panel's answer can be applied: every answer but one holding an <c>In</c>
+    /// with no values — nothing chosen, or no chosen value among a search's matches. Such a
+    /// clause keeps no row, and the engine refuses it (ADR-0023); no filter in its place
+    /// would show every row, which nobody chose. So, as Excel's OK is with nothing ticked
+    /// (ADR-0009), Apply shows it is unavailable while the answer is that one, and refuses it
+    /// when it comes anyway — a press, or an Enter, that reached a circuit ahead of the render
+    /// that disabled it (ADR-0039). The core's <see cref="FilterPanelContext.Apply"/> refuses
+    /// it too, and the panel stands.
+    /// </summary>
+    public static bool CanApply(FilterSpec? spec)
+        => spec is null || spec.Clauses.All(c => c.Operator != FilterOperator.In || c.Values is { Count: > 0 });
 
     /// <summary>Whether a value's text matches the search: contained, ignoring case, as
     /// the panels list it (ADR-0009). An empty search matches everything.</summary>
