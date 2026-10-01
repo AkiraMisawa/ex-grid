@@ -56,7 +56,10 @@ References shifted, a series from two or more numbers, and dates by day. Any oth
 refused, and the user is told why. Ctrl+D and Ctrl+R copy the range's first row or column over the
 rest, Formulas with their References shifted, and never continue a series. Delete clears the
 Selection's contents and keeps its formats, as one undo step. Ctrl+F finds text as it is shown, in
-every row of the Sheet.
+every row of the Sheet. Excel's formatting keys format the Selection, each as one undo step: Ctrl+B,
+Ctrl+I, Ctrl+U and Ctrl+5 (and Ctrl+2 to Ctrl+4) toggle bold, italic, underline and strikethrough in
+the direction the Focus cell gives them, and Ctrl+Shift with `~ ! @ # $ % ^` applies the Number
+Format Excel applies under the Sheet's culture, `&` an outline and `_` no borders.
 
 ## Linked Tables
 
@@ -146,7 +149,8 @@ application can grey out its own buttons:
 ```
 
 A Linked Table's declaration and snapshots are data arriving, not commands, and are taken while an
-edit is open.
+edit is open. A formatting key pressed while an edit is open changes nothing, as the commands do:
+the user is told why, and `OnFormatKeyRefused` is raised with the refusal.
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any

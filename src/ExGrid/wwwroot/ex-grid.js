@@ -28,10 +28,16 @@
  *   — the core's own constant, so the number lives in one place (ADR-0034)
  * @param {boolean} canFind whether a search is wired — Ctrl+F then opens the find panel,
  *   and the keys after it wait for the panel; otherwise it is refused (ADR-0055)
+ * @param {string[]} declaredKeys canonical forms of the keys the Consumer declared (ADR-0050,
+ *   item 14), already among takenKeys: the editing branch claims them too
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys) {
     let taken = new Set(takenKeys);
+    // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
+    // edit open they are in `taken`; while one is open they are claimed beside the editor's keys,
+    // and the Consumer is told an edit is open. This file names none of them.
+    let declared = new Set(declaredKeys ?? []);
 
     // A reveal's scroll write, held until the render that paints its slice has reached the
     // DOM (ADR-0012, 2026-09-29). The core sends the write from inside that render, so on a
@@ -262,6 +268,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // descendant (ADR-0010).
         if (!k.onRoot && !k.inEditor) {
             return null;
+        }
+        // A declared key changes nothing in the editor and no mode: the core raises it with the
+        // edit open, and the Consumer decides (ADR-0050, item 14). Taken, so the browser's own
+        // meaning — Ctrl+U's page source — does not run either.
+        if (declared.has(canonical)) {
+            return 'core';
         }
         // A list of candidates painted is open, whatever the gate was last told: on a circuit
         // the render that paints it and the message that tells the gate are two messages, and a
@@ -1688,11 +1700,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Which keys this grid takes, whether any column edits and whether a search is
         // wired — re-told when a parameter change changes the answer, so a grid that
         // becomes display-only stops taking printable keys, and one whose Consumer stops
-        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055).
-        setClaims: (takenKeys, editable, findable) => {
+        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055) — and
+        // which of them the Consumer declared (ADR-0050, item 14).
+        setClaims: (takenKeys, editable, findable, declaredKeys) => {
             taken = new Set(takenKeys);
             canEdit = editable;
             canFind = findable;
+            declared = new Set(declaredKeys ?? []);
         },
         getScrollOffset: () => (pendingReveal
             ? { top: pendingReveal.top, left: pendingReveal.left }

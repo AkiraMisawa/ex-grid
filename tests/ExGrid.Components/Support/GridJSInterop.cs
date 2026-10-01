@@ -221,6 +221,11 @@ internal sealed class GridJSInterop
     internal IReadOnlyList<string> TakenAtAttach =>
         (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[3]!;
 
+    /// <summary>The Consumer's declared keys the gate was handed at attach for its editing
+    /// branch (ADR-0050, item 14): the last argument of <c>attach</c>.</summary>
+    internal IReadOnlyList<string> DeclaredAtAttach =>
+        (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[7]!;
+
     /// <summary>Every time the key gate was told whether a popover's contents have a popup
     /// of their own open (ADR-0039).</summary>
     internal JSRuntimeInvocationHandler InnerPopupTold { get; private init; } = default!;

@@ -36,7 +36,8 @@
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
-        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" />
+        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
+        DeclaredKeys="SheetFormatKeys.Declared" OnDeclaredKey="_formatKey" />
 @* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
    Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
 <div class="ex-sheet-notice" role="status">@_notice</div>
@@ -88,6 +89,7 @@
     private readonly EventCallback _redo;
     private readonly EventCallback<bool> _editingChanged;
     private readonly EventCallback<EditDiscardReason> _editDiscarded;
+    private readonly EventCallback<GridDeclaredKeyPress> _formatKey;
 
     private ExGrid<SheetRow>? _grid;
     private SheetColumnList _columns = SheetColumnList.Default;
@@ -197,6 +199,10 @@
             OnEditDiscarded(reason);
             return Task.CompletedTask;
         }));
+        // Excel's formatting keys, which the grid claims for this Sheet and raises with whether an
+        // edit is open (ADR-0063, ADR-0050 item 14). No receiver: a format re-renders what its
+        // change names, and a refusal renders its notice itself.
+        _formatKey = new EventCallback<GridDeclaredKeyPress>(null, (Func<GridDeclaredKeyPress, Task>)(press => OnFormatKeyAsync(press)));
     }
 
     /// <summary>
@@ -301,12 +307,21 @@
     [Parameter] public EventCallback<bool> EditingChanged { get; set; }
 
     /// <summary>
+    /// Raised when one of Excel's formatting keys is pressed while an edit is open (ADR-0063): the
+    /// key changed nothing, and its reason is said in ExSheet's notice. In that state Excel formats
+    /// the selected characters, and a Cell Format is per cell. The key is still claimed, so the
+    /// browser's own meaning does not run either: Ctrl+U opens no page source.
+    /// </summary>
+    [Parameter] public EventCallback<SheetRefusal> OnFormatKeyRefused { get; set; }
+
+    /// <summary>
     /// Whether an edit is open in the grid: from the moment a cell or the Formula Bar is typed in,
     /// or opened with F2 or a double click, until the edit is committed, cancelled or discarded.
     /// A commit the Sheet rejects — a Formula it cannot read — leaves it open (ADR-0034). While it
     /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
     /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/> and
-    /// <see cref="SetAlignmentAsync"/> are refused by name (ADR-0048, ADR-0063).
+    /// <see cref="SetAlignmentAsync"/> are refused by name (ADR-0048, ADR-0063), and Excel's
+    /// formatting keys change nothing (<see cref="OnFormatKeyRefused"/>).
     /// <see cref="CellFormatAt"/> is a read, and answers. ExSheet learns it from its grid
     /// (ADR-0050 section 6).
     /// </summary>
@@ -469,6 +484,31 @@
     /// committed, the cell is as it was.
     /// </summary>
     public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
+
+    /// <summary>
+    /// One of Excel's formatting keys (ADR-0063, "Keys"), claimed by the grid and raised with
+    /// whether an edit is open (ADR-0050 item 14). With no edit open it sets what Excel sets under
+    /// the Sheet's culture on the Selection, as one step on the undo stack, a toggle in the
+    /// direction the Focus cell gives it (<see cref="SheetFormatKeys.ChangeFor"/>). While an edit is
+    /// open it changes nothing, says why, and is raised through <see cref="OnFormatKeyRefused"/>
+    /// (SH-43). ExSheet hears an edit end a render late when a parameter change discarded it
+    /// (ADR-0050 section 6), so its own word counts as well as the grid's.
+    /// </summary>
+    private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
+    {
+        if (SheetFormatKeys.KindOf(press.Key) is not { } kind) return;
+        if (press.EditOpen || IsEditing)
+        {
+            var refusal = new SheetRefusal(SheetRefusalReason.EditIsOpen, SheetWords.FormatKeyWhileEditing);
+            Tell(refusal.Message);
+            StateHasChanged();
+            await OnFormatKeyRefused.InvokeAsync(refusal);
+            return;
+        }
+        if (_selection.IsEmpty) return;
+        var focus = _selection.Focus;
+        await SetCellFormatAsync(SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture));
+    }
 
     // Undo or redo from the grid's own keys (ADR-0050 item 8). The grid forwards them only while
     // no edit is open, but ExSheet hears an edit end a render late when a parameter change

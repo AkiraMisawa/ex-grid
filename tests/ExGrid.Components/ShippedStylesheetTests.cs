@@ -383,8 +383,29 @@ public class ShippedStylesheetTests
         // hands it, at attach or re-told through setClaims, and that set is consulted only
         // while no edit is open. While one is, the editing sets decide, and they carry none.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
+    }
+
+    [Fact] // ADR-0050 item 14 / ADR-0021 / DC-57 / DC-24: the gate claims declared keys only from C#'s list, beside the editor's own, and names none itself
+    public void The_gate_claims_declared_keys_only_from_the_cores_list()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var gate = Regex.Match(script.Text, @"const gate = \(k\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(gate.Success, "the gate is not in the module");
+
+        // Handed at attach and re-told with the claims, per instance.
+        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys\) \{"), script.Text);
+        Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
+        // Consulted in the editing branch only — with no edit open they are among the taken keys —
+        // and answered as the core's, which changes no mode and holds no key after it.
+        var noEditReturns = gate.Value.IndexOf("return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';", StringComparison.Ordinal);
+        var declaredAt = gate.Value.IndexOf("declared.has(canonical)", StringComparison.Ordinal);
+        Assert.True(noEditReturns > 0 && declaredAt > noEditReturns, "the declared keys are consulted outside the editing branch");
+        Assert.Matches(new Regex(@"if \(declared\.has\(canonical\)\) \{\s*return 'core';\s*\}"), gate.Value);
+        // The module names no formatting key of its own: they reach it only in C#'s list.
+        Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[bBiIuU2-5~!@#$%^&_]'"), script.Text);
     }
 
     [Fact] // ADR-0051 second round / ADR-0021 / DC-24 / DC-31: the caret is reported with each input and whenever it moves, and set when the core says, nothing measured
