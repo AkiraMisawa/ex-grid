@@ -239,7 +239,8 @@
         }
         catch (SnapshotException refused)
         {
-            // "Row 1,234, column 'Notional': '1,250,00O.00' is not a number (line 1,235)."
+            // The library's sentence, naming the row and the column:
+            // "Row 1,234, column 'Notional': '40,00O.00' is not a number (line 1,235)."
             _refusal = refused.Message;
             _status = $"{name} was refused: nothing was read.";
         }
@@ -284,8 +285,14 @@
         }
         catch (SnapshotException refused)
         {
+            // Its first rows cannot be read at all: an empty file, text not valid UTF-8, a quote left open.
             _refusal = refused.Message;
             _status = $"No Schema can be suggested for {name}.";
+        }
+        catch (IOException failed)
+        {
+            _refusal = failed.Message;
+            _status = $"{name} could not be read.";
         }
     }
 

@@ -33,8 +33,9 @@
 </p>
 <p>
     A tenor is text, and no alphabetical order holds the tenors: <code>10Y</code> would stand before
-    <code>1M</code>, and <code>ON</code> near the end. No declared list holds them either, because
-    a new tenor would fall outside it. So the Tenor field declares an <strong>Order Key</strong>: a
+    <code>1M</code>, and <code>ON</code> near the end. Neither does a declared Item order, Excel's
+    custom list: a tenor the list leaves out would stand after every tenor in it. So the Tenor field
+    declares an <strong>Order Key</strong>: a
     function from an Item to what the Items are ordered by, here months to maturity, called once per
     Item (ADR-0059). The engine parses no tenor; the key is the application's. The options desk's
     system writes eighteen months as <code>1Y6M</code> and the others as <code>18M</code>: both are
