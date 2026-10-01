@@ -245,9 +245,13 @@ for (const chrome of ['builtin', 'mud']) {
             await pane(page).getByRole('checkbox', { name: 'Desk', exact: true }).check();
             await pane(page).getByRole('checkbox', { name: 'P&L', exact: true }).check();
 
-            await expect.poll(async () => (await paintedRows(page)).at(-1)[0]).toBe('Grand Total');
-            const suggested = Number((await paintedRows(page)).at(-1).at(-1));
-            expect(Math.round(suggested)).toBe(declared);
+            // Sum of P&L by desk, in the default General format, which keeps the cents: the report
+            // is asked again for each tick, so it is read once its total row carries the sum.
+            const suggested = async () => {
+                const total = (await paintedRows(page)).at(-1);
+                return total?.[0] === 'Grand Total' && total.length === 2 ? Math.round(Number(total[1])) : null;
+            };
+            await expect.poll(suggested).toBe(declared);
         });
 
         test(`ADR-0068: the code the page shows is the code it runs (${chrome})`, async ({ page }) => {
