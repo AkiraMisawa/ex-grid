@@ -84,3 +84,31 @@ A lined pinned cell on a striped row paints the stripe over the rule, in ticket 
 must lie over the rule, and the tint over the covers. A pinned cell without lines, and the scrollable
 cells, paint the rule over the stripe. The two differ only when the rule colour is translucent, and
 then by the stripe's own alpha (2 to 5%).
+
+2026-10-01, agent cf-88, after CI run 36929390859. On Linux, `mud.spec.mjs` › "the Wrapper's row rule
+runs on across the Pinned Column" failed in the dark scheme, on both hosts. The pinned cell's line was
+`[79,79,86]` and the scrollable cell's `[78,78,86]`.
+- **The cause is the stage where the blend is done.** MudBlazor's dark rule is
+  `rgba(255,255,255,30/255)` on `#373740`. The exact blend is 78.53 in red and green, which rounds to
+  79 or 78, and 86.47 in blue, which gives 86 either way.
+  - The pinned cell paints that blend onto its own opaque ground as it paints.
+  - A scrollable cell lies on a transparent row. Its rule reached the grid's ground only when the
+    Viewport's layer (`will-change: transform`) was composited. That second blend rounded down on
+    Linux and up on this Mac, where every path I tried gave 79: GPU, `--disable-gpu`,
+    `--disable-gpu-compositing` and SwiftShader. So Linux could not be reproduced here, and the cause
+    is reasoned from the numbers.
+- **So the two are made to paint identically.** The row now paints the grid's own ground,
+  `:where(.ex-row) { background-color: var(--ex-background, Canvas) }`. The rule, or a stripe, is
+  then blended onto an opaque ground as the row paints, as it is on the pinned cell.
+  - The rule has zero specificity, so ExSheet's Paper on its rows wins whatever the order.
+  - Nothing in the Viewport lies beneath the rows: the selection and its bands are above them
+    (z-index 1).
+- **The test still compares exactly**, and its comment says why.
+- **Tests.**
+  - A layer-2 test covers the row's ground and its specificity.
+  - Locally the mud, stripes, appearance, selection-look, sheet-paper and presentation specs pass 94 of
+    95. The one exception is stripes' vertical-scrollbar test, which fails on this Mac's
+    headless overlay scrollbar, before and after.
+  - CI is the judge of the Linux pixels.
+- **If CI still parts them**, the paths could not be made one. The next step is then a tolerance of
+  one level, for this half-level blend, and nothing wider.
