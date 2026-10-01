@@ -183,3 +183,17 @@ every row exactly.
 **The assertion is loosened only there.** `scrollbar.spec.mjs` allows `2 / devicePixelRatio` more
 slack, and only when `scrollTop × devicePixelRatio ≥ 2^24`. Everywhere else, "flush" (ADR-0012)
 still means within the one pixel it always did.
+
+## The slice's offset lands on a whole device pixel *(2026-10-01, ticket 49)*
+
+A compressed grid places its slice with `translateY` at a fraction of a CSS pixel. At 150% that was
+often a fraction of a device pixel too, for example `translateY(19.249px)`. The viewport is
+composited (`will-change: transform`), so the browser resampled the whole slice there, and every
+line in it blurred: a Sheet's thin borders became two half-dark rows.
+- The offset is now rounded to the nearest device pixel in the stylesheet:
+  `translateY(round(nearest, Npx, var(--ex-dp, 1px)))`.
+- That moves the slice by at most half a device pixel. It is inside the placement error accepted
+  above, and the Selection, the Cell Editor and the overlays move with it, because they lie in the
+  slice.
+- Ticket 49's 150% border tests failed 18 of 29 without it and pass 29 of 29 with it. Ticket 47's
+  150% check had read only the top of a small grid, where the offset is 0.
