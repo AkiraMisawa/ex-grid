@@ -10,8 +10,8 @@ namespace ExGrid.Tests;
 /// </summary>
 public class GridPresentationDefaultsTests
 {
-    // Roboto at 14px, 600 weight, measured in Chrome (see ExGrid.MudBlazor): declared
-    // a shade over the measurement, the safe direction (ADR-0016).
+    // A Wrapper's widths at 14px: Roboto's as ExGrid.MudBlazor first declared them. Its
+    // current widths are MudExGridPresentation's; these tests need only these numbers.
     private static readonly GridPresentationDefaults Roboto = new(10.4, 8.0, 4.95, 14);
 
     [Fact] // ADR-0030: the defaults' widths replace the preset's, the preset keeps its padding

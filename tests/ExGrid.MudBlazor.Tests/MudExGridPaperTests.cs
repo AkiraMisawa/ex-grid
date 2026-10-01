@@ -172,7 +172,7 @@ public class MudExGridPaperTests : MudTestContext
     [Fact] // ADR-0027/0030: another font brings its widths in the same value, and the paper writes both
     public void Another_font_brings_its_widths_in_one_value()
     {
-        // A font with a 10px digit: twelve digits plus padding is 136px, past the 112px column.
+        // A font with a 10px digit: twelve digits plus padding is 136px, past the 116px column.
         var inter = new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14);
         var cut = RenderPaper(ps => ps.Add(p => p.Font, inter).Add(p => p.Style, "margin: 4px"));
 
