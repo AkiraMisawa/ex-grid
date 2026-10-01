@@ -648,4 +648,24 @@ public class PointModeTests : GridTestContext
 
         Assert.Equal("A1", NameBox(cut));
     }
+
+    [Fact] // ADR-0051 (2026-10-01) / ADR-0010 / ticket 78: a press into the Name Box while pointing commits, keeps the keyboard there, and renames it to the Focus — the name the first key replaces whole
+    public async Task ADR0051_a_press_into_the_name_box_while_pointing_renames_it_to_the_focus()
+    {
+        var intents = new List<GridEditIntent<TestRow>>();
+        var cut = RenderWithNameBox(intents);
+        await StartFormulaAsync(cut);
+        await PressAsync(cut, "ArrowDown", text: "=", caret: 1);
+        Assert.Equal("A2", NameBox(cut));
+        var focusRequests = JSInterop.Invocations.Count(i => i.Identifier is "focusEditor" or "reclaimFocus");
+
+        await cut.Find("input.ex-name-box").FocusAsync(new FocusEventArgs());
+
+        // The press's selection was made over A2; the commit's render writes A1 over it, and the
+        // listener's first key selects that whole again (ex-grid.js, nameBoxSelected). The core
+        // neither takes the keyboard from the Name Box nor asks the script for anything more.
+        Assert.Equal("=A2", Assert.Single(intents).Value);
+        Assert.Equal("A1", NameBox(cut));
+        Assert.Equal(focusRequests, JSInterop.Invocations.Count(i => i.Identifier is "focusEditor" or "reclaimFocus"));
+    }
 }

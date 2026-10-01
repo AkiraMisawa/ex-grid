@@ -218,6 +218,114 @@ test('SH-18/DC-11: the Name Box pressed with an edit open commits it, then navig
     await expect(cell(grid, 'F3')).toHaveText('1');
 });
 
+// A press into the Name Box selects its text, as Excel's does, so what is typed replaces the
+// address shown (ADR-0051, decided with the user 2026-10-01; ticket 78). The fifteenth Windows run
+// (i7) found the caret left after `D10`, and an IME's composition appended to it: `D10かな`. Only
+// the press that gives the Name Box the keyboard selects; one into it while it holds the keyboard
+// is the field's own. Under both Chromes: the built-in input, and ExGrid.MudBlazor's control inside
+// the core's box.
+const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, input.selectionEnd]);
+
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`ticket 78 under the ${chrome} Chrome`, () => {
+        test.beforeEach(async ({ page }) => {
+            if (chrome !== 'builtin') {
+                await openSheet(page, chrome);
+            }
+        });
+
+        test('ticket 78/ADR-0051: a press into the Name Box selects its text, B2 typed replaces it and Enter goes there; a second press places the caret', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'D10');
+
+            await nameBox(grid).click();
+
+            await expect(nameBox(grid)).toBeFocused();
+            await expect.poll(() => selectionOf(nameBox(grid))).toEqual([0, 3]);
+            await page.keyboard.type('B');
+            await expect(nameBox(grid)).toHaveValue('B');
+            await page.keyboard.type('2');
+            await expect(nameBox(grid)).toHaveValue('B2');
+            await page.keyboard.press('Enter');
+            await expectFocusAt(grid, 'B2');
+            await expect(grid).toBeFocused();
+
+            // A second press, into the Name Box that holds the keyboard, places the caret where it
+            // lands: here past the text's end.
+            await nameBox(grid).click();
+            await expect.poll(() => selectionOf(nameBox(grid))).toEqual([0, 2]);
+            const box = await nameBox(grid).boundingBox();
+            await nameBox(grid).click({ position: { x: box.width - 4, y: box.height / 2 } });
+            await expect.poll(() => selectionOf(nameBox(grid))).toEqual([2, 2]);
+            // Escape still gives the keyboard back, the Focus where it was.
+            await page.keyboard.press('Escape');
+            await expect(grid).toBeFocused();
+            await expectFocusAt(grid, 'B2');
+        });
+
+        test('ticket 78/ADR-0051: the commit a press into the Name Box makes renames it, and what is typed replaces the new name; a Reject still takes the keyboard back', async ({ page }) => {
+            const grid = sheet(page);
+            await pressCell(grid, 'F2');
+            await page.keyboard.type('=1+');
+            await expect(editor(grid)).toHaveValue('=1+');
+            await page.keyboard.press('ArrowDown');
+            await expect(editor(grid)).toHaveValue('=1+F3');
+            await expect(nameBox(grid)).toHaveValue('F3');
+
+            // The press selects F3; its commit names the Focus, F2, over that selection.
+            await nameBox(grid).click();
+
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'F2')).toHaveText('1');
+            await expect(nameBox(grid)).toHaveValue('F2');
+            await expect(nameBox(grid)).toBeFocused();
+            await page.keyboard.type('B');
+            await expect(nameBox(grid)).toHaveValue('B');
+            await page.keyboard.type('2');
+            await expect(nameBox(grid)).toHaveValue('B2');
+            await page.keyboard.press('Enter');
+            await expectFocusAt(grid, 'B2');
+
+            // A Formula that cannot be read is Rejected on the press: the keyboard goes back to the
+            // edit, and what is typed lands in the Formula (ADR-0050, fourth round; ADR-0021).
+            await pressCell(grid, 'F3');
+            await page.keyboard.type('=SUM(');
+            await expect(editor(grid)).toHaveValue('=SUM(');
+            await nameBox(grid).click();
+            await expect(editor(grid)).toBeFocused();
+            await typeSteadily(page, editor(grid), '1)');
+            await expect(editor(grid)).toHaveValue('=SUM(1)');
+            await page.keyboard.press('Enter');
+            await expect(cell(grid, 'F3')).toHaveText('1');
+        });
+
+        // On a circuit the Name Box's press is not held among the keys, so the render answering the
+        // row press before it lands after the press and writes its name over the selection.
+        test('ticket 78/ADR-0051: on a 150 ms circuit, a render that renames the Name Box after the press leaves what is typed replacing the name', async ({ page }) => {
+            test.skip(!SERVER, 'WebAssembly has no round trip: the row press is answered before the Name Box is pressed');
+            const grid = sheet(page);
+            await pressCell(grid, 'F2');
+            await setRoundTrip(150);
+            // No wait for anything: the press into the Name Box follows the row press as a user's does.
+            await clickCell(grid, 'F8');
+            await nameBox(grid).click();
+            await expect(nameBox(grid)).toHaveValue('F8');
+            // Every round trip has landed — the renames, and the row's hand-back, which leaves the
+            // Name Box its keyboard (ADR-0021).
+            await page.waitForTimeout(600);
+            await expect(nameBox(grid)).toBeFocused();
+
+            await page.keyboard.type('D');
+            await expect(nameBox(grid)).toHaveValue('D');
+            await page.keyboard.type('4');
+            await expect(nameBox(grid)).toHaveValue('D4');
+            await page.keyboard.press('Enter');
+            await expectFocusAt(grid, 'D4');
+            await setRoundTrip(0);
+        });
+    });
+}
+
 // Home and End in Caret move the caret, in the Cell Editor and in the Formula Bar (ADR-0010). On
 // macOS the browser binds them to scrolling the document instead, and PageUp and PageDown to
 // scrolling a page: the grid scrolled away from the open edit, the edited cell left the painted
