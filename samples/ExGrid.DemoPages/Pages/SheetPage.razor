@@ -45,6 +45,7 @@
     <button id="sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
     <button id="sheet-redo" disabled="@_editing" @onclick="RedoAsync">Redo</button>
     <button id="sheet-money" disabled="@_editing" @onclick="FormatMoneyAsync">Format selection as #,##0.00</button>
+    <button id="sheet-format-cells" disabled="@_editing" @onclick="FormatCellsAsync">Format Cells…</button>
     <button id="sheet-insert-row" disabled="@_editing" @onclick="InsertRowAsync">Insert a row above row 2</button>
     <button id="sheet-revalue" @onclick="RevalueAsync">Revalue the positions by +1%</button>
 </div>
@@ -53,7 +54,10 @@
     <span id="sheet-status">@_status</span>
 </p>
 
-<div class="demo-side-by-side">
+@* ?box=window gives the Sheet a box that follows the window's height (ViewportSize.Stretch), so a
+   popover's room changes with the window: the browser tests shrink it under Format Cells
+   (DC-60, ADR-0040). *@
+<div class="demo-side-by-side" style="@(InWindowBox ? "height: calc(100vh - 360px); min-height: 0" : null)">
     @if (DemoChrome.IsMud(ChromeName))
     {
         <MudExGridPaper>@Sheet</MudExGridPaper>
@@ -97,11 +101,17 @@
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
+    /// <summary><c>window</c> sizes the Sheet's height by the window's rather than declaring it.</summary>
+    [SupplyParameterFromQuery(Name = "box")]
+    public string? Box { get; set; }
+
+    private bool InWindowBox => Box == "window";
+
     private IGridChrome? _chrome;
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
     private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions"
+                                              EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : 420)" ViewportWidth="720" OnLinkedColumnColoursChanged="OutlinePositions"
                                               SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused" />;
 
     protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
@@ -238,6 +248,9 @@
     private Task FormatMoneyAsync() => CommandAsync(sheet => sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00")));
 
     private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
+
+    // The Consumer's own button for Format Cells (ADR-0063), beside the Context Menu's command.
+    private Task FormatCellsAsync() => CommandAsync(sheet => sheet.OpenFormatCellsAsync());
 
     // A command ExSheet refuses changes nothing and says why (ADR-0048): an insertion that would
     // push an Entry off the Sheet, or any command while an edit is open. The buttons are greyed

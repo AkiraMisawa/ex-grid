@@ -60,11 +60,11 @@ public class FormatKeyTests : SheetTestContext
             "Control+~", "Control+Shift+~", "Control+!", "Control+Shift+!", "Control+@", "Control+Shift+@",
             "Control+#", "Control+Shift+#", "Control+$", "Control+Shift+$", "Control+%", "Control+Shift+%",
             "Control+^", "Control+Shift+^", "Control+&", "Control+Shift+&", "Control+_", "Control+Shift+_",
+            "Control+1", "Control+Shift+1",
         ];
 
         Assert.Equal(expected.Order(StringComparer.Ordinal), SheetFormatKeys.Declared.Order(StringComparer.Ordinal));
-        // Ctrl+1 waits for Format Cells (ticket 52); Ctrl+Shift+U is another key in Excel.
-        Assert.DoesNotContain("Control+1", SheetFormatKeys.Declared);
+        // Ctrl+Shift+U is another key in Excel.
         Assert.DoesNotContain("Control+Shift+U", SheetFormatKeys.Declared);
         Assert.Equal(expected.Length, Grid(RenderSheet()).Instance.DeclaredKeys!.Count);
     }
@@ -75,7 +75,6 @@ public class FormatKeyTests : SheetTestContext
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-US", ("A1", "1234.5"))));
         await GoToAsync(cut, "A1");
 
-        await PressAsync(cut, "1", ctrl: true);
         await PressAsync(cut, "U", ctrl: true, shift: true);
         await PressAsync(cut, "6", ctrl: true);
 
@@ -271,6 +270,7 @@ public class FormatKeyTests : SheetTestContext
     [InlineData("$", true)]
     [InlineData("&", true)]
     [InlineData("_", true)]
+    [InlineData("1", false)]
     public async Task While_an_edit_is_open_a_formatting_key_changes_nothing_and_says_why(string key, bool shift)
     {
         var refusals = new List<SheetRefusal>();

@@ -1,0 +1,126 @@
+/* ExSheet's stylesheet, beside ExGrid's ex-grid.css.
+
+   Format Cells under the built-in Chrome (ADR-0063): the contents ExSheet shows in the grid's
+   popover frame (ADR-0050 item 16). It frames the Paper rather than lying on it, so it follows the
+   colour scheme as every popover does, through the grid's own Visual Tokens (ADR-0027/0063). Its
+   classes are implementation detail (ADR-0029): a Consumer restyles Format Cells by substituting
+   its Chrome, not by writing against these. No geometry here is arithmetic the grid reads: the
+   frame's place and bound arrive inline from the core (ADR-0040). */
+.ex-format-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 36em;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.ex-format-cells-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid GrayText;
+}
+.ex-popover .ex-format-cells-tab {
+    border: 1px solid transparent;
+    border-bottom: 0;
+    background: none;
+    color: inherit;
+    padding: 4px 10px;
+}
+.ex-popover .ex-format-cells-tab[aria-selected="true"] {
+    border-color: GrayText;
+    background: var(--ex-header-background, Canvas);
+    font-weight: 600;
+    margin-bottom: -1px;
+}
+.ex-format-cells-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 16em;
+}
+.ex-format-cells fieldset {
+    margin: 0;
+    padding: 4px 8px 6px;
+    border: 1px solid GrayText;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ex-format-cells-columns {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+.ex-format-cells-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.ex-format-cells-choice,
+.ex-format-cells-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ex-format-cells-field input[type="number"] { width: 5em; }
+.ex-format-cells-reason,
+.ex-format-cells-refusal:not(:empty) {
+    display: block;
+    font-size: 0.85em;
+}
+.ex-format-cells-reason {
+    margin-left: 1.6em;
+    color: GrayText;
+}
+.ex-format-cells-refusal { color: var(--ex-state-error-color, #b3261e); }
+.ex-format-cells-types {
+    max-height: 10em;
+    overflow-y: auto;
+}
+
+/* The palette (case 23): ten swatches across. Each is a radio button drawn as its colour, which is
+   written inline as the user's choice of document data, never a Visual Token (ADR-0063). */
+.ex-format-cells-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ex-format-cells-swatches {
+    display: grid;
+    grid-template-columns: repeat(10, 16px);
+    gap: 3px;
+}
+.ex-format-cells-swatch {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1px solid GrayText;
+    cursor: pointer;
+}
+.ex-format-cells-swatch:checked {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+}
+.ex-format-cells-swatch:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+.ex-format-cells-hex { width: 7em; font-family: inherit; }
+
+/* The Border tab. */
+.ex-format-cells-line-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ex-format-cells-presets,
+.ex-format-cells-edges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.ex-popover .ex-format-cells-edge[aria-pressed="true"] { font-weight: 600; }
+.ex-format-cells-preview { border: 1px solid GrayText; }

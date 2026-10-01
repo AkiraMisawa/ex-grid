@@ -42,6 +42,9 @@ public abstract class SheetTestContext : BunitContext
 
     internal FakeTimeProvider Clock { get; } = new();
 
+    /// <summary>How many times the grid has asked for the keyboard back on its root (ADR-0039, ADR-0021).</summary>
+    internal int ReclaimCount => _handle.Invocations["reclaimFocus"].Count;
+
     /// <summary>Renders an ExSheet as a connected, interactive component.</summary>
     internal IRenderedComponent<SheetComponent> RenderSheet(Action<ComponentParameterCollectionBuilder<SheetComponent>>? parameters = null)
     {

@@ -635,7 +635,7 @@
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
              aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
             <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
-            <div class="ex-popover-find-body">
+            <div class="ex-popover-find-body ex-popover-body">
                 @if (Chrome?.FindPanel(findContext) is { } findFragment)
                 {
                     @findFragment
@@ -667,6 +667,19 @@
                 }
             </div>
             <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
+        </div>
+    }
+    @if (_consumerPopover is { } consumerPopover)
+    {
+        @* A Consumer's popover (ADR-0050, item 16): the Consumer's contents in the core's frame,
+           a popover by every popover rule (ADR-0039/0040) and keyed by its opening like the
+           others. A sentinel either side wraps Tab inside it: the trailing one asks the contents
+           for their first control, the leading one for their last. *@
+        <div class="ex-popover ex-popover-consumer" style="@ConsumerPopoverStyle()" role="dialog"
+             aria-label="@consumerPopover.Label" @key="_popoverFocusRequest">
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="WrapConsumerPopoverToLast"></span>
+            <div class="ex-popover-body">@consumerPopover.Content(BuildConsumerPopoverContext())</div>
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="WrapConsumerPopoverToFirst"></span>
         </div>
     }
     @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
@@ -4011,6 +4024,7 @@
 
         _menuColumn = -1;
         _findOpen = false;
+        _consumerPopover = null;
         _contextCell = cell;
         BeginPopoverFocus();
         // The offsets are relative to the Viewport, whose left edge is the content's and
@@ -4040,6 +4054,7 @@
         (_contextLeftPx, _contextTopPx) = CellCorner(focus);
         _menuColumn = -1;
         _findOpen = false;
+        _consumerPopover = null;
         _contextCell = focus;
         BeginPopoverFocus();
     }
@@ -4439,6 +4454,7 @@
         _menuColumn = column;
         _contextCell = null;
         _findOpen = false;
+        _consumerPopover = null;
         BeginPopoverFocus();
         if (IsFilterable(column))
             await BeginFilterAsync(column);
@@ -4457,8 +4473,9 @@
         await OpenMenuAsync(column);
     }
 
-    /// <summary>Whether any popover stands: a column's, the Context Menu or the find panel.</summary>
-    private bool AnyPopoverOpen => _menuColumn >= 0 || _contextCell is not null || _findOpen;
+    /// <summary>Whether any popover stands: a column's, the Context Menu, the find panel or a
+    /// Consumer's (ADR-0050, item 16).</summary>
+    private bool AnyPopoverOpen => _menuColumn >= 0 || _contextCell is not null || _findOpen || _consumerPopover is not null;
 
     private void CloseMenus()
     {
@@ -4469,6 +4486,7 @@
         _innerPopupOpen = false;
         _contextCell = null;
         _menuColumn = -1;
+        _consumerPopover = null;
         _shownMenuCommands = null;
         _panelValues = null;
         _panelChecked = null;
@@ -4528,7 +4546,7 @@
     /// so that side is its room (ADR-0040).</summary>
     private double? PopoverRoomPx()
     {
-        if (_menuColumn >= 0 || _findOpen)
+        if (_menuColumn >= 0 || _findOpen || _consumerPopover is not null)
             return HeaderPopoverRoomPx;
         if (_contextCell is not null)
         {
@@ -6955,7 +6973,10 @@
             _suppressRender = true;
             return;
         }
-        if (_menuColumn >= 0 || _contextCell is not null)
+        // A Consumer's popover closes too, as a press elsewhere in the instance closes a popover
+        // (ADR-0010): the edit this opens must not stand under contents that hold the keyboard
+        // (ADR-0050, item 16).
+        if (_menuColumn >= 0 || _contextCell is not null || _consumerPopover is not null)
             CloseMenus();
         EndInteractive();
         var focus = _selection.Selection.Focus;

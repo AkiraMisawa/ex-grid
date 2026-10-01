@@ -27,14 +27,15 @@ internal static class SheetFormatKeys
         Scientific,
         Outline,
         NoBorders,
+        FormatCells,
     }
 
     // Each key is the character it types with Ctrl, as Excel reads it — by the character, not by
     // where the key lies (case 19) — so a layout that types `#` without Shift (UK) reaches the date
     // format as one that needs Shift does. A letter is claimed in both cases for CapsLock, and
     // without Shift: Ctrl+Shift+U is another key in Excel. Every other character is claimed with
-    // Shift and without it, whichever its layout needs. Ctrl+1 is not here until Format Cells
-    // opens from it (ticket 52).
+    // Shift and without it, whichever its layout needs. Ctrl+1 opens Format Cells (ticket 52); it
+    // sets nothing itself, so it has no change below.
     private static readonly (char Character, Kind Kind)[] Keys =
     [
         ('b', Kind.Bold), ('2', Kind.Bold),
@@ -50,6 +51,7 @@ internal static class SheetFormatKeys
         ('^', Kind.Scientific),
         ('&', Kind.Outline),
         ('_', Kind.NoBorders),
+        ('1', Kind.FormatCells),
     ];
 
     private static readonly Dictionary<string, Kind> ByKey = Build();
