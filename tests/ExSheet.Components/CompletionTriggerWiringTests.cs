@@ -18,7 +18,9 @@ namespace ExSheet.Components.Tests;
 /// Tab closes any list, which does not come back on what Tab wrote; and → or ← at an open value
 /// list points and closes it. As Part B of the ninth Windows run saw it (ticket 70): with the caret
 /// before or inside a value nothing is listed, and Home and the Shift+arrows at an open value list
-/// point and close it.
+/// point and close it. As the thirteenth run saw it (ticket 74): text that is not a number lists
+/// every value, letters included, a number that is no value nothing, and with the caret before
+/// white space nothing is listed.
 /// </summary>
 public class CompletionTriggerWiringTests : SheetTestContext
 {
@@ -143,6 +145,106 @@ public class CompletionTriggerWiringTests : SheetTestContext
 
         Assert.Empty(Candidates(cut));
         Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+    }
+
+    [Theory] // ADR-0058 (the thirteenth Windows run, Q54), SH-36: text that is not a number lists every value, the first chosen — letters list no function and no table — and Tab writes the value over the whole typed text, closes the list, and it is not opened again on what Tab wrote
+    [InlineData("X")]
+    [InlineData("AV")]
+    [InlineData("Positions")]
+    [InlineData("A1")]
+    [InlineData("\"")]
+    public async Task SH36_text_that_is_not_a_number_lists_every_value_and_tab_writes_over_it(string typed)
+    {
+        var cut = RenderSheet();
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "PV"]);
+        await StartTypingAsync(cut, "D10", AtMatchMode + typed);
+
+        Assert.Equal(MatchModes, Candidates(cut));
+        Assert.Equal("0 - Exact match", Chosen(cut));
+        // No Reference can go after what was typed: the list is not open over Point.
+        Assert.Equal("completion", GateModesTold()[^1]);
+        Assert.False(cut.Find(".ex-completion").HasAttribute("data-ex-over-point"));
+
+        await PressInEditorAsync(cut, "Tab", AtMatchMode + typed, AtMatchMode.Length + typed.Length);
+
+        Assert.Equal(AtMatchMode + "0", EditorText(cut));
+        // The Sheet lists 0 alone for the text Tab wrote, and the grid does not show it.
+        Assert.Single((await Grid(cut).Instance.CompleteEditorText!(AtMatchMode + "0", AtMatchMode.Length + 1))!.Candidates);
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+        Assert.Equal("overwrite", GateModesTold()[^1]);
+    }
+
+    [Fact] // ADR-0058 (Q54), SH-36: at search_mode a letter lists its four values, not AVERAGE
+    public async Task SH36_a_letter_at_search_mode_lists_its_values()
+    {
+        var cut = RenderSheet();
+
+        await StartTypingAsync(cut, "D10", AtMatchMode + "0,A");
+
+        Assert.Equal(
+            ["1 - Search first-to-last", "-1 - Search last-to-first", "2 - Binary search (sorted ascending order)", "-2 - Binary search (sorted descending order)"],
+            Candidates(cut));
+        Assert.Equal("1 - Search first-to-last", Chosen(cut));
+    }
+
+    [Fact] // ADR-0058 (Q54), SH-36: after an operator at match_mode (1+) every value is listed, 0 chosen, not 1; the list is open over Point, so Escape closes it and ↓ then points
+    public async Task SH36_after_an_operator_at_match_mode_every_value_is_listed_over_point()
+    {
+        var cut = RenderSheet();
+        const string typed = AtMatchMode + "1+";
+        await StartTypingAsync(cut, "D10", typed);
+
+        Assert.Equal(MatchModes, Candidates(cut));
+        Assert.Equal("0 - Exact match", Chosen(cut));
+        Assert.Equal("completionOverPoint", GateModesTold()[^1]);
+        Assert.True(cut.Find(".ex-completion").HasAttribute("data-ex-over-point"));
+
+        await PressInEditorAsync(cut, "Escape", typed, typed.Length);
+        Assert.Empty(Candidates(cut));
+        await PressInEditorAsync(cut, "ArrowDown", typed, typed.Length);
+
+        Assert.Equal(typed + "D11", EditorText(cut));
+    }
+
+    [Theory] // ADR-0058 (Q54; the ninth run's Part B), SH-36: a number that is no value lists nothing — 4 at match_mode, 5 at search_mode — and the hint still shows
+    [InlineData("4", "[match_mode]")]
+    [InlineData("0,5", "[search_mode]")]
+    public async Task SH36_a_number_that_is_no_value_lists_nothing(string typed, string argument)
+    {
+        var cut = RenderSheet();
+
+        await StartTypingAsync(cut, "D10", AtMatchMode + typed);
+
+        Assert.Empty(Candidates(cut));
+        Assert.Equal(argument, cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+        Assert.NotEqual("completion", GateModesTold()[^1]);
+    }
+
+    [Fact] // ADR-0058 (the thirteenth Windows run, Q55; 11a), SH-36: with the caret before two spaces nothing is listed, and Tab commits the Formula with the spaces kept and moves on, as Tab does with no list open
+    public async Task SH36_with_the_caret_before_white_space_nothing_is_listed_and_tab_commits()
+    {
+        var cut = RenderSheet();
+        const string typed = AtMatchMode + "  )";
+        await StartTypingAsync(cut, "D10", typed);
+        Assert.Empty(Candidates(cut));
+
+        // F2, then ←←← in Caret, to stand straight after ,, before the two spaces.
+        await PressInEditorAsync(cut, "F2", typed, typed.Length);
+        await ReportCaretAsync(cut, typed, typed.Length - 1);
+        await ReportCaretAsync(cut, typed, typed.Length - 2);
+        await ReportCaretAsync(cut, typed, AtMatchMode.Length);
+
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+        Assert.Equal("caret", GateModesTold()[^1]);
+
+        await PressInEditorAsync(cut, "Tab", typed, AtMatchMode.Length);
+
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Equal("E10", cut.Find(".ex-name-box").GetAttribute("value"));
+        await GoToAsync(cut, "D10");
+        Assert.Equal(typed, cut.Find(".ex-formula-bar-text").GetAttribute("value"));
     }
 
     [Fact] // ADR-0058, SH-36: while the list is open ↓ and ↑ choose in it, and write nothing
