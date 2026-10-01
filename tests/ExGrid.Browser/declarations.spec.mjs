@@ -1373,8 +1373,11 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(cell(grid, 'E3')).toHaveText('');
         await copied('C2', '0.5');
 
-        // Enter and Escape in the Formula Bar, whose field stays in the page.
-        await clickCell(grid, 'E4');
+        // Enter and Escape in the Formula Bar, whose field stays in the page. The cell is pressed
+        // until the bar shows it: on the Server host the bar read a round trip early still shows
+        // C2's 0.5, and the typing was expected after it, where the grid rightly wrote 8 alone
+        // (CI, the Server host, 2026-10-01).
+        await pressCell(grid, 'E4');
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '8');
         await page.keyboard.press('Enter');
@@ -1382,7 +1385,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(cell(grid, 'E4')).toHaveText('8');
         await expect(grid).toBeFocused();
         await copied('B3', '7');
-        await clickCell(grid, 'E5');
+        await pressCell(grid, 'E5');
         await clickBarEnd(grid);
         await typeSteadily(page, bar(grid), '9');
         await page.keyboard.press('Escape');
