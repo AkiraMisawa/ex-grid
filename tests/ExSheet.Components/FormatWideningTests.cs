@@ -16,7 +16,10 @@ namespace ExSheet.Components.Tests;
 /// to 19; <c>verification/2026-10-01-windows-excel-12/cell-format-12.md</c>): a Number Format
 /// widens a column the user has not sized whose numbers it no longer fits, as one undo step with
 /// the format, and recorded as a width an entry widened (SH-26); a column the user sized never
-/// widens; and the date and time keys show Excel's built-ins in the Sheet culture's own form.
+/// widens; and the date and time keys show Excel's built-ins in the Sheet culture's own form. The
+/// fourteenth run added Ctrl+5, which widens as a Number Format key does, where Ctrl+B and the Fill
+/// do not (ticket 100; ADR-0071, "What the fourteenth Windows run settled", case 7;
+/// <c>verification/2026-10-01-windows-excel-14/cell-format-14.md</c>).
 /// </summary>
 public class FormatWideningTests : SheetTestContext
 {
@@ -27,7 +30,23 @@ public class FormatWideningTests : SheetTestContext
         return sheet.ToDocument();
     }
 
+    private static readonly CellFill Yellow = CellFill.Solid(CellColour.FromRgb(0xFFFF00));
+
     private static CellTextMetrics Metrics => GridMetrics.Resolve(GridDensity.Compact).CellMetrics;
+
+    /// <summary>
+    /// The fourteenth run's case 7: A1 holds 1234567.5 in <c>0.00</c>, which shows <c>####</c> at the
+    /// default width, with <paramref name="also"/> set on it too. The format is in the document, as
+    /// Excel's passes b to d set it on the empty A1 before the number, so nothing widened it.
+    /// </summary>
+    private static SheetDocument Hashed(CellFormatChange? also = null)
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-GB"));
+        sheet.Enter(CellAddress.Parse("A1"), "1234567.5");
+        sheet.SetCellFormat([CellRange.Parse("A1")], new CellFormatChange { NumberFormat = NumberFormat.Parse("0.00") });
+        if (also is not null) sheet.SetCellFormat([CellRange.Parse("A1")], also);
+        return sheet.ToDocument();
+    }
 
     private static double WidthOf(IRenderedComponent<ExSheet> cut, int column) =>
         Grid(cut).Instance.Columns[column].Width.Width.FixedPx;
@@ -189,8 +208,8 @@ public class FormatWideningTests : SheetTestContext
         Assert.Equal("1,234,567.50", CellText(cut, "B5"));
     }
 
-    [Fact] // ADR-0071 case 17: only a Number Format widens — a Font or a Border leaves the width though a number already shows ####
-    public async Task Only_a_number_format_widens()
+    [Fact] // ADR-0071 case 17 and the fourteenth run's case 7: Ctrl+B, Ctrl+I, Ctrl+U, a Fill and a Border leave the width though a number already shows ####; a Number Format widens it
+    public async Task Bold_italic_underline_a_fill_and_a_border_never_widen()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentIn("en-GB", ("A1", "1234567890"))));
         // A Consumer's edit is done as written, and widens nothing (DoAsync).
@@ -199,8 +218,15 @@ public class FormatWideningTests : SheetTestContext
         await GoToAsync(cut, "A1");
 
         await PressAsync(cut, "b", ctrl: true);
+        await PressAsync(cut, "i", ctrl: true);
+        await PressAsync(cut, "u", ctrl: true);
         await PressAsync(cut, "&", ctrl: true, shift: true);
+        await PressAsync(cut, "_", ctrl: true, shift: true);
+        // The Fill, as a toolbar's Fill Colour button sets it (the fourteenth run set it with the mouse).
+        Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Fill = Yellow }));
+        Assert.True(FormatAt(cut, "A1").Font is { Bold: true, Italic: true, Underline: true });
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
         Assert.Matches("^#+$", CellText(cut, "A1"));
 
         await PressAsync(cut, "!", ctrl: true, shift: true);
@@ -239,6 +265,120 @@ public class FormatWideningTests : SheetTestContext
         await cut.Instance.DoAsync(SheetEdit.SetCellFormat([CellRange.Parse("C1")], new CellFormatChange { NumberFormat = number }));
         Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 2));
         Assert.Matches("^#+$", CellText(cut, "C1"));
+    }
+
+    // ---- The fourteenth run's case 7: Ctrl+5 widens as a Number Format key does ----
+
+    [Fact] // ADR-0071, the fourteenth run's case 7: Ctrl+5 widens a column at the default width whose number shows ####, as a Number Format key does, recorded as a width an entry widened
+    public async Task Ctrl_5_widens_as_a_number_format_key_does_case_14_7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed()));
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        await GoToAsync(cut, "A1");
+
+        await PressAsync(cut, "5", ctrl: true);
+
+        Assert.True(FormatAt(cut, "A1").Font.Strikethrough);
+        Assert.Equal("1234567.50", CellText(cut, "A1"));
+        Assert.Equal(WidenedFor("1234567.50"), WidthOf(cut, 0), 6);
+        Assert.Equal(SheetColumnWidthKind.WidenedByEntry, Assert.Single(cut.Instance.ToDocument().ColumnWidths).Kind);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 1));
+    }
+
+    [Theory] // ADR-0071, the fourteenth run's case 7 (passes b, c and d): of Ctrl+B, Ctrl+5 and the Fill, in any order, only Ctrl+5 widens
+    [InlineData("b", "5", "fill")]
+    [InlineData("5", "b", "fill")]
+    [InlineData("fill", "b", "5")]
+    public async Task Of_bold_strikethrough_and_the_fill_only_ctrl_5_widens_case_14_7(string first, string second, string third)
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed()));
+        await GoToAsync(cut, "A1");
+        var widened = SheetColumns.DefaultWidthPx;
+
+        foreach (var step in new[] { first, second, third })
+        {
+            if (step == "fill") Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Fill = Yellow }));
+            else await PressAsync(cut, step, ctrl: true);
+
+            // Ctrl+5 widens to the text as the cell paints it then, bold where Ctrl+B came first.
+            if (step == "5") widened = Math.Ceiling((FormatAt(cut, "A1").Font.Bold ? Metrics.Bold : Metrics).EstimatePx("1234567.50"));
+            Assert.Equal(widened, WidthOf(cut, 0), 6);
+        }
+        Assert.True(widened > SheetColumns.DefaultWidthPx);
+        Assert.Equal(new CellFont(Bold: true, Strikethrough: true), FormatAt(cut, "A1").Font);
+        Assert.Equal(Yellow, FormatAt(cut, "A1").Fill);
+    }
+
+    [Fact] // ADR-0071, the fourteenth run's case 7, read for taking it off (the run pressed Ctrl+5 only to set it): Ctrl+5 over a struck number that shows #### takes strikethrough off and widens the same way
+    public async Task Ctrl_5_taking_strikethrough_off_widens_the_same_way_case_14_7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed(new CellFormatChange { Strikethrough = true })));
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        await GoToAsync(cut, "A1");
+
+        await PressAsync(cut, "5", ctrl: true);
+
+        Assert.False(FormatAt(cut, "A1").Font.Strikethrough);
+        Assert.Equal("1234567.50", CellText(cut, "A1"));
+        Assert.Equal(WidenedFor("1234567.50"), WidthOf(cut, 0), 6);
+    }
+
+    [Fact] // ADR-0071, the fourteenth run's case 7, ADR-0048: Ctrl+5's widening is part of its one undo step, undone and redone with the strikethrough
+    public async Task Ctrl_5s_widening_is_part_of_its_one_undo_step_case_14_7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed()));
+        await GoToAsync(cut, "A1");
+        await PressAsync(cut, "5", ctrl: true);
+
+        Assert.True(await cut.Instance.UndoAsync());
+        Assert.False(FormatAt(cut, "A1").Font.Strikethrough);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        Assert.False(cut.Instance.CanUndo);
+
+        Assert.True(await cut.Instance.RedoAsync());
+        Assert.True(FormatAt(cut, "A1").Font.Strikethrough);
+        Assert.Equal("1234567.50", CellText(cut, "A1"));
+        Assert.Equal(WidenedFor("1234567.50"), WidthOf(cut, 0), 6);
+    }
+
+    [Fact] // ADR-0071, the fourteenth run's case 7 with the twelfth's case 18: Ctrl+5 never widens a column the user sized
+    public async Task Ctrl_5_never_widens_a_column_the_user_sized_case_14_7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed()));
+        await ResizeAsync(cut, "A", SheetColumns.DefaultWidthPx);
+        await GoToAsync(cut, "A1");
+
+        await PressAsync(cut, "5", ctrl: true);
+
+        Assert.True(FormatAt(cut, "A1").Font.Strikethrough);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0), 6);
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+        Assert.Equal(SheetColumnWidthKind.SetByUser, Assert.Single(cut.Instance.ToDocument().ColumnWidths).Kind);
+    }
+
+    [Fact] // ADR-0071, the fourteenth run's case 7: Format Cells' Font tab stays as Ctrl+B is, so strikethrough set there widens nothing; nor does SetCellFormatAsync's, which sets a Font as that tab does (a reading: no run asked either)
+    public async Task Strikethrough_from_format_cells_or_set_cell_format_never_widens_case_14_7()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, Hashed()));
+        await GoToAsync(cut, "A1");
+
+        Assert.True(await cut.Instance.OpenFormatCellsAsync());
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll(".ex-format-cells")));
+        await cut.FindAll(".ex-format-cells-tab").Single(t => t.TextContent == "Font").ClickAsync(new MouseEventArgs());
+        await cut.Find(".ex-format-cells-strikethrough").ChangeAsync(new ChangeEventArgs { Value = true });
+        await cut.Find("form.ex-format-cells").SubmitAsync();
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".ex-format-cells")));
+
+        Assert.True(FormatAt(cut, "A1").Font.Strikethrough);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Matches("^#+$", CellText(cut, "A1"));
+
+        Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Strikethrough = false }));
+        Assert.False(FormatAt(cut, "A1").Font.Strikethrough);
+        Assert.Equal(SheetColumns.DefaultWidthPx, WidthOf(cut, 0));
+        Assert.Empty(cut.Instance.ToDocument().ColumnWidths);
     }
 
     // ---- Case 19: the date and time keys' built-ins under three cultures ----

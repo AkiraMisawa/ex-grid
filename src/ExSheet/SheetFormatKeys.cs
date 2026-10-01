@@ -81,8 +81,9 @@ internal static class SheetFormatKeys
     /// as Excel shows them (the twelfth run, case 19): <c>05-Jan-26</c> and <c>09:05</c> under
     /// en-GB, <c>5-Jan-26</c> and <c>9:05 AM</c> under en-US, <c>05-1-26</c> and <c>9:05</c> under
     /// ja-JP. A Number Format widens the columns it no longer fits, as every Number Format set on
-    /// the Selection does (case 17). The outline is thin and Automatic on each range's four edges;
-    /// no borders clears every edge of each range.
+    /// the Selection does (case 17), and so does strikethrough (<see cref="WidensAsANumberFormatDoes"/>).
+    /// The outline is thin and Automatic on each range's four edges; no borders clears every edge
+    /// of each range.
     /// </summary>
     /// <param name="kind">The key.</param>
     /// <param name="focus">The Focus cell's Cell Format, as it shows.</param>
@@ -104,6 +105,15 @@ internal static class SheetFormatKeys
         Kind.NoBorders => new() { Borders = BorderChange.None },
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Not a formatting key."),
     };
+
+    /// <summary>
+    /// Whether a key that sets no Number Format still widens the columns whose numbers no longer
+    /// fit, exactly as a Number Format key does (ticket 58's rule): Ctrl+5, setting strikethrough or
+    /// taking it off, as Excel's widened column A for <c>1234567.50</c> (the fourteenth Windows run,
+    /// case 7). Ctrl+B and the Fill did not, in any of three orders, and Ctrl+I, Ctrl+U and the
+    /// Border keys stay as Ctrl+B is until a run asks (ADR-0071).
+    /// </summary>
+    internal static bool WidensAsANumberFormatDoes(Kind kind) => kind == Kind.Strikethrough;
 
     private static Dictionary<string, Kind> Build()
     {

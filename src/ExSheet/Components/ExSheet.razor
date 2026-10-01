@@ -501,8 +501,11 @@
     /// A Number Format widens each column whose numbers it no longer fits, in the same operation,
     /// as Excel's formatting keys do (ADR-0071, case 17): a column the user has not sized, to hold
     /// the widest of them, recorded as a width an entry widened (SH-26). A column the user sized
-    /// never widens (case 18). Format Cells' OK does the same. <see cref="DoAsync"/> does an edit
-    /// exactly as it is written, and widens nothing.
+    /// never widens (case 18). Format Cells' OK does the same. A Font, a Fill or Borders widens
+    /// nothing, strikethrough among them: Excel's Ctrl+5 widens as a Number Format key does (the
+    /// fourteenth Windows run, case 7), but Format Cells' Font tab is read as Ctrl+B is, which no
+    /// run has seen widen, and this method sets a Font as that tab does. <see cref="DoAsync"/> does
+    /// an edit exactly as it is written, and widens nothing.
     /// </remarks>
     public Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
@@ -553,7 +556,9 @@
     /// One of Excel's formatting keys (ADR-0071, "Keys"), claimed by the grid and raised with
     /// whether an edit is open (ADR-0050 item 14). With no edit open it sets what Excel sets under
     /// the Sheet's culture on the Selection, as one step on the undo stack, a toggle in the
-    /// direction the Focus cell gives it (<see cref="SheetFormatKeys.ChangeFor"/>). While an edit is
+    /// direction the Focus cell gives it (<see cref="SheetFormatKeys.ChangeFor"/>). A Number Format
+    /// key and Ctrl+5 widen the columns whose numbers no longer fit, in that step
+    /// (<see cref="SheetFormatKeys.WidensAsANumberFormatDoes"/>). While an edit is
     /// open it changes nothing, says why, and is raised through <see cref="OnFormatKeyRefused"/>
     /// (SH-43). Ctrl+1 opens Format Cells instead of setting anything, and while an edit is open it
     /// is refused as the others are: Excel opens a Font-only Format Cells there, for rich text
@@ -586,7 +591,9 @@
         }
         var focus = _selection.Focus;
         // On the Selection the key carries, which SetCellFormatAsync would read from the grid again.
-        await FormatSelectionAsync(SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture));
+        await FormatSelectionAsync(
+            SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture),
+            widen: SheetFormatKeys.WidensAsANumberFormatDoes(kind));
     }
 
     /// <summary>
@@ -1331,14 +1338,15 @@
     /// entry each (ADR-0047, SH-21), any other range sets its cells, and Borders are set relative
     /// to each range; nothing is capped (principle 5). A part the change does not name is left as
     /// it is. A Number Format widens the columns whose numbers it no longer fits, in the same
-    /// step (ADR-0071, case 17).
+    /// step (ADR-0071, case 17), and so does a change <paramref name="widen"/> names although it
+    /// sets none: Ctrl+5's (the fourteenth run's case 7).
     /// </summary>
-    private async Task<bool> FormatSelectionAsync(CellFormatChange change)
+    private async Task<bool> FormatSelectionAsync(CellFormatChange change, bool widen = false)
     {
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
         var cells = ranges.Select(SheetFormulaAids.RangeOf).ToList();
-        await PerformAsync(SheetEdit.SetCellFormat(cells, change), widenOver: change.NumberFormat is null ? null : cells);
+        await PerformAsync(SheetEdit.SetCellFormat(cells, change), widenOver: widen || change.NumberFormat is not null ? cells : null);
         return true;
     }
 
@@ -1391,7 +1399,8 @@
     /// The columns a number widens, as Excel's do (<see cref="SheetWidening"/>): a number or date
     /// the user typed into a column that does not fit (ADR-0047, second round; SH-20), a typed
     /// Formula whose result is a number, as Excel was observed to widen it (WD-007), and the
-    /// numbers a Number Format no longer fits (ADR-0071, case 17), in a column the user has not
+    /// numbers a Number Format, or Ctrl+5, no longer fits (ADR-0071, case 17; the fourteenth run's
+    /// case 7), in a column the user has not
     /// sized (SH-26; case 18). Each width is recorded in the Sheet like any other (ADR-0046), as a
     /// step of the operation's own; none where no column is widened.
     /// </summary>
