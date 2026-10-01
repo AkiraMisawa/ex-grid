@@ -337,6 +337,10 @@ coloured by the CSS Custom Highlight API.)*
   generated stylesheet paints `::highlight()` for those names from the existing colour tokens.
   `CSS.highlights` is one registry per document, so shared names would let one grid clear another's
   colours. Names of its own keep the instances independent (ADR-0018).
+- The `MutationObserver` watches two attributes of the layer, not one: its text and its colour
+  stretches (`data-ex-text`, `data-ex-colours`). A change of either rebuilds the ranges.
+- Under forced colours Chrome ignores `::highlight()` rules, so the layer's line opts out of forced
+  colours and takes the system colours itself.
 - It is still the editor listener, not a new entry.
 
 *(Added 2026-09-29, decided with the user, with
