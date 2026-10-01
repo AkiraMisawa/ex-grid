@@ -6749,7 +6749,8 @@
     /// What the Formula Bar shows for the Focus cell (ADR-0051/0016): the uncommitted text
     /// while it is being edited — the bar is the editor's second surface — and otherwise the
     /// Consumer's opening text where it supplies one, or the full value: never the
-    /// <c>####</c> and never a rounding format, in the current culture's own spelling.
+    /// <c>####</c> and never a rounding format, in the current culture's own spelling — except
+    /// an unformatted date or time, which reads in its cell's ISO form (ADR-0006, ticket 95).
     /// Empty with no Focus, or over a row not in hand.
     /// </summary>
     private string FormulaBarText()
@@ -6771,6 +6772,11 @@
         return column.Value(row) switch
         {
             null => "",
+            // An unformatted date or time reads as its cell does, in its ISO form by type
+            // (ADR-0006, note of 2026-10-01; ticket 95): the current culture is the server's on
+            // the Server host, and a day and a month read the wrong way round are quietly wrong.
+            var date when column.Format is null && date is DateOnly or DateTime or DateTimeOffset or TimeOnly
+                => DisplayText.Of(date),
             IFormattable formattable => formattable.ToString(null, CultureInfo.CurrentCulture),
             var value => value.ToString() ?? "",
         };

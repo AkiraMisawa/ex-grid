@@ -45,9 +45,11 @@ public class DateWithoutFormatTests : GridTestContext
         public void Dispose() => (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = _previous;
     }
 
-    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(TestSource? source = null, GridColumn<TestRow>[]? columns = null)
+    private IRenderedComponent<ExGrid<TestRow>> RenderGrid(TestSource? source = null, GridColumn<TestRow>[]? columns = null, bool bar = false)
         => Render<ExGrid<TestRow>>(ps =>
         {
+            if (bar)
+                ps.Add(g => g.ShowFormulaBar, true);
             if (source is null)
                 ps.Add(g => g.Window, TestRows.Window());
             else
@@ -113,6 +115,42 @@ public class DateWithoutFormatTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("F2", false, false, false, false, false));
 
         Assert.Equal("2026-01-05 09:05:07", cut.Find(".ex-editor").GetAttribute("value"));
+    }
+
+    [Theory, MemberData(nameof(Cultures))] // ADR-0006 (ticket 95) / ADR-0051: the Formula Bar's full value of an unformatted date or time reads in its cell's ISO form
+    public async Task The_formula_bar_shows_an_unformatted_date_in_its_iso_form(string culture)
+    {
+        using var _ = new CultureScope(culture);
+        var cut = RenderGrid(bar: true);
+        await ClickCellAsync(cut, 50, 10);
+
+        var shown = new List<string?>();
+        for (var column = 0; column < FirstRow.Length; column++)
+        {
+            if (column > 0)
+                await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, false, false, false, false));
+            shown.Add(cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+        }
+
+        Assert.Equal(FirstRow, shown);
+    }
+
+    [Theory, MemberData(nameof(Cultures))] // ADR-0051 / ADR-0006: with a Format, and for a number, the bar's full value is the current culture's, as before
+    public async Task The_formula_bar_keeps_a_formatted_date_and_a_number_in_the_cultures_spelling(string culture)
+    {
+        using var _ = new CultureScope(culture);
+        var cut = RenderGrid(bar: true, columns:
+        [
+            new("When", ColumnType.Date, r => When(r), width: Wide, format: v => ((DateTime)v).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            new("Amount", ColumnType.Number, r => r.Amount, width: Wide),
+        ]);
+        await ClickCellAsync(cut, 50, 10);
+        var formatted = cut.Find(".ex-formula-bar-text").GetAttribute("value");
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, false, false, false, false));
+        var number = cut.Find(".ex-formula-bar-text").GetAttribute("value");
+
+        Assert.Equal(new DateTime(2026, 1, 5, 9, 5, 7).ToString(null, CultureInfo.CurrentCulture), formatted);
+        Assert.Equal(100.5m.ToString(null, CultureInfo.CurrentCulture), number);
     }
 
     [Theory, MemberData(nameof(Cultures))] // ADR-0006 / ADR-0016: an Auto column is sized to the ISO text, the same width under every culture
