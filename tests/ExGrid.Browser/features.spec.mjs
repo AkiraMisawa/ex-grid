@@ -115,10 +115,9 @@ test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shi
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c1$/);
 
-    // The browser's next element from where the keyboard is: this grid edits, so that is its
-    // Keyboard Field, which stands at the start of the Viewport (ADR-0080). The header's ▾ buttons,
-    // tab stops of their own (KB-12), come before it in the page's order, and Tab goes straight on
-    // to the page. No cell takes it, and nothing traps it.
+    // The browser's next element from where the keyboard is, this grid's Keyboard Field: the page's
+    // next element after the grid. The header's ▾ buttons are not tab stops, on any grid (ADR-0080,
+    // 2026-10-02), so none is reached on the way. No cell takes it, and nothing traps it.
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 
@@ -129,16 +128,11 @@ test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shi
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c2$/);
 
-    // Shift+Tab after an Escape goes to the page's previous element: from the field, the header's
-    // last ▾ button, and on back through the others to the element before the grid. The root is
-    // no tab stop, so nothing on the way out hands the keyboard back to the field (ADR-0080).
+    // Shift+Tab after an Escape goes to the page's previous element, the one before the grid: no
+    // ▾ is reached, and the root is no tab stop, so nothing on the way out hands the keyboard back
+    // to the field (ADR-0080).
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
-    const menus = grid(page).locator('.ex-menu-button');
-    for (let i = await menus.count() - 1; i >= 0; i--) {
-        await page.keyboard.press('Shift+Tab');
-        await expect(menus.nth(i)).toBeFocused();
-    }
     await page.keyboard.press('Shift+Tab');
     await expect(page.locator('#before-grid')).toBeFocused();
 });
@@ -188,8 +182,7 @@ test('with a 150 ms round trip, the keys straight after Escape wait for its answ
     await page.waitForTimeout(1000);
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c1$/);
-    // The browser's next element from the grid's Keyboard Field, past the header's ▾ buttons,
-    // which come before it (ADR-0080).
+    // The page's next element after the grid: the header's ▾ buttons are not tab stops (ADR-0080).
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 
@@ -548,28 +541,34 @@ test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4,
     // The first grid edits, so its tab stop is its Keyboard Field, and its root is not one
     // (ADR-0080).
     const first = grid(page);
-    // Walk tabs until the first grid's keyboard is reached: nav links precede it, and so do the
-    // header's ▾ buttons, which are tab stops of their own (KB-12) standing before the Viewport.
-    for (let i = 0; i < 30; i++) {
-        if (await keyboardIsOn(first) === true) break;
+    // Walk tabs until the first grid's keyboard is reached: nav links precede it. The header's ▾
+    // buttons are not tab stops, on any grid, so the walk reaches the field without passing one
+    // (ADR-0080, 2026-10-02).
+    const passed = [];
+    for (let i = 0; i < 20; i++) {
+        const on = await keyboardIsOn(first);
+        if (on === true) break;
+        passed.push(on);
         await page.keyboard.press('Tab');
     }
+    expect(passed.filter((holder) => holder.includes('ex-menu-button')), 'a ▾ reached by Tab').toEqual([]);
     await expect(keyField(first)).toBeFocused();
     await expect(keyField(first)).toHaveAttribute('tabindex', '0');
     await expect(first).toHaveAttribute('tabindex', '-1');
     // Keyboard focus shows the ring (KB-12). The field matches :focus-visible on every focus, a
     // click's too, so the root's ring is drawn from the script's mark of a keyboard that did not
-    // arrive by a press (ADR-0080).
-    await expect(first).toHaveClass(/\bex-focus-visible\b/);
+    // arrive by a press: an attribute, which a render rewriting the root's classes leaves standing
+    // (ADR-0080).
+    await expect(first).toHaveAttribute('data-ex-focus-visible', /.*/);
     await expect.poll(() => first.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
 
-    // One more Tab leaves the grid entirely: no cell is a tab stop.
+    // One more Tab: no cell is a tab stop.
     await page.keyboard.press('Tab');
     const activeInsideGrid = await first.evaluate(
         (el) => el === document.activeElement || el.contains(document.activeElement));
-    // The next stop is past the field — the second grid, or the page — unless this Tab is the
-    // grid's own, which keeps the keyboard in the field; what it must not be is a cell of the
-    // first grid.
+    // Tab is the grid's own key here (ADR-0012's cycle), so the keyboard can stay in the field;
+    // what the next stop must not be is a cell of the first grid, or one of its ▾ buttons.
+    expect(String(await keyboardIsOn(first))).not.toMatch(/ex-menu-button/);
     const activeIsCell = await page.evaluate(
         () => document.activeElement?.classList?.contains('ex-cell') ?? false);
     expect(activeIsCell).toBe(false);

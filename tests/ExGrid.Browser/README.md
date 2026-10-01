@@ -218,7 +218,8 @@ nobody had asked for. What that means when writing a test:
   real clipboard: the editor's two states (ED-2/3/4), both clipboard formats and the
   refusals (CP-1/3/4/5/6/10/14, PST-1), the keys the grid must not take (KB-15), one
   tab stop, its Keyboard Field's on a grid that edits, with the ring drawn from the root's
-  mark (A11Y-4, KB-12, ADR-0080), instance independence (DOM-4), header-click sorting
+  mark and no column's ▾ reached by Tab (A11Y-4, KB-12, ADR-0080), instance independence
+  (DOM-4), header-click sorting
   (SR-1). And on `/cells`, entering a cell by key (ADR-0037): Space
   into a cell with several actions, the arrows choosing and Space firing once, Enter
   never firing (KB-20/21/22); Space putting the caret in a Template's own field and
