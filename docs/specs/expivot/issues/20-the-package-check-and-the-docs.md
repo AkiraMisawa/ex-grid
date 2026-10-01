@@ -11,6 +11,12 @@ Status: ready-for-agent
 
 **Blocked by:** 19
 
-- [ ] PV-1, DA-1, DA-16
+- [x] PV-1, DA-1, DA-16
 
 ## Comments
+
+2026-10-01: The package check holds `ExPivot.Engine` to exactly the `ExGrid.Data` it was built with
+(it said "depends on nothing at all" until the engine was rebuilt on the Snapshot), and every other
+package the family packs to referencing no data package. It now also compiles the engine README's
+standard examples — typed declarations, `PivotSource.From`, a report asked of a source, a Change
+Batch — against the packed package. Passed.

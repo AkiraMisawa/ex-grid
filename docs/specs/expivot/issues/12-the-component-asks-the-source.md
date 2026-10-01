@@ -1,6 +1,6 @@
 # 12: The component asks the source
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** `ExPivot` takes a `Source` instead of records (ADR-0058, ADR-0065).
 

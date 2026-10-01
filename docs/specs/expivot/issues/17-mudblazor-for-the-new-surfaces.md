@@ -1,6 +1,6 @@
 # 17: MudBlazor for the new surfaces
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** `MudPivotChrome` for the surfaces the grilling added (ADR-0061).
 

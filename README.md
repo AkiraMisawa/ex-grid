@@ -14,7 +14,9 @@ Three products share this repository and ship as separate packages
   `docs/specs/exsheet/`.
 - **ExPivot** — Excel's PivotTable, drawn by ExGrid, with a MudBlazor Wrapper
   (`ExPivot.MudBlazor`). Decided in ADR-0058 to ADR-0068, specified in `docs/specs/expivot/`.
-  See it on the demo host's `/pivot` page, and `/pivot?chrome=mud`.
+  See it on the demo host's pages, one per use case, each showing the code it runs: `/pivot`
+  (add `?chrome=mud` for MudBlazor), `/pivot-csv`, `/pivot-db`, `/pivot-live` and `/pivot-risk`;
+  and ExGrid alone over live data on `/grid-live`.
 
 The family's immutable data, the **Snapshot**, is a package of its own, `ExGrid.Data`, with
 `ExGrid.Data.Arrow` beside it to carry a Snapshot as Apache Arrow

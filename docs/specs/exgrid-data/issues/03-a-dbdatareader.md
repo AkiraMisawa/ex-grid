@@ -1,6 +1,6 @@
 # 03: A Snapshot read from a `DbDataReader`
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** a builder that reads any ADO.NET `DbDataReader` into a Snapshot.
 

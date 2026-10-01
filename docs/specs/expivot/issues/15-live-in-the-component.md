@@ -1,6 +1,6 @@
 # 15: Live data in the component
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the component's side of ADR-0066.
 

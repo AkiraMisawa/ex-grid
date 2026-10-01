@@ -1,6 +1,6 @@
 # 10: The Pivot Source and its JSON
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** `PivotSource` (ADR-0065).
 

@@ -1,6 +1,6 @@
 # 16: The words of Excel's Japanese edition
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the words of Excel's Japanese edition, bundled (ADR-0059).
 

@@ -1,6 +1,6 @@
 # 02: A CSV read under a Schema, and a suggested Schema
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** `ExGrid.Data`'s CSV reader, which reads a stream of bytes straight into a
 Snapshot's columns, under a Schema the Consumer declares.

@@ -1,6 +1,6 @@
 # 05: `ExGrid.Data.Arrow`
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** a new project, `src/ExGrid.Data.Arrow`, referencing `ExGrid.Data` exactly and
 `Apache.Arrow` within a stated range (built with 23.0.0). Its tests are

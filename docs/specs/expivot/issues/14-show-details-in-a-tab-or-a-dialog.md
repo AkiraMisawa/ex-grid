@@ -1,6 +1,6 @@
 # 14: Show Details in a tab or a dialog
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the three destinations of Show Details (ADR-0058).
 

@@ -1,6 +1,6 @@
 # 13: The toolbar and the Layout menu
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** the toolbar above the report (ADR-0060).
 

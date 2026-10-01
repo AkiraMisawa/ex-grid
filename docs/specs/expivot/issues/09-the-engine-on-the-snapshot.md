@@ -1,6 +1,6 @@
 # 09: The engine on the Snapshot
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** `ExPivot.Engine` rebuilt to aggregate a Snapshot's columns (ADR-0059, ADR-0063).
 

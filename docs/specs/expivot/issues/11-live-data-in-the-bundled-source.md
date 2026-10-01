@@ -1,6 +1,6 @@
 # 11: Live data in the bundled source
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** `PivotSource.From(snapshot)` takes a Change Batch (ADR-0066). It makes the next
 Snapshot, and folds the batch into the answer it holds for the current question.
