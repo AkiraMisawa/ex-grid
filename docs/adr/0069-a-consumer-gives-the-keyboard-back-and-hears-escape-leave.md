@@ -33,7 +33,10 @@ two gaps in what a Consumer can do with a grid's keyboard.
 - It is a public method on the grid. A Consumer calls it when something of its own that held the
   keyboard over the grid goes away: a dialog, a panel, a tab.
 - It does what the grid does when one of its own popovers closes. It gives the root DOM focus when
-  DOM focus is on nothing (the page's `body`) or already inside this grid.
+  DOM focus is on nothing (the page's `body`) or already inside this grid. A field of the grid's
+  own beside the rows — the Formula Bar or the Name Box — keeps the keyboard, as it does from the
+  grid's own hand-back ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of
+  2026-09-28): the user is typing there.
 - It never takes the keyboard from anywhere else: not from another control the user chose
   meanwhile, and not from another grid
   ([ADR-0018](./0018-multiple-instances-must-be-independent.md)). On Blazor Server the call
