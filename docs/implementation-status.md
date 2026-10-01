@@ -777,8 +777,22 @@ DA-17). Over a million trades in a published WebAssembly build:
 | Met | Missed |
 |---|---|
 | A collapse, a sort or a form, laid out from the answer held: 28–32 ms | A CSV of a million rows: 14.6 s against 4 s (955 ms on CoreCLR, against about 0.4 s) |
-| 1,000 changes on screen: 43 ms | The page blocked for at most 50 ms: a gesture's worst is about 0.2 s, and a question near the cap holds the page for 1.9 s |
+| 1,000 changes on screen: 43 ms | The page blocked for at most 50 ms: a gesture's worst is about 0.2 s, and a question near the cap held the page for 1.9 s (137 ms once sliced, below) |
 | A new question for a 50-leaf report: a median of 159–229 ms | A new question near the 200,000-leaf cap: 2.7 s |
+
+**Since then, decided with the user and built** (2026-10-01):
+
+- **The cap stays 200,000, and the work after an answer is sliced** (ADR-0065, PV-40, ticket 22).
+  Near the cap the longest task fell from 1.65 s to 137 ms, and the answer took 2.79 s rather
+  than 2.59, measured back to back (`verification/2026-10-01-linux-measure-sliced`). What remains
+  over 50 ms is the browser runtime's full collections, about 70 ms inside a slice, and the turn
+  that puts the report on screen.
+- **A Consumer gives a grid the keyboard back, and hears an Escape that leaves it**
+  ([ADR-0069](adr/0069-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-56,
+  DC-57, PV-39, ticket 21). Show Details' dialog closes on Escape, and the report takes the
+  keyboard back however it closes. Building it found that a held Escape peeled a layer per
+  repeat, cancelling a half-typed formula under its closing list. A held Escape is now one
+  press in every grid (ADR-0012, KB-44).
 
 DA-17: a million records built from objects in 426 ms on CoreCLR and 3.8 s in the browser; read
 from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
@@ -796,10 +810,8 @@ from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
 
 **Not done.**
 
-- **The default cap on leaves is measured, not settled** (ADR-0065). Settling it is the user's
-  choice: a lower default, slicing the work after the answer, or a default per host.
-- **Show Details' dialog cannot give the keyboard back to the report, and Escape in its grid does not
-  close it.** Both wait on the user (Q64 and Q65).
+- **Near the cap, PV-21's 50 ms is still missed**, by the browser runtime's collections inside a
+  slice. Fewer allocations in the pass and the cube would shorten them; that is not a ticket yet.
 - **Excel's behaviour was read, not observed.** Every reading is listed in
   `docs/specs/expivot/excel-behaviours.md`, for a run beside Excel on Windows (ticket 07).
 - **Edge, Windows and a real IME have run none of it.**
