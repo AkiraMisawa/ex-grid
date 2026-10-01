@@ -350,9 +350,22 @@ public class ShippedStylesheetTests
         // text (F4, ADR-0051 2026-09-29) — reads of the field and of the listener's own note,
         // no layout read.
         Assert.Single(Regex.Matches(script.Text, @"'OnKeyAsync'"));
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false\)",
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false,\s*k\.repeat === true\)",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
+    }
+
+    [Fact] // ADR-0069/0021 / DC-57: the key message says whether the key is a held key's repeat — a field of the event the listener already reads, the last of the one message
+    public void The_key_message_says_whether_the_key_is_a_repeat()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // Auto-repeat is visible only in the capture-phase listener: by the time a key reaches
+        // .NET, a repeat looks like a press. The snapshot every key is gated and held as keeps
+        // the browser's flag, and the one message to OnKeyAsync carries it last, so a held key
+        // replayed after a hold says so as well. The core raises OnLeave once per press from it.
+        Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*repeat: event\.repeat,", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*,\s*k\.repeat === true\)\s*\.catch\(", RegexOptions.Singleline), script.Text);
     }
 
     [Fact] // ADR-0051 (2026-09-29) / ADR-0021 / DC-45 / DC-24: F4 is claimed only while an edit is open, and only where C# says the Consumer declared what it does
