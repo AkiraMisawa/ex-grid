@@ -130,7 +130,26 @@ public partial class ExPivot
             return;
         var load = new ItemsLoad();
         _itemLoads[field] = load;
-        _ = ListItemsAsync(source, new PivotItemsQuery(field, version, max: ItemListCap), page => load.Page = page, problem => load.Problem = problem);
+        _ = ListItemsAsync(source, new PivotItemsQuery(field, version, max: ItemListCap),
+            page =>
+            {
+                load.Page = page;
+                // A search already typed into this field's open Filter…, beyond the Items listed,
+                // is the source's to answer, under this listing's version (ADR-0065 refined).
+                if (_open is { Kind: Surface.ItemFilter } open && open.Field == field && open.ItemSearch.Length > 0
+                    && page.Total > page.Items.Count)
+                    SearchItems(open, open.ItemSearch);
+            },
+            problem => load.Problem = problem);
+    }
+
+    /// <summary>A new report — another Source Version — lists again what an open Filter… and the
+    /// report filter band show: the Items held were the previous version's.</summary>
+    private void LoadShownItems()
+    {
+        LoadBandItems();
+        if (_open is { Kind: Surface.ItemFilter } open)
+            LoadItems(open.Field);
     }
 
     /// <summary>The Items of every report filter that hides some, which the band summarises.</summary>

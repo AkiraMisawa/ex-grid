@@ -143,6 +143,26 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Equal(source.Questions[0].Query, source.Questions[1].Query);
     }
 
+    [Fact] // ADR-0065/0025 (PV-30): a Refresh that fails leaves the report as it was and says so where the user sees it, and throws nothing
+    public async Task A_failed_refresh_leaves_the_report_and_says_so()
+    {
+        var source = new OnDemandSource(Bundled(), new PivotSourceFeatures(Enum.GetValues<PivotAggregation>(), canRefresh: true))
+        {
+            AnswersAtOnce = true,
+            RefreshFails = new InvalidOperationException("The server cannot be reached."),
+        };
+        var cut = RenderPivot(RegionProduct, source: source);
+        var before = RowTexts(cut);
+
+        await cut.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal("The source could not answer: The server cannot be reached.", cut.Find(".ex-pivot-refusal-notice").TextContent);
+        Assert.Equal("alert", cut.Find(".ex-pivot-refusal-notice").GetAttribute("role"));
+        Assert.Equal(before, RowTexts(cut));
+        Assert.Single(source.Questions);
+        Assert.IsType<InvalidOperationException>(cut.Instance.LastError);
+    }
+
     [Fact] // ADR-0060 (PV-30): the Layout menu offers Excel's Design tab choices under its headings, the current choice marked and a choice that would change nothing disabled
     public async Task The_layout_menu_offers_excels_choices()
     {

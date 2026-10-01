@@ -46,13 +46,27 @@ public partial class ExPivot
     /// Excel's Refresh (ADR-0065): the source is told to refresh, and the report is asked for
     /// again, whether or not the answer held would lay it out. The report stays as it was until the
     /// answer lands. A source that cannot be refreshed — the bundled one — answers the same data
-    /// again; it is refreshed by handing ExPivot a new source.
+    /// again; it is refreshed by handing ExPivot a new source. A source that fails to refresh
+    /// leaves the report as it was and says so, as a failed question does (<see cref="LastError"/>).
     /// </summary>
     public Task RefreshAsync() => InvokeAsync(async () =>
     {
         var source = _source ?? throw new InvalidOperationException("ExPivot has no Source yet.");
         var generation = _generation;
-        await source.RefreshAsync();
+        try
+        {
+            await source.RefreshAsync();
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // A failure is never silent, and never takes the report away (ADR-0025).
+            if (!_disposed)
+            {
+                Fail(error);
+                StateHasChanged();
+            }
+            return;
+        }
         // A source that says its data moved on may already have been asked again, through its
         // Changed (ticket 15's seam): a question asked since is the newer one, and stands.
         if (generation == _generation && !_disposed)
@@ -313,7 +327,7 @@ public partial class ExPivot
         _reportSource = source;
         Show(report, layout);
         _lastError = null;
-        LoadBandItems();
+        LoadShownItems();
         if (raise && !_emitted.TryGetValue(layout, out _))
         {
             _emitted.AddOrUpdate(layout, Emitted);

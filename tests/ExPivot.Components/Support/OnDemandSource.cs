@@ -85,10 +85,14 @@ internal sealed class OnDemandSource(PivotSource reference, PivotSourceFeatures?
         return reference.DetailsAsync(query, cancellationToken);
     }
 
+    /// <summary>What Refresh fails with, as a server that cannot be reached does; null while it
+    /// succeeds.</summary>
+    public Exception? RefreshFails { get; set; }
+
     public override ValueTask RefreshAsync(CancellationToken cancellationToken = default)
     {
         Refreshes++;
-        return ValueTask.CompletedTask;
+        return RefreshFails is { } error ? ValueTask.FromException(error) : ValueTask.CompletedTask;
     }
 
     /// <summary>One question, held until the test answers it.</summary>

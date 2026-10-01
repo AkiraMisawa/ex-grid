@@ -302,6 +302,48 @@ public class DetailsAndVersionTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "R10000"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
     }
 
+    [Fact] // ADR-0065 (PV-23): an open Filter… lists again under the new report's Source Version when a refresh brings one, and stays open
+    public async Task An_open_filter_lists_the_new_versions_items()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        await RunMenuAsync(cut, "Filter…");
+        cut.WaitForAssertion(() => Assert.Equal(5, cut.FindAll(".ex-pivot-item").Count));
+        var before = cut.Instance.Report!.Cube.SourceVersion;
+
+        cut.Render(ps => ps.Add(p => p.Source, Bundled([.. Sales, new Sale("South", "Apples", 1m, 1, true)])));
+
+        cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "East", "North", "South", "West", "(blank)"],
+            cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
+        Assert.NotEqual(before, cut.Instance.Report!.Cube.SourceVersion);
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+    }
+
+    [Fact] // ADR-0065 refined (PV-23): a search typed while Filter… waits for its Items is asked of the source once they land, when there are more Items than are listed
+    public async Task A_search_typed_before_the_items_land_is_asked_when_they_do()
+    {
+        var many = Enumerable.Range(0, PivotComponent.ItemListCap + 1)
+            .Select(i => new Sale($"R{i:D5}", "Apples", 1m, 1, true))
+            .ToArray();
+        var reference = Bundled(many);
+        var source = new OnDemandSource(reference) { AnswersAtOnce = true, HoldsItems = true };
+        var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Values = [Sum("Amount")] }, source: source);
+        await cut.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
+        await cut.Find(".ex-pivot-item-filter .ex-pivot-search").InputAsync(new ChangeEventArgs { Value = "r1000" });
+        var (query, listing) = Assert.Single(source.HeldItems);
+
+        var page = await reference.ItemsAsync(query, Xunit.TestContext.Current.CancellationToken);
+        await cut.InvokeAsync(() => listing.SetResult(page));
+
+        cut.WaitForAssertion(() => Assert.Equal(2, source.HeldItems.Count));
+        var (search, found) = source.HeldItems[1];
+        Assert.Equal("r1000", search.Search);
+        Assert.Equal(query.SourceVersion, search.SourceVersion);
+        var answer = await reference.ItemsAsync(search, Xunit.TestContext.Current.CancellationToken);
+        await cut.InvokeAsync(() => found.SetResult(answer));
+        cut.WaitForAssertion(() => Assert.Equal(["(Select All)", "R10000"], cut.FindAll(".ex-pivot-item").Select(i => i.TextContent.Trim())));
+    }
+
     [Fact] // ADR-0065 (PV-23): the report filter band says the data has changed when the source refuses the version its summary needs
     public void The_band_says_the_data_has_changed()
     {
