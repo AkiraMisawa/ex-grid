@@ -250,8 +250,12 @@ public static class FilterPanelChoices
     /// separator stands only where the culture writes one, so <c>1234,5</c> under en-US is not
     /// 12345. A text that reads as two numbers is refused rather than guessed: under a culture
     /// that groups with a dot, <c>1.234</c> (ADR-0006, note of 2026-10-01; principle 1).</item>
-    /// <item><b>A date</b> is read in the invariant culture first, so the ISO form a date operand
-    /// reopens in (ticket 94) reads back as itself, and in <paramref name="culture"/> otherwise.</item>
+    /// <item><b>A date</b> is read as a number is (ticket 97): ticket 94's ISO forms exactly, which
+    /// a date operand reopens in, and anything else in <paramref name="culture"/> alone, never
+    /// invariant first — under en-GB <c>05/01/2026</c> is 5 January. A numeric date whose year
+    /// stands last under a culture that writes it first (ja-JP's <c>yyyy/MM/dd</c>) has no order
+    /// of day and month from the culture, so where both orders are dates it reads two ways and is
+    /// refused.</item>
     /// <item><b>A boolean</b> is <c>true</c> or <c>false</c>; <b>text</b> is itself.</item>
     /// </list>
     /// </summary>
@@ -265,11 +269,7 @@ public static class FilterPanelChoices
         {
             ColumnType.Text => new OperandReading(text, OperandRefusal.None),
             ColumnType.Number => ReadNumber(text, culture.NumberFormat),
-            ColumnType.Date => DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var isoDate)
-                ? new OperandReading(isoDate, OperandRefusal.None)
-                : DateTime.TryParse(text, culture, DateTimeStyles.None, out var localDate)
-                    ? new OperandReading(localDate, OperandRefusal.None)
-                    : new OperandReading(null, OperandRefusal.NotReadable),
+            ColumnType.Date => ReadDate(text, culture),
             ColumnType.Boolean => bool.TryParse(text, out var flag)
                 ? new OperandReading(flag, OperandRefusal.None)
                 : new OperandReading(null, OperandRefusal.NotReadable),
@@ -319,6 +319,9 @@ public static class FilterPanelChoices
         ArgumentNullException.ThrowIfNull(culture);
         return reading switch
         {
+            { Refusal: OperandRefusal.ReadsTwoWays, OtherValue: (DateTime first, DateTime second) } => string.Format(culture,
+                "\u201C{0}\u201D reads two ways: as {1}, and as {2}. Type the one you mean as {1} or {2}.",
+                text, IsoDateText(first), IsoDateText(second)),
             { Refusal: OperandRefusal.ReadsTwoWays, OtherValue: var (asCulture, asPoint) } => string.Format(culture,
                 "\u201C{0}\u201D reads two ways: as {1}, and as {2}. Type {1} without separators, or {3} for the other.",
                 text, OperandText(asCulture, culture), OperandText(asPoint, CultureInfo.InvariantCulture), OperandText(asPoint, culture)),
@@ -327,6 +330,74 @@ public static class FilterPanelChoices
             _ => null,
         };
     }
+
+    // Ticket 94's forms, which a date or a time operand reopens in: read exactly, in every culture.
+    private static readonly string[] IsoDateForms = ["yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd"];
+
+    // A date written as three runs of digits — day, month and year in some order — with a time or
+    // nothing after it.
+    private static readonly System.Text.RegularExpressions.Regex NumericDate =
+        new(@"^(\d{1,4})[./\-](\d{1,2})[./\-](\d{1,4})(?=$|[\sT])", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// A date read as ticket 97 decides: ticket 94's ISO forms exactly, then the culture alone. A
+    /// numeric date is read in the order its year stands in: first is year, month, day, as every
+    /// culture that writes the year first writes it; last is the culture's own order of day and
+    /// month where the culture writes the year last too. Where it writes the year first, a date
+    /// with its year last has no order from the culture, so where day and month could be either it
+    /// reads two ways, and is refused rather than guessed.
+    /// </summary>
+    private static OperandReading ReadDate(string text, CultureInfo culture)
+    {
+        var trimmed = text.Trim();
+        if (DateTimeOffset.TryParseExact(trimmed, "yyyy-MM-dd HH:mm:ss zzz", CultureInfo.InvariantCulture, DateTimeStyles.None, out var offset))
+            return new OperandReading(offset, OperandRefusal.None);
+        if (DateTime.TryParseExact(trimmed, IsoDateForms, CultureInfo.InvariantCulture, DateTimeStyles.None, out var iso))
+            return new OperandReading(iso, OperandRefusal.None);
+        if (!DateTime.TryParse(trimmed, culture, DateTimeStyles.None, out var local))
+            return new OperandReading(null, OperandRefusal.NotReadable);
+        var numeric = NumericDate.Match(trimmed);
+        // Month names, or no year: the culture's own reading is the only one.
+        if (!numeric.Success || numeric.Groups[1].Length != 4 && numeric.Groups[3].Length != 4)
+            return new OperandReading(local, OperandRefusal.None);
+        var (first, second, third) = (int.Parse(numeric.Groups[1].Value, CultureInfo.InvariantCulture),
+            int.Parse(numeric.Groups[2].Value, CultureInfo.InvariantCulture), int.Parse(numeric.Groups[3].Value, CultureInfo.InvariantCulture));
+        if (numeric.Groups[1].Length == 4)
+            return DateOf(first, second, third, local) is { } yearFirst
+                ? new OperandReading(yearFirst, OperandRefusal.None)
+                : new OperandReading(null, OperandRefusal.NotReadable);
+        var pattern = culture.DateTimeFormat.ShortDatePattern;
+        var yearFirstHere = pattern.IndexOf('y', StringComparison.Ordinal) < pattern.IndexOf('M', StringComparison.Ordinal);
+        var dayFirstHere = pattern.IndexOf('d', StringComparison.Ordinal) < pattern.IndexOf('M', StringComparison.Ordinal);
+        if (!yearFirstHere)
+        {
+            return (dayFirstHere ? DateOf(third, second, first, local) : DateOf(third, first, second, local)) is { } inOrder
+                ? new OperandReading(inOrder, OperandRefusal.None)
+                : new OperandReading(null, OperandRefusal.NotReadable);
+        }
+        var monthFirst = DateOf(third, first, second, local);
+        var dayFirst = DateOf(third, second, first, local);
+        return (monthFirst, dayFirst) switch
+        {
+            ({ } m, { } d) when m != d => new OperandReading(null, OperandRefusal.ReadsTwoWays, (m, d)),
+            ({ } m, _) => new OperandReading(m, OperandRefusal.None),
+            (_, { } d) => new OperandReading(d, OperandRefusal.None),
+            _ => new OperandReading(null, OperandRefusal.NotReadable),
+        };
+    }
+
+    /// <summary>The date of <paramref name="year"/>, <paramref name="month"/> and
+    /// <paramref name="day"/> at <paramref name="time"/>'s time of day, or null where there is
+    /// no such date.</summary>
+    private static DateTime? DateOf(int year, int month, int day, DateTime time)
+        => year is >= 1 and <= 9999 && month is >= 1 and <= 12 && day >= 1 && day <= DateTime.DaysInMonth(year, month)
+            ? new DateTime(year, month, day).Add(time.TimeOfDay)
+            : null;
+
+    /// <summary>A date as a refusal names it, in a form that reads back exactly: the day alone at
+    /// midnight, the day and time otherwise.</summary>
+    private static string IsoDateText(DateTime date)
+        => date.ToString(date.TimeOfDay == TimeSpan.Zero ? "yyyy-MM-dd" : "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// A number read in the culture, with its grouping checked (ADR-0006, note of 2026-10-01).
