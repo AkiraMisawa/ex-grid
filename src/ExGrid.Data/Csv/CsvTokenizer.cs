@@ -157,6 +157,10 @@ internal sealed class CsvTokenizer
         var fields = 0;
         var breaks = 0;
         var p = pos;
+        // The last block of sixteen bytes compared for an unquoted field, and where its stops are: the
+        // fields of a record are short, so the next one often ends in the same block.
+        var blockAt = -Vector128<byte>.Count;
+        uint blockStops = 0;
         while (true)
         {
             int start;
@@ -240,13 +244,30 @@ internal sealed class CsvTokenizer
                 var found = false;
                 if (Vector128.IsHardwareAccelerated)
                 {
-                    while (q + Vector128<byte>.Count <= end)
+                    // The stops left in the block the field begins in, when one was compared already.
+                    var offset = q - blockAt;
+                    if ((uint)offset < (uint)Vector128<byte>.Count)
+                    {
+                        var left = blockStops >> offset;
+                        if (left != 0)
+                        {
+                            q += BitOperations.TrailingZeroCount(left);
+                            found = true;
+                        }
+                        else
+                        {
+                            q = blockAt + Vector128<byte>.Count;
+                        }
+                    }
+                    while (!found && q + Vector128<byte>.Count <= end)
                     {
                         var bytes = Vector128.LoadUnsafe(ref origin, (nuint)q);
                         var hits = (Vector128.Equals(bytes, separatorVector) | Vector128.Equals(bytes, crVector)
                             | Vector128.Equals(bytes, lfVector) | Vector128.Equals(bytes, quoteVector)).ExtractMostSignificantBits();
                         if (hits != 0)
                         {
+                            blockAt = q;
+                            blockStops = hits;
                             q += BitOperations.TrailingZeroCount(hits);
                             found = true;
                             break;

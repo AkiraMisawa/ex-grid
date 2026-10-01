@@ -31,6 +31,35 @@ public class CsvBoundaryTests
         AssertValues(expected, Read(schema, bytes));
     }
 
+    [Fact] // ADR-0063: many short fields in one block of sixteen bytes read alike, and a quote among them is refused in its column
+    public void Short_fields_in_one_block_read_alike_and_a_quote_among_them_is_refused()
+    {
+        var names = Enumerable.Range(0, 20).Select(c => $"C{c}").ToArray();
+        var schema = Texts(names);
+        var header = string.Join(",", names) + "\n";
+        for (var width = 0; width < 4; width++)
+        {
+            // Twenty fields of the same width, then a quoted one in the middle of a record of them.
+            var values = Enumerable.Range(0, 20).Select(c => new string((char)('a' + c), width)).ToArray();
+            var record = string.Join(",", values) + "\n";
+            var quoted = string.Join(",", values.Select((v, c) => c == 9 ? "\"x,y\"" : v)) + "\r\n";
+            var snapshot = Read(schema, Utf8(header + record + quoted + record));
+
+            for (var c = 0; c < 20; c++)
+            {
+                var value = width == 0 ? null : values[c];
+                Assert.Equal([value, c == 9 ? "x,y" : value, value], Values(snapshot, names[c]));
+            }
+            for (var c = 0; c < 20; c++)
+            {
+                // A quote after a field's first byte stands inside it.
+                var broken = string.Join(",", values.Select((v, k) => k == c ? v + "q\"" : v)) + "\n";
+                Assert.Equal($"Row 2, column 'C{c}': a quote stands inside a field that does not begin with one (line 3).",
+                    Refusal(schema, Utf8(header + record + broken)).Message);
+            }
+        }
+    }
+
     [Fact] // ADR-0063: a field far longer than a block or the buffer is read whole
     public void A_very_long_field_is_read_whole()
     {
