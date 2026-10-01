@@ -27,7 +27,8 @@ test.skip(MEASURE === 'pivot' && SERVER, 'PV-21 is measured on WebAssembly: run 
 
 // A document of its own for every test: each measurement starts from a real load, with the probe
 // installed before the app's first script, and no test's million records are another's to collect.
-test.use({ viewport: { width: 1400, height: 1100 }, freshDocument: true });
+// An action that cannot find its target fails within a minute rather than at the test's hour.
+test.use({ viewport: { width: 1400, height: 1100 }, freshDocument: true, actionTimeout: 60_000 });
 
 const REPORT = '.ex-pivot .ex-pivot-sheet > .ex-grid';
 const VIEWPORT = `${REPORT} .ex-viewport`;
@@ -241,7 +242,7 @@ async function openMillion(page) {
     await openMeasured(page, `/pivot?trades=${MILLION}`);
     await expect(page.locator('#pivot-read')).toContainText(`${MILLION.toLocaleString('en-US')} trades read into a Snapshot`, { timeout: 600_000 });
     await expect(page.locator(VIEWPORT).locator('.ex-row').first()).toBeVisible({ timeout: 300_000 });
-    await page.waitForFunction(() => window.__pv21.seen('first report')?.frameAt != null);
+    await page.waitForFunction(() => window.__pv21.seen('first report')?.frameAt != null, null, { polling: 100, timeout: 120_000 });
     await page.waitForTimeout(1_000);
     return page.evaluate(() => {
         const p = window.__pv21;
@@ -388,6 +389,7 @@ test('PV-21: a question near the 200,000-leaf cap, and past it, over a million t
     for (const layout of layouts) {
         const runs = [];
         for (let run = 0; run < 3; run++) {
+            console.log(`${layout.name}, run ${run + 1}`);
             await openMillion(page);
             // Built in the pane while Defer Layout Update holds it, then asked once, by Update.
             await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
@@ -578,4 +580,21 @@ test('PV-21/DA-17: a CSV of a million rows read on /pivot-csv', async ({ page },
     };
     record(testInfo.project.name, { 'PV-21/DA-17 CSV of 1,000,000 rows, browser (/pivot-csv)': result });
     console.log(`PV-21 CSV ${JSON.stringify(result, null, 1)}`);
+});
+
+// The file above reaches the reader through InputFile's stream, from JavaScript; the page's own
+// sample is written in memory and read from a MemoryStream. A tenth of the rows, so the two say
+// how much of the file's time is the reading itself.
+test('DA-17: the trade export\'s 100,000-trade sample read from memory on /pivot-csv', async ({ page }, testInfo) => {
+    test.setTimeout(3_600_000);
+    const runs = [];
+    for (let run = 0; run < 3; run++) {
+        await openMeasured(page, '/pivot-csv');
+        await page.locator('#csv-sample-large').click();
+        await expect(page.locator('#csv-status')).toContainText('100,000 rows read in', { timeout: 600_000 });
+        runs.push(Number(/in ([\d.]+) s/.exec(await page.locator('#csv-status').textContent())[1]));
+    }
+    const result = { rows: 100_000, from: 'a MemoryStream (the page\'s "100,000 trades" sample)', pageSeconds: spread(runs, (s) => s) };
+    record(testInfo.project.name, { 'DA-17 CSV of 100,000 rows from memory, browser (/pivot-csv)': result });
+    console.log(`DA-17 CSV sample ${JSON.stringify(result, null, 1)}`);
 });

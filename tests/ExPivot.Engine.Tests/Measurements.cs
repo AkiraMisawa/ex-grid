@@ -194,7 +194,12 @@ public class Measurements
         {
             var query = PivotQuery.For(layout, int.MaxValue);
             var answer = Ask(PivotSource.From(snapshot, fields.Fields, Whole), query);
+            // What ExPivot does with an answer as it lands, at once and in one piece: makes its cube.
             var cube = PivotEngine.Cube(query, answer, fields.Fields);
+            for (var warm = 0; warm < 4; warm++)
+                cube = PivotEngine.Cube(query, answer, fields.Fields);
+            Report($"{name}: the answer made a cube", [.. Enumerable.Range(0, 9).Select(_ => Time(() => cube = PivotEngine.Cube(query, answer, fields.Fields)))],
+                $"{answer.LeafCount:N0} leaves");
             var (region, inner) = (layout.Rows[0], layout.Rows.Skip(1).ToArray());
             foreach (var (gesture, next) in new[]
                      {
