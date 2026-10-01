@@ -10,6 +10,13 @@ Status: ready-for-agent
 
 **Blocked by:** 12
 
-- [ ] PV-33: no English word left on `/pivot` in Japanese
+- [x] PV-33: no English word left on `/pivot` in Japanese
 
 ## Comments
+
+2026-10-01: Built. `PivotWords.Japanese` gives the word of Excel's Japanese edition for every id
+ExPivot paints, and for ExGrid's Copy and Copy with headers in the report's Context Menu. The
+Consumer chooses them in one line (`Label="PivotWords.Japanese"`); the culture alone changes no
+word. Layer 1 holds every id and every template's arguments; layer 2 walks every surface over
+Japanese data and finds no Latin word but OK, and fails on any id asked for that has no Japanese
+word. `/pivot` has a words switch (`#pivot-words`, or `?words=ja`), which layer 3 exercises.

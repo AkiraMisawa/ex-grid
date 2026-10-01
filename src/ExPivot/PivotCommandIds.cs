@@ -92,22 +92,35 @@ public static class PivotCommandIds
 
     /// <summary>Hide the Field List.</summary>
     public const string HideFieldList = "hide-field-list";
-}
 
-/// <summary>
-/// The records behind one cell of the report — Show Details (ADR-0062) — raised to the Consumer,
-/// who shows them where its application shows records. The Items say which cell they are behind.
-/// </summary>
-/// <typeparam name="TRecord">The Consumer's record type.</typeparam>
-/// <param name="Records">The Source Records, in their order in the snapshot; none hidden.</param>
-/// <param name="RowItems">The row's Items, outermost first: each field's caption and the Item's label.</param>
-/// <param name="ColumnItems">The column's Items, outermost first.</param>
-/// <param name="ValueField">The Value Field's caption, or null for a label cell.</param>
-public sealed record PivotDetails<TRecord>(
-    IReadOnlyList<TRecord> Records,
-    IReadOnlyList<PivotDetailItem> RowItems,
-    IReadOnlyList<PivotDetailItem> ColumnItems,
-    string? ValueField);
+    /// <summary>The toolbar's Layout ▾ button, which opens the Layout menu (ADR-0060).</summary>
+    public const string LayoutMenu = "layout-menu";
+
+    /// <summary>The toolbar's Refresh: Excel's, offered when the source can be refreshed (ADR-0065).</summary>
+    public const string Refresh = "refresh";
+
+    /// <summary>The toolbar's toggle that shows and hides the Field List (ADR-0060).</summary>
+    public const string FieldListToggle = "field-list-toggle";
+
+    /// <summary>The id of a Layout menu choice's command, which is also the id of its word:
+    /// <c>form-outline</c> is "Show in Outline Form" (ADR-0060).</summary>
+    public static string LayoutChoice(PivotLayoutChoice choice) => choice switch
+    {
+        PivotLayoutChoice.DoNotShowSubtotals => "subtotals-do-not-show",
+        PivotLayoutChoice.ShowSubtotalsAtBottom => "subtotals-at-bottom",
+        PivotLayoutChoice.ShowSubtotalsAtTop => "subtotals-at-top",
+        PivotLayoutChoice.GrandTotalsOff => "grand-totals-off",
+        PivotLayoutChoice.GrandTotalsOn => "grand-totals-on",
+        PivotLayoutChoice.GrandTotalsOnRowsOnly => "grand-totals-rows-only",
+        PivotLayoutChoice.GrandTotalsOnColumnsOnly => "grand-totals-columns-only",
+        PivotLayoutChoice.CompactForm => "form-compact",
+        PivotLayoutChoice.OutlineForm => "form-outline",
+        PivotLayoutChoice.TabularForm => "form-tabular",
+        PivotLayoutChoice.RepeatItemLabels => "repeat-item-labels",
+        PivotLayoutChoice.DoNotRepeatItemLabels => "do-not-repeat-item-labels",
+        _ => throw new ArgumentOutOfRangeException(nameof(choice), choice, "Unknown PivotLayoutChoice."),
+    };
+}
 
 /// <summary>One Item a detailed cell stands for.</summary>
 /// <param name="Field">The field's caption.</param>

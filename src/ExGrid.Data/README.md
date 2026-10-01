@@ -8,8 +8,10 @@ pass over a million rows is a loop over arrays rather than over objects.
 - **Six kinds**: Text, Decimal, Double, Integer, Date and Boolean, with a **Blank** possible in each,
   kept apart from `""` and 0.
 - **Ways in** that yield a Snapshot or refuse whole, naming the row and the column: the Consumer's
-  objects through typed accessors, which box nothing and keep the objects by reference; and columns,
-  a value or a span at a time, for data a reader has read itself.
+  objects through typed accessors, which box nothing and keep the objects by reference; a CSV read
+  as bytes under a **Schema** the Consumer declares, with nothing guessed; a `DbDataReader`, each
+  column by its own type; and columns, a value or a span at a time, for data a reader has read
+  itself.
 - **Loads in slices**, yielding between them and reporting progress, with a `CancellationToken`,
   so a browser keeps painting while a million rows load.
 - **Change Batches**: records added, changed and removed by a **Record Key** make the next Snapshot,
@@ -56,6 +58,65 @@ for (var s = 0; s < snapshot.SliceCount; s++)
     // ...
 }
 ```
+
+## From a CSV, under a Schema
+
+```csharp
+var schema = new CsvSchema(
+[
+    new CsvColumn("Account", SnapshotKind.Text),                       // "00123" stays "00123"
+    new CsvColumn("Notional", SnapshotKind.Decimal) { Header = "Amount (USD)", DecimalPoint = ",", ThousandsSeparator = "." },
+    new CsvColumn("TradeDate", SnapshotKind.Date) { DateFormats = ["dd.MM.yyyy"] },
+    new CsvColumn("Live", SnapshotKind.Boolean) { TrueText = ["1"], FalseText = ["0"] },
+])
+{
+    Separator = CsvSeparator.Semicolon,
+    BlankText = ["NULL", "-"],          // an empty field is a Blank in every kind already
+    RecordKey = "Account",
+};
+
+Snapshot snapshot = await schema.ReadAsync("trades.csv", new SnapshotLoadOptions { Progress = progress }, token);
+```
+
+The file is read as bytes, straight into the columns, with no string made per cell, and quoting
+follows RFC 4180. A value its kind cannot read, a record of the wrong length, a quote left open or
+text not valid in the encoding fails the load, naming the row, the column and the line; a declared
+column missing from the header is refused by name, and a column the Schema does not declare is
+skipped. UTF-8 is read with or without its byte-order mark. Shift-JIS, which Excel on Japanese
+Windows saves, is read when the Schema declares `Encoding = CsvEncoding.ShiftJis`; only that member
+refers to the code pages, so a trimmed browser application that never asks for it does not download
+them.
+
+For a file nobody has described, a Schema can be suggested from its first rows. It marks each
+column whose kind is not clear — digits with leading zeros, mixed date formats, a comma that could
+be the decimal point — and it is never applied by itself:
+
+```csharp
+CsvSuggestion suggestion = await CsvSchema.SuggestAsync("unknown.csv", cancellationToken: token);
+foreach (var column in suggestion.Columns.Where(c => c.IsUnclear))
+    Console.WriteLine($"{column.Column.Name}: {string.Join(" ", column.Marks.Select(m => m.Note))}");
+// Show it to the user; read the file under it, or under what they changed, once they confirm.
+Snapshot confirmed = await suggestion.Schema.ReadAsync("unknown.csv", cancellationToken: token);
+```
+
+## From a DbDataReader
+
+```csharp
+await using var reader = await command.ExecuteReaderAsync(token);
+Snapshot snapshot = await new SnapshotDataReaderBuilder()
+    .Column("trade_id", name: "Id")
+    .Column("desk", name: "Desk")
+    .Column("notional", name: "Notional", caption: "Notional (USD)")
+    .Text<Guid>("book_id", g => g.ToString(), name: "Book")   // a type no kind reads by itself
+    .Key("Id")
+    .BuildAsync(reader, options, token);
+```
+
+Each column is read by its own type: `decimal` as Decimal, `double` and `float` as Double, the
+integers as Integer, `DateTime`, `DateOnly`, `DateTimeOffset` and `TimeOnly` as Date, `bool` as
+Boolean, `string` and `char` as Text, and `DBNull` as a Blank. A column of any other type is refused
+by name unless a conversion like the one above declares its kind. With no column declared, every
+column of the reader is read under its own name.
 
 ## From columns
 

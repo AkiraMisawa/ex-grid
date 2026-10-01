@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>A Snapshot of ExGrid.Data as Apache Arrow: read from Arrow's IPC stream or file format (Feather 2), as pyarrow, DuckDB and Polars write them, and written as an uncompressed IPC stream with the Snapshot's captions, Record Key and version. Ships at the same version as ExGrid.Data and depends on exactly that version.</Description>
+    <PackageTags>snapshot;columnar;arrow;apache-arrow;ipc;feather;pivot;excel</PackageTags>
+    <!-- Trimmable, as ExGrid.Data is (ADR-0063): a browser application that only reads Snapshots
+         publishes without the writer, and one that only writes without the reader. Untrimmable, the
+         package would be kept whole under Blazor's default partial trimming. It also turns the trim
+         analysers on, so the build says when code stops being trim-safe. -->
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Apache.Arrow's major version moved four times a year in 2024 and 2025 (ADR-0064). The
+         format is stable, but the library's API is not promised to be: this package reads and
+         writes through ArrowStreamReader, ArrowFileReader, ArrowStreamWriter, ArrayData and the
+         ICompressionCodecFactory a Consumer hands in. So it states the range it was built and
+         tested with — 23.x — rather than a floor, and a Consumer who moves Apache.Arrow to 24 is
+         told so at restore (NU1608) instead of meeting a break at run time. The package check
+         reads and writes a stream through the packed package, so a new range is tried there
+         first. -->
+    <PackageReference Include="Apache.Arrow" Version="[23.0.0,24.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0063/0064): this package references ExGrid.Data, and
+         nothing in ExGrid.Data knows it exists. -->
+    <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExGrid.Data.Arrow.Tests" />
+  </ItemGroup>
+
+  <!-- ExGrid.Data.Arrow depends on exactly the ExGrid.Data version it was built with (ADR-0064,
+       DA-1): it reads and writes that version's Snapshot. NuGet offers no range on a
+       ProjectReference, so the version pack computed is made exact here, as the Wrappers do;
+       the package check reads it back from the .nuspec. -->
+  <Target Name="DependOnExactlyThisData" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -1,17 +1,66 @@
-@* The built-in menu of a placed field (ADR-0060): ExPivot's commands, in its order, each with
-   its Enabled state. The first enabled one takes DOM focus when the menu opens. *@
+@* The built-in menu (ADR-0060): a placed field's commands, or the Layout menu's choices, in
+   ExPivot's order, each with its Enabled state. A choice among others is a menuitemradio, its mark
+   shown, and a group of them stands under its heading. The first enabled command takes DOM focus
+   when the menu opens. *@
 <div class="ex-pivot-menu" role="none">
-    @for (var i = 0; i < Context.Commands.Count; i++)
+    @foreach (var group in Groups())
     {
-        var command = Context.Commands[i];
-        <PivotFocusButton @key="command.Id" Class="ex-pivot-menu-item" role="menuitem" Disabled="!command.Enabled"
-                          OnClick="command.Invoke" FocusRequest="@(i == FirstEnabled ? Context.FocusRequest : 0)">@command.Label</PivotFocusButton>
+        @if (group.Heading is { } heading)
+        {
+            <div class="ex-pivot-menu-group" role="group" aria-label="@heading">
+                <div class="ex-pivot-menu-heading" aria-hidden="true">@heading</div>
+                @Items(group)
+            </div>
+        }
+        else
+        {
+            @Items(group)
+        }
     }
 </div>
 
 @code {
     /// <summary>The commands and the request to take the keyboard (ADR-0060).</summary>
     [Parameter, EditorRequired] public PivotMenuContext Context { get; set; } = default!;
+
+    private sealed record Group(string? Heading, int From, int To);
+
+    private IEnumerable<Group> Groups()
+    {
+        var start = 0;
+        string? heading = null;
+        for (var i = 0; i < Context.Commands.Count; i++)
+        {
+            if (Context.Commands[i].GroupHeading is { } next)
+            {
+                if (i > start)
+                    yield return new Group(heading, start, i);
+                start = i;
+                heading = next;
+            }
+        }
+        if (Context.Commands.Count > start)
+            yield return new Group(heading, start, Context.Commands.Count);
+    }
+
+    private RenderFragment Items(Group group) => @<text>
+        @for (var i = group.From; i < group.To; i++)
+        {
+            var command = Context.Commands[i];
+            var index = i;
+            <PivotFocusButton @key="command.Id" Class="@(command.Checked is null ? "ex-pivot-menu-item" : "ex-pivot-menu-item ex-pivot-menu-choice")"
+                              role="@(command.Checked is null ? "menuitem" : "menuitemradio")"
+                              aria-checked="@(command.Checked is { } chosen ? (chosen ? "true" : "false") : null)"
+                              Disabled="!command.Enabled" OnClick="command.Invoke"
+                              FocusRequest="@(index == FirstEnabled ? Context.FocusRequest : 0)">
+                @if (command.Checked is { } mark)
+                {
+                    <span class="ex-pivot-menu-mark" aria-hidden="true">@(mark ? "✓" : "")</span>
+                }
+                @command.Label
+            </PivotFocusButton>
+        }
+    </text>;
 
     private int FirstEnabled
     {

@@ -32,6 +32,13 @@
     --ex-pivot-toggle-color: var(--mud-palette-text-secondary);
     --ex-pivot-toggle-background: transparent;
     --ex-pivot-toggle-border-color: var(--mud-palette-lines-inputs);
+    /* Show Details (ADR-0058): a tab's records over the report, the tabs at its foot, and the
+       dialog's backdrop, painted as MudBlazor paints its own. ExPivot's markup draws them until
+       this Wrapper draws them with MudTabs (ticket 17); only their colours are the palette's. */
+    --ex-pivot-details-background: var(--mud-palette-surface);
+    --ex-pivot-tab-background: var(--mud-palette-background-gray);
+    --ex-pivot-tab-selected-background: var(--mud-palette-surface);
+    --ex-pivot-dialog-backdrop: var(--mud-palette-overlay-dark);
     /* The pane's type. The report's is the grid's own, which is metrics-bearing and the paper's
        (ADR-0027/0030); this one sizes nothing ExPivot computes. */
     --ex-pivot-font-size: var(--mud-typography-body2-size, 0.875rem);
@@ -50,6 +57,14 @@
 }
 .mud-ex-pivot-pane > * { flex: none; }
 .mud-ex-pivot-pane .mud-ex-pivot-pane-caption { color: var(--mud-palette-text-secondary); }
+
+/* Defer Layout Update and Update at the pane's foot (ADR-0060). */
+.mud-ex-pivot-defer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
 
 /* The list of fields: takes what the pane leaves and scrolls on its own. */
 .mud-ex-pivot-pane > .mud-ex-pivot-fields {
@@ -138,6 +153,11 @@
 .mud-ex-pivot-menu .mud-ex-pivot-menu-item,
 .mud-ex-pivot-menu .mud-ex-pivot-menu-item .mud-button-label {
     justify-content: flex-start;
+}
+/* A group's heading in the Layout menu: Subtotals, Grand Totals, Report Layout. */
+.mud-ex-pivot-menu .mud-ex-pivot-menu-heading {
+    padding: 6px 8px 2px;
+    color: var(--mud-palette-text-secondary);
 }
 
 /* The panels: MudBlazor's controls in a column, the Item list scrolling on its own and the

@@ -51,6 +51,52 @@ public sealed record PivotEditResult(PivotLayout Layout, PivotRefusal? Refusal =
 }
 
 /// <summary>
+/// One choice of the Layout menu on the report's toolbar (ADR-0060): Excel's Design tab settings,
+/// under Excel's names, in Excel's order — Subtotals, Grand Totals, then Report Layout. Excel's
+/// Blank Rows is left out: the engine has no blank row.
+/// </summary>
+public enum PivotLayoutChoice
+{
+    /// <summary>Subtotals: Do Not Show Subtotals — no field in Rows or Columns has one.</summary>
+    DoNotShowSubtotals = 0,
+
+    /// <summary>Subtotals: Show all Subtotals at Bottom of Group.</summary>
+    ShowSubtotalsAtBottom,
+
+    /// <summary>Subtotals: Show all Subtotals at Top of Group.</summary>
+    ShowSubtotalsAtTop,
+
+    /// <summary>Grand Totals: Off for Rows and Columns.</summary>
+    GrandTotalsOff,
+
+    /// <summary>Grand Totals: On for Rows and Columns.</summary>
+    GrandTotalsOn,
+
+    /// <summary>Grand Totals: On for Rows Only — Excel's grand totals for rows, which is the
+    /// <c>Grand Total</c> column at the right (<see cref="PivotLayout.GrandTotalColumn"/>, ADR-0059).</summary>
+    GrandTotalsOnRowsOnly,
+
+    /// <summary>Grand Totals: On for Columns Only — Excel's grand totals for columns, which is the
+    /// <c>Grand Total</c> row at the bottom (<see cref="PivotLayout.GrandTotalRow"/>, ADR-0059).</summary>
+    GrandTotalsOnColumnsOnly,
+
+    /// <summary>Report Layout: Show in Compact Form.</summary>
+    CompactForm,
+
+    /// <summary>Report Layout: Show in Outline Form.</summary>
+    OutlineForm,
+
+    /// <summary>Report Layout: Show in Tabular Form.</summary>
+    TabularForm,
+
+    /// <summary>Report Layout: Repeat All Item Labels.</summary>
+    RepeatItemLabels,
+
+    /// <summary>Report Layout: Do Not Repeat Item Labels.</summary>
+    DoNotRepeatItemLabels,
+}
+
+/// <summary>
 /// What each Field List gesture means (ADR-0060), as pure functions from a layout to the next.
 /// The component, a substituted Chrome and a server apply the same rules: a field stands at most
 /// once across Filters, Rows and Columns and its settings travel with it; it may stand in Values
@@ -287,6 +333,119 @@ public static class PivotLayoutEdits
         values[index] = value;
         return new PivotEditResult(layout with { Values = values });
     }
+
+    // ---- The Layout menu (ADR-0060) -----------------------------------------------------------
+
+    /// <summary>
+    /// A Layout menu choice applied (ADR-0060), as Excel's Design tab applies it. The Subtotals
+    /// choices set every field in Rows and Columns — Automatic, or None — and, for the two that
+    /// show them, where they stand; the Grand Totals choices set the two switches; the Report
+    /// Layout choices set the form, or whether the Outline and Tabular forms repeat their outer
+    /// Items' labels. Everything else in the layout is kept, and a choice that changes nothing in
+    /// the layout returns the instance it was given.
+    /// </summary>
+    public static PivotLayout Choose(PivotLayout layout, PivotLayoutChoice choice)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        return choice switch
+        {
+            PivotLayoutChoice.DoNotShowSubtotals => WithSubtotals(layout, false),
+            PivotLayoutChoice.ShowSubtotalsAtBottom => WithSubtotalsAt(WithSubtotals(layout, true), atTop: false),
+            PivotLayoutChoice.ShowSubtotalsAtTop => WithSubtotalsAt(WithSubtotals(layout, true), atTop: true),
+            PivotLayoutChoice.GrandTotalsOff => WithGrandTotals(layout, row: false, column: false),
+            PivotLayoutChoice.GrandTotalsOn => WithGrandTotals(layout, row: true, column: true),
+            PivotLayoutChoice.GrandTotalsOnRowsOnly => WithGrandTotals(layout, row: false, column: true),
+            PivotLayoutChoice.GrandTotalsOnColumnsOnly => WithGrandTotals(layout, row: true, column: false),
+            PivotLayoutChoice.CompactForm => WithForm(layout, PivotReportForm.Compact),
+            PivotLayoutChoice.OutlineForm => WithForm(layout, PivotReportForm.Outline),
+            PivotLayoutChoice.TabularForm => WithForm(layout, PivotReportForm.Tabular),
+            PivotLayoutChoice.RepeatItemLabels => layout.RepeatItemLabels ? layout : layout with { RepeatItemLabels = true },
+            PivotLayoutChoice.DoNotRepeatItemLabels => layout.RepeatItemLabels ? layout with { RepeatItemLabels = false } : layout,
+            _ => throw new ArgumentOutOfRangeException(nameof(choice), choice, "Unknown PivotLayoutChoice."),
+        };
+    }
+
+    /// <summary>
+    /// Whether <paramref name="choice"/> is what the report shows now — the Layout menu marks it
+    /// (ADR-0060). Read from what is painted: in the Tabular form, which puts every subtotal at the
+    /// bottom, Show at Bottom is the current Subtotals choice whatever the layout's setting; in the
+    /// Compact form, which has no outer label columns, neither label choice is. With no field in
+    /// Rows or Columns there is nothing to subtotal and no Subtotals choice is current, and with
+    /// fields that disagree, none is.
+    /// </summary>
+    public static bool IsChosen(PivotLayout layout, PivotLayoutChoice choice)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        var fields = AxisFields(layout);
+        var atTop = SubtotalsShownAtTop(layout);
+        return choice switch
+        {
+            PivotLayoutChoice.DoNotShowSubtotals => fields.Length > 0 && fields.All(p => !p.Subtotals),
+            PivotLayoutChoice.ShowSubtotalsAtBottom => fields.Length > 0 && fields.All(p => p.Subtotals) && !atTop,
+            PivotLayoutChoice.ShowSubtotalsAtTop => fields.Length > 0 && fields.All(p => p.Subtotals) && atTop,
+            PivotLayoutChoice.GrandTotalsOff => !layout.GrandTotalRow && !layout.GrandTotalColumn,
+            PivotLayoutChoice.GrandTotalsOn => layout.GrandTotalRow && layout.GrandTotalColumn,
+            PivotLayoutChoice.GrandTotalsOnRowsOnly => !layout.GrandTotalRow && layout.GrandTotalColumn,
+            PivotLayoutChoice.GrandTotalsOnColumnsOnly => layout.GrandTotalRow && !layout.GrandTotalColumn,
+            PivotLayoutChoice.CompactForm => layout.Form == PivotReportForm.Compact,
+            PivotLayoutChoice.OutlineForm => layout.Form == PivotReportForm.Outline,
+            PivotLayoutChoice.TabularForm => layout.Form == PivotReportForm.Tabular,
+            PivotLayoutChoice.RepeatItemLabels => layout.Form != PivotReportForm.Compact && layout.RepeatItemLabels,
+            PivotLayoutChoice.DoNotRepeatItemLabels => layout.Form != PivotReportForm.Compact && !layout.RepeatItemLabels,
+            _ => throw new ArgumentOutOfRangeException(nameof(choice), choice, "Unknown PivotLayoutChoice."),
+        };
+    }
+
+    /// <summary>
+    /// Whether <paramref name="choice"/> would change what the report shows (ADR-0060): the Layout
+    /// menu disables one that would not, as it disables any command that would change nothing. The
+    /// current choice never would. Nor would a Subtotals choice with no field in Rows or Columns,
+    /// Show at Top in the Tabular form, which puts every subtotal at the bottom whatever is
+    /// chosen, nor a label choice in the Compact form, which has no outer label columns to repeat
+    /// into.
+    /// </summary>
+    public static bool Changes(PivotLayout layout, PivotLayoutChoice choice)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        var fields = AxisFields(layout);
+        var someOff = fields.Any(p => !p.Subtotals);
+        var atTop = SubtotalsShownAtTop(layout);
+        return choice switch
+        {
+            PivotLayoutChoice.DoNotShowSubtotals => fields.Any(p => p.Subtotals),
+            PivotLayoutChoice.ShowSubtotalsAtBottom => fields.Length > 0 && (someOff || atTop),
+            PivotLayoutChoice.ShowSubtotalsAtTop => fields.Length > 0 && layout.Form != PivotReportForm.Tabular && (someOff || !atTop),
+            PivotLayoutChoice.RepeatItemLabels => layout.Form != PivotReportForm.Compact && !layout.RepeatItemLabels,
+            PivotLayoutChoice.DoNotRepeatItemLabels => layout.Form != PivotReportForm.Compact && layout.RepeatItemLabels,
+            _ => !IsChosen(layout, choice),
+        };
+    }
+
+    private static PivotFieldPlacement[] AxisFields(PivotLayout layout) => [.. layout.Rows, .. layout.Columns];
+
+    // Where subtotals are painted: at the top only outside the Tabular form, which puts them at
+    // the bottom whatever the setting (ADR-0059).
+    private static bool SubtotalsShownAtTop(PivotLayout layout) => layout.SubtotalsAtTop && layout.Form != PivotReportForm.Tabular;
+
+    private static PivotLayout WithSubtotals(PivotLayout layout, bool subtotals)
+    {
+        if (AxisFields(layout).All(p => p.Subtotals == subtotals))
+            return layout;
+        PivotFieldPlacement[] Set(IReadOnlyList<PivotFieldPlacement> placements)
+            => placements.Select(p => p.Subtotals == subtotals ? p : p with { Subtotals = subtotals }).ToArray();
+        return layout with { Rows = Set(layout.Rows), Columns = Set(layout.Columns) };
+    }
+
+    private static PivotLayout WithSubtotalsAt(PivotLayout layout, bool atTop)
+        => layout.SubtotalsAtTop == atTop ? layout : layout with { SubtotalsAtTop = atTop };
+
+    private static PivotLayout WithGrandTotals(PivotLayout layout, bool row, bool column)
+        => layout.GrandTotalRow == row && layout.GrandTotalColumn == column
+            ? layout
+            : layout with { GrandTotalRow = row, GrandTotalColumn = column };
+
+    private static PivotLayout WithForm(PivotLayout layout, PivotReportForm form)
+        => layout.Form == form ? layout : layout with { Form = form };
 
     // ---- The parts ------------------------------------------------------------------------
 

@@ -12,7 +12,9 @@
 @* ?chrome=mud stands the pivot on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's Chrome
    with both Wrappers' stylesheets (ADR-0061); absent or builtin is ExPivot's own markup. The
    browser tests run the page under both, because swapping the Chrome must change no behaviour
-   (ADR-0060). The details grid below takes the same Chrome as the report's. *@
+   (ADR-0060). ?details=dialog opens Show Details in a dialog, and ?details=page hands the records to
+   this page, which lists them under the pivot; absent, they open in a tab at the report's foot
+   (ADR-0058). ?words=ja speaks Excel's Japanese edition's words (ADR-0059). *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Dark="_dark">
     <Head>
         <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
@@ -28,12 +30,14 @@
 <h1>Pivot — ExPivot drawn by ExGrid</h1>
 
 <p>
-    Excel's PivotTable over 2,000 invented trades (ADR-0058). Tick fields in the PivotTable Fields
-    pane, or drag them between Filters, Columns, Rows and Values; each placed field has Excel's
-    menu, with Filter…, Field Settings… and Value Field Settings… (ADR-0060). The report is one
-    ExGrid: select, copy, and press the <code>−</code> and <code>+</code> buttons to collapse and
-    expand. Double-click a value, or use the Context Menu's Show Details, to list the trades behind
-    it below (ADR-0062).
+    Excel's PivotTable over 2,000 invented trades (ADR-0058), asked of a Pivot Source over them
+    (ADR-0065). Tick fields in the PivotTable Fields pane, or drag them between Filters, Columns,
+    Rows and Values; each placed field has Excel's menu, with Filter…, Field Settings… and Value
+    Field Settings…, and Defer Layout Update holds the pane's changes until Update (ADR-0060). The
+    toolbar above the report holds the report filter band, Excel's Layout menu and the pane's
+    toggle. The report is one ExGrid: select, copy, and press the <code>−</code> and <code>+</code>
+    buttons to collapse and expand. Double-click a value, or use the Context Menu's Show Details, to
+    see the trades behind it (ADR-0062).
 </p>
 
 <div class="demo-toolbar">
@@ -41,6 +45,7 @@
     <button id="pivot-save" @onclick="Save">Save the layout</button>
     <button id="pivot-restore" disabled="@(_saved is null)" @onclick="Restore">Restore the saved layout</button>
     <button id="pivot-revalue" @onclick="Revalue">Revalue the trades by +1%</button>
+    <button id="pivot-words" @onclick="ToggleWords">@(_japanese ? "English words" : "日本語 (Excel's Japanese words)")</button>
     @if (DemoChrome.IsMud(ChromeName))
     {
         <button id="toggle-dark" @onclick="() => _dark = !_dark">Toggle dark mode</button>
@@ -50,6 +55,7 @@
 
 <p class="demo-status">
     <span id="pivot-status">@_status</span>
+    <span id="pivot-field-list-status">Field List shown: @_showFieldList</span>
 </p>
 
 @if (DemoChrome.IsMud(ChromeName))
@@ -61,12 +67,15 @@ else
     @Pivot
 }
 
-<h2>Details</h2>
-<p id="pivot-details-caption">@_detailsCaption</p>
-<div id="pivot-details">
-    <ExGrid TRow="DemoPivotTrade" Window="_details" Columns="DetailColumns" RowHeight="28"
-            ViewportHeight="240" ViewportWidth="900" Chrome="_gridChrome" />
-</div>
+@if (DetailsOnPage)
+{
+    <h2>Details</h2>
+    <p id="pivot-details-caption">@_detailsCaption</p>
+    <div id="pivot-details">
+        <ExGrid TRow="DemoPivotTrade" Window="_details" Columns="DetailColumns" RowHeight="28"
+                ViewportHeight="240" ViewportWidth="900" Chrome="_gridChrome" />
+    </div>
+}
 
 @code {
     private static readonly GridColumn<DemoPivotTrade>[] DetailColumns =
@@ -82,8 +91,10 @@ else
         new("Pnl", ColumnType.Number, t => t.Pnl, header: "P&L"),
     ];
 
-    private DemoPivotTrade[] _trades = DemoPivotData.Trades();
     private decimal _revaluation = 1m;
+    // The bundled Pivot Source over the trades, the reference (ADR-0065). Held in a field: a new
+    // source is a refresh, so one made per render would ask again every time.
+    private PivotSource _source = PivotSource.From(DemoPivotData.Trades(), DemoPivotData.Fields);
     private PivotLayout _layout = DemoPivotData.FirstLayout();
     private string? _saved;
     private IReadOnlyList<DemoPivotTrade> _details = [];
@@ -91,26 +102,38 @@ else
     private string _status = "";
     private int _changes;
     private bool _dark;
+    private bool _japanese;
+    private bool _showFieldList = true;
     private IGridChrome? _gridChrome;
     private IPivotChrome? _pivotChrome;
     // Held in a field: a delegate made per render would reach the pivot as a change (ADR-0003).
-    private EventCallback<PivotDetails<DemoPivotTrade>> _showDetails;
+    private EventCallback<PivotDetails> _showDetails;
 
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
-    private RenderFragment Pivot => @<ExPivot TRecord="DemoPivotTrade" Records="_trades" Fields="DemoPivotData.Fields"
-                                               @bind-Layout="_layout" @bind-Layout:after="Changed"
-                                               PivotChrome="_pivotChrome" Chrome="_gridChrome" OnShowDetails="_showDetails"
+    [SupplyParameterFromQuery(Name = "details")]
+    public string? DetailsName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "words")]
+    public string? WordsName { get; set; }
+
+    private bool DetailsOnPage => DetailsName == "page";
+
+    private PivotDetailsView DetailsView => DetailsName == "dialog" ? PivotDetailsView.Dialog : PivotDetailsView.Tab;
+
+    // Excel's Japanese edition's words, chosen in one line; null keeps the English (ADR-0059).
+    private Func<string, string?>? Words => _japanese ? PivotWords.Japanese : null;
+
+    private RenderFragment Pivot => @<ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
+                                               @bind-ShowFieldList="_showFieldList"
+                                               PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                               OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"
                                                Culture="Culture" ViewportHeight="460" />;
 
     private static CultureInfo Culture => CultureInfo.GetCultureInfo("en-US");
 
-    protected override void OnInitialized()
-    {
-        _showDetails = EventCallback.Factory.Create<PivotDetails<DemoPivotTrade>>(this, ShowDetails);
-        Describe();
-    }
+    protected override void OnInitialized() => Describe();
 
     protected override void OnParametersSet()
     {
@@ -118,6 +141,10 @@ else
         // details grid takes ExGrid.MudBlazor's directly (DemoChrome refuses any other name).
         _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
         _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+        // Listening to OnShowDetails is what takes the records from the tab and the dialog.
+        _showDetails = DetailsOnPage ? EventCallback.Factory.Create<PivotDetails>(this, ShowDetailsAsync) : default;
+        if (WordsName == "ja")
+            _japanese = true;
     }
 
     private void Changed()
@@ -148,17 +175,29 @@ else
 
     private void Revalue()
     {
+        // New data is a new source: ExPivot asks it again (ADR-0058/0065).
         _revaluation *= 1.01m;
-        _trades = DemoPivotData.Trades(_revaluation);
+        _source = PivotSource.From(DemoPivotData.Trades(_revaluation), DemoPivotData.Fields);
         Describe();
     }
 
-    private void ShowDetails(PivotDetails<DemoPivotTrade> details)
+    private void ToggleWords() => _japanese = !_japanese;
+
+    private async Task ShowDetailsAsync(PivotDetails details)
     {
-        _details = details.Records;
+        // The page takes every record behind the cell, under the report's Source Version, and its
+        // own trade objects with them: the source is in the process.
+        var page = await details.DetailsAsync(0, int.MaxValue);
+        if (page.IsRefused)
+        {
+            _details = [];
+            _detailsCaption = page.Refusal!.Message;
+            return;
+        }
+        _details = page.Records.Select(r => (DemoPivotTrade)r.Record!).ToArray();
         var items = details.RowItems.Concat(details.ColumnItems).Select(i => $"{i.Field} = {i.Item}");
         var where = string.Join(", ", items);
-        _detailsCaption = $"{details.Records.Count.ToString("N0", Culture)} trades behind {details.ValueField ?? "the cell"}"
+        _detailsCaption = $"{page.Total.ToString("N0", Culture)} trades behind {details.ValueField ?? "the cell"}"
             + (where.Length > 0 ? $" where {where}." : ".");
     }
 

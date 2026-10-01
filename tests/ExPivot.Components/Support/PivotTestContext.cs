@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
-using PivotComponent = ExPivot.Components.ExPivot<ExPivot.Components.Tests.Support.Sale>;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.Components.Tests.Support;
 
@@ -71,21 +71,26 @@ public abstract class PivotTestContext : BunitContext
         new("Online", PivotFieldType.Boolean, s => s.Online),
     ];
 
+    /// <summary>The bundled source over the sales — the reference, answering in the process.</summary>
+    public static PivotSource Bundled(IReadOnlyList<Sale>? records = null) => PivotSource.From(records ?? Sales, Fields);
+
     public static PivotFieldPlacement P(string field) => new(field);
 
     public static PivotValueField Sum(string field) => new(field, PivotAggregation.Sum);
 
-    /// <summary>Renders an ExPivot as a connected, interactive component, in en-US.</summary>
+    /// <summary>Renders an ExPivot as a connected, interactive component, in en-US, over
+    /// <paramref name="source"/> — the bundled source over <paramref name="records"/> unless told
+    /// otherwise.</summary>
     internal IRenderedComponent<PivotComponent> RenderPivot(
         PivotLayout? layout = null,
         Action<ComponentParameterCollectionBuilder<PivotComponent>>? parameters = null,
-        IReadOnlyList<Sale>? records = null)
+        IReadOnlyList<Sale>? records = null,
+        PivotSource? source = null)
     {
         Interactive();
         return Render<PivotComponent>(ps =>
         {
-            ps.Add(p => p.Records, records ?? Sales)
-              .Add(p => p.Fields, Fields)
+            ps.Add(p => p.Source, source ?? Bundled(records))
               .Add(p => p.Culture, CultureInfo.GetCultureInfo("en-US"))
               .Add(p => p.ViewportHeight, (ViewportSize)400)
               .Add(p => p.ViewportWidth, (ViewportSize)700);
@@ -115,13 +120,15 @@ public abstract class PivotTestContext : BunitContext
 
     /// <summary>Each painted row's cells as text, label cells first, joined with " | ".</summary>
     internal static string[] RowTexts(IRenderedComponent<PivotComponent> cut)
-        => cut.FindAll(".ex-viewport .ex-row")
-            .Select(row => string.Join(" | ", row.QuerySelectorAll("[role=gridcell]").Select(c => c.TextContent.Trim())).TrimEnd())
-            .ToArray();
+        => RowTextsOf(cut.FindAll(".ex-pivot-sheet > .ex-grid .ex-viewport .ex-row"));
+
+    /// <summary>Each painted row's cells as text, joined with " | ".</summary>
+    internal static string[] RowTextsOf(IEnumerable<IElement> rows)
+        => rows.Select(row => string.Join(" | ", row.QuerySelectorAll("[role=gridcell]").Select(c => c.TextContent.Trim())).TrimEnd()).ToArray();
 
     /// <summary>The leaf headers as painted.</summary>
     internal static string[] HeaderTexts(IRenderedComponent<PivotComponent> cut)
-        => cut.FindAll(".ex-header [role=columnheader]").Select(h => h.TextContent.Trim()).ToArray();
+        => Grid(cut).FindAll(".ex-header [role=columnheader]").Select(h => h.TextContent.Trim()).ToArray();
 
     /// <summary>The Field List's entry buttons of one Area, as captioned.</summary>
     internal static string[] AreaEntries(IRenderedComponent<PivotComponent> cut, string area)
@@ -134,6 +141,10 @@ public abstract class PivotTestContext : BunitContext
     internal static IElement FieldItem(IRenderedComponent<PivotComponent> cut, string caption)
         => cut.FindAll(".ex-pivot-field").Single(f => f.QuerySelector(".ex-pivot-field-caption")!.TextContent.Trim() == caption);
 
+    /// <summary>Ticks or unticks a field in the list of fields.</summary>
+    internal static Task TickFieldAsync(IRenderedComponent<PivotComponent> cut, string caption, bool tick)
+        => FieldItem(cut, caption).QuerySelector("input")!.ChangeAsync(new ChangeEventArgs { Value = tick });
+
     /// <summary>Opens the menu of the Area's entry captioned <paramref name="caption"/>.</summary>
     internal static Task OpenMenuAsync(IRenderedComponent<PivotComponent> cut, string area, string caption)
         => AreaElement(cut, area).QuerySelectorAll(".ex-pivot-entry-button")
@@ -142,7 +153,14 @@ public abstract class PivotTestContext : BunitContext
 
     /// <summary>Runs the open menu's command called <paramref name="label"/>.</summary>
     internal static Task RunMenuAsync(IRenderedComponent<PivotComponent> cut, string label)
-        => cut.FindAll(".ex-pivot-menu-item").Single(b => b.TextContent.Trim() == label).ClickAsync(new MouseEventArgs());
+        => MenuItem(cut, label).ClickAsync(new MouseEventArgs());
+
+    /// <summary>The open menu's command called <paramref name="label"/>, a choice's mark aside.</summary>
+    internal static IElement MenuItem(IRenderedComponent<PivotComponent> cut, string label)
+        => cut.FindAll(".ex-pivot-menu-item").Single(b => MenuLabel(b) == label);
+
+    /// <summary>A menu item's label, a choice's mark aside.</summary>
+    internal static string MenuLabel(IElement item) => item.TextContent.Replace("✓", "", StringComparison.Ordinal).Trim();
 
     /// <summary>The Context Menu's commands the grid would show on (row, column).</summary>
     internal static IReadOnlyList<GridCommand> ContextCommands(IRenderedComponent<PivotComponent> cut, int row, string column)

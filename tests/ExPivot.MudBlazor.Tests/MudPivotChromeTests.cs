@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using MudBlazor.Extensions;
 using Xunit;
+using PivotComponent = ExPivot.Components.ExPivot;
 
 namespace ExPivot.MudBlazor.Tests;
 
@@ -24,7 +25,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Values = [Sum("Amount")],
     };
 
-    [Fact] // ADR-0061: the pane is MudBlazor's controls — a search field, a checkbox per field, the four Areas — in ExPivot's region
+    [Fact] // ADR-0061: the pane is MudBlazor's controls — a search field, a checkbox per field, the four Areas, Defer Layout Update at the foot — in ExPivot's region
     public void The_pane_is_drawn_with_MudBlazor_controls()
     {
         var cut = RenderPivot();
@@ -32,10 +33,11 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-field-list .mud-ex-pivot-pane"));
         Assert.Empty(cut.FindAll(".ex-pivot-pane"));
         Assert.Single(cut.FindComponents<MudTextField<string>>());
-        Assert.Equal(["Region", "Product", "Amount", "Quantity", "Online"],
+        Assert.Equal(["Region", "Product", "Amount", "Quantity", "Online", "Defer Layout Update"],
             cut.FindComponents<MudCheckBox<bool>>().Select(c => c.Instance.Label));
         Assert.Equal(["Filters", "Columns", "Rows", "Values"],
             cut.FindAll(".mud-ex-pivot-area-name").Select(e => e.TextContent.Trim()));
+        Assert.Equal("Update", cut.Find(".mud-ex-pivot-defer .mud-ex-pivot-update").TextContent.Trim());
     }
 
     [Fact] // ADR-0060/0061: a tick through MudBlazor's checkbox places the field where Excel does
@@ -281,7 +283,7 @@ public class MudPivotChromeTests : MudPivotTestContext
     [Fact] // ADR-0060/0061: the report grid is dressed by MudGridChrome, which words ExPivot's commands in ExPivot's words, never their ids
     public void The_grid_menu_speaks_ExPivots_words()
     {
-        var cut = RenderPivot(RegionProduct, showDetails: EventCallback.Factory.Create<PivotDetails<Sale>>(this, () => { }));
+        var cut = RenderPivot(RegionProduct, showDetails: EventCallback.Factory.Create<PivotDetails>(this, () => { }));
 
         var chrome = Assert.IsType<MudGridChrome>(Grid(cut).Instance.Chrome);
         var menu = Render(chrome.ContextMenu(ContextAt(cut, 1, Grid(cut).Instance.Columns[1].Name))!);
@@ -305,7 +307,7 @@ public class MudPivotChromeTests : MudPivotTestContext
             "field-list" => "PivotTable-Felder",
             _ => null,
         };
-        var cut = RenderPivot(RegionProduct, label: label, showDetails: EventCallback.Factory.Create<PivotDetails<Sale>>(this, () => { }));
+        var cut = RenderPivot(RegionProduct, label: label, showDetails: EventCallback.Factory.Create<PivotDetails>(this, () => { }));
 
         var chrome = Assert.IsType<MudGridChrome>(Grid(cut).Instance.Chrome);
         Assert.Equal("Details anzeigen", chrome.Label!(PivotCommandIds.ShowDetails));
@@ -361,7 +363,7 @@ public class MudPivotChromeTests : MudPivotTestContext
         Assert.Equal(PivotLayoutJson.Write(plain.Instance.CurrentLayout), PivotLayoutJson.Write(mud.Instance.CurrentLayout));
         Assert.Equal(RowTexts(plain), RowTexts(mud));
 
-        static Task Tick(IRenderedComponent<ExPivot<Sale>> cut, string caption)
+        static Task Tick(IRenderedComponent<PivotComponent> cut, string caption)
             => cut.FindAll(".ex-pivot-field").Single(f => f.TextContent.Trim() == caption).QuerySelector("input")!
                 .ChangeAsync(new ChangeEventArgs { Value = true });
     }

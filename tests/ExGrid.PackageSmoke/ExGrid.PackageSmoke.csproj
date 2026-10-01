@@ -3,17 +3,21 @@
   <!-- An application that takes ExGrid the way a Consumer does: from the packages, never from
        the projects (ADR-0042). It is outside the solution, and check.sh is the only way in:
        it packs ExGrid's packages into .feed/, ExSheet's into .sheet-feed/ and ExPivot's — with
-       ExGrid.Data, which ships beside ExPivot (ADR-0063) — into .pivot-feed/, and passes the
-       version it packed. Everything the DemoHost gets from a ProjectReference — the static web
+       ExGrid.Data and ExGrid.Data.Arrow, which ship beside ExPivot (ADR-0063/0064) — into
+       .pivot-feed/, and passes the version it packed. Everything the DemoHost gets from a ProjectReference — the static web
        assets, the dependency ranges, the READMEs' examples compiling at all — is exercised here
        as a package delivers it.
 
        net10.0, the floor a Consumer may sit on (ADR-0022). The root namespace is not under
-       ExGrid, as no Consumer's is. -->
+       ExGrid, as no Consumer's is.
+
+       RoundTrip/ is an application of its own, which runs a Snapshot through an Arrow stream and
+       back (DA-16); this one compiles the same code for a browser, and leaves that folder alone. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PackageSmoke</RootNamespace>
     <AssemblyName>PackageSmoke</AssemblyName>
+    <DefaultItemExcludes>$(DefaultItemExcludes);RoundTrip/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +27,7 @@
     <PackageReference Include="ExSheet.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExSheet" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.Data" Version="$(ExGridVersion)" />
+    <PackageReference Include="ExGrid.Data.Arrow" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.Engine" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot" Version="$(ExGridVersion)" />
     <PackageReference Include="ExPivot.MudBlazor" Version="$(ExGridVersion)" />
