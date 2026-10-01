@@ -206,8 +206,11 @@ test.describe('on /sheet', () => {
         await pressCell(grid, 'C2');
         await setRoundTrip(150);
 
-        // Outside the Selection, the secondary click moves it to C3 and opens the menu there. The
-        // move is heard behind the menu's own focus, a round trip after the menu shows.
+        // Outside the Selection, the secondary click moves it to C3 and opens the menu there.
+        // This pins the outcome on a real circuit; it does not hold the order. At 150 ms and at
+        // 600 ms this test passed with ExSheet still reading the Selection last heard: by the time
+        // the click on the item reached the Sheet, the move had been heard (why was not traced).
+        // The order in which it has not is staged in layer 2 (CommandSelectionTests).
         await cell(grid, 'C3').click({ force: true, button: 'right' });
         await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
         await expect(formatCells(grid)).toBeVisible();
