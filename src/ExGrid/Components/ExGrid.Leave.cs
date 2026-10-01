@@ -54,20 +54,16 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0069): the
     /// grid's way out of Enter/Tab cycling. Declared, the Consumer hears it in place of the grid
-    /// releasing DOM focus, once per press; undeclared, the focus is released as before.
+    /// releasing DOM focus; undeclared, the focus is released as before. Once per press: a held
+    /// Escape's repeats never reach here (<see cref="OnKeyAsync"/>).
     /// </summary>
-    /// <param name="repeat">Whether the key is a held key's repeat. A repeat raises nothing, and
-    /// releases nothing, where the Consumer listens: the press it repeats has already been heard,
-    /// or peeled a layer of its own, and each press is one dismissal.</param>
-    private async Task LeaveOrRaiseAsync(bool repeat)
+    private async Task LeaveOrRaiseAsync()
     {
         if (!OnLeave.HasDelegate)
         {
             await LeaveAsync();
             return;
         }
-        if (repeat)
-            return;
         await OnLeave.InvokeAsync();
     }
 }

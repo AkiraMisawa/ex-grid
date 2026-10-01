@@ -5697,6 +5697,12 @@
     {
         if (_disposed)
             return;
+        // A held Escape is one press (ADR-0012, refined with ADR-0069): the press peels its one
+        // layer, and the repeats dismiss nothing more. Otherwise a held key closed a Formula
+        // Entry's list and then cancelled the edit under it, or closed a dialog and then released
+        // the keyboard of the grid it had just been handed back to.
+        if (repeat && key == "Escape")
+            return;
         // While editing, the keys the gate forwarded are the editor's contract
         // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite. The key
         // carries the editor's text and selection as the browser had them (ADR-0051), and
@@ -5841,7 +5847,7 @@
                     StateHasChanged();
                     return;
                 }
-                await LeaveOrRaiseAsync(repeat);
+                await LeaveOrRaiseAsync();
                 return;
             case GridKeyKind.Engage:
                 // With no Focus, Space is a first key like any other: it only places the

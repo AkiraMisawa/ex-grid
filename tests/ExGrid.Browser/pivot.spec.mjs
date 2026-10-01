@@ -218,6 +218,30 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
         });
 
+        test(`ADR-0069/0012: Escape held in the dialog's grid closes the dialog once, and its repeats leave the report the keyboard (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+            const records = dialog.locator('.ex-grid');
+            await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+            await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
+            await expect(records).toBeFocused();
+
+            // Held: the first keydown is the press; Playwright sends the ones after it as the
+            // browser sends a held key's repeats, and they reach the report once it has the keyboard.
+            await page.keyboard.down('Escape');
+            await expect(dialog).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+            await page.keyboard.down('Escape');
+            await page.keyboard.down('Escape');
+            await page.keyboard.up('Escape');
+
+            await expect(report(page)).toBeFocused();
+            await page.keyboard.press('ArrowDown');
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+        });
+
         test(`ADR-0069: however the dialog closes — Escape on Close, Close, the backdrop — the arrows move the report's Focus again (${chrome})`, async ({ page }) => {
             await open(page, chrome, '&details=dialog');
             const dialog = page.getByRole('dialog', { name: /^Details: / });

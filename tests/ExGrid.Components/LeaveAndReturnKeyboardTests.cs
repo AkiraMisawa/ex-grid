@@ -225,7 +225,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(focus, ActiveDescendant(cut));
     }
 
-    [Fact] // ADR-0069/0012 (DC-57, DC-1): without OnLeave, Escape with nothing left to dismiss releases the DOM focus as before
+    [Fact] // ADR-0069/0012 (DC-57, DC-1): without OnLeave, Escape with nothing left to dismiss releases the DOM focus as before — once a press, as every Escape acts (ADR-0012, refined 2026-10-01)
     public async Task Without_on_leave_escape_releases_the_focus_as_before()
     {
         var cut = RenderGrid();
@@ -234,7 +234,45 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         await PressAsync(cut, "Escape");
         await PressAsync(cut, "Escape", repeat: true);
 
-        Assert.Equal(2, Js.BlurCount);
+        Assert.Equal(1, Js.BlurCount);
+    }
+
+    [Fact] // ADR-0012 (refined 2026-10-01): a held Escape is one press — the press closes the popover, and its repeats release nothing
+    public async Task A_held_escape_closes_a_popover_and_its_repeats_release_nothing()
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 0, Amount);
+        await PressAsync(cut, "F10", shift: true);
+        Assert.Single(cut.FindAll(".ex-popover"));
+
+        await PressAsync(cut, "Escape", fromDescendant: true);
+        await PressAsync(cut, "Escape", repeat: true);
+        await PressAsync(cut, "Escape", repeat: true);
+
+        Assert.Empty(cut.FindAll(".ex-popover"));
+        Assert.Equal(0, Js.BlurCount);
+    }
+
+    [Fact] // ADR-0012/0051 (refined 2026-10-01): a held Escape is one press — the press closes a Formula Entry's list, and its repeats leave the edit standing
+    public async Task A_held_escape_closes_a_formula_entrys_list_and_its_repeats_leave_the_edit()
+    {
+        var cut = RenderGrid(complete: (text, caret) => ValueTask.FromResult<EditorCompletion?>(
+            text.StartsWith('=') && caret > 1
+                ? new EditorCompletion([new CompletionCandidate("SUM", 1, caret - 1, "SUM(")])
+                : null));
+        await ClickCellAsync(cut, 0, Book);
+        await PressAsync(cut, "=");
+        await cut.Find(".ex-viewport .ex-editor").InputAsync(new ChangeEventArgs { Value = "=SU" });
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=SU", 3));
+        Assert.Single(cut.FindAll(".ex-completion"));
+
+        await PressAsync(cut, "Escape");
+        await PressAsync(cut, "Escape", repeat: true);
+        await PressAsync(cut, "Escape", repeat: true);
+
+        Assert.Empty(cut.FindAll(".ex-completion"));
+        Assert.Single(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Equal(0, Js.BlurCount);
     }
 
     [Fact] // ADR-0069 (DC-57): a held Escape raises OnLeave once — its repeats raise nothing and release nothing until the key is released, and the next press raises it again
