@@ -201,7 +201,10 @@ Excel's Escape with nothing to cancel does nothing. So the root keeps the keyboa
 or Shift+Tab is left to the browser, which moves to the next or the previous element of the page:
 a keyboard user still leaves by Escape and Tab, as before, and is never trapped. Any other key after
 the Escape means what it always means, and ends the release: a character opens an edit in the
-selected cell, an arrow moves, and a later Tab cycles inside the selection again. Escape there is a
+selected cell, an arrow moves, and a later Tab cycles inside the selection again. So does a press
+on the grid *(decided with the user the same day, when ticket 77 was built)*: a user who clicks back
+into the grid has come back to it. A press elsewhere on the page is not heard, since that would need
+a listener outside the grid (ADR-0018, ADR-0021). Escape there is a
 change of the keys the gate claims (ADR-0010: a mode change is a different set), so the keys typed
 after it are held until it is answered, as after any mode change. It holds for ExGrid and ExSheet
 alike, since the reason above holds for both. The options set aside: ExSheet ignoring that Escape, as

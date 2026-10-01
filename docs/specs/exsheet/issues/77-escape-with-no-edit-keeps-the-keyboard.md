@@ -16,7 +16,8 @@ there is that prototype's to report.
       focus on the root and releases Tab: the next Tab or Shift+Tab is not claimed, so the browser moves
       to the next or the previous element of the page (ADR-0012, KB-8)
 - [ ] Any other key after that Escape keeps its meaning and ends the release: a character opens an edit
-      in the selected cell, an arrow moves, and a later Tab cycles inside the selection again
+      in the selected cell, an arrow moves, and a later Tab cycles inside the selection again. A press
+      on the grid ends it too (decided 2026-10-01): in the capture-phase `mousedown` already attached
 - [ ] The Escape is a change of the claimed set (ADR-0010): keys typed after it are held until it is
       answered, as after any mode change; no listener is added and no layout is read (ADR-0021)
 - [ ] ExGrid and ExSheet alike, under both Chromes; the Escape a popover, an Inner Popup, Find, a
