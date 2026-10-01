@@ -442,12 +442,37 @@ nobody had asked for. What that means when writing a test:
   report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
   Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
   giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by
-  the page; Defer Layout Update holding the report until Update (PV-28); and the words switch
-  speaking Excel's Japanese edition and back (PV-33). Under MudBlazor alone, a MudSelect's list
+  the page; Defer Layout Update holding the report until Update (PV-28); the words switch
+  speaking Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade
+  date, moved to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in
+  the Japanese words (ADR-0059); and the code the page shows under "The code" equal to the
+  regions of its source it is read from (PV-20). Under MudBlazor alone, a MudSelect's list
   in Value Field Settings… taking Escape before its panel (PV-11), and the palette reaching the
   pane, the entries and the `−` button in both schemes (PV-18). Not asserted: where the keyboard
   goes when the dialog closes, nor Escape pressed inside the dialog's own grid — both wait on a
   decision about ExGrid's core (ticket 14 of docs/specs/expivot).
+- `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0063, PV-20), **run once per
+  Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
+  the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through
+  Blazor's `InputFile` (`setInputFiles` with a file the test writes) with a malformed row,
+  refused whole with the library's sentence naming the row, the column, the value and the line,
+  and nothing pivoted — and the page's own malformed sample refused the same way; a file of a
+  million records painting its progress, the bar its bytes and the line its rows, with the
+  inputs disabled meanwhile, and Cancel stopping it with nothing read; an unknown semicolon
+  file's suggested Schema shown with what is not clear about it (leading zeros kept as Text, a
+  decimal comma), nothing read until it is confirmed, then read under it to exact totals by
+  desk, the account numbers keeping their zeros; the page's two samples, one under the declared
+  Schema and one under a suggested Schema, reading the same trades to the same total — a second
+  file read while a report stands; and the code shown under "The code" equal to its source.
+- `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0059, PV-20), **run once
+  per Chrome**, in a window wide enough for every tenor column beside the pane, since the report
+  grid paints only the columns in view: the tenors painted in the Order Key's order, `ON`, `TN`,
+  `1W` … `30Y`, with `18M` and `1Y6M` two Items side by side, each carrying its own desks'
+  positions; the tenor's Filter… listing its Items in the same order; without the key, the
+  labels' order (`10Y` before `1M`), and back; every total painted the sum of what it totals —
+  across each row, down each desk and down the Grand Total row — and the report's own the page's
+  sum of the positions; and the code the page shows, the README's `Tenors.Months` among it,
+  equal to its source.
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or
