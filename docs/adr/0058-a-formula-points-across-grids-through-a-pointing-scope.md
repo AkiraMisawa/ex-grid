@@ -520,6 +520,14 @@ heading (`$B$2`, then `$B$3`). Three things were decided with the user.
   tables they begin: ExSheet had listed `XLOOKUP` for `X`, `AVERAGE` for `AV` and `A`, the table for
   `Positions`, and nothing for `A1`, `1+` and `"`. Tab writes the selected value over the typed text.
   This replaces the second reading taken while building ticket 44.
+  - **What counts as a number, and where the rule stops** *(decided with the user while ticket 74 was
+    built, 2026-10-01; not asked of Excel, and asked by the next run)*. A number is what the Formula
+    grammar reads as a number constant, with one optional sign before it and spaces after it, and it
+    lists the value it equals: `1.0`, `+1` and `1 ` list `1`, and `-0` lists `0`. So Tab over a number
+    never changes the number. `--1`, `- 1`, `50%` and `1e` are not numbers, and list every value. A
+    grouping parenthesis opens an expression of its own, as inside `SUM(`: `,,(` lists nothing and
+    `,,(A` lists `AVERAGE`. So does `[` after a table's name: `,,Positions[` lists the table's columns,
+    as `Table[` does anywhere, while `,,Positions` lists the values.
 - **White space after the caret is something of the argument** *(decided with the user, Q55)*. With
   the caret before two spaces (`,,|  )`), Excel listed nothing, and Tab entered the Formula with the
   spaces kept. ExSheet had counted them as nothing, listed the five values, and written `,,0  )` with
