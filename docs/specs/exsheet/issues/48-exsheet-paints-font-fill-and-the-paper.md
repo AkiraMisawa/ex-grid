@@ -15,6 +15,9 @@ Status: ready-for-agent
   - The Headings, the Name Box, the Formula Bar and popovers follow the scheme.
   - ADR-0027's note of 2026-09-30 permits this exception. Say in a comment how it is done.
 - [ ] `ExGrid.MudBlazor`'s stylesheet does not set the Paper tokens (inspect, SH-39).
+- [ ] A Fill or Font on a whole row or column paints cells that hold nothing, so a change to a
+      level repaints every painted row it covers. `SheetChange.Rows` lists only rows that hold a
+      cell, so it does not cover them (found by ticket 45).
 - [ ] A row repaints only when its Values or its Cell Format changed (SH-4, DC-58).
 - [ ] **Layer 3** under the light and the dark scheme, under both Chromes, on both hosts: recorded
       colours read as recorded, and a clean console.

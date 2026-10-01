@@ -7,6 +7,8 @@ Status: ready-for-agent
 **Blocked by:** 44, 45, 47, and the eleventh Windows run's Part A (group 3)
 
 - [ ] ExSheet answers each cell's Border sides from the engine.
+- [ ] A Border on a whole row or column is drawn on cells that hold nothing, so a change to a level
+      repaints every painted row it covers, as ticket 48 does for Fills.
 - [ ] Where both sides of an edge are recorded, ExSheet answers with the line Excel draws (run 11,
       case 7).
 - [ ] A Fill covers the gridlines at its cell's edges, as the run observed (cases 4–6).
