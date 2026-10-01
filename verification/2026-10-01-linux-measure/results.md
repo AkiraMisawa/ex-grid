@@ -1,9 +1,10 @@
 # PV-21 and DA-17, measured *(2026-10-01, the pages at `b78b348`)*
 
 Observational: recorded, never gated (Definition of Done §1). PV-21 holds ExPivot to the targets the
-user set as "snappy" (Q52), in the browser over a million records, and settles the default cap on
-leaves from a measurement. DA-17 records a million records built from objects, read from a CSV and
-read from Arrow, on CoreCLR and in the browser. This is the record that ExPivot's ticket 08 and
+user set as "snappy" (Q52), in the browser over a million records, and is where the default cap on
+leaves (200,000, provisional) is to be settled from a measurement. This record measures it; the
+setting is the user's. DA-17 records a million records built from objects, read from a CSV and read
+from Arrow, on CoreCLR and in the browser. This is the record that ExPivot's ticket 08 and
 ExGrid.Data's ticket 06 ask for.
 
 `metrics.json` holds every number. The browser's are under `chromium-local`, as the fixtures'
@@ -118,10 +119,11 @@ What the rows say:
   reading, not on getting the file. The page's 100,000-trade sample, read from a `MemoryStream`,
   takes 1.7 s (1.5–1.7): a tenth of the rows in a little more than a tenth of the time.
 - **50 ms at a time holds for the gestures' medians, and not beyond them.** The slices of a question
-  and of a load (30 ms) stay within it. What does not stay within it is work done in one piece:
+  and of a load are 30 ms, and they stay within it. These do not:
   - the synchronous read of objects that `/pivot` does;
-  - a load's last step;
-  - the first run of a code path;
+  - some part of each load, which was not traced further: 131 ms in the CSV read, and 196 ms in the
+    Arrow read;
+  - the first run of a code path, as the first questions show against the ones after them;
   - after a question's last slice, the answer assembled and the cube made, which grow with the leaves.
 
 ## DA-17
@@ -157,10 +159,10 @@ the same trades (`DemoPivotData.Trades(count: 1,000,000)`).
 | Rows TradeDate, Quantity; Columns Product, Currency | 314,758 | refused: "This layout needs more than 200,000 cells." | 536 ms / 533 ms (498–552), to the refusal | 149 / 137 ms |
 
 "First" is the first question of its kind since the load. "Then" is the median of the next three.
-The first visual answer was 37–47 ms in every case but one, which took 137 ms. An earlier run asked each of the last four on a
-fresh load. It found 1,352, 2,828, 3,002 and 625 ms, blocked for 721, 2,106, 2,160 and 151 ms; it is
-in `metrics.json`. On CoreCLR, a question of 199,511 leaves takes 140–164 ms, and making its cube
-takes 119 ms more.
+The first visual answer was 37–47 ms in every case but one, which took 137 ms. An earlier run asked
+each of the last four on a fresh load. It found 1,352, 2,828, 3,002 and 625 ms, blocked for 721,
+2,106, 2,160 and 151 ms; it is in `metrics.json`. On CoreCLR, a question of 199,511 leaves takes
+140–164 ms, and making its cube takes 119 ms more.
 
 What these numbers suggest. The decision is the user's, and it belongs in ADR-0065:
 
