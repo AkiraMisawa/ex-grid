@@ -16,7 +16,9 @@ internal struct CountsPart
 
 /// <summary>The sum part: exact while every number was, <c>double</c> once one was not or the
 /// exact sum overflowed. <see cref="Compensation"/> is Neumaier's running error while a sum is
-/// being accumulated; a finished part has folded it in.</summary>
+/// being accumulated; a finished part has folded it in. While an Integer or Decimal column is
+/// read, its exact sum is kept apart as an integer (<see cref="ValueAccumulator"/>), and only a
+/// finished part holds it in <see cref="Exact"/>.</summary>
 internal struct SumPart
 {
     public decimal Exact;

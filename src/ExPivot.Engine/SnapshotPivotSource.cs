@@ -61,6 +61,16 @@ public sealed class SnapshotPivotSource : PivotSource
         }
     }
 
+    /// <summary>The pass held for the current question, for layer 1: what a batch folds into.</summary>
+    internal AggregationPass? HeldPass
+    {
+        get
+        {
+            lock (_gate)
+                return _held;
+        }
+    }
+
     /// <summary>The Source Version the source answers under now.</summary>
     public string SourceVersion
     {

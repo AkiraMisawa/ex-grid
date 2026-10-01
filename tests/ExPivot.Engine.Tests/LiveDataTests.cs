@@ -258,6 +258,29 @@ public class LiveDataTests
         Assert.Throws<SnapshotException>(() => source.Apply(columns.Batch(removedKeys: ["East"])));
     }
 
+    [Fact] // ADR-0066: a part that cannot be subtracted is recomputed from the records of the leaves the batch touched, and no others
+    public async Task Only_the_touched_leaves_records_are_read_again()
+    {
+        var fields = Declarations();
+        // A hundred desks of ten records each, their risk summed in double.
+        var trades = Enumerable.Range(0, 1_000).Select(i => Row(i, "D" + (i % 100).ToString(CultureInfo.InvariantCulture), 1m) with { Risk = i * 0.1 }).ToArray();
+        var source = PivotSource.From(trades, fields);
+        var query = new PivotQuery(rows: [F("Desk")], values: [V("Risk", PivotParts.Sum), V("Amount", PivotParts.Sum)]);
+        await source.AggregateAsync(query, Ct);
+
+        // One record of D7 changed: D7's nine others and the changed one are read, and nothing else.
+        source.Apply(fields.Batch(changed: [trades[7] with { Risk = 5 }]));
+        var one = source.HeldPass!.RecomputedRows;
+        SameLeaves(await PivotSource.From(source.Snapshot, fields.Fields).AggregateAsync(query, Ct), await source.AggregateAsync(query, Ct), "one");
+        // Most desks touched at once: one sweep over the column reads the rows of those desks.
+        source.Apply(fields.Batch(removedKeys: [.. Enumerable.Range(100, 60).Select(i => (object)(long)i)]));
+        var many = source.HeldPass!.RecomputedRows;
+        SameLeaves(await PivotSource.From(source.Snapshot, fields.Fields).AggregateAsync(query, Ct), await source.AggregateAsync(query, Ct), "swept");
+
+        Assert.Equal(10, one);
+        Assert.Equal(60 * 9, many);
+    }
+
     [Fact] // ADR-0066: a batch that would pass MaxLeaves drops the held answer, and the question is refused as a fresh one would be
     public async Task A_batch_that_passes_the_cap_is_asked_afresh()
     {
