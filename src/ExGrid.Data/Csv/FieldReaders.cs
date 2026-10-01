@@ -1,4 +1,5 @@
 using System.Globalization;
+using ExGrid.Data.Storage;
 
 namespace ExGrid.Data.Csv;
 
@@ -44,13 +45,14 @@ internal readonly ref struct CsvRecords
 /// Reads one declared column's field of each record of a batch into its column builder: an empty
 /// field, or one of the column's blank texts, as a Blank, and any other as a value of the column's
 /// kind, or a refusal naming the row and the column. A batch is read column by column, each column
-/// in one loop over the records (ticket 07): a browser runs .NET in an interpreter, where a call per
-/// field cost more than the reading.
+/// in one loop over the records, and appended to the builder at once (ticket 07): a browser runs .NET
+/// in an interpreter, where a call per field cost more than the reading.
 /// </summary>
 internal abstract class FieldReader
 {
     private readonly byte[][] blanks;
     private byte[] unescaped = new byte[64];
+    private ulong[] blankBits = [];
 
     protected FieldReader(CsvColumn column, IReadOnlyList<string> blankTexts, IFieldContext context, bool isKey)
     {
@@ -80,8 +82,9 @@ internal abstract class FieldReader
 
     /// <summary>
     /// Reads field <paramref name="field"/> of the batch's first <paramref name="rows"/> records, in
-    /// order, and returns how many were read: <paramref name="rows"/>, or the batch row of the first
-    /// one refused, with <paramref name="refusal"/> saying why.
+    /// order, and returns how many were read: <paramref name="rows"/>, once they are appended to the
+    /// column, or the batch row of the first one refused, with <paramref name="refusal"/> saying why
+    /// and nothing appended.
     /// </summary>
     public abstract int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal);
 
@@ -110,6 +113,28 @@ internal abstract class FieldReader
 
     protected string Show(ReadOnlySpan<byte> field) => CsvText.Show(Context.Encoding, field);
 
+    /// <summary>Room for a batch of <paramref name="rows"/> in a scratch array the reader keeps.</summary>
+    protected static TValue[] Room<TValue>(ref TValue[] array, int rows)
+    {
+        if (array.Length < rows)
+            array = new TValue[Math.Max(rows, array.Length * 2)];
+        return array;
+    }
+
+    /// <summary>The bits that mark the Blanks of a batch of <paramref name="rows"/>, all clear.</summary>
+    protected ulong[] ClearBlanks(int rows)
+    {
+        var words = Bits.Words(rows);
+        if (blankBits.Length < words)
+            blankBits = new ulong[words];
+        else
+            Array.Clear(blankBits, 0, words);
+        return blankBits;
+    }
+
+    /// <summary>The Blanks of a batch of <paramref name="rows"/>, as <see cref="ClearBlanks"/> gave them and the reader set them.</summary>
+    protected ReadOnlySpan<ulong> Blanks(int rows) => blankBits.AsSpan(0, Bits.Words(rows));
+
     private ReadOnlySpan<byte> Unescape(ReadOnlySpan<byte> content)
     {
         if (unescaped.Length < content.Length)
@@ -132,10 +157,13 @@ internal sealed class TextFieldReader(CsvColumn column, IReadOnlyList<string> bl
 {
     private readonly ByteTextCache cache = new();
     private char[] chars = new char[64];
+    private int[] codes = [];
 
     public override int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal)
     {
         var width = records.Width;
+        var batch = Room(ref codes, rows);
+        var anyBlank = false;
         for (var r = 0; r < rows; r++)
         {
             var value = Content(records, (r * width) + field);
@@ -146,12 +174,13 @@ internal sealed class TextFieldReader(CsvColumn column, IReadOnlyList<string> bl
                     refusal = BlankKey(r);
                     return r;
                 }
-                builder.AppendBlank();
+                batch[r] = -1;
+                anyBlank = true;
                 continue;
             }
             if (cache.Enabled && cache.TryGet(value, out var code))
             {
-                builder.AppendCode(code);
+                batch[r] = code;
                 continue;
             }
             if (!CsvText.TryDecode(Context.Encoding, value, ref chars, out var length))
@@ -159,10 +188,12 @@ internal sealed class TextFieldReader(CsvColumn column, IReadOnlyList<string> bl
                 refusal = Context.Refuse(r, Name, $"the text is not valid {Context.Encoding.Name}");
                 return r;
             }
-            code = builder.AppendText(chars.AsSpan(0, length));
+            code = builder.Interner.Intern(chars.AsSpan(0, length));
+            batch[r] = code;
             if (cache.Enabled)
                 cache.Add(value, code);
         }
+        builder.AppendCodes(batch.AsSpan(0, rows), anyBlank);
         refusal = null;
         return rows;
     }
@@ -174,16 +205,21 @@ internal sealed class DecimalFieldReader(CsvColumn column, IReadOnlyList<string>
     : FieldReader(column, blankTexts, context, false)
 {
     private readonly NumberReading reading = new(column, context.Encoding);
+    private long[] values = [];
+    private byte[] scales = [];
+    private decimal[] exacts = [];
 
     public override int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal)
     {
         var width = records.Width;
+        var batch = Room(ref values, rows);
+        var batchScales = Room(ref scales, rows);
         for (var r = 0; r < rows; r++)
         {
             var content = Content(records, (r * width) + field);
             if (IsBlank(content))
             {
-                builder.AppendBlank();
+                batchScales[r] = DecimalColumnBuilder.BlankRow;
                 continue;
             }
             var status = NumberText.Parse(CsvText.Trim(content), reading, out var number);
@@ -191,12 +227,14 @@ internal sealed class DecimalFieldReader(CsvColumn column, IReadOnlyList<string>
             {
                 if (number.Scale <= 28 && number.TryLong(out var scaled))
                 {
-                    builder.AppendScaled(scaled, number.Scale);
+                    batch[r] = scaled;
+                    batchScales[r] = (byte)number.Scale;
                     continue;
                 }
                 if (number.TryDecimal(out var exact))
                 {
-                    builder.Append(exact);
+                    Room(ref exacts, rows)[r] = exact;
+                    batchScales[r] = DecimalColumnBuilder.ExactRow;
                     continue;
                 }
             }
@@ -205,6 +243,7 @@ internal sealed class DecimalFieldReader(CsvColumn column, IReadOnlyList<string>
                 : Context.Refuse(r, Name, $"{Show(content)} has more digits than a Decimal holds exactly");
             return r;
         }
+        builder.AppendRows(batch.AsSpan(0, rows), batchScales.AsSpan(0, rows), exacts);
         refusal = null;
         return rows;
     }
@@ -215,10 +254,13 @@ internal sealed class IntegerFieldReader(CsvColumn column, IReadOnlyList<string>
     : FieldReader(column, blankTexts, context, isKey)
 {
     private readonly NumberReading reading = new(column, context.Encoding);
+    private long[] values = [];
 
     public override int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal)
     {
         var width = records.Width;
+        var batch = Room(ref values, rows);
+        var blankBits = ClearBlanks(rows);
         for (var r = 0; r < rows; r++)
         {
             var content = Content(records, (r * width) + field);
@@ -229,7 +271,8 @@ internal sealed class IntegerFieldReader(CsvColumn column, IReadOnlyList<string>
                     refusal = BlankKey(r);
                     return r;
                 }
-                builder.AppendBlank();
+                Bits.Set(blankBits, r);
+                batch[r] = 0;
                 continue;
             }
             var status = NumberText.Parse(CsvText.Trim(content), reading, out var number);
@@ -237,7 +280,7 @@ internal sealed class IntegerFieldReader(CsvColumn column, IReadOnlyList<string>
             {
                 if (status == NumberStatus.Ok && number.TryLong(out var integer))
                 {
-                    builder.Append(integer);
+                    batch[r] = integer;
                     continue;
                 }
                 refusal = Context.Refuse(r, Name, $"{Show(content)} is outside the range of a 64-bit Integer");
@@ -246,6 +289,7 @@ internal sealed class IntegerFieldReader(CsvColumn column, IReadOnlyList<string>
             refusal = Context.Refuse(r, Name, $"{Show(content)} is not an integer");
             return r;
         }
+        builder.Append(batch.AsSpan(0, rows), Blanks(rows));
         refusal = null;
         return rows;
     }
@@ -259,16 +303,20 @@ internal sealed class DoubleFieldReader(CsvColumn column, IReadOnlyList<string> 
 {
     private readonly NumberReading reading = new(column, context.Encoding);
     private byte[] scratch = new byte[64];
+    private double[] values = [];
 
     public override int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal)
     {
         var width = records.Width;
+        var batch = Room(ref values, rows);
+        var blankBits = ClearBlanks(rows);
         for (var r = 0; r < rows; r++)
         {
             var content = Content(records, (r * width) + field);
             if (IsBlank(content))
             {
-                builder.AppendBlank();
+                Bits.Set(blankBits, r);
+                batch[r] = 0;
                 continue;
             }
             var reason = TryRead(content, out var number);
@@ -277,8 +325,9 @@ internal sealed class DoubleFieldReader(CsvColumn column, IReadOnlyList<string> 
                 refusal = Context.Refuse(r, Name, reason);
                 return r;
             }
-            builder.Append(number);
+            batch[r] = number;
         }
+        builder.Append(batch.AsSpan(0, rows), Blanks(rows));
         refusal = null;
         return rows;
     }
@@ -321,6 +370,7 @@ internal sealed class DateFieldReader : FieldReader
     private readonly DateColumnBuilder builder;
     private readonly DateFormat[] formats;
     private char[] chars = new char[32];
+    private long[] values = [];
 
     public DateFieldReader(CsvColumn column, IReadOnlyList<string> blankTexts, DateColumnBuilder builder, IFieldContext context)
         : base(column, blankTexts, context, false)
@@ -333,12 +383,15 @@ internal sealed class DateFieldReader : FieldReader
     public override int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal)
     {
         var width = records.Width;
+        var batch = Room(ref values, rows);
+        var blankBits = ClearBlanks(rows);
         for (var r = 0; r < rows; r++)
         {
             var content = Content(records, (r * width) + field);
             if (IsBlank(content))
             {
-                builder.AppendBlank();
+                Bits.Set(blankBits, r);
+                batch[r] = 0;
                 continue;
             }
             if (!TryRead(CsvText.Trim(content), out var ticks))
@@ -348,8 +401,9 @@ internal sealed class DateFieldReader : FieldReader
                     : $"{Show(content)} is not a date in any of the formats {string.Join(", ", formats.Select(f => $"'{f.Format}'"))}");
                 return r;
             }
-            builder.AppendTicks(ticks);
+            batch[r] = ticks;
         }
+        builder.AppendTicks(batch.AsSpan(0, rows), Blanks(rows));
         refusal = null;
         return rows;
     }
@@ -383,16 +437,20 @@ internal sealed class BooleanFieldReader(CsvColumn column, IReadOnlyList<string>
     private readonly string[] trues = [.. column.TrueText ?? CsvColumn.ExcelTrue];
     private readonly string[] falses = [.. column.FalseText ?? CsvColumn.ExcelFalse];
     private char[] chars = new char[16];
+    private bool[] values = [];
 
     public override int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal)
     {
         var width = records.Width;
+        var batch = Room(ref values, rows);
+        var blankBits = ClearBlanks(rows);
         for (var r = 0; r < rows; r++)
         {
             var content = Content(records, (r * width) + field);
             if (IsBlank(content))
             {
-                builder.AppendBlank();
+                Bits.Set(blankBits, r);
+                batch[r] = false;
                 continue;
             }
             var value = CsvText.Trim(content);
@@ -401,18 +459,19 @@ internal sealed class BooleanFieldReader(CsvColumn column, IReadOnlyList<string>
                 var text = chars.AsSpan(0, length);
                 if (Matches(text, trues))
                 {
-                    builder.Append(true);
+                    batch[r] = true;
                     continue;
                 }
                 if (Matches(text, falses))
                 {
-                    builder.Append(false);
+                    batch[r] = false;
                     continue;
                 }
             }
             refusal = Context.Refuse(r, Name, $"{Show(content)} is not a spelling of true or false ({string.Join(", ", trues.Concat(falses).Select(s => $"'{s}'"))})");
             return r;
         }
+        builder.Append(batch.AsSpan(0, rows), Blanks(rows));
         refusal = null;
         return rows;
     }

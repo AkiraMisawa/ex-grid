@@ -169,6 +169,22 @@ public sealed class TextColumnBuilder : ColumnBuilder
     }
 
     /// <summary>
+    /// Appends codes <see cref="Interner"/> gave, and -1 for a Blank, as <see cref="AppendCode"/> would
+    /// one at a time, looking at the segment once per run rather than once per code.
+    /// <paramref name="mayHoldBlanks"/> is false only when no code is -1.
+    /// </summary>
+    internal void AppendCodes(ReadOnlySpan<int> codes, bool mayHoldBlanks)
+    {
+        var done = 0;
+        while (done < codes.Length)
+        {
+            var n = Room(codes.Length - done);
+            Texts.AddCodes(codes.Slice(done, n), mayHoldBlanks);
+            done += n;
+        }
+    }
+
+    /// <summary>
     /// Appends values given as codes into another producer's <paramref name="dictionary"/>, as Arrow
     /// and Parquet hold text. They are taken under the Snapshot's rules, whatever the producer's were:
     /// the Snapshot's dictionary is in the order values first appear in these rows, not the
@@ -290,6 +306,40 @@ public sealed class DecimalColumnBuilder : ColumnBuilder
         Room(1);
         Numbers.AddScaled(value, scale);
     }
+
+    /// <summary>The scale by which <see cref="AppendRows"/> is told a row is a Blank.</summary>
+    internal const byte BlankRow = 0xFF;
+
+    /// <summary>The scale by which <see cref="AppendRows"/> is told a row is a <see cref="decimal"/>.</summary>
+    internal const byte ExactRow = 0xFE;
+
+    /// <summary>
+    /// Appends rows as <see cref="ColumnBuilder.AppendBlank"/>, <see cref="AppendScaled(long, int)"/>
+    /// and <see cref="Append(decimal)"/> would, one after another, looking at the segment once per run:
+    /// row i is a Blank when <c>scales[i]</c> is <see cref="BlankRow"/>, <c>exacts[i]</c> when it is
+    /// <see cref="ExactRow"/>, and <c>values[i]</c> × 10^-<c>scales[i]</c> otherwise, a scale within 0 to 28.
+    /// </summary>
+    internal void AppendRows(ReadOnlySpan<long> values, ReadOnlySpan<byte> scales, ReadOnlySpan<decimal> exacts)
+    {
+        Span<int> bits = stackalloc int[4];
+        var done = 0;
+        while (done < values.Length)
+        {
+            var end = done + Room(values.Length - done);
+            var numbers = Numbers;
+            for (var i = done; i < end; i++)
+            {
+                var scale = scales[i];
+                if (scale == BlankRow)
+                    numbers.AddBlank();
+                else if (scale == ExactRow)
+                    numbers.Add(exacts[i], bits);
+                else
+                    numbers.AddScaled(values[i], scale);
+            }
+            done = end;
+        }
+    }
 }
 
 /// <summary>Appends Double values, each held exactly as it comes, non-finite values included.</summary>
@@ -405,12 +455,26 @@ public sealed class DateColumnBuilder : ColumnBuilder
     public void AppendTicks(ReadOnlySpan<long> ticks, ReadOnlySpan<ulong> blanks = default)
     {
         CheckBlanks(blanks, ticks.Length);
-        for (var i = 0; i < ticks.Length; i++)
+        // As AppendBlank and AppendTicks(long) would append them one at a time, looking at the segment
+        // once per run.
+        var done = 0;
+        while (done < ticks.Length)
         {
-            if (IsBlank(blanks, i))
-                AppendBlank();
-            else
-                AppendTicks(ticks[i]);
+            var end = done + Room(ticks.Length - done);
+            var dates = Dates;
+            for (var i = done; i < end; i++)
+            {
+                if (IsBlank(blanks, i))
+                {
+                    dates.AddBlank();
+                    continue;
+                }
+                var value = ticks[i];
+                if ((ulong)value > (ulong)DateTime.MaxValue.Ticks)
+                    throw Refuse(Count, OutOfRange(value));
+                dates.Add(value);
+            }
+            done = end;
         }
     }
 
