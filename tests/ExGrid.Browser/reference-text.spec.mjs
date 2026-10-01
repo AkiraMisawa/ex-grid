@@ -334,6 +334,21 @@ async function expectPointedLook(field, text) {
     expect(span.ink).not.toBe(TRANSPARENT);
 }
 
+// The palette's first two colours, #326ac7 and #c0353e, and Excel's shade of each for the pointed
+// Reference's text, #0401a2 and #630101 (Part B of the eighth Windows run, cases 20 and 20x): the
+// light defaults of --ex-reference-1-pointed and --ex-reference-2-pointed (DC-56).
+const FIRST_COLOUR = 'rgb(50, 106, 199)';
+const SECOND_COLOUR = 'rgb(192, 53, 62)';
+const FIRST_POINTED = 'rgb(4, 1, 162)';
+const SECOND_POINTED = 'rgb(99, 1, 1)';
+
+/** The one span pointed wears this colour, and on the grey its text is this shade of it. */
+async function expectPointedShade(field, text, colour, ink) {
+    await expectPointedLook(field, text);
+    const span = (await spansOf(field)).find((one) => one.pointed);
+    expect({ colour: span.colour, ink: span.ink, ground: span.ground }).toEqual({ colour, ink, ground: POINTED_GROUND });
+}
+
 for (const chrome of ['builtin', 'mud']) {
     test(`ADR-0051/0057: after =SUM( the Reference Point writes is shown selected in the Cell Editor, and the Formula Bar stays plain (${chrome} Chrome)`, async ({ page }) => {
         await underChrome(page, chrome);
@@ -413,6 +428,37 @@ for (const chrome of ['builtin', 'mud']) {
         expect((await spansOf(editor(grid))).map((span) => [span.text, span.pointed])).toEqual([['D11', false], ['F55', false]]);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
+    });
+
+    // Excel's cases 20 and 20x, typed from D10 as the run typed them: ↓ after =D11+ points D11
+    // again, which shares the first Reference's colour; ↓ once more points D12, a second colour.
+    test(`DC-56: the pointed Reference's text is Excel's shade of its colour — #0401a2 for the first, #630101 for the second — on #c6c6c6 (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'D10');
+        await page.keyboard.type('=D11+');
+        await expect(editor(grid)).toHaveValue('=D11+');
+
+        await page.keyboard.press('ArrowDown');
+        await expectColoured(editor(grid), '=D11+D11');
+        await expectPointedShade(editor(grid), 'D11', FIRST_COLOUR, FIRST_POINTED);
+        await page.keyboard.press('ArrowDown');
+        await expectColoured(editor(grid), '=D11+D12');
+        await expectPointedShade(editor(grid), 'D12', SECOND_COLOUR, SECOND_POINTED);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+
+        // One Reference, pointed after =SUM( and moved on: the first colour's shade.
+        await pressCell(grid, 'D10');
+        await page.keyboard.type('=SUM(');
+        await expect(editor(grid)).toHaveValue('=SUM(');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+        await expectColoured(editor(grid), '=SUM(D12');
+        await expectPointedShade(editor(grid), 'D12', FIRST_COLOUR, FIRST_POINTED);
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'D10')).toHaveText('');
     });
 }
 
