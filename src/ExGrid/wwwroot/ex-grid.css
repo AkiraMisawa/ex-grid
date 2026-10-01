@@ -84,15 +84,6 @@
 .ex-row {
     background-image: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
 }
-/* The row's ground is the grid's own, painted on the row as well. A translucent rule or stripe
-   is then blended onto an opaque ground as the row paints, as it is on a Pinned Column's cell
-   (below). Over a transparent row it reached the grid's ground only when the Viewport's layer was
-   composited, a blend that rounds on its own. MudBlazor's dark rule, 78.53 exactly on its ground,
-   came out 78 there and 79 on the pinned cell beside it (Chrome on Linux, CI, 2026-10-01; ticket
-   92). Zero specificity, so a Consumer's or a package's row ground (ExSheet's Paper) wins
-   whatever the order. Nothing in the Viewport lies beneath the rows: the selection and its bands
-   are above them (z-index 1). */
-:where(.ex-row) { background-color: var(--ex-background, Canvas); }
 /* The same rule on a Pinned Column's cell (ticket 92). Its opaque ground hides the rule its row
    paints beneath it, so the cell paints the rule itself — transparent until a theme turns it on,
    as the row's is, so a grid without one paints as before. It is named in --ex-row-rule, and each

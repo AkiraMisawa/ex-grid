@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { painted, contrast, resolvedColour } from './pixels.mjs';
+import { painted, contrast, resolvedColour, sameColour } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -309,14 +309,19 @@ test('the Wrapper\'s row rule runs on across the Pinned Column, light and dark (
             await page.mouse.move(0, 0);
         }
         for (const [n, { pinned, scrollable }] of (await lines()).entries()) {
-            // Compared exactly: the two are one translucent rule (dark) blended onto one opaque
-            // ground as each element paints — the pinned cell's own, and the row's (the grid's
-            // ground, painted on the row). Over a transparent row the blend waited for the
-            // Viewport's layer to be composited, and Linux's Chrome rounded it apart: 78 beside 79
-            // (ticket 92, CI 2026-10-01).
             // There is a rule to carry: the scrollable cell's line differs from its ground.
             expect(scrollable.rule, `dark=${dark}, row ${n + 1}: the Wrapper's rule shows`).not.toEqual(scrollable.ground);
-            expect(pinned.rule, `dark=${dark}, row ${n + 1}: the pinned cell's line is the rule`).toEqual(scrollable.rule);
+            // The rule within one level on each channel, and nothing wider. Both lines are the same
+            // rule on the same ground, but they are painted along two paths: the pinned cell paints
+            // the rule over its own ground, and the scrollable cell lies on the row, which paints it.
+            // In the dark scheme the rule is translucent, rgba(255,255,255,30/255) on (55,55,64),
+            // and the blend is 78.53 in red and green, half a level from either neighbour. Chrome and
+            // Edge on Linux round it to 79 on the pinned cell and 78 on the row, on both hosts.
+            // Giving the row an opaque ground of its own did not change that (ticket 92, CI runs
+            // 36929390859 and 36934151352). A half-level blend rounded two ways is one level apart.
+            // A rule missing from the pinned cell would leave its ground, 23 levels away.
+            expect(sameColour(pinned.rule, scrollable.rule, 1),
+                `dark=${dark}, row ${n + 1}: the pinned cell's line is the rule (${pinned.rule} beside ${scrollable.rule})`).toBe(true);
             expect(pinned.ground, `dark=${dark}, row ${n + 1}: the grounds above it`).toEqual(scrollable.ground);
         }
     }
