@@ -1,6 +1,6 @@
 # 75: The Cell Editor shows what Point writes
 
-Status: needs-info
+Status: done
 
 **What to build:** ADR-0058, "What the thirteenth Windows run settled", the defect seen and not asked.
 After `Home` or Shift+→ over Point wrote `A10` or `D10:E10` (b3–b5 of the thirteenth run), the Cell
@@ -10,11 +10,13 @@ had just been written.
 
 **Blocked by:** None.
 
-- [ ] After Point writes into the Cell Editor or the Formula Bar — by an arrow, `Home`, a Shift+arrow, a
+- [x] After Point writes into the Cell Editor or the Formula Bar — by an arrow, `Home`, a Shift+arrow, a
       press on the Sheet, or a press on a registered grid — the field's caret is inside its visible
       width, so the written Reference can be read. Find which of these paths leave the field's
-      `scrollLeft` behind, and fix them all, not only the two the run saw (ADR-0051, ADR-0058)
-- [ ] The field's scroll is set through the scroll offsets ADR-0021 allows, at the caret the core
+      `scrollLeft` behind, and fix them all, not only the two the run saw (ADR-0051, ADR-0058).
+      *Met for a caret at the start or the end of the text; short of the end it is a recorded gap,
+      decided with the user on 2026-10-01 (see the Comments)*
+- [x] The field's scroll is set through the scroll offsets ADR-0021 allows, at the caret the core
       placed, without measuring text (no layout read on the path to a paint). If the caret cannot be
       brought into view without measuring, stop and report the proposal: that is a decision
 - [x] Reference Outlines' text layer (ADR-0057) follows the field's `scrollLeft`, as it does when the
@@ -25,10 +27,12 @@ had just been written.
 
 ## Comments
 
-2026-10-01, implemented on `agent/ps-75` in two commits. **The first, `722e763`, is the fix: a caret
-at the end of the text. The second, `b8a2930`, is a proposal awaiting a decision: a caret short of
-the end.** It can be reverted alone. The status is `needs-info` until the decision is made. The first
-two boxes hold at the end of the text, and short of it they wait on that decision.
+2026-10-01, implemented on `agent/ps-75`. **The fix, `722e763`, covers a caret at the start or the
+end of the text. A second commit, `b8a2930`, proposed a caret short of the end. The user decided the
+same day not to take it, and to record what is left as a known gap** (ADR-0058, "What the thirteenth
+Windows run settled"): short of the end, a write can carry the caret past the field's right edge by up
+to what was written, and the next key brings it back. The proposal stays on `agent/ps-75` only; its
+analysis is kept below as the reason.
 
 - **Which paths left the scroll behind: all of them.** Every write the core makes reaches the field
   through `setCaret` in `ex-grid.js`: an arrow, `Home`, a Shift+arrow, a press on the Sheet, a press on
@@ -52,7 +56,7 @@ two boxes hold at the end of the text, and short of it they wait on that decisio
   moves no view either. After `=XLOOKUP(1,A2:A4,B2:B4,,` was typed, the caret stood at the end with
   `scrollLeft` 0. This is not a Point write. It is the same defect at the end of the text, so
   `typeInto` calls `showCaret` after each typed key and each replayed ← or →.
-- **The proposal (`b8a2930`), short of the end.** A caret short of the end is left to the browser by
+- **The proposal (`b8a2930`, not taken), short of the end.** A caret short of the end is left to the browser by
   the first commit. A write moves it right by what was written, and it can cross the field's right
   edge: 19–20 px after a press on the Sheet before `)`, and 297 px after a press on the positions grid
   before `)`, in layer 3 without the proposal. No place for that caret can be set without the width of
@@ -127,8 +131,8 @@ two boxes hold at the end of the text, and short of it they wait on that decisio
     `=SUM(A2:A4,B2:B4,C2:C4,`; ↓ and a press in the Formula Bar after forty ranges.
   - In `pointing-scope.spec.mjs`: a press on the positions grid after `=` (b11).
 
-  The proposal adds 3: a press and ↓ after F2 before `)`, under both Chromes, and a press on the
-  positions grid before `)`.
+  The proposal added 3 more (a press and ↓ after F2 before `)`, under both Chromes, and a press on
+  the positions grid before `)`); they went with it.
 
   Runs: headless, macOS, `--project=chrome`, private ports. Edge, and the full run, are CI's.
   - With the fix set aside, all 7 failed at their first check after the write (WebAssembly). The
