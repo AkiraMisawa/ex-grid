@@ -62,6 +62,22 @@ public class PinnedRowRuleTests : GridTestContext
         Assert.Null(Winning(scrollable, "background-image"));
     }
 
+    [Fact] // Ticket 92 (CI, 2026-10-01): a row paints the grid's own ground, so a translucent rule is blended onto it as the row paints, as on a pinned cell, and a package's row ground wins whatever the order
+    public void A_row_paints_the_grids_ground_beneath_its_rule()
+    {
+        var cut = RenderGrid();
+        var row = cut.FindAll(".ex-viewport [role=row]")[0];
+
+        Assert.Equal("var(--ex-background, Canvas)", Winning(row, "background-color"));
+        Assert.Equal("var(--ex-background, Canvas)", Winning(cut.Find(".ex-grid"), "background"));
+        var (selectors, _) = Assert.Single(ShippedStylesheetTests.UnconditionalRules(),
+            rule => ShippedStylesheetTests.Declarations(rule.Body).Any(declared => declared.Property == "background-color")
+                && rule.Selectors.Any(selector => !selector.Contains("::", StringComparison.Ordinal) && row.Matches(selector)));
+        var selector = Assert.Single(selectors);
+        // Below ExSheet's Paper, whose own selector has one class's specificity.
+        Assert.True(ShippedStylesheetTests.Specificity(selector).CompareTo(ShippedStylesheetTests.Specificity(":where(.ex-sheet) .ex-row")) < 0);
+    }
+
     [Fact] // Ticket 92: the rule is the body's alone — a pinned header cell keeps the header's own rule
     public void A_pinned_header_cell_keeps_the_headers_rule()
     {

@@ -309,6 +309,11 @@ test('the Wrapper\'s row rule runs on across the Pinned Column, light and dark (
             await page.mouse.move(0, 0);
         }
         for (const [n, { pinned, scrollable }] of (await lines()).entries()) {
+            // Compared exactly: the two are one translucent rule (dark) blended onto one opaque
+            // ground as each element paints — the pinned cell's own, and the row's (the grid's
+            // ground, painted on the row). Over a transparent row the blend waited for the
+            // Viewport's layer to be composited, and Linux's Chrome rounded it apart: 78 beside 79
+            // (ticket 92, CI 2026-10-01).
             // There is a rule to carry: the scrollable cell's line differs from its ground.
             expect(scrollable.rule, `dark=${dark}, row ${n + 1}: the Wrapper's rule shows`).not.toEqual(scrollable.ground);
             expect(pinned.rule, `dark=${dark}, row ${n + 1}: the pinned cell's line is the rule`).toEqual(scrollable.rule);
