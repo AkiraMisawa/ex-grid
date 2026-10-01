@@ -595,6 +595,20 @@ public class CellAppearanceTests : GridTestContext
         }
     }
 
+    [Fact] // ADR-0050 item 15 / ADR-0071 (ticket 90): .ex-lined paints a row rule a cell names in --ex-row-rule beneath every other layer, and the core names none
+    public void The_lined_rule_paints_a_named_row_rule_beneath_every_layer()
+    {
+        var rules = ShippedStylesheetTests.CoreStylesheet().Rules;
+        var (_, body) = Assert.Single(rules, rule => rule.Selectors is [".ex-cell.ex-lined"]);
+
+        // Last, so the covers lie over it as a Fill lies over a gridline, and the lines over both.
+        Assert.Equal("var(--ex-row-rule, none)", Layers(Declared(body, "background-image"))[^1]);
+        Assert.Equal("100% 100%", Layers(Declared(body, "background-size"))[^1]);
+        Assert.Equal("0 0", Layers(Declared(body, "background-position"))[^1]);
+        // A grid whose Consumer names none paints its lined cells as before: no core rule names one.
+        Assert.DoesNotContain(rules, rule => Regex.IsMatch(rule.Body, @"--ex-row-rule\s*:"));
+    }
+
     [Fact] // DC-58 / P4: nothing per cell reaches JavaScript — the same calls with the declaration as without
     public void Nothing_per_cell_reaches_javascript()
     {

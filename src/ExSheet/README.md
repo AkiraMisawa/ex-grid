@@ -257,7 +257,8 @@ cells, over the Fills and under the Selection; where both cells record a line on
 upper or left cell's is drawn. Every row keeps its one height, where Excel would raise a row for a
 medium or a thick line. A Number Format's colour (`[Red]` and the seven others) is painted in Excel's
 colour for that name, in place of the Font's. A bold number is judged by the bold widths, so one that
-does not fit shows `####` rather than being cut.
+does not fit shows `####` rather than being cut. A cell keeps its Fill and Font while it is edited,
+with the Font's own colour, since the editor shows the Entry and not the formatted Value.
 
 The ground the cells lie on is the **Paper**, Excel's white, and text whose Font colour is
 Automatic is the **Ink**, Excel's black — in every colour scheme, as Excel's cells stay white under

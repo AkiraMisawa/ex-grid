@@ -73,12 +73,14 @@ public static class SheetCases
                 Format(sheet, new CellFormatChange { NumberFormat = NumberFormat.Parse("0;[Red]-0"), FontColour = Blue }, "A1:B1");
                 break;
             case "3b":
-                // No section shows them, so no colour. The case's A4, 5 in 0;[Red]@, is left out:
-                // the engine refuses that code, which Excel takes.
+                // No section shows them, so no colour; and 5 in 0;[Red]@ is shown by its first
+                // section, which names none.
                 Enter(sheet, "A1", "abc");
                 Enter(sheet, "A2", "TRUE");
                 Enter(sheet, "A3", "=1/0");
+                Enter(sheet, "A4", "5");
                 Format(sheet, new CellFormatChange { NumberFormat = NumberFormat.Parse("[Red]0") }, "A1:A3");
+                Format(sheet, new CellFormatChange { NumberFormat = NumberFormat.Parse("0;[Red]@") }, "A4");
                 break;
             case "3c":
                 // A #### keeps its section's colour: column A at the width Excel showed it at.

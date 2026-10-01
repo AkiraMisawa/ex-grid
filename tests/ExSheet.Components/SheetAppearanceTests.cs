@@ -82,16 +82,17 @@ public class SheetAppearanceTests : SheetTestContext
         Assert.Contains($"ex-font-{hex}", Classes(cut, "A1"));
     }
 
-    [Fact] // ADR-0071, SH-40 (case 3b): where no section shows the Value, there is no colour
+    [Fact] // ADR-0071, ADR-0047, SH-40 (case 3b): where no section shows the Value, there is no colour, and 5 in 0;[Red]@ is shown by an uncoloured section
     public void No_section_that_shows_the_value_means_no_colour()
     {
-        // Case 3b's fourth cell, 5 in 0;[Red]@, is left out: the engine refuses that code, which
-        // Excel takes.
-        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
-            sheet => Format(sheet, "A1:A3", new CellFormatChange { NumberFormat = NumberFormat.Parse("[Red]0") }),
-            ("A1", "abc"), ("A2", "TRUE"), ("A3", "=1/0"))));
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(sheet =>
+        {
+            Format(sheet, "A1:A3", new CellFormatChange { NumberFormat = NumberFormat.Parse("[Red]0") });
+            Format(sheet, "A4", new CellFormatChange { NumberFormat = NumberFormat.Parse("0;[Red]@") });
+        }, ("A1", "abc"), ("A2", "TRUE"), ("A3", "=1/0"), ("A4", "5"))));
 
-        foreach (var address in new[] { "A1", "A2", "A3" }) Assert.DoesNotContain("ex-font-", Classes(cut, address));
+        Assert.Equal("5", CellText(cut, "A4"));
+        foreach (var address in new[] { "A1", "A2", "A3", "A4" }) Assert.DoesNotContain("ex-font-", Classes(cut, address));
     }
 
     [Fact] // ADR-0071, SH-40 (case 3c): a #### keeps its section's colour
@@ -254,5 +255,37 @@ public class SheetAppearanceTests : SheetTestContext
 
         Assert.Equal("0.33333333", CellText(cut, "A1"));
         Assert.Equal("0.3333333", CellText(cut, "A2"));
+    }
+
+    [Fact] // ADR-0050 item 15, ADR-0071 (ticket 88): the Cell Editor keeps the cell's Fill and Font, in the Font's own colour, since it shows the Entry and not the formatted Value
+    public async Task The_cell_editor_keeps_the_fill_and_the_font_in_the_fonts_own_colour()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
+            sheet => Format(sheet, "B1", new CellFormatChange { NumberFormat = NumberFormat.Parse("0;[Red]-0"), FontColour = Blue, Bold = true, Fill = Yellow }),
+            ("B1", "-5"))));
+        // The cell paints its formatted Value in the Number Format's red.
+        Assert.Contains("ex-font-ff0000b", Classes(cut, "B1"));
+
+        await GoToAsync(cut, "B1");
+        await PressAsync(cut, "F2");
+
+        var editor = cut.Find(".ex-viewport input.ex-editor");
+        Assert.Equal("-5", editor.GetAttribute("value"));
+        Assert.Equal(["ex-editor", "ex-font-0000ffb", "ex-fill-ffff00"], editor.ClassList);
+        // The coloured text beneath it (ADR-0057) is read on the same Fill, in the same Font.
+        Assert.Equal(["ex-reference-text", "ex-reference-text-cell", "ex-font-0000ffb", "ex-fill-ffff00"],
+            cut.Find(".ex-viewport .ex-reference-text-cell").ClassList);
+    }
+
+    [Fact] // ADR-0050 item 15, ADR-0071 (ticket 88): an Automatic Font is the Ink in the editor too, and a column's Fill is the ground of a cell that holds nothing
+    public async Task The_cell_editor_over_an_empty_cell_takes_its_columns_fill()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
+            sheet => Format(sheet, "C:C", new CellFormatChange { Fill = Yellow }))));
+
+        await GoToAsync(cut, "C4");
+        await PressAsync(cut, "x");
+
+        Assert.Equal(["ex-editor", "ex-fill-ffff00"], cut.Find(".ex-viewport input.ex-editor").ClassList);
     }
 }

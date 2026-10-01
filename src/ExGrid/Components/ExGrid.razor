@@ -328,6 +328,11 @@
                     {
                         var editorChrome = Chrome?.CellEditor(BuildEditorContext());
                         _editorIsChrome = editorChrome is not null;
+                        @* The edited cell's Fill and Font (ADR-0050, item 15): on the field, on the
+                           box a Chrome's control stands in, and on the coloured text beneath. *@
+                        var editorLook = EditorAppearanceClass();
+                        var editorClass = WithEditorAppearance("ex-editor", editorLook);
+                        var referenceTextClass = WithEditorAppearance("ex-reference-text ex-reference-text-cell", editorLook);
                         @if (_editingCell.Column < _columnStyles.Geometry.PinnedCount)
                         {
                             <div class="ex-editor-pinned" @key="EditorLayerKey">
@@ -340,7 +345,7 @@
                                        cell under the live editor. *@
                                     @if (editorChrome is not null)
                                     {
-                                        <div class="ex-editor" style="@pinnedBox" @onmousedown:stopPropagation>@editorChrome</div>
+                                        <div class="@editorClass" style="@pinnedBox" @onmousedown:stopPropagation>@editorChrome</div>
                                     }
                                     else
                                     {
@@ -349,9 +354,9 @@
                                            stylesheet look for it. A Chrome places its own. *@
                                         @if (ReferencesIn is not null)
                                         {
-                                            <div class="ex-reference-text ex-reference-text-cell" style="@pinnedBox" data-ex-text="@_editText" aria-hidden="true"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                            <div class="@referenceTextClass" style="@pinnedBox" data-ex-text="@_editText" aria-hidden="true"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
                                         }
-                                        <input class="ex-editor" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="@editorClass" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -360,15 +365,15 @@
                         {
                             @if (editorChrome is not null)
                             {
-                                <div class="ex-editor" style="@editorBox" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
+                                <div class="@editorClass" style="@editorBox" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
                             }
                             else
                             {
                                 @if (ReferencesIn is not null)
                                 {
-                                    <div class="ex-reference-text ex-reference-text-cell" style="@editorBox" data-ex-text="@_editText" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                    <div class="@referenceTextClass" style="@editorBox" data-ex-text="@_editText" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
                                 }
-                                <input class="ex-editor" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="@editorClass" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -822,13 +827,14 @@
        tallest length it will, and a ResizeObserver reports that size — the ceiling in CSS
        pixels at this scale and zoom. Paint nothing, take nothing, say nothing. *@
     <div class="ex-ceiling-probe" aria-hidden="true"><div style="@CeilingProbeStyle"></div></div>
-    @if (CellAppearance is not null && _appearances is { } appearances)
+    @if ((CellAppearance is not null || EditorAppearance is not null) && _appearances is { } appearances)
     {
         @* The generated stylesheet of a per-cell appearance (ADR-0050, item 15; ADR-0071): one
            rule per Font, per Fill colour and per line on each side, never per combination, added
-           the first time a cell asks for one. Last in the root, because the rows above resolved
-           their appearance in this same render and the rules they named must be in it. The text
-           is one held string until a rule is added, so the diff compares a reference. *@
+           the first time a cell asks for one. Last in the root, because the rows above, and the
+           Cell Editor, resolved their appearance in this same render and the rules they named must
+           be in it. The text is one held string until a rule is added, so the diff compares a
+           reference. *@
         <style>@appearances.Styles.Css</style>
     }
 </div>
@@ -1208,6 +1214,20 @@
     /// moved; a new lookup asks every painted row again.</para>
     /// </summary>
     [Parameter] public CellAppearanceOf<TRow>? CellAppearance { get; set; }
+
+    /// <summary>
+    /// The look the Cell Editor takes over the cell it edits (ADR-0050, item 15): that cell's
+    /// Fill as the editor's ground, and its Font — a colour, bold, italic, underline and
+    /// strikethrough — as the editor's text, so a cell keeps its look while it is edited, as
+    /// Excel's does. Its Borders are not read. The editor's box, its padding and its outline stay
+    /// as they are, and the Formula Bar keeps its own look. Null, the default, takes the
+    /// <see cref="CellAppearance"/> answer: a Consumer declares this only where the editor looks
+    /// unlike the cell, as ExSheet does for a Number Format's colour, which paints the formatted
+    /// Value and not the Entry the editor shows (ADR-0071). Asked for the cell an edit is open
+    /// on, at each render while it is open; without either declaration nothing is asked and
+    /// the editor is as before.
+    /// </summary>
+    [Parameter] public CellAppearanceOf<TRow>? EditorAppearance { get; set; }
 
     /// <summary>
     /// Which line is drawn on an edge whose two cells record different lines (ADR-0050, item
@@ -2070,6 +2090,28 @@
         var below = slice + 1 < _window.Count ? _window[slice + 1] : null;
         return appearances.At(row, _window[slice], above, below);
     }
+
+    /// <summary>
+    /// The appearance classes the Cell Editor wears over the cell it edits (ADR-0050, item 15):
+    /// that cell's Font and Fill, from <see cref="EditorAppearance"/> or else
+    /// <see cref="CellAppearance"/>; null without either declaration, or while the edited row is
+    /// not in hand. Interned, so a render that changes nothing writes no class: the listener's
+    /// class on the field (ADR-0057) stays where it set it.
+    /// </summary>
+    private string? EditorAppearanceClass()
+    {
+        if ((EditorAppearance ?? CellAppearance) is not { } lookup || _editMode == EditMode.None)
+            return null;
+        var slice = _editingCell.Row - _windowStart;
+        if (slice < 0 || slice >= _window.Count || _editingCell.Column < 0 || _editingCell.Column >= Columns.Count
+            || !Columns[_editingCell.Column].PaintsValue)
+            return null;
+        return (_appearances ??= new()).Styles.EditorClassFor(lookup(_window[slice], Columns[_editingCell.Column]));
+    }
+
+    /// <summary>A class attribute with the Cell Editor's appearance classes after it, interned per pair.</summary>
+    private string WithEditorAppearance(string baseClass, string? look)
+        => look is null || _appearances is not { } appearances ? baseClass : appearances.Styles.Join(baseClass, look);
 
     /// <summary>The metrics a cell's text is estimated with for an Auto width or a fit: the
     /// bold widths for a bold cell (ADR-0050, item 15), and the other class at its own width

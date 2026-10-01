@@ -43,6 +43,15 @@ internal static class SheetAppearance
     internal static EdgeBorderOf EdgeBorder { get; } = static (upperOrLeft, _) => upperOrLeft;
 
     /// <summary>
+    /// The look the Cell Editor takes over the cell it edits (ADR-0050 item 15, ticket 88): the
+    /// cell's Font and Fill, with the Font's own colour. A Number Format's colour paints the
+    /// formatted Value, and the editor shows the Entry, so -5 in <c>0;[Red]-0</c> under a blue Font
+    /// is edited in blue. Asked for the one cell an edit is open on, so it reads the engine afresh.
+    /// </summary>
+    internal static CellAppearanceOf<SheetRow> Editor { get; } =
+        (row, column) => row.EditorAppearanceAt(SheetColumns.IndexOf(column));
+
+    /// <summary>
     /// The appearance of the cell at <paramref name="address"/>: its Font, Fill and Borders as the
     /// Sheet shows them, with <paramref name="numberFormatColour"/>, the colour of the Number
     /// Format's section that shows its Value, in place of the Font's colour.

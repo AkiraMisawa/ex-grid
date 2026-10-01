@@ -11,7 +11,8 @@ namespace ExSheet.Engine;
 /// marks decimals — and shown with the Sheet's culture's separators and month and day names.
 /// </summary>
 /// <remarks>
-/// The subset read: up to four sections (positive; negative; zero; text); the digit placeholders
+/// The subset read: up to four sections (positive; negative; zero; text), where a text section
+/// (<c>@</c>) may also end a format of two or three, as in <c>0;[Red]@</c>; the digit placeholders
 /// <c>0 # ?</c>, the decimal point, thousands separators and scaling commas, <c>%</c>, scientific
 /// <c>E+00</c> with one integer placeholder, <c>@</c>, quoted text, <c>\</c> escapes, <c>_</c>
 /// spacing, and the date and time codes <c>y m d h s</c> with <c>AM/PM</c> and <c>A/P</c>. A
@@ -81,9 +82,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         {
             var section = Section.Parse(parts[i], out reason);
             if (section is null) return Refuse(out reason, reason);
-            if (section.Kind == SectionKind.Text && i < 3 && parts.Count > 1)
+            if (section.Kind == SectionKind.Text && i < parts.Count - 1)
             {
-                reason = "@ belongs in the fourth section, or in a format of one section.";
+                reason = "@ belongs in the last section.";
                 return false;
             }
             if (i == 3 && section.Kind is not (SectionKind.Text or SectionKind.Literal))
@@ -99,7 +100,17 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>Whether a number shows in Excel's General form: the format is General, or holds only a text section (<c>@</c>).</summary>
-    internal bool ShowsNumbersAsGeneral => _sections.Length == 0 || (_sections.Length == 1 && _sections[0].Kind == SectionKind.Text);
+    internal bool ShowsNumbersAsGeneral => NumberSections == 0;
+
+    /// <summary>
+    /// How many sections show numbers. A text section (<c>@</c>) that ends a format of fewer than
+    /// four shows none, so <c>0;[Red]@</c> shows every number by its first section, as a format
+    /// of one section does (case 3b of the eleventh Windows run, ADR-0071).
+    /// </summary>
+    private int NumberSections => _sections.Length is > 0 and < 4 && _sections[^1].Kind == SectionKind.Text ? _sections.Length - 1 : _sections.Length;
+
+    /// <summary>The section that shows text: the fourth, or a text section that ends a shorter format; <see langword="null"/> when there is none.</summary>
+    private Section? TextSection => _sections.Length == 4 ? _sections[3] : _sections.Length > 0 && _sections[^1].Kind == SectionKind.Text ? _sections[^1] : null;
 
     /// <summary>
     /// A Value as this format shows it in a column <paramref name="characters"/> wide, each
@@ -367,7 +378,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
             case ValueKind.Error:
                 return (value.ToString(), false, null);
             case ValueKind.Text:
-                var textSection = _sections.Length == 4 ? _sections[3] : _sections.Length == 1 && _sections[0].Kind == SectionKind.Text ? _sections[0] : null;
+                var textSection = TextSection;
                 return textSection is null ? (value.Text, false, null) : (textSection.FormatText(value.Text), false, textSection.Colour);
         }
 
@@ -378,11 +389,11 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         }
         Section chosen;
         var automaticMinus = false;
-        if (number < 0 && _sections.Length >= 2)
+        if (number < 0 && NumberSections >= 2)
         {
             chosen = _sections[1];
         }
-        else if (number == 0 && _sections.Length >= 3)
+        else if (number == 0 && NumberSections >= 3)
         {
             chosen = _sections[2];
         }
