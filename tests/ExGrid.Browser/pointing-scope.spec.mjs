@@ -37,6 +37,20 @@ async function expectPointedAt(grid, pointed = true) {
 }
 
 /**
+ * Whether a grid is pointed at for the text typed into the Sheet: once the Formula Bar, which the
+ * core renders, shows that text, the grid wears ex-pointed-at. The class alone can be left from an
+ * earlier text — `=` points, `=S` does not — while the renders of the texts typed since are still on
+ * their way on a circuit, and one of them can paint the grid otherwise before a press lands: that
+ * press is then an ordinary press, and the edit stands (ADR-0058, "On a circuit"). Found on CI, the
+ * Server host, 2026-10-01: `=SUM(` and `=SUM(1,` were followed by a press that landed after `=S`
+ * had been painted, and the positions grid took the press as its own.
+ */
+async function expectPointedAtFor(sheetGrid, grid, text) {
+    await expect(bar(sheetGrid)).toHaveValue(text);
+    await expectPointedAt(grid);
+}
+
+/**
  * Resolves as soon as the grid wears ex-pointed-at: heard from the class itself, in the task that
  * applies the render, rather than polled, so that a press can follow while keys typed before it
  * are still held by the Sheet's listener (DC-54). The observer is gone once it has answered.
@@ -60,6 +74,21 @@ async function pointedAtNow(grid) {
         }, 5000);
         observer.observe(root, { attributes: true, attributeFilter: ['class'] });
     }));
+}
+
+/**
+ * Whether the grid wore ex-pointed-at as the next press on it was made: heard on its root in the
+ * capture phase, in the press's own task, so it is what the browser painted then, whatever the
+ * core had meanwhile decided. The listener goes with that press. Read it with `.evaluate((h) => h.at)`.
+ */
+function paintedAtNextPress(grid) {
+    return grid.evaluateHandle((root) => {
+        const heard = {};
+        heard.at = new Promise((resolve) => {
+            root.addEventListener('mousedown', () => resolve(root.classList.contains('ex-pointed-at')), { capture: true, once: true });
+        });
+        return heard;
+    });
 }
 
 /** A column header of a grid, by its label. */
@@ -129,7 +158,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(');
 
         await header(table, 'PV').click({ force: true });
 
@@ -152,7 +181,7 @@ test.describe('/sheet', () => {
         // The text the press lands after, as the user sees it: a press made while keys typed before
         // it are still on their way is DC-54's, below.
         await expect(editor(grid)).toHaveValue('=1+');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=1+');
 
         await clickCell(table, 'C3');
         await expect(editor(grid)).toHaveValue(`=1+${LOOKUP_4471.slice(1)}`);
@@ -188,7 +217,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(');
 
         await clickCell(table, 'C3', { modifiers: ['Shift'] });
 
@@ -203,7 +232,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(');
         await expect(editor(grid)).toHaveValue('=SUM(');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(');
         const from = await boxOf(cell(table, 'C1'));
         const to = await boxOf(cell(table, 'C3'));
 
@@ -278,7 +307,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(1,');
         await expect(editor(grid)).toHaveValue('=SUM(1,');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(1,');
         await setRoundTrip(150);
 
         // No wait between the three.
@@ -322,13 +351,73 @@ test.describe('/sheet', () => {
         });
     }
 
+    // A press keeps the meaning the grid on screen had when it was made (ADR-0058, "On a circuit";
+    // GridPointedAt.OnPress), whichever way the core has moved since: on a circuit the grid is painted
+    // pointed at, or otherwise, a round trip after the text that decides it. Found on CI (the Server
+    // host, 2026-10-01): a press made just after `=SUM(1,` landed once `=S` had been painted, and was
+    // the positions grid's own, the Sheet's edit standing and nothing written, which the tests above
+    // now wait out (expectPointedAtFor). Here each way is made on purpose, with a round trip.
+    test('ADR-0058/DC-54: with a 150 ms round trip, a press on the positions grid still painted pointed at after the text stopped pointing writes nothing, says why, and the keys after it go on', async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly paints the end of pointing before a press can land');
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=1+');
+        await expectPointedAtFor(grid, table, '=1+');
+        const target = await boxOf(cell(table, 'C3'));
+        const painted = await paintedAtNextPress(table);
+        await setRoundTrip(150);
+
+        // `2` ends pointing in the core at once, and the grid is painted otherwise a round trip later:
+        // the press lands in between. No wait between the three.
+        await page.keyboard.type('2');
+        await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+        await page.keyboard.type('*3');
+
+        await expect(page.locator('#sheet-pointing')).toContainText('no longer stood where a Reference can go');
+        await expect(editor(grid)).toHaveValue('=1+2*3');
+        await expect(editor(grid)).toBeFocused();
+        await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
+        expect(await painted.evaluate((heard) => heard.at), 'the press was made on a grid painted pointed at').toBe(true);
+    });
+
+    test('ADR-0058/SH-35: with a 150 ms round trip, a press on the positions grid still painted otherwise after the text began to point is an ordinary press, and the edit stands', async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly paints the start of pointing before a press can land');
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'F3');
+        await page.keyboard.type('=1');
+        await expect(bar(grid)).toHaveValue('=1');
+        await expectPointedAt(table, false);
+        const target = await boxOf(cell(table, 'C3'));
+        const painted = await paintedAtNextPress(table);
+        await setRoundTrip(150);
+
+        // `+` begins pointing in the core at once, and the grid is painted pointed at a round trip
+        // later: the press lands in between. No wait between the two.
+        await page.keyboard.type('+');
+        await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
+
+        await expect(table).toBeFocused();
+        await expect(table).toHaveAttribute('aria-activedescendant', /-r2c2$/);
+        await expect(editor(grid)).toHaveValue('=1+');
+        await expectPointedAt(table, false);
+        await expect(page.locator('#sheet-pointing')).toHaveText('');
+        expect(await painted.evaluate((heard) => heard.at), 'the press was made on a grid painted otherwise').toBe(false);
+        await setRoundTrip(0);
+        // The edit stands, and a press back points.
+        await clickCell(grid, 'B2');
+        await expect(editor(grid)).toHaveValue('=1+B2');
+        await expect(editor(grid)).toBeFocused();
+    });
+
     test('ADR-0058/SH-34: =SUM(1, and a press on a PV cell outline Id and PV in their text\'s colours, dash the cell, lay the lookup on the grey, and the dashes follow the row through a sort', async ({ page }) => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
         await page.keyboard.type('=SUM(1,');
         await expect(editor(grid)).toHaveValue('=SUM(1,');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=SUM(1,');
 
         await clickCell(table, 'C3');
 
@@ -393,7 +482,7 @@ test.describe('/sheet', () => {
         await pressCell(grid, 'F3');
         await page.keyboard.type('=1+');
         await expect(editor(grid)).toHaveValue('=1+');
-        await expectPointedAt(table);
+        await expectPointedAtFor(grid, table, '=1+');
 
         await header(table, 'PV').click({ force: true });
 
@@ -692,7 +781,7 @@ test.describe('/pointing', () => {
         await pressCell(grid, 'C3');
         await page.keyboard.type('=COUNTA(');
         await expect(editor(grid)).toHaveValue('=COUNTA(');
-        await expectPointedAt(positions);
+        await expectPointedAtFor(grid, positions, '=COUNTA(');
         await header(positions, 'PV').click({ force: true });
         await expect(editor(grid)).toHaveValue('=COUNTA(Positions[PV]');
 
