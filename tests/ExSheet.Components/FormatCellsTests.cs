@@ -594,6 +594,115 @@ public class FormatCellsTests : SheetTestContext
         Assert.Equal(BorderLine.None, FormatAt(cut, "B2").Borders.Top);
     }
 
+    // ---- A code typed under Custom (the fourteenth Windows run, case 11) ----
+
+    [Theory] // ADR-0071 / SH-45, case 14-11: under ja-JP, dd-mmm-yy typed under Custom is built-in 15 and shows 05-1-26, and d-mmm-yy is a code of its own and shows 5-1-26
+    [InlineData("dd-mmm-yy", "05-1-26", true)]
+    [InlineData("d-mmm-yy", "5-1-26", false)]
+    public async Task A_typed_code_is_a_built_in_only_where_it_spells_it_case_14_11(string typed, string shown, bool builtIn)
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("ja-JP"));
+        sheet.Enter(CellAddress.Parse("A1"), "=46027");
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, sheet.ToDocument()));
+        await OpenAsync(cut, "A1");
+        await ChooseAsync(cut, ".ex-format-cells-categories", "Custom");
+
+        await cut.Find(".ex-format-cells-code").InputAsync(new ChangeEventArgs { Value = typed });
+        await OkAsync(cut);
+
+        cut.WaitForAssertion(() => Assert.False(IsOpen(cut)));
+        Assert.Equal(shown, CellText(cut, "A1"));
+        Assert.Equal(builtIn, FormatAt(cut, "A1").NumberFormat.Code == "d-mmm-yy");
+    }
+
+    // ---- A range's outer edges show as drawn (the fourteenth Windows run, case 13) ----
+
+    private static void ThickBottomOnA1(Sheet sheet) => Format(sheet, "A1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+
+    // What a cell records of its own, read back from the document: GetCellFormats answers each cell's own sides.
+    private static IReadOnlySet<CellFormat> RecordedAt(IRenderedComponent<ExSheet> cut, string range) =>
+        Sheet.Open(cut.Instance.ToDocument()).GetCellFormats(CellRange.Parse(range));
+
+    [Fact] // ADR-0071 / SH-45, case 14-13: A2 under A1's thick bottom opens with a thick top, its button pressed, though A2 records nothing
+    public async Task A2_under_a1s_thick_bottom_opens_with_a_thick_top_case_14_13()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(ThickBottomOnA1)));
+
+        await OpenAsync(cut, "A2");
+        await ShowTabAsync(cut, "Border");
+
+        Assert.Equal("true", cut.Find(".ex-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
+        Assert.Equal("3", cut.Find(".ex-format-cells-preview line[data-edge=Top]").GetAttribute("stroke-width"));
+        Assert.Equal("false", cut.Find(".ex-format-cells-edge[data-edge=Bottom]").GetAttribute("aria-pressed"));
+        Assert.Equal([CellFormat.Default], RecordedAt(cut, "A2"));
+    }
+
+    [Theory] // ADR-0071 / SH-45, case 14-13: over several ranges, each range's top shows the line drawn along it — the same over A2 and C2, and differing over A2 and E2
+    [InlineData("C2", "true")]
+    [InlineData("E2", "mixed")]
+    public async Task Each_ranges_outer_edge_shows_as_drawn_case_14_13(string other, string pressed)
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(sheet =>
+        {
+            ThickBottomOnA1(sheet);
+            Format(sheet, "C1", new CellFormatChange { Borders = new BorderChange { Bottom = Thick } });
+        })));
+
+        await GoToAsync(cut, "A2");
+        await CtrlClickAsync(cut, other);
+        Assert.True(await cut.Instance.OpenFormatCellsAsync());
+        cut.WaitForAssertion(() => Assert.True(IsOpen(cut)));
+        await ShowTabAsync(cut, "Border");
+
+        Assert.Equal(pressed, cut.Find(".ex-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
+    }
+
+    // A press with Ctrl on a cell, which adds it to the Selection as a range of its own.
+    private static async Task CtrlClickAsync(IRenderedComponent<ExSheet> cut, string address)
+    {
+        var at = CellAddress.Parse(address);
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs
+        {
+            Button = 0, Buttons = 1, CtrlKey = true,
+            OffsetX = HeadingWidth(cut) + at.Column * SheetColumns.DefaultWidthPx + 5,
+            OffsetY = at.Row * ExSheet.DefaultRowHeightPx + 5,
+        });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0 });
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-13: OK with the shown top left alone sets nothing: A2 still records no top, and no undo step is added
+    public async Task Ok_with_the_shown_top_left_alone_sets_nothing_case_14_13()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(ThickBottomOnA1)));
+        await OpenAsync(cut, "A2");
+        await ShowTabAsync(cut, "Border");
+
+        await OkAsync(cut);
+
+        cut.WaitForAssertion(() => Assert.False(IsOpen(cut)));
+        Assert.False(cut.Instance.CanUndo);
+        Assert.Equal([CellFormat.Default], RecordedAt(cut, "A2"));
+        Assert.Equal(Thick, FormatAt(cut, "A1").Borders.Bottom);
+    }
+
+    [Fact] // ADR-0071 / SH-45, case 14-13 (a reading: no run pressed it): taking the shown top away clears A1's bottom too, so no line is drawn there
+    public async Task Taking_the_shown_top_away_clears_a1s_bottom_case_14_13()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(ThickBottomOnA1)));
+        await OpenAsync(cut, "A2");
+        await ShowTabAsync(cut, "Border");
+
+        await cut.FindAll(".ex-format-cells-line-column input").Single(i => i.GetAttribute("aria-label") == "Thick").ChangeAsync(new ChangeEventArgs { Value = "on" });
+        await cut.Find(".ex-format-cells-edge[data-edge=Top]").ClickAsync(new MouseEventArgs());
+        Assert.Equal("false", cut.Find(".ex-format-cells-edge[data-edge=Top]").GetAttribute("aria-pressed"));
+        await OkAsync(cut);
+
+        cut.WaitForAssertion(() => Assert.False(IsOpen(cut)));
+        Assert.Equal(CellBorders.None, FormatAt(cut, "A1").Borders);
+        Assert.Equal(CellBorders.None, FormatAt(cut, "A2").Borders);
+        Assert.True(cut.Instance.CanUndo);
+    }
+
     // ---- A Chrome that draws it in a frame of its own (ADR-0071, ADR-0010's note of 2026-09-30) ----
 
     private sealed class OwnFrameChrome : ISheetChrome

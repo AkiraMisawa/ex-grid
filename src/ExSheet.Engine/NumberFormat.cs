@@ -218,8 +218,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// recorded in its invariant code and is not the pattern it spells.
     /// <list type="bullet">
     /// <item><c>d-mmm-yy</c> writes the day with two digits where the culture's short date does, as
-    /// the built-in <c>d-mmm</c> does: <c>05-Jan-26</c> under en-GB, <c>5-Jan-26</c> under en-US.
-    /// Under ja-JP the month is its number, <c>05-1-26</c>, as Excel showed it there.</item>
+    /// the built-in <c>d-mmm</c> does: <c>05-Jan-26</c> under en-GB, <c>5-Jan-26</c> under en-US,
+    /// and <c>05-1-26</c> under ja-JP, where <c>mmm</c> is the month's number
+    /// (<see cref="AbbreviatedMonthNamesOf"/>).</item>
     /// <item><c>h:mm</c> writes the hour with two digits where the culture's short time does:
     /// <c>09:05</c> under en-GB, <c>9:05</c> under en-US and ja-JP.</item>
     /// </list>
@@ -230,9 +231,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         if (string.Equals(Code, DayMonthYearCode, StringComparison.OrdinalIgnoreCase))
         {
             var day = culture.DateTimeFormat.ShortDatePattern.Contains("dd", StringComparison.Ordinal) ? "dd" : "d";
-            // Excel's own local code there reads dd-mmm-yy, yet it showed the month as a number.
-            var month = culture.Name == "ja-JP" ? "m" : "mmm";
-            code = $"{day}-{month}-yy";
+            code = $"{day}-mmm-yy";
         }
         else if (string.Equals(Code, HourMinuteCode, StringComparison.OrdinalIgnoreCase))
         {
@@ -298,19 +297,117 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>
-    /// The abbreviated month names Excel shows under <paramref name="culture"/>: the culture's own,
-    /// with the one difference found between the data .NET reads and Windows' regional settings.
-    /// The ICU data on Linux (Ubuntu 24.04's) abbreviates September as <c>Sept</c> under en-GB and
-    /// its kin, where Windows, which Excel reads, and macOS write <c>Sep</c>. Windows' is taken
-    /// everywhere, so a Sheet's text does not differ by the machine it ran on.
+    /// The built-ins shown in the Sheet culture's own form (<see cref="LocalIn"/>): the short date
+    /// and the short date with a time (14 and 22), the day and month (16), the day, month and year
+    /// (15), the hour and minute (20), and the currency (6 and 8).
+    /// </summary>
+    private static readonly NumberFormat[] LocalisedBuiltIns =
+        [ShortDate, ShortDateTime, Parse(DayMonthCode), Parse(DayMonthYearCode), Parse(HourMinuteCode), Currency, WholeCurrency];
+
+    /// <summary>
+    /// The form this format shows in under <paramref name="culture"/> where it is a built-in shown in
+    /// the culture's own form; <see langword="null"/> for any other format, or where the culture's
+    /// form is the code itself.
+    /// </summary>
+    private NumberFormat? LocalIn(CultureInfo culture) => ShortDateIn(culture) ?? DateOrTimeIn(culture) ?? CurrencyIn(culture);
+
+    /// <summary>
+    /// The code as Format Cells' Custom box spells it under <paramref name="culture"/>, as Excel's
+    /// local code does (ADR-0071; the fourteenth Windows run, case 11). A built-in shown in the
+    /// culture's own form is spelled in that form: the built-in <c>d-mmm-yy</c> is
+    /// <c>dd-mmm-yy</c> under ja-JP and en-GB. A code of its own that spells such a built-in's code
+    /// (<see cref="TryParseLocal"/>) is spelled as it was typed, and any other code as it is.
+    /// <see cref="TryParseLocal"/> reads the spelling back as this format under the same culture.
+    /// The one exception is a code of its own under a culture that spells the built-in the same way,
+    /// where the two show alike: typed again, it is the built-in, as the rule reads it.
+    /// </summary>
+    public string LocalCode(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        return LocalIn(culture)?.Code ?? BuiltInSpelled(Code) ?? Code;
+    }
+
+    /// <summary>
+    /// Reads a code typed into Format Cells' Custom box under <paramref name="culture"/> (ADR-0071;
+    /// the fourteenth Windows run, case 11). A code is a built-in only when it spells that
+    /// built-in's code under the culture (<see cref="LocalCode"/>), in any case. Under ja-JP,
+    /// <c>dd-mmm-yy</c> is the built-in <c>d-mmm-yy</c> and shows <c>05-1-26</c>, and
+    /// <c>d-mmm-yy</c> is a code of its own and shows <c>5-1-26</c>, as Excel showed them. Under
+    /// en-US the two spellings are one, and <c>d-mmm-yy</c> is the built-in.
+    /// </summary>
+    /// <remarks>
+    /// A code of its own that spells a built-in's invariant code is recorded with its separators
+    /// escaped, <c>d\-mmm\-yy</c>: the same code to Excel, shown as it is spelled under every
+    /// culture, and no built-in's, so a Sheet Document keeps it apart from the built-in. Any other
+    /// code is read as <see cref="TryParse"/> reads it.
+    /// </remarks>
+    public static bool TryParseLocal(string code, CultureInfo culture, [NotNullWhen(true)] out NumberFormat? format, [NotNullWhen(false)] out string? reason)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        if (!TryParse(code, out format, out reason)) return false;
+        foreach (var builtIn in LocalisedBuiltIns)
+        {
+            if (string.Equals(format.Code, builtIn.LocalCode(culture), StringComparison.OrdinalIgnoreCase))
+            {
+                format = builtIn;
+                return true;
+            }
+        }
+        // The engine would show it as the built-in it spells, in the culture's own form.
+        if (format.LocalIn(culture) is not null) format = Parse(OwnSpelling(format.Code));
+        return true;
+    }
+
+    /// <summary>
+    /// A built-in's invariant code as a code of its own: each separator escaped, so that it shows
+    /// as it is spelled and is no built-in's. A built-in's code holds no quote or backslash.
+    /// </summary>
+    private static string OwnSpelling(string builtIn)
+    {
+        var spelled = new StringBuilder(builtIn.Length * 2);
+        foreach (var c in builtIn)
+        {
+            if (c is '-' or '/' or ':' or '$') spelled.Append('\\');
+            spelled.Append(c);
+        }
+        return spelled.ToString();
+    }
+
+    /// <summary>The built-in's code a code of its own spells (<see cref="OwnSpelling"/>), or <see langword="null"/> when it is not one.</summary>
+    private static string? BuiltInSpelled(string code)
+    {
+        if (!code.Contains('\\')) return null;
+        var unescaped = code.Replace("\\", "", StringComparison.Ordinal);
+        return string.Equals(OwnSpelling(unescaped), code, StringComparison.Ordinal)
+            && LocalisedBuiltIns.Any(builtIn => string.Equals(builtIn.Code, unescaped, StringComparison.OrdinalIgnoreCase))
+            ? unescaped
+            : null;
+    }
+
+    /// <summary>
+    /// The abbreviated month names Excel shows under <paramref name="culture"/>, which <c>mmm</c>
+    /// shows: the culture's own, with the two differences found between the ICU data .NET reads and
+    /// Windows' regional settings, which Excel reads. Windows' are taken everywhere, so a Sheet's
+    /// text does not differ by the machine it ran on.
+    /// <list type="bullet">
+    /// <item>ICU on Linux (Ubuntu 24.04's) abbreviates September as <c>Sept</c> under en-GB and its
+    /// kin, where Windows and macOS write <c>Sep</c> (the twelfth Windows run, case 19).</item>
+    /// <item>ICU abbreviates a Japanese month as its full name, <c>1月</c>, on every platform, where
+    /// Windows writes the month's number alone, <c>1</c>. So under ja-JP <c>mmm</c> shows the month as
+    /// a number with no leading zero, in every code, and <c>mmmm</c> shows <c>1月</c> (the fourteenth
+    /// Windows run, cases 10 and 11).</item>
+    /// </list>
     /// </summary>
     public static string[] AbbreviatedMonthNamesOf(CultureInfo culture)
     {
         ArgumentNullException.ThrowIfNull(culture);
         var names = (string[])culture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+        var japanese = culture.TwoLetterISOLanguageName == "ja";
         for (var i = 0; i < names.Length; i++)
         {
+            var number = (i + 1).ToString(CultureInfo.InvariantCulture);
             if (names[i] == "Sept") names[i] = "Sep";
+            else if (japanese && names[i] == number + "月") names[i] = number;
         }
         return names;
     }
@@ -389,7 +486,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     /// </summary>
     internal (string Text, bool CannotShow, NumberFormatColour? Colour) Format(Value value, CultureInfo culture)
     {
-        if (value.Kind == ValueKind.Number && (ShortDateIn(culture) ?? DateOrTimeIn(culture) ?? CurrencyIn(culture)) is { } local) return local.Format(value, culture);
+        if (value.Kind == ValueKind.Number && LocalIn(culture) is { } local) return local.Format(value, culture);
         switch (value.Kind)
         {
             case ValueKind.Boolean:

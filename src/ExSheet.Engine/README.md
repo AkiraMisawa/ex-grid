@@ -191,10 +191,20 @@ step.Undo();                                         // Entries, formats and Ref
   `GetBorders` one part of it. Its Borders are the edges as shown, the same from either cell:
   where both cells record a line on an edge, the upper cell's (the left cell's) is shown, and
   otherwise whichever records one. `GetCellFormats(range)`, what Format Cells reads, answers each
-  cell's own sides instead, as Excel's Format Cells compares them. `GetRowNumberFormat`, `GetColumnNumberFormat` and their
+  cell's own sides instead, as Excel's Format Cells compares them inside a range, and
+  `GetEdgeLines(range)` the lines drawn along the range's outer edges, as Excel's Format Cells shows
+  them. `GetRowNumberFormat`, `GetColumnNumberFormat` and their
   alignment counterparts answer what a level records. A colour (`CellColour`) is Automatic or RGB; a Fill is RGB or none; a Border
   is one of Excel's thirteen line styles and a colour. The per-cell forms taking addresses keep
   working.
+- **Built-ins in the culture's own form.** A Number Format is written in Excel's invariant codes,
+  and Excel's built-in short date, date with the month's name, hour and minute and currency show
+  in the Sheet culture's own form: `05-Jan-26`, `09:05` and `£5.00` under en-GB. Under ja-JP
+  `mmm` is the month's number in every code, as Windows names the months there (`05-1-26`).
+  `NumberFormat.LocalCode(culture)` spells a format as the culture's Format Cells does, and
+  `NumberFormat.TryParseLocal(code, culture, …)` reads a code typed there: it is a built-in only
+  when it spells that built-in's code under the culture, so under ja-JP `dd-mmm-yy` is the
+  built-in `d-mmm-yy`, and `d-mmm-yy` typed there is a code of its own, recorded as `d\-mmm\-yy`.
 - **Copy and paste.** `Sheet.Copy(range)` gives the Entries (`SheetBlock`) for a paste inside
   the Sheet, where relative References shift by the distance pasted, and the Values for anywhere
   else: `Text` as the cells show them, `Html` unformatted. `SheetEdit.PasteText` reads each

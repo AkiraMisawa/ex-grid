@@ -93,3 +93,14 @@ public readonly record struct CellBorders(BorderLine Top = default, BorderLine B
     /// <summary>No line on any side.</summary>
     public static CellBorders None => default;
 }
+
+/// <summary>
+/// The lines drawn along a range's four outer edges, each line once per edge
+/// (<see cref="Sheet.GetEdgeLines"/>): what Format Cells shows on a range's outline (ADR-0071; the
+/// fourteenth Windows run, case 13).
+/// </summary>
+/// <param name="Top">The lines along the top edge.</param>
+/// <param name="Bottom">The lines along the bottom edge.</param>
+/// <param name="Left">The lines along the left edge.</param>
+/// <param name="Right">The lines along the right edge.</param>
+public sealed record RangeEdgeLines(IReadOnlySet<BorderLine> Top, IReadOnlySet<BorderLine> Bottom, IReadOnlySet<BorderLine> Left, IReadOnlySet<BorderLine> Right);
