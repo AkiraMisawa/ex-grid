@@ -60,12 +60,13 @@ async function pressAt(grid, address) {
 }
 
 /**
- * Puts a button straight before and straight after `root`, so a Tab or Shift+Tab out of the grid has
- * somewhere to land that is known; alterPage takes them out as the test ends (ADR-0056).
+ * Puts a button straight before and straight after the `index`-th grid root `rootSelector` finds, so
+ * a Tab or Shift+Tab out of the grid has somewhere to land that is known; alterPage takes them out as
+ * the test ends (ADR-0056).
  */
-async function surround(page, rootSelector) {
-    await alterPage(page, (selector) => {
-        const root = document.querySelector(selector);
+async function surround(page, rootSelector, index = 0) {
+    await alterPage(page, ({ selector, at }) => {
+        const root = document.querySelectorAll(selector)[at];
         const before = document.createElement('button');
         before.id = 'before-grid';
         before.textContent = 'before';
@@ -78,7 +79,7 @@ async function surround(page, rootSelector) {
             before.remove();
             after.remove();
         };
-    }, rootSelector);
+    }, { selector: rootSelector, at: index });
 }
 
 /** Whether DOM focus is anywhere inside `grid`. */
@@ -489,6 +490,77 @@ test('ADR-0080 / ADR-0035 / ED-30: over a cell that does not edit the Keyboard F
     await page.keyboard.press('Escape');
     await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
 });
+
+// The header's ▾ buttons are not tab stops, on any grid, under either Chrome (ADR-0080, decided with
+// the user 2026-10-02; A11Y-4): the field stands after the header in the markup, and a Tab into a grid
+// that edits went through every column's ▾ before the first cell. /features' first grid edits and
+// shows a ▾ per column; its second shows them and edits nothing. A press still opens the popover.
+for (const chrome of ['builtin', 'mud']) {
+    test.describe(`/features under the ${chrome} Chrome`, () => {
+        const grids = (page) => page.locator('.ex-grid');
+
+        test.beforeEach(async ({ page }) => {
+            await page.goto(chrome === 'builtin' ? '/features' : `/features?chrome=${chrome}`);
+            await expect(grids(page)).toHaveCount(2);
+            await expect(grids(page).first().locator('.ex-row').first()).toBeVisible();
+        });
+
+        test('A11Y-4 / ADR-0080: Tab from before the first grid, which edits, reaches its field past every ▾, and the next Tab leaves the grid; Shift+Tab likewise', async ({ page }) => {
+            const grid = grids(page).first();
+            const menus = grid.locator('.ex-header .ex-menu-button');
+            expect(await menus.count()).toBeGreaterThan(0);
+            for (const tabindex of await menus.evaluateAll((buttons) => buttons.map((b) => b.getAttribute('tabindex')))) {
+                expect(tabindex).toBe('-1');
+            }
+            await surround(page, '.ex-grid', 0);
+
+            await page.locator('#before-grid').focus();
+            await page.keyboard.press('Tab');
+            await expect(keyField(grid)).toBeFocused();
+            // Tab is the grid's until Escape releases it (ADR-0012); the released Tab leaves.
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            await page.keyboard.press('Tab');
+            await expect(page.locator('#after-grid')).toBeFocused();
+
+            await page.keyboard.press('Shift+Tab');
+            await expect(keyField(grid)).toBeFocused();
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            await page.keyboard.press('Shift+Tab');
+            await expect(page.locator('#before-grid')).toBeFocused();
+
+            // Pressed, the ▾ still opens the column's popover.
+            await menus.nth(1).click();
+            await expect(grid.locator('.ex-popover [role=menu]')).toBeVisible();
+            await page.keyboard.press('Escape');
+            await expect(grid.locator('.ex-popover')).toHaveCount(0);
+        });
+
+        test('A11Y-4 / ADR-0080: on the second grid, which edits nothing, Tab and Shift+Tab reach its root and pass no ▾ on the way out', async ({ page }) => {
+            const grid = grids(page).nth(1);
+            await expect(grid.locator('.ex-header .ex-menu-button').first()).toBeAttached();
+            await expect(keyField(grid)).toHaveCount(0);
+            await surround(page, '.ex-grid', 1);
+
+            await page.locator('#before-grid').focus();
+            await page.keyboard.press('Tab');
+            await expect(grid).toBeFocused();
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            await page.keyboard.press('Tab');
+            await expect(page.locator('#after-grid')).toBeFocused();
+
+            // From after the grid, Shift+Tab lands on the root, not on its last ▾.
+            await page.keyboard.press('Shift+Tab');
+            await expect(grid).toBeFocused();
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            await page.keyboard.press('Shift+Tab');
+            await expect(page.locator('#before-grid')).toBeFocused();
+        });
+    });
+}
 
 // A display-only grid has no field, and keeps the keyboard, the tab stop, the ring and
 // aria-activedescendant on its root, as before (ADR-0080). /wide edits nothing and shows no menu

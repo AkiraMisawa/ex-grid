@@ -124,9 +124,14 @@
                        diff a new handler per render — re-registered and sent to the browser
                        for every header button on every render of the root, which is every
                        vertical scroll frame (PF-3). *@
+                    @* The ▾ is pressed, never reached by Tab (ADR-0080, decided with the user
+                       2026-10-02), as the action buttons are (ADR-0037): the Keyboard Field stands
+                       after the header in the markup, and a Tab into the grid went through every
+                       column's ▾ before the first cell. Alt+↓ opens the column's popover by key
+                       (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
                     <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                         {@HeaderMark}@if (ShowMenuButtons)
-                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                        {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                         {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
@@ -139,7 +144,7 @@
                     {
                         <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                             {@HeaderMark}@if (ShowMenuButtons)
-                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                            {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                             {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                     }
                 }

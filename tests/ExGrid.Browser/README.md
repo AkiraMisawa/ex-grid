@@ -460,7 +460,8 @@ nobody had asked for. What that means when writing a test:
   two compositions behind 150 ms appended in order; copy and paste from the field; a field per
   Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
   from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
-  likewise; the release of Tab ending when DOM focus leaves, on a grid with a field and one without
+  likewise; on `/features` under both Chromes, no column's ▾ reached by Tab or Shift+Tab, on the
+  grid that edits or the one that does not, and a press on one still opening its popover; the release of Tab ending when DOM focus leaves, on a grid with a field and one without
   (KB-8); the root's ring after Tab and not after a click (KB-12); and over the DevTools protocol's
   `Accessibility` domain, the focused node the field and its active descendant the Focus cell, or
   the chosen action's button while Interactive (A11Y-21). A real IME is the sixteenth Windows run's.

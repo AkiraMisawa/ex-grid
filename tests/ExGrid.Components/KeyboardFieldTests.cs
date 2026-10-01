@@ -84,6 +84,56 @@ public class KeyboardFieldTests : GridTestContext
         Assert.Equal("0", cut.Find(".ex-grid").GetAttribute("tabindex"));
     }
 
+    /// <summary>A grid whose headers carry the ▾ (a sort is listened to), with its first column
+    /// pinned, so both of the header's paths paint one.</summary>
+    private IRenderedComponent<ExGrid<TestRow>> RenderGridWithMenus(bool editable)
+        => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, BookAndAmount(editable))
+            .Add(g => g.RowHeight, RowHeightPx)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.PinnedColumnCount, 1)
+            .Add(g => g.OnSortChanged, (IReadOnlyList<SortSpec> _) => { }));
+
+    /// <summary>The elements the browser's Tab would stop on: the natively focusable ones and any
+    /// with a tabindex, less those taken out of the sequence by tabindex -1.</summary>
+    private static List<AngleSharp.Dom.IElement> TabStops(IRenderedComponent<ExGrid<TestRow>> cut)
+        => [.. cut.FindAll("button, input, select, textarea, a[href], [tabindex]")
+            .Where(element => element.GetAttribute("tabindex") is not { } index || !index.StartsWith('-'))
+            .Where(element => !element.HasAttribute("disabled"))];
+
+    [Theory] // ADR-0080 (2026-10-02) / ADR-0033 / A11Y-4: the header's ▾ buttons are not tab stops, on a grid that edits and on one that does not; the grid's one tab stop is its field, or its root
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ADR0080_the_headers_menu_buttons_are_out_of_the_tab_sequence(bool editable)
+    {
+        var cut = RenderGridWithMenus(editable);
+
+        var menus = cut.FindAll(".ex-menu-button");
+        Assert.Equal(2, menus.Count);
+        Assert.All(menus, button => Assert.Equal("-1", button.GetAttribute("tabindex")));
+        var stop = Assert.Single(TabStops(cut));
+        Assert.Equal(editable ? "ex-key-field" : "ex-grid", stop.ClassList[0]);
+    }
+
+    [Fact] // ADR-0080 (2026-10-02) / ADR-0044 / FL-12: out of the tab sequence, the ▾ is still pressed, and Alt+↓ reaches the same popover by key
+    public async Task ADR0080_a_press_and_alt_down_still_open_the_columns_popover()
+    {
+        var cut = RenderGridWithMenus(editable: true);
+
+        await cut.FindAll(".ex-menu-button")[1].ClickAsync(new MouseEventArgs());
+        Assert.Equal("Amount", cut.Find(".ex-popover [role=menu]").GetAttribute("aria-label"));
+        // Escape in the popover, as the capture listener forwards a descendant's (ADR-0039).
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Escape", false, false, false, false, false, fromDescendant: true));
+        Assert.Empty(cut.FindAll(".ex-popover"));
+
+        await ClickCellAsync(cut, 150, 10); // row 0, Amount
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, true, false, false));
+        Assert.Equal("Amount", cut.Find(".ex-popover [role=menu]").GetAttribute("aria-label"));
+    }
+
     [Fact] // ADR-0080 / ADR-0033 / A11Y-20: a Prerendered grid that edits has no field and no tab stop
     public void ADR0080_a_prerendered_grid_that_edits_has_no_field_and_no_tab_stop()
     {
