@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Globalization;
 
 namespace ExGrid.Data.Arrow;
 
@@ -30,13 +31,25 @@ internal static class IpcFrames
     /// before it allocates what their first four bytes would claim.</summary>
     private const int MaxSchemaLength = 64 << 20;
 
+    /// <summary>The smallest metadata a message has: a flatbuffer <c>Message</c> padded to eight bytes.</summary>
+    private const int MinMetadataLength = 8;
+
     /// <summary>The bytes are not Arrow at all.</summary>
     public static SnapshotException NotArrow()
         => new("The bytes are not an Arrow IPC stream or file: they begin with neither an IPC message nor ARROW1.");
 
+    /// <summary>The bytes are gzip's, as an HTTP response compressed with gzip is before it is undone.</summary>
+    public static SnapshotException Gzipped()
+        => new("The bytes are compressed with gzip, not an Arrow IPC stream or file: undo the compression first. "
+            + "An HttpClient does when its handler's AutomaticDecompression includes GZip.");
+
     /// <summary>The stream holds no schema.</summary>
     public static SnapshotException Empty()
         => new("The Arrow stream is empty: it holds no schema.");
+
+    /// <summary>The bytes end inside what would be a stream's first message, its schema.</summary>
+    public static SnapshotException EndsInFirstMessage()
+        => new("The bytes end inside their first message: they are not an Arrow IPC stream, or they are one cut short; a stream is read only whole.");
 
     /// <summary>The stream was cut short.</summary>
     public static SnapshotException CutShort()
@@ -45,13 +58,16 @@ internal static class IpcFrames
     /// <summary>
     /// The length of a stream's first message — its framing and its metadata, the schema's — read
     /// from <paramref name="head"/>, the stream's first eight bytes or all it has, before Arrow reads
-    /// it. The metadata's length must be one a schema can have.
+    /// it. The metadata's length must be one a schema can have, so the length is always more than
+    /// eight bytes.
     /// </summary>
     /// <exception cref="SnapshotException">The stream is empty, ends at once, or is not Arrow.</exception>
     public static int FirstMessageLength(ReadOnlySpan<byte> head)
     {
         if (head.IsEmpty)
             throw Empty();
+        if (head.Length >= 2 && head[0] == 0x1F && head[1] == 0x8B)
+            throw Gzipped();
         if (head.Length < 4)
             throw NotArrow();
         var framing = 4;
@@ -65,7 +81,7 @@ internal static class IpcFrames
         }
         if (length == 0)
             throw Empty();
-        if (length is < 0 or > MaxSchemaLength)
+        if (length is < MinMetadataLength or > MaxSchemaLength)
             throw NotArrow();
         return framing + length;
     }
@@ -92,46 +108,51 @@ internal static class IpcFrames
     }
 
     /// <summary>A whole stream's messages, in order, up to its end-of-stream marker.</summary>
-    /// <exception cref="SnapshotException">The bytes do not begin with a schema message, or the stream
-    /// ends before its marker.</exception>
+    /// <exception cref="SnapshotException">The bytes do not begin with a schema message, a message is
+    /// malformed, or the stream ends before its marker.</exception>
     public static List<IpcMessage> Messages(ReadOnlySpan<byte> stream)
     {
-        FirstMessageLength(stream[..Math.Min(8, stream.Length)]);
+        var firstLength = FirstMessageLength(stream[..Math.Min(8, stream.Length)]);
+        if (firstLength > stream.Length)
+            throw EndsInFirstMessage();
+        CheckSchema(stream[..firstLength]);
         var messages = new List<IpcMessage>();
         var position = 0;
         while (true)
         {
-            var first = messages.Count == 0;
             var start = position;
             if (stream.Length - position < 4)
-                throw first ? NotArrow() : CutShort();
+                throw CutShort();
             var length = BinaryPrimitives.ReadInt32LittleEndian(stream[position..]);
             position += 4;
             if (length == Continuation)
             {
                 if (stream.Length - position < 4)
-                    throw first ? NotArrow() : CutShort();
+                    throw CutShort();
                 length = BinaryPrimitives.ReadInt32LittleEndian(stream[position..]);
                 position += 4;
             }
+            // The first message is a schema, so this ends a stream that holds one.
             if (length == 0)
-                return first ? throw Empty() : messages;
-            if (length < 0 || (first && length > MaxSchemaLength))
-                throw NotArrow();
+                return messages;
+            if (length < 0)
+                throw Malformed(start, "claims a negative length");
             if (length > stream.Length - position)
                 throw CutShort();
-            if (!TryReadMessage(stream.Slice(position, length), out var kind, out var bodyLength, out var rows)
-                || (first && kind != SchemaMessage))
-            {
-                throw NotArrow();
-            }
+            if (!TryReadMessage(stream.Slice(position, length), out var kind, out var bodyLength, out var rows))
+                throw Malformed(start, "is not a message");
             position += length;
-            if (bodyLength < 0 || bodyLength > stream.Length - position)
+            if (bodyLength < 0)
+                throw Malformed(start, "claims a negative body");
+            if (bodyLength > stream.Length - position)
                 throw CutShort();
             position += (int)bodyLength;
             messages.Add(new IpcMessage(start, position, kind, rows));
         }
     }
+
+    private static SnapshotException Malformed(int at, string what)
+        => new(string.Create(CultureInfo.InvariantCulture, $"The Arrow stream is malformed: the message at byte {at:N0} {what}."));
 
     /// <summary>A message's kind, its body's length and, for a record batch, its rows.</summary>
     private static bool TryReadMessage(ReadOnlySpan<byte> metadata, out byte kind, out long bodyLength, out long rows)

@@ -25,19 +25,21 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
         cancellationToken.ThrowIfCancellationRequested();
         long? total = stream.CanSeek ? stream.Length - stream.Position : null;
         var head = new byte[8];
-        var got = 0;
-        while (got < head.Length)
-        {
-            var read = await stream.ReadAsync(head.AsMemory(got), cancellationToken).ConfigureAwait(false);
-            if (read == 0)
-                break;
-            got += read;
-        }
+        var got = await stream.ReadAtLeastAsync(head, head.Length, throwOnEndOfStream: false, cancellationToken).ConfigureAwait(false);
         if (head.AsSpan(0, got).StartsWith(FileMagic))
             return await ReadFileAsync(stream, head, got).ConfigureAwait(false);
 
-        IpcFrames.CheckStart(head.AsSpan(0, got));
-        var source = new TrackingStream(head.AsMemory(0, got), stream);
+        // The first message whole — a stream's schema — is checked before Arrow reads a byte, so
+        // bytes that are not Arrow are refused as such, not by whatever Arrow makes of them.
+        var length = IpcFrames.FirstMessageLength(head.AsSpan(0, got));
+        var first = new byte[length];
+        head.AsSpan(0, got).CopyTo(first);
+        var rest = await stream.ReadAtLeastAsync(first.AsMemory(got), length - got, throwOnEndOfStream: false, cancellationToken).ConfigureAwait(false);
+        if (got + rest < length)
+            throw IpcFrames.EndsInFirstMessage();
+        IpcFrames.CheckSchema(first);
+
+        var source = new TrackingStream(first, stream);
         using var reader = new ArrowStreamReader(source, codecs, leaveOpen: true);
         return await ReadBatchesAsync(reader, _ => source.BytesRead, total, null, () => source.ReachedEnd).ConfigureAwait(false);
     }
