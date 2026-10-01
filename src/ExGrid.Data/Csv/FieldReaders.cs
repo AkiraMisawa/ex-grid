@@ -451,13 +451,31 @@ internal sealed class DateFieldReader : FieldReader
 }
 
 /// <summary>A Boolean, by the column's spellings of true and false, matched ignoring case.</summary>
-internal sealed class BooleanFieldReader(CsvColumn column, IReadOnlyList<string> blankTexts, BooleanColumnBuilder builder, IFieldContext context)
-    : FieldReader(column, blankTexts, context, false)
+internal sealed class BooleanFieldReader : FieldReader
 {
-    private readonly string[] trues = [.. column.TrueText ?? CsvColumn.ExcelTrue];
-    private readonly string[] falses = [.. column.FalseText ?? CsvColumn.ExcelFalse];
+    private readonly BooleanColumnBuilder builder;
+    private readonly string[] trues;
+    private readonly string[] falses;
+
+    /// <summary>Each spelling's bytes, in capitals, when every spelling is ASCII; otherwise null.</summary>
+    private readonly byte[][]? asciiTrues;
+    private readonly byte[][]? asciiFalses;
     private char[] chars = new char[16];
     private bool[] values = [];
+
+    public BooleanFieldReader(CsvColumn column, IReadOnlyList<string> blankTexts, BooleanColumnBuilder builder, IFieldContext context)
+        : base(column, blankTexts, context, false)
+    {
+        this.builder = builder;
+        trues = [.. column.TrueText ?? CsvColumn.ExcelTrue];
+        falses = [.. column.FalseText ?? CsvColumn.ExcelFalse];
+        // In UTF-8 an ASCII byte is the character it is in ASCII; Shift-JIS is left to its decoder.
+        if (context.Encoding == CsvEncoding.Utf8 && trues.Concat(falses).All(s => System.Text.Ascii.IsValid(s)))
+        {
+            asciiTrues = [.. trues.Select(s => System.Text.Encoding.ASCII.GetBytes(s.ToUpperInvariant()))];
+            asciiFalses = [.. falses.Select(s => System.Text.Encoding.ASCII.GetBytes(s.ToUpperInvariant()))];
+        }
+    }
 
     public override int Read(in CsvRecords records, int field, int rows, out SnapshotException? refusal)
     {
@@ -473,7 +491,32 @@ internal sealed class BooleanFieldReader(CsvColumn column, IReadOnlyList<string>
                 batch[r] = false;
                 continue;
             }
-            var value = CsvText.Trim(content);
+            var value = Trimmed(content);
+            // An ASCII field matches an ASCII spelling ignoring case as its bytes do, in capitals; any
+            // other is decoded, and matched as text.
+            if (asciiTrues is not null)
+            {
+                var match = MatchesAscii(value, asciiTrues);
+                if (match > 0)
+                {
+                    batch[r] = true;
+                    continue;
+                }
+                if (match == 0)
+                {
+                    match = MatchesAscii(value, asciiFalses!);
+                    if (match > 0)
+                    {
+                        batch[r] = false;
+                        continue;
+                    }
+                    if (match == 0)
+                    {
+                        refusal = Refuse(r, content);
+                        return r;
+                    }
+                }
+            }
             if (CsvText.TryDecode(Context.Encoding, value, ref chars, out var length))
             {
                 var text = chars.AsSpan(0, length);
@@ -488,13 +531,47 @@ internal sealed class BooleanFieldReader(CsvColumn column, IReadOnlyList<string>
                     continue;
                 }
             }
-            refusal = Context.Refuse(r, Name, $"{Show(content)} is not a spelling of true or false ({string.Join(", ", trues.Concat(falses).Select(s => $"'{s}'"))})");
+            refusal = Refuse(r, content);
             return r;
         }
         builder.Append(batch.AsSpan(0, rows), Blanks(rows));
         refusal = null;
         return rows;
     }
+
+    /// <summary>Whether ASCII <paramref name="value"/> is one of <paramref name="spellings"/> ignoring
+    /// case: 1 when it is, 0 when it is not, and -1 when it is not ASCII and so cannot be told here.</summary>
+    private static int MatchesAscii(ReadOnlySpan<byte> value, byte[][] spellings)
+    {
+        foreach (var spelling in spellings)
+        {
+            if (spelling.Length != value.Length)
+                continue;
+            var i = 0;
+            for (; i < value.Length; i++)
+            {
+                var b = value[i];
+                if (b >= 0x80)
+                    return -1;
+                if ((uint)(b - (byte)'a') <= 'z' - 'a')
+                    b -= 0x20;
+                if (b != spelling[i])
+                    break;
+            }
+            if (i == value.Length)
+                return 1;
+        }
+        // A non-ASCII byte may stand where no spelling of the same length looked.
+        foreach (var b in value)
+        {
+            if (b >= 0x80)
+                return -1;
+        }
+        return 0;
+    }
+
+    private SnapshotException Refuse(int row, ReadOnlySpan<byte> content)
+        => Context.Refuse(row, Name, $"{Show(content)} is not a spelling of true or false ({string.Join(", ", trues.Concat(falses).Select(s => $"'{s}'"))})");
 
     private static bool Matches(ReadOnlySpan<char> text, string[] spellings)
     {
