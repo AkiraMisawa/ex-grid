@@ -24,10 +24,16 @@ namespace ExGrid.Data.Arrow;
 public static class SnapshotArrow
 {
     /// <summary>
+    /// The media type of an Arrow IPC stream, as IANA registers it — what a server answers a Snapshot
+    /// with: <c>application/vnd.apache.arrow.stream</c>.
+    /// </summary>
+    public const string StreamMediaType = "application/vnd.apache.arrow.stream";
+
+    /// <summary>
     /// Reads a Snapshot from an Arrow IPC stream, or from an Arrow file (<c>.arrow</c>, Feather 2),
     /// told apart by the file's leading <c>ARROW1</c>. Record batch by record batch, in slices that
-    /// yield between them and report progress (<paramref name="options"/>); the stream is read to its
-    /// end and left open.
+    /// yield between them and report progress (<paramref name="options"/>). A stream is read from its
+    /// current position up to its end-of-stream marker, a file to its end, and either is left open.
     /// </summary>
     /// <param name="stream">The stream to read, from its current position.</param>
     /// <param name="options">How the load paces itself and reports its progress.</param>
@@ -79,11 +85,12 @@ public static class SnapshotArrow
     /// </summary>
     /// <param name="snapshot">The Snapshot to write.</param>
     /// <param name="stream">Where to write it, from its current position.</param>
-    /// <param name="cancellationToken">Cancels the write between record batches.</param>
+    /// <param name="cancellationToken">Cancels the write between record batches. What was written by
+    /// then ends without an end-of-stream marker, so a read refuses it as cut short.</param>
     /// <exception cref="SnapshotException">A value cannot be written exactly in its column's Arrow type:
     /// a Decimal past <c>decimal128</c>'s 38 digits at the column's scale, a Date that needs
-    /// nanoseconds outside their range, or text that is not valid Unicode. Nothing more is written
-    /// once a value is refused, and what was written is not a whole stream.</exception>
+    /// nanoseconds outside their range, or text a row holds that is not valid Unicode. Every value
+    /// is checked before the first byte is written, so a refused write writes nothing.</exception>
     /// <exception cref="OperationCanceledException">The write was cancelled.</exception>
     public static Task WriteAsync(Snapshot snapshot, Stream stream, CancellationToken cancellationToken = default)
         => WriteAsync(snapshot, stream, ArrowSnapshotWriter.DefaultBatchRows, cancellationToken);
