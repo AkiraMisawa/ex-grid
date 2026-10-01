@@ -14,9 +14,11 @@ namespace ExGrid.Components.Tests;
 /// </summary>
 public class PresentationDefaultsWiringTests : GridTestContext
 {
+    // A Wrapper's widths at 14px: Roboto's as ExGrid.MudBlazor first declared them. Its
+    // current widths are MudExGridPresentation's; these tests need only these numbers.
     private static readonly GridPresentationDefaults Roboto = new(10.4, 8.0, 4.95, 14);
 
-    // Twelve digits at Roboto's 8.0px plus 2 × 8px padding is 112px exactly, which
+    // Twelve digits at an 8.0px digit plus 2 × 8px padding is 112px exactly, which
     // fits; at the system default's 9.742px it is 132.9px, which hashes.
     private static readonly ColumnWidthSpec Width112 = new(ColumnWidth.Fixed(112));
 
