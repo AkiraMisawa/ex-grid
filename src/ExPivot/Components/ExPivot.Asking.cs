@@ -1,5 +1,7 @@
 using System.Globalization;
+using ExGrid;
 using ExPivot.Engine;
+using Microsoft.AspNetCore.Components;
 
 namespace ExPivot.Components;
 
@@ -9,6 +11,16 @@ namespace ExPivot.Components;
 // what its refusal, its failure and its answer mean (ADR-0066).
 public partial class ExPivot
 {
+    /// <summary>
+    /// How ExPivot shares the thread while it makes an answer's cube and lays out its report
+    /// (ADR-0065, PV-40): in slices of about 30 ms, yielding between them, so that a browser keeps
+    /// painting, the report on screen stays as it was — under the loading indication — until the
+    /// new one is complete, and a newer gesture supersedes the work. A quick layout yields nothing.
+    /// Null, the default, is <see cref="PivotSlicing.Default"/>; a test hands in its own to count
+    /// the yields, or to hold the work at one.
+    /// </summary>
+    [Parameter] public PivotSlicing? Slicing { get; set; }
+
     private PivotSource? _source;
 
     // The answer held, and the source that gave it: what a change that needs no new question is
@@ -266,10 +278,23 @@ public partial class ExPivot
         }
         if (!force && _cube is { } cube && ReferenceEquals(_cubeSource, source) && cube.Holds(layout))
         {
-            // A change that needs no new question asks none (ADR-0059/0065).
+            // A change that needs no new question asks none (ADR-0059/0065). It is laid out from the
+            // answer held at once, in the gesture's own turn, when the layout is quick, as it nearly
+            // always is; one that grows long is laid out in slices, and is the work in flight
+            // meanwhile — under the loading indication, superseded by a further change, and waited
+            // for by changes of data (PV-40).
             Supersede();
-            await ShowAsync(cube, source, layout, raise, fresh: false, kind);
-            await RegatherAsync(carried);
+            var laying = new CancellationTokenSource();
+            _asking = laying;
+            _askingCarries = carried;
+            var work = LayOutHeldAsync(cube, source, layout, raise, kind, _generation, laying);
+            if (!work.IsCompleted)
+            {
+                SetLoading(true);
+                StateHasChanged();
+                return;
+            }
+            await work;
             StateHasChanged();
             return;
         }
@@ -300,6 +325,13 @@ public partial class ExPivot
     /// question: one a further change superseded is discarded, always, whether it arrives, fails or
     /// is cancelled. Run detached, so asking never blocks; whatever fails in ExPivot's own code
     /// meanwhile reaches the renderer rather than an unobserved task.
+    /// <para>
+    /// The question stays out until its report is complete (PV-40): the answer's cube is made and
+    /// its report laid out in slices, the report on screen staying as it was meanwhile, and a
+    /// further change supersedes the question there as it would at the source. A large answer that
+    /// arrived from another turn than the one that asked — the source's last slice, or its
+    /// transport's — is made into its cube in a turn of its own.
+    /// </para>
     /// </summary>
     private async Task AskAsync(
         PivotSource source, PivotQuery query, PivotLayout layout, int generation, CancellationTokenSource asking, bool raise,
@@ -307,10 +339,14 @@ public partial class ExPivot
     {
         try
         {
+            var pace = new Pace(Pacing, asking.Token);
             PivotAnswer answer;
+            bool arrivedAtOnce;
             try
             {
-                answer = await source.AggregateAsync(query, asking.Token);
+                var question = source.AggregateAsync(query, asking.Token);
+                arrivedAtOnce = question.IsCompleted;
+                answer = await question;
             }
             catch (OperationCanceledException) when (asking.IsCancellationRequested)
             {
@@ -330,33 +366,55 @@ public partial class ExPivot
             }
             if (generation != _generation || _disposed)
                 return;
-            var carried = FinishAsking();
+            // When the answer arrived: the time the report it makes says it shows the data as of.
+            var arrivedAt = Now();
             if (answer.IsRefused)
             {
+                var refusedCarried = FinishAsking();
                 if (IsStaleFor(kind, layout))
                     MarkStale(StaleRefusalOf(answer.Refusal!), error: null, newest: null);
                 else
                     Refuse(RefusalOf(answer.Refusal!));
-                await LandedAsync(carried, version: null);
+                await LandedAsync(refusedCarried, version: null);
                 StateHasChanged();
                 return;
             }
             PivotCube cube;
             try
             {
-                cube = PivotEngine.Cube(query, answer, source.Fields);
+                if (!arrivedAtOnce)
+                {
+                    pace.Restart();
+                    if (answer.LeafCount >= LargeStep)
+                        await pace.YieldAsync();
+                }
+                cube = await pace.AfterAsync(PivotEngine.CubeAsync(query, answer, source.Fields, Pacing, asking.Token));
+                await pace.GoOnAsync(answer.LeafCount);
+            }
+            catch (OperationCanceledException) when (asking.IsCancellationRequested)
+            {
+                // Superseded while the cube was made: the further change asks, or lays out, its own.
+                return;
             }
             catch (InvalidOperationException error)
             {
+                if (generation != _generation || _disposed)
+                    return;
                 // An answer to another question than the one asked is refused by name.
+                var failedCarried = FinishAsking();
                 FailFor(kind, layout, error);
-                await LandedAsync(carried, version: null);
+                await LandedAsync(failedCarried, version: null);
                 StateHasChanged();
                 return;
             }
-            await ShowAsync(cube, source, layout, raise, fresh: true, kind);
-            await LandedAsync(carried, answer.SourceVersion);
-            StateHasChanged();
+            catch when (generation == _generation && !_disposed)
+            {
+                FinishAsking();
+                throw;
+            }
+            if (generation != _generation || _disposed)
+                return;
+            await LayOutAsync(cube, source, layout, raise, fresh: true, kind, generation, asking, pace, arrivedAt);
         }
         catch (Exception error) when (!_disposed)
         {
@@ -368,6 +426,64 @@ public partial class ExPivot
             // at the moment it is superseded, while the source may still hold the token.
             asking.Dispose();
         }
+    }
+
+    /// <summary>A layout of the answer held, the work in flight: laid out, and shown when it is
+    /// complete and still the current work. It owns its token source, as a question does.</summary>
+    private async Task LayOutHeldAsync(
+        PivotCube cube, PivotSource source, PivotLayout layout, bool raise, Question kind, int generation, CancellationTokenSource laying)
+    {
+        try
+        {
+            await LayOutAsync(cube, source, layout, raise, fresh: false, kind, generation, laying, new Pace(Pacing, laying.Token), arrivedAt: null);
+        }
+        catch (Exception error) when (!_disposed)
+        {
+            await DispatchExceptionAsync(error);
+        }
+        finally
+        {
+            laying.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Lays <paramref name="layout"/> out from <paramref name="cube"/> in slices, and shows it once
+    /// it is complete (PV-40): the report on screen stays as it was meanwhile, and nothing half made
+    /// is ever shown. Superseded meanwhile — its token cancelled, or the generation moved on — it
+    /// ends where it is, and shows nothing.
+    /// </summary>
+    private async Task LayOutAsync(
+        PivotCube cube, PivotSource source, PivotLayout layout, bool raise, bool fresh, Question kind, int generation,
+        CancellationTokenSource working, Pace pace, DateTimeOffset? arrivedAt)
+    {
+        Built built;
+        try
+        {
+            built = await BuildAsync(cube, layout, pace, working.Token);
+        }
+        catch (OperationCanceledException) when (working.IsCancellationRequested)
+        {
+            return;
+        }
+        catch when (generation == _generation && !_disposed)
+        {
+            // A layout that failed — an Order Key that threw — is no longer out, and its failure
+            // reaches the renderer.
+            FinishAsking();
+            throw;
+        }
+        if (generation != _generation || _disposed)
+            return;
+        var carried = FinishAsking();
+        await PresentAsync(built, cube, source, layout, raise, fresh, kind, arrivedAt);
+        // An answer for newer data has landed, with what it carried; a layout of the answer held
+        // brought none, and what a question it superseded carried is gathered again.
+        if (fresh)
+            await LandedAsync(carried, cube.SourceVersion);
+        else
+            await RegatherAsync(carried);
+        StateHasChanged();
     }
 
     /// <summary>The question in flight has landed: nothing is out any more. Returns whether it
@@ -404,28 +520,72 @@ public partial class ExPivot
         _gridVersion++;
     }
 
+    /// <summary>How ExPivot's work shares the thread: the Consumer's slicing, or the default.</summary>
+    private PivotSlicing Pacing => Slicing ?? PivotSlicing.Default;
+
+    /// <summary>A report laid out, with what was measured of it on the way (PV-40): whether its rows
+    /// are those of the report it was compared with, and its label columns' widths under the metrics
+    /// they were sized by — none for a report a cap refuses, which is shown nowhere.</summary>
+    private sealed record Built(PivotReport Report, PivotReport? ComparedTo, bool SameRows, double[]? LabelWidths, GridMetrics Metrics);
+
     /// <summary>
-    /// Lays <paramref name="layout"/> out from <paramref name="cube"/> and shows it — unless the
-    /// report would pass a cap on its rows or columns, which refuses it by name and leaves the
-    /// report on the layout before (ADR-0065), or, for newer data under the layout on screen, leaves
-    /// the report stale (ADR-0066). A user's layout, once shown, is raised.
+    /// Lays <paramref name="layout"/> out from <paramref name="cube"/> in slices (PV-40): the
+    /// report, then its rows compared with the report on screen, then its label columns sized from
+    /// their labels — in the words and the culture the report is in when it is done: words that
+    /// changed meanwhile lay it out again.
     /// </summary>
+    private async Task<Built> BuildAsync(PivotCube cube, PivotLayout layout, Pace pace, CancellationToken token)
+    {
+        while (true)
+        {
+            var options = _options;
+            var metrics = _metrics;
+            var report = await pace.AfterAsync(PivotEngine.ReportAsync(cube, layout, options, Pacing, token));
+            var size = report.Rows.Count + report.ValueColumns.Count;
+            await pace.GoOnAsync(size);
+            var comparedTo = _report;
+            var sameRows = false;
+            double[]? widths = null;
+            if (CapBrokenBy(report) is null)
+            {
+                if (comparedTo is not null)
+                {
+                    sameRows = await pace.AfterAsync(report.HasSameRowsAsAsync(comparedTo, Pacing, token));
+                    await pace.GoOnAsync(size);
+                }
+                widths = await LabelWidthsAsync(report, metrics, pace);
+                // What follows — the report put on screen, and painted — has a turn of its own.
+                await pace.GoOnAsync(size);
+            }
+            if (ReferenceEquals(options, _options))
+                return new Built(report, comparedTo, sameRows, widths, metrics);
+        }
+    }
+
+    /// <summary>
+    /// Shows a report laid out — unless it would pass a cap on its rows or columns, which refuses it
+    /// by name and leaves the report on the layout before (ADR-0065), or, for newer data under the
+    /// layout on screen, leaves the report stale (ADR-0066). A user's layout, once shown, is raised.
+    /// </summary>
+    /// <param name="built">The report laid out, and what was measured of it.</param>
     /// <param name="cube">The answer the report is laid out from.</param>
     /// <param name="source">The source that gave it.</param>
-    /// <param name="layout">The layout to lay out.</param>
+    /// <param name="layout">The layout it was laid out under.</param>
     /// <param name="raise">Whether the layout, once shown, is raised through LayoutChanged.</param>
     /// <param name="fresh">Whether <paramref name="cube"/> is an answer that has just arrived,
     /// rather than the one held.</param>
     /// <param name="kind">What the question it answers was asked for.</param>
-    private async Task ShowAsync(PivotCube cube, PivotSource source, PivotLayout layout, bool raise, bool fresh, Question kind)
+    /// <param name="arrivedAt">When a fresh answer arrived.</param>
+    private async Task PresentAsync(
+        Built built, PivotCube cube, PivotSource source, PivotLayout layout, bool raise, bool fresh, Question kind, DateTimeOffset? arrivedAt)
     {
         if (fresh)
         {
             _cube = cube;
             _cubeSource = source;
-            _cubeAt = Now();
+            _cubeAt = arrivedAt ?? Now();
         }
-        var report = PivotEngine.Report(cube, layout, _options);
+        var report = built.Report;
         if (CapBrokenBy(report) is { } broken)
         {
             if (fresh && IsStaleFor(kind, layout))
@@ -436,7 +596,7 @@ public partial class ExPivot
         }
         _reportSource = source;
         // Only data marks a cell (ADR-0066): an answer that has just arrived for newer data.
-        Show(report, layout, _cubeAt, data: fresh && kind != Question.Layout);
+        Show(built, layout, _cubeAt, data: fresh && kind != Question.Layout);
         if (fresh)
             _lastError = null;
         // The notice goes when an answer is laid out: a new one, or the newest held, which a cap
@@ -459,20 +619,31 @@ public partial class ExPivot
     }
 
     /// <summary>
-    /// Puts <paramref name="report"/> on screen. The order a selection is written in is kept when
+    /// Puts the report <paramref name="built"/> holds on screen. The order a selection is written in is kept when
     /// only values moved (ADR-0011). The Change Highlight's history gains a version when the report
     /// is newer data under the layout and words on screen, and starts again otherwise — a new
     /// layout, a sort, a collapse, a form, new words — so that only data marks a cell
     /// (ADR-0066/0067); the grid is handed a new delegate for each history that can mark.
     /// </summary>
-    /// <param name="report">The report.</param>
+    /// <param name="built">The report, laid out, and what was measured of it: its rows compared
+    /// with the report on screen, which is compared again only when another was put up meanwhile,
+    /// and its label columns' widths.</param>
     /// <param name="layout">The layout it was laid out under.</param>
     /// <param name="arrivedAt">When the answer it was laid out from arrived; null to keep the time
     /// of the report on screen, whose answer it is laid out from again.</param>
     /// <param name="data">Whether it is an answer for newer data, which marks what changed.</param>
-    private void Show(PivotReport report, PivotLayout layout, DateTimeOffset? arrivedAt, bool data)
+    private void Show(Built built, PivotLayout layout, DateTimeOffset? arrivedAt, bool data)
     {
-        var sameRows = _report is not null && report.HasSameRowsAs(_report);
+        var report = built.Report;
+        // A new report on screen: a laying out again of the one before has nothing left to do.
+        if (_relabelling is { } relabelling)
+        {
+            _relabelling = null;
+            relabelling.Cancel();
+        }
+        var sameRows = ReferenceEquals(built.ComparedTo, _report)
+            ? built.SameRows
+            : _report is not null && report.HasSameRowsAs(_report);
         if (!sameRows)
             _rowSequenceVersion++;
         var at = arrivedAt ?? _shownAt;
@@ -484,18 +655,108 @@ public partial class ExPivot
         _report = report;
         _shown = layout;
         _shownAt = at;
+        if (built.LabelWidths is { } widths)
+            KeepLabelWidths(report, built.Metrics, widths);
         BuildColumns();
     }
 
+    // The words or the culture moving on lays the report on screen out again; the work, when it
+    // grows long, is cancelled by the next such change, a new report on screen, or the disposal.
+    private CancellationTokenSource? _relabelling;
+
     /// <summary>The words or the culture changed: the report on screen is laid out again from the
-    /// answer held, in the new ones, asking nothing.</summary>
+    /// answer held, in the new ones, asking nothing — at once when it is quick, and in slices when
+    /// it grows long, the report on screen staying until the new one is complete (PV-40). Work in
+    /// flight lays its own report out in the new words.</summary>
     private void LayOutAgain()
     {
-        // The report's own answer, which holds its layout by construction.
-        if (_report is { } report)
-            Show(PivotEngine.Report(report.Cube, _shown, _options), _shown, arrivedAt: null, data: false);
-        else
+        _relabelling?.Cancel();
+        _relabelling = null;
+        if (_report is not { } report)
+        {
             BuildColumns();
+            return;
+        }
+        var relabelling = new CancellationTokenSource();
+        _relabelling = relabelling;
+        _ = RelabelAsync(report, relabelling);
+    }
+
+    private async Task RelabelAsync(PivotReport report, CancellationTokenSource relabelling)
+    {
+        try
+        {
+            // The report's own answer, which holds its layout by construction.
+            var built = await BuildAsync(report.Cube, report.Layout, new Pace(Pacing, relabelling.Token), relabelling.Token);
+            if (_disposed || relabelling.IsCancellationRequested || !ReferenceEquals(_report, report))
+                return;
+            _relabelling = null;
+            Show(built, report.Layout, arrivedAt: null, data: false);
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) when (relabelling.IsCancellationRequested)
+        {
+            // Another change of words, or a new report, made it moot.
+        }
+        catch (Exception error) when (!_disposed)
+        {
+            await DispatchExceptionAsync(error);
+        }
+        finally
+        {
+            if (ReferenceEquals(_relabelling, relabelling))
+                _relabelling = null;
+            relabelling.Dispose();
+        }
+    }
+
+    /// <summary>A step of work this large or larger — leaves, or rows and columns — that did not
+    /// yield is followed by a yield when it left less than half the slice (PV-40); a smaller one
+    /// never is, so quick work never reads the clock, as the engine's never does.</summary>
+    private const int LargeStep = 512;
+
+    /// <summary>
+    /// ExPivot's share of the thread across the steps of one piece of work (PV-40): the engine's —
+    /// the cube made, the report laid out, its rows compared — and its own, the label columns
+    /// sized. A slice begins when the work does and after every yield. A step that yielded ended in
+    /// a turn that has done a slice's work, so the next begins after a yield of its own
+    /// (<see cref="AfterAsync"/>); a large step that did not is followed by one when it left less
+    /// than half the slice (<see cref="GoOnAsync"/>). Quick work, as nearly all of it is, is done
+    /// in the turn that asked for it.
+    /// </summary>
+    private sealed class Pace(PivotSlicing slicing, CancellationToken token)
+    {
+        private long _start = slicing.TimeProvider.GetTimestamp();
+
+        /// <summary>Whether the slice has run for its budget.</summary>
+        public bool Spent => slicing.TimeProvider.GetElapsedTime(_start) >= slicing.Budget;
+
+        /// <summary>A slice begins now: in a turn the work did not begin in.</summary>
+        public void Restart() => _start = slicing.TimeProvider.GetTimestamp();
+
+        /// <summary>Yields the thread, and begins a slice; throws once the work is cancelled.</summary>
+        public async Task YieldAsync()
+        {
+            await slicing.YieldAsync(token);
+            token.ThrowIfCancellationRequested();
+            Restart();
+        }
+
+        /// <summary>Awaits a step of the engine's, begun already, and yields after it when it
+        /// yielded.</summary>
+        public async Task<T> AfterAsync<T>(ValueTask<T> step)
+        {
+            if (step.IsCompleted)
+                return step.GetAwaiter().GetResult();
+            var result = await step;
+            await YieldAsync();
+            return result;
+        }
+
+        /// <summary>After a step of <paramref name="size"/>: a yield when the step was large and
+        /// less than half the slice is left.</summary>
+        public Task GoOnAsync(int size)
+            => size >= LargeStep && slicing.TimeProvider.GetElapsedTime(_start) * 2 >= slicing.Budget ? YieldAsync() : Task.CompletedTask;
     }
 
     /// <summary>The cap a report breaks, or null (ADR-0065): Excel's rows and columns unless the

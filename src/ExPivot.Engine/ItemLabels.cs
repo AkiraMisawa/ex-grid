@@ -59,13 +59,16 @@ internal sealed class ItemLabels(PivotOptions options)
 /// but <c>(blank)</c>.
 /// <para>
 /// The Order Key is read only when <paramref name="byKey"/>: a sort by a Value Field breaks its ties
-/// by label, and never by key. <see cref="Prepare"/> calls it, once per Item, before a sort.
+/// by label, and never by key. <see cref="Prepare(IEnumerable{ItemRef})"/> calls it, once per Item, before a sort.
 /// </para>
 /// </summary>
 internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo culture, bool descending, bool byKey = true)
     : IComparer<ItemRef>
 {
     private readonly CompareInfo _compare = culture.CompareInfo;
+
+    // The first Item prepared that has a key: every other key is held to its type.
+    private ItemRef? _firstKeyed;
 
     /// <summary>
     /// Computes the Order Key of each of <paramref name="items"/> that has none yet — once per Item —
@@ -77,40 +80,45 @@ internal sealed class ItemOrder(FieldMeta meta, ItemLabels labels, CultureInfo c
     /// Items keys of two types.</exception>
     public void Prepare(IEnumerable<ItemRef> items)
     {
+        foreach (var item in items)
+            Prepare(item);
+    }
+
+    /// <summary><see cref="Prepare(IEnumerable{ItemRef})"/> for the next Item, so that many can be
+    /// prepared a piece at a time (PV-40); the keys of every Item prepared by this order are held to
+    /// one type.</summary>
+    public void Prepare(ItemRef item)
+    {
         if (!byKey || meta.OrderKey is not { } orderKey)
             return;
-        ItemRef? first = null;
-        foreach (var item in items)
+        if (!item.HasOrderKey)
         {
-            if (!item.HasOrderKey)
+            IComparable? key = null;
+            if (item.Key.Kind is not (PivotItemKind.Blank or PivotItemKind.Error) && item.FirstValue is { } value)
             {
-                IComparable? key = null;
-                if (item.Key.Kind is not (PivotItemKind.Blank or PivotItemKind.Error) && item.FirstValue is { } value)
+                try
                 {
-                    try
-                    {
-                        key = orderKey(value);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new InvalidOperationException(
-                            $"The Order Key of {meta.Info.Caption} failed on '{labels.Of(item, meta)}'.", e);
-                    }
+                    key = orderKey(value);
                 }
-                item.SetOrderKey(key);
+                catch (Exception e)
+                {
+                    throw new InvalidOperationException(
+                        $"The Order Key of {meta.Info.Caption} failed on '{labels.Of(item, meta)}'.", e);
+                }
             }
-            if (item.OrderKey is null)
-                continue;
-            if (first is null)
-            {
-                first = item;
-            }
-            else if (item.OrderKey.GetType() != first.OrderKey!.GetType())
-            {
-                throw new InvalidOperationException(
-                    $"The Order Key of {meta.Info.Caption} gave '{labels.Of(first, meta)}' a key of type {first.OrderKey.GetType().Name} "
-                    + $"and '{labels.Of(item, meta)}' one of type {item.OrderKey.GetType().Name}; a field's keys are of one type.");
-            }
+            item.SetOrderKey(key);
+        }
+        if (item.OrderKey is null)
+            return;
+        if (_firstKeyed is not { } first)
+        {
+            _firstKeyed = item;
+        }
+        else if (item.OrderKey.GetType() != first.OrderKey!.GetType())
+        {
+            throw new InvalidOperationException(
+                $"The Order Key of {meta.Info.Caption} gave '{labels.Of(first, meta)}' a key of type {first.OrderKey.GetType().Name} "
+                + $"and '{labels.Of(item, meta)}' one of type {item.OrderKey.GetType().Name}; a field's keys are of one type.");
         }
     }
 

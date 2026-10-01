@@ -41,9 +41,21 @@ internal sealed class CellReader(PivotCube cube, ValueFieldPlan[] values)
 /// Lays a cube out under a layout (ADR-0059): the value columns and their Header Group spans
 /// from the column tree, the rows from the row tree in the layout's form, each in its Items'
 /// order, with subtotals, grand totals, collapsed Items and Σ Values where the layout puts them.
+/// <para>
+/// Each tree is walked depth first, in its Items' order — each node entered, its children walked,
+/// then left — and the walk can stop after any step and go on from there, so that a report is laid
+/// out in slices (<see cref="BuildAsync"/>, PV-40) by the very steps that lay it out at once
+/// (<see cref="Build"/>). A node's children are ordered a piece at a time too: thousands of
+/// siblings are as long a piece of work as thousands of rows.
+/// </para>
 /// </summary>
 internal sealed class ReportBuilder
 {
+    // What a step of the walk is worth, in the units the slicer counts: a node entered or left,
+    // each row it emits, and each column, whose name is written from its Items.
+    private const int RowUnits = 4;
+    private const int ColumnUnits = 8;
+
     private readonly PivotCube _cube;
     private readonly PivotLayout _layout;
     private readonly PivotOptions _options;
@@ -105,18 +117,26 @@ internal sealed class ReportBuilder
         return RowLevels + (_valuesOnRows ? 1 : 0);
     }
 
-    public PivotReport Build()
+    /// <summary>The report, laid out at once: the steps of <see cref="BuildAsync"/>, never
+    /// yielding.</summary>
+    public PivotReport Build() => Slicer.Run(BuildAsync(Slicer.Unsliced));
+
+    /// <summary>The report, laid out in slices (PV-40): the value columns and their spans, then the
+    /// rows, each tree walked a step at a time, and the rows handed to the report.</summary>
+    public async ValueTask<PivotReport> BuildAsync(Slicer slicer)
     {
         var columns = new List<PivotReportColumn>();
         var spans = new List<PivotHeaderSpan>();
         var rows = new List<PivotReportRow>();
         if (!Empty)
         {
-            EmitColumns(columns, spans);
-            EmitRows(rows);
+            await EmitColumnsAsync(columns, spans, slicer).ConfigureAwait(false);
+            await EmitRowsAsync(rows, slicer).ConfigureAwait(false);
         }
         var tiers = ColumnLevels == 0 ? 0 : _valuesOnColumns ? ColumnLevels : ColumnLevels - 1;
-        return new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
+        var report = new PivotReport(_cube, _layout, _options, _reader, LabelColumns(), columns, spans, tiers, rows);
+        await slicer.ForAsync(rows.Count, report.Attach).ConfigureAwait(false);
+        return report;
     }
 
     private string Word(string id) => _options.Word(id);
@@ -140,11 +160,97 @@ internal sealed class ReportBuilder
         return columns;
     }
 
+    // ---- The walk ------------------------------------------------------------------------
+
+    /// <summary>
+    /// Walks the tree under <paramref name="root"/> depth first, children in their order: each node
+    /// entered (<paramref name="enter"/>, which answers −1 when its children are not walked, or a
+    /// mark it is left with), its children walked, then left (<paramref name="leave"/>). The root is
+    /// entered and left too. It stops after a step whenever the slice is spent, and goes on from
+    /// there once the thread was yielded.
+    /// </summary>
+    private async ValueTask WalkAsync(
+        AxisNode root, bool rows, Func<AxisNode, int> enter, Action<AxisNode, int> leave, Func<int> emitted, int unitsEach, Slicer slicer)
+    {
+        var walk = new Walk(this, root, rows, enter, leave, emitted, unitsEach);
+        while (!walk.Run(slicer))
+            await slicer.PauseAsync().ConfigureAwait(false);
+    }
+
+    private sealed class Walk(
+        ReportBuilder builder, AxisNode root, bool rows, Func<AxisNode, int> enter, Action<AxisNode, int> leave, Func<int> emitted, int unitsEach)
+    {
+        private Frame[] _frames = [new Frame { Node = root }];
+        private int _depth = 1;
+
+        /// <summary>Walks on until the tree is done — true — or the slice is spent after a step —
+        /// false, to be run again once the thread was yielded.</summary>
+        public bool Run(Slicer slicer)
+        {
+            while (_depth > 0)
+            {
+                ref var top = ref _frames[_depth - 1];
+                var before = emitted();
+                var units = 1;
+                if (top.Children is not null)
+                {
+                    if (top.Next < top.Children.Count)
+                    {
+                        Push(top.Children[top.Next++]);
+                        continue;
+                    }
+                    leave(top.Node, top.Mark);
+                    _depth--;
+                }
+                else if (top.Ordering is { } ordering)
+                {
+                    var budget = Slicer.PieceUnits;
+                    if (ordering.Step(ref budget))
+                    {
+                        top.Children = ordering.Result;
+                        top.Ordering = null;
+                    }
+                    units = Slicer.PieceUnits - budget;
+                }
+                else
+                {
+                    var mark = enter(top.Node);
+                    if (mark < 0)
+                        _depth--;
+                    else
+                    {
+                        top.Mark = mark;
+                        top.Ordering = builder.Order(top.Node, rows);
+                    }
+                }
+                if (slicer.Done(units + ((emitted() - before) * unitsEach)))
+                    return false;
+            }
+            return true;
+        }
+
+        private void Push(AxisNode node)
+        {
+            if (_depth == _frames.Length)
+                Array.Resize(ref _frames, _frames.Length * 2);
+            _frames[_depth++] = new Frame { Node = node };
+        }
+
+        private struct Frame
+        {
+            public AxisNode Node;
+            public int Mark;
+            public ChildOrder? Ordering;
+            public List<AxisNode>? Children;
+            public int Next;
+        }
+    }
+
     // ---- Columns -------------------------------------------------------------------------
 
     private int TierOf(int level) => _valuesOnColumns ? ColumnLevels - level : ColumnLevels - 1 - level;
 
-    private void EmitColumns(List<PivotReportColumn> columns, List<PivotHeaderSpan> spans)
+    private async ValueTask EmitColumnsAsync(List<PivotReportColumn> columns, List<PivotHeaderSpan> spans, Slicer slicer)
     {
         var root = _cube.ColumnRoot;
         if (ColumnLevels == 0)
@@ -166,8 +272,10 @@ internal sealed class ReportBuilder
             return;
         }
 
-        foreach (var child in Sorted(root, rows: false))
-            EmitColumn(child, columns, spans);
+        await WalkAsync(root, rows: false,
+            node => EnterColumn(node, columns, spans),
+            (node, start) => LeaveColumn(node, start, columns, spans),
+            () => columns.Count + spans.Count, ColumnUnits, slicer).ConfigureAwait(false);
 
         if (_layout.GrandTotalColumn && ValueCount > 0)
         {
@@ -187,36 +295,45 @@ internal sealed class ReportBuilder
         }
     }
 
-    private void EmitColumn(AxisNode node, List<PivotReportColumn> columns, List<PivotHeaderSpan> spans)
+    // A column Item: an innermost or collapsed one emits its columns, and its children are not
+    // walked; any other is left with the first column under it. The root's children are walked.
+    private int EnterColumn(AxisNode node, List<PivotReportColumn> columns, List<PivotHeaderSpan> spans)
     {
+        if (node.Item is null)
+            return 0;
         var level = node.Level;
         var innermost = level == ColumnLevels - 1;
-        var collapsed = !innermost && _columnCollapse[level].IsCollapsed(node.Item!.Key);
+        var collapsed = !innermost && _columnCollapse[level].IsCollapsed(node.Item.Key);
+        if (!innermost && !collapsed)
+            return columns.Count;
         var label = Label(node, _columnMeta[level]);
         var tier = TierOf(level);
-        if (innermost || collapsed)
+        if (_valuesOnColumns)
         {
-            if (_valuesOnColumns)
-            {
-                var first = columns.Count;
-                for (var vf = 0; vf < ValueCount; vf++)
-                    columns.Add(Column(PivotColumnRole.Item, node, vf, _values[vf].Caption));
-                // The Item over its Value Fields' captions: one tier for an innermost Item, and
-                // down to the captions for a collapsed one, which has no levels below it.
-                spans.Add(new PivotHeaderSpan(label, first, ValueCount, tier, tier));
-            }
-            else
-            {
-                // Its own leaf header; for a collapsed Item it stretches up to its parent's
-                // rectangle (ADR-0032).
-                columns.Add(Column(PivotColumnRole.Item, node, -1, label));
-            }
-            return;
+            var first = columns.Count;
+            for (var vf = 0; vf < ValueCount; vf++)
+                columns.Add(Column(PivotColumnRole.Item, node, vf, _values[vf].Caption));
+            // The Item over its Value Fields' captions: one tier for an innermost Item, and
+            // down to the captions for a collapsed one, which has no levels below it.
+            spans.Add(new PivotHeaderSpan(label, first, ValueCount, tier, tier));
         }
+        else
+        {
+            // Its own leaf header; for a collapsed Item it stretches up to its parent's
+            // rectangle (ADR-0032).
+            columns.Add(Column(PivotColumnRole.Item, node, -1, label));
+        }
+        return -1;
+    }
 
-        var start = columns.Count;
-        foreach (var child in Sorted(node, rows: false))
-            EmitColumn(child, columns, spans);
+    // An outer column Item, its children walked: its rectangle over them, then its subtotal.
+    private void LeaveColumn(AxisNode node, int start, List<PivotReportColumn> columns, List<PivotHeaderSpan> spans)
+    {
+        if (node.Item is null)
+            return;
+        var level = node.Level;
+        var label = Label(node, _columnMeta[level]);
+        var tier = TierOf(level);
         spans.Add(new PivotHeaderSpan(label, start, columns.Count - start, tier, 1));
 
         if (_columnPlacements[level].Subtotals && ValueCount > 0)
@@ -266,7 +383,7 @@ internal sealed class ReportBuilder
 
     // ---- Rows ----------------------------------------------------------------------------
 
-    private void EmitRows(List<PivotReportRow> rows)
+    private async ValueTask EmitRowsAsync(List<PivotReportRow> rows, Slicer slicer)
     {
         var root = _cube.RowRoot;
         if (RowLevels == 0)
@@ -289,13 +406,10 @@ internal sealed class ReportBuilder
             return;
         }
 
-        foreach (var child in Sorted(root, rows: true))
-        {
-            if (_layout.Form == PivotReportForm.Tabular)
-                EmitTabular(child, rows);
-            else
-                EmitGrouped(child, rows);
-        }
+        if (_layout.Form == PivotReportForm.Tabular)
+            await WalkAsync(root, rows: true, node => EnterTabular(node, rows), (node, _) => LeaveTabular(node, rows), () => rows.Count, RowUnits, slicer).ConfigureAwait(false);
+        else
+            await WalkAsync(root, rows: true, node => EnterGrouped(node, rows), (node, _) => LeaveGrouped(node, rows), () => rows.Count, RowUnits, slicer).ConfigureAwait(false);
 
         if (_layout.GrandTotalRow && ValueCount > 0)
         {
@@ -351,12 +465,16 @@ internal sealed class ReportBuilder
         return at;
     }
 
-    // The Compact and Outline forms: a group row heads each outer Item's block (ADR-0059).
-    private void EmitGrouped(AxisNode node, List<PivotReportRow> rows)
+    // The Compact and Outline forms: a group row heads each outer Item's block (ADR-0059). An
+    // innermost or collapsed Item is its rows, and its children are not walked; an outer one is
+    // its group row, then its children, then — when they stand at the bottom — its subtotals.
+    private int EnterGrouped(AxisNode node, List<PivotReportRow> rows)
     {
+        if (node.Item is null)
+            return 0;
         var level = node.Level;
         var innermost = level == RowLevels - 1;
-        var collapsed = !innermost && _rowCollapse[level].IsCollapsed(node.Item!.Key);
+        var collapsed = !innermost && _rowCollapse[level].IsCollapsed(node.Item.Key);
         if (innermost || collapsed)
         {
             if (_valuesOnRows)
@@ -370,26 +488,37 @@ internal sealed class ReportBuilder
                 rows.Add(new PivotReportRow(innermost ? PivotRowRole.Item : PivotRowRole.Group, node, -1,
                     carriesValues: true, ItemLabels(node)));
             }
-            return;
+            return -1;
         }
 
-        var subtotals = _rowPlacements[level].Subtotals && ValueCount > 0;
-        var atTop = subtotals && _layout.SubtotalsAtTop && !_valuesOnRows;
+        var (_, atTop) = SubtotalsOf(level);
         rows.Add(new PivotReportRow(PivotRowRole.Group, node, -1, carriesValues: atTop, ItemLabels(node)));
-        foreach (var child in Sorted(node, rows: true))
-            EmitGrouped(child, rows);
-        if (subtotals && !atTop)
+        return 0;
+    }
+
+    private void LeaveGrouped(AxisNode node, List<PivotReportRow> rows)
+    {
+        if (node.Item is null)
+            return;
+        var (subtotals, atTop) = SubtotalsOf(node.Level);
+        if (!subtotals || atTop)
+            return;
+        if (_valuesOnRows)
         {
-            if (_valuesOnRows)
-            {
-                for (var vf = 0; vf < ValueCount; vf++)
-                    rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, SubtotalLabels(node, vf)));
-            }
-            else
-            {
-                rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, -1, carriesValues: true, SubtotalLabels(node, -1)));
-            }
+            for (var vf = 0; vf < ValueCount; vf++)
+                rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, SubtotalLabels(node, vf)));
         }
+        else
+        {
+            rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, -1, carriesValues: true, SubtotalLabels(node, -1)));
+        }
+    }
+
+    // Whether an outer Item of a level has subtotals, and whether they stand on its group row.
+    private (bool Subtotals, bool AtTop) SubtotalsOf(int level)
+    {
+        var subtotals = _rowPlacements[level].Subtotals && ValueCount > 0;
+        return (subtotals, subtotals && _layout.SubtotalsAtTop && !_valuesOnRows);
     }
 
     // An Item's own row: its label where its form puts it, the button beside an outer one, and
@@ -454,45 +583,48 @@ internal sealed class ReportBuilder
 
     // The Tabular form: no group rows — an outer Item's label stands on the first row of its
     // block, and its subtotal at the bottom (ADR-0059).
-    private void EmitTabular(AxisNode node, List<PivotReportRow> rows)
+    private int EnterTabular(AxisNode node, List<PivotReportRow> rows)
     {
+        if (node.Item is null)
+            return 0;
         var level = node.Level;
         _pending[level] = node;
         var innermost = level == RowLevels - 1;
-        var collapsed = !innermost && _rowCollapse[level].IsCollapsed(node.Item!.Key);
-        if (innermost || collapsed)
+        var collapsed = !innermost && _rowCollapse[level].IsCollapsed(node.Item.Key);
+        if (!innermost && !collapsed)
+            return 0;
+        var role = innermost ? PivotRowRole.Item : PivotRowRole.Group;
+        if (_valuesOnRows)
         {
-            var role = innermost ? PivotRowRole.Item : PivotRowRole.Group;
-            if (_valuesOnRows)
+            for (var vf = 0; vf < ValueCount; vf++)
             {
-                for (var vf = 0; vf < ValueCount; vf++)
-                {
-                    var labels = TabularLabels(node, level);
-                    labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-                    rows.Add(new PivotReportRow(role, node, vf, carriesValues: true, labels));
-                }
+                var labels = TabularLabels(node, level);
+                labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
+                rows.Add(new PivotReportRow(role, node, vf, carriesValues: true, labels));
             }
-            else
-            {
-                rows.Add(new PivotReportRow(role, node, -1, carriesValues: true, TabularLabels(node, level)));
-            }
-            return;
         }
-
-        foreach (var child in Sorted(node, rows: true))
-            EmitTabular(child, rows);
-
-        if (_rowPlacements[level].Subtotals && ValueCount > 0)
+        else
         {
-            var total = PivotWords.Fill(Word(PivotWords.ItemTotal), Label(node, _rowMeta[level]));
-            for (var vf = _valuesOnRows ? 0 : -1; vf < (_valuesOnRows ? ValueCount : 0); vf++)
-            {
-                var labels = TabularLabels(node, level - 1);
-                labels[level] = new PivotRowLabel(total);
-                if (vf >= 0)
-                    labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
-                rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, labels));
-            }
+            rows.Add(new PivotReportRow(role, node, -1, carriesValues: true, TabularLabels(node, level)));
+        }
+        return -1;
+    }
+
+    private void LeaveTabular(AxisNode node, List<PivotReportRow> rows)
+    {
+        if (node.Item is null)
+            return;
+        var level = node.Level;
+        if (!_rowPlacements[level].Subtotals || ValueCount == 0)
+            return;
+        var total = PivotWords.Fill(Word(PivotWords.ItemTotal), Label(node, _rowMeta[level]));
+        for (var vf = _valuesOnRows ? 0 : -1; vf < (_valuesOnRows ? ValueCount : 0); vf++)
+        {
+            var labels = TabularLabels(node, level - 1);
+            labels[level] = new PivotRowLabel(total);
+            if (vf >= 0)
+                labels[_labelColumnCount - 1] = new PivotRowLabel(_values[vf].Caption);
+            rows.Add(new PivotReportRow(PivotRowRole.Subtotal, node, vf, carriesValues: true, labels));
         }
     }
 
@@ -517,43 +649,150 @@ internal sealed class ReportBuilder
 
     // ---- Order ---------------------------------------------------------------------------
 
-    private List<AxisNode> Sorted(AxisNode node, bool rows)
+    /// <summary>
+    /// The children of <paramref name="node"/> in their order (ADR-0059), to be made a step at a
+    /// time. By a Value Field's value at each Item's total across the other axis, as shown; blank
+    /// and error values last, ties by label ascending — the Order Key does not touch a sort by
+    /// value. Otherwise by label, under the field's declared order and Order Key.
+    /// </summary>
+    private ChildOrder Order(AxisNode node, bool rows)
     {
         var level = node.Level + 1;
         var placement = rows ? _rowPlacements[level] : _columnPlacements[level];
         var meta = rows ? _rowMeta[level] : _columnMeta[level];
-        var children = new List<AxisNode>(node.Children);
+        var children = node.Children;
         var descending = placement.Sort.Direction == PivotSortDirection.Descending;
         if (placement.Sort.ByValue is { } vf)
         {
-            // By a Value Field's value at each Item's total across the other axis, as shown;
-            // blank and error values last, ties by label ascending (ADR-0059). The Order Key does
-            // not touch a sort by value.
             var other = rows ? _cube.ColumnRoot : _cube.RowRoot;
             var byLabel = new ItemOrder(meta, _labels, _culture, descending: false, byKey: false);
-            var keys = new Dictionary<AxisNode, double?>(children.Count);
-            foreach (var child in children)
-            {
-                var value = rows ? _reader.Shown(child, other, vf) : _reader.Shown(other, child, vf);
-                keys[child] = value.IsEmpty || value.IsError ? null : value.Number;
-            }
-            children.Sort((a, b) =>
-            {
-                var x = keys[a];
-                var y = keys[b];
-                if (x is null || y is null)
-                    return x is null && y is null ? byLabel.Compare(a.Item, b.Item) : x is null ? 1 : -1;
-                var compared = x.Value.CompareTo(y.Value);
-                if (descending)
-                    compared = -compared;
-                return compared != 0 ? compared : byLabel.Compare(a.Item, b.Item);
-            });
-            return children;
+            var keys = new double?[children.Count];
+            return new ChildOrder(children,
+                i =>
+                {
+                    var child = children[i];
+                    var value = rows ? _reader.Shown(child, other, vf) : _reader.Shown(other, child, vf);
+                    keys[i] = value.IsEmpty || value.IsError ? null : value.Number;
+                },
+                (i, j) =>
+                {
+                    var x = keys[i];
+                    var y = keys[j];
+                    if (x is null || y is null)
+                        return x is null && y is null ? byLabel.Compare(children[i].Item, children[j].Item) : x is null ? 1 : -1;
+                    var compared = x.Value.CompareTo(y.Value);
+                    if (descending)
+                        compared = -compared;
+                    return compared != 0 ? compared : byLabel.Compare(children[i].Item, children[j].Item);
+                });
         }
         var order = new ItemOrder(meta, _labels, _culture, descending);
-        order.Prepare(children.Select(child => child.Item!));
-        children.Sort((a, b) => order.Compare(a.Item, b.Item));
-        return children;
+        return new ChildOrder(children, i => order.Prepare(children[i].Item!), (i, j) => order.Compare(children[i].Item, children[j].Item));
+    }
+
+    /// <summary>
+    /// A node's children ordered a step at a time: each child prepared — its Order Key, or its value
+    /// — then a stable merge sort, bottom up, from runs sorted by insertion, every comparison and
+    /// every move a unit of work. The order is a total one, so the result is the one any sort
+    /// gives.
+    /// </summary>
+    private sealed class ChildOrder(List<AxisNode> children, Action<int> prepare, Comparison<int> compare)
+    {
+        private const int Run = 16;
+
+        private readonly int _count = children.Count;
+        private int[] _from = [.. Enumerable.Range(0, children.Count)];
+        private int[] _to = new int[children.Count];
+        private int _prepared;
+        private int _runs;
+        private int _width = Run;
+        private bool _merging;
+        private int _lo;
+        private int _i;
+        private int _j;
+        private int _k;
+        private int _mid;
+        private int _hi;
+
+        /// <summary>The children in their order, once <see cref="Step"/> has answered true.</summary>
+        public List<AxisNode>? Result { get; private set; }
+
+        /// <summary>Goes on ordering until it is done — true — or <paramref name="budget"/> units of
+        /// work are spent — false; what is left of the budget is left in it.</summary>
+        public bool Step(ref int budget)
+        {
+            while (_prepared < _count)
+            {
+                if (budget <= 0)
+                    return false;
+                prepare(_prepared++);
+                budget -= 2;
+            }
+            while (_runs < _count)
+            {
+                if (budget <= 0)
+                    return false;
+                var end = Math.Min(_runs + Run, _count);
+                budget -= InsertionSort(_runs, end);
+                _runs = end;
+            }
+            while (_width < _count)
+            {
+                if (!_merging)
+                {
+                    if (_lo >= _count)
+                    {
+                        (_from, _to) = (_to, _from);
+                        _width *= 2;
+                        _lo = 0;
+                        continue;
+                    }
+                    _mid = Math.Min(_lo + _width, _count);
+                    _hi = Math.Min(_lo + (2 * _width), _count);
+                    _i = _lo;
+                    _j = _mid;
+                    _k = _lo;
+                    _merging = true;
+                }
+                while (_k < _hi)
+                {
+                    if (budget <= 0)
+                        return false;
+                    // The left run's first on a tie: the merge keeps the order runs were in.
+                    _to[_k++] = _i < _mid && (_j >= _hi || compare(_from[_i], _from[_j]) <= 0) ? _from[_i++] : _from[_j++];
+                    budget--;
+                }
+                _merging = false;
+                _lo += 2 * _width;
+            }
+            var result = new List<AxisNode>(_count);
+            foreach (var index in _from)
+                result.Add(children[index]);
+            Result = result;
+            budget--;
+            return true;
+        }
+
+        // Sorts [from, to) of the order in place, stably; answers the comparisons made.
+        private int InsertionSort(int from, int to)
+        {
+            var comparisons = 1;
+            for (var n = from + 1; n < to; n++)
+            {
+                var index = _from[n];
+                var at = n;
+                while (at > from)
+                {
+                    comparisons++;
+                    if (compare(_from[at - 1], index) <= 0)
+                        break;
+                    _from[at] = _from[at - 1];
+                    at--;
+                }
+                _from[at] = index;
+            }
+            return comparisons;
+        }
     }
 
     /// <summary>A field's collapse state, read per Item without searching the layout's list.</summary>

@@ -134,15 +134,17 @@ public sealed record PivotSourceRefusal(PivotSourceRefusalKind Kind, string Mess
 }
 
 /// <summary>
-/// How the bundled source shares the thread while it reads the records (ADR-0065): it works in
-/// slices of about <see cref="Budget"/> and yields between them, so a browser keeps painting, and
-/// a cancelled question stops at the next slice. Every setting can be replaced — a test makes the
-/// slices deterministic with a zero budget and a yield of its own.
+/// How the bundled source shares the thread while it reads the records and assembles its answer,
+/// and how ExPivot shares it while it makes an answer's cube and lays out its report (ADR-0065,
+/// PV-27/PV-40): the work runs in slices of about <see cref="Budget"/> and yields between them, so
+/// a browser keeps painting, and cancelled work stops at the next slice. Every setting can be
+/// replaced — a test makes the slices deterministic with a zero budget and a yield of its own.
 /// </summary>
 public sealed record PivotSlicing
 {
     private readonly TimeSpan _budget = TimeSpan.FromMilliseconds(30);
     private readonly int _recordsPerCheck = 1024;
+    private readonly int _unitsPerCheck = 1024;
     private readonly TimeProvider _timeProvider = TimeProvider.System;
 
     /// <summary>30 ms slices, the clock read every 1,024 records, and the platform's yield.</summary>
@@ -179,7 +181,27 @@ public sealed record PivotSlicing
     /// leaves stops at the row that passed the cap).</summary>
     internal Action<long>? RowsRead { get; init; }
 
-    internal ValueTask YieldAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// How many units of the work after a pass — a leaf of an answer assembled, a leaf's cells of a
+    /// cube merged, a row of a report laid out — are done between two looks at the clock; 1,024 by
+    /// default. The units are counted across every step of the work, so a small answer never reads
+    /// the clock at all. Layer 1 lowers it to slice small answers.
+    /// </summary>
+    internal int UnitsPerCheck
+    {
+        get => _unitsPerCheck;
+        init => _unitsPerCheck = value >= 1 ? value : throw new ArgumentOutOfRangeException(nameof(UnitsPerCheck), value, "At least one unit is done between two looks at the clock.");
+    }
+
+    /// <summary>
+    /// Yields the thread as a slice ends: <see cref="Yield"/> when it is set, otherwise the
+    /// platform's — <c>Task.Delay(1)</c> in a browser, so that it can paint, and <c>Task.Yield()</c>
+    /// elsewhere — capturing no caller's context. Work that goes on after a piece of sliced work
+    /// has yielded takes a slice of its own with it (ExPivot does, between making the cube and
+    /// laying out the report).
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    public ValueTask YieldAsync(CancellationToken cancellationToken = default)
         => Yield is { } yield ? yield(cancellationToken) : PlatformYield(cancellationToken);
 
     // The bundled source captures no caller's context: its slices go on wherever the runtime puts

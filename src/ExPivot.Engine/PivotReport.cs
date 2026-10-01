@@ -34,8 +34,14 @@ public sealed class PivotReport
         HeaderTierCount = headerTierCount;
         Rows = rows;
         ValueCaptions = reader.Values.Select(v => v.Caption).ToArray();
-        foreach (var row in rows)
-            row.Attach(this);
+    }
+
+    /// <summary>Makes rows [<paramref name="from"/>, <paramref name="to"/>) this report's — every
+    /// row before the report is handed out, a piece at a time when it is laid out in slices.</summary>
+    internal void Attach(int from, int to)
+    {
+        for (var i = from; i < to; i++)
+            Rows[i].Attach(this);
     }
 
     /// <summary>The cube the report was laid out from.</summary>
@@ -85,9 +91,37 @@ public sealed class PivotReport
     {
         if (other is null || other.Rows.Count != Rows.Count)
             return false;
-        if (ReferenceEquals(other, this))
-            return true;
-        for (var i = 0; i < Rows.Count; i++)
+        return ReferenceEquals(other, this) || SameRows(other, 0, Rows.Count);
+    }
+
+    /// <summary>
+    /// <see cref="HasSameRowsAs"/> in slices (ADR-0065, PV-40): the rows compared a piece at a time,
+    /// the thread yielded whenever a slice of <see cref="PivotSlicing.Budget"/> is spent — a refresh
+    /// of a large report compares every row. Cancelled, it throws at the next yield. A small report
+    /// is compared without reading the clock, and the task is complete when it returns.
+    /// </summary>
+    /// <param name="other">The report to compare with, or null.</param>
+    /// <param name="slicing">How the work shares the thread; <see cref="PivotSlicing.Default"/> when left out.</param>
+    /// <param name="cancellationToken">Stops the work at the next yield.</param>
+    public ValueTask<bool> HasSameRowsAsAsync(PivotReport? other, PivotSlicing? slicing = null, CancellationToken cancellationToken = default)
+    {
+        var slicer = Slicer.Of(slicing ?? PivotSlicing.Default, cancellationToken);
+        if (other is null || other.Rows.Count != Rows.Count)
+            return ValueTask.FromResult(false);
+        return ReferenceEquals(other, this) ? ValueTask.FromResult(true) : SameRowsAsync(other, slicer);
+    }
+
+    private async ValueTask<bool> SameRowsAsync(PivotReport other, Slicer slicer)
+    {
+        var same = true;
+        await slicer.ForAsync(Rows.Count, (from, to) => same = SameRows(other, from, to), weight: 2).ConfigureAwait(false);
+        return same;
+    }
+
+    // Whether rows [from, to) stand for what the other report's rows there stand for.
+    private bool SameRows(PivotReport other, int from, int to)
+    {
+        for (var i = from; i < to; i++)
         {
             var mine = Rows[i];
             var theirs = other.Rows[i];

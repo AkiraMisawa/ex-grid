@@ -2,40 +2,6 @@ using ExGrid.Data;
 
 namespace ExPivot.Engine;
 
-/// <summary>
-/// How the bundled source shares the thread (ADR-0065): a pass is run in steps of
-/// <see cref="PivotSlicing.RecordsPerCheck"/> rows, the clock is read after each, a slice ends once it
-/// has run for <see cref="PivotSlicing.Budget"/>, and the thread is yielded between slices. A
-/// cancelled question throws at the next slice; a step that answers false has stopped it.
-/// </summary>
-internal static class SlicedRun
-{
-    public static async ValueTask RunAsync(long count, Func<long, long, bool> step, PivotSlicing slicing, CancellationToken cancellationToken)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var clock = slicing.TimeProvider;
-        long at = 0;
-        while (true)
-        {
-            var sliceStart = clock.GetTimestamp();
-            while (at < count)
-            {
-                var end = Math.Min(count, at + slicing.RecordsPerCheck);
-                if (!step(at, end))
-                    return;
-                at = end;
-                if (clock.GetElapsedTime(sliceStart) >= slicing.Budget)
-                    break;
-            }
-            if (at >= count)
-                break;
-            await slicing.YieldAsync(cancellationToken).ConfigureAwait(false);
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-        cancellationToken.ThrowIfCancellationRequested();
-    }
-}
-
 /// <summary>A field's Items over all the data a Snapshot holds (ADR-0059/0065): every held row's
 /// Item, not narrowed by any Hidden Item, a text Item spelled by its first spelling among the
 /// records present.</summary>
