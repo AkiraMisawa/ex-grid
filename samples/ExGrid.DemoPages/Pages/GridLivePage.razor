@@ -202,6 +202,9 @@ else
             }
             finally
             {
+                // Not loading once the read is over, whether it landed or failed: a failure is said
+                // in the status line, never painted as a Window still on its way.
+                _loading = false;
                 _turn.Release();
             }
         }
@@ -283,7 +286,7 @@ else
         _named += tradeIds.Length;
         _heard.UnionWith(tradeIds);
         if (_reading.IsCompleted)
-            _reading = ReadHeardAsync();
+            _reading = Reported(ReadHeardAsync());
     }
 
     private async Task ReadHeardAsync()
@@ -472,14 +475,11 @@ else
         }
     }
 
+    // A rate chosen while the live updates are on reaches the server at once.
     private async Task RateChangedAsync()
     {
-        if (_liveOn)
-            await ToggleRateAsync();
-    }
-
-    private async Task ToggleRateAsync()
-    {
+        if (!_liveOn)
+            return;
         var token = _leaving.Token;
         try
         {
@@ -508,8 +508,24 @@ else
             + $"{_named.ToString("N0", Culture)} trades; {_changedInView.ToString("N0", Culture)} cells in view changed.{heard}");
     }
 
+    // The page's own loop, which nothing awaits: a failure in it is reported as a render's is,
+    // never lost with the task.
+    private async Task Reported(Task loop)
+    {
+        try
+        {
+            await loop;
+        }
+        catch (Exception error)
+        {
+            await DispatchExceptionAsync(error);
+        }
+    }
+
     private void Unavailable(HttpRequestException error)
     {
+        // Said in the status line, rather than left on screen as a Window still on its way.
+        _loading = false;
         _noticesInitial = Api.NotAnswering(error);
         _noticesLine?.Show(_noticesInitial);
         _ = InvokeAsync(StateHasChanged);

@@ -132,7 +132,7 @@
         if (!firstRender)
             return;
         _ticks = new PeriodicTimer(BatchEvery);
-        _ = AmendAsync(_ticks);
+        _ = Reported(AmendAsync(_ticks));
         var token = _leaving.Token;
         try
         {
@@ -228,7 +228,7 @@
         hub.On<string>("VersionChanged", version =>
         {
             server.NotifyChanged(version);
-            DescribeServer(version);
+            _ = InvokeAsync(() => DescribeServer(version));
         });
         // Not cancelled by the page's going: a connection cut off while it opens is an error in the
         // browser's console. DisposeAsync waits for it instead.
@@ -280,6 +280,20 @@
     private RenderFragment Framed(RenderFragment pivot) => DemoChrome.IsMud(ChromeName)
         ? @<MudExGridPaper Elevation="1" Class="demo-stretch-paper">@pivot</MudExGridPaper>
         : pivot;
+
+    // The page's own loop, which nothing awaits: a failure in it is reported as a render's is,
+    // never lost with the task.
+    private async Task Reported(Task loop)
+    {
+        try
+        {
+            await loop;
+        }
+        catch (Exception error)
+        {
+            await DispatchExceptionAsync(error);
+        }
+    }
 
     private void ToggleLocal() => _localOn = !_localOn;
 

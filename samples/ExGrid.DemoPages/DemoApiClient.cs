@@ -55,13 +55,22 @@ public sealed class DemoApiClient : IDisposable
     /// <summary>The server's SignalR hub, which says when the trades change (ADR-0066/0067).</summary>
     public Uri Hub => new(Address, HubPath);
 
-    /// <summary>What a page shows when the server does not answer: where it was looked for, and
-    /// how to start it there.</summary>
+    /// <summary>What a page shows when a request to the server fails: where the server was looked
+    /// for, and what to do about it — start it there, or wait for it to finish generating its trades.
+    /// Shown in place of what the page would have read, never beside an answer that looks
+    /// complete.</summary>
     /// <param name="error">What the request failed with.</param>
-    public string NotAnswering(Exception error) =>
-        $"The demo API server did not answer at {Address} ({error.Message}). It is started with "
-        + $"\"dotnet run --project samples/ExGrid.DemoApi --urls {Address.GetLeftPart(UriPartial.Authority)}\" "
-        + "beside the host, as layer 3 does (ADR-0068).";
+    public string NotAnswering(HttpRequestException error)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        return error.StatusCode is { } status
+            ? $"The demo API server at {Address} answered {(int)status} ({status}). At its first start it "
+                + "generates its trades and answers 503 until they are ready (GET /api/status says how far it has "
+                + "got); reload the page once they are."
+            : $"The demo API server did not answer at {Address} ({error.Message}). It is started with "
+                + $"\"dotnet run --project samples/ExGrid.DemoApi --urls {Address.GetLeftPart(UriPartial.Authority)}\" "
+                + "beside the host, as layer 3 does (ADR-0068).";
+    }
 
     /// <inheritdoc />
     public void Dispose() => Http.Dispose();
