@@ -1,5 +1,6 @@
 import { test, expect, alterPage, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
     expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell, expectCaretShown,
@@ -601,7 +602,7 @@ test('DC-19: = ↓ ↓ points at F4, Shift+arrows extend, the Selection and the 
     // The Focus is still the cell being edited; the Name Box names the pointed cell, as Excel's
     // does (ADR-0051, observed 2026-09-27).
     await expect(nameBox(grid)).toHaveValue('F4');
-    await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c5$/);
+    await expectActiveDescendant(grid, /-r1c5$/);
     await expectCovers(grid.locator('.ex-selection .ex-focus'), grid, 'F2', 'F2');
 
     // Shift+↓ and Shift+→ extend the outline, and the Reference follows it.
@@ -796,7 +797,7 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.type('9');
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await expect(cell(grid, 'F2')).toHaveText('');
         await expect(bar(grid)).toHaveValue('');
         // A press into the bar while a key is still held — a character typed onto the cell,
@@ -979,7 +980,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expect(nameBox(grid)).toHaveValue('D4');
         await page.keyboard.press('Enter');
         await expectFocusAt(grid, 'D4');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await setRoundTrip(0);
     });
 }
@@ -1675,7 +1676,7 @@ for (const chrome of ['builtin', 'mud']) {
         // Enter in the Cell Editor commits and moves.
         await enter(page, grid, 'E1', '5');
         await expect(cell(grid, 'E1')).toHaveText('5');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await copied('C2', '0.5');
         await copied('B3', '7');
 
@@ -1707,7 +1708,7 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Enter');
         await expect(editor(grid)).toHaveCount(0);
         await expect(cell(grid, 'E4')).toHaveText('8');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await copied('B3', '7');
         await pressCell(grid, 'E5');
         await clickBarEnd(grid);
@@ -1715,7 +1716,7 @@ for (const chrome of ['builtin', 'mud']) {
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
         await expect(cell(grid, 'E5')).toHaveText('');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await copied('B2', '12');
 
         // And a paste after an edit lands where the Selection is.
@@ -1746,7 +1747,8 @@ const excelColumnHtml = (width, cells) => [
 
 // A paste event carrying every flavour Excel's clipboard showed the page on Windows: text/plain
 // with the values, text/html with the shown text, text/rtf, and a file (the picture of the
-// range). Dispatched on the grid's focused root, where the browser's own paste lands.
+// range). Dispatched on the grid's root, where the browser's own paste, aimed at the Keyboard
+// Field that holds the keyboard, is heard (ADR-0080).
 async function pasteAsExcel(grid, cells, width) {
     await grid.evaluate((root, { text, html }) => {
         const data = new DataTransfer();
@@ -1946,7 +1948,7 @@ test('SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 
 test('DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser\'s', async ({ page }) => {
     const positionsGrid = positions(page);
     await positionsGrid.locator("[id$='-r1c1']").click({ force: true });
-    await expect(positionsGrid).toBeFocused();
+    await expectKeyboardOn(positionsGrid);
     await alterPage(page, () => {
         window.__undoPrevented = null;
         const listener = (event) => {

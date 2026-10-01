@@ -1,4 +1,5 @@
 import { test, expect, alterPage, record } from './fixtures.mjs';
+import { activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The drag gestures with a real mouse (ADR-0011/0016/0032), the large-paste and
 // off-screen-paste rules (ADR-0014/0015) with the paste's own number (PST-6), and the
@@ -130,7 +131,7 @@ test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded, ADR
     // Ctrl+Shift+Down moved the Extent; the Focus stayed on row 0 (ADR-0052), so Down lands on row 1.
     await page.keyboard.press('ArrowDown');
     await expect
-        .poll(async () => grid(page).getAttribute('aria-activedescendant'), { timeout: 500 })
+        .poll(async () => activeDescendant(grid(page)), { timeout: 500 })
         .toMatch(/r1c1$/);
     const keyMs = Date.now() - keyBefore;
 
@@ -144,7 +145,7 @@ test('the focus outline holds 3:1 against the cell ground under the default them
     await grid(page).locator("[id$='r1c1']").click({ force: true });
     // The Focus outline is painted by the render the click asked for — a round trip away
     // on the Server host.
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
+    await expectActiveDescendant(grid(page), /r1c1$/);
 
     const contrast = await page.evaluate(() => {
         const focus = [...document.querySelectorAll('.ex-focus')]
@@ -203,8 +204,8 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
 test('a composing IME keydown is never taken (ED-11, the listener guard)', async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
-    const before = await grid(page).getAttribute('aria-activedescendant');
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    const before = await activeDescendant(grid(page));
 
     // A synthetic composing keydown: the capture listener must let it pass — taking
     // Enter or an arrow mid-composition breaks typing in any language that needs one.
@@ -223,5 +224,5 @@ test('a composing IME keydown is never taken (ED-11, the listener guard)', async
     });
     expect(results).toEqual({ composingEnter: false, composingArrow: false, keyCode229: false });
     // And the Focus did not move under the half-finished word.
-    expect(await grid(page).getAttribute('aria-activedescendant')).toBe(before);
+    expect(await activeDescendant(grid(page))).toBe(before);
 });

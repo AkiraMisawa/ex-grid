@@ -1,4 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { expectKeyboardOn } from './keyboard.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, enter, candidates, typeSteadily,
     expectCovers,
@@ -80,15 +81,16 @@ test('ADR-0018: a completion list, a pointing outline and the Formula Bar belong
     await expect(bar(right)).toHaveValue('');
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
-    // The cancel hands the keyboard back to the left root a round trip later; a press on the
-    // other Sheet before that is the race the last test in this file pins.
+    // The cancel hands the keyboard back to the left Sheet — its Keyboard Field (ADR-0080) — a
+    // round trip later; a press on the other Sheet before that is the race the last test in this
+    // file pins.
     await expect(editor(left)).toHaveCount(0);
-    await expect(left).toBeFocused();
+    await expectKeyboardOn(left);
 
     // Pointing in the right Sheet paints its outline there only.
     await clickCell(right, 'D1');
     await expectFocusAt(right, 'D1');
-    await expect(right).toBeFocused();
+    await expectKeyboardOn(right);
     await page.keyboard.type('=');
     await page.keyboard.press('ArrowLeft');
     await expect(editor(right)).toHaveValue('=C1');
@@ -141,7 +143,7 @@ test('ADR-0018: a Sheet the user has pressed keeps the keyboard when the other o
     await expectFocusAt(right, 'D1');
     // Every answer in flight has landed.
     await page.waitForTimeout(1000);
-    await expect(right).toBeFocused();
+    await expectKeyboardOn(right);
     await page.keyboard.type('7');
     await page.keyboard.press('Enter');
     await expect(cell(right, 'D1')).toHaveText('7');
@@ -172,7 +174,7 @@ test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid
 
     await clickCell(right, 'D1');
     await expectFocusAt(right, 'D1');
-    await expect(right).toBeFocused();
+    await expectKeyboardOn(right);
     await page.keyboard.type('=B1+COUNTA(Positions[Id])');
     await expect(editor(right)).toHaveValue('=B1+COUNTA(Positions[Id])');
     const rightId = rightPositions.locator('.ex-reference-outline');

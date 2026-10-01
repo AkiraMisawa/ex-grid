@@ -1,5 +1,8 @@
 import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import {
+    expectKeyboardOn, keyboardIsOn, keyField, activeDescendant, expectActiveDescendant,
+} from './keyboard.mjs';
 import { expectSelectionIsCell } from './sheet-helpers.mjs';
 
 // The interaction surface, driven with real keys and the real clipboard against the
@@ -42,8 +45,9 @@ test('typing opens Overwrite containing the character, Enter commits and moves (
     // The demo's Consumer applies the intent (ADR-0007's other half): a NEW row
     // instance comes back through the source and the painted cell follows.
     await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Xyz');
-    // Enter moved the Focus down: the activedescendant names row 1.
-    const active = await grid(page).getAttribute('aria-activedescendant');
+    // Enter moved the Focus down: the activedescendant names row 1, on the grid's Keyboard Field
+    // (ADR-0080).
+    const active = await activeDescendant(grid(page));
     expect(active).toMatch(/r1c1$/);
 });
 
@@ -71,8 +75,9 @@ test('Escape cancels the editor and never blurs the grid mid-edit (ED-3)', async
 
     await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     await expect(page.locator('#edit-status')).toContainText('Edited: —');
-    // The grid still holds the keyboard: the root has DOM focus again.
-    await expect(grid(page)).toBeFocused();
+    // The grid still holds the keyboard: its root, or its Keyboard Field, has DOM focus again
+    // (ADR-0080).
+    await expectKeyboardOn(grid(page));
 });
 
 // KB-8 (ADR-0012, rewritten 2026-10-01): Escape with nothing left to dismiss releases Tab and keeps
@@ -94,7 +99,7 @@ async function aButtonEitherSide(page) {
     });
 }
 
-test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shift+Tab leaves for the page (KB-8)', async ({ page }) => {
+test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shift+Tab leaves for the page (KB-8, ADR-0080)', async ({ page }) => {
     await aButtonEitherSide(page);
     await clickCell(page, 0, 1);
     await page.keyboard.type('Q');
@@ -107,30 +112,33 @@ test('Escape with nothing to dismiss keeps the keyboard, and the next Tab or Shi
     // for it (ADR-0010/0021), so each Tab here waits for its Escape's answer.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
-    await expect(grid(page)).toBeFocused();
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+    await expectKeyboardOn(grid(page));
+    await expectActiveDescendant(grid(page), /r0c1$/);
 
-    // The browser's next element: the header's ▾ buttons are tab stops of their own (KB-12), and
-    // Tab goes on through them to the page. No cell takes it, and nothing traps it.
-    await page.keyboard.press('Tab');
-    const menus = grid(page).locator('.ex-menu-button');
-    await expect(menus.first()).toBeFocused();
-    for (let i = 1; i < await menus.count(); i++) {
-        await page.keyboard.press('Tab');
-        await expect(menus.nth(i)).toBeFocused();
-    }
+    // The browser's next element from where the keyboard is: this grid edits, so that is its
+    // Keyboard Field, which stands at the start of the Viewport (ADR-0080). The header's ▾ buttons,
+    // tab stops of their own (KB-12), come before it in the page's order, and Tab goes straight on
+    // to the page. No cell takes it, and nothing traps it.
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 
-    // Back on the root the release is spent: Tab cycles inside the selection again.
+    // Back in the grid the release is spent: Tab cycles inside the selection again. Focus put on
+    // the root by script is passed on to its Keyboard Field (ADR-0080).
     await grid(page).focus();
     await page.keyboard.press('Tab');
-    await expect(grid(page)).toBeFocused();
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c2$/);
+    await expectKeyboardOn(grid(page));
+    await expectActiveDescendant(grid(page), /r0c2$/);
 
-    // Shift+Tab after an Escape goes to the page's previous element.
+    // Shift+Tab after an Escape goes to the page's previous element: from the field, the header's
+    // last ▾ button, and on back through the others to the element before the grid. The root is
+    // no tab stop, so nothing on the way out hands the keyboard back to the field (ADR-0080).
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
+    const menus = grid(page).locator('.ex-menu-button');
+    for (let i = await menus.count() - 1; i >= 0; i--) {
+        await page.keyboard.press('Shift+Tab');
+        await expect(menus.nth(i)).toBeFocused();
+    }
     await page.keyboard.press('Shift+Tab');
     await expect(page.locator('#before-grid')).toBeFocused();
 });
@@ -146,7 +154,7 @@ test('Escape, Escape, then a character opens an edit in the selected cell (KB-8)
     const editor = grid(page).locator('input.ex-editor');
     await expect(editor).toHaveValue('x');
     await expect(editor).toBeFocused();
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+    await expectActiveDescendant(grid(page), /r0c1$/);
     await page.keyboard.press('Escape');
     await expect(editor).toHaveCount(0);
     await expect(page.locator('#edit-status')).toContainText('Edited: —');
@@ -158,17 +166,18 @@ test('Escape, a press on a cell, then Tab cycles inside it (KB-8)', async ({ pag
     // Released once the answer has landed; the user who presses the grid has come back to it.
     await page.waitForTimeout(500);
     await clickCell(page, 1, 1);
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
+    await expectActiveDescendant(grid(page), /r1c1$/);
 
     await page.keyboard.press('Tab');
-    await expect(grid(page)).toBeFocused();
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c2$/);
+    await expectKeyboardOn(grid(page));
+    await expectActiveDescendant(grid(page), /r1c2$/);
 });
 
-test('with a 150 ms round trip, the keys straight after Escape wait for its answer: a Tab is dropped, a character opens an edit (KB-8, ADR-0010)', async ({ page }) => {
+test('with a 150 ms round trip, the keys straight after Escape wait for its answer: a Tab is dropped, a character opens an edit (KB-8, ADR-0010, ADR-0080)', async ({ page }) => {
     test.skip(!SERVER, 'WebAssembly answers before the next key: nothing is held long enough to see');
+    await aButtonEitherSide(page);
     await clickCell(page, 0, 1);
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+    await expectActiveDescendant(grid(page), /r0c1$/);
     await setRoundTrip(150);
 
     // A Tab typed before the Escape's answer is held behind it; released then, it is the browser's,
@@ -177,10 +186,12 @@ test('with a 150 ms round trip, the keys straight after Escape wait for its answ
     await page.keyboard.press('Escape');
     await page.keyboard.press('Tab');
     await page.waitForTimeout(1000);
-    await expect(grid(page)).toBeFocused();
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+    await expectKeyboardOn(grid(page));
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    // The browser's next element from the grid's Keyboard Field, past the header's ▾ buttons,
+    // which come before it (ADR-0080).
     await page.keyboard.press('Tab');
-    await expect(grid(page).locator('.ex-menu-button').first()).toBeFocused();
+    await expect(page.locator('#after-grid')).toBeFocused();
 
     // A character typed before the answer opens an edit in the selected cell once it lands.
     await grid(page).focus();
@@ -188,7 +199,7 @@ test('with a 150 ms round trip, the keys straight after Escape wait for its answ
     await page.keyboard.type('x');
     const editor = grid(page).locator('input.ex-editor');
     await expect(editor).toHaveValue('x');
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+    await expectActiveDescendant(grid(page), /r0c1$/);
     await page.keyboard.press('Escape');
     await expect(editor).toHaveCount(0);
 });
@@ -197,11 +208,11 @@ test('Escape, an arrow, then Tab cycles inside the selection (KB-8)', async ({ p
     await clickCell(page, 0, 1);
     await page.keyboard.press('Escape');
     await page.keyboard.press('ArrowDown');
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
+    await expectActiveDescendant(grid(page), /r1c1$/);
 
     await page.keyboard.press('Tab');
-    await expect(grid(page)).toBeFocused();
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c2$/);
+    await expectKeyboardOn(grid(page));
+    await expectActiveDescendant(grid(page), /r1c2$/);
 });
 
 test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/CP-6/CP-10)', async ({ page }) => {
@@ -303,7 +314,7 @@ test('CP-6/CP-10/CP-14: Ctrl+C and Ctrl+V reach the grid after an edit ends by E
         await expect(editor).toHaveValue('Q');
         await page.keyboard.press(key);
         await expect(editor).toHaveCount(0);
-        await expect(grid(page)).toBeFocused();
+        await expectKeyboardOn(grid(page));
         await copies(1, 1);
         await copies(2, 1);
     }
@@ -329,7 +340,7 @@ test('ADR-0014 (amended 2026-09-29): one value of plain text over a range goes i
     await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Solo');
     await expect(grid(page).locator("[id$='r1c1']")).toHaveText(below[0]);
     await expect(grid(page).locator("[id$='r2c1']")).toHaveText(below[1]);
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+    await expectActiveDescendant(grid(page), /r0c1$/);
     // That cell alone, row 0 and column 1: B1 in A1 terms (a 1×1 Selection is not announced:
     // ADR-0033).
     await expectSelectionIsCell(grid(page), 'B1');
@@ -498,8 +509,8 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
     await clickCell(page, 0, 1);
     // The click's Focus is painted by the render it asked for — a round trip away on the
     // Server host.
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
-    const focusBefore = await grid(page).getAttribute('aria-activedescendant');
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    const focusBefore = await activeDescendant(grid(page));
 
     // Registered and awaited before the key is sent, and NOT `once`: a chord arrives
     // as two keydowns — Control first, then PageDown — and a once-listener is spent
@@ -526,32 +537,39 @@ test('Ctrl+PageDown is neither handled nor prevented (KB-15)', async ({ page }) 
     await page.keyboard.press('ControlOrMeta+PageDown');
 
     expect(await page.evaluate(() => window.__kb15)).toBe(false);
-    expect(await grid(page).getAttribute('aria-activedescendant')).toBe(focusBefore);
+    expect(await activeDescendant(grid(page))).toBe(focusBefore);
 });
 
-test('the grid is one tab stop (A11Y-4, KB-12)', async ({ page }) => {
+test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4, KB-12, ADR-0080)', async ({ page }) => {
     // Tab from the address bar territory: focus the body first.
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Tab');
 
-    // The first tab stop inside the page that is the grid's is the root itself.
+    // The first grid edits, so its tab stop is its Keyboard Field, and its root is not one
+    // (ADR-0080).
     const first = grid(page);
-    // Walk tabs until the first grid is reached (nav links precede it).
-    for (let i = 0; i < 20; i++) {
-        if (await first.evaluate((el) => document.activeElement === el)) break;
+    // Walk tabs until the first grid's keyboard is reached: nav links precede it, and so do the
+    // header's ▾ buttons, which are tab stops of their own (KB-12) standing before the Viewport.
+    for (let i = 0; i < 30; i++) {
+        if (await keyboardIsOn(first) === true) break;
         await page.keyboard.press('Tab');
     }
-    await expect(first).toBeFocused();
-    // Keyboard focus shows the ring (KB-12).
-    const outline = await first.evaluate((el) => getComputedStyle(el).outlineStyle);
-    expect(outline).not.toBe('none');
+    await expect(keyField(first)).toBeFocused();
+    await expect(keyField(first)).toHaveAttribute('tabindex', '0');
+    await expect(first).toHaveAttribute('tabindex', '-1');
+    // Keyboard focus shows the ring (KB-12). The field matches :focus-visible on every focus, a
+    // click's too, so the root's ring is drawn from the script's mark of a keyboard that did not
+    // arrive by a press (ADR-0080).
+    await expect(first).toHaveClass(/\bex-focus-visible\b/);
+    await expect.poll(() => first.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
 
     // One more Tab leaves the grid entirely: no cell is a tab stop.
     await page.keyboard.press('Tab');
     const activeInsideGrid = await first.evaluate(
         (el) => el === document.activeElement || el.contains(document.activeElement));
-    // The next stop can be the second grid's root or the menu buttons; what it must
-    // not be is a cell of the first grid.
+    // The next stop is past the field — the second grid, or the page — unless this Tab is the
+    // grid's own, which keeps the keyboard in the field; what it must not be is a cell of the
+    // first grid.
     const activeIsCell = await page.evaluate(
         () => document.activeElement?.classList?.contains('ex-cell') ?? false);
     expect(activeIsCell).toBe(false);
@@ -584,7 +602,7 @@ test('a header click sorts and the selection is untouched by it (SR-1)', async (
 
     await expect(grid(page).locator('.ex-header-cell').nth(2)).toHaveAttribute('aria-sort', 'ascending');
     // The click did not select the column: the selection is still the one cell.
-    const active = await grid(page).getAttribute('aria-activedescendant');
+    const active = await activeDescendant(grid(page));
     expect(active).toMatch(/c0$/);
 });
 
@@ -632,7 +650,7 @@ test('Escape returns the keyboard from a descendant control to the grid (ADR-002
 
     // …but Escape is the way out: back to the grid, not out of it.
     await page.keyboard.press('Escape');
-    await expect(cells).toBeFocused();
+    await expectKeyboardOn(cells);
 });
 
 // Entering a cell by key (ADR-0037), on /cells. Columns there: Book 0 (pinned), Close of
@@ -660,8 +678,9 @@ test('Space enters a cell with several actions; the arrows choose and Space fire
     const chosen = cells.locator('.ex-action-chosen');
     await expect(chosen).toHaveCount(1);
     await expect(chosen).toHaveText('Approve');
-    // The keyboard never left the root; the root names the chosen button instead.
-    await expect(cells).toBeFocused();
+    // The keyboard never left the grid, whose root names the chosen button instead: this grid
+    // edits nothing, so it has no Keyboard Field (ADR-0080).
+    await expectKeyboardOn(cells);
     const chosenId = await chosen.getAttribute('id');
     await expect(cells).toHaveAttribute('aria-activedescendant', chosenId);
 
@@ -699,7 +718,7 @@ test('Escape leaves an Interactive cell and the grid keeps the keyboard (KB-22, 
     await page.keyboard.press('Escape');
 
     await expect(cells.locator('.ex-action-chosen')).toHaveCount(0);
-    await expect(cells).toBeFocused();
+    await expectKeyboardOn(cells);
     await expect(cells).toHaveAttribute('aria-activedescendant', /r0c6$/);
 });
 
@@ -714,7 +733,7 @@ test('Space puts the caret in a Template cell\'s field, and Escape brings the ke
     await expect(note).toHaveValue('memo');
 
     await page.keyboard.press('Escape');
-    await expect(cells).toBeFocused();
+    await expectKeyboardOn(cells);
     await expect(cells).toHaveAttribute('aria-activedescendant', /r0c4$/);
     // The text typed there is the field's, and it is still there.
     await expect(note).toHaveValue('memo');
