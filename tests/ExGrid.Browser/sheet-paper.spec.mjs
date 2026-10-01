@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { sheet, cell, pressCell, editor } from './sheet-helpers.mjs';
+import { sheet, cell, pressCell, editor, bar, stretchesOf } from './sheet-helpers.mjs';
 import { painted, sameColour, resolvedColour, contrast } from './pixels.mjs';
 
 // ExSheet paints Font and Fill on white Paper (ticket 48; ADR-0071, "Paper and Ink"; SH-39, SH-40,
@@ -151,13 +151,18 @@ for (const [chrome, query] of CHROMES) {
             // Point (ADR-0051): the Reference written by an arrow is shown selected, on the shade.
             await page.keyboard.press('ArrowDown');
             await expect(editor(grid)).toHaveValue('=C3+E8');
-            // The coloured text is the core's under either Chrome: in the cell, and in the bar.
-            const pointed = grid.locator('.ex-viewport .ex-reference-text .ex-reference-pointed').first();
-            await expect(pointed).toBeAttached();
+            // The coloured text is the core's under either Chrome: in the cell, and in the bar. Its
+            // References are highlights over the layer's one run (ADR-0057, note of 2026-10-01), so
+            // the colours are those the grid's stylesheet paints them in. The bar's layer is hidden
+            // while the edit is in the cell, and its colours are read off the same highlights.
+            await expect.poll(async () => (await stretchesOf(editor(grid))).filter((stretch) => stretch.pointed).map((stretch) => stretch.text)).toEqual(['E8']);
+            const stretches = await stretchesOf(editor(grid));
+            const barColour = await bar(grid).evaluate((input, first) =>
+                getComputedStyle(input.previousElementSibling.firstElementChild, `::highlight(${first})`).color, `${stretches[0].prefix}1`);
             read[scheme] = {
                 outline: await colourOf(grid.locator('.ex-reference-outline.ex-reference-1').first(), 'color'),
-                shade: await colourOf(pointed, 'backgroundColor'),
-                bar: await colourOf(grid.locator('.ex-formula-bar .ex-reference-text .ex-reference-1').first(), 'color'),
+                shade: await resolvedColour(page, stretches.find((stretch) => stretch.pointed).ground),
+                bar: await resolvedColour(page, barColour),
             };
             await page.keyboard.press('Escape');
         }
@@ -295,9 +300,11 @@ for (const [chrome, query] of CHROMES) {
         await expect(editor(grid)).toHaveValue('=A1+B1');
         await expect(editor(grid)).toHaveClass(/\bex-reference-text-shown\b/);
         await page.mouse.move(0, 0);
-        const layer = editorLayer(grid);
-        expect((await lookOf(layer.locator('.ex-reference-1'))).color).toEqual([0x32, 0x6a, 0xc7]);
-        expect((await lookOf(layer.locator('.ex-reference-2'))).color).toEqual([0xc0, 0x35, 0x3e]);
+        // Each Reference is a highlight over the layer's one run (ADR-0057, note of 2026-10-01).
+        await expect.poll(async () => (await stretchesOf(editor(grid))).map((stretch) => stretch.text)).toEqual(['A1', 'B1']);
+        const [first, second] = await stretchesOf(editor(grid));
+        expect(await resolvedColour(page, first.ink)).toEqual([0x32, 0x6a, 0xc7]);
+        expect(await resolvedColour(page, second.ink)).toEqual([0xc0, 0x35, 0x3e]);
         const box = await editorBox(grid).boundingBox();
         expect(sameColour(await groundOf(page, editorBox(grid)), [255, 255, 0], 2), 'still on the Fill').toBe(true);
         // As painted: each Reference's colour is on the screen inside the editor, over the yellow.

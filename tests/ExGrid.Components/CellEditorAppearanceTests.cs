@@ -168,7 +168,7 @@ public class CellEditorAppearanceTests : GridTestContext
         Assert.Equal("ex-reference-text ex-reference-text-cell ex-font-ff0000bius ex-fill-ffff00", layer.ClassName);
         Assert.Equal("ex-editor ex-font-ff0000bius ex-fill-ffff00", layer.NextElementSibling!.ClassName);
         // The Reference keeps its own colour's class over the look.
-        Assert.Equal("=<span class=\"ex-reference-1\">B2</span>", layer.FirstElementChild!.InnerHtml);
+        Assert.Equal("=<span class=\"ex-reference-1\">B2</span>", global::ReferenceText.ColouredText.Of(layer));
         // The Formula Bar frames the Paper: its field and its layer keep their own look.
         Assert.DoesNotContain(cut.FindAll(".ex-formula-bar *"), e => e.ClassName?.Contains("ex-font-") == true || e.ClassName?.Contains("ex-fill-") == true);
     }

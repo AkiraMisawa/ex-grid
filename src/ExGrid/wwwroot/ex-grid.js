@@ -493,32 +493,93 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     document.addEventListener('selectionchange', onSelectionChange);
 
-    // The coloured text (ADR-0057): beneath an editor surface, a layer the core renders with each
-    // Reference in its colour stands immediately before the field, and carries the text it was
-    // rendered for (data-ex-text). On a circuit that is a round trip behind the typing, and colours
-    // on text typed past would stand on the wrong characters, so the layer shows — and the field's
-    // own text turns transparent — only while the two texts are one: the listener sets one class on
-    // the field then, and the stylesheet does the rest. Only in the surface the edit is in, as Excel
-    // colours it: the field holding DOM focus, the one held keys are handed to (ADR-0051) — the
-    // other surface keeps its plain text, and a press from one into the other takes the colours
-    // with it. Compared on each input, when a layer's text changes (that one attribute, observed
-    // while an edit is open) and whenever the selection moves, which is how a field that has just
-    // taken focus, or just opened over its layer, is heard. A field holding an IME composition is
-    // ahead of anything rendered, and is never shown over; every input of a composition, its last
-    // included, says so, and the composition's end comes with no input after it, so the end is
-    // heard too, and the colours come back then rather than at the next keystroke. The layer's
-    // line scrolls with the field: the scroll-offset entry, on one more element (ADR-0021). Reads
-    // values, one attribute, which element has focus and scroll offsets; no layout.
+    // The coloured text (ADR-0057): beneath an editor surface, a layer the core renders with the
+    // field's text stands immediately before the field, and carries the text it was rendered for
+    // (data-ex-text). On a circuit that is a round trip behind the typing, and colours on text typed
+    // past would stand on the wrong characters, so the layer shows — and the field's own text turns
+    // transparent — only while the two texts are one: the listener sets one class on the field then,
+    // and the stylesheet does the rest. Only in the surface the edit is in, as Excel colours it: the
+    // field holding DOM focus, the one held keys are handed to (ADR-0051) — the other surface keeps
+    // its plain text, and a press from one into the other takes the colours with it. Compared on each
+    // input, when a layer's text or colours change (those two attributes, observed while an edit is
+    // open) and whenever the selection moves, which is how a field that has just taken focus, or just
+    // opened over its layer, is heard. A field holding an IME composition is ahead of anything
+    // rendered, and is never shown over; every input of a composition, its last included, says so,
+    // and the composition's end comes with no input after it, so the end is heard too, and the
+    // colours come back then rather than at the next keystroke. The layer's line scrolls with the
+    // field: the scroll-offset entry, on one more element (ADR-0021). Reads values, two attributes,
+    // which element has focus and scroll offsets; no layout.
+    //
+    // The layer's text is one run, as the field's is, and its References are coloured by the CSS
+    // Custom Highlight API (ADR-0057 and ADR-0021, notes of 2026-10-01): when the layer shows, one
+    // Range per stretch the core wrote on it (data-ex-colours: "start,length,name" each), over its
+    // one text node, in the highlight of that name; when it hides, they are taken out again. The
+    // names are this grid's own, and so are the highlights registered under them, which go with the
+    // grid: CSS.highlights is one registry per document, and a shared name would let one grid clear
+    // another's colours (ADR-0018). The grid's generated stylesheet paints them.
     let composingIn = null;
     let watchingReferenceTexts = false;
+    const highlights = new Map();
+    const colouredLayers = new Map();
     const referenceTextOf = (field) => {
         const layer = field.previousElementSibling;
         return layer !== null && layer.classList.contains('ex-reference-text') ? layer : null;
     };
+    const uncolour = (layer) => {
+        const coloured = colouredLayers.get(layer);
+        if (coloured !== undefined) {
+            for (const [highlight, range] of coloured.ranges) {
+                highlight.delete(range);
+            }
+            colouredLayers.delete(layer);
+        }
+    };
+    // Built again only when the layer's text, its colours or its run has changed since, or a range
+    // no longer spans what it was built over — a change to the run's text moves the ranges in it.
+    const colour = (layer) => {
+        const text = layer.getAttribute('data-ex-text');
+        const colours = layer.getAttribute('data-ex-colours') ?? '';
+        const run = layer.firstElementChild?.firstChild;
+        const coloured = colouredLayers.get(layer);
+        if (coloured !== undefined && coloured.text === text && coloured.colours === colours && coloured.run === run
+            && coloured.ranges.every(([, range, length]) => range.endOffset - range.startOffset === length)) {
+            return;
+        }
+        uncolour(layer);
+        if (!(run instanceof Text) || colours === '' || typeof Highlight !== 'function') {
+            return;
+        }
+        const ranges = [];
+        for (const stretch of colours.split(' ')) {
+            const [start, length, name] = stretch.split(',');
+            const from = Number(start);
+            const to = from + Number(length);
+            if (!(from >= 0 && to <= run.length)) {
+                continue;
+            }
+            let highlight = highlights.get(name);
+            if (highlight === undefined) {
+                highlight = new Highlight();
+                highlights.set(name, highlight);
+                CSS.highlights.set(name, highlight);
+            }
+            const range = new Range();
+            range.setStart(run, from);
+            range.setEnd(run, to);
+            highlight.add(range);
+            ranges.push([highlight, range, to - from]);
+        }
+        colouredLayers.set(layer, { text, colours, run, ranges });
+    };
     const gateReferenceText = (field, layer) => {
-        field.classList.toggle('ex-reference-text-shown',
-            editing !== 'none' && field === document.activeElement && composingIn !== field
-            && layer.getAttribute('data-ex-text') === field.value);
+        const shown = editing !== 'none' && field === document.activeElement && composingIn !== field
+            && layer.getAttribute('data-ex-text') === field.value;
+        field.classList.toggle('ex-reference-text-shown', shown);
+        if (shown) {
+            colour(layer);
+        } else {
+            uncolour(layer);
+        }
         layer.firstElementChild.scrollLeft = field.scrollLeft;
     };
     const gateReferenceTexts = () => {
@@ -561,7 +622,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         watchingReferenceTexts = on;
         if (on) {
-            referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text'], subtree: true });
+            referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text', 'data-ex-colours'], subtree: true });
             root.addEventListener('scroll', onFieldScroll, true);
             root.addEventListener('compositionend', onCompositionEnd, true);
             return;
@@ -572,6 +633,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         composingIn = null;
         for (const field of root.querySelectorAll('.ex-reference-text-shown')) {
             field.classList.remove('ex-reference-text-shown');
+        }
+        for (const layer of [...colouredLayers.keys()]) {
+            uncolour(layer);
         }
     };
 
@@ -2129,6 +2193,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             cancelAnimationFrame(caretFrame);
             caretFrame = 0;
             watchReferenceTexts(false);
+            // The grid's highlights go with it: their names are its own, and nothing else paints
+            // or empties them.
+            for (const [name, highlight] of highlights) {
+                if (CSS.highlights.get(name) === highlight) {
+                    CSS.highlights.delete(name);
+                }
+            }
+            highlights.clear();
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
             lastSurface = null;
