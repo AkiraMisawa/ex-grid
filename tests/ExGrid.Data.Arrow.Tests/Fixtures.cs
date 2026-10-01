@@ -21,6 +21,9 @@ internal static class Fixtures
 
     public static readonly DateTime Epoch = new(2026, 1, 1);
 
+    /// <summary>The codecs a Consumer hands in to read a compressed stream: Apache.Arrow.Compression's.</summary>
+    public static readonly ICompressionCodecFactory Codecs = new Apache.Arrow.Compression.CompressionCodecFactory();
+
     /// <summary>Deals keyed by id, with every kind of column, some captioned.</summary>
     public static SnapshotBuilder<Deal> Deals()
         => new SnapshotBuilder<Deal>()

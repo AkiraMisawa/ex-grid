@@ -40,7 +40,7 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
         IpcFrames.CheckSchema(first);
 
         var source = new TrackingStream(first, stream);
-        using var reader = new ArrowStreamReader(source, codecs, leaveOpen: true);
+        using var reader = new ArrowStreamReader(source, ManagedMemory.Instance, codecs, leaveOpen: true);
         return await ReadBatchesAsync(reader, _ => source.BytesRead, total, null, () => source.ReachedEnd).ConfigureAwait(false);
     }
 
@@ -94,7 +94,7 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
         file.Position = 0;
         if (!tail.AsSpan().SequenceEqual(FileMagic))
             throw new SnapshotException("The Arrow file ends without its footer, so it may have been cut short; a file is read only whole.");
-        using var reader = new ArrowFileReader(file, allocator: null, codecs, leaveOpen: true);
+        using var reader = new ArrowFileReader(file, ManagedMemory.Instance, codecs, leaveOpen: true);
         return await ReadBatchesAsync(reader, null, null, null, null).ConfigureAwait(false);
     }
 
@@ -116,20 +116,23 @@ internal sealed class ArrowSnapshotReader(SnapshotLoadOptions? options, ICompres
         var columns = Declare(schema, builder);
         var scratch = new ReadScratch();
         var batches = 0;
+        // A record batch is not disposed: disposing one releases the dictionary its columns share
+        // with the batches after it, and a later batch, or a delta Arrow concatenates onto it, would
+        // read released memory. A batch from a stream or a file holds managed memory (ManagedMemory),
+        // and one read in place holds the Consumer's own bytes — and, when its buffers were
+        // compressed, what Arrow undid them into, which Arrow's finalizers release; either way it
+        // is reclaimed once the batch is let go.
         while (await GuardAsync(() => reader.ReadNextRecordBatchAsync(cancellationToken), ranOut).ConfigureAwait(false) is { } batch)
         {
-            using (batch)
+            long? bytes = bytesAfter?.Invoke(batches);
+            var arrays = Arrays(batch, columns);
+            for (var start = 0; start < batch.Length; start += ChunkRows)
             {
-                long? bytes = bytesAfter?.Invoke(batches);
-                var arrays = Arrays(batch, columns);
-                for (var start = 0; start < batch.Length; start += ChunkRows)
-                {
-                    var length = Math.Min(ChunkRows, batch.Length - start);
-                    long rowBase = builder.RowCount;
-                    for (var c = 0; c < columns.Length; c++)
-                        columns[c].Read(arrays[c], start, length, rowBase, scratch);
-                    await builder.CheckpointAsync(bytes, totalBytes).ConfigureAwait(false);
-                }
+                var length = Math.Min(ChunkRows, batch.Length - start);
+                long rowBase = builder.RowCount;
+                for (var c = 0; c < columns.Length; c++)
+                    columns[c].Read(arrays[c], start, length, rowBase, scratch);
+                await builder.CheckpointAsync(bytes, totalBytes).ConfigureAwait(false);
             }
             batches++;
             cancellationToken.ThrowIfCancellationRequested();
