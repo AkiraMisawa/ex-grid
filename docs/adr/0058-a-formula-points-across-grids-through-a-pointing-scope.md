@@ -193,6 +193,12 @@ there is neither.
   - **This holds no state between instances.** The grid learns which root to tell from the render
     that makes it pointed at, and only what the Consumer put in one Scope is joined. That is the
     difference from the first gap. Here the script keeps an order; it does not decide a meaning.
+  - **The keys held are replayed against the mode the write leaves.** *(Found on CI, the Server host,
+    2026-10-01.)* The Sheet's key gate had learned that mode from the render's after-render, which on
+    a circuit runs once the browser has acknowledged the render: a round trip after the press was
+    answered. A Shift+↓ held behind the press met the gate still in Overwrite, was not claimed, and
+    was dropped, so the page did not say why nothing moved. The Sheet now tells its gate before the
+    write returns, as any change of an edit does, so the tell travels ahead of the answer.
 
 ## Completion, aligned with Excel
 

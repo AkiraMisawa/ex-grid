@@ -616,6 +616,33 @@ test.describe('/pointing', () => {
         await expect(editor(grid)).toHaveValue(lookup('R-2'));
     });
 
+    // The keys held behind a press handed on are handed on against the mode its answer leaves (DC-54).
+    // The Sheet's key gate learned that mode from the render's after-render, which on a circuit runs
+    // once the browser has acknowledged the render: a round trip after the answer. A Shift+↓ held
+    // behind the press met the gate before it was told, was not claimed, and was dropped, and the page
+    // said nothing (found on CI, the Server host, 2026-10-01).
+    test('ADR-0058/SH-35/DC-54: with a 150 ms round trip, a press and Shift+↓ at once: the Shift+↓ is refused, and the page says why', async ({ page }) => {
+        test.skip(!SERVER, 'WebAssembly has no round trip: the gate is told within the press');
+        const grid = sheet(page);
+        const positions = table(page);
+        await pressCell(grid, 'C3');
+        await page.keyboard.type('=');
+        await expect(editor(grid)).toHaveValue('=');
+        await expectPointedAt(positions);
+        await setRoundTrip(150);
+
+        // No wait between the two.
+        await clickCell(positions, 'C1');
+        await page.keyboard.press('Shift+ArrowDown');
+
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await expect(refused(page)).toContainText('Shift+arrow');
+        await expect(editor(grid)).toHaveValue(lookup('R-1'));
+        await setRoundTrip(0);
+        await page.keyboard.press('ArrowDown');
+        await expect(editor(grid)).toHaveValue(lookup('R-2'));
+    });
+
     /** The dashes run down the body of the column a cell is in, from that cell down: its left edge
      * and its width, from its top, over more than one row. */
     async function expectDashedColumn(positions, address) {
