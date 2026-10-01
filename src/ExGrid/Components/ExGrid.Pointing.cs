@@ -17,7 +17,8 @@ public partial class ExGrid<TRow>
     /// Formula. Asked synchronously, on the text and caret each arrow key carries from the
     /// browser and never on an earlier answer, so a fast typist is never pointed where the text
     /// no longer allows it. While it answers true in Overwrite, an arrow points instead of
-    /// committing — <c>=</c> ↓ ↓ writes the Reference two rows down — and a click on a cell
+    /// committing — <c>=</c> ↓ ↓ writes the Reference two rows down — Home points at the row's
+    /// first column, End commits nothing and writes nothing (ADR-0058), and a click on a cell
     /// points in any editing state. Where it answers false, Overwrite and Caret keep the
     /// meanings ADR-0012 gives the arrows. Needs <see cref="ReferenceText"/>. Null — the
     /// default — never points.
@@ -208,11 +209,13 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// An arrow, Shift and an arrow, Home or End while editing (ADR-0051). While an outline
-    /// stands over unchanged text they move it; otherwise, in Overwrite or Point, an arrow
-    /// starts pointing from the edited cell when the Consumer says a Reference can go at the
-    /// caret. Anywhere else the key keeps the meaning ADR-0012 gives it.
+    /// stands over unchanged text they move it; otherwise, in Overwrite or Point, an arrow or
+    /// Home starts pointing from the edited cell when the Consumer says a Reference can go at the
+    /// caret, and End there is claimed and does nothing (ADR-0058, Q53). Anywhere else the key
+    /// keeps the meaning ADR-0012 gives it.
     /// </summary>
-    /// <returns>Whether the key pointed.</returns>
+    /// <returns>Whether the key was Point's: it pointed, or it was End where Point could
+    /// start.</returns>
     private bool OnPointKey(string canonical)
     {
         if (PointAt is not { } pointAt || ReferenceText is null)
@@ -245,10 +248,17 @@ public partial class ExGrid<TRow>
         if (!PointingContinues)
         {
             EndPointing();
-            // Home and End move an outline that stands; they start none. Caret's arrows are
-            // the editor's.
-            if (move.Kind == 2 || _editMode == EditMode.Caret || _editCaret < 0 || !pointAt(_editText, _editCaret))
+            // Caret's arrows are the editor's.
+            if (_editMode == EditMode.Caret || _editCaret < 0 || !pointAt(_editText, _editCaret))
                 return false;
+            // With no outline standing, Home starts one at the row's first column, as an arrow
+            // starts one, and End writes nothing and commits nothing (ADR-0058, Q53): Excel's End
+            // turns on an End Mode the grid does not have. A list it closed is repainted.
+            if (canonical == "End")
+            {
+                StateHasChanged();
+                return true;
+            }
             _pointer = GridSelection.Empty.Click(_editingCell, extent);
             _pointStart = _editCaret;
             _pointLength = 0;

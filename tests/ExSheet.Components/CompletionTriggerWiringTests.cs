@@ -16,7 +16,9 @@ namespace ExSheet.Components.Tests;
 /// list comes back after Backspace; and F3 is left to the browser. As the tenth Windows run saw
 /// it (ticket 44): a value typed whole lists that value alone, any other beginning every value;
 /// Tab closes any list, which does not come back on what Tab wrote; and → or ← at an open value
-/// list points and closes it.
+/// list points and closes it. As Part B of the ninth Windows run saw it (ticket 55): with the caret
+/// before or inside a value nothing is listed, and Home and the Shift+arrows at an open value list
+/// point and close it.
 /// </summary>
 public class CompletionTriggerWiringTests : SheetTestContext
 {
@@ -103,6 +105,46 @@ public class CompletionTriggerWiringTests : SheetTestContext
             Candidates(cut));
     }
 
+    [Fact] // ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: with the caret moved back before the value, nothing is listed, the hint still shows, and Tab commits and moves on, as anywhere else in the edit
+    public async Task SH36_with_the_caret_before_a_value_nothing_is_listed_and_tab_commits()
+    {
+        var cut = RenderSheet();
+        const string typed = AtMatchMode + "1)";
+        await StartTypingAsync(cut, "D10", typed);
+        Assert.Empty(Candidates(cut));
+
+        // F2, then ←← in Caret: the editor's own, which the listener reports.
+        await PressInEditorAsync(cut, "F2", typed, typed.Length);
+        Assert.Equal("caret", GateModesTold()[^1]);
+        await ReportCaretAsync(cut, typed, typed.Length - 1);
+        await ReportCaretAsync(cut, typed, AtMatchMode.Length);
+
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+        Assert.Equal("caret", GateModesTold()[^1]);
+
+        await PressInEditorAsync(cut, "Tab", typed, AtMatchMode.Length);
+
+        Assert.Empty(cut.FindAll(".ex-viewport .ex-editor"));
+        Assert.Equal("E10", cut.Find(".ex-name-box").GetAttribute("value"));
+        await GoToAsync(cut, "D10");
+        Assert.Equal(typed, cut.Find(".ex-formula-bar-text").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth Windows run, Q49), SH-36: with the caret inside a value, nothing is listed either, until Excel is observed
+    public async Task SH36_with_the_caret_inside_a_value_nothing_is_listed()
+    {
+        var cut = RenderSheet();
+        const string typed = AtMatchMode + "-1)";
+        await StartTypingAsync(cut, "D10", typed);
+
+        await PressInEditorAsync(cut, "F2", typed, typed.Length);
+        await ReportCaretAsync(cut, typed, AtMatchMode.Length + 1);
+
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("[match_mode]", cut.Find(".ex-completion .ex-completion-hint strong").TextContent);
+    }
+
     [Fact] // ADR-0058, SH-36: while the list is open ↓ and ↑ choose in it, and write nothing
     public async Task SH36_down_and_up_choose_in_the_list()
     {
@@ -183,6 +225,94 @@ public class CompletionTriggerWiringTests : SheetTestContext
 
         Assert.Equal(AtMatchMode + "C10", EditorText(cut));
         Assert.Empty(Candidates(cut));
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth Windows run, x6; Q51), SH-36: Shift+→ at an open value list, where a Reference can go, points at D10:E10 from D10, as Excel's did, and closes the list
+    public async Task SH36_shift_right_at_an_open_value_list_points_at_a_range_and_closes_it()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", AtMatchMode);
+        Assert.Equal(MatchModes, Candidates(cut));
+
+        await PressInEditorAsync(cut, "ArrowRight", AtMatchMode, AtMatchMode.Length, shift: true);
+
+        Assert.Equal(AtMatchMode + "D10:E10", EditorText(cut));
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("point", GateModesTold()[^1]);
+        Assert.EndsWith(",,<span class=\"ex-reference-3 ex-reference-pointed\">D10:E10</span>",
+            Grid(cut).Find(".ex-viewport > .ex-reference-text > .ex-reference-text-line").InnerHtml, StringComparison.Ordinal);
+        Assert.NotEmpty(cut.FindAll(".ex-viewport .ex-editor"));
+    }
+
+    [Fact] // ADR-0058 (Part B of the ninth Windows run, x4; Q51, Q53), SH-36: Home at an open value list points at A10, the row's first column, as Excel's did, and closes the list
+    public async Task SH36_home_at_an_open_value_list_points_at_the_rows_first_column()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", AtMatchMode);
+        Assert.Equal(MatchModes, Candidates(cut));
+
+        await PressInEditorAsync(cut, "Home", AtMatchMode, AtMatchMode.Length);
+
+        Assert.Equal(AtMatchMode + "A10", EditorText(cut));
+        Assert.Empty(Candidates(cut));
+        Assert.Equal("point", GateModesTold()[^1]);
+        Assert.EndsWith(",,<span class=\"ex-reference-3 ex-reference-pointed\">A10</span>",
+            Grid(cut).Find(".ex-viewport > .ex-reference-text > .ex-reference-text-line").InnerHtml, StringComparison.Ordinal);
+        Assert.Equal("A10", cut.Find(".ex-name-box").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0058 (x5; Q51, Q53), SH-36: End at an open value list closes it and writes nothing; no commit is asked for, so nothing is refused, and the edit stays open
+    public async Task SH36_end_at_an_open_value_list_closes_it_and_writes_nothing()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", AtMatchMode);
+
+        await PressInEditorAsync(cut, "End", AtMatchMode, AtMatchMode.Length);
+
+        Assert.Equal(AtMatchMode, EditorText(cut));
+        Assert.Empty(Candidates(cut));
+        Assert.Empty(Grid(cut).FindAll(".ex-point"));
+        Assert.Empty(cut.FindAll(".ex-message"));
+        Assert.Equal("D10", cut.Find(".ex-name-box").GetAttribute("value"));
+    }
+
+    [Fact] // ADR-0058 (Q53), SH-36: with no list, at a Reference's place, Home points at the row's first column and End writes nothing — neither asks for the commit the Sheet would refuse
+    public async Task SH36_without_a_list_home_points_and_end_writes_nothing()
+    {
+        var cut = RenderSheet();
+        await StartTypingAsync(cut, "D10", "=SUM(");
+        Assert.Empty(Candidates(cut));
+
+        await PressInEditorAsync(cut, "Home", "=SUM(", 5);
+        Assert.Equal("=SUM(A10", EditorText(cut));
+        Assert.Equal("point", GateModesTold()[^1]);
+        await PressInEditorAsync(cut, "Escape", "=SUM(A10", 8);
+
+        await StartTypingAsync(cut, "D10", "=SUM(");
+        await PressInEditorAsync(cut, "End", "=SUM(", 5);
+
+        Assert.Equal("=SUM(", EditorText(cut));
+        Assert.Empty(Grid(cut).FindAll(".ex-point"));
+        Assert.Empty(cut.FindAll(".ex-message"));
+        Assert.Equal("D10", cut.Find(".ex-name-box").GetAttribute("value"));
+    }
+
+    [Theory] // ADR-0058 (Q51), SH-36: in a list of names Home, End and the Shift+arrows stay the editor's — the gate does not claim them — and one claimed all the same writes nothing and commits nothing
+    [InlineData("Home", false)]
+    [InlineData("End", false)]
+    [InlineData("ArrowRight", true)]
+    public async Task SH36_in_a_list_of_names_home_end_and_shift_arrows_stay_the_editors(string key, bool shift)
+    {
+        var cut = RenderSheet();
+        await cut.Instance.DeclareLinkedTableAsync("Positions", ["Id", "PV"]);
+        await StartTypingAsync(cut, "D10", "=Posit");
+        Assert.Equal("completion", GateModesTold()[^1]);
+
+        await PressInEditorAsync(cut, key, "=Posit", 6, shift: shift);
+
+        Assert.Equal("=Posit", EditorText(cut));
+        Assert.Empty(Grid(cut).FindAll(".ex-point"));
+        Assert.Equal("D10", cut.Find(".ex-name-box").GetAttribute("value"));
     }
 
     [Fact] // ADR-0058 / ADR-0051 second round, SH-36: in a list of names ← and → are not claimed — they move the caret — and the box says so

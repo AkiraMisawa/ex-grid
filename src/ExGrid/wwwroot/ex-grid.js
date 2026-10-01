@@ -117,9 +117,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
     // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
     // extend the outline rather than select text in the input. And while a completion list
-    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ← and → move the caret —
-    // unless the list is open over Point, where they point, as they do without it (ADR-0058,
-    // the tenth Windows run).
+    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
+    // Shift+arrows are the editor's — unless the list is open over Point, where they do what
+    // Point does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B
+    // of the ninth).
     const pointKeys = new Set([
         ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
     // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
@@ -130,7 +131,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
         'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
     const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
-    const completionOverPointKeys = new Set([...completionKeys, 'ArrowLeft', 'ArrowRight']);
+    const completionOverPointKeys = new Set([
+        ...completionKeys, 'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
     const claimedWhile = {
         overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,
         completionOverPoint: completionOverPointKeys,
@@ -286,7 +289,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the render that paints it and the message that tells the gate are two messages, and a
         // ← typed between them would be claimed as Overwrite's and swallowed. The core marks
         // the list on its box (data-ex-list) in the render itself, and a list open over Point
-        // (data-ex-over-point), whose ← and → point (ADR-0058); read, not measured.
+        // (data-ex-over-point), whose ←, →, Home, End and Shift+arrows point (ADR-0058); read,
+        // not measured.
         const list = listShown();
         const claimed = list === null
             ? (claimedWhile[editing] ?? editingKeys)
@@ -1756,8 +1760,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         writeCopy: (withHeaders) => writeAsync(withHeaders === true),
         // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
         // 'caret', 'point', 'completion' (ADR-0051), 'completionOverPoint' (ADR-0058: a list
-        // open where ← and → point) or 'pointed' (ADR-0058: what Point wrote came from a press
-        // on another grid), whether inputs report their caret,
+        // open where ←, →, Home, End and the Shift+arrows point) or 'pointed' (ADR-0058: what
+        // Point wrote came from a press on another grid), whether inputs report their caret,
         // and whether F4 is claimed while editing. Set by the core when the mode changes —
         // a mode change is a different set of claimed keys. (A focusable descendant holding
         // the keyboard — ADR-0020's interactive cell — is not a mode: it is read off

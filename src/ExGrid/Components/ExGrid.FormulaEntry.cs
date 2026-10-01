@@ -79,9 +79,10 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// Whether a list is open over Point (ADR-0058, "What the tenth Windows run settled"): the
     /// caret stands where the Consumer says a Reference can go, outside Caret, whose arrows are
-    /// the editor's. A list takes only ↑, ↓, Tab and Escape, so ← and → then point, as they would
-    /// without it — an argument's value list after <c>,,</c> — where in a list of names they move
-    /// the caret.
+    /// the editor's. A list takes only ↑, ↓, Tab and Escape, so ←, →, <c>Home</c>, <c>End</c> and
+    /// the Shift+arrows then do what Point does with them, as they would without it — an
+    /// argument's value list after <c>,,</c> (Part B of the ninth Windows run) — where in a list
+    /// of names they are the editor's.
     /// </summary>
     private bool CompletionListOverPoint
         => CompletionListOpen && _editMode != EditMode.Caret && ReferenceText is not null
@@ -90,11 +91,11 @@ public partial class ExGrid<TRow>
 
     /// <summary>The key gate's set for the current state (ADR-0010): Caret leaves the arrows
     /// to the editor. While a list is open, in any state, only its ↑/↓ are claimed beside the
-    /// editing keys, so ← and → move the caret — and ← and → too while it is open over Point,
-    /// where they point (ADR-0058). Point claims Overwrite's keys and the four Shift+arrows,
-    /// which extend the outline (ADR-0051's second round); and, while what Point wrote was written
-    /// from outside and a Consumer hears the arrows, the Primary Modifier's arrows too (ADR-0058,
-    /// "The keyboard").</summary>
+    /// editing keys, so ← and → move the caret — and ←, →, Home, End and the Shift+arrows too
+    /// while it is open over Point, where they point (ADR-0058). Point claims Overwrite's keys
+    /// and the four Shift+arrows, which extend the outline (ADR-0051's second round); and, while
+    /// what Point wrote was written from outside and a Consumer hears the arrows, the Primary
+    /// Modifier's arrows too (ADR-0058, "The keyboard").</summary>
     private string GateMode() => _editMode switch
     {
         EditMode.None => "none",
@@ -382,12 +383,13 @@ public partial class ExGrid<TRow>
     /// <summary>
     /// A key the gate forwarded while a list is open (ADR-0051): ↑/↓ choose, Tab accepts and
     /// closes the list, Escape closes the list and leaves the edit open. A list takes no other
-    /// key (ADR-0058, the tenth Windows run). Open over Point, ← and → close it and are not the
-    /// list's: they point, as they would without it. Elsewhere the gate leaves ←, →, Home and End
-    /// to the editor while a list is open; one that arrives all the same was claimed by a gate
-    /// not yet told the list opened, and its default was prevented, so it only closes the
-    /// list — it neither moves the caret nor commits. Every other key keeps its meaning, and
-    /// whatever it does to the edit takes the list with it.
+    /// key (ADR-0058, the tenth Windows run). Open over Point, ←, →, Home, End and the
+    /// Shift+arrows close it and are not the list's: they do what Point does with them, as they
+    /// would without it (ADR-0058, Part B of the ninth Windows run). Elsewhere the gate leaves
+    /// ←, →, Home and End to the editor while a list is open; one that arrives all the same was
+    /// claimed by a gate not yet told the list opened, and its default was prevented, so it only
+    /// closes the list — it neither moves the caret nor commits. Every other key keeps its
+    /// meaning, and whatever it does to the edit takes the list with it.
     /// </summary>
     /// <returns>Whether the key was the list's.</returns>
     private bool OnCompletionKey(string canonical)
@@ -413,7 +415,9 @@ public partial class ExGrid<TRow>
                 CloseCompletion();
                 StateHasChanged();
                 return true;
-            case "ArrowLeft" or "ArrowRight" when CompletionListOverPoint:
+            case "ArrowLeft" or "ArrowRight" or "Home" or "End"
+                or "Shift+ArrowUp" or "Shift+ArrowDown" or "Shift+ArrowLeft" or "Shift+ArrowRight"
+                when CompletionListOverPoint:
                 CloseCompletion();
                 return false;
             case "ArrowLeft" or "ArrowRight" or "Home" or "End":

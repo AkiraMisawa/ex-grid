@@ -126,9 +126,10 @@ public static partial class FormulaEntry
     /// grammar refuses (ADR-0047);</item>
     /// <item>at an argument that takes one of a fixed list of values (<see cref="DeclaredFunction.ValuesOf"/>),
     /// holding nothing yet or the beginning of a value, those values, in Excel's order, before
-    /// anything is typed. A value typed whole, with the caret after it, lists that value alone
-    /// (<c>0</c> lists <c>0 - Exact match</c>); any other beginning lists every value, as Excel
-    /// does not narrow a value list by what is typed (<c>-</c> lists all five of
+    /// anything is typed — while nothing of the argument stands after the caret: before a value or
+    /// inside one, nothing is listed (Part B of the ninth Windows run). A value typed whole lists
+    /// that value alone (<c>0</c> lists <c>0 - Exact match</c>); any other beginning lists every
+    /// value, as Excel does not narrow a value list by what is typed (<c>-</c> lists all five of
     /// <c>match_mode</c>'s; the tenth Windows run).</item>
     /// </list>
     /// <see langword="null"/> anywhere else — after <c>=</c>, an operator, <c>(</c> or <c>,</c> at any
@@ -237,10 +238,11 @@ public static partial class FormulaEntry
 
     /// <summary>
     /// The values of the argument the caret stands at, when it takes one of a fixed list (ADR-0058):
-    /// the argument holds nothing yet, or the beginning of a value and nothing else. A value typed
-    /// whole before the caret, with nothing of it after the caret, is listed alone; anything else
-    /// lists every value, the first to be chosen (ADR-0058, "What the tenth Windows run settled").
-    /// Accepting one writes it over the whole of the value being typed.
+    /// the argument holds nothing yet, or the beginning of a value and nothing else, and nothing of
+    /// it stands after the caret — with the caret before a value or inside one, Excel lists nothing
+    /// (ADR-0058, "What Part B of the ninth Windows run settled", Q49). A value typed whole is listed
+    /// alone; anything else lists every value, the first to be chosen (ADR-0058, "What the tenth
+    /// Windows run settled"). Accepting one writes it over what was typed.
     /// </summary>
     private static FormulaCompletion? CompleteValue(string text, int caret, List<Token> tokens)
     {
@@ -253,19 +255,16 @@ public static partial class FormulaEntry
         var start = call.ArgumentStart;
         while (start < caret && char.IsWhiteSpace(text[start])) start++;
         var typed = text[start..caret];
-        bool Begins(int length) => values.Any(v => v.Value.Length >= length && string.CompareOrdinal(v.Value, 0, text, start, length) == 0);
-        if (!Begins(typed.Length)) return null;
-        var end = caret;
-        while (end < text.Length && Begins(end + 1 - start)) end++;
-        var after = end;
+        if (!values.Any(v => v.Value.StartsWith(typed, StringComparison.Ordinal))) return null;
+        var after = caret;
         while (after < text.Length && char.IsWhiteSpace(text[after])) after++;
         if (after < text.Length && text[after] is not (',' or ')')) return null;
 
-        var whole = end == caret ? values.Where(v => v.Value == typed).ToList() : [];
+        var whole = values.Where(v => v.Value == typed).ToList();
         var candidates = (whole.Count > 0 ? whole : values)
             .Select(v => new CompletionCandidate(v.Text, CompletionKind.ArgumentValue, v.Value, null))
             .ToList();
-        return new FormulaCompletion(start, end - start, candidates);
+        return new FormulaCompletion(start, caret - start, candidates);
     }
 
     /// <summary>

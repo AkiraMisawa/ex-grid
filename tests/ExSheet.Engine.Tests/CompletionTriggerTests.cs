@@ -146,17 +146,33 @@ public class CompletionTriggerTests
         Assert.Equal(length, completion.Length);
     }
 
-    [Theory] // ADR-0058, SH-36: with the caret before a value already there, or inside it, every value is listed and the list replaces the whole of it
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|1)", 1)]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|1)", 2)]
-    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|-1)", 2)]
-    public void The_list_replaces_the_whole_value(string marked, int length)
+    [Theory] // ADR-0058 (Part B of the ninth Windows run, x1; Q49), SH-36: the value list opens only while nothing of the argument stands after the caret — with the caret before a value, or inside one, nothing is listed
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|1)")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|-1)")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|1)")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|1")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,| 1)")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|1,0)")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,|-2)")]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,-|2)")]
+    public void ADR0058_Q49_with_the_caret_before_or_inside_a_value_nothing_is_listed(string marked)
     {
-        var completion = Complete(marked)!;
+        var (text, caret) = AtCaret(marked);
 
-        Assert.Equal(24, completion.Start);
-        Assert.Equal(length, completion.Length);
-        Assert.Equal(MatchModes, completion.Candidates.Select(c => c.Name));
+        Assert.Null(Complete(marked));
+        // The argument's hint still shows (x1: the ScreenTip with [match_mode] bold).
+        Assert.NotNull(FormulaEntry.HintAt(text, caret));
+    }
+
+    [Theory] // ADR-0058 (Q49), SH-36: what follows the argument is not of it — a value list still opens with the caret before the comma or the parenthesis that ends it
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|,1)", 5)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,|)", 5)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,-|)", 5)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0|,1)", 1)]
+    [InlineData("=XLOOKUP(1,A2:A4,B2:B4,,0,|)", 4)]
+    public void ADR0058_Q49_the_list_opens_before_what_ends_the_argument(string marked, int listed)
+    {
+        Assert.Equal(listed, Complete(marked)!.Candidates.Count);
     }
 
     [Theory] // ADR-0058 (the tenth Windows run, case 1), SH-36: a value typed whole, with the caret after it, lists that value alone — 0 lists 0 - Exact match — and accepting it writes it again over itself
