@@ -156,12 +156,18 @@ internal abstract class FieldReader
     }
 }
 
-/// <summary>Text, exactly as written, into the column's dictionary; bytes seen before are not decoded
-/// again.</summary>
+/// <summary>
+/// Text, exactly as written, into the column's dictionary; bytes seen before are not decoded again.
+/// In UTF-8, two different runs of bytes are two different texts, so the bytes alone tell the texts
+/// apart: a text not seen before is added to the dictionary without being looked up in it, and the
+/// dictionary's codes by text are left to be made when first asked for (ticket 07). Shift-JIS writes
+/// some characters two ways, so there each text is looked up.
+/// </summary>
 internal sealed class TextFieldReader(CsvColumn column, IReadOnlyList<string> blankTexts, TextColumnBuilder builder, IFieldContext context, bool isKey)
     : FieldReader(column, blankTexts, context, isKey)
 {
-    private readonly ByteTextCache cache = new();
+    private readonly bool byBytes = context.Encoding == CsvEncoding.Utf8;
+    private readonly ByteTextCache cache = new(keepAll: context.Encoding == CsvEncoding.Utf8);
     private char[] chars = new char[64];
     private int[] codes = [];
 
@@ -194,7 +200,9 @@ internal sealed class TextFieldReader(CsvColumn column, IReadOnlyList<string> bl
                 refusal = Context.Refuse(r, Name, $"the text is not valid {Context.Encoding.Name}");
                 return r;
             }
-            code = builder.Interner.Intern(chars.AsSpan(0, length));
+            code = byBytes
+                ? builder.Interner.AddNew(new string(chars, 0, length))
+                : builder.Interner.Intern(chars.AsSpan(0, length));
             batch[r] = code;
             if (cache.Enabled)
                 cache.Add(value, code);

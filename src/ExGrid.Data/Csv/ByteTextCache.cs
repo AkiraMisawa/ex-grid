@@ -10,10 +10,12 @@ namespace ExGrid.Data.Csv;
 /// <para>
 /// Only bytes that decoded strictly are added, so a hit is valid text. A column whose values rarely
 /// repeat — identifiers — gains nothing from it, so once it holds many entries and most lookups miss,
-/// it gives up and lets go of what it holds.
+/// it gives up and lets go of what it holds; unless it is made to keep every entry, because it is
+/// what tells the column's texts apart (ticket 07): UTF-8 decodes two different runs of bytes into
+/// two different texts, so in UTF-8 a miss is a text not seen before.
 /// </para>
 /// </summary>
-internal sealed class ByteTextCache
+internal sealed class ByteTextCache(bool keepAll = false)
 {
     private const int GiveUpAt = 1 << 16;
 
@@ -57,7 +59,7 @@ internal sealed class ByteTextCache
     /// has just missed.</summary>
     public void Add(ReadOnlySpan<byte> bytes, int code)
     {
-        if (count >= GiveUpAt && hits * 2 < lookups)
+        if (!keepAll && count >= GiveUpAt && hits * 2 < lookups)
         {
             GiveUp();
             return;
