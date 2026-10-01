@@ -154,6 +154,39 @@ public class PivotRenderingTests : PivotTestContext
         Assert.Equal("1285", RowTexts(cut)[0]);
     }
 
+    private sealed record Position(string Desk, decimal Pnl);
+
+    // A source of another shape than the Sales: what a new file, read under another Schema, brings.
+    private static PivotSource Positions() => PivotSource.From(
+        new[] { new Position("Rates", 1m), new Position("Credit", 2m), new Position("Rates", 4m) },
+        new PivotField<Position>[]
+        {
+            new("Desk", PivotFieldType.Text, p => p.Desk),
+            new("Pnl", PivotFieldType.Number, p => p.Pnl),
+        });
+
+    [Fact] // ADR-0058/0065: a new source and a new layout handed in together are taken together — the source is checked against the layout it comes with
+    public void A_new_source_and_a_new_layout_handed_in_together_are_taken_together()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+
+        cut.Render(ps => ps
+            .Add(p => p.Source, Positions())
+            .Add(p => p.Layout, new PivotLayout { Rows = [P("Desk")], Values = [Sum("Pnl")] }));
+
+        Assert.Equal(["Credit | 2", "Rates | 5", "Grand Total | 7"], RowTexts(cut));
+    }
+
+    [Fact] // ADR-0058: a new source that lacks a field the layout on screen places, handed in without a layout of its own, is refused by name
+    public void A_new_source_the_layout_on_screen_does_not_fit_is_refused()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region")], Values = [Sum("Amount")] });
+
+        var refusal = Assert.Throws<InvalidOperationException>(() => cut.Render(ps => ps.Add(p => p.Source, Positions())));
+
+        Assert.Contains("'Region'", refusal.Message);
+    }
+
     [Fact] // ADR-0058: a layout naming a field the source does not offer is refused by name
     public void A_layout_naming_an_undeclared_field_is_refused()
     {

@@ -265,11 +265,19 @@
         var pursue = !_initialised;
         var force = false;
         var refresh = false;
+        // The Consumer's own new layout, when this render brings one: not one this instance raised
+        // and the Consumer bound back, and not the one on screen.
+        var consumerLayout = !ReferenceEquals(Layout, _layoutParameter) && Layout is not null
+            && !_emitted.TryGetValue(Layout, out _) && !ReferenceEquals(Layout, _layout)
+            ? Layout
+            : null;
         if (!ReferenceEquals(Source, _source))
         {
             // A new source is a refresh: nothing it says can come from the answer held, and the
-            // one before it is no longer listened to (ADR-0065/0066).
-            CheckFields(Source, _layout);
+            // one before it is no longer listened to (ADR-0065/0066). It is held to the layout it
+            // will be asked under: the one it came with, when data of another shape and its layout
+            // arrive together, and otherwise the one on screen.
+            CheckFields(Source, consumerLayout ?? _layout);
             refresh = _source is not null;
             _source = Source;
             Listen(Source);
@@ -281,10 +289,10 @@
         {
             _layoutParameter = Layout;
             // A layout this instance raised and the Consumer bound back is the one on screen.
-            if (Layout is not null && !_emitted.TryGetValue(Layout, out _) && !ReferenceEquals(Layout, _layout))
+            if (consumerLayout is not null)
             {
-                CheckFields(Source, Layout);
-                _layout = Layout;
+                CheckFields(Source, consumerLayout);
+                _layout = consumerLayout;
                 // The Consumer's layout replaces the user's: it is never raised back.
                 _raisePending = false;
                 if (_pending is not null)
