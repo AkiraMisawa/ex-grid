@@ -418,9 +418,10 @@ internal static class Compaction
     }
 
     /// <summary>
-    /// The same version with the rows its batch segments still hold merged, by position, into as few
-    /// segments as hold them, each with its key index; the base segments, their removal sets and the
-    /// base's key index are shared as they are. The new addresses of the rows held in slices from
+    /// The same version with the rows its batch segments still hold merged into as few segments as
+    /// hold them — each segment's rows in turn, so most are copied in runs — each with its key index;
+    /// every row keeps its position. The base segments, their removal sets and the base's key index
+    /// are shared as they are. The new addresses of the rows held in slices from
     /// <paramref name="firstNew"/> on are added to <paramref name="moved"/>.
     /// </summary>
     public static Snapshot Batches(Snapshot version, int firstNew, List<SnapshotRow> moved)
@@ -438,7 +439,6 @@ internal static class Compaction
                     held.Add((segment.PositionOf(o), s, o));
             }
         }
-        held.Sort(static (a, b) => a.Position.CompareTo(b.Position));
 
         SourceMap[] source = [SourceMap.Identity(version)];
         var segments = new List<Segment>(version.Segments.Take(version.BaseSegmentCount));

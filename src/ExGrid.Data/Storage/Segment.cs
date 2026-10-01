@@ -7,8 +7,9 @@ namespace ExGrid.Data.Storage;
 /// <para>
 /// Every row has a position, which orders the rows a version holds. A base segment's rows sit at
 /// consecutive positions from <see cref="FirstPosition"/>; a segment a batch made carries each row's
-/// position, ascending — a changed record's is the one its old version had, so it keeps its place,
-/// and an added record's is past every position before it, so it goes at the end.
+/// position — a changed record's is the one its old version had, so it keeps its place, and an added
+/// record's is past every position before it, so it goes at the end. A batch writes its rows in
+/// position order; a merge of batch segments keeps each row's position but not that order.
 /// </para>
 /// </summary>
 internal sealed class Segment(
@@ -27,7 +28,7 @@ internal sealed class Segment(
 
     public int FirstPosition { get; } = firstPosition;
 
-    /// <summary>Each row's position, for a segment a batch made; <see langword="null"/> for a base segment.</summary>
+    /// <summary>Each row's position, for a segment batches made; <see langword="null"/> for a base segment.</summary>
     public int[]? Positions { get; } = positions;
 
     /// <summary>Key to offset, for a segment a batch made; a base segment's keys are in the base's index.</summary>
