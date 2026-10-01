@@ -17,9 +17,16 @@ public partial class ExPivot
     private int _dialogFocus;
     private int _sheetSequence;
 
-    // The tab whose button takes the keyboard next — null for the report's own — and the request
-    // that asks it; zero while none is asked.
+    // The tab whose button takes the keyboard next — a details tab's; the report's tab hands it to
+    // the report's grid instead (_keyboardBack) — and the request that asks it; zero while none is
+    // asked.
     private (PivotDetailsSheet? Sheet, int Request) _tabFocus;
+
+    // The request for the report's grid to take the keyboard back (ADR-0069), made when the dialog
+    // closes, however it closes, and when a details tab closes with the report's tab selected after
+    // it; zero while none was made. Acted on after the render that carries it (PivotKeyboardReturn).
+    private int _keyboardBack;
+    private Func<Task>? _returnKeyboard;
 
     /// <summary>
     /// The records behind a value cell (ADR-0058/0062): an empty cell has none. They are asked of the
@@ -83,8 +90,18 @@ public partial class ExPivot
         // Excel's next sheet: the one after the closed tab, or before it, or the report.
         if (ReferenceEquals(_selectedSheet, sheet))
             _selectedSheet = _sheets.Count == 0 ? null : _sheets[Math.Min(at, _sheets.Count - 1)];
-        // The close button that held the keyboard is gone: the selected tab takes it.
-        _tabFocus = (_selectedSheet, ++_focusSequence);
+        // The close button that held the keyboard is gone: the selected tab takes it. The report's
+        // tab is its grid, which takes the keyboard back (ADR-0069) — there may be no tab left to
+        // hold it, the last one having closed.
+        if (_selectedSheet is null)
+        {
+            _tabFocus = default;
+            _keyboardBack = ++_focusSequence;
+        }
+        else
+        {
+            _tabFocus = (_selectedSheet, ++_focusSequence);
+        }
         StateHasChanged();
     }
 
@@ -94,8 +111,26 @@ public partial class ExPivot
             return;
         _dialog = null;
         dialog.Dispose();
+        // However it closed — its grid's Escape, an Escape on its frame, Close, the backdrop — the
+        // control that held the keyboard went with it, and the report's grid takes it back
+        // (ADR-0069).
+        _keyboardBack = ++_focusSequence;
         StateHasChanged();
     }
+
+    /// <summary>Asks the report's grid for the keyboard back (ADR-0069), when there is a grid: an
+    /// empty report has none, and a grid that has gone does nothing.</summary>
+    private Task ReturnKeyboardToReportAsync() => _grid?.ReturnKeyboardAsync() ?? Task.CompletedTask;
+
+    /// <summary>What gives the report's grid the keyboard back, after the render that carries the
+    /// request (<see cref="PivotKeyboardReturn"/>).</summary>
+    private RenderFragment KeyboardReturn() => builder =>
+    {
+        builder.OpenComponent<PivotKeyboardReturn>(0);
+        builder.AddComponentParameter(1, nameof(PivotKeyboardReturn.Request), _keyboardBack);
+        builder.AddComponentParameter(2, nameof(PivotKeyboardReturn.Return), _returnKeyboard ??= ReturnKeyboardToReportAsync);
+        builder.CloseComponent();
+    };
 
     private RenderFragment DetailsTabs() => builder =>
     {
@@ -126,8 +161,10 @@ public partial class ExPivot
     };
 
     /// <summary>A details sheet's records: an ExGrid of the source's fields, paged from the source,
-    /// or the sentence that says why they cannot be shown.</summary>
-    private RenderFragment Records(PivotDetailsSheet sheet) => builder =>
+    /// or the sentence that says why they cannot be shown. <paramref name="leave"/> is the dialog's
+    /// way out, raised by an Escape its grid has nothing left to dismiss (ADR-0069); a tab's grid has
+    /// none.</summary>
+    private RenderFragment Records(PivotDetailsSheet sheet, EventCallback leave = default) => builder =>
     {
         builder.OpenComponent<PivotDetailsGrid>(0);
         builder.AddComponentParameter(1, nameof(PivotDetailsGrid.Sheet), sheet);
@@ -138,6 +175,7 @@ public partial class ExPivot
         builder.AddComponentParameter(6, nameof(PivotDetailsGrid.RowHeight), RowHeight);
         builder.AddComponentParameter(7, nameof(PivotDetailsGrid.Density), Density);
         builder.AddComponentParameter(8, nameof(PivotDetailsGrid.CellMetrics), CellMetrics);
+        builder.AddComponentParameter(9, nameof(PivotDetailsGrid.OnLeave), leave);
         builder.CloseComponent();
     };
 
@@ -145,7 +183,9 @@ public partial class ExPivot
 
     private RenderFragment DialogContent(PivotDetailsSheet sheet) => builder =>
     {
-        var context = new PivotDetailsDialogContext(sheet.Details.Title, Records(sheet), CloseDialog, _dialogFocus, Word);
+        // The dialog's grid hears the Escape it has nothing left to dismiss, and the dialog closes
+        // on it: the grid's capture-phase listener keeps every Escape from the frame (ADR-0069).
+        var context = new PivotDetailsDialogContext(sheet.Details.Title, Records(sheet, _closeDialog), CloseDialog, _dialogFocus, Word);
         if (PivotChrome?.DetailsDialog(context) is { } custom)
         {
             builder.AddContent(0, custom);

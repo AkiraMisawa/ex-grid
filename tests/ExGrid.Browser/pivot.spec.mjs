@@ -1,5 +1,6 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
+import { API_URL } from './hosting.mjs';
 
 // ExPivot on /pivot (ADR-0058/0060/0061/0062/0065), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: what only a browser can say. That a field dragged with the browser's
@@ -182,6 +183,106 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect(dialog).toHaveCount(0);
             await expect(pivot(page).locator('.ex-pivot-report')).not.toHaveAttribute('inert');
+        });
+
+        test(`ADR-0069: Escape in the dialog's grid peels the grid's own layers, then closes the dialog, and the arrows move the report's Focus again (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await firstValue(page).dblclick({ force: true });
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
+            const records = dialog.locator('.ex-grid');
+            await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+
+            // Into the records: their grid holds the keyboard, and the arrows are its own.
+            await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
+            await expect(records).toBeFocused();
+            await page.keyboard.press('ArrowDown');
+            await expect(records).toHaveAttribute('aria-activedescendant', /-r1c0$/);
+
+            // The grid's own layer first: Escape closes its Context Menu, and the dialog stands.
+            await page.keyboard.press('Shift+F10');
+            const menu = records.locator('.ex-popover');
+            await expect(menu).toBeVisible();
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(dialog).toBeVisible();
+            await expect(records).toBeFocused();
+
+            // Nothing left to dismiss in the grid: the dialog closes, and the report has the keyboard.
+            await page.keyboard.press('Escape');
+
+            await expect(dialog).toHaveCount(0);
+            await expect(pivot(page).locator('.ex-pivot-report')).not.toHaveAttribute('inert');
+            await expect(report(page)).toBeFocused();
+            await page.keyboard.press('ArrowDown');
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+        });
+
+        test(`ADR-0069: however the dialog closes — Escape on Close, Close, the backdrop — the arrows move the report's Focus again (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            const dialog = page.getByRole('dialog', { name: /^Details: / });
+            const close = dialog.getByRole('button', { name: 'Close', exact: true });
+            const ways = {
+                // Close holds the keyboard as the dialog opens, and the frame hears its Escape.
+                escape: () => page.keyboard.press('Escape'),
+                close: () => close.click(),
+                // Beside the dialog, on the backdrop over the report.
+                backdrop: () => page.locator('.ex-pivot-dialog-backdrop').click({ position: { x: 8, y: 8 } }),
+            };
+            for (const [how, closeIt] of Object.entries(ways)) {
+                await firstValue(page).dblclick({ force: true });
+                await expect(dialog).toBeVisible();
+                await expect(close).toBeFocused();
+
+                await closeIt();
+
+                await expect(dialog, how).toHaveCount(0);
+                await expect(report(page), how).toBeFocused();
+                await page.keyboard.press('ArrowDown');
+                await expect(report(page), how).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            }
+        });
+
+        test(`ADR-0069: Escape in a details tab's grid closes nothing; the selected tab closed hands the keyboard to the tab selected next, and the last one back to the report (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await firstValue(page).dblclick({ force: true });
+            const tabs = pivot(page).getByRole('tablist');
+            const details = tabs.getByRole('tab', { name: /^Details: / });
+            const panel = pivot(page).getByRole('tabpanel');
+            const records = panel.locator('.ex-grid');
+            await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+
+            // A tab is a sheet of its own, and Escape does not close a sheet: its grid lets go of the
+            // keyboard, as any grid's Escape does, and the tab stays.
+            await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
+            await expect(records).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(records).not.toBeFocused();
+            await expect(details).toHaveCount(1);
+            await expect(panel).toBeVisible();
+
+            // A second tab, from the report once it is shown again (on Server, a round trip after
+            // its tab is pressed); closed while selected, it hands the keyboard to the tab selected
+            // next.
+            await tabs.getByRole('tab', { name: 'PivotTable', exact: true }).click();
+            await expect(panel).toHaveCount(0);
+            await expect(rows(page).first()).toBeVisible();
+            await rows(page).nth(2).locator('[role=gridcell]').nth(2).dblclick({ force: true });
+            await expect(details).toHaveCount(2);
+            await expect(details.nth(1)).toBeFocused();
+            await tabs.getByRole('button', { name: `Close ${await details.nth(1).textContent()}`, exact: true }).click();
+            await expect(details).toHaveCount(1);
+            await expect(details).toHaveAttribute('aria-selected', 'true');
+            await expect(details).toBeFocused();
+
+            // The last one closed takes the tabs away: the report's grid has the keyboard back, on
+            // the cell it left.
+            await tabs.getByRole('button', { name: /^Close Details: Americas/ }).click();
+            await expect(tabs).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c2$/);
+            await page.keyboard.press('ArrowDown');
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r3c2$/);
         });
 
         test(`ADR-0062: a page that listens to Show Details takes the trades, and neither a tab nor a dialog opens (${chrome})`, async ({ page }) => {
@@ -424,6 +525,63 @@ for (const chrome of ['builtin', 'mud']) {
         });
     });
 }
+
+// ExGrid's ReturnKeyboardAsync, as ExPivot asks it (DC-56): the conditions only a browser can show.
+// On the Server host the request lands a round trip after the dialog or the tab went, and what the
+// user chose in that time keeps the keyboard. On WebAssembly there is no round trip to add, and the
+// same test is the case without one.
+
+test('ADR-0069 (DC-56): a control focused while the report\'s keyboard is on its way back keeps it', async ({ page }) => {
+    await open(page, 'builtin', '&details=dialog');
+    await firstValue(page).dblclick({ force: true });
+    const dialog = page.getByRole('dialog', { name: /^Details: / });
+    const records = dialog.locator('.ex-grid');
+    await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+    await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
+    await expect(records).toBeFocused();
+    const delayed = await setRoundTrip(150);
+
+    // The Escape that closes the dialog, and at once a control of the page's, which the dialog left
+    // reachable: it is outside the pivot.
+    await page.keyboard.press('Escape');
+    await page.locator('#pivot-save').focus();
+
+    await expect(dialog).toHaveCount(0);
+    // Past the report's request, which on Server comes two round trips after the Escape.
+    await page.waitForTimeout(delayed ? 1000 : 100);
+    await expect(page.locator('#pivot-save')).toBeFocused();
+    await expect(report(page)).not.toBeFocused();
+});
+
+test('ADR-0069/0018 (DC-56): a second grid pressed while the keyboard is on its way back to the first keeps it', async ({ page }) => {
+    // /pivot-db stands two pivots side by side: two report grids, each with its tabs (ADR-0068).
+    const reset = await fetch(`${API_URL}/api/reset`, { method: 'POST' });
+    expect(reset.ok).toBe(true);
+    await page.goto('/pivot-db');
+    const first = page.locator('#pivot-db-snapshot .ex-pivot');
+    const second = page.locator('#pivot-db-server .ex-pivot');
+    const reportOf = (p) => p.locator('.ex-pivot-sheet > .ex-grid');
+    const rowsOf = (p) => reportOf(p).locator('.ex-viewport .ex-row');
+    await expect(rowsOf(first).first()).toBeVisible({ timeout: 60_000 });
+    await expect(rowsOf(second).first()).toBeVisible({ timeout: 60_000 });
+    await rowsOf(first).nth(1).locator('[role=gridcell]').nth(1).dblclick({ force: true });
+    const tabs = first.getByRole('tablist');
+    await expect(tabs.getByRole('tab', { name: /^Details: / })).toBeFocused();
+    const delayed = await setRoundTrip(150);
+
+    // The first pivot's last tab closed: its report asks for the keyboard back. Meanwhile the user
+    // presses a cell of the second pivot's report.
+    await tabs.getByRole('button', { name: /^Close Details: / }).click();
+    await rowsOf(second).nth(2).locator('[role=gridcell]').nth(1).click({ force: true });
+
+    await expect(tabs).toHaveCount(0);
+    await page.waitForTimeout(delayed ? 1000 : 100);
+    await expect(reportOf(second)).toBeFocused();
+    await expect(reportOf(second)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+    await page.keyboard.press('ArrowDown');
+    await expect(reportOf(second)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
+    await expect(reportOf(first)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+});
 
 test('ADR-0039/0061: a MudSelect list inside Value Field Settings takes Escape before its panel', async ({ page }) => {
     await open(page, 'mud');

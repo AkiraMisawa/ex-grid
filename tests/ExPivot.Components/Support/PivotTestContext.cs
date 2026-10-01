@@ -25,21 +25,44 @@ public sealed record Sale(string? Region, string Product, decimal Amount, int Qu
 public abstract class PivotTestContext : BunitContext
 {
     private const string ModulePath = "./_content/ExGrid/ex-grid.js";
+    private readonly BunitJSModuleInterop _module;
     private bool _rendererInfoSet;
 
     protected PivotTestContext()
     {
         Services.AddSingleton<TimeProvider>(Clock);
-        var module = JSInterop.SetupModule(ModulePath);
-        var handle = module.SetupModule("attach", _ => true);
+        _module = JSInterop.SetupModule(ModulePath);
+        StandIn(_module.SetupModule("attach", _ => true));
+        // Blazor's own FocusAsync, which the built-in views use to hand the keyboard on.
+        JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true).SetVoidResult();
+    }
+
+    // Every call a grid makes to the handle its listener's attach gave it, answered as the
+    // browser would answer it.
+    private static void StandIn(BunitJSModuleInterop handle)
+    {
         handle.Setup<bool>("metaIsPrimary").SetResult(false);
         handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
         foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose" })
             handle.SetupVoid(name, _ => true).SetVoidResult();
-        // Blazor's own FocusAsync, which the built-in views use to hand the keyboard on.
-        JSInterop.SetupVoid("Blazor._internal.domWrapper.focus", _ => true).SetVoidResult();
     }
+
+    /// <summary>The handle of every report grid attached from here on, kept apart from the details
+    /// grids' handles: what the report's own grid asks of the browser — the keyboard back on its
+    /// root among it (ADR-0069). Called before the pivot is rendered.</summary>
+    internal BunitJSModuleInterop ReportGridHandle()
+    {
+        var handle = _module.SetupModule("attach",
+            invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotReportRow>>);
+        StandIn(handle);
+        return handle;
+    }
+
+    /// <summary>How many times the report grid behind <paramref name="handle"/> has asked for the
+    /// keyboard back on its root, from nothing or from inside it (ADR-0021/0069).</summary>
+    internal static int KeyboardReturns(BunitJSModuleInterop handle)
+        => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
 
     internal FakeTimeProvider Clock { get; } = new();
 
