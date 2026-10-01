@@ -442,25 +442,52 @@ nobody had asked for. What that means when writing a test:
   report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
   Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
   giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by
-  the page; Defer Layout Update holding the report until Update (PV-28); and the words switch
-  speaking Excel's Japanese edition and back (PV-33). Under MudBlazor alone, a MudSelect's list
+  the page; Defer Layout Update holding the report until Update (PV-28); the words switch
+  speaking Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade
+  date, moved to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in
+  the Japanese words (ADR-0059); and the code the page shows under "The code" equal to the
+  regions of its source it is read from (PV-20). Under MudBlazor alone, a MudSelect's list
   in Value Field Settings… taking Escape before its panel (PV-11), and the palette reaching the
   pane, the entries and the `−` button in both schemes (PV-18). Not asserted: where the keyboard
   goes when the dialog closes, nor Escape pressed inside the dialog's own grid — both wait on a
   decision about ExGrid's core (ticket 14 of docs/specs/expivot).
+- `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0063, PV-20), **run once per
+  Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
+  the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through
+  Blazor's `InputFile` (`setInputFiles` with a file the test writes) with a malformed row,
+  refused whole with the library's sentence naming the row, the column, the value and the line,
+  and nothing pivoted — and the page's own malformed sample refused the same way; a file of a
+  million records painting its progress, the bar its bytes and the line its rows, with the
+  inputs disabled meanwhile, and Cancel stopping it with nothing read; an unknown semicolon
+  file's suggested Schema shown with what is not clear about it (leading zeros kept as Text, a
+  decimal comma), nothing read until it is confirmed, then read under it to exact totals by
+  desk, the account numbers keeping their zeros; the page's two samples, one under the declared
+  Schema and one under a suggested Schema, reading the same trades to the same total — a second
+  file read while a report stands; and the code shown under "The code" equal to its source.
 - `pivot-db.spec.mjs` — `/pivot-db` (ADR-0064/0065/0068), **run once per Chrome**, against the
   demo API server from either host: its trades read over Arrow into a Snapshot the page pivots in
   its own process, at the version `/api/status` names, and asked of the server through
   `PivotSource.Fetch`, which answers in SQL, show the same numbers painted row for row — and
   again after a layout changed in one pane is shown on the other pivot; Refresh is offered by the
   server's source alone, and asks again; Show Details opens the same records behind a cell in
-  both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20).
+  both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20);
+  and the code the page shows equal to its source, the Arrow request taking its response whole
+  (ADR-0064).
 - `pivot-live.spec.mjs` — `/pivot-live` (ADR-0066/0067/0068), **run once per Chrome**: Change
   Batches the page folds into the bundled source on its own timer mark the values they changed;
   paused, the marks go after their second, and a collapse marks nothing however long after
   (PV-36). The server's live updates, which the page turns on, mark the server report's values
   through the hub's notices; the page's button turns them off and on, and leaving the page turns
-  them off (PV-20).
+  them off (PV-20); and the code the page shows equal to its source.
+- `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0059, PV-20), **run once
+  per Chrome**, in a window wide enough for every tenor column beside the pane, since the report
+  grid paints only the columns in view: the tenors painted in the Order Key's order, `ON`, `TN`,
+  `1W` … `30Y`, with `18M` and `1Y6M` two Items side by side, each carrying its own desks'
+  positions; the tenor's Filter… listing its Items in the same order; without the key, the
+  labels' order (`10Y` before `1M`), and back; every total painted the sum of what it totals —
+  across each row, down each desk and down the Grand Total row — and the report's own the page's
+  sum of the positions; and the code the page shows, the README's `Tenors.Months` among it,
+  equal to its source.
 - `grid-live.spec.mjs` — `/grid-live` (ADR-0067/0068), ExGrid alone over the server's trades, its
   marks set to last a minute so that where they are is what is compared. A mark is keyed by row
   and column: across a three-row scroll every trade still painted keeps exactly its marked cells,
@@ -469,11 +496,12 @@ nobody had asked for. What that means when writing a test:
   the Viewport transitions or animates, under the core's stylesheet and under the Wrapper's
   (`?chrome=mud`), whose warning tint the mark takes; the grid's live region is not touched; and
   forced colours restate the mark as a dashed outline (DC-55). The Window is read from the server
-  as the grid scrolls, and leaving turns the live updates off (PV-20).
+  as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the page
+  shows is equal to its source.
 
-  The three share the run's one API server: each test starts from `POST /api/reset`, reads the
-  trade count and the Source Version from `/api/status`, and turns the live updates off as it
-  ends.
+  `pivot-db`, `pivot-live` and `grid-live` share the run's one API server: each test starts from
+  `POST /api/reset`, reads the trade count and the Source Version from `/api/status`, and turns
+  the live updates off as it ends. They read "The code" regions through `demo-code.mjs`.
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or

@@ -37,9 +37,9 @@
     <li>
         <strong>In this process.</strong> The page holds /pivot's 2,000 trades in a Snapshot, read
         through typed declarations whose Record Key is the trade's id
-        (<code>PivotSource.From(trades, fields)</code>). Its own timer amends a few trades four times a
-        second and hands each amendment to the source as one Change Batch
-        (<code>source.Apply(fields.Batch(changed: amended))</code>). The source makes the next
+        (<code>PivotSource.From(trades, DemoPivotData.Fields)</code>). Its own timer amends a few trades
+        four times a second and hands each amendment to the source as one Change Batch
+        (<code>source.Apply(DemoPivotData.Fields.Batch(changed: amended))</code>). The source makes the next
         Snapshot and brings the answer it holds up to date from what the batch removed and added,
         rather than from 2,000 records again.
     </li>
@@ -86,6 +86,7 @@
     whose base address is the demo API server, and <code>DemoServerPivot</code> is the server's
     Pivot Source, shown on /pivot-db.
 </p>
+<DemoCodeBlock File="DemoPivotData.cs" Region="fields" />
 <DemoCodeBlock File="PivotLivePage.razor" Region="batch" />
 <DemoCodeBlock File="PivotLivePage.razor" Region="server" />
 <DemoCodeBlock File="PivotLivePage.razor" Region="pivots" />
@@ -114,8 +115,6 @@
 
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
-
-    protected override void OnInitialized() => _local = PivotSource.From(_trades, _fields);
 
     protected override void OnParametersSet()
     {
@@ -155,25 +154,13 @@
     }
 
     #region The code: batch
-    // The trades in a Snapshot, read through typed declarations whose Record Key is the trade's id,
-    // so that a Change Batch can change a trade by its key (ADR-0063/0066).
-    private readonly PivotFields<DemoPivotTrade> _fields = PivotFields.Of<DemoPivotTrade>()
-        .Text("Region", t => t.Region)
-        .Text("Desk", t => t.Desk)
-        .Text("Book", t => t.Book)
-        .Text("Product", t => t.Product)
-        .Text("Currency", t => t.Currency)
-        .Text("Month", t => t.Month)
-        .Date("TradeDate", t => t.TradeDate, caption: "Trade date", format: "yyyy-MM-dd")
-        .Number("Notional", t => t.Notional, format: "#,##0.00")
-        .Number("Pnl", t => t.Pnl, caption: "P&L", format: "#,##0.00")
-        .Number("Quantity", t => t.Quantity)
-        .Boolean("Confirmed", t => t.Confirmed)
-        .Key("TradeId", t => t.Id);
-
+    // /pivot's trades in a Snapshot, read through its typed declarations (DemoPivotData.Fields),
+    // whose Record Key is the trade's id: a Change Batch changes a trade by its key (ADR-0063/0066).
     private readonly DemoPivotTrade[] _trades = DemoPivotData.Trades();
-    private SnapshotPivotSource _local = default!;   // PivotSource.From(_trades, _fields), in OnInitialized
+    private SnapshotPivotSource _local = default!;
     private PeriodicTimer? _ticks;
+
+    protected override void OnInitialized() => _local = PivotSource.From(_trades, DemoPivotData.Fields);
 
     // Four times a second, a few trades amended and handed to the source as one Change Batch: the
     // source makes the next Snapshot, brings the answer it holds up to date from what the batch
@@ -186,7 +173,7 @@
             if (!_localOn)
                 continue;
             var amended = Amend(TradesPerBatch);
-            var change = _local.Apply(_fields.Batch(changed: amended));
+            var change = _local.Apply(DemoPivotData.Fields.Batch(changed: amended));
             DescribeBatch(amended, change.After);
         }
     }

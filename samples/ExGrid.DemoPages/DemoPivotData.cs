@@ -6,7 +6,8 @@ namespace ExGrid.DemoPages;
 /// <summary>
 /// A booked trade as the /pivot page pivots it. Immutable: ExPivot holds a snapshot and a new list
 /// is a refresh (ADR-0058). None of it is any real Consumer's: the books and desks are invented and
-/// the numbers are a seeded sequence.
+/// the numbers are a seeded sequence. Its month is not a property: the Pivot Fields declare it as a
+/// part of the trade date (ADR-0059).
 /// </summary>
 public sealed record DemoPivotTrade(
     string Id,
@@ -19,14 +20,10 @@ public sealed record DemoPivotTrade(
     decimal Notional,
     decimal Pnl,
     int Quantity,
-    bool Confirmed)
-{
-    /// <summary>The trade's month, as a text Item: Excel groups dates by month through a
-    /// grouping this first version leaves out, so the page declares the month it wants.</summary>
-    public string Month => TradeDate.ToString("yyyy-MM", CultureInfo.InvariantCulture);
-}
+    bool Confirmed);
 
-/// <summary>The /pivot page's records, fields and first layout.</summary>
+/// <summary>The /pivot page's records, fields and first layout. /pivot-csv writes the same trades
+/// as a CSV and reads them back.</summary>
 public static class DemoPivotData
 {
     private static readonly (string Region, string[] Books)[] Regions =
@@ -42,14 +39,19 @@ public static class DemoPivotData
 
     private static readonly string[] Currencies = ["USD", "EUR", "JPY", "GBP", "CHF"];
 
-    /// <summary>Two thousand trades from a fixed seed, so every run of the page — and every
-    /// browser test — pivots the same numbers.</summary>
-    public static DemoPivotTrade[] Trades(decimal revaluation = 1m)
+    /// <summary>The trades the page opens with.</summary>
+    public const int Count = 2000;
+
+    /// <summary><paramref name="count"/> trades from a fixed seed, so every run of the page — and
+    /// every browser test — pivots the same numbers; the first 2,000 are the same whatever the count.</summary>
+    public static DemoPivotTrade[] Trades(decimal revaluation = 1m, int count = Count) => [.. Generate(count, revaluation)];
+
+    /// <summary>The same trades as <see cref="Trades"/>, made one at a time as they are enumerated.</summary>
+    public static IEnumerable<DemoPivotTrade> Generate(int count, decimal revaluation = 1m)
     {
         var random = new Random(20260930);
-        var trades = new DemoPivotTrade[2000];
         var start = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Unspecified);
-        for (var i = 0; i < trades.Length; i++)
+        for (var i = 0; i < count; i++)
         {
             var (region, books) = Regions[random.Next(Regions.Length)];
             var book = books[random.Next(books.Length)];
@@ -59,7 +61,7 @@ public static class DemoPivotData
                 : Desks[3];
             var notional = Math.Round((decimal)(random.Next(1, 500) * 10_000) * revaluation, 2);
             var pnl = Math.Round((decimal)(random.NextDouble() - 0.45) * notional / 100m, 2);
-            trades[i] = new DemoPivotTrade(
+            yield return new DemoPivotTrade(
                 Id: "T" + (100000 + i).ToString(CultureInfo.InvariantCulture),
                 Region: region,
                 Desk: desk,
@@ -72,26 +74,26 @@ public static class DemoPivotData
                 Quantity: random.Next(1, 50),
                 Confirmed: random.Next(10) > 0);
         }
-        return trades;
     }
 
-    /// <summary>The Pivot Fields, in the order the Field List shows them.</summary>
-    public static readonly PivotField<DemoPivotTrade>[] Fields =
-    [
-        new("Region", PivotFieldType.Text, t => t.Region),
-        new("Desk", PivotFieldType.Text, t => t.Desk),
-        new("Book", PivotFieldType.Text, t => t.Book),
-        new("Product", PivotFieldType.Text, t => t.Product),
-        new("Currency", PivotFieldType.Text, t => t.Currency),
-        new("Month", PivotFieldType.Text, t => t.Month),
-        new("TradeDate", PivotFieldType.Date, t => t.TradeDate, caption: "Trade date", format: "yyyy-MM-dd"),
-        new("Notional", PivotFieldType.Number, t => t.Notional, format: "#,##0.00"),
-        new("Pnl", PivotFieldType.Number, t => t.Pnl, caption: "P&L", format: "#,##0.00"),
-        new("Quantity", PivotFieldType.Number, t => t.Quantity),
-        new("Confirmed", PivotFieldType.Boolean, t => t.Confirmed),
-    ];
+    #region The code: fields
+    // Each field once, with a typed accessor and its settings: the declaration makes both the
+    // Snapshot column the trades are read into, boxing no value, and the Pivot Field over it.
+    public static readonly PivotFields<DemoPivotTrade> Fields = PivotFields.Of<DemoPivotTrade>()
+        .Key("Id", t => t.Id)                                     // the Record Key, not a field
+        .Text("Region", t => t.Region)
+        .Text("Desk", t => t.Desk)
+        .Text("Book", t => t.Book)
+        .Text("Product", t => t.Product)
+        .Text("Currency", t => t.Currency)
+        .Date("TradeDate", t => t.TradeDate, caption: "Trade date", format: "yyyy-MM-dd")
+        .Month("Month", of: "TradeDate")                          // Jan … Dec, by the calendar
+        .Number("Notional", t => t.Notional, format: "#,##0.00")  // decimal: summed exactly
+        .Number("Pnl", t => t.Pnl, caption: "P&L", format: "#,##0.00")
+        .Number("Quantity", t => t.Quantity)                      // int: an Integer column
+        .Boolean("Confirmed", t => t.Confirmed);                  // TRUE and FALSE
 
-    /// <summary>The layout the page opens with: P&amp;L by region and desk, across products.</summary>
+    // P&L by region and desk, across products, filtered by currency.
     public static PivotLayout FirstLayout() => new()
     {
         Filters = [new PivotFieldPlacement("Currency")],
@@ -99,4 +101,5 @@ public static class DemoPivotData
         Columns = [new PivotFieldPlacement("Product")],
         Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
     };
+    #endregion
 }
