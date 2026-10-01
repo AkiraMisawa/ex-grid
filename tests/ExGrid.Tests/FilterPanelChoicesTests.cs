@@ -43,12 +43,48 @@ public class FilterPanelChoicesTests
         Assert.Equal([null, "Gamma"], clause.Values!);
     }
 
-    [Fact] // ADR-0009: nothing chosen keeps nothing, as asked — never silently no filter
-    public void Nothing_chosen_is_a_filter_that_keeps_nothing()
+    [Fact] // ADR-0009/0023: nothing chosen is never silently no filter, and it is no filter Apply may hand on — the engine refuses an In with no values
+    public void Nothing_chosen_keeps_nothing_and_cannot_be_applied()
     {
         var spec = FilterPanelChoices.FromValueList(Domain, new HashSet<object?>());
 
         Assert.Empty(Assert.Single(spec!.Clauses).Values!);
+        Assert.False(FilterPanelChoices.CanApply(spec));
+    }
+
+    [Fact] // ADR-0009/0023 (ticket 76): a search with no chosen value among its matches cannot be applied either
+    public void A_search_with_nothing_chosen_among_its_matches_cannot_be_applied()
+    {
+        var everything = new HashSet<object?>(Domain.Values);
+
+        // "Alpha " matches no value — the text SRV-5's replayed Space left in the search box.
+        Assert.False(FilterPanelChoices.CanApply(FilterPanelChoices.FromValueList(
+            Domain, everything, TextOf, search: "Alpha ", addToCurrent: false, current: null)));
+        // Alpha matches, and is not chosen.
+        Assert.False(FilterPanelChoices.CanApply(FilterPanelChoices.FromValueList(
+            Domain, new HashSet<object?>(["Beta", "Gamma"]), TextOf, search: "alp", addToCurrent: false, current: null)));
+    }
+
+    [Fact] // ADR-0009 / FL-13 (ticket 76): added to the filter in force, a search with nothing chosen applies that filter, so it can be applied
+    public void Adding_nothing_to_the_filter_in_force_can_be_applied()
+    {
+        var spec = FilterPanelChoices.FromValueList(
+            Domain, new HashSet<object?>(), TextOf, search: "zzz", addToCurrent: true, current: InList("Beta"));
+
+        Assert.Equal(["Beta"], Assert.Single(spec!.Clauses).Values!);
+        Assert.True(FilterPanelChoices.CanApply(spec));
+    }
+
+    [Fact] // ADR-0009: every other answer can be applied — no filter, a part of the list, a condition
+    public void Every_other_answer_can_be_applied()
+    {
+        Assert.True(FilterPanelChoices.CanApply(null));
+        Assert.True(FilterPanelChoices.CanApply(InList("Alpha")));
+        Assert.True(FilterPanelChoices.CanApply(InList([null])));
+        Assert.True(FilterPanelChoices.CanApply(FilterPanelChoices.FromCondition(FilterOperator.IsBlank, null)));
+        Assert.True(FilterPanelChoices.CanApply(FilterPanelChoices.FromCondition(FilterOperator.In, "Alpha")));
+        Assert.True(FilterPanelChoices.CanApply(FilterPanelChoices.FromConditions(
+            FilterOperator.StartsWith, "Al", FilterCombinator.Or, FilterOperator.EndsWith, "ma")));
     }
 
     [Fact] // ADR-0009: a TooMany answer has no list to choose from

@@ -457,6 +457,65 @@ public class MudFilterPanelTests : MudTestContext
         Assert.Equal("(Select All Search Results)", cut.Find(".mud-ex-grid-filter-all").TextContent.Trim());
     }
 
+    [Fact] // WR-2 / ADR-0009/0023 (ticket 76): with nothing ticked Apply is unavailable, and the submit Enter makes applies nothing
+    public async Task Nothing_ticked_cannot_be_applied()
+    {
+        var cut = RenderPanel(Context());
+
+        await SelectAll(cut).ChangeAsync(new ChangeEventArgs { Value = false });
+        Assert.All(ValueBoxes(cut), box => Assert.False(box.IsChecked()));
+        Assert.True(Button(cut, "mud-ex-grid-filter-apply").HasAttribute("disabled"));
+        await cut.Find("form").SubmitAsync();
+
+        Assert.Empty(_applied);
+    }
+
+    [Fact] // WR-2 / FL-10 (ticket 76): a search with no chosen value among its matches is nothing to apply — SRV-5's "Alpha " and its Enter
+    public async Task A_search_with_nothing_chosen_among_its_matches_cannot_be_applied()
+    {
+        var cut = RenderPanel(Context());
+
+        await cut.Find(".mud-ex-grid-filter-search input").InputAsync(new ChangeEventArgs { Value = "Alpha " });
+        Assert.True(Button(cut, "mud-ex-grid-filter-apply").HasAttribute("disabled"));
+        await cut.Find("form").SubmitAsync();
+
+        Assert.Empty(_applied);
+    }
+
+    [Fact] // WR-1 / FN-17 (ticket 76): nothing ticked is applied by neither Chrome, and the reference source is never asked to refuse it
+    public async Task Nothing_ticked_is_applied_by_neither_chrome()
+    {
+        foreach (var chrome in new IGridChrome?[] { null, MudGridChrome.Default })
+        {
+            var source = GridSource.From(Rows(5));
+            var cut = Render<ExGrid<Trade>>(ps => ps
+                .Add(g => g.Source, source)
+                .Add(g => g.Columns, (GridColumn<Trade>[])[
+                    new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(100)), filterUi: FilterUiMode.ValueList),
+                    new("Amount", ColumnType.Number, r => r.Amount, width: new ColumnWidthSpec(ColumnWidth.Fixed(112)))])
+                .Add(g => g.RowHeight, 20d)
+                .Add(g => g.ViewportHeight, 200)
+                .Add(g => g.ViewportWidth, 400)
+                .Add(g => g.Chrome, chrome));
+            await cut.FindAll(".ex-menu-button")[0].ClickAsync(new MouseEventArgs());
+
+            if (chrome is null)
+            {
+                await cut.Find(".ex-popover .ex-select-all").ClickAsync(new MouseEventArgs());
+                await cut.Find(".ex-popover form").SubmitAsync();
+            }
+            else
+            {
+                await cut.Find(".mud-ex-grid-filter-all input[type=checkbox]").ChangeAsync(new ChangeEventArgs { Value = false });
+                await cut.Find("form.mud-ex-grid-filter").SubmitAsync();
+            }
+
+            Assert.Null(source.Filter);
+            Assert.Single(cut.FindAll(".ex-popover"));
+            Assert.Equal(5, cut.FindAll(".ex-row").Count);
+        }
+    }
+
     [Fact] // FL-13 / ADR-0009: while searching a filtered column, the matches can join the filter in force
     public async Task Add_current_selection_joins_the_filter_in_force()
     {

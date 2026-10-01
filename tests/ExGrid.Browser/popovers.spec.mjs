@@ -91,6 +91,23 @@ const CONDITION = {
     },
 };
 
+// Each Chrome's own controls over a value list: "(Select All)" is a button with a checkbox's
+// role in the built-in panel and a tri-state MudCheckBox in the Wrapper's.
+const VALUE_LIST = {
+    builtin: {
+        selectAll: (popover) => popover.locator('.ex-select-all'),
+        ticked: (popover) => popover.locator('.ex-popover-list label input[type=checkbox]:checked'),
+        search: (popover) => popover.locator('input[type=search]'),
+        apply: (popover) => popover.locator('.ex-popover-actions button', { hasText: 'OK' }),
+    },
+    mud: {
+        selectAll: (popover) => popover.locator('.mud-ex-grid-filter-all input'),
+        ticked: (popover) => popover.locator('.mud-ex-grid-filter-value input:checked'),
+        search: (popover) => popover.locator('.mud-ex-grid-filter-search input'),
+        apply: (popover) => popover.locator('.mud-ex-grid-filter-apply'),
+    },
+};
+
 // The rows left after a Notional > 3,000,000 condition (the page's notionals run from
 // 1,000,000 up), applied by `apply`. The source re-answers after the panel closes, so the
 // count is waited for, not read at once.
@@ -546,6 +563,39 @@ for (const chrome of CHROMES) {
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
             const byEnter = await rowCountAfterFilter(page, chrome, (panel) => CONDITION[chrome].operand(panel).press('Enter'));
             expect(byEnter).toBe(byOk);
+        });
+
+        test('with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76)', async ({ page }) => {
+            const all = await grid(page).getAttribute('aria-rowcount');
+            const popover = grid(page).locator('.ex-popover');
+            const values = VALUE_LIST[chrome];
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+
+            // "(Select All)" toggled from every value to none.
+            await values.selectAll(popover).click();
+            await expect(values.ticked(popover)).toHaveCount(0);
+
+            // Enter in the search box submits the form whatever Apply's state (ADR-0039); an In
+            // with no values is not a filter the engine takes (ADR-0023), so the panel stands.
+            // Absence cannot be waited for, so the submission is given time to land.
+            await values.search(popover).focus();
+            await page.keyboard.press('Enter');
+            await page.waitForTimeout(600);
+            await expect(popover).toHaveCount(1);
+            await expect(values.apply(popover)).toBeDisabled();
+            // A press on the unavailable Apply does nothing either.
+            await values.apply(popover).click({ force: true });
+            await page.waitForTimeout(600);
+            await expect(popover).toHaveCount(1);
+            expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+
+            // Escape closes it as a Cancel, and the rows are as they were.
+            await page.keyboard.press('Escape');
+            await expect(popover).toHaveCount(0);
+            expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
         });
 
         test('a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039)', async ({ page }) => {

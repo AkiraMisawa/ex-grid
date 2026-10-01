@@ -218,11 +218,19 @@
                             Class="mud-ex-grid-filter-operand" />,
     };
 
-    /// <summary>Apply is unavailable until the operator's value is given (WR-2); a value
-    /// list can always be applied.</summary>
+    /// <summary>Apply is unavailable until the operator's value is given (WR-2), and, over a
+    /// value list, while its answer keeps nothing — nothing ticked among the values shown
+    /// (FilterPanelChoices.CanApply, ticket 76).</summary>
     private bool CanApply
         => !_awaiting
-           && (_chosen is not null || !FilterPanelChoices.TakesOperand(_operator) || Operand is not null);
+           && (_chosen is not null && _domain is { IsTooMany: false } domain
+               ? FilterPanelChoices.CanApply(ValueListAnswer(domain, _chosen))
+               : !FilterPanelChoices.TakesOperand(_operator) || Operand is not null);
+
+    /// <summary>The value list's answer, by FilterPanelChoices' rules: the checked values,
+    /// among a search's matches while one stands.</summary>
+    private FilterSpec? ValueListAnswer(DistinctValues domain, HashSet<object?> chosen)
+        => FilterPanelChoices.FromValueList(domain, chosen, TextOf, _searchText ?? "", _addToCurrent, Context.Current);
 
     protected override void OnParametersSet()
     {
@@ -309,7 +317,7 @@
         if (!CanApply)
             return;
         Context.Apply(_chosen is not null && _domain is { IsTooMany: false } domain
-            ? FilterPanelChoices.FromValueList(domain, _chosen, TextOf, _searchText ?? "", _addToCurrent, Context.Current)
+            ? ValueListAnswer(domain, _chosen)
             : FilterPanelChoices.FromConditions(
                 _operator, Operand, _combinator, _secondOperator,
                 _secondOperator is { } second && FilterPanelChoices.TakesOperand(second) ? OperandOf(_second) : null));

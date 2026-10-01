@@ -1,7 +1,7 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
-    sheet, positions, openSheet, cell, clickCell, editor, bar, nameBox, pressCell, boxOf, expectCovers,
+    sheet, positions, openSheet, cell, clickCell, editor, bar, nameBox, pressCell, boxOf, expectCovers, expectCaretShown,
 } from './sheet-helpers.mjs';
 
 // A Pointing Scope (ADR-0058, ticket 37; SH-32, SH-35): /sheet puts its Sheet and its positions grid
@@ -116,6 +116,9 @@ const spansOf = (field) => field.evaluate((input) => [...input.previousElementSi
 
 /** The texts of the layer's spans marked as what Point wrote. */
 const pointedTexts = async (field) => (await spansOf(field)).filter((span) => span.pointed).map((span) => span.text);
+
+/** Where a field's caret stands, in characters. */
+const caretOf = (field) => field.evaluate((input) => input.selectionStart);
 
 /** The line an outline or the dashes are drawn with. */
 const lineOf = (locator) => locator.evaluate((element) => {
@@ -563,6 +566,26 @@ test.describe('/sheet', () => {
         await expect(cell(grid, 'F3')).toHaveText('318.25');
         await expect(dashes).toHaveCount(0);
         await expect(table.locator('.ex-reference-outline')).toHaveCount(0);
+    });
+
+    // The thirteenth Windows run's b11 (ADR-0058, the defect seen and not asked; ticket 75): the
+    // lookup a press wrote stood with the caret at its end and the Cell Editor still showing the
+    // text's start. The editor shows the caret, and the coloured layer is scrolled with it (DC-48).
+    test('ticket 75: a press on the positions grid shows the lookup it wrote at the end of the text in the Cell Editor', async ({ page }) => {
+        const grid = sheet(page);
+        const table = positions(page);
+        await pressCell(grid, 'D10');
+        await page.keyboard.type('=');
+        await expectPointedAtFor(grid, table, '=');
+
+        await clickCell(table, 'C3');
+
+        await expect(editor(grid)).toHaveValue(LOOKUP_4471);
+        await expect.poll(() => caretOf(editor(grid))).toBe(LOOKUP_4471.length);
+        await expectCaretShown(editor(grid), { scrolled: true }, 'a press on the positions grid wrote the lookup');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'D10')).toHaveText('');
     });
 
     // The first gap of ADR-0058, "On a circuit": the positions grid learns that the Sheet points from

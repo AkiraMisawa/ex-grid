@@ -553,6 +553,12 @@ heading (`$B$2`, then `$B$3`). Three things were decided with the user.
 - **A defect, seen and not asked:** after `Home` or Shift+→ over Point writes `A10` or `D10:E10`, the
   Cell Editor's own `scrollLeft` stays where it was (81.3 px), and the caret and the written Reference
   lie 24 to 50 px past its right edge, in all six configurations. What Point writes is to be seen as it
-  is written.
+  is written. *(Built by ticket 75 for a caret at the start or the end of the text, which is where
+  typing a Formula from its start always points. A caret short of the end is left to the browser,
+  decided with the user on 2026-10-01: no place for it can be set without the width of the text before
+  it, and getting that width from the browser, by laying out a shorter copy of the text, is the
+  measuring ADR-0021 refuses, and it broke an IME composition. Such a write can carry the caret past
+  the field's right edge by up to what was written, until the next key. It shows only when an
+  existing Formula wider than the field is edited in its middle.)*
 
 Tickets 74 and 75 build these.

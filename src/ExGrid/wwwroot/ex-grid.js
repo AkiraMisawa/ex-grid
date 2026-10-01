@@ -728,20 +728,40 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 noteCaretMove(input);
             }
             input.setSelectionRange(at, at);
+            showCaret(input, at);
             return true;
         } else {
             return false;
         }
+        // Shown as the field shows what is typed: the text set from script moves no view, so the
+        // keys held while an edit opened on a circuit left the caret at the end of the text and
+        // the field showing its start (ticket 75, found by its test on the Server host).
+        showCaret(input, input.selectionEnd);
         // The field hears it as it hears typing (its @oninput).
         input.dispatchEvent(new Event('input', { bubbles: true }));
         return true;
     };
+    // A caret placed from script at either end of the text, brought into view as the field brings
+    // the user's own: setting the value or the selection from script moves no view (ticket 32;
+    // ticket 75, where a Reference Point wrote at the end of a Formula stood past the Cell
+    // Editor's right edge). At the start the field shows its start; at the end the offset is set
+    // past the far end, and the browser clamps it, so the caret stands at the field's right edge.
+    // Nothing is read but the field's value (ADR-0021). A caret short of the end is left where the
+    // browser shows it: no place for it can be set without the width of the text before it
+    // (ticket 75's Comments). The layer that colours the field follows the offset through the
+    // field's scroll event, as it does when the user types (ADR-0057).
+    const showCaret = (input, at) => {
+        if (at <= 0) {
+            input.scrollLeft = 0;
+        } else if (at >= input.value.length) {
+            input.scrollLeft = Number.MAX_SAFE_INTEGER;
+        }
+    };
     // Home or End answered in an editor field on an Apple platform (ticket 32), as Windows and
     // Linux answer them, and a held Home or End replayed on any platform: the caret to the
     // text's start or end, or with Shift the selection extended there from its anchor; in an
-    // editor surface, the user's own move. The field is scrolled to show that end — setting
-    // the offset from script moves no view by itself, and a number past the far end is clamped
-    // to it by the browser — so nothing is read but the field's value and selection (ADR-0021).
+    // editor surface, the user's own move. The field is scrolled to show that end (showCaret),
+    // so nothing is read but the field's value and selection (ADR-0021).
     const placeCaretAtEnd = (input, k, ownMove = true) => {
         const toEnd = k.key === 'End';
         const edge = toEnd ? input.value.length : 0;
@@ -758,7 +778,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         } else {
             input.setSelectionRange(edge, edge);
         }
-        input.scrollLeft = toEnd ? Number.MAX_SAFE_INTEGER : 0;
+        showCaret(input, edge);
     };
     const typeIntoEditor = (k) => {
         const input = editorInput();
@@ -1824,6 +1844,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                     reportCaretOf(input);
                     return;
                 }
+                // In view: what Point wrote at the end of a long Formula is read as it is written,
+                // as is the end of F4's selection there, where the browser's own move would show it
+                // (ADR-0058, the thirteenth Windows run; ticket 75).
+                showCaret(input, end);
                 input.setSelectionRange(caret, end);
                 reportedText = text;
                 reportedCaret = caret;
