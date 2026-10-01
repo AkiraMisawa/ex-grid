@@ -49,17 +49,18 @@ internal static class Exactly
     }
 
     /// <summary>The value with its trailing zeros gone, so that one value has one form — <c>1.5</c>,
-    /// never <c>1.50</c> — whatever segments its parts came from (ADR-0063).</summary>
+    /// never <c>1.50</c> — whatever segments its parts came from (ADR-0063). Zero is <c>0</c>, never
+    /// <c>0.00</c> nor the negative zero a subtraction of two equal negative numbers leaves.</summary>
     public static decimal Canonical(decimal value)
     {
         Span<int> bits = stackalloc int[4];
         decimal.GetBits(value, bits);
+        if ((bits[0] | bits[1] | bits[2]) == 0)
+            return 0m;
         var scale = (bits[3] >> 16) & 0xFF;
         if (scale == 0)
             return value;
         var magnitude = ((UInt128)(uint)bits[2] << 64) | ((ulong)(uint)bits[1] << 32) | (uint)bits[0];
-        if (magnitude == 0)
-            return 0m;
         if (magnitude % 10 != 0)
             return value;
         while (scale > 0 && magnitude % 10 == 0)
