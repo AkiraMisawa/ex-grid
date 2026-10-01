@@ -1,6 +1,6 @@
 # 47: The core paints a per-cell appearance, and judges bold by bold widths
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** [ADR-0050](../../../adr/0050-what-exsheet-asks-of-exgrids-core.md), item 15, from
 [ADR-0063](../../../adr/0063-a-sheets-cell-format-is-document-data-painted-on-white-paper.md). A Consumer can supply a cell's Font, Fill and four Border sides. A bold cell is judged by bold
@@ -12,28 +12,28 @@ share of Excel's centred line from edges resolved once per row outside the rende
 `spikes/render-bench/Bench.Client/` (`CellFormatModel.cs`, `Components/FormatRow.razor`, mode
 `BorderInCellExcel`).
 
-- [ ] **The declaration**: a per-cell appearance (Font colour, bold, italic, underline,
+- [x] **The declaration**: a per-cell appearance (Font colour, bold, italic, underline,
       strikethrough; Fill; four Border sides), off by default (DC-1).
   - It says how a change reaches the rows, in the shape ticket 44's decision fits: ADR-0006's lookup
     identity, or per row.
-- [ ] **Painting**: Font and Fill are painted by the mechanism ticket 44's decision chose (DC-58).
+- [x] **Painting**: Font and Fill are painted by the mechanism ticket 44's decision chose (DC-58).
   - P1–P9 hold.
   - A row repaints only when its Values or its appearance changed.
   - Nothing per cell reaches JavaScript.
-- [ ] **Borders are drawn as DC-59 says**: centred on the gridline, a thick line into both cells,
+- [x] **Borders are drawn as DC-59 says**: centred on the gridline, a thick line into both cells,
       above Fills and below the Focus, the Selection and the Reference Outlines. Only painted rows
       are drawn. The line for an edge recorded on both sides is the Consumer's answer.
-- [ ] **Bold widths** (DC-58).
+- [x] **Bold widths** (DC-58).
   - `CellTextMetrics` gains them: each character class at the bold weight. The core's defaults for
     its own font are measured as §21.7a measured the regular ones.
   - A bold cell's `####` decision, and the width handed to painted text, use them.
-- [ ] `ExGrid.MudBlazor` supplies bold widths for its font (ADR-0030).
-- [ ] **Measure two variants in `spikes/render-bench`** (ADR-0063, "Still owed").
+- [x] `ExGrid.MudBlazor` supplies bold widths for its font (ADR-0030).
+- [x] **Measure two variants in `spikes/render-bench`** (ADR-0063, "Still owed").
   - The hybrid: solid lines as the cell's own `border`, with background layers only for dashes,
     double and the pixel past the gridline. Interning stays per side, style and colour, never per
     combination of four sides. Take it if it draws the same pixels and costs less.
   - A Fill and a border on the same cell.
-- [ ] **Tests.**
+- [x] **Tests.**
   - Layer 2: render counts and markup.
   - Layer 3 pixels:
     - a bold number at the width where regular fits and bold does not;
@@ -162,4 +162,29 @@ third pixel above the Fill; a right border leaves the number 4px from the cell's
   to a fit, Pinned Columns, a sideways pan, and no new JavaScript. All of layers 1 and 2 pass:
   ExGrid.Tests 871, ExGrid.Components 1119 (one skipped), ExGrid.MudBlazor.Tests 88,
   ExSheet.Engine.Tests 2107, ExSheet.Components.Tests 414.
-- Layer 3 (`appearance.spec.mjs`; DC-59 also in `chrome-150`): not yet run, waiting for the slot.
+- Layer 3, headless on this Mac, `appearance.spec.mjs` and `navigation.spec.mjs`, projects `chrome`
+  and `chrome-150` (whose display scale, 1.5, each line test asserts): 61 passed on WebAssembly and
+  61 passed on Server, with a clean console. That is the thirteen styles on a bottom and on a right
+  edge at 100% and at 150%, the line above a Fill, the Focus and the Selection above a line, the bold
+  `####` in Roboto (bold painted whole in the column wide enough for it, its ink heavier than the
+  regular's), italic clear of both edges of its cell, and the demo page in the index.
+
+### Left for others
+
+- **Under CDP's device-scale emulation** (Playwright's `deviceScaleFactor`), a border and a one-pixel
+  dash tile are blended over two device rows at 1.5; a real display scale or browser zoom lays out in
+  device pixels and draws them exactly, as `chrome-150` checks. Windows and a real zoomed browser are
+  owed by hand, as ADR-0063 says.
+- **Readings, not observed:** where two filled cells meet, the upper or left cell's own colour shows
+  on the gridline between them; a double line's gridline pixel is the grid's ground
+  (`--ex-background`), over a Fill too; the long dash at resolutions other than 1 and 1.5 is 8 below
+  1.5dppx and 9 from it.
+- **On a bordered cell, the lines replace** a group or total row's tint and a pinned cell's stripe
+  tint, which are background images on the same cell.
+- **Metrics given without bold widths** charge bold 4% over the regular widths
+  (`CellTextMetrics.BoldWidthAllowance`), reasoned from the faces measured as the full-width fallback
+  is; ADR-0016 or ADR-0063 may want to record it.
+- **Seen on the way:** `ExGrid.MudBlazor` declares Roboto's regular digit class at 8.0, but `£`, which
+  that class holds, measured 8.281 at weight 600.
+- **Windows' Segoe UI** was not measured at either weight; the bold defaults are the widest measured
+  so far, as the regular ones are.

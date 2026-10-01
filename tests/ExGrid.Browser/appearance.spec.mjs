@@ -119,8 +119,10 @@ function expected(style, scale) {
 test.describe('DC-59: lines', () => {
     for (const [index, style] of STYLES.entries()) {
         for (const side of ['bottom', 'right']) {
-            test(`DC-59: a ${style} line on a cell's ${side} edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9)`, async ({ page }) => {
+            test(`DC-59: a ${style} line on a cell's ${side} edge is drawn as Excel draws it, centred on the gridline (ADR-0050 item 15, case 9)`, async ({ page }, testInfo) => {
                 await open(page);
+                // The 150% run is the display scale chrome-150 sets, not a default it fell back from.
+                expect(await page.evaluate(() => devicePixelRatio)).toBe(testInfo.project.name === 'chrome-150' ? 1.5 : 1);
                 const cell = cellOf(page, 'appearance-borders', index, side === 'bottom' ? 1 : 3);
                 await cell.scrollIntoViewIfNeeded();
                 const box = await cell.boundingBox();
