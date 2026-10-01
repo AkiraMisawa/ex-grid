@@ -15,7 +15,8 @@ namespace ExGrid.DemoApi.Tests;
 /// </summary>
 public class DemoApiServer : IAsyncLifetime
 {
-    /// <summary>How many trades the server generates.</summary>
+    /// <summary>How many trades the server generates, unless a fixture says otherwise
+    /// (<see cref="TradeCount"/>).</summary>
     public const int Trades = 3_000;
 
     private readonly TempDirectory _directory = new();
@@ -24,6 +25,12 @@ public class DemoApiServer : IAsyncLifetime
     internal WebApplicationFactory<Program> Factory => _factory ?? throw new InvalidOperationException("Not started.");
 
     internal TradeStore Store => Factory.Services.GetRequiredService<TradeStore>();
+
+    /// <summary>The data directory the server's trades live in.</summary>
+    internal string DataDirectory => _directory.Path;
+
+    /// <summary>How many trades this server generates.</summary>
+    public virtual int TradeCount => Trades;
 
     /// <summary>Whether the server makes its trades ready as it starts; a test of the answers
     /// before that turns it off.</summary>
@@ -37,7 +44,7 @@ public class DemoApiServer : IAsyncLifetime
                 [new KeyValuePair<string, string?>("Logging:LogLevel:Default", "Warning")]))
             .ConfigureTestServices(services =>
             {
-                services.AddSingleton(new DemoApiOptions(Trades, _directory.Path));
+                services.AddSingleton(new DemoApiOptions(TradeCount, _directory.Path));
                 if (!MakesTradesReady)
                 {
                     services.Remove(services.Single(service =>
@@ -63,4 +70,11 @@ public class DemoApiServer : IAsyncLifetime
 public sealed class DemoApiServerNotReady : DemoApiServer
 {
     protected override bool MakesTradesReady => false;
+}
+
+/// <summary>The server over twenty thousand trades — every book, date and month among them — for
+/// holding its Pivot Source to <c>PivotSource.From</c>'s answers (PV-22).</summary>
+public sealed class PivotApiServer : DemoApiServer
+{
+    public override int TradeCount => 20_000;
 }

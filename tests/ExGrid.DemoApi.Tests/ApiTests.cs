@@ -138,4 +138,29 @@ public sealed class NotReadyTests(DemoApiServerNotReady server) : IClassFixture<
         using var off = await client.PostAsJsonAsync("/api/live", new { on = false }, Token);
         Assert.Equal(HttpStatusCode.OK, off.StatusCode);
     }
+
+    [Fact] // ADR-0065/0068 and principle 1: the Arrow stream, the Pivot Source, by-id and reset wait for the data too
+    public async Task ADR0068_the_stream_the_pivot_source_by_id_and_reset_wait_for_the_data()
+    {
+        using var client = server.Factory.CreateClient();
+        var question = ExPivot.Engine.PivotJson.Write(new ExPivot.Engine.PivotQuery());
+        foreach (var request in new Func<HttpRequestMessage>[]
+                 {
+                     () => new HttpRequestMessage(HttpMethod.Get, "/api/trades.arrows"),
+                     () => new HttpRequestMessage(HttpMethod.Post, "/api/pivot/aggregate") { Content = new StringContent(question) },
+                     () => new HttpRequestMessage(HttpMethod.Get, "/api/trades/by-id?ids=T10000000"),
+                     () => new HttpRequestMessage(HttpMethod.Post, "/api/reset"),
+                 })
+        {
+            using var message = request();
+            using var response = await client.SendAsync(message, Token);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Equal("The trades are being made ready.",
+                (await response.Content.ReadFromJsonAsync<JsonElement>(Token)).GetProperty("detail").GetString());
+        }
+
+        // What a page offers its Field List needs no data.
+        using var fields = await client.GetAsync("/api/pivot/fields", Token);
+        Assert.Equal(HttpStatusCode.OK, fields.StatusCode);
+    }
 }

@@ -284,4 +284,42 @@ public class LeafAggregateTests
         Assert.Contains("two leaves", Assert.Throws<InvalidOperationException>(
             () => PivotEngine.Cube(new PivotQuery(rows: [new("Region")]), twice, Fields)).Message);
     }
+
+    [Fact] // ADR-0063/0065, PV-22: a Decimal is its value, not the scale a source wrote it at — the raw form a copy carries is one, whichever source answered
+    public void A_sources_scale_is_not_part_of_the_report()
+    {
+        var layout = new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount"), Value("Amount", PivotAggregation.Max)] };
+        var query = PivotQuery.For(layout);
+        // A database's money column: SUM and MAX come back at its two places.
+        var builder = new PivotAnswerBuilder(query, "sql-1");
+        foreach (var (region, product, amount) in new[] { ("East", "Apples", 0.25m), ("East", "Pears", 0.25m), ("North", "Pears", 75.60m) })
+        {
+            var leaf = builder.AddLeaf([PivotItemKey.Text(region), PivotItemKey.Text(product)], 1);
+            builder.SetCounts(leaf, 0, 1, 1);
+            builder.SetSum(leaf, 0, PivotNumber.Exact(amount));
+            builder.SetExtremes(leaf, 0, PivotNumber.Exact(amount), PivotNumber.Exact(amount));
+        }
+        Sale[] records =
+        [
+            new("East", "Apples", new DateTime(2026, 1, 10), 0.25m, 1, true),
+            new("East", "Pears", new DateTime(2026, 1, 12), 0.25m, 1, false),
+            new("North", "Pears", new DateTime(2026, 2, 18), 75.6m, 1, false),
+        ];
+
+        var raw = Raw(PivotEngine.Report(PivotEngine.Cube(query, builder.Build(), Fields), layout, EnUs));
+
+        Assert.Equal(Raw(Report(records, Fields, layout)), raw);
+        // East's 0.25 + 0.25 is 0.50 to decimal addition, and the source's 75.60 is 75.60.
+        Assert.Contains("0.5", raw);
+        Assert.Contains("75.6", raw);
+        Assert.Contains("76.1", raw);
+        Assert.DoesNotContain(raw, text => text.Contains('.') && text.EndsWith('0'));
+    }
+
+    // Every value cell's raw, locale-free form — what a copy carries — in the report's order.
+    private static string[] Raw(PivotReport report) => report.Rows
+        .SelectMany(row => Enumerable.Range(0, report.ValueColumns.Count).Select(column => row.ValueAt(column)))
+        .OfType<PivotValue>()
+        .Select(value => value.ToString(null, System.Globalization.CultureInfo.InvariantCulture))
+        .ToArray();
 }

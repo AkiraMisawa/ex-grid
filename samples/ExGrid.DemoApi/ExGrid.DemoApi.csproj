@@ -14,6 +14,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The family's packages, referenced as any application references them (ADR-0068): the
+         Snapshot and its Arrow stream for "database → Snapshot" (ADR-0063/0064), and the Pivot
+         Source's contract and PivotJson for "database → server Pivot Source" (ADR-0065). -->
+    <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
+    <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
+    <ProjectReference Include="..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="ExGrid.DemoApi.Tests" />
   </ItemGroup>
 

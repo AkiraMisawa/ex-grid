@@ -80,6 +80,17 @@ learns it: SignalR, polling, or a message bus (Q57).
 
 ## Refined while building it
 
+*(2026-10-01, when the bundled source's side was built.)*
+
+- **A batch that compacts the Snapshot is not folded.** A compaction moves rows
+  (ADR-0063), so the answer held for the current question is dropped and the next question is
+  answered afresh. So is a batch whose new Items would pass `MaxLeaves`: the fresh question is
+  refused, naming the bound, and ExPivot shows a Stale Report. Either way no report is computed
+  from half a batch.
+- **Subtraction is used only where no sum can round.** A leaf whose exact sum has passed 128 bits
+  ([ADR-0059](./0059-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)) is
+  a `double`, and is recomputed from its records whenever a batch touches it.
+
 *(2026-10-01, when the component's side was built.)*
 
 - **A question for newer data does not dim the report.** Dimming it four times a second would

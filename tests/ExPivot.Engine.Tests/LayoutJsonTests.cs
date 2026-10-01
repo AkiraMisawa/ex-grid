@@ -85,13 +85,14 @@ public class LayoutJsonTests
     public void An_unknown_name_or_shape_is_refused(string json)
         => Assert.ThrowsAny<Exception>(() => PivotLayoutJson.Read(json));
 
-    [Fact] // ADR-0058/0059: the engine references only the base class library
-    public void The_engine_references_only_the_base_class_library()
+    [Fact] // ADR-0058/0063 (PV-1): the engine references the base class library and ExGrid.Data, and nothing else
+    public void The_engine_references_only_the_base_class_library_and_the_data_package()
     {
         var referenced = typeof(PivotEngine).Assembly.GetReferencedAssemblies().Select(a => a.Name!).ToArray();
 
         Assert.All(referenced, name => Assert.True(
-            name == "System" || name.StartsWith("System.", StringComparison.Ordinal) || name == "netstandard",
+            name == "System" || name.StartsWith("System.", StringComparison.Ordinal) || name == "netstandard" || name == "ExGrid.Data",
             $"ExPivot.Engine references {name}."));
+        Assert.Contains("ExGrid.Data", referenced);
     }
 }
