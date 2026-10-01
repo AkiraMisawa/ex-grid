@@ -2,6 +2,11 @@ using System.Buffers.Binary;
 
 namespace ExGrid.Data.Arrow;
 
+/// <summary>One message of an IPC stream: where it starts (its continuation marker or length) and
+/// ends (after its body), its kind (1 a schema, 2 a dictionary batch, 3 a record batch), and a record
+/// batch's rows.</summary>
+internal readonly record struct IpcMessage(int Start, int End, byte Kind, long Rows);
+
 /// <summary>
 /// The framing of Arrow's IPC stream, read without Apache.Arrow: each message is an optional
 /// continuation marker (<c>0xFFFFFFFF</c>), its metadata's length, the metadata — a flatbuffer
@@ -70,13 +75,22 @@ internal static class IpcFrames
     /// ends before its marker.</exception>
     public static (long[] BatchEnds, long Rows) Walk(ReadOnlySpan<byte> stream)
     {
+        var batches = Messages(stream).Where(m => m.Kind == RecordBatchMessage).ToArray();
+        return ([.. batches.Select(m => (long)m.End)], batches.Sum(m => m.Rows));
+    }
+
+    /// <summary>A whole stream's messages, in order, up to its end-of-stream marker.</summary>
+    /// <exception cref="SnapshotException">The bytes do not begin with a schema message, or the stream
+    /// ends before its marker.</exception>
+    public static List<IpcMessage> Messages(ReadOnlySpan<byte> stream)
+    {
         CheckStart(stream[..Math.Min(8, stream.Length)]);
-        var ends = new List<long>();
-        long rows = 0;
+        var messages = new List<IpcMessage>();
         var position = 0;
-        var first = true;
         while (true)
         {
+            var first = messages.Count == 0;
+            var start = position;
             if (stream.Length - position < 4)
                 throw first ? NotArrow() : CutShort();
             var length = BinaryPrimitives.ReadInt32LittleEndian(stream[position..]);
@@ -89,12 +103,12 @@ internal static class IpcFrames
                 position += 4;
             }
             if (length == 0)
-                return first ? throw Empty() : ([.. ends], rows);
+                return first ? throw Empty() : messages;
             if (length < 0 || (first && length > MaxSchemaLength))
                 throw NotArrow();
             if (length > stream.Length - position)
                 throw first ? NotArrow() : CutShort();
-            if (!TryReadMessage(stream.Slice(position, length), out var kind, out var bodyLength, out var batchRows)
+            if (!TryReadMessage(stream.Slice(position, length), out var kind, out var bodyLength, out var rows)
                 || (first && kind != SchemaMessage))
             {
                 throw NotArrow();
@@ -103,12 +117,7 @@ internal static class IpcFrames
             if (bodyLength < 0 || bodyLength > stream.Length - position)
                 throw CutShort();
             position += (int)bodyLength;
-            if (kind == RecordBatchMessage)
-            {
-                ends.Add(position);
-                rows += batchRows;
-            }
-            first = false;
+            messages.Add(new IpcMessage(start, position, kind, rows));
         }
     }
 
