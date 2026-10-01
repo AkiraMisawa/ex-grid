@@ -516,7 +516,8 @@
     /// <summary>The one string a cell paints, measures and decides overflow on — count
     /// and render must see the same text — and the one copy, the value list and the
     /// editor show for the value (ADR-0005/0006): the column's Format where it declares
-    /// one, the bare ToString where it does not. Null is a Blank and paints empty
+    /// one, and where it does not a date's or a time's ISO form by type, or the value's own
+    /// ToString (ADR-0006, note of 2026-10-01). Null is a Blank and paints empty
     /// (ADR-0023).</summary>
     internal static string CellText(GridColumn<TRow> column, TRow row)
         => column.Info.TextOf(row);
