@@ -163,4 +163,67 @@ public class PivotFieldsTests
     {
         public void Report(SnapshotProgress value) => seen.Add(value);
     }
+
+    // ---- The README's example, as it is written there ---------------------------------------------
+
+    private sealed record ReadmeTrade(string Id, string Region, string Desk, string Tenor, DateOnly TradeDate, decimal Pnl, double Price);
+
+    private static class Tenors
+    {
+        // Months to maturity: "1Y6M" is 18, as "18M" is, and the two stand side by side.
+        public static IComparable? Months(string tenor)
+        {
+            if (tenor is "ON" or "TN")
+                return tenor == "ON" ? -2m : -1m;
+            decimal months = 0, number = 0;
+            foreach (var c in tenor)
+            {
+                if (char.IsAsciiDigit(c))
+                {
+                    number = (number * 10) + (c - '0');
+                    continue;
+                }
+                var unit = c switch { 'W' => 0.25m, 'M' => 1m, 'Y' => 12m, _ => 0m };
+                if (unit == 0 || number == 0)
+                    return null;   // not a tenor: no key, so after the tenors
+                months += number * unit;
+                number = 0;
+            }
+            return number == 0 && months > 0 ? months : null;
+        }
+    }
+
+    [Fact] // ADR-0059/0063/0065: the README's declarations — the standard way — declare, order and answer as it says
+    public async Task The_readmes_declarations_answer_as_it_says()
+    {
+        var fields = PivotFields.Of<ReadmeTrade>()
+            .Key("Id", t => t.Id)
+            .Text("Region", t => t.Region)
+            .Text("Desk", t => t.Desk, itemOrder: ["Rates", "Credit"])
+            .Text("Tenor", t => t.Tenor, orderKey: Tenors.Months)
+            .Date("TradeDate", t => t.TradeDate, caption: "Trade date")
+            .Month("Month", of: "TradeDate")
+            .Number("Pnl", t => t.Pnl, caption: "P&L", format: "#,##0.00")
+            .Number("Price", t => t.Price);
+        ReadmeTrade[] trades =
+        [
+            new("T-1", "EMEA", "FX", "1Y6M", new DateOnly(2026, 2, 1), 10m, 99.5),
+            new("T-2", "EMEA", "Rates", "ON", new DateOnly(2026, 1, 5), -2.5m, 100.25),
+            new("T-3", "APAC", "Credit", "18M", new DateOnly(2026, 2, 9), 4m, 101),
+            new("T-4", "APAC", "Rates", "1W", new DateOnly(2026, 1, 30), 1m, 98),
+            new("T-1042", "APAC", "Rates", "Other", new DateOnly(2026, 3, 1), 7m, 97),
+        ];
+        var source = PivotSource.From(trades, fields);
+        var tenors = new PivotLayout { Rows = [P("Tenor")], Columns = [P("Month")], Values = [Sum("Pnl")] };
+        var desks = new PivotLayout { Rows = [P("Desk")], Values = [Sum("Pnl")] };
+
+        var report = await SnapshotSourceTests.ReportOf(source, tenors);
+        source.Apply(fields.Batch(added: [trades[0] with { Id = "T-5", Tenor = "TN" }], removedKeys: ["T-1042"]));
+        var live = await SnapshotSourceTests.ReportOf(source, tenors);
+
+        Assert.Equal(["Row Labels", "Jan", "Feb", "Mar", "Grand Total"], Headers(report));
+        Assert.Equal(["ON", "1W", "18M", "1Y6M", "Other"], report.Rows.Where(r => r.Role == PivotRowRole.Item).Select(r => r.Labels[0].Text!));
+        Assert.Equal(["ON", "TN", "1W", "18M", "1Y6M"], live.Rows.Where(r => r.Role == PivotRowRole.Item).Select(r => r.Labels[0].Text!));
+        Assert.Equal(["Rates", "Credit", "FX"], (await SnapshotSourceTests.ReportOf(source, desks)).Rows.Where(r => r.Role == PivotRowRole.Item).Select(r => r.Labels[0].Text!));
+    }
 }

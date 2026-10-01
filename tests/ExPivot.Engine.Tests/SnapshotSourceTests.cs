@@ -300,6 +300,56 @@ public class SnapshotSourceTests
         }
     }
 
+    [Fact] // ADR-0065 (PV-22): a source answering through Fetch from the same Snapshot gives the same Leaf Aggregates, Items and Details, after batches too
+    public async Task Fetch_over_a_snapshot_answers_as_from_does()
+    {
+        var fields = LiveDataTests.Declarations();
+        var reference = PivotSource.From(
+        [
+            LiveDataTests.Row(1, "Rates", 1.25m), LiveDataTests.Row(2, "RATES", -3m) with { Risk = double.NaN },
+            LiveDataTests.Row(3, null, null) with { Date = null }, LiveDataTests.Row(4, "Credit", 0.0001m) with { Book = "ny-2", Live = false },
+        ], fields);
+        var fetched = OverJson(reference);
+        PivotQuery[] questions =
+        [
+            new(rows: [F("Desk")], columns: [F("Month")], values: [V("Amount"), V("Risk"), V("Quantity", PivotParts.Sum)]),
+            new(rows: [F("Book", PivotItemKey.Text("LDN-1"))], filters: [F("Live", PivotItemKey.Blank)], values: [V("Desk", PivotParts.Counts), V("Date", PivotParts.Counts)]),
+            new(columns: [F("Risk")], values: [V("Amount", PivotParts.Sum | PivotParts.Extremes)]),
+        ];
+
+        foreach (var batch in new[]
+                 {
+                     fields.Batch(),
+                     fields.Batch(added: [LiveDataTests.Row(5, "fx", 12.5m)], changed: [LiveDataTests.Row(2, "Rates", 2m)], removedKeys: [3L]),
+                 })
+        {
+            reference.Apply(batch);
+            foreach (var query in questions)
+            {
+                var expected = await reference.AggregateAsync(query, Ct);
+                SameAnswer(expected, await fetched.AggregateAsync(query, Ct));
+                foreach (var field in query.Placed.Select(f => f.Field))
+                    SameItems(await reference.ItemsAsync(new PivotItemsQuery(field, expected.SourceVersion), Ct), await fetched.ItemsAsync(new PivotItemsQuery(field, expected.SourceVersion), Ct));
+                var layout = new PivotLayout
+                {
+                    Rows = [.. query.Rows.Select(f => new PivotFieldPlacement(f.Field) { HiddenItems = f.HiddenItems })],
+                    Columns = [.. query.Columns.Select(f => new PivotFieldPlacement(f.Field) { HiddenItems = f.HiddenItems })],
+                    Filters = [.. query.Filters.Select(f => new PivotFieldPlacement(f.Field) { HiddenItems = f.HiddenItems })],
+                    Values = [.. query.Values.Select(v => Value(v.Field, PivotAggregation.Count))],
+                };
+                var report = PivotEngine.Report(PivotEngine.Cube(PivotQuery.For(layout), await reference.AggregateAsync(PivotQuery.For(layout), Ct), reference.Fields), layout, EnUs);
+                foreach (var row in report.Rows)
+                {
+                    for (var column = -1; column < report.ValueColumns.Count; column++)
+                    {
+                        var details = report.DetailsQuery(row, column);
+                        SameDetails(await reference.DetailsAsync(details, Ct), await fetched.DetailsAsync(details, Ct));
+                    }
+                }
+            }
+        }
+    }
+
     [Fact] // ADR-0062/0065: the records behind a cell carry each field's value by its kind, and the Consumer's own object
     public async Task The_records_behind_a_cell_carry_their_values_and_objects()
     {
