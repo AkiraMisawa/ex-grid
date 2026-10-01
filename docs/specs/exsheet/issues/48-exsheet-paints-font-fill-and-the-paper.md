@@ -169,3 +169,7 @@ check is not loosened to hide one (AGENTS.md). Ticket 86 fixes the drift. The ot
 - a pinned lined cell's gridline → ticket 90.
 
 The Focus under MudBlazor's dark scheme stays the Wrapper's (ADR-0030).
+
+*(2026-10-01, orchestrator, later.)* Ticket 86 found that fixing the drift needs the CSS Custom Highlight API.
+The user then chose to keep ADR-0057's acceptance of it. So (a) became: the test reads the drift as ADR-0057
+accepts it.

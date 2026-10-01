@@ -269,6 +269,15 @@ file.
   character, and below twenty References it does not show. If long Formulas show it, the fix is to
   draw the layer as one run and colour it with the CSS Custom Highlight API, which needs script of its
   own and a decision.
+  *(2026-10-01, decided with the user, ticket 86: still accepted.)*
+  - Ticket 48 drew the Cell Editor in the Ink. The drift then crossed the layer-3 test's pixel
+    threshold by one edge pixel at End under `ExSheet.MudBlazor`'s Roboto.
+  - Ticket 86 measured it. Each span's width is rounded up to 1/64 px, which comes to about 1/16 px
+    at End of the test's Formula, never a character.
+  - The Highlight API was offered and not taken. Script and a registry shared across instances are
+    too much for a drift no reader sees.
+  - The test now checks what DC-48 states: the offsets and the computed font properties are equal.
+    Its pixel comparison allows the sub-pixel drift accepted here, and nothing more.
 - **Two moments leave the colours a keystroke behind, and both are accepted.**
   - Focus moved mid-edit to something that is not a text field (a button in a Consumer's cell) leaves
     the previous field coloured until the next key or caret move. The colours are still over the

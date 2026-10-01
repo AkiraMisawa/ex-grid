@@ -1,6 +1,6 @@
 # 86: ADR-0057's coloured layer lies over the field's text under the Wrapper's font
 
-Status: needs-info
+Status: ready-for-agent
 
 **What to build:** the fix ticket 48 found and decided (its comment, "DC-48 under ExSheet.MudBlazor, at End").
 - Under `ExSheet.MudBlazor`'s Chrome, with Roboto, the coloured layer of
@@ -143,3 +143,13 @@ amended note on ADR-0021, and DC-51 widened.
     their shape, so neither Chrome changes.
 
 Nothing is committed for this ticket except this comment.
+
+*(2026-10-01, orchestrator.)* **Decided with the user: the drift stays accepted, as ADR-0057 says.** The
+Highlight API is not taken. ADR-0057's note of this date records why.
+- [ ] `reference-text.spec.mjs`'s DC-48 tests check what DC-48 states: the offsets and the computed font
+      properties are equal.
+- [ ] Their pixel comparison allows ADR-0057's accepted drift and nothing more, under both Chromes. For
+      example, compare after a shift by the measured bound for the Formula's span count, or allow edge pixels
+      only where a glyph's edge falls.
+- [ ] Show that a real misalignment still fails: a shift of half a pixel, a different font, or a different
+      letter spacing.
