@@ -106,8 +106,8 @@ runs on across the Pinned Column" failed in the dark scheme, on both hosts. The 
 - **The test still compares exactly**, and its comment says why.
 - **Tests.**
   - A layer-2 test covers the row's ground and its specificity.
-  - Locally the mud, stripes, appearance, selection-look, sheet-paper and presentation specs pass,
-    95 of them. The one exception is stripes' vertical-scrollbar test, which fails on this Mac's
+  - Locally the mud, stripes, appearance, selection-look, sheet-paper and presentation specs pass 94 of
+    95. The one exception is stripes' vertical-scrollbar test, which fails on this Mac's
     headless overlay scrollbar, before and after.
   - CI is the judge of the Linux pixels.
 - **If CI still parts them**, the paths could not be made one. The next step is then a tolerance of
