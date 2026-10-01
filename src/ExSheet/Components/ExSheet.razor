@@ -305,8 +305,10 @@
     /// or opened with F2 or a double click, until the edit is committed, cancelled or discarded.
     /// A commit the Sheet rejects — a Formula it cannot read — leaves it open (ADR-0034). While it
     /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
-    /// <see cref="SetNumberFormatAsync"/> and <see cref="SetAlignmentAsync"/> are refused by name
-    /// (ADR-0048). ExSheet learns it from its grid (ADR-0050 section 6).
+    /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/> and
+    /// <see cref="SetAlignmentAsync"/> are refused by name (ADR-0048, ADR-0063).
+    /// <see cref="CellFormatAt"/> is a read, and answers. ExSheet learns it from its grid
+    /// (ADR-0050 section 6).
     /// </summary>
     public bool IsEditing { get; private set; }
 
@@ -412,29 +414,61 @@
     }
 
     /// <summary>
-    /// Sets the number format of the Selection as one operation (ADR-0046); <see langword="null"/>
-    /// is General. Formats live at three levels, as in Excel (ADR-0047): a Selection of whole
-    /// columns or whole rows sets them on the columns or rows, one entry each, and any other
-    /// range on its cells. A Selection of several ranges, whole columns and rows among them, is
-    /// one operation too (ADR-0046). Answers false when nothing is selected.
+    /// Sets the parts of a Cell Format that <paramref name="change"/> names on the Selection, as
+    /// one operation on the undo stack (ADR-0063, ADR-0048). Every part it does not name stays as
+    /// each cell has it, each Font emphasis on its own: a change that sets bold keeps each cell's
+    /// italic, Fill and Number Format. A Cell Format lives at three levels, as in Excel (ADR-0047):
+    /// a Selection of whole columns or whole rows sets it on the columns or rows, one entry each,
+    /// and any other range on its cells. A Selection of several ranges, whole columns and rows
+    /// among them, is one operation too (ADR-0046), and the change's Borders are relative to each
+    /// range, so each range gets its own outline, as in Excel. Answers false when nothing is
+    /// selected.
     /// </summary>
+    /// <exception cref="ArgumentException">The change sets no part of a Cell Format.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The change's alignment is not one.</exception>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
-    public Task<bool> SetNumberFormatAsync(NumberFormat? format) => OnDispatcherAsync(() =>
+    public Task<bool> SetCellFormatAsync(CellFormatChange change)
     {
-        RefuseWhileEditing();
-        return FormatSelectionAsync(format ?? NumberFormat.General, null);
-    });
+        ArgumentNullException.ThrowIfNull(change);
+        if (change.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
+        if (change.Alignment is { } alignment && !Enum.IsDefined(alignment))
+        {
+            throw new ArgumentOutOfRangeException(nameof(change), alignment, "Not an alignment.");
+        }
+        return OnDispatcherAsync(() =>
+        {
+            RefuseWhileEditing();
+            return FormatSelectionAsync(change);
+        });
+    }
 
     /// <summary>
-    /// Sets the horizontal alignment of the Selection as one operation (ADR-0046), at the levels
-    /// <see cref="SetNumberFormatAsync"/> sets a format at (ADR-0047), and answering as it does.
+    /// Sets the Number Format of the Selection; <see langword="null"/> is General. A shorthand for
+    /// <see cref="SetCellFormatAsync"/> with a change that names the Number Format alone
+    /// (ADR-0063), so it acts, refuses and answers as that change does.
     /// </summary>
     /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
-    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) => OnDispatcherAsync(() =>
-    {
-        RefuseWhileEditing();
-        return FormatSelectionAsync(null, alignment);
-    });
+    public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
+        SetCellFormatAsync(new CellFormatChange { NumberFormat = format ?? NumberFormat.General });
+
+    /// <summary>
+    /// Sets the horizontal alignment of the Selection. A shorthand for
+    /// <see cref="SetCellFormatAsync"/> with a change that names the Alignment alone (ADR-0063), so
+    /// it acts, refuses and answers as that change does.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
+        SetCellFormatAsync(new CellFormatChange { Alignment = alignment });
+
+    /// <summary>
+    /// The Cell Format of the cell at <paramref name="address"/> as it shows (ADR-0063): each part
+    /// the cell's own, else its row's, else its column's, else the part's default — cell over row
+    /// over column, as in Excel. What a toolbar reads for the Focus cell whenever the Selection
+    /// changes. It is a read, so it answers while an edit is open too: until the edit is
+    /// committed, the cell is as it was.
+    /// </summary>
+    public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
 
     // Undo or redo from the grid's own keys (ADR-0050 item 8). The grid forwards them only while
     // no edit is open, but ExSheet hears an edit end a render late when a parameter change
@@ -1008,16 +1042,17 @@
     }
 
     /// <summary>
-    /// A formatting command on the Selection, as one step (ADR-0046, ADR-0048): every range goes
-    /// to the engine as a range, so whole columns and whole rows are recorded as one entry each
-    /// (ADR-0047, SH-21) and any other range sets its cells; nothing is capped (principle 5).
-    /// A null format or alignment is left as it is.
+    /// A formatting command on the Selection, as one step (ADR-0046, ADR-0048, ADR-0063): every
+    /// range goes to the engine as a range, so whole columns and whole rows are recorded as one
+    /// entry each (ADR-0047, SH-21), any other range sets its cells, and Borders are set relative
+    /// to each range; nothing is capped (principle 5). A part the change does not name is left as
+    /// it is.
     /// </summary>
-    private async Task<bool> FormatSelectionAsync(NumberFormat? format, HorizontalAlignment? alignment)
+    private async Task<bool> FormatSelectionAsync(CellFormatChange change)
     {
         var ranges = _selection.Ranges;
         if (ranges.Count == 0) return false;
-        await PerformAsync(SheetEdit.SetCellFormat(ranges.Select(SheetFormulaAids.RangeOf).ToList(), new CellFormatChange { NumberFormat = format, Alignment = alignment }));
+        await PerformAsync(SheetEdit.SetCellFormat(ranges.Select(SheetFormulaAids.RangeOf).ToList(), change));
         return true;
     }
 

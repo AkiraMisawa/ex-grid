@@ -115,11 +115,26 @@ await sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00"));   // on the se
 await sheet.UndoAsync();
 ```
 
-A format or an alignment set on a selection of whole columns or whole rows is recorded on the
-columns or rows, one entry each, as Excel records it: cell over row over column.
+`SetCellFormatAsync` sets the parts of a Cell Format a `CellFormatChange` names on every range of
+the selection, as one undo step, and leaves every other part as each cell has it. Its borders are
+relative to each range, so each range gets its own outline, as in Excel. `SetNumberFormatAsync`
+and `SetAlignmentAsync` are shorthands for a change that names that one part:
+
+```csharp
+await sheet.SetCellFormatAsync(new CellFormatChange
+{
+    Bold = true,
+    Borders = BorderChange.Outline(new BorderLine(BorderLineStyle.Thin)),
+});
+var shown = sheet.CellFormatAt(CellAddress.Parse("A1"));   // cell over row over column
+```
+
+A Cell Format set on a selection of whole columns or whole rows is recorded on the columns or
+rows, one entry each, as Excel records it, and `CellFormatAt` answers what a cell shows, part by
+part from the cell, its row or its column. It is a read, and answers while an edit is open.
 
 While an edit is open — a cell or the Formula Bar typed in, and not yet committed or cancelled —
-these commands, `RedoAsync` and `SetAlignmentAsync` among them, are refused with
+these commands, `RedoAsync`, `SetCellFormatAsync` and `SetAlignmentAsync` among them, are refused with
 `SheetRefusalReason.EditIsOpen` and change nothing, as Excel greys out its ribbon while a cell is
 edited: a row inserted above the cell would otherwise carry the typing into another row.
 `IsEditing` says whether an edit is open, and `EditingChanged` is raised when that changes, so the
