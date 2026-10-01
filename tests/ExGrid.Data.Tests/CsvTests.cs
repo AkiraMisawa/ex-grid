@@ -46,6 +46,18 @@ public class CsvTests
         Assert.Equal(["1", "2", "3", "4"], Values(snapshot, "A"));
     }
 
+    [Fact] // ADR-0063: a file of a header alone is a Snapshot of the declared columns and no rows
+    public void A_header_alone_is_a_snapshot_of_no_rows()
+    {
+        var schema = new CsvSchema([new("Desk", SnapshotKind.Text), new("Qty", SnapshotKind.Integer)]);
+
+        var snapshot = Read(schema, "Desk,Qty\r\n");
+
+        Assert.Equal(0, snapshot.RowCount);
+        Assert.Equal(["Desk", "Qty"], snapshot.Columns.Select(c => c.Name));
+        Assert.Equal(0, Read(schema, "Desk,Qty").RowCount);
+    }
+
     [Fact] // ADR-0063: a trailing separator makes one more field, which is empty
     public void A_trailing_separator_makes_an_empty_field()
     {
