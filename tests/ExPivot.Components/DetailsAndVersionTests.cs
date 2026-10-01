@@ -103,6 +103,25 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Single(cut.FindComponents<ExGrid<PivotReportRow>>());
     }
 
+    [Fact] // ADR-0058 (PV-14): while a details tab is selected its records cover the report, which stays with its state and is marked covered — left unpainted, so its own header cannot stand over the records' — until the report's tab brings it back
+    public async Task The_records_cover_the_report()
+    {
+        var cut = RenderPivot(ByRegionAndProduct);
+        var grid = Grid(cut).Instance;
+        Assert.Equal("ex-pivot-sheet", cut.Find(".ex-pivot-sheet").ClassName);
+
+        await DoubleClickAsync(cut, 0, 1);
+
+        Assert.Contains("ex-pivot-sheet-covered", cut.Find(".ex-pivot-sheet").ClassList);
+        Assert.NotNull(cut.Find(".ex-pivot-sheet-covered > .ex-grid"));
+        Assert.Same(grid, Grid(cut).Instance);
+
+        await cut.FindAll(".ex-pivot-tab-button")[0].ClickAsync(new MouseEventArgs());
+
+        Assert.Equal("ex-pivot-sheet", cut.Find(".ex-pivot-sheet").ClassName);
+        Assert.Same(grid, Grid(cut).Instance);
+    }
+
     [Fact] // ADR-0058 (PV-14): a tab Show Details opens takes the keyboard, which the report it covers keeps no longer; closing a tab gives it to the tab selected next
     public async Task The_keyboard_follows_the_tabs()
     {

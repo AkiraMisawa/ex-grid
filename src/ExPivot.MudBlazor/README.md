@@ -3,13 +3,18 @@
 [ExPivot](https://www.nuget.org/packages/ExPivot), Excel's PivotTable for Blazor, inside a
 MudBlazor application:
 
-- **`MudPivotChrome`** draws the PivotTable Fields pane with its Defer Layout Update, each
-  field's menu and the toolbar's Layout menu, Filter…, Field Settings…, Value Field Settings…,
-  the report filter band, and the Stale Report's notice — a warning `MudAlert` with a Retry
-  button — with MudBlazor's own controls: checkboxes, text fields, selects, radio groups, buttons
-  and Material icons. It also dresses the report's grid with `ExGrid.MudBlazor`'s
-  `MudGridChrome`, so you set one parameter for both. The toolbar and Show Details' tabs and
-  dialog are still ExPivot's own markup inside the paper, holding the Mud band and grids.
+- **`MudPivotChrome`** draws every surface of the pivot with MudBlazor's own controls:
+  checkboxes, text fields, selects, radio groups, buttons, tabs, alerts and Material icons.
+  - The PivotTable Fields pane, with Defer Layout Update, each field's menu, Filter…, Field
+    Settings… and Value Field Settings….
+  - The toolbar above the report: the report filter band, Layout ▾ with its menu, Refresh when
+    the source can be refreshed, and the pane's toggle, with a refusal as an error `MudAlert`.
+  - Show Details' tabs, as `MudTabs` at the report's foot, and the content of its dialog. The
+    dialog itself is ExPivot's frame, not a `MudDialog`.
+  - The Stale Report's notice, a warning `MudAlert` with a Retry button.
+
+  It also dresses the report's grid with `ExGrid.MudBlazor`'s `MudGridChrome`, so you set one
+  parameter for both.
 - **`mud-ex-pivot.css`** maps ExPivot's Visual Tokens onto MudBlazor's palette variables and
   lays out the Chrome's controls. It follows the theme, dark mode included.
 - The surface is `ExGrid.MudBlazor`'s **`MudExGridPaper`**, unchanged. It brings the Material
@@ -17,7 +22,8 @@ MudBlazor application:
   with.
 
 The pivot's behaviour does not change. The Chrome draws and calls back, and ExPivot decides what
-every tick, drop and command means. The same gestures make the same layout under either Chrome.
+every tick, drop and command means, which tab is selected, and where every menu, panel and dialog
+opens. The same gestures make the same layout under either Chrome.
 
 > **This is a prerelease (`0.x`).** It ships at the same version as ExPivot and depends on
 > exactly that version and on the matching `ExGrid.MudBlazor`, so upgrade them together.

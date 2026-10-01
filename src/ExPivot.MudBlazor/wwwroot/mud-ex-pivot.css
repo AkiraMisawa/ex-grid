@@ -32,13 +32,18 @@
     --ex-pivot-toggle-color: var(--mud-palette-text-secondary);
     --ex-pivot-toggle-background: transparent;
     --ex-pivot-toggle-border-color: var(--mud-palette-lines-inputs);
-    /* Show Details (ADR-0058): a tab's records over the report, the tabs at its foot, and the
-       dialog's backdrop, painted as MudBlazor paints its own. ExPivot's markup draws them until
-       this Wrapper draws them with MudTabs (ticket 17); only their colours are the palette's. */
+    /* Show Details (ADR-0058): a tab's records over the report, and the dialog's frame and
+       backdrop — ExPivot's, painted as MudBlazor paints a MudDialog: the surface, no edge, the
+       theme's corners and the dialog's elevation. The tabs and the dialog's content are this
+       Wrapper's own MudBlazor controls; the tabs' tokens still reach ExPivot's markup when a
+       Consumer keeps it under the paper. */
     --ex-pivot-details-background: var(--mud-palette-surface);
     --ex-pivot-tab-background: var(--mud-palette-background-gray);
     --ex-pivot-tab-selected-background: var(--mud-palette-surface);
     --ex-pivot-dialog-backdrop: var(--mud-palette-overlay-dark);
+    --ex-pivot-dialog-border-color: transparent;
+    --ex-pivot-dialog-radius: var(--mud-default-borderradius);
+    --ex-pivot-dialog-shadow: var(--mud-elevation-24);
     /* The Stale Report's notice (ADR-0066), as ExPivot's markup draws it when a Consumer keeps
        the built-in notice under the paper; MudPivotChrome draws it as a MudAlert instead. */
     --ex-pivot-stale-color: var(--mud-palette-text-primary);
@@ -150,7 +155,8 @@
 }
 .mud-ex-pivot-entry-values .mud-ex-pivot-entry-caption { font-style: italic; }
 
-/* A placed field's menu: MudButtons laid out as a Material menu, each label at the start. */
+/* A placed field's menu, and the Layout menu: MudButtons laid out as a Material menu, each label at
+   the start — a choice that wraps, as the Layout menu's longer ones do, wraps from there too. */
 .mud-ex-pivot-menu {
     display: flex;
     flex-direction: column;
@@ -158,6 +164,7 @@
 .mud-ex-pivot-menu .mud-ex-pivot-menu-item,
 .mud-ex-pivot-menu .mud-ex-pivot-menu-item .mud-button-label {
     justify-content: flex-start;
+    text-align: start;
 }
 /* A group's heading in the Layout menu: Subtotals, Grand Totals, Report Layout. */
 .mud-ex-pivot-menu .mud-ex-pivot-menu-heading {
@@ -205,13 +212,40 @@
 .mud-ex-pivot-stale-message { flex: 1 1 auto; min-width: 0; }
 .mud-ex-pivot-retry { flex: none; text-transform: none; }
 
-/* The report filter band, above the report: the wrapper around each button is positioned, so
+/* The toolbar above the report (ADR-0060): the report filter band on its left; Layout ▾, Refresh
+   and the Field List's toggle on its right, keeping the case of Excel's words. Layout ▾'s wrapper
+   is positioned, so ExPivot's menu frame opens under it, over the report. */
+.mud-ex-pivot-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding: 0 0 8px;
+}
+.mud-ex-pivot-toolbar-start { flex: 1 1 auto; min-width: 0; }
+.mud-ex-pivot-toolbar-end {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+}
+.mud-ex-pivot-toolbar-anchor {
+    position: relative;
+    display: inline-flex;
+}
+.mud-ex-pivot-toolbar-button { text-transform: none; }
+/* The toggle while the pane is shown: pressed, as a selected toolbar button is shaded. */
+.mud-ex-pivot-toolbar-button.mud-ex-pivot-pressed { background-color: rgba(var(--mud-palette-primary-rgb), 0.12); }
+/* What the report could not do with the last change, under the toolbar. */
+.mud-ex-pivot-refusal-notice { margin: 0 0 8px; }
+
+/* The report filter band, on the toolbar's left: the wrapper around each button is positioned, so
    ExPivot's Filter… frame opens under it (ADR-0060). */
 .mud-ex-pivot-filters {
     display: flex;
     flex-wrap: wrap;
     gap: 4px 16px;
-    padding: 0 0 8px;
 }
 .mud-ex-pivot-filter {
     display: flex;
@@ -224,3 +258,49 @@
     min-width: 160px;
 }
 .mud-ex-pivot-filter-anchor .mud-ex-pivot-filter-button { flex: 1 1 auto; min-width: 0; }
+
+/* Show Details' tabs at the report's foot (ADR-0058): MudTabs placed at the bottom, under a rule,
+   where Excel's sheet tabs are. A tab keeps the case of its cell's Items, takes the width of its
+   title — cut with an ellipsis past a sheet tab's width — and has its close button beside it. The
+   selected one stands out as a sheet tab does. MudTabs' own panels stay empty: ExPivot places the
+   records over the report. */
+.mud-ex-pivot-tabs { border-top: 1px solid var(--mud-palette-lines-default); }
+.mud-ex-pivot-tabs .mud-ex-pivot-tab {
+    width: auto;
+    text-transform: none;
+}
+.mud-ex-pivot-tabs .mud-ex-pivot-tab-selected { font-weight: 600; }
+.mud-ex-pivot-tab-wrapper {
+    display: inline-flex;
+    align-items: center;
+}
+.mud-ex-pivot-tab-title {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mud-ex-pivot-tab-wrapper .mud-ex-pivot-tab-close { margin-inline-end: 4px; }
+
+/* Show Details' dialog content, inside ExPivot's frame (ADR-0058): laid out as a MudDialog's — the
+   title, the records taking what is left, and the actions at the end. */
+.mud-ex-pivot-dialog-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.mud-ex-pivot-dialog-content .mud-ex-pivot-dialog-title { padding: 8px 8px 0; }
+.mud-ex-pivot-dialog-records {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+.mud-ex-pivot-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+}

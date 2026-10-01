@@ -42,6 +42,41 @@ public class MudPivotStaleReportTests : MudPivotTestContext
         }
     }
 
+    /// <summary>The bundled source, refreshable, whose Refresh fails while the test says so —
+    /// a server that cannot reload its data — counting what it is asked.</summary>
+    private sealed class RefreshingSource : PivotSource
+    {
+        private readonly PivotSource _inner = PivotSource.From(Sales, MudPivotTestContext.Fields);
+
+        public Exception? RefreshFails { get; set; }
+
+        public int Refreshes { get; private set; }
+
+        public int Questions { get; private set; }
+
+        public override IReadOnlyList<PivotField> Fields => _inner.Fields;
+
+        public override PivotSourceFeatures Features { get; } = new(Enum.GetValues<PivotAggregation>(), canRefresh: true);
+
+        public override ValueTask<PivotAnswer> AggregateAsync(PivotQuery query, CancellationToken cancellationToken = default)
+        {
+            Questions++;
+            return _inner.AggregateAsync(query, cancellationToken);
+        }
+
+        public override ValueTask<PivotItemPage> ItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default)
+            => _inner.ItemsAsync(query, cancellationToken);
+
+        public override ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
+            => _inner.DetailsAsync(query, cancellationToken);
+
+        public override ValueTask RefreshAsync(CancellationToken cancellationToken = default)
+        {
+            Refreshes++;
+            return RefreshFails is { } error ? ValueTask.FromException(error) : ValueTask.CompletedTask;
+        }
+    }
+
     private static Sale[] EastApples(decimal amount) => [Sales[0] with { Amount = amount }, .. Sales[1..]];
 
     /// <summary>The server's data moves on while it cannot be reached: the report is left stale.</summary>
@@ -109,5 +144,38 @@ public class MudPivotStaleReportTests : MudPivotTestContext
         Assert.Equal(PivotLayoutJson.Write(plain.Instance.CurrentLayout), PivotLayoutJson.Write(mud.Instance.CurrentLayout));
         Assert.False(mud.Instance.IsStale);
         Assert.False(plain.Instance.IsStale);
+    }
+
+    [Fact] // ADR-0066 refined, ADR-0061 (PV-9, PV-37): a failed Refresh is a Stale Report under MudBlazor too — the warning MudAlert says the source could not answer, nothing is said on the toolbar, and Retry refreshes again, as under the built-in markup
+    public async Task A_failed_refresh_is_a_stale_report_under_mudblazor()
+    {
+        var mudSource = new RefreshingSource { RefreshFails = new InvalidOperationException("The server cannot be reached.") };
+        var mud = RenderPivot(RegionAmount, source: mudSource);
+        var plainSource = new RefreshingSource { RefreshFails = new InvalidOperationException("The server cannot be reached.") };
+        var plain = RenderPivot(RegionAmount, chrome: BuiltIn, source: plainSource);
+
+        await mud.Find(".mud-ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
+        await plain.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
+
+        Assert.True(mud.Instance.IsStale);
+        Assert.Equal(Severity.Warning, mud.FindComponent<MudAlert>().Instance.Severity);
+        var message = mud.Find(".ex-pivot-stale[role=status] .mud-ex-pivot-stale-message").TextContent;
+        Assert.StartsWith("Showing the data as of ", message);
+        Assert.EndsWith(": the source could not answer: The server cannot be reached.", message);
+        static string Reason(string sentence) => sentence[(sentence.IndexOf(": ", StringComparison.Ordinal) + 2)..];
+        Assert.Equal(Reason(plain.Find(".ex-pivot-stale-message").TextContent), Reason(message));
+        Assert.Empty(mud.FindAll(".mud-ex-pivot-refusal-notice"));
+        Assert.Equal("East | 180", RowTexts(mud)[0]);
+
+        mudSource.RefreshFails = null;
+        plainSource.RefreshFails = null;
+        await mud.Find(".mud-ex-pivot-retry").ClickAsync(new MouseEventArgs());
+        await plain.Find(".ex-pivot-retry").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(2, mudSource.Refreshes);
+        Assert.Equal(plainSource.Refreshes, mudSource.Refreshes);
+        Assert.Equal(plainSource.Questions, mudSource.Questions);
+        mud.WaitForAssertion(() => Assert.False(mud.Instance.IsStale));
+        Assert.Empty(mud.FindAll(".mud-ex-pivot-stale-notice"));
     }
 }

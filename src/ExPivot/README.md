@@ -80,9 +80,10 @@ Link both stylesheets in your host page:
   `RedrawInterval` (250 ms; zero redraws on every change). A change of values keeps the Selection
   and any open menu or panel. A value cell whose shown text changed is marked for
   `ChangeHighlightDuration` (one second); a new layout, a sort or a collapse marks nothing. When
-  the newest data cannot be shown — it breaks a cap, or the source fails — the report stays as it
-  was, and a notice under the toolbar says what happened and as of when, with Retry. `Clock`
-  takes a `TimeProvider` for tests.
+  the newest data cannot be shown — it breaks a cap, the source fails, or a Refresh fails — the
+  report stays as it was, and a notice under the toolbar says what happened and as of when, with
+  Retry. While a new version's Items are on their way, the report filter band and Filter… keep
+  the ones they listed. `Clock` takes a `TimeProvider` for tests.
 - **ShowFieldList** can be bound (`@bind-ShowFieldList`) to remember the pane the user hid or
   showed from the toolbar.
 - **Label** replaces any word by its id. `Label="PivotWords.Japanese"` speaks the words of

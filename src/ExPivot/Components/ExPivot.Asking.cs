@@ -77,17 +77,23 @@ public partial class ExPivot
     /// source says its data moved on, but at once and under the loading indication. The report
     /// stays as it was until the answer lands, and the cells whose painted values changed are
     /// marked. A source that cannot be refreshed — the bundled one — answers the same data again;
-    /// it is refreshed by handing ExPivot a new source, or a Change Batch. A source that fails to
-    /// refresh leaves the report as it was and says so, as a failed question does
-    /// (<see cref="LastError"/>); an answer that cannot be shown leaves a Stale Report.
+    /// it is refreshed by handing ExPivot a new source, or a Change Batch. A Refresh that fails —
+    /// the source cannot refresh, or its answer cannot be shown — leaves a Stale Report: the report
+    /// stays on the version shown, and the notice under the toolbar says the source could not
+    /// answer, as of when, with Retry, which refreshes again (ADR-0066). The failure is kept
+    /// (<see cref="LastError"/>). Before the first report there is nothing to be stale, and the
+    /// toolbar says it instead.
     /// </summary>
     public Task RefreshAsync() => InvokeAsync(async () =>
     {
         var source = _source ?? throw new InvalidOperationException("ExPivot has no Source yet.");
         var generation = _generation;
         // A source that refreshes says its data moved on: the question below answers that notice,
-        // so it is not asked twice.
+        // so it is not asked twice. A Stale Report's Retry is not offered meanwhile: the refresh is
+        // out.
         _refreshing = true;
+        if (_stale is not null)
+            StateHasChanged();
         Exception? failure = null;
         try
         {
@@ -105,9 +111,13 @@ public partial class ExPivot
             return;
         if (failure is not null)
         {
+            // A source handed over meanwhile is the one the report waits on now, and its own
+            // question answers it: the old one's failure says nothing about what is shown.
+            if (!ReferenceEquals(source, _source))
+                return;
             // A failure is never silent, and never takes the report away (ADR-0025). Changes the
             // source announced meanwhile are still asked for.
-            Fail(failure);
+            RefreshFailed(failure);
             await ScheduleRedrawAsync();
             StateHasChanged();
             return;
@@ -435,6 +445,7 @@ public partial class ExPivot
         {
             _stale = null;
             _staleNewest = null;
+            _staleRetryRefreshes = false;
         }
         LoadShownItems();
         if (ReferenceEquals(layout, _layout))
@@ -511,22 +522,52 @@ public partial class ExPivot
         _raisePending = false;
     }
 
-    /// <summary>The source failed: the report stays as it was and says why; the layout the pane
-    /// shows is kept, so asking again asks for it.</summary>
+    /// <summary>The source failed: the report stays as it was, and the toolbar says why.</summary>
     private void Fail(Exception error)
     {
         _lastError = error;
         _refusal = PivotWords.Fill(Word("source-failed"), error.Message);
     }
 
-    /// <summary>A question failed: for newer data under the layout on screen, the report is left
-    /// stale; for a layout, the failure is said on the toolbar.</summary>
+    /// <summary>
+    /// A question failed. For newer data under the layout on screen, the report is left stale
+    /// (ADR-0066). A failed question for a layout is not stale data: the toolbar says it, and the
+    /// layout goes back to the one the report shows, as a refused one does, so the pane shows what
+    /// the report was laid out under (ADR-0066 refined); nothing is raised for it. Before the first
+    /// report there is none to go back to, and the pane keeps the layout, so the next change asks
+    /// for it again. The pending layout, while Defer Layout Update is ticked, is the user's work in
+    /// the pane, and stays.
+    /// </summary>
     private void FailFor(Question kind, PivotLayout layout, Exception error)
     {
         if (IsStaleFor(kind, layout))
+        {
             MarkStale(PivotWords.Fill(Word(StaleReportWords.SourceFailed), error.Message), error, newest: null);
-        else
+            return;
+        }
+        Fail(error);
+        if (_report is not null)
+        {
+            _layout = _shown;
+            _raisePending = false;
+        }
+    }
+
+    /// <summary>
+    /// A Refresh the source could not carry out (ADR-0066 refined): the newest data cannot be
+    /// shown, so the report stays on the version shown as a Stale Report, whose notice says the
+    /// source could not answer, as of when, and whose Retry refreshes again — what failed was the
+    /// refresh, and asking the source that did not refresh would show its old data as the newest.
+    /// Without a report there is nothing to be stale, and the toolbar says it.
+    /// </summary>
+    private void RefreshFailed(Exception error)
+    {
+        if (_report is null)
+        {
             Fail(error);
+            return;
+        }
+        MarkStale(PivotWords.Fill(Word(StaleReportWords.SourceFailed), error.Message), error, newest: null, retryRefreshes: true);
     }
 
     /// <summary>

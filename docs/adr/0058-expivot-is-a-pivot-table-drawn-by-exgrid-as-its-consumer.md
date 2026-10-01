@@ -183,6 +183,11 @@ destinations:
 - **The Consumer.** When it listens to `OnShowDetails`, it takes the records to show where it shows
   records, and neither the tab nor the dialog opens.
 
+*(Refined 2026-10-01, while building the tabs.)* **While a details tab is selected, the report it
+covers stays laid out, with its state, and is not painted.** ExGrid's sticky header stands in
+layers of the grid's own, and painted over the records' header: the trades read under the report's
+money-column headings. A report nobody sees also takes no keyboard and is not read out.
+
 ## Packages
 
 *Changed when decided:* `ExGrid.Data` joined, under the engine (ADR-0063).

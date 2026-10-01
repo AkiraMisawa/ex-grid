@@ -15,10 +15,12 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// What the Pivot Source contract added, under MudBlazor (ADR-0060/0061/0065): Defer Layout Update
-/// at the Mud pane's foot, the Layout menu drawn as the Mud menu, the Aggregations a source does
-/// not answer offered disabled with the reason — and the toolbar and Show Details' tab, built-in
-/// markup for now, holding the Mud band and the details grid dressed by the grid Wrapper.
+/// What the Pivot Source contract and the toolbar added, under MudBlazor (ADR-0060/0061/0065):
+/// Defer Layout Update at the Mud pane's foot, the toolbar above the report drawn with MudBlazor's
+/// controls in ExPivot's order and roles — the Mud band, Layout ▾ opening the Mud menu in ExPivot's
+/// frame, Refresh, the pane's pressed toggle, a refusal as an error alert — making the layouts the
+/// built-in markup makes, and the Aggregations a source does not answer offered disabled with the
+/// reason.
 /// </summary>
 public class MudPivotToolbarTests : MudPivotTestContext
 {
@@ -72,14 +74,25 @@ public class MudPivotToolbarTests : MudPivotTestContext
                 .ChangeAsync(new ChangeEventArgs { Value = true });
     }
 
+    private static Task OpenLayoutMenuAsync(IRenderedComponent<PivotComponent> cut)
+        => cut.Find(".mud-ex-pivot-layout-button").ClickAsync(new MouseEventArgs());
+
+    /// <summary>The toolbar's MudButtons on its right, by their words, in order.</summary>
+    private static string[] ToolbarButtons(IRenderedComponent<PivotComponent> cut)
+        => cut.FindAll(".mud-ex-pivot-toolbar-end > .mud-ex-pivot-toolbar-anchor > button, .mud-ex-pivot-toolbar-end > button")
+            .Select(b => b.TextContent.Trim()).ToArray();
+
     [Fact] // ADR-0060/0061 (PV-30): the Layout menu is the Mud menu — the groups headed, each choice a radio, the current ones checked, a no-op disabled
     public async Task The_layout_menu_is_the_mud_menu()
     {
         var cut = RenderPivot(RegionAmount with { Rows = [P("Region"), P("Product")] });
 
-        await cut.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs());
+        await OpenLayoutMenuAsync(cut);
 
-        var frame = cut.Find(".ex-pivot-toolbar-anchor .ex-pivot-popup");
+        var frame = cut.Find(".mud-ex-pivot-toolbar-anchor .ex-pivot-popup");
+        Assert.Contains("ex-pivot-popup-overlay", frame.ClassName);
+        Assert.Contains("ex-pivot-popup-end", frame.ClassName);
+        Assert.Equal("true", cut.Find(".mud-ex-pivot-layout-button").GetAttribute("aria-expanded"));
         Assert.Equal("menu", frame.GetAttribute("role"));
         Assert.NotNull(frame.QuerySelector(".mud-ex-pivot-menu"));
         Assert.Equal(["Subtotals", "Grand Totals", "Report Layout"],
@@ -102,15 +115,16 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal(PivotReportForm.Tabular, cut.Instance.CurrentLayout.Form);
         Assert.Equal(["Region", "Product", "Sum of Amount"], HeaderTexts(cut));
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
-        Assert.Equal("false", cut.Find(".ex-pivot-layout-button").GetAttribute("aria-expanded"));
+        Assert.Empty(cut.FindAll(".ex-pivot-backdrop"));
+        Assert.Equal("false", cut.Find(".mud-ex-pivot-layout-button").GetAttribute("aria-expanded"));
     }
 
-    [Fact] // ADR-0039/0060: the Layout menu's first enabled choice takes DOM focus under MudBlazor; Escape closes it
+    [Fact] // ADR-0039/0060 (PV-11): the Layout menu's first enabled choice takes DOM focus under MudBlazor; Escape closes it, and the keyboard goes back to Layout ▾
     public async Task The_layout_menu_takes_the_keyboard()
     {
         var cut = RenderPivot(RegionAmount);
 
-        await cut.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs());
+        await OpenLayoutMenuAsync(cut);
 
         var first = cut.FindComponents<MudPivotButton>().First(b => b.Instance.Class == "mud-ex-pivot-menu-item" && !b.Instance.Disabled);
         Assert.Equal("Do Not Show Subtotals", first.Find("button").TextContent.Trim());
@@ -120,28 +134,112 @@ public class MudPivotToolbarTests : MudPivotTestContext
 
         Assert.Empty(cut.FindAll(".ex-pivot-popup"));
         Assert.Equal(RegionAmount.Form, cut.Instance.CurrentLayout.Form);
+        var layout = cut.FindComponents<MudPivotButton>().Single(b => b.Instance.Class!.Contains("mud-ex-pivot-layout-button", StringComparison.Ordinal));
+        Assert.Equal((ElementIdOf(layout.Instance), false), LastFocus());
     }
 
-    [Fact] // ADR-0060/0061 (PV-30): the toolbar is ExPivot's markup holding the Mud band on its left; its toggle hides and shows the Mud pane
-    public async Task The_toolbar_holds_the_mud_band_and_toggles_the_pane()
+    [Fact] // ADR-0060/0061 (PV-30): the toolbar is MudBlazor's controls in ExPivot's order and roles — the Mud band on its left, then Layout ▾ and the pane's toggle, and no Refresh for a source that cannot be refreshed
+    public void The_toolbar_is_drawn_with_mudblazor_controls()
     {
         var cut = RenderPivot(RegionAmount with { Filters = [P("Online")] });
 
-        var toolbar = cut.Find(".ex-pivot-toolbar");
-        Assert.NotNull(toolbar.QuerySelector(".ex-pivot-toolbar-start .mud-ex-pivot-filter-button"));
-        Assert.Equal(["Layout", "Field List"],
-            toolbar.QuerySelectorAll(".ex-pivot-toolbar-end .ex-pivot-toolbar-button")
-                .Select(b => (b.QuerySelector("span") ?? b).TextContent.Trim()));
-        Assert.Single(cut.FindAll(".mud-ex-pivot-pane"));
+        Assert.Empty(cut.FindAll(".ex-pivot-toolbar"));
+        var toolbar = cut.Find(".ex-pivot-report > .mud-ex-pivot-toolbar");
+        Assert.NotNull(toolbar.QuerySelector(".mud-ex-pivot-toolbar-start .mud-ex-pivot-filters .mud-ex-pivot-filter-button"));
+        Assert.Equal(["Layout", "Field List"], ToolbarButtons(cut));
+        var layout = cut.Find(".mud-ex-pivot-layout-button");
+        Assert.Equal("menu", layout.GetAttribute("aria-haspopup"));
+        Assert.Equal("false", layout.GetAttribute("aria-expanded"));
+        Assert.Equal("true", cut.Find(".mud-ex-pivot-field-list-toggle").GetAttribute("aria-pressed"));
+        var buttons = cut.FindComponents<MudButton>().Where(b => b.Instance.Class?.Contains("mud-ex-pivot-toolbar-button", StringComparison.Ordinal) == true).ToArray();
+        Assert.Equal(
+            [MudPivotIcons.ForCommand(PivotCommandIds.LayoutMenu), MudPivotIcons.ForCommand(PivotCommandIds.FieldListToggle)],
+            buttons.Select(b => b.Instance.StartIcon));
+        Assert.Equal(Icons.Material.Filled.ArrowDropDown, buttons[0].Instance.EndIcon);
+        Assert.Empty(cut.FindAll(".mud-ex-pivot-refresh-button"));
+    }
 
-        await cut.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
+    [Fact] // ADR-0060/0061 (PV-30): the toggle shows whether the pane is shown — pressed, in the primary colour — and hides and shows the Mud pane
+    public async Task The_toggle_hides_and_shows_the_pane()
+    {
+        var cut = RenderPivot(RegionAmount);
+        Assert.Single(cut.FindAll(".mud-ex-pivot-pane"));
+        Assert.Contains("mud-ex-pivot-pressed", cut.Find(".mud-ex-pivot-field-list-toggle").ClassName);
+        Assert.Contains("mud-button-text-primary", cut.Find(".mud-ex-pivot-field-list-toggle").ClassName);
+
+        await cut.Find(".mud-ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
 
         Assert.Empty(cut.FindAll(".mud-ex-pivot-pane"));
-        Assert.Equal("false", cut.Find(".ex-pivot-field-list-toggle").GetAttribute("aria-pressed"));
+        Assert.Equal("false", cut.Find(".mud-ex-pivot-field-list-toggle").GetAttribute("aria-pressed"));
+        Assert.DoesNotContain("mud-ex-pivot-pressed", cut.Find(".mud-ex-pivot-field-list-toggle").ClassName);
 
-        await cut.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
+        await cut.Find(".mud-ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
 
         Assert.Single(cut.FindAll(".mud-ex-pivot-pane"));
+        Assert.Equal("true", cut.Find(".mud-ex-pivot-field-list-toggle").GetAttribute("aria-pressed"));
+    }
+
+    [Fact] // ADR-0065/0061 (PV-30): Refresh is a MudButton between Layout ▾ and the toggle when the source can be refreshed; it refreshes the source and asks again
+    public async Task Refresh_is_a_mud_button_between_layout_and_the_toggle()
+    {
+        var source = new LimitedSource(PivotSource.From(Sales, Fields), new PivotSourceFeatures(Enum.GetValues<PivotAggregation>(), canRefresh: true));
+        var cut = RenderPivot(RegionAmount, source: source);
+        Assert.Equal(["Layout", "Refresh", "Field List"], ToolbarButtons(cut));
+        var refresh = cut.FindComponents<MudButton>().Single(b => b.Instance.Class!.Contains("mud-ex-pivot-refresh-button", StringComparison.Ordinal));
+        Assert.Equal(Icons.Material.Filled.Refresh, refresh.Instance.StartIcon);
+        var asked = source.Questions;
+
+        await cut.Find(".mud-ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(1, source.Refreshes);
+        Assert.Equal(asked + 1, source.Questions);
+    }
+
+    [Fact] // ADR-0065/0061 (PV-29, PV-24): what the report could not do with the last change is an error MudAlert under the toolbar, an alert as the built-in notice is
+    public void A_refusal_is_an_error_mud_alert()
+    {
+        var source = new LimitedSource(PivotSource.From(Sales, Fields), new PivotSourceFeatures([PivotAggregation.Sum, PivotAggregation.Count]));
+
+        var cut = RenderPivot(RegionAmount with { Values = [new PivotValueField("Amount", PivotAggregation.Product)] }, source: source);
+
+        var alert = cut.FindComponents<MudAlert>().Single(a => a.Instance.Class == "mud-ex-pivot-refusal-notice");
+        Assert.Equal(Severity.Error, alert.Instance.Severity);
+        var notice = cut.Find(".ex-pivot-report > .mud-alert.mud-ex-pivot-refusal-notice");
+        Assert.Equal("alert", notice.GetAttribute("role"));
+        Assert.Equal("The source does not answer Product.", notice.QuerySelector(".mud-alert-message")!.TextContent.Trim());
+        Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));
+        Assert.Equal(0, source.Questions);
+    }
+
+    [Fact] // ADR-0060/0061 (PV-9, PV-30, PV-12): the toolbar's gestures — a Layout choice, the band's Filter… and the toggle — make the built-in markup's layout under MudBlazor
+    public async Task The_toolbar_makes_the_built_ins_layout()
+    {
+        var start = RegionAmount with { Filters = [P("Online")], Rows = [P("Region"), P("Product")] };
+        var mud = RenderPivot(start);
+        await OpenLayoutMenuAsync(mud);
+        await RunMenuAsync(mud, "Show in Outline Form");
+        await mud.Find(".mud-ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
+        await TickItemAsync(mud, "FALSE", false);
+        await mud.Find(".mud-ex-pivot-ok").ClickAsync(new MouseEventArgs());
+        await mud.Find(".mud-ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
+
+        var plain = RenderPivot(start, chrome: BuiltIn);
+        await plain.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs());
+        await plain.FindAll(".ex-pivot-menu-item").Single(b => b.TextContent.Replace("✓", "", StringComparison.Ordinal).Trim() == "Show in Outline Form")
+            .ClickAsync(new MouseEventArgs());
+        await plain.Find(".ex-pivot-filter-button").ClickAsync(new MouseEventArgs());
+        await plain.FindAll(".ex-pivot-item").Single(i => i.TextContent.Trim() == "FALSE").QuerySelector("input")!
+            .ChangeAsync(new ChangeEventArgs { Value = false });
+        await plain.Find(".ex-pivot-ok").ClickAsync(new MouseEventArgs());
+        await plain.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
+
+        Assert.Equal(PivotReportForm.Outline, mud.Instance.CurrentLayout.Form);
+        Assert.Equal([PivotItemKey.Boolean(false)], mud.Instance.CurrentLayout.Filters[0].HiddenItems);
+        Assert.Equal(PivotLayoutJson.Write(plain.Instance.CurrentLayout), PivotLayoutJson.Write(mud.Instance.CurrentLayout));
+        Assert.Equal(RowTexts(plain), RowTexts(mud));
+        Assert.Equal("TRUE", mud.Find(".mud-ex-pivot-filter-summary").TextContent.Trim());
+        Assert.Empty(mud.FindAll(".mud-ex-pivot-pane"));
+        Assert.Empty(plain.FindAll(".ex-pivot-field-list"));
     }
 
     [Fact] // ADR-0061/0065 (PV-24): an Aggregation the source does not answer is offered disabled in the Mud panel, with the reason, and never asked for
@@ -170,24 +268,12 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal(asked, source.Questions);
     }
 
-    [Fact] // ADR-0058/0061 (PV-14): Show Details under MudBlazor opens the built-in tab at the report's foot, its grid dressed by the grid Wrapper
-    public async Task Show_details_opens_a_tab_dressed_by_the_wrapper()
-    {
-        var cut = RenderPivot(RegionAmount with { Rows = [P("Region"), P("Product")] });
-
-        await cut.InvokeAsync(() => Grid(cut).Instance.OnCellDoubleClick.InvokeAsync(new CellPosition(1, 1)));
-
-        var tabs = cut.Find(".ex-pivot-tabs");
-        Assert.Equal(["PivotTable", "Details: East / Apples"], tabs.QuerySelectorAll("[role=tab]").Select(t => t.TextContent.Trim()));
-        var details = cut.FindComponent<ExGrid<PivotDetailRecord>>();
-        Assert.Same(Grid(cut).Instance.Chrome, details.Instance.Chrome);
-        Assert.IsType<MudGridChrome>(details.Instance.Chrome);
-    }
-
     /// <summary>The bundled source with fewer features, counting what it is asked.</summary>
     private sealed class LimitedSource(PivotSource inner, PivotSourceFeatures features) : PivotSource
     {
         public int Questions { get; private set; }
+
+        public int Refreshes { get; private set; }
 
         public override IReadOnlyList<PivotField> Fields => inner.Fields;
 
@@ -205,6 +291,10 @@ public class MudPivotToolbarTests : MudPivotTestContext
         public override ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken cancellationToken = default)
             => inner.DetailsAsync(query, cancellationToken);
 
-        public override ValueTask RefreshAsync(CancellationToken cancellationToken = default) => inner.RefreshAsync(cancellationToken);
+        public override ValueTask RefreshAsync(CancellationToken cancellationToken = default)
+        {
+            Refreshes++;
+            return inner.RefreshAsync(cancellationToken);
+        }
     }
 }

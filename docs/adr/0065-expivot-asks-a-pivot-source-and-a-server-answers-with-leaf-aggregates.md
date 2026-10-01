@@ -216,7 +216,8 @@ A source that can be asked again, such as a server's, says so in its features (Q
   the report filter band read "Loading…" and disable Filter…'s OK for a round trip after each
   redraw. Hidden Items are keys, which name the same Items under any version, so ticking and
   applying against the Items in view is safe. The Items of the new version replace them when they
-  land.
+  land. This holds across versions of one source only: a new source is new data, and its Items
+  start from a loading listing.
 
 ## Consequences
 

@@ -81,7 +81,8 @@ public abstract class MudPivotTestContext : BunitContext
         IPivotChrome? chrome = null,
         Func<string, string?>? label = null,
         EventCallback<PivotDetails>? showDetails = null,
-        PivotSource? source = null)
+        PivotSource? source = null,
+        PivotDetailsView? detailsView = null)
     {
         if (!_rendererInfoSet)
         {
@@ -108,6 +109,8 @@ public abstract class MudPivotTestContext : BunitContext
                     inner.AddComponentParameter(8, nameof(PivotComponent.Label), label);
                 if (showDetails is { } details)
                     inner.AddComponentParameter(9, nameof(PivotComponent.OnShowDetails), details);
+                if (detailsView is { } view)
+                    inner.AddComponentParameter(10, nameof(PivotComponent.DetailsView), view);
                 inner.CloseComponent();
             }));
             builder.CloseComponent();
