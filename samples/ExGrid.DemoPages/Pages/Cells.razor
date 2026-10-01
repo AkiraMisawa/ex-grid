@@ -1,4 +1,11 @@
 @page "/cells"
+@using ExGrid.Chrome
+
+@* ?chrome=mud runs the grid under ExGrid.MudBlazor's Chrome, and ?editable=1 makes Book editable,
+   so the grid holds the keyboard in its Keyboard Field (ADR-0080) beside an Interactive cell: what
+   A11Y-21 reads the chosen action's button through. Without them the page is what it always was:
+   a grid that edits nothing, whose root is the tab stop. *@
+<DemoChromeAssets Name="@ChromeName" />
 
 <DemoNav />
 
@@ -38,16 +45,40 @@
 
 <ExGrid TRow="DemoPosition"
         Window="DemoData.Positions"
-        Columns="Columns"
+        Columns="_columns"
         CellState="_cellState"
         RowKind="RowKindOf"
         OnAction="OnAction"
         RowHeight="28"
         ViewportHeight="420"
         ViewportWidth="1100"
-        PinnedColumnCount="1" />
+        PinnedColumnCount="1"
+        OnEdit="OnEdit"
+        Chrome="_chrome" />
 
 @code {
+    /// <summary>Which Chrome the grid runs with (<see cref="DemoChrome"/>).</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    /// <summary><c>?editable=1</c>: Book takes typing, and the grid holds the keyboard in its
+    /// Keyboard Field (ADR-0080).</summary>
+    [SupplyParameterFromQuery(Name = "editable")]
+    public string? Editable { get; set; }
+
+    private IGridChrome? _chrome;
+    private IReadOnlyList<GridColumn<DemoPosition>> _columns = Columns;
+
+    protected override void OnParametersSet()
+    {
+        _chrome = DemoChrome.From(ChromeName);
+        _columns = Editable == "1" ? EditableColumns : Columns;
+    }
+
+    // An edit is reported and not kept: the page shows what was asked.
+    private void OnEdit(GridEditIntent<DemoPosition> intent)
+        => _lastAction = $"Edited '{intent.Column}' on {intent.Row.Book} to {intent.Value}.";
+
     // Held in fields, never rebuilt per render: a new columns array or a new delegate
     // would hand every row a changed parameter and defeat memoisation (ADR-0003).
     private static readonly RenderFragment<TemplateCellContext<DemoPosition>> LimitBar = cell => @<div class="demo-bar">
@@ -83,6 +114,13 @@
         GridColumn<DemoPosition>.ActionColumn("Review",
             [new GridAction("approve", "Approve"), new GridAction("query", "Query"), new GridAction("escalate", "Escalate")],
             header: "Review"),
+    ];
+
+    // The same columns with Book editable (?editable=1), held once as Columns is (ADR-0003).
+    private static readonly GridColumn<DemoPosition>[] EditableColumns =
+    [
+        new("Book", ColumnType.Text, r => r.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(180)), editable: true),
+        .. Columns[1..],
     ];
 
     private static readonly Func<DemoPosition, RowKind> RowKindOf = row => row.Kind;

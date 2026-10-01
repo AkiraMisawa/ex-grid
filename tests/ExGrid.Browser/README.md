@@ -451,6 +451,19 @@ nobody had asked for. What that means when writing a test:
   positions grid with the pointed cell in view; Shift+↓ and Ctrl+↓ writing nothing, with the page
   saying why; ↓ after a press on the PV header writing nothing, with the page saying to press a cell;
   and ↓ and `*2` typed at once, 150 ms injected on the Server host, keeping their order.
+- `key-field.spec.mjs` — the Keyboard Field (ADR-0080, ticket 80 of docs/specs/exsheet) on `/sheet`
+  under both Chromes, `/sheets`, `/features`, `/wide` and `/cells?editable=1`: with a cell
+  selected, DOM focus on the field inside the root, unseen, over the Focus cell; a composition made
+  through the DevTools protocol (`Input.imeSetComposition`, `Input.insertText`) drawn over D10 with
+  nothing moving, its end opening the Cell Editor holding it and Enter committing (ED-30, i1); a
+  cancelled one leaving an empty edit (i2); a press on D12 mid-composition putting the text in D10;
+  two compositions behind 150 ms appended in order; copy and paste from the field; a field per
+  Sheet (ADR-0018); read-only over a cell that does not edit. The field as the one tab stop, Tab in
+  from before and Shift+Tab in from after, then out (A11Y-4), and a display-only grid's root
+  likewise; the release of Tab ending when DOM focus leaves, on a grid with a field and one without
+  (KB-8); the root's ring after Tab and not after a click (KB-12); and over the DevTools protocol's
+  `Accessibility` domain, the focused node the field and its active descendant the Focus cell, or
+  the chosen action's button while Interactive (A11Y-21). A real IME is the sixteenth Windows run's.
 
 `sheet-helpers.mjs` is what those five share: opening `/sheet` under either Chrome and waiting
 for its Linked Table, a Sheet's grid, the positions grid beside it, a cell by its A1 address, the

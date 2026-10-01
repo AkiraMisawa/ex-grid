@@ -493,7 +493,7 @@ public class EditingNotificationTests : GridTestContext
 
         Assert.Single(edits);
         Assert.Equal("none", GateModesTold()[^1]);
-        Assert.EndsWith("-r1c0", cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.EndsWith("-r1c0", KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
         Assert.True(enter.IsCompleted);
         gate.SetVoidResult();
         await enter;
