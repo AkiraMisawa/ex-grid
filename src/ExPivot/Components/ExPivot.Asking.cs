@@ -165,10 +165,13 @@ public partial class ExPivot
         var source = _source!;
         var layout = _layout;
         _refusal = null;
+        // Each way out renders ExPivot: the gesture's event may have been a view's, which renders
+        // only itself, and the pane, the toolbar and the report are all ExPivot's to paint.
         if (NotOffered(source, layout) is { } aggregation)
         {
             Supersede();
             Refuse(PivotWords.Fill(Word("aggregation-not-offered"), Word(PivotWords.AggregationName(aggregation))));
+            StateHasChanged();
             return;
         }
         if (!force && _cube is { } cube && ReferenceEquals(_cubeSource, source) && cube.Holds(layout))
@@ -176,6 +179,7 @@ public partial class ExPivot
             // A change that needs no new question asks none (ADR-0059/0065).
             Supersede();
             await ShowAsync(cube, source, layout, raise);
+            StateHasChanged();
             return;
         }
         PivotQuery query;
@@ -193,6 +197,7 @@ public partial class ExPivot
         _asking = asking;
         SetLoading(true);
         _ = AskAsync(source, query, layout, generation, asking, raise);
+        StateHasChanged();
     }
 
     /// <summary>

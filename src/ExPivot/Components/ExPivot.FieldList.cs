@@ -237,7 +237,6 @@ public partial class ExPivot
         if (!_fieldListShown)
         {
             _fieldListShown = true;
-            _showFieldListParameter = true;
             _ = ShowFieldListChanged.InvokeAsync(true);
         }
         Open(NewPanel(kind, entry, bandField: null));

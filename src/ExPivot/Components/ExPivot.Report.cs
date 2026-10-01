@@ -550,13 +550,14 @@ public partial class ExPivot
     }
 
     /// <summary>Shows or hides the Field List — the toolbar's toggle, or the Context Menu — and
-    /// tells a Consumer that binds it (ADR-0060).</summary>
+    /// tells a Consumer that binds it (ADR-0060). The user's choice holds until the Consumer's
+    /// <see cref="ShowFieldList"/> itself changes: a Consumer that binds it hands the choice back,
+    /// and one that does not keeps passing the value it always passed.</summary>
     private async Task SetFieldListShownAsync(bool shown)
     {
         if (_fieldListShown == shown)
             return;
         _fieldListShown = shown;
-        _showFieldListParameter = shown;
         if (!shown && _open is { OnToolbar: false })
             CloseOpenQuietly();
         StateHasChanged();
