@@ -386,7 +386,367 @@
         }
       }
     },
+    "PV-21 1,000 changes, /pivot-live over 1,000,000 trades": {
+      "runs": 12,
+      "appliedMs": {
+        "median": 43,
+        "min": 35,
+        "max": 57
+      },
+      "applyToReportFrameMs": {
+        "median": 43,
+        "min": 35,
+        "max": 57
+      },
+      "taskStartToReportFrameMs": {
+        "median": 61,
+        "min": 53,
+        "max": 165
+      },
+      "longestTaskMs": {
+        "median": 0,
+        "min": 0,
+        "max": 164
+      },
+      "reportInTheBatchsFrame": 12,
+      "lastStatus": "Batch 20: 1,000 trades amended, applied in 41 ms; the Snapshot is at version 20."
+    },
+    "DA-17 Arrow, browser (/pivot-db)": {
+      "trades": 1000000,
+      "firstRead": {
+        "status": "Read 1,000,000 trades at version 7175be75-3 in 10,398 ms.",
+        "pageMs": 10398,
+        "requestMs": 6320,
+        "browserReadMs": 4128,
+        "longestTaskMs": 454,
+        "readTaskMs": 65,
+        "firstQuestionMs": 283
+      },
+      "readAgain": {
+        "runs": 5,
+        "pageMs": {
+          "median": 4070,
+          "min": 3960,
+          "max": 4167
+        },
+        "requestMs": {
+          "median": 435,
+          "min": 420,
+          "max": 513
+        },
+        "browserReadMs": {
+          "median": 3693,
+          "min": 3495,
+          "max": 3769
+        },
+        "longestTaskMs": {
+          "median": 196,
+          "min": 170,
+          "max": 296
+        }
+      }
+    },
+    "PV-21/DA-17 CSV of 1,000,000 rows, browser (/pivot-csv)": {
+      "rows": 1000000,
+      "fileMiB": 89.7,
+      "runs": 3,
+      "pageSeconds": {
+        "median": 14.6,
+        "min": 14.4,
+        "max": 14.7
+      },
+      "readMs": {
+        "median": 14752,
+        "min": 14527,
+        "max": 14890
+      },
+      "firstQuestionMs": {
+        "median": 422,
+        "min": 420,
+        "max": 471
+      },
+      "reportMs": {
+        "median": 15173,
+        "min": 14998,
+        "max": 15309
+      },
+      "firstVisualAnswerMs": {
+        "median": 130,
+        "min": 115,
+        "max": 142
+      },
+      "longestTaskWhileReadingMs": {
+        "median": 131,
+        "min": 126,
+        "max": 142
+      },
+      "longestTaskUntilReportMs": {
+        "median": 145,
+        "min": 142,
+        "max": 153
+      },
+      "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 14.7 s."
+    },
+    "DA-17 CSV of 100,000 rows from memory, browser (/pivot-csv)": {
+      "rows": 100000,
+      "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
+      "pageSeconds": {
+        "median": 1.7,
+        "min": 1.5,
+        "max": 1.7
+      }
+    },
+    "PV-21 questions below the cap, /pivot over 1,000,000 trades": {
+      "Rows TradeDate; Columns Product: 1,350 combinations": {
+        "leaves": 1350,
+        "first": {
+          "answerMs": 338.3,
+          "longestTaskMs": 166,
+          "firstVisualAnswerMs": 41.3
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 41.8,
+          "min": 38,
+          "max": 43.2
+        },
+        "answerMs": {
+          "median": 247.1,
+          "min": 232.5,
+          "max": 261.7
+        },
+        "longestTaskMs": {
+          "median": 74,
+          "min": 64,
+          "max": 90
+        },
+        "longestTaskSettlingMs": {
+          "median": 74,
+          "min": 64,
+          "max": 90
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.3,
+          "max": 0.5
+        },
+        "reportRows": 271
+      },
+      "Rows TradeDate, Book; Columns Product: 13,500 combinations": {
+        "leaves": 13500,
+        "first": {
+          "answerMs": 365.2,
+          "longestTaskMs": 163,
+          "firstVisualAnswerMs": 41.5
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 41.1,
+          "min": 38.3,
+          "max": 42
+        },
+        "answerMs": {
+          "median": 361.7,
+          "min": 347.5,
+          "max": 363.3
+        },
+        "longestTaskMs": {
+          "median": 158,
+          "min": 146,
+          "max": 161
+        },
+        "longestTaskSettlingMs": {
+          "median": 158,
+          "min": 146,
+          "max": 161
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.8
+        },
+        "reportRows": 2971
+      },
+      "Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations": {
+        "leaves": 26982,
+        "first": {
+          "answerMs": 838.5,
+          "longestTaskMs": 492,
+          "firstVisualAnswerMs": 46.3
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 39.8,
+          "min": 39.5,
+          "max": 41.9
+        },
+        "answerMs": {
+          "median": 646.2,
+          "min": 639.9,
+          "max": 691.5
+        },
+        "longestTaskMs": {
+          "median": 311,
+          "min": 298,
+          "max": 341
+        },
+        "longestTaskSettlingMs": {
+          "median": 311,
+          "min": 298,
+          "max": 341
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.6
+        },
+        "reportRows": 8371
+      }
+    },
     "PV-21 the cap on leaves, /pivot over 1,000,000 trades": {
+      "Rows TradeDate, Quantity; Columns Product: 66,150 combinations": {
+        "leaves": 66150,
+        "first": {
+          "answerMs": 1515.8,
+          "longestTaskMs": 879,
+          "firstVisualAnswerMs": 44.5
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 39.6,
+          "min": 38.6,
+          "max": 40.9
+        },
+        "answerMs": {
+          "median": 1162.7,
+          "min": 1029.6,
+          "max": 1185.5
+        },
+        "longestTaskMs": {
+          "median": 621,
+          "min": 615,
+          "max": 664
+        },
+        "longestTaskSettlingMs": {
+          "median": 621,
+          "min": 615,
+          "max": 664
+        },
+        "inputDelayMs": {
+          "median": 0.4,
+          "min": 0.4,
+          "max": 0.4
+        },
+        "reportRows": 13501
+      },
+      "Rows TradeDate, Notional: 134,730 combinations": {
+        "leaves": 134646,
+        "first": {
+          "answerMs": 2504.8,
+          "longestTaskMs": 1799,
+          "firstVisualAnswerMs": 38.9
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 38.3,
+          "min": 37.9,
+          "max": 40.5
+        },
+        "answerMs": {
+          "median": 2545.7,
+          "min": 2438.2,
+          "max": 2627.4
+        },
+        "longestTaskMs": {
+          "median": 1832,
+          "min": 1758,
+          "max": 1856
+        },
+        "longestTaskSettlingMs": {
+          "median": 1832,
+          "min": 1758,
+          "max": 1856
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.7
+        },
+        "reportRows": 134917
+      },
+      "Rows TradeDate, Quantity; Columns Product, Region: 198,450 combinations": {
+        "leaves": 197151,
+        "first": {
+          "answerMs": 2751.7,
+          "longestTaskMs": 1996,
+          "firstVisualAnswerMs": 41.3
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 38.4,
+          "min": 37.5,
+          "max": 136.8
+        },
+        "answerMs": {
+          "median": 2704.2,
+          "min": 2565.8,
+          "max": 2708.4
+        },
+        "longestTaskMs": {
+          "median": 1889,
+          "min": 1748,
+          "max": 1983
+        },
+        "longestTaskSettlingMs": {
+          "median": 1889,
+          "min": 1748,
+          "max": 1983
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.4,
+          "max": 0.5
+        },
+        "reportRows": 13501
+      },
+      "Rows TradeDate, Quantity; Columns Product, Currency: 330,750 combinations, refused": {
+        "leaves": 314758,
+        "first": {
+          "answerMs": 536.3,
+          "longestTaskMs": 149,
+          "firstVisualAnswerMs": 37.1
+        },
+        "runs": 3,
+        "firstVisualAnswerMs": {
+          "median": 38.9,
+          "min": 37.5,
+          "max": 41.3
+        },
+        "answerMs": {
+          "median": 533.2,
+          "min": 498.2,
+          "max": 551.8
+        },
+        "longestTaskMs": {
+          "median": 137,
+          "min": 109,
+          "max": 141
+        },
+        "longestTaskSettlingMs": {
+          "median": 137,
+          "min": 109,
+          "max": 141
+        },
+        "inputDelayMs": {
+          "median": 0.5,
+          "min": 0.3,
+          "max": 0.5
+        },
+        "reportRows": 14,
+        "notice": "This layout needs more than 200,000 cells."
+      }
+    },
+    "PV-21 the cap on leaves, each question on a fresh load of /pivot (the first run)": {
       "Rows TradeDate, Quantity; Columns Product: 66,150 combinations": {
         "leaves": 66150,
         "runs": 3,
@@ -508,120 +868,10 @@
         "reportRows": 14,
         "notice": "This layout needs more than 200,000 cells."
       }
-    },
-    "PV-21 1,000 changes, /pivot-live over 1,000,000 trades": {
-      "runs": 12,
-      "appliedMs": {
-        "median": 43,
-        "min": 35,
-        "max": 57
-      },
-      "applyToReportFrameMs": {
-        "median": 43,
-        "min": 35,
-        "max": 57
-      },
-      "taskStartToReportFrameMs": {
-        "median": 61,
-        "min": 53,
-        "max": 165
-      },
-      "longestTaskMs": {
-        "median": 0,
-        "min": 0,
-        "max": 164
-      },
-      "reportInTheBatchsFrame": 12,
-      "lastStatus": "Batch 20: 1,000 trades amended, applied in 41 ms; the Snapshot is at version 20."
-    },
-    "DA-17 Arrow, browser (/pivot-db)": {
-      "trades": 1000000,
-      "firstRead": {
-        "status": "Read 1,000,000 trades at version 7175be75-3 in 10,398 ms.",
-        "pageMs": 10398,
-        "requestMs": 6320,
-        "browserReadMs": 4128,
-        "longestTaskMs": 454,
-        "readTaskMs": 65,
-        "firstQuestionMs": 283
-      },
-      "readAgain": {
-        "runs": 5,
-        "pageMs": {
-          "median": 4070,
-          "min": 3960,
-          "max": 4167
-        },
-        "requestMs": {
-          "median": 435,
-          "min": 420,
-          "max": 513
-        },
-        "browserReadMs": {
-          "median": 3693,
-          "min": 3495,
-          "max": 3769
-        },
-        "longestTaskMs": {
-          "median": 196,
-          "min": 170,
-          "max": 296
-        }
-      }
-    },
-    "PV-21/DA-17 CSV of 1,000,000 rows, browser (/pivot-csv)": {
-      "rows": 1000000,
-      "fileMiB": 89.7,
-      "runs": 3,
-      "pageSeconds": {
-        "median": 14.6,
-        "min": 14.4,
-        "max": 14.7
-      },
-      "readMs": {
-        "median": 14752,
-        "min": 14527,
-        "max": 14890
-      },
-      "firstQuestionMs": {
-        "median": 422,
-        "min": 420,
-        "max": 471
-      },
-      "reportMs": {
-        "median": 15173,
-        "min": 14998,
-        "max": 15309
-      },
-      "firstVisualAnswerMs": {
-        "median": 130,
-        "min": 115,
-        "max": 142
-      },
-      "longestTaskWhileReadingMs": {
-        "median": 131,
-        "min": 126,
-        "max": 142
-      },
-      "longestTaskUntilReportMs": {
-        "median": 145,
-        "min": 142,
-        "max": 153
-      },
-      "lastStatus": "trades-1000000.csv: 1,000,000 rows read in 14.7 s."
-    },
-    "DA-17 CSV of 100,000 rows from memory, browser (/pivot-csv)": {
-      "rows": 100000,
-      "from": "a MemoryStream (the page's \"100,000 trades\" sample)",
-      "pageSeconds": {
-        "median": 1.7,
-        "min": 1.5,
-        "max": 1.7
-      }
     }
   },
   "coreclr": {
-    "how": "the explicit tests in Release, run three times each with -explicit only; each line is the median of the three passes' medians, each pass warmed",
+    "how": "the explicit tests in Release, run three times each with -explicit only; each line is the median of the passes' medians, each pass warmed",
     "ExPivot.Engine.Tests Measurements (PV-21)": {
       "main: 3 row fields, Product, two Sums": {
         "n": 7,

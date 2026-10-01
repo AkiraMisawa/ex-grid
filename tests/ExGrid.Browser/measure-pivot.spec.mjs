@@ -331,9 +331,92 @@ async function moveEntry(page, caption, command) {
     await expect(page.getByRole('menu')).toHaveCount(0);
 }
 
+const ROW_COUNT = { kind: 'attribute-changes', selector: REPORT, name: 'aria-rowcount' };
+
+/** Waits until no long task has ended for half a second. */
+const quiet = (page) => page.waitForFunction(() => {
+    const p = window.__pv21;
+    return performance.now() - Math.max(0, ...p.longTasks.map((t) => t.start + t.duration)) > 500;
+}, null, { polling: 100, timeout: 300_000 });
+
+/**
+ * Each layout built in the pane while Defer Layout Update holds it, then asked once, by Update —
+ * four times on one load of /pivot over a million trades, going back to the page's first layout
+ * with its Reset between them (the Consumer's layout: Defer Layout Update stays ticked). The first
+ * time is the first question of its kind since the load, the code it runs not yet run; the other
+ * three are summed up apart from it.
+ */
+async function questions(page, layouts) {
+    await openMillion(page);
+    const firstRows = await page.locator(REPORT).getAttribute('aria-rowcount');
+    await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
+    const update = pane(page).getByRole('button', { name: 'Update', exact: true });
+    const results = {};
+    for (const layout of layouts) {
+        const runs = [];
+        for (let run = 0; run < 4; run++) {
+            console.log(`${layout.name}, run ${run + 1}`);
+            await page.locator('#pivot-reset').click();
+            await expect(page.locator(REPORT)).toHaveAttribute('aria-rowcount', firstRows, { timeout: 300_000 });
+            await expect(page.locator('.ex-pivot-refusal-notice')).toHaveCount(0);
+            await quiet(page);
+            await layout.build();
+            await expect(update).toBeEnabled();
+            const result = await timed(page, layout.answer ?? ROW_COUNT, () => update.click(), update);
+            result.reportRows = Number(await page.locator(REPORT).getAttribute('aria-rowcount'));
+            result.notice = await page.locator('.ex-pivot-refusal-notice').textContent({ timeout: 1_000 }).catch(() => null);
+            runs.push(result);
+        }
+        results[layout.name] = {
+            first: { answerMs: runs[0].answerMs, longestTaskMs: runs[0].blocked.longestMs, firstVisualAnswerMs: runs[0].firstVisualAnswerMs },
+            ...summary(runs.slice(1)),
+            reportRows: runs[0].reportRows,
+            notice: runs[0].notice ?? undefined,
+        };
+    }
+    return results;
+}
+
+test('PV-21: questions of a thousand to thirty thousand leaves, over a million trades on /pivot', async ({ page }, testInfo) => {
+    test.setTimeout(3_600_000);
+    // Below the cap's layouts, to see where a question passes 0.3 s: 270 dates, ten books, five
+    // products and TRUE or FALSE, a million trades filling every combination.
+    const results = await questions(page, [
+        {
+            name: 'Rows TradeDate; Columns Product: 1,350 combinations',
+            build: async () => {
+                await tick(page, 'Desk').uncheck();
+                await tick(page, 'Region').uncheck();
+                await tick(page, 'Trade date').check();
+            },
+        },
+        {
+            name: 'Rows TradeDate, Book; Columns Product: 13,500 combinations',
+            build: async () => {
+                await tick(page, 'Desk').uncheck();
+                await tick(page, 'Region').uncheck();
+                await tick(page, 'Trade date').check();
+                await tick(page, 'Book').check();
+            },
+        },
+        {
+            name: 'Rows TradeDate, Book, Confirmed; Columns Product: 27,000 combinations',
+            build: async () => {
+                await tick(page, 'Desk').uncheck();
+                await tick(page, 'Region').uncheck();
+                await tick(page, 'Trade date').check();
+                await tick(page, 'Book').check();
+                await tick(page, 'Confirmed').check();
+            },
+        },
+    ]);
+    record(testInfo.project.name, { 'PV-21 questions below the cap, /pivot over 1,000,000 trades': results });
+    console.log(`PV-21 below the cap ${JSON.stringify(results, null, 1)}`);
+});
+
 test('PV-21: a question near the 200,000-leaf cap, and past it, over a million trades on /pivot', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
-    const rowCount = { kind: 'attribute-changes', selector: REPORT, name: 'aria-rowcount' };
+    const rowCount = ROW_COUNT;
     // The trades' 270 dates, 49 quantities, 499 notionals, five products, five currencies and three
     // regions are drawn independently, so a million of them fill nearly every combination of a few:
     // these are the combinations, and the leaves are nearly as many.
@@ -385,24 +468,7 @@ test('PV-21: a question near the 200,000-leaf cap, and past it, over a million t
             answer: { kind: 'matches', selector: '.ex-pivot-refusal-notice', pattern: 'needs more than 200,000 cells' },
         },
     ];
-    const results = {};
-    for (const layout of layouts) {
-        const runs = [];
-        for (let run = 0; run < 3; run++) {
-            console.log(`${layout.name}, run ${run + 1}`);
-            await openMillion(page);
-            // Built in the pane while Defer Layout Update holds it, then asked once, by Update.
-            await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
-            await layout.build();
-            const update = pane(page).getByRole('button', { name: 'Update', exact: true });
-            await expect(update).toBeEnabled();
-            const result = await timed(page, layout.answer, () => update.click(), update);
-            result.reportRows = Number(await page.locator(REPORT).getAttribute('aria-rowcount'));
-            result.notice = await page.locator('.ex-pivot-refusal-notice').textContent().catch(() => null);
-            runs.push(result);
-        }
-        results[layout.name] = { ...summary(runs), reportRows: runs[0].reportRows, notice: runs[0].notice ?? undefined };
-    }
+    const results = await questions(page, layouts);
     record(testInfo.project.name, { 'PV-21 the cap on leaves, /pivot over 1,000,000 trades': results });
     console.log(`PV-21 cap ${JSON.stringify(results, null, 1)}`);
 });
