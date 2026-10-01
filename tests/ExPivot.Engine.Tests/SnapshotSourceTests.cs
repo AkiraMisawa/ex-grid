@@ -206,6 +206,110 @@ public class SnapshotSourceTests
         Assert.Equal(PivotNumber.Exact(0.3m), tenths.Values[0].SumAt(0));
     }
 
+    [Fact] // ADR-0059/0065 (PV-4): over typed columns, every Aggregation at every cell, subtotal and grand total is the Aggregation of its own records
+    public async Task Every_aggregation_over_typed_columns_is_the_aggregation_of_its_records()
+    {
+        var fields = PivotFields.Of<Row>()
+            .Key("Key", r => r.Text)
+            .Text("Group", r => r.Text![..1])
+            .Number("Money", r => r.Money)
+            .Number("Measure", r => r.Measure)
+            .Number("Count", r => r.Count)
+            .Boolean("Flag", r => r.Flag);
+        var random = new Random(4);
+        var held = new List<Row>();
+        Row Make(int i) => new(
+            "ABC"[random.Next(3)] + i.ToString(CultureInfo.InvariantCulture),
+            random.Next(8) == 0 ? null : random.Next(-100_000, 100_000) / 100m,
+            random.Next(8) == 0 ? null : random.Next(30) == 0 ? double.NaN : Math.Round(random.NextDouble() * 10, 3),
+            random.Next(8) == 0 ? null : random.Next(-50, 50),
+            null,
+            random.Next(5) == 0 ? null : random.Next(2) == 0);
+        held.AddRange(Enumerable.Range(0, 200).Select(Make));
+        var source = PivotSource.From(held, fields);
+        // A batch at four places, so the Decimal column's slices are held at two scales.
+        Row[] added = [.. Enumerable.Range(200, 40).Select(i => Make(i) with { Money = random.Next(-100_000, 100_000) / 10_000m })];
+        source.Apply(fields.Batch(added: added, removedKeys: [held[3].Text!, held[7].Text!]));
+        held.AddRange(added);
+        held.RemoveAll(r => r.Text == held[3].Text || r.Text == held[7].Text);
+
+        var aggregations = Enum.GetValues<PivotAggregation>();
+        var layout = new PivotLayout
+        {
+            Rows = [P("Group")],
+            Columns = [P("Flag")],
+            Values = [.. new[] { "Money", "Count", "Measure" }.SelectMany(field => aggregations.Select(a => Value(field, a)))],
+        };
+        var report = await ReportOf(source, layout);
+        var cells = 0;
+        foreach (var row in report.Rows.Where(r => r.CarriesValues))
+        {
+            for (var column = 0; column < report.ValueColumns.Count; column++)
+            {
+                var path = report.RowPath(row).Concat(report.ColumnPath(column)).ToArray();
+                var records = held.Where(r => path.All(step => step.Field == "Group"
+                    ? PivotItemKey.For(r.Text![..1]).Equals(step.Item)
+                    : PivotItemKey.For(r.Flag).Equals(step.Item))).ToArray();
+                var value = layout.Values[report.ValueFieldAt(row, column)];
+                object? Read(Row r) => value.Field switch { "Money" => r.Money, "Count" => r.Count, _ => r.Measure };
+                var expected = Expected(records.Select(Read).Where(v => v is not null).ToArray(), records.Length, value.Aggregation);
+                var actual = row.ValueAt(column);
+                var where = $"{value.Aggregation} of {value.Field} at [{string.Join(", ", path.Select(p => p.Item))}]";
+                switch (expected)
+                {
+                    case null:
+                        Assert.True(actual is null, $"{where}: empty, not {actual}");
+                        break;
+                    case string error:
+                        Assert.True(actual?.Error == error, $"{where}: {error}, not {actual}");
+                        break;
+                    case decimal exact:
+                        Assert.True(actual?.Exact == exact, $"{where}: exactly {exact}, not {actual}");
+                        break;
+                    case double number:
+                        Assert.True(actual is { Exact: null, IsError: false }, $"{where}: a double, not {actual}");
+                        Assert.Equal(number, actual!.Number, Math.Max(1, Math.Abs(number)) * 1e-9);
+                        break;
+                }
+                cells++;
+            }
+        }
+        Assert.True(cells > 33 * 9, $"{cells} cells checked");
+    }
+
+    // ADR-0059's table over one cell's values of one typed column — decimals and longs exact,
+    // doubles not — and the cell's record count: null for an empty cell, a string for an error.
+    private static object? Expected(object?[] values, int records, PivotAggregation aggregation)
+    {
+        if (records == 0 || values.Length == 0)
+            return null;
+        if (aggregation == PivotAggregation.Count || aggregation == PivotAggregation.CountNumbers)
+            return (decimal)values.Length;
+        if (values.Any(v => v is double d && !double.IsFinite(d)))
+            return "#NUM!";
+        var exact = values.All(v => v is decimal or long);
+        var doubles = values.Select(Convert.ToDouble).ToArray();
+        var sum = exact ? values.Sum(Convert.ToDecimal) : 0m;
+        var n = doubles.Length;
+        var mean = doubles.Average();
+        var m2 = doubles.Sum(x => (x - mean) * (x - mean));
+        object result = aggregation switch
+        {
+            PivotAggregation.Sum => exact ? sum : doubles.Sum(),
+            PivotAggregation.Average => exact ? sum / n : doubles.Sum() / n,
+            PivotAggregation.Max => exact ? values.Max(Convert.ToDecimal) : doubles.Max(),
+            PivotAggregation.Min => exact ? values.Min(Convert.ToDecimal) : doubles.Min(),
+            PivotAggregation.Product => doubles.Aggregate(1.0, (product, x) => product * x),
+            PivotAggregation.Var => n < 2 ? "#DIV/0!" : m2 / (n - 1),
+            PivotAggregation.StdDev => n < 2 ? "#DIV/0!" : Math.Sqrt(m2 / (n - 1)),
+            PivotAggregation.Varp => m2 / n,
+            PivotAggregation.StdDevp => Math.Sqrt(m2 / n),
+            _ => throw new ArgumentOutOfRangeException(nameof(aggregation)),
+        };
+        // An overflow in double is #NUM! (ADR-0059).
+        return result is double d && !double.IsFinite(d) ? "#NUM!" : result;
+    }
+
     [Fact] // ADR-0059 (PV-4): an exact sum that leaves decimal's range falls back to double, Excel's arithmetic, rather than failing
     public async Task An_exact_sum_past_decimals_range_is_a_double()
     {
