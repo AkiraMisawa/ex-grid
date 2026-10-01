@@ -58,6 +58,16 @@ public static class MudExGridWords
     /// <summary>The Formula Bar's text field, as its accessible name (ADR-0051).</summary>
     public const string FormulaBar = "formula-bar";
 
+    /// <summary>A condition's number that is not a number as the culture writes it (ticket 96).
+    /// Without the Chrome's word for it, the panel says what was typed and why, in the core's
+    /// English (<see cref="FilterPanelChoices.RefusalText"/>).</summary>
+    public const string OperandNotReadable = "operand-not-readable";
+
+    /// <summary>A condition's number that reads as two numbers, refused rather than guessed
+    /// (ticket 96). Without the Chrome's word for it, the panel names both readings in the core's
+    /// English.</summary>
+    public const string OperandReadsTwoWays = "operand-reads-two-ways";
+
     private static string English(string id) => id switch
     {
         NameBox => "Name Box",
@@ -74,6 +84,8 @@ public static class MudExGridWords
         JoinOr => "Or",
         NoSecondCondition => "(none)",
         SecondCondition => "Second condition",
+        OperandNotReadable => "Not a number as this column reads numbers.",
+        OperandReadsTwoWays => "This reads as two different numbers. Type it without separators.",
         _ => BuiltInCommandLabels.For(id),
     };
 
