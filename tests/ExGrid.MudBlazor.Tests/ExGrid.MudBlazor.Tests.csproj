@@ -7,6 +7,9 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
     <!-- No native apphost, for the reason in tests/Directory.Build.targets. -->
     <UseAppHost>false</UseAppHost>
     <RootNamespace>ExGrid.MudBlazor.Tests</RootNamespace>

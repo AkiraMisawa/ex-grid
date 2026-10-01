@@ -8,6 +8,9 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
     <!-- No native apphost, for the reason set out in tests/Directory.Build.targets:
          the SDK's net8 apphost started under the host loader and then dlopened the nix
          runtime's libcoreclr.so, putting two glibcs in one process. Going through the
