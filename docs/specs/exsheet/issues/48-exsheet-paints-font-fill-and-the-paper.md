@@ -14,7 +14,9 @@ Status: ready-for-agent
     Editor keep their light-scheme appearance.
   - The Headings, the Name Box, the Formula Bar and popovers follow the scheme.
   - ADR-0027's note of 2026-09-30 permits this exception. Say in a comment how it is done.
-- [ ] `ExGrid.MudBlazor`'s stylesheet does not set the Paper tokens (inspect, SH-39).
+- [ ] Neither `ExGrid.MudBlazor`'s stylesheet nor `ExSheet.MudBlazor`'s `mud-ex-sheet.css` sets the
+      Paper tokens (inspect, SH-39). Layer 3 "under both Chromes" runs `/sheet?chrome=mud`, which is
+      `MudSheetChrome` since ticket 53.
 - [ ] A Fill or Font on a whole row or column paints cells that hold nothing, so a change to a
       level repaints every painted row it covers. `SheetChange.Rows` lists only rows that hold a
       cell, so it does not cover them (found by ticket 45).

@@ -188,6 +188,14 @@ cell's padding. A layer-3 check confirms that nothing is cut.
       ([ADR-0018](./0018-multiple-instances-must-be-independent.md)).
     - On closing, the Chrome calls the core's focus function to return the keyboard, as a Chrome's
       editor does (ADR-0021's note of 2026-09-30).
+    - *(2026-10-01, ticket 53.)* On closing, a `MudDialog` hands focus back to whatever held it at
+      opening. When a page's button opened it, that is the button, and the core then declines the
+      hand-back, because the keyboard is somewhere else.
+      - So before opening, the Chrome moves focus to an empty element of its own, through Blazor's
+        `FocusAsync`, and removes that element once the dialog has the keyboard. On closing, focus
+        lands on nothing, and the core takes the keyboard back.
+      - No script is involved. A Chrome that owns its frame is responsible for leaving the keyboard
+        where the core will take it back.
   - **Tabs switch as in ARIA's tabs pattern**, with the arrow keys on the tab list. Excel's Ctrl+Tab
     and Ctrl+PageDown are reserved by Chrome for its own tabs, so a page never receives them.
 - **A Consumer with its own dialog substitutes its own Chrome**, as with the filter panel
