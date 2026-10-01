@@ -28,6 +28,8 @@ public static class DemoPageList
             "GridSource.Fetch over a slow server: only the range you land on is painted, stale answers are discarded (ADR-0025)."),
         new("shared", "Shared data", "Rows and data",
             "One store, a Grid Source per user; on the Server host a change reaches every tab, a sort reaches only one (ADR-0018)."),
+        new("grid-live", "Live grid", "Rows and data",
+            "A live Window over the demo API server's trades: its hub names the trades that changed, the page reads them again, and the cells whose values moved are marked for a moment (ADR-0067, ADR-0068)."),
         new("cells", "Cells and rows", "Cells and rows",
             "Cell State, Row Kind, Template Columns and Action Columns — what the value alone cannot say (ADR-0006, ADR-0020, ADR-0024)."),
         new("marks", "Row Marks", "Cells and rows",
@@ -56,6 +58,10 @@ public static class DemoPageList
             "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard, and each outlines a Linked Table's columns only in the grid its page wired to it (ADR-0018, ADR-0048, ADR-0057)."),
         new("pivot", "Pivot", "ExPivot",
             "Excel's PivotTable drawn by ExGrid: the PivotTable Fields pane with drag and drop, each field's menu and panels, collapse and expand, and Show Details; ?chrome=mud dresses it in MudBlazor (ADR-0058, ADR-0060, ADR-0061)."),
+        new("pivot-db", "Pivot over a database", "ExPivot",
+            "The demo API server's SQLite trades two ways, side by side: read over Arrow into a Snapshot the page pivots, and asked of the server's own Pivot Source, which answers in SQL (ADR-0064, ADR-0065, ADR-0068)."),
+        new("pivot-live", "Live pivots", "ExPivot",
+            "Change Batches folded into the bundled source by the page's own timer, and a server whose data its live updates keep moving; changed values are marked in both (ADR-0066, ADR-0067)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

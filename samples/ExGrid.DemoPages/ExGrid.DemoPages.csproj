@@ -17,6 +17,15 @@
          application resolves the dependency upward (ADR-0022), and these pages are where
          that is seen to work. -->
     <PackageReference Include="MudBlazor" Version="9.9.0" />
+    <!-- How /pivot-live and /grid-live hear the demo API server's "the trades changed": its
+         SignalR hub. The demo's dependency, never a library's (ADR-0068, Q63): ExGrid and ExPivot
+         are told what the page heard, not how it arrived. -->
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.12" />
+    <!-- For one call: /pivot-db turns the browser's response streaming off for its Arrow request,
+         which reads it in 0.3 s rather than 2 s (ADR-0064). The method sets an option on the
+         request; on the Server host the request goes out through SocketsHttpHandler, which
+         ignores it, so the same page code is right on both hosts. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,6 +41,16 @@
          things that reference ExPivot and ExPivot.MudBlazor (ADR-0058, ADR-0061). -->
     <ProjectReference Include="..\..\src\ExPivot\ExPivot.csproj" />
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
+    <!-- /pivot-db reads the demo API server's trades as an Arrow stream into a Snapshot
+         (ADR-0064): with the tests, the demo is what references the Arrow package (DA-1). -->
+    <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What the pages that call the demo API server show under "The code" is read from their
+         own source (DemoCode), embedded here, so the code a page shows is the code it runs. -->
+    <EmbeddedResource Include="DemoServerPivot.cs;Pages\PivotDbPage.razor;Pages\PivotLivePage.razor;Pages\GridLivePage.razor"
+                      LogicalName="DemoCode/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

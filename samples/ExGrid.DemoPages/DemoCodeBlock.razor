@@ -1,0 +1,14 @@
+@* One region of a page's own source, shown under "The code" (DemoCode): the file it is in, then
+   the code, verbatim, as the page runs it. *@
+<figure class="demo-code">
+    <figcaption>@File</figcaption>
+    <pre><code data-file="@File" data-region="@Region">@DemoCode.Region(File, Region)</code></pre>
+</figure>
+
+@code {
+    /// <summary>The embedded file, by its name: <c>DemoPivotData.cs</c>, <c>PivotPage.razor</c>.</summary>
+    [Parameter, EditorRequired] public string File { get; set; } = "";
+
+    /// <summary>The region's name, as its <c>#region The code: name</c> line gives it.</summary>
+    [Parameter, EditorRequired] public string Region { get; set; } = "";
+}
