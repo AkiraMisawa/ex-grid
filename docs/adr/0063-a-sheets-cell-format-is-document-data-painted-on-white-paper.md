@@ -362,7 +362,8 @@ rule applies: a disagreement is fixed to Excel's answer. None of them needed a n
 ## Readings until the twelfth Windows run *(2026-10-01)*
 
 `docs/specs/exsheet/verify-on-windows-12.md` asks Excel about each of these, and each is corrected
-here when the answer comes. They are readings, not decisions: the answer is Excel's (ADR-0047's
+here when the answer comes.
+*(Answered by the twelfth Windows run, 2026-10-01. The next section says what the answers settled.)* They are readings, not decisions: the answer is Excel's (ADR-0047's
 rule). Where Excel has not answered, they say what ExSheet does until it has.
 
 - **A paste, Ctrl+D, Ctrl+R and the fill handle keep the line between two cells one line.** Each
@@ -383,6 +384,58 @@ rule). Where Excel has not answered, they say what ExSheet does until it has.
 - **The two items ticket 51 left** (above): whether a formatting key widens a standard-width
   column, and whether Excel localises built-ins 15 and 20.
 
+## What the twelfth Windows run settled *(2026-10-01)*
+
+The run was made at a0ed1e6. Its record is
+`verification/2026-10-01-windows-excel-12/cell-format-12.md`. Every answer is Excel's (ADR-0047's
+rule), and none of them needed a new decision.
+
+**How Excel keeps the line between two cells.** All of the eleventh and twelfth runs' answers about
+edges follow from one model, and ExSheet takes it in place of ticket 55's (which wrote both sides on
+every setting).
+- **Each cell records its own four sides**, as Excel's files do.
+- **Setting or clearing an edge** with a border command (a key, Format Cells, `SetCellFormatAsync`)
+  records it on the cells it was set on, and **clears the neighbour's record of the same edge**.
+  That is why the later setting wins from either side (run 11, cases 7 and 13).
+- **Copying a Cell Format** (a paste, Ctrl+D, Ctrl+R, the fill handle) writes each target cell's
+  own four sides, and touches no neighbour (cases 1–5).
+- **Where both cells record a line on one edge, the upper cell's is the one shown, and the left
+  cell's for a vertical edge. Where only one records a line, that line is shown, from either
+  side.** This covers:
+  - a paste over a cell whose neighbour had a line (case 1);
+  - the edge a Ctrl+D source shares with its first target, which keeps the source's bottom although
+    the source has no top (case 3);
+  - two rows brought together by a deletion: the upper row's line, or the lower's when the upper
+    has none (cases 6, 7 and 9).
+- **Inserting and deleting move the cells with their own records.** An inserted row takes no
+  Borders.
+  - A line on row 1's top therefore moves down with row 1, and shows between the new row 1 and
+    row 2 (case 10). This corrects ticket 55's reading.
+  - The edge between a row and the row inserted under it is the row's own bottom, so it still
+    shows (cases 11 and 12 of the eleventh run).
+
+**What else the run settled.**
+- **An outline over a whole row** sets its top and bottom, and the left of column A, but not the
+  right of column XFD (case 14). Excel draws nothing at A's left beyond the Row Headings' edge.
+- **An outline over the whole Sheet sets nothing** (case 15).
+- **An inside line over whole columns** also shows on the top of row 1 and the bottom of row
+  1048576 (case 16), as ticket 55 read it.
+- **An inserted row takes the Font as it takes the Fill**, and an inserted column mirrors an
+  inserted row (cases 12 and 13).
+- **Every formatting key widens a column at the standard width whose formatted text no longer
+  fits**, and the column then leaves the standard width (case 17). A column the user has sized is
+  never widened (case 18). Format Cells and `SetCellFormatAsync` are read as doing the same, which is
+  not yet observed.
+- **Excel localises the date key's and the time key's built-ins** (case 19).
+  - Under en-GB they show `05-Jan-26` and `09:05`.
+  - Under en-US they show `5-Jan-26` and `9:05 AM`; the time key writes the AM/PM built-in.
+  - Under ja-JP they show `05-1-26` and `9:05`; the month is a number there.
+  - ExSheet records them as culture-localised built-ins, as it records the currency key's.
+- **Excel raises a row for a thick line** in these cases too. ExSheet's rows keep one height
+  (above).
+
+Ticket 57 takes the model. Ticket 58 takes the keys' widening and the localised built-ins.
+
 ## Consequences
 
 - **Notes on other ADRs**, each saying what changed:
@@ -399,6 +452,6 @@ rule). Where Excel has not answered, they say what ExSheet does until it has.
 - **The code's names follow the glossary.** `AxisStyle` becomes `AxisFormat`, `SetStyle` becomes
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
-- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done. Tickets 44 to 57 in
+- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done. Tickets 44 to 58 in
   `docs/specs/exsheet/issues/`. Ticket 55 was added by the eleventh run, 56 by ticket 51's Server
-  fix, and 57 for the twelfth run's answers.
+  fix, and 57 and 58 by the twelfth run.

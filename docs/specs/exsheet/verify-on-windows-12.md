@@ -1,6 +1,7 @@
 # What to verify on Windows, twelfth run
 
-Status: ready-for-human. **Part A asks Excel only and can run now.** (Part C of the
+Status: done. **Part A was run on 2026-10-01 at a0ed1e6** (`verification/2026-10-01-windows-excel-12/`;
+what it settled is in ADR-0063). (Part C of the
 [eleventh run](verify-on-windows-11.md) still waits for tickets 48, 49 and 51.)
 
 This is for the Claude Code session on the Windows desktop of the earlier runs.
