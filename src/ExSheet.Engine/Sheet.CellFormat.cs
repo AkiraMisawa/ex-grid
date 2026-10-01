@@ -232,10 +232,13 @@ public sealed partial class Sheet
     /// (<see cref="ApplyCellFormatOn"/>), and, across each outer edge the change sets, on the cells
     /// beside it at whichever level they lie on, whose record of that edge it clears. So the line
     /// set is the one shown from either cell, and the later setting wins (the eleventh Windows run,
-    /// cases 7 and 13; the twelfth run). Undoing it puts back both.
+    /// cases 7 and 13; the twelfth run). Undoing it puts back both. Its Borders are as they are set
+    /// on the range (<see cref="BorderChange.On"/>): over whole rows an inside vertical line reaches
+    /// the left of column A (the fourteenth run, case 14).
     /// </summary>
     internal CellFormatOutcome ApplyCellFormat(CellRange range, CellFormatChange change)
     {
+        if (change.Borders is { } set) change = change with { Borders = set.On(range) };
         var own = ApplyCellFormatOn(range, change);
         if (!change.SetsBorders) return own;
         List<CellFormatOutcome> parts = [own];
@@ -324,7 +327,8 @@ public sealed partial class Sheet
     /// patched from its own and would hide the column's the cell showed;</item>
     /// <item>on whole rows, each row's cell in column A where the left of column A takes another
     /// line than the inner sides, since an outline over whole rows sets it (the twelfth Windows run,
-    /// case 14) and a row's level is the same the whole length of the row.</item>
+    /// case 14) and a row's level is the same the whole length of the row. Where it takes the inner
+    /// sides' line, as under Inside, the row records it (the fourteenth run, case 14).</item>
     /// </list>
     /// No other cell is given its own for an outer edge: whole columns have no top or bottom edge,
     /// whole rows no right edge, and the whole Sheet none (<see cref="PlaceInRange.Of"/>).

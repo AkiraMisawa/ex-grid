@@ -82,8 +82,10 @@ public sealed record CellFormatChange
 /// set is the one shown from either side (the eleventh run, cases 7 and 13). An edge on the Sheet's
 /// outer edge has no cell beside it. Whole columns have no top or bottom edge, so an outline over
 /// them sets their left and right (case 15). Whole rows have no right edge, so an outline over them
-/// sets their top and bottom and the left of column A (the twelfth run, case 14). The whole Sheet
-/// has no outer edge, so an outline over it sets nothing (case 15).
+/// sets their top and bottom and the left of column A (the twelfth run, case 14), and Inside over
+/// them sets every vertical side, the left of column A and the right of column XFD included (the
+/// fourteenth run, case 14). The whole Sheet has no outer edge, so an outline over it sets nothing
+/// (the twelfth run, case 15), and Inside over it sets every side (the fourteenth run, case 15).
 /// </remarks>
 public sealed record BorderChange
 {
@@ -134,6 +136,18 @@ public sealed record BorderChange
         (place.LastColumn ? Right : InsideVertical) ?? borders.Right);
 
     /// <summary>
+    /// The change as it is set on <paramref name="range"/>. Over whole rows short of the whole
+    /// Sheet, the left of column A is the range's left edge, and where the change sets no left edge
+    /// of its own it takes the inside vertical line: Inside over whole rows sets every vertical side,
+    /// the left of column A included, as it sets the right of column XFD, and Excel records it on
+    /// the rows (the fourteenth Windows run, case 14). An outline over them still sets the left of
+    /// column A from its left edge (the twelfth run, case 14). Over any other range the change is as
+    /// it is.
+    /// </summary>
+    internal BorderChange On(CellRange range) =>
+        Left is null && InsideVertical is not null && range.IsWholeRows && !range.IsWholeColumns ? this with { Left = InsideVertical } : this;
+
+    /// <summary>
     /// The cells beside <paramref name="range"/> across each outer edge the change sets, with the
     /// change that clears their record of it (the twelfth Windows run). An edge on the Sheet's outer
     /// edge has none, which is also why whole columns have none above or below and whole rows none
@@ -178,7 +192,9 @@ internal readonly record struct PlaceInRange(bool FirstRow, bool LastRow, bool F
     /// <item>whole columns have no top or bottom edge, so an outline over them sets their left and
     /// right edges (the eleventh Windows run, case 15);</item>
     /// <item>whole rows have no right edge, so an outline over them sets their top and bottom and the
-    /// left of column A (the twelfth run, case 14);</item>
+    /// left of column A (the twelfth run, case 14), and an inside vertical line reaches the right of
+    /// column XFD — and the left of column A, which <see cref="BorderChange.On"/> gives it (the
+    /// fourteenth run, case 14);</item>
     /// <item>the whole Sheet has no outer edge, so an outline over it sets nothing (the twelfth run,
     /// case 15).</item>
     /// </list>
