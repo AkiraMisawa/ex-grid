@@ -1,13 +1,13 @@
-# 58: A column reached by the arrows is scrolled into view
+# 73: A column reached by the arrows is scrolled into view
 
 Status: done
 
 **What to build:** ADR-0058, "What Part B of the ninth Windows run settled", the sub-bullet under
-"← and → point at the next column the table has", decided with the user on 2026-10-01 when ticket 56
-was built without it. Ticket 56 dashes the column that ← or → reaches from a column header, and does
+"← and → point at the next column the table has", decided with the user on 2026-10-01 when ticket 71
+was built without it. Ticket 71 dashes the column that ← or → reaches from a column header, and does
 not scroll. In a grid narrower than its columns the dashed column can lie outside the view.
 
-**Blocked by:** None (ticket 56 is merged).
+**Blocked by:** None (ticket 71 is merged).
 
 - [x] When ← or → after a column header press reaches a column, the grid scrolls it into view across:
       the column whole inside the client area, beside the vertical Scrollbar Gutter. The vertical
@@ -70,7 +70,7 @@ not scroll. In a grid narrower than its columns the dashed column can lie outsid
 
   Layer 3, `pointing-scope.spec.mjs`, gains one test in the `/pointing?narrow` describe. The grid
   is scrolled 280 px down, and the test waits until it no longer paints R-1. Off macOS it requires
-  the vertical gutter to occupy layout, as ticket 57's test does. PV's header ends past the client
+  the vertical gutter to occupy layout, as ticket 72's test does. PV's header ends past the client
   area. Then `=`, a press on Id's header, and → give `=Positions[PV]`. `scrollLeft` moves, and PV's
   dashes lie inside the client area across, with their right side within 1 px of the client
   area's right edge, against the gutter. They are down PV's header, and `scrollTop` is the same
@@ -78,10 +78,10 @@ not scroll. In a grid narrower than its columns the dashed column can lie outsid
   area, and `scrollTop` unchanged. The keyboard stays in the Sheet, the grid has no Selection, and
   nothing is refused. It ran headless on macOS, chrome, on private ports, as one run of the spec file
   on each host: WebAssembly, 24 passed and 1 skipped (the Server-only SH-35 test); Server, 25
-  passed. On macOS the gutter is 0 there (ticket 57's Comments), so the check against a real gutter
+  passed. On macOS the gutter is 0 there (ticket 72's Comments), so the check against a real gutter
   is CI's Linux run.
 - **Left open:** nothing in this ticket. Seen while reading, and not changed: `ExSheet`'s
   `OnPointingRefused` doc comment still lists "an arrow after a press on a column's header" among
-  the refusals. Since ticket 56, such an arrow is refused only when the first row cannot be written
+  the refusals. Since ticket 71, such an arrow is refused only when the first row cannot be written
   or the column is no longer shown.
 

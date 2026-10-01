@@ -1,6 +1,6 @@
 # What to verify on Windows, thirteenth run
 
-Status: ready-for-human — **Part A is Excel only and needs no build**; **Part B once tickets 55–58 are
+Status: ready-for-human — **Part A is Excel only and needs no build**; **Part B once tickets 70–73 are
 done.**
 
 For the Claude Code session on the Windows desktop of the earlier runs. Read
@@ -66,7 +66,7 @@ gives both is not known.
 |---|---|---|
 | 10 | `=XLOOKUP(1,A2:A4,B2:B4,,-1)`, `{F2}`, `{LEFT}{LEFT}` (the caret between `-` and `1`) | A list? Then `{TAB}`: what is written, and is the Formula entered |
 | 11 | `=XLOOKUP(1,A2:A4,B2:B4,,10)`, `{F2}`, `{LEFT}{LEFT}` (the caret between `1` and `0`) | The same |
-| 11a | `=XLOOKUP(1,A2:A4,B2:B4,,  )`, `{F2}`, `{LEFT}{LEFT}{LEFT}` (the caret before the two spaces) | The same. ExSheet counts spaces before `,` or `)` as nothing of the argument and lists (ticket 55's Comments); Excel was not asked |
+| 11a | `=XLOOKUP(1,A2:A4,B2:B4,,  )`, `{F2}`, `{LEFT}{LEFT}{LEFT}` (the caret before the two spaces) | The same. ExSheet counts spaces before `,` or `)` as nothing of the argument and lists (ticket 70's Comments); Excel was not asked |
 
 ### Group 3 — the arrow keys straight after a column heading in another workbook (Q52)
 
@@ -82,7 +82,7 @@ Book2 beside Book1, as in Part B of the ninth run.
 
 ## Part B — ExSheet beside the decisions
 
-Once tickets 55–58 say `Status: done` on `claude/exsheet-ninth-run-b`. As Part B of the ninth run:
+Once tickets 70–73 say `Status: done` on `claude/exsheet-ninth-run-b`. As Part B of the ninth run:
 `/sheet`, `/pointing` and `/pointing?narrow`, Chrome and Edge, WebAssembly, Server, and Server behind
 150 ms, at 150%, real keys and the real mouse; the probe reads the DOM and takes the page's pictures.
 
@@ -99,7 +99,7 @@ Once tickets 55–58 say `Status: done` on `claude/exsheet-ninth-run-b`. As Part
 | b8 | `/pointing` | `=`, a press on PV's header, ← | `=Positions[Id]`, passing over Book; the dashes over Id's body (Q52) |
 | b9 | `/pointing` | `=`, a press on PV's header, ↑ | unchanged; nothing told (Q52, an edge) |
 | b10 | `/pointing` | `=`, a drag down PV's data, then ↓ | `=`, the drag's reason told; ↓ points in the Sheet, at C4 |
-| b10a | `/pointing?narrow` | the grid scrolled to its first column; `=`, a press on Id's header, →, then ← | `=Positions[PV]`, the grid scrolled across so that PV's dashes lie whole in view, not scrolled down; then `=Positions[Id]`, Id whole in view (ticket 58) |
+| b10a | `/pointing?narrow` | the grid scrolled to its first column; `=`, a press on Id's header, →, then ← | `=Positions[PV]`, the grid scrolled across so that PV's dashes lie whole in view, not scrolled down; then `=Positions[Id]`, Id whole in view (ticket 73) |
 | b11 | `/pointing?narrow` | the grid scrolled to its last row and column; `=`, a press on R-40's PV | the dashes and both column outlines inside the client area, beside both gutters (DC-53) |
 
 Behind 150 ms, wait for the positions grid to wear `ex-pointed-at` before any press that follows `=`

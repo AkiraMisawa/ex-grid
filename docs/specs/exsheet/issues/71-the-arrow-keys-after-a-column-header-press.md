@@ -1,4 +1,4 @@
-# 56: The arrow keys after a column header press
+# 71: The arrow keys after a column header press
 
 Status: done
 
@@ -8,7 +8,7 @@ wrote. Excel, pointing at a whole column of another workbook, went with ↓ to t
 data and with → to the next column (`verification/2026-10-01-windows-9/pointing-scope.md`, cases y1
 and y2).
 
-**Blocked by:** None. It shares nothing with ticket 55 but the Sheet's test files; keep to the
+**Blocked by:** None. It shares nothing with ticket 70 but the Sheet's test files; keep to the
 Pointing Scope's tests.
 
 - [x] After a press on a registered grid's column header, ↓ points at the column's first row in the

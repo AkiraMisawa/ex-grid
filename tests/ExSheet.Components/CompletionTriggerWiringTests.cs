@@ -16,7 +16,7 @@ namespace ExSheet.Components.Tests;
 /// list comes back after Backspace; and F3 is left to the browser. As the tenth Windows run saw
 /// it (ticket 44): a value typed whole lists that value alone, any other beginning every value;
 /// Tab closes any list, which does not come back on what Tab wrote; and → or ← at an open value
-/// list points and closes it. As Part B of the ninth Windows run saw it (ticket 55): with the caret
+/// list points and closes it. As Part B of the ninth Windows run saw it (ticket 70): with the caret
 /// before or inside a value nothing is listed, and Home and the Shift+arrows at an open value list
 /// point and close it.
 /// </summary>

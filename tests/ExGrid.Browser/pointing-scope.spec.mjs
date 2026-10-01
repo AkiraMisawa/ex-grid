@@ -730,7 +730,7 @@ test.describe('/pointing', () => {
     });
 });
 
-// The positions grid with its own scrollbars (DC-53; ticket 57). Part B of the ninth Windows run
+// The positions grid with its own scrollbars (DC-53; ticket 72). Part B of the ninth Windows run
 // could not set this up: /pointing's grid is wider than its columns, so it has no horizontal
 // scrollbar, and its last column ends 18 px short of the vertical one. ?narrow lays the grid out
 // narrower than its columns. Scrolled to its last row and its last column, R-40's PV lies against

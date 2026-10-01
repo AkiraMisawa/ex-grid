@@ -1,4 +1,4 @@
-# 55: The value list as Part B of the ninth run saw it
+# 70: The value list as Part B of the ninth run saw it
 
 Status: done
 
@@ -7,7 +7,7 @@ bullets (Q49, Q51), and ADR-0051's note of 2026-10-01. Part B of the ninth run
 (`verification/2026-10-01-windows-9/pointing-scope.md`, "Ask Excel too (1)", cases x1, x4–x6)
 contradicted two readings ticket 44 was built on.
 
-**Blocked by:** None. It shares nothing with ticket 56 but the Sheet's test files; keep to the
+**Blocked by:** None. It shares nothing with ticket 71 but the Sheet's test files; keep to the
 completion tests.
 
 - [x] The value list opens only while nothing of the argument stands after the caret. With the caret

@@ -14,7 +14,7 @@ namespace ExSheet.Components.Tests;
 /// table does not have; each rewrites what this Point wrote, moves the dashes, and has the grid scroll
 /// the cell into view. At an edge nothing moves. A row that has not arrived, Shift and an arrow, and
 /// Ctrl and an arrow write nothing, leave the text as it was, and tell why. After a press on a column's
-/// header (ticket 56; Part B of the ninth run, Q52), ↓ points at the column's first row, ← and → at
+/// header (ticket 71; Part B of the ninth run, Q52), ↓ points at the column's first row, ← and → at
 /// the next column the table has, as a column, and ↑ is an edge; after a drag took back what its press
 /// wrote, the arrows are the Sheet's own Point. The page is
 /// <see cref="Support.ScopedSheets"/>: R-1, R-2, R-"5" and a blank key in rows 0 to 3, then rows that

@@ -273,7 +273,8 @@ ninth run's Part B asks Excel; a reading it contradicts is corrected here.
 - **Text that begins no value lists nothing** (`4`, `A1`, `1+` at `match_mode`). Read literally, "any
   other text lists every value" would open a list after an operator, which the table above rules out
   and which would take ↓ from Point. *(Excel agreed for `4` and listed every value for `A`; the rest
-  waits for Excel. See Part B of the ninth run, below.)*
+  waits for Excel. See Part B of the ninth run, below.)* *(Replaced 2026-10-01: Excel lists every
+  value for any text that is not a number. See the thirteenth run, Q54, below.)*
 - **`Home`, `End` and the Shift+arrows stay the editor's while any list is open**; only ← and → are
   given to Point, where it can. *(Replaced 2026-10-01: over Point, Excel's close the list and point.
   See Part B of the ninth run, below.)*
@@ -429,7 +430,8 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   edit. This replaces the first reading taken while building ticket 44.
 - **`A` at `match_mode` lists every value in Excel**, `0 - Exact match` selected, with a tip that
   describes the selected value; `4` lists nothing. ExSheet lists the functions `A` begins (`AVERAGE`),
-  as it does after any letter. One case does not give Excel's rule, so **nothing changes until Excel
+  as it does after any letter. *(Settled by the thirteenth run, Q54, below.)* One case does not give
+  Excel's rule, so **nothing changes until Excel
   is asked more** *(decided with the user, Q50)*: `A1`, `1+`, another letter, and the same at
   `search_mode` (`verify-on-windows-13.md`). The second reading taken while building ticket 44 holds
   for `4` and waits for the rest.
@@ -443,7 +445,7 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   of names, where Overwrite's `Home` would commit the Formula. This replaces the third reading taken
   while building ticket 44.
   - **At a Reference's place, `Home` points at the row's first column, and `End` writes nothing**,
-    with a list open or not *(decided with the user, Q53, while ticket 55 was built)*. Point had
+    with a list open or not *(decided with the user, Q53, while ticket 70 was built)*. Point had
     moved an outline that stood with `Home` and `End` and started none, so with no outline they were
     Overwrite's: a commit, which the Sheet refuses for a Formula that ends too early. Excel's `Home`
     in Enter mode points where a Reference can go (x4) and commits where none can (the tenth run,
@@ -463,7 +465,7 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
     asked → straight from a heading; from its heading cell, which is a row of the Table, it would
     reach the next column's heading. `verify-on-windows-13.md` asks.
     - **The column reached is scrolled into view across, and only across** *(decided with the user,
-      2026-10-01, when ticket 56 was built without it)*. A grid narrower than its columns could
+      2026-10-01, when ticket 71 was built without it)*. A grid narrower than its columns could
       otherwise dash a column the reader cannot see, and Excel always brings what it points at into
       view. The vertical offset stays where it is: the column's body is what is dashed, and no row of
       it is the one pointed at. A column already whole in view, or pinned, does not move the grid.
@@ -493,5 +495,48 @@ ADR's rules. Excel contradicted four readings, and each is decided here with the
   which column is read is shown and which Reference reads it is not, as ADR-0057 leaves; the
   completion cases of the tenth run, typed into ExSheet, gave Excel's answers.
 
-Tickets 55 to 58 in `docs/specs/exsheet/issues/` build these. `docs/specs/exsheet/verify-on-windows-13.md`
-asks Excel what is left to it and types the changes into ExSheet.
+Tickets 70 to 73 in `docs/specs/exsheet/issues/` build these. `docs/specs/exsheet/verify-on-windows-13.md`
+asks Excel what is left to it and types the changes into ExSheet. *(The tickets were numbered 55 to 58
+until 2026-10-01, when the Cell Format's line was found to hold those numbers, and the procedure was
+the twelfth until the same day. The ninth run's Part B and the thirteenth run's records cite the old
+numbers.)*
+
+## What the thirteenth Windows run settled *(2026-10-01)*
+
+`docs/specs/exsheet/verify-on-windows-13.md` asked Excel what Part B of the ninth run had left to it
+(Part A, Excel 2609), and typed tickets 70 to 73 into ExSheet at 6ebc186 (Part B). It is recorded in
+`verification/2026-10-01-windows-13/pointing-scope.md`. Part B read 70 of 70 states the same in all
+six configurations, and as decided: DC-53's gutters on `/pointing?narrow`, and a column reached by the
+arrows scrolled across only. b2's keys (F2, then one ←) left the caret after `-1`, where the value is
+typed whole and listed alone, as decided; with ←← (b2x) nothing was listed and Tab committed. Part A
+agreed with Q49 (`,,-|1)` and `,,1|0)` list nothing, and Tab enters the Formula) and with ↓ from a
+heading (`$B$2`, then `$B$3`). Three things were decided with the user.
+
+- **At an argument whose values are a fixed list, text that is not a number lists every value, with
+  the first selected** *(decided with the user, Q54; this settles Q50)*. Excel, at `match_mode`, listed
+  every value with `0 - Exact match` selected for `A1`, `1+` (not `1`), `X`, `AV`, `Positions` and
+  `"`; at `search_mode`, `A` listed its four values and `5` nothing. A number lists the value it is
+  alone, or nothing when it is no value (`4`, `5`). Letters there list the values, not the functions or
+  tables they begin: ExSheet had listed `XLOOKUP` for `X`, `AVERAGE` for `AV` and `A`, the table for
+  `Positions`, and nothing for `A1`, `1+` and `"`. Tab writes the selected value over the typed text.
+  This replaces the second reading taken while building ticket 44.
+- **White space after the caret is something of the argument** *(decided with the user, Q55)*. With
+  the caret before two spaces (`,,|  )`), Excel listed nothing, and Tab entered the Formula with the
+  spaces kept. ExSheet had counted them as nothing, listed the five values, and written `,,0  )` with
+  the edit left open (ticket 70's Comments).
+- **After a header press, ← and → still point at the next column as a column, and ↑ is still an
+  edge** *(decided with the user, Q56: a recorded difference)*. Excel, after a click on a heading of
+  another workbook, moved as from the header row's cell: → gave `$C$1`, a cell outside the Table; ←
+  gave `Trades[[#Headers],[Id]]`, the next column's header cell; ↑ gave `Trades[[#Headers],[PV]]`; and
+  from the header cell `PV`, → gave `$C$1`, then ↓ `$C$2`. A registered grid's header is not a row of
+  the table, and ExSheet's grammar refuses `[#Headers]` (above, "After `Table[`"), so the header cell
+  cannot be written. The column is the nearest thing the grid shows.
+- **`=SUM(A` lists the functions ExSheet computes**: `AVERAGE` alone, where Excel lists every function
+  beginning with A. A function it cannot compute would make the Formula an error the moment it was
+  chosen, as a candidate the grammar refuses would. A deliberate difference.
+- **A defect, seen and not asked:** after `Home` or Shift+→ over Point writes `A10` or `D10:E10`, the
+  Cell Editor's own `scrollLeft` stays where it was (81.3 px), and the caret and the written Reference
+  lie 24 to 50 px past its right edge, in all six configurations. What Point writes is to be seen as it
+  is written.
+
+Tickets 74 and 75 build these.
