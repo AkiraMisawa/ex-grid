@@ -82,14 +82,18 @@
    whose opaque ground would otherwise stop the band at the pinned block. Not on the
    scrollable cells: they are transparent over the row already, and a second layer there
    would make them darker than the pinned ones. Declared before Row Kind and Cell State, so
-   that at equal specificity the grounds that carry meaning paint over the one that does not. */
+   that at equal specificity the grounds that carry meaning paint over the one that does not.
+   A cell's tint — this one, Row Kind's and a Missing state's — is named in --ex-tint and
+   painted from it, so that a cell carrying lines can paint the same tint beneath them
+   (.ex-lined, ADR-0050 item 15); the cascade that picks the winning tint is unchanged. */
 .ex-row-stripe {
     background-image:
         linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px)),
         linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
 }
 .ex-row-stripe .ex-pinned {
-    background-image: linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+    --ex-tint: linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+    background-image: var(--ex-tint);
 }
 /* Row Kind (ADR-0024): the role of a row, painted without touching its geometry. Height
    stays exactly the detail row's — the virtualisation arithmetic, the selection overlay
@@ -108,10 +112,12 @@
    is content-box, so a border would make every total row one pixel taller than the
    arithmetic says — the drift ADR-0013 warns about, and invisible on screen. */
 .ex-row-group, .ex-row-group .ex-cell {
-    background-image: linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
+    --ex-tint: linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
+    background-image: var(--ex-tint);
 }
 .ex-row-total, .ex-row-total .ex-cell {
-    background-image: linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px);
+    --ex-tint: linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px);
+    background-image: var(--ex-tint);
 }
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016);
    the padding is a Geometry Token from the same Grid Metrics the width estimates read,
@@ -215,18 +221,24 @@
    padding); everything else is a background layer over the Fill and under the text. The grid's
    generated stylesheet names each layer in custom properties (an image, its size, where it stands;
    per side t, r, b, l), one class per side, line style and colour, and this one rule reads them, so
-   the sheet grows with the lines and never with their combinations. Beneath the
-   lines, a neighbour's Fill covering the gridline this cell holds (--ex-cover-r, --ex-cover-b), and
-   beneath that the column rule, an inset shadow everywhere else, which would lie over the lines.
-   Declared before the Cell States, so a Modified cell's mark still wins its box-shadow. */
+   the sheet grows with the lines and never with their combinations. Beneath the lines, the cell's
+   tint (--ex-tint: a Row Stripe's, a Row Kind's or a Missing state's, as the cascade picked it),
+   which the lines never take away (ADR-0038, ADR-0024, ADR-0006). It covers the whole cell, as on
+   a cell without lines, so it also lies over a neighbour's Fill covering the gridline this cell
+   holds (--ex-cover-r, --ex-cover-b) — in a group or total row that neighbour wears the same
+   tint, and a total row's rule runs on across the gridline — and beneath those the column rule,
+   an inset shadow everywhere else, which would lie over the lines. All of it lies over the cell's
+   own Fill, its background colour. Declared after Row Kind, whose rules paint the tint alone, and
+   before the Cell States, so a Modified cell's mark still wins its box-shadow; Missing's rule
+   leaves a lined cell's layers to this one. */
 .ex-cell.ex-lined {
     background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
-        var(--ex-cover-r, none), var(--ex-cover-b, none),
+        var(--ex-tint, none), var(--ex-cover-r, none), var(--ex-cover-b, none),
         linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0);
     background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
-        100% 100%, 100% 100%, 100% 100%;
+        100% 100%, 100% 100%, 100% 100%, 100% 100%;
     background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
-        0 0, 0 0, 0 0;
+        0 0, 0 0, 0 0, 0 0;
     background-repeat: no-repeat;
     background-origin: border-box;
     box-shadow: none;
@@ -257,9 +269,13 @@
    is something the grid was explicitly told; a role is something about its neighbours,
    and it is the state that must never be the one that disappears. */
 .ex-cell.ex-state-stale { color: var(--ex-state-stale-color, #8a6d1f); font-style: var(--ex-state-stale-style, italic); }
+/* Missing's tint is a cell's tint like a stripe's or a role's: named here, after them, so it
+   wins, and painted beneath the lines by .ex-lined, which is declared before this block and
+   would otherwise lose every layer it paints to this one. */
 .ex-cell.ex-state-missing {
-    background-image: linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)));
+    --ex-tint: linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)));
 }
+.ex-cell.ex-state-missing:not(.ex-lined) { background-image: var(--ex-tint); }
 .ex-cell.ex-state-error { color: var(--ex-state-error-color, #b3261e); text-decoration: var(--ex-state-error-decoration, underline wavy); text-decoration-skip-ink: none; }
 /* A corner mark rather than a fill: the value has been overridden, and the number itself
    is what the reader is here for. box-shadow paints inside the cell's own box, so it
@@ -275,7 +291,7 @@
    for the same reason the header is — the columns underneath pass beneath it. */
 /* background-COLOR, not the shorthand: Cell State and Row Kind paint their tints as
    background images on the same cell, and the shorthand would reset them. The colour is
-   the ground underneath; the tints layer on top. */
+   the ground underneath; the tints layer on top, and a cell's lines on top of them. */
 .ex-pinned { position: sticky; z-index: 2; background-color: var(--ex-pinned-background, Canvas); }
 .ex-header .ex-pinned { z-index: 5; background-color: var(--ex-header-background, Canvas); }
 /* The Row Headings and their corner (ADR-0050): first in each row's flow and in the
