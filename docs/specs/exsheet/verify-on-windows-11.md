@@ -2,7 +2,7 @@
 
 Status: ready-for-human. **Parts A and B were run on 2026-10-01 at 76d3866**
 (`verification/2026-10-01-windows-excel-11/`, `verification/2026-10-01-windows-browser-11/`; what they
-settled is in ADR-0071). **Part C waits until tickets 48, 49 and 51 are done.**
+settled is in ADR-0071). **Part C is ready** (tickets 48, 49 and 51 are in).
 
 This is for the Claude Code session on the Windows desktop of the earlier runs (Excel, Chrome, Edge,
 WSL2 with nix).
@@ -134,9 +134,53 @@ Close anything the browser opened before sending the next key.
 
 ## Part C — ExSheet beside Excel (after tickets 48, 49 and 51)
 
-Run Part A's cases 1, 2, 4–6, 8–14 and 16–19 on the DemoHost's `/sheet`, both hosts, under Chrome
-and Edge. Put each screenshot beside Excel's from Part A. Group 3's pixels are SH-46's evidence, and
-Group 4's keys are SH-42's. This part's procedure is completed when those tickets are done.
+*(Written 2026-10-01, once tickets 48, 49 and 51 were in.)* ExSheet is put beside Part A's Excel
+screenshots, case by case. **Decide nothing. Record everything.**
+
+### Setup
+
+- **Branch and host.** Fetch `claude/exsheet-cell-format`, branch `claude/exsheet-windows-verify-11c`
+  from its tip, and record the tip.
+  - Run the DemoHost as the ninth run's Part B ran it (`verification/2026-10-01-windows-9/`), and the
+    thirteenth run's Part B after it: from WSL with nix, the WebAssembly host
+    (`samples/ExGrid.DemoHost`) and the Server host (`samples/ExGrid.DemoHost.Server`), opened from
+    Windows' Chrome and Edge.
+- **The pages.** `/sheet?case=<name>` opens one of Part A's set-ups instead of the page's own
+  Sheet. The names are 1, 2, 3b, 3c, 4–14, 16–18, `12-1` (the twelfth run's case 1) and `12-14`
+  (the twelfth run's case 14).
+  - The case pages pin no column, as Part A's workbook had no frozen panes.
+  - Add `&chrome=mud` for `ExSheet.MudBlazor`'s Chrome, and `&scheme=dark` for the dark scheme.
+- **Zoom.** Use the browser at 100%, and at 150% where a case says so. Prefer Windows' display scale
+  at 150%, as Part A's 150% screenshots were taken, and record which was used.
+- **Pixels.** Read them across each gridline as Part A's group 3 did, from a screenshot of the page, not
+  from the DOM.
+
+### Cases
+
+| Part A case | On ExSheet | What to put beside Excel's |
+|---|---|---|
+| 1, 2, 3b, 3c | `?case=` with the same name | the colour of each value and of the `#` |
+| 4, 5, 6 | `?case=4`, `5`, `6` | the gridlines around and between Fills |
+| 7 | `?case=7`, then set B2's right edge and C2's left edge by Format Cells (Ctrl+1) as Part A did by COM | the line drawn, after each setting |
+| 8, 9 | `?case=8`, `?case=9`, at 100% and at 150% | case 9's table, pixel by pixel, for all thirteen styles; the row heights unchanged (ExSheet keeps one height where Excel raises a row) |
+| 10 | `?case=10` | whether B3's Fill covers the line's part inside B3 |
+| 11 | `?case=11`, B2:C3 selected with real keys | the Focus and the Selection over the lines, on all four sides |
+| 12, 13, 14 | `?case=12`, `13`, `14`, with Part A's keys | the edges after each key |
+| `12-1`, `12-14` | `?case=12-1`, `?case=12-14` | the line drawn where both cells record one; a line on column A's left beside the Row Headings |
+| 16, 17, 18 | `?case=16`, `17`, `18`, with Part A's keys, as characters on the UK layout | what each key sets, and its undo |
+| 22, 24, 25 | `/sheet`, Ctrl+1, under both Chromes | Format Cells' tabs; how cells that differ show; what OK sets |
+
+- **Run every case under Chrome** on the WebAssembly host. Run cases 8, 9, 11 and 16–18 under Edge and on
+  the Server host too.
+- **Run cases 1, 4 and 9 again with `&scheme=dark`**: the Paper stays white and the Ink black (SH-39).
+
+### Results
+
+- Write `verification/<date>-windows-excel-11c/beside-excel.md`. Give one row per case: Excel's
+  screenshot, ExSheet's, and **same** or **different**, saying what differs. Push it on
+  `claude/exsheet-windows-verify-11c`.
+- **List every difference.** Mark each one that ADR-0071 already records as deliberate: one row height,
+  and Ctrl+1 during an edit.
 
 ## Results
 
