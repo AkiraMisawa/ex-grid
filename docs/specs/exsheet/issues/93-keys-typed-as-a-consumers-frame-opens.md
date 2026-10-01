@@ -115,3 +115,28 @@ note of this date record it.
     `popovers.spec.mjs`: 99 of 99 on Server and 99 of 99 on WebAssembly, in Chrome. The Sheet's
     menu commands on Server: 5 of 5.
 
+*(2026-10-01, agent cf-53: CI run 36926565340.)* `format-cells.spec.mjs:86` (Ctrl+1, then Escape;
+the grid is not focused afterwards) failed on the Server host in Edge, twice. It is this ticket's
+gap, and it is not Edge's.
+- **Reproduced on Chrome** on the Server host before this ticket's change. After Escape the
+  keyboard ended on `body`, and was still there 600 ms later:
+
+  | Round trip | Runs on `body` |
+  |---|---|
+  | 0 ms | 0 of 3 |
+  | 40 ms | 0 of 3 |
+  | 80 ms | 2 of 3 |
+  | 150 ms | 3 of 3 |
+
+- **Traced at 150 ms:**
+  1. Ctrl+1 opens the popover.
+  2. Escape is typed on the root while the popover is drawn but before its tab holds the keyboard.
+  3. The core closes the popover and hands the keyboard back to the root.
+  4. The tab's opening focus lands only after that (about a round trip after the popover was
+     drawn), so the tab takes the keyboard.
+  5. The render that removes the popover leaves it on `body`, where no hand-back takes it again.
+- **With this ticket's change** the Escape is held behind Ctrl+1 until the tab holds the keyboard,
+  and is then handed to it. The popover closes from inside, after its own focus, and the hand-back
+  comes last. The same runs: 12 of 12 end on the grid's root, at every round trip up to 150 ms.
+  Edge is CI's.
+
