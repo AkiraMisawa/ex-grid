@@ -138,7 +138,9 @@
 .ex-pivot-tab-button { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .ex-pivot-tab-close { padding: 2px 6px; }
 
-/* Show Details' dialog, ExPivot's frame (ADR-0058): over the page, with a backdrop that closes it. */
+/* Show Details' dialog, ExPivot's frame (ADR-0058): over the page, with a backdrop that closes it.
+   Its edge, corners and shadow are Visual Tokens of its own, a menu's by default, so a Wrapper can
+   give the frame its design system's dialog look while the frame stays ExPivot's (ADR-0061). */
 .ex-pivot-dialog-backdrop { position: fixed; inset: 0; z-index: 30; background: var(--ex-pivot-dialog-backdrop, rgba(0, 0, 0, 0.32)); }
 .ex-pivot-dialog {
     position: fixed;
@@ -154,8 +156,9 @@
     padding: 8px;
     color: var(--ex-pivot-popup-color, CanvasText);
     background: var(--ex-pivot-popup-background, Canvas);
-    border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
-    box-shadow: var(--ex-pivot-popup-shadow, 0 2px 8px rgba(0, 0, 0, 0.2));
+    border: 1px solid var(--ex-pivot-dialog-border-color, var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45)));
+    border-radius: var(--ex-pivot-dialog-radius, 0);
+    box-shadow: var(--ex-pivot-dialog-shadow, var(--ex-pivot-popup-shadow, 0 2px 8px rgba(0, 0, 0, 0.2)));
 }
 .ex-pivot-dialog:focus { outline: none; }
 .ex-pivot-dialog-content { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-height: 0; }

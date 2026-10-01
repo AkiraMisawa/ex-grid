@@ -6,23 +6,21 @@ using Microsoft.AspNetCore.Components;
 namespace ExPivot.MudBlazor;
 
 /// <summary>
-/// ExPivot's Chrome under MudBlazor (ADR-0061): the PivotTable Fields pane, a placed field's menu,
-/// Filter…, Field Settings…, Value Field Settings…, the report filter band and the Stale Report's
-/// notice drawn with MudBlazor's own controls, and the report grid dressed by
-/// <see cref="MudGridChrome"/> — so one parameter dresses both.
+/// ExPivot's Chrome under MudBlazor (ADR-0061): every surface ExPivot hands a Chrome drawn with
+/// MudBlazor's own controls — the PivotTable Fields pane with Defer Layout Update, a placed field's
+/// menu and the Layout menu, Filter…, Field Settings…, Value Field Settings…, the toolbar above the
+/// report with its report filter band, Show Details' tabs and the content of its dialog, and the
+/// Stale Report's notice — and the report grid dressed by <see cref="MudGridChrome"/>, so one
+/// parameter dresses both.
 ///
 /// <para>It draws what ExPivot hands it and calls back. Which commands there are, what a drop
-/// means, the drafts, and where a menu or panel opens and what closes it are ExPivot's; swapping
-/// this Chrome for the built-in markup changes no behaviour (ADR-0060). A <c>MudSelect</c>'s list
-/// is an Inner Popup of its panel, reported so that Escape closes the list first (ADR-0039). The
-/// words are ExPivot's, by id: one <c>Label</c> written on ExPivot words the pane, its panels and
-/// the report's Context Menu alike.</para>
-///
-/// <para>The Layout menu is a menu, so it is drawn by <see cref="MudPivotMenu"/>, with the group
-/// headings and the marked choice ExPivot hands it. The toolbar above the report, Show Details'
-/// tabs and the content of its dialog are not drawn here yet: those members are left at null, so
-/// ExPivot draws its built-in markup for them, the report filter band inside the toolbar drawn by
-/// <see cref="MudPivotReportFilters"/> all the same.</para>
+/// means, the drafts, which tab is selected, and where a menu, panel or dialog opens and what
+/// closes it are ExPivot's; swapping this Chrome for the built-in markup changes no behaviour
+/// (ADR-0060). Every frame is ExPivot's — the dialog's too, which is never a <c>MudDialog</c> — and
+/// the Chrome draws inside it. A <c>MudSelect</c>'s list is an Inner Popup of its panel, reported
+/// so that Escape closes the list first (ADR-0039). The words are ExPivot's, by id: one
+/// <c>Label</c> written on ExPivot words the pane, its panels, the toolbar, the tabs and the
+/// report's Context Menu alike.</para>
 /// </summary>
 public sealed class MudPivotChrome : IPivotChrome
 {
@@ -52,7 +50,12 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <summary>The report filter band (<see cref="MudPivotReportFilters"/>).</summary>
     public RenderFragment? ReportFilters(PivotReportFiltersContext context) => View<MudPivotReportFilters, PivotReportFiltersContext>(context);
 
-    /// <summary>A placed field's menu (<see cref="MudPivotMenu"/>).</summary>
+    /// <summary>The toolbar above the report (<see cref="MudPivotToolbar"/>): the report filter band,
+    /// then Layout ▾, Refresh and the Field List's toggle as <c>MudButton</c>s, and a refusal as an
+    /// error <c>MudAlert</c> (ADR-0060).</summary>
+    public RenderFragment? Toolbar(PivotToolbarContext context) => View<MudPivotToolbar, PivotToolbarContext>(context);
+
+    /// <summary>A placed field's menu, and the toolbar's Layout menu (<see cref="MudPivotMenu"/>).</summary>
     public RenderFragment? Menu(PivotMenuContext context) => View<MudPivotMenu, PivotMenuContext>(context);
 
     /// <summary>Filter… (<see cref="MudPivotItemFilter"/>).</summary>
@@ -64,6 +67,15 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <summary>Value Field Settings… (<see cref="MudPivotValueFieldSettings"/>).</summary>
     public RenderFragment? ValueFieldSettings(PivotValueFieldSettingsContext context)
         => View<MudPivotValueFieldSettings, PivotValueFieldSettingsContext>(context);
+
+    /// <summary>Show Details' tabs at the report's foot (<see cref="MudPivotDetailsTabs"/>):
+    /// <c>MudTabs</c> placed at the bottom, bound to the tab ExPivot selects (ADR-0058).</summary>
+    public RenderFragment? DetailsTabs(PivotDetailsTabsContext context) => View<MudPivotDetailsTabs, PivotDetailsTabsContext>(context);
+
+    /// <summary>The content of Show Details' dialog, inside ExPivot's frame
+    /// (<see cref="MudPivotDetailsDialog"/>): the cell's title, the records and a Close
+    /// <c>MudButton</c> (ADR-0058).</summary>
+    public RenderFragment? DetailsDialog(PivotDetailsDialogContext context) => View<MudPivotDetailsDialog, PivotDetailsDialogContext>(context);
 
     /// <summary>The Stale Report's notice (<see cref="MudPivotStaleReport"/>): a warning
     /// <c>MudAlert</c> with a Retry <c>MudButton</c> (ADR-0066).</summary>
