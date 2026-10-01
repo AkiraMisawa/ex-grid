@@ -78,6 +78,28 @@ learns it: SignalR, polling, or a message bus (Q57).
     time and the reason, is not one. On a live risk screen, the last known values are worth keeping
     in view.
 
+## Refined while building it
+
+*(2026-10-01, when the component's side was built.)*
+
+- **A question for newer data does not dim the report.** Dimming it four times a second would
+  flicker. A Refresh, a Retry and a new source still show the loading indication, because the
+  user asked for them.
+- **A column that appears is marked too**, every cell of it, as a row that appears is.
+- **A new source is data**: its changed cells are marked, and a refusal of its answer is a Stale
+  Report. **New caps from the Consumer are not data**: they mark nothing, and a refusal goes to
+  the toolbar's notice, as a refused layout does.
+- **A failed Refresh is a Stale Report.** The newest data could not be shown, and the notice
+  says so with the time of the version on screen and Retry. A failed question for a layout the
+  user asked for is not stale data: it goes to the toolbar's notice, and the layout goes back.
+- **The as-of time is the clock's**: when the answer on screen arrived, in the clock's local zone
+  and the report's culture, with the date when it is not today. On Blazor Server, the clock's
+  zone is the server's unless the Consumer hands ExPivot a `Clock` that answers the user's.
+- **Gathering keeps redraws apart whatever the latency.** A change is asked for no sooner than
+  the interval after the last change reached the screen, whether that change was shown or found
+  unshowable. A user's gesture supersedes a question for newer data, and its own question brings
+  the change; a data change never cancels the user's question.
+
 ## Considered options
 
 - **Only additions** (Q42, option a) — rejected: a blotter's trades are amended and cancelled.

@@ -237,7 +237,7 @@
 
     // The Consumer's word, the engine's English, then the English of the words the engine does not
     // hold yet; an id none of them knows is painted as itself — a missing word seen, never a blank.
-    private string Word(string id) => Label?.Invoke(id) ?? PivotWords.EnglishFor(id) ?? StaleReportWords.EnglishFor(id) ?? id;
+    private string Word(string id) => Label?.Invoke(id) ?? PivotWords.EnglishFor(id) ?? id;
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()

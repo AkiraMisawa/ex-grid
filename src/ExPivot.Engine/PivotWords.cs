@@ -266,6 +266,16 @@ public static class PivotWords
         ["sheets"] = "Sheets",
         ["close-tab"] = "Close {0}",
         ["close"] = "Close",
+
+        // The Stale Report's notice (ADR-0066): {0} the time of the version shown, {1} what
+        // happened; each reason's {0} its cap or the source's own sentence.
+        ["stale-report"] = "Showing the data as of {0}: {1}",
+        ["stale-too-many-cells"] = "the newest data needs more than {0} cells.",
+        ["stale-too-many-rows"] = "the newest data needs more than {0} rows.",
+        ["stale-too-many-columns"] = "the newest data needs more than {0} columns.",
+        ["stale-source-failed"] = "the source could not answer: {0}",
+        ["stale-source-refused"] = "the source refused to answer: {0}",
+        ["retry"] = "Retry",
     };
 
     // The words of Excel's Japanese edition (ADR-0059), for every id above, and for the ExGrid
@@ -415,6 +425,14 @@ public static class PivotWords
         ["sheets"] = "シート",
         ["close-tab"] = "{0} を閉じる",
         ["close"] = "閉じる",
+
+        ["stale-report"] = "{0} 時点のデータを表示しています: {1}",
+        ["stale-too-many-cells"] = "最新のデータには {0} 個を超えるセルが必要です。",
+        ["stale-too-many-rows"] = "最新のデータには {0} を超える行が必要です。",
+        ["stale-too-many-columns"] = "最新のデータには {0} を超える列が必要です。",
+        ["stale-source-failed"] = "ソースから応答を得られませんでした: {0}",
+        ["stale-source-refused"] = "ソースが応答を拒否しました: {0}",
+        ["retry"] = "再試行",
 
         // ExGrid's commands in the report's Context Menu (ExGrid.Chrome.GridCommandIds).
         ["copy"] = "コピー",

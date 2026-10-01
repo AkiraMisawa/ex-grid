@@ -203,6 +203,13 @@ A source that can be asked again, such as a server's, says so in its features (Q
   as the `double` it is, and a sum of money as the decimal it is.
 - **Counts are 64-bit throughout**, because a server's data is not bounded by a process's.
 
+- **While a new version's Items are on their way, the previous version's stay in view.** With a
+  server's source, every redraw of live data brings a new Source Version. Re-listing would make
+  the report filter band read "Loading…" and disable Filter…'s OK for a round trip after each
+  redraw. Hidden Items are keys, which name the same Items under any version, so ticking and
+  applying against the Items in view is safe. The Items of the new version replace them when they
+  land.
+
 ## Consequences
 
 - **ExPivot's entry point is now `PivotSource.From`, not `PivotEngine`.** The engine is what the
