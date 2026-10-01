@@ -1,0 +1,117 @@
+@page "/pivot-risk"
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@using global::ExPivot
+@using global::ExPivot.Chrome
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
+
+@* ?chrome=mud stands the pivot on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's Chrome,
+   as /pivot does (ADR-0061). *@
+<DemoChromeAssets Name="@ChromeName" Paper="true">
+    <Head>
+        <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <link href="_content/ExPivot.MudBlazor/mud-ex-pivot.css" rel="stylesheet" />
+        }
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>Pivot risk — a rate-delta report by tenor</h1>
+
+<p>
+    <strong>The use case:</strong> a rate-delta report as a risk desk reads one: each desk's PV01
+    on each curve — the change in value, in US dollars, for a one basis point move — bucketed by
+    tenor, with desks and curves in Rows and tenors in Columns. The positions are invented from a
+    fixed seed.
+</p>
+<p>
+    A tenor is text, and no alphabetical order holds the tenors: <code>10Y</code> would stand before
+    <code>1M</code>, and <code>ON</code> near the end. Neither does a declared Item order, Excel's
+    custom list: a tenor the list leaves out would stand after every tenor in it. So the Tenor field
+    declares an <strong>Order Key</strong>: a
+    function from an Item to what the Items are ordered by, here months to maturity, called once per
+    Item (ADR-0059). The engine parses no tenor; the key is the application's. The options desk's
+    system writes eighteen months as <code>1Y6M</code> and the others as <code>18M</code>: both are
+    18 months, and they stand side by side as two Items, because a key orders Items and never
+    merges them.
+</p>
+
+<div class="demo-toolbar">
+    <label>
+        <input id="risk-order-key" type="checkbox" checked="@_orderKey" @onchange="ToggleOrderKey" />
+        Order the tenors by <code>Tenors.Months</code>
+    </label>
+</div>
+
+<p class="demo-status">
+    <span id="risk-net">@_net</span>
+</p>
+
+@if (DemoChrome.IsMud(ChromeName))
+{
+    <MudExGridPaper Elevation="1" Class="demo-stretch-paper">@Pivot</MudExGridPaper>
+}
+else
+{
+    @Pivot
+}
+
+<h2>The code</h2>
+
+<p>The Order Key, in <code>DemoRiskData.cs</code>: months to maturity, or no key for what is not a tenor.</p>
+<DemoCodeBlock File="DemoRiskData.cs" Region="tenors" />
+
+<p>The fields, the tenor's carrying the key, and the layout:</p>
+<DemoCodeBlock File="DemoRiskData.cs" Region="fields" />
+
+<p>The source and the pivot, in <code>PivotRiskPage.razor</code>:</p>
+<DemoCodeBlock File="PivotRiskPage.razor" Region="pivot" />
+
+@code {
+    private bool _orderKey = true;
+    private IGridChrome? _gridChrome;
+    private IPivotChrome? _pivotChrome;
+
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    private static CultureInfo Culture => CultureInfo.GetCultureInfo("en-US");
+
+    // The page's own sum over the positions, beside the report's grand total, which the engine
+    // computes from the same positions.
+    private readonly string _net =
+        $"The positions' net PV01, summed by the page itself: {DemoRiskData.Positions.Sum(p => p.Pv01).ToString("#,##0", Culture)} USD over "
+        + $"{DemoRiskData.Positions.Count.ToString("N0", Culture)} positions.";
+
+    #region The code: pivot
+    // The bundled Pivot Source over the positions, held in a field: a new source is a refresh.
+    private PivotSource _source = PivotSource.From(DemoRiskData.Positions, DemoRiskData.Fields);
+    private PivotLayout _layout = DemoRiskData.Layout();
+
+    private RenderFragment Pivot => @<ExPivot Source="_source" @bind-Layout="_layout"
+                                               PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                               Culture="Culture" ViewportHeight="420" />;
+    #endregion
+
+    protected override void OnParametersSet()
+    {
+        // The report grid takes ExPivot.MudBlazor's grid Chrome through the pivot Chrome
+        // (DemoChrome refuses any other name).
+        _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
+        _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+    }
+
+    private void ToggleOrderKey(ChangeEventArgs e)
+    {
+        // The fields are the source's, so other fields are another source; the layout stays.
+        _orderKey = e.Value is true;
+        _source = PivotSource.From(DemoRiskData.Positions, _orderKey ? DemoRiskData.Fields : DemoRiskData.FieldsWithoutKey);
+    }
+}

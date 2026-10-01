@@ -34,4 +34,11 @@
     <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- What the ExPivot pages show under "The code" is read from their own source (DemoCode),
+         embedded here, so the code a page shows is the code it runs. -->
+    <EmbeddedResource Include="DemoPivotData.cs;DemoCsv.cs;DemoRiskData.cs;Pages\PivotPage.razor;Pages\PivotCsvPage.razor;Pages\PivotRiskPage.razor"
+                      LogicalName="DemoCode/%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

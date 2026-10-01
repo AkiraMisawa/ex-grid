@@ -55,7 +55,11 @@ public static class DemoPageList
         new("sheets", "Two sheets", "ExSheet",
             "Two ExSheets on one page: keys, completion, undo and the Formula Bar stay with the Sheet that has the keyboard, and each outlines a Linked Table's columns only in the grid its page wired to it (ADR-0018, ADR-0048, ADR-0057)."),
         new("pivot", "Pivot", "ExPivot",
-            "Excel's PivotTable drawn by ExGrid: the PivotTable Fields pane with drag and drop, each field's menu and panels, collapse and expand, and Show Details; ?chrome=mud dresses it in MudBlazor (ADR-0058, ADR-0060, ADR-0061)."),
+            "The basics of Excel's PivotTable drawn by ExGrid: fields declared with PivotFields.Of, Month as a part of the trade date, the Fields pane, the Layout menu, Show Details in tabs, and Excel's Japanese words; ?chrome=mud dresses it in MudBlazor (ADR-0058, ADR-0059, ADR-0060, ADR-0061)."),
+        new("pivot-csv", "Pivot over a CSV", "ExPivot",
+            "A CSV read under a declared Schema, and an unknown file under a suggested one once you confirm it: choosing a file, progress, Cancel, a malformed row refused by name, then the pivot (ADR-0063)."),
+        new("pivot-risk", "Pivot risk", "ExPivot",
+            "A rate-delta report: desks and curves in Rows, tenors in Columns, ordered ON, TN, 1W … 30Y by an Order Key, with 18M and 1Y6M side by side (ADR-0059)."),
     ];
 
     /// <summary>The entry for a base-relative path, ignoring any query or fragment, or null

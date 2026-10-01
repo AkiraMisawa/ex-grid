@@ -30,14 +30,22 @@
 <h1>Pivot — ExPivot drawn by ExGrid</h1>
 
 <p>
-    Excel's PivotTable over 2,000 invented trades (ADR-0058), asked of a Pivot Source over them
-    (ADR-0065). Tick fields in the PivotTable Fields pane, or drag them between Filters, Columns,
-    Rows and Values; each placed field has Excel's menu, with Filter…, Field Settings… and Value
-    Field Settings…, and Defer Layout Update holds the pane's changes until Update (ADR-0060). The
-    toolbar above the report holds the report filter band, Excel's Layout menu and the pane's
-    toggle. The report is one ExGrid: select, copy, and press the <code>−</code> and <code>+</code>
-    buttons to collapse and expand. Double-click a value, or use the Context Menu's Show Details, to
-    see the trades behind it (ADR-0062).
+    <strong>The use case:</strong> records the application already holds in memory, pivoted as
+    Excel's PivotTable pivots them (ADR-0058). Here, 2,000 invented trades. Each field is declared
+    once with <code>PivotFields.Of&lt;DemoPivotTrade&gt;()</code>, a typed accessor that boxes no
+    value, and Month is not a property of the trade: it is declared as the month of the trade date,
+    labelled Jan to Dec and ordered by the calendar (ADR-0059). <code>PivotSource.From</code> reads
+    the trades once into a Snapshot and answers every question from it (ADR-0063, ADR-0065).
+</p>
+
+<p>
+    Tick fields in the PivotTable Fields pane, or drag them between Filters, Columns, Rows and
+    Values; each placed field has Excel's menu, with Filter…, Field Settings… and Value Field
+    Settings…, and Defer Layout Update holds the pane's changes until Update (ADR-0060). The toolbar
+    above the report holds the report filter band, Excel's Layout menu and the pane's toggle. The
+    report is one ExGrid: select, copy, and press the <code>−</code> and <code>+</code> buttons to
+    collapse and expand. Double-click a value, or use the Context Menu's Show Details, to see the
+    trades behind it (ADR-0062).
 </p>
 
 <div class="demo-toolbar">
@@ -77,6 +85,25 @@ else
     </div>
 }
 
+<h2>The code</h2>
+
+<p>
+    What this page runs, read from its own source. The fields and the first layout, in
+    <code>DemoPivotData.cs</code>:
+</p>
+<DemoCodeBlock File="DemoPivotData.cs" Region="fields" />
+
+<p>
+    The source and the pivot, in <code>PivotPage.razor</code>. A new source is a refresh, so it is
+    held in a field; the layout is View State, bound and saved by the page. <code>Label</code> takes
+    Excel's Japanese words in one line, and <code>DetailsView</code> or <code>OnShowDetails</code>
+    decide where Show Details goes:
+</p>
+<DemoCodeBlock File="PivotPage.razor" Region="pivot" />
+
+<p>The layout saved as JSON and read back, and the records behind a cell taken by the page:</p>
+<DemoCodeBlock File="PivotPage.razor" Region="save" />
+
 @code {
     private static readonly GridColumn<DemoPivotTrade>[] DetailColumns =
     [
@@ -92,10 +119,6 @@ else
     ];
 
     private decimal _revaluation = 1m;
-    // The bundled Pivot Source over the trades, the reference (ADR-0065). Held in a field: a new
-    // source is a refresh, so one made per render would ask again every time.
-    private PivotSource _source = PivotSource.From(DemoPivotData.Trades(), DemoPivotData.Fields);
-    private PivotLayout _layout = DemoPivotData.FirstLayout();
     private string? _saved;
     private IReadOnlyList<DemoPivotTrade> _details = [];
     private string _detailsCaption = "Double-click a value in the report.";
@@ -122,8 +145,12 @@ else
 
     private PivotDetailsView DetailsView => DetailsName == "dialog" ? PivotDetailsView.Dialog : PivotDetailsView.Tab;
 
-    // Excel's Japanese edition's words, chosen in one line; null keeps the English (ADR-0059).
-    private Func<string, string?>? Words => _japanese ? PivotWords.Japanese : null;
+    private static CultureInfo Culture => CultureInfo.GetCultureInfo("en-US");
+
+    #region The code: pivot
+    // The bundled Pivot Source over the trades: the reference, answered in this process (ADR-0065).
+    private PivotSource _source = PivotSource.From(DemoPivotData.Trades(), DemoPivotData.Fields);
+    private PivotLayout _layout = DemoPivotData.FirstLayout();
 
     private RenderFragment Pivot => @<ExPivot Source="_source" @bind-Layout="_layout" @bind-Layout:after="Changed"
                                                @bind-ShowFieldList="_showFieldList"
@@ -131,7 +158,9 @@ else
                                                OnShowDetails="_showDetails" DetailsView="DetailsView" Label="Words"
                                                Culture="Culture" ViewportHeight="460" />;
 
-    private static CultureInfo Culture => CultureInfo.GetCultureInfo("en-US");
+    // Excel's Japanese edition's words, chosen in one line; null keeps the English (ADR-0059).
+    private Func<string, string?>? Words => _japanese ? PivotWords.Japanese : null;
+    #endregion
 
     protected override void OnInitialized() => Describe();
 
@@ -159,9 +188,20 @@ else
         Describe();
     }
 
+    private void Revalue()
+    {
+        // New data is a new source: ExPivot asks it again (ADR-0058/0065).
+        _revaluation *= 1.01m;
+        _source = PivotSource.From(DemoPivotData.Trades(_revaluation), DemoPivotData.Fields);
+        Describe();
+    }
+
+    private void ToggleWords() => _japanese = !_japanese;
+
+    #region The code: save
     private void Save()
     {
-        _saved = PivotLayoutJson.Write(_layout);
+        _saved = PivotLayoutJson.Write(_layout);    // versioned JSON, to keep as a user's setting
         Describe();
     }
 
@@ -172,16 +212,6 @@ else
         _layout = PivotLayoutJson.Read(_saved);
         Describe();
     }
-
-    private void Revalue()
-    {
-        // New data is a new source: ExPivot asks it again (ADR-0058/0065).
-        _revaluation *= 1.01m;
-        _source = PivotSource.From(DemoPivotData.Trades(_revaluation), DemoPivotData.Fields);
-        Describe();
-    }
-
-    private void ToggleWords() => _japanese = !_japanese;
 
     private async Task ShowDetailsAsync(PivotDetails details)
     {
@@ -200,6 +230,7 @@ else
         _detailsCaption = $"{page.Total.ToString("N0", Culture)} trades behind {details.ValueField ?? "the cell"}"
             + (where.Length > 0 ? $" where {where}." : ".");
     }
+    #endregion
 
     private void Describe()
         => _status = $"{_changes.ToString(Culture)} changes made in the pane; "

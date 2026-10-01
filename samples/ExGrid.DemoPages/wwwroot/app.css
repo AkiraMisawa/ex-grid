@@ -110,6 +110,53 @@ body:has(.demo-mud-app) {
     border-radius: 2px;
 }
 
+/* "The code" on the ExPivot pages: a region of the page's own source (DemoCode), on a ground
+   that reads in both schemes. */
+.demo-code {
+    margin: 0.5rem 0 1.5rem;
+    max-width: 72rem;
+}
+
+.demo-code figcaption {
+    font-size: 0.8rem;
+    opacity: 0.75;
+}
+
+.demo-code pre {
+    margin: 0.25rem 0 0;
+    padding: 0.75rem 1rem;
+    overflow: auto;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    background: rgba(128, 128, 128, 0.12);
+    border-radius: 4px;
+}
+
+/* /pivot-csv: the suggested Schema, its doubts, and a refused file's sentence. */
+.demo-table {
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+}
+
+.demo-table th,
+.demo-table td {
+    padding: 0.25rem 0.5rem;
+    border: 1px solid rgba(128, 128, 128, 0.4);
+    text-align: left;
+    vertical-align: top;
+}
+
+.demo-mark {
+    display: block;
+    font-style: italic;
+}
+
+.demo-refusal:not(:empty) {
+    padding: 0.25rem 0.5rem;
+    border-left: 4px solid #b00020;
+}
+
 #blazor-error-ui {
     display: none;
     position: fixed;

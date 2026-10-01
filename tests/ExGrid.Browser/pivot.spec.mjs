@@ -1,4 +1,7 @@
 import { test, expect } from './fixtures.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ExPivot on /pivot (ADR-0058/0060/0061/0062/0065), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: what only a browser can say. That a field dragged with the browser's
@@ -7,13 +10,33 @@ import { test, expect } from './fixtures.mjs';
 // dialog, or hands the records to the page; that the keyboard goes into a menu and back; that the
 // toolbar above the report holds the report filter band, the Layout menu and the pane's toggle,
 // and that their popups open under it, over the report; that Defer Layout Update holds the report
-// until Update; that the words can be Excel's Japanese edition's; and, under MudBlazor, that a
-// select's list takes Escape before its panel and that the palette reaches the pane in both
-// schemes. Everything is found by role and name, which both Chromes give the same, so the same
-// test runs under either (ADR-0060: swapping the Chrome changes no behaviour).
+// until Update; that the words can be Excel's Japanese edition's; that Month, a part of the trade
+// date, is painted Jan to Sep in the calendar's order; that the code the page shows is the code it
+// runs; and, under MudBlazor, that a select's list takes Escape before its panel and that the
+// palette reaches the pane in both schemes. Everything is found by role and name, which both
+// Chromes give the same, so the same test runs under either (ADR-0060: swapping the Chrome changes
+// no behaviour).
 
 // Tall and wide enough for the report, the pane beside it and the details grid under them.
 test.use({ viewport: { width: 1400, height: 1100 } });
+
+const PAGES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../samples/ExGrid.DemoPages');
+
+/** A region of the page's source, read as DemoCode.cs reads it to show it under "The code": the
+ *  lines between `#region The code: name` and the next `#endregion`, less the indentation they share. */
+function codeRegion(file, region) {
+    const at = [path.join(PAGES, file), path.join(PAGES, 'Pages', file)].find((p) => fs.existsSync(p));
+    const lines = fs.readFileSync(at, 'utf8').replace(/\r\n?/g, '\n').split('\n');
+    const marker = (line) => line.trim().replace(/^@\*\s*(.*?)\s*\*@$/, '$1');
+    const start = lines.findIndex((line) => marker(line) === `#region The code: ${region}`);
+    const end = lines.findIndex((line, i) => i > start && marker(line).startsWith('#endregion'));
+    if (start < 0 || end < 0) {
+        throw new Error(`${file} has no region 'The code: ${region}'`);
+    }
+    const body = lines.slice(start + 1, end);
+    const indent = Math.min(...body.filter((line) => line.trim()).map((line) => line.length - line.trimStart().length));
+    return body.map((line) => (line.length >= indent ? line.slice(indent) : line.trimStart())).join('\n');
+}
 
 const pivot = (page) => page.locator('.ex-pivot');
 // The report's own grid: a details tab's grid stands beside it in the same box, and a dialog's
@@ -383,6 +406,41 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#pivot-words').click();
             await expect(pane(page)).toBeVisible();
             await expect(report(page).getByRole('columnheader').first()).toHaveText('Row Labels');
+        });
+
+        test(`ADR-0059: Month is the month of the trade date, painted Jan to Sep in the calendar's order, in either words (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Product').click();
+            await page.getByRole('menuitem', { name: 'Remove Field' }).click();
+            await expect.poll(() => entriesOf(page, 'Columns')).toEqual([]);
+            // A date part is declared Date, so a ticked one goes to Rows; from there, to Columns.
+            await page.getByRole('checkbox', { name: 'Month', exact: true }).check();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk', 'Month']);
+            await entry(page, 'Month').click();
+
+            await page.getByRole('menuitem', { name: 'Move to Column Labels' }).click();
+
+            await expect.poll(() => entriesOf(page, 'Columns')).toEqual(['Month']);
+            // The trades run from 2 January to late September: nine Items, by the calendar, which
+            // no order of their labels gives.
+            const headers = report(page).getByRole('columnheader');
+            await expect(headers).toHaveText(['Row Labels', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Grand Total']);
+
+            await page.locator('#pivot-words').click();
+
+            await expect(headers).toHaveText(['行ラベル', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '総計']);
+        });
+
+        test(`ADR-0068: the code the page shows is the code it runs: the fields declared with PivotFields.Of, Month a part of the trade date (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const shown = (file, region) => page.locator(`.demo-code code[data-file="${file}"][data-region="${region}"]`).textContent();
+
+            const fields = await shown('DemoPivotData.cs', 'fields');
+            expect(fields).toBe(codeRegion('DemoPivotData.cs', 'fields'));
+            expect(fields).toContain('PivotFields.Of<DemoPivotTrade>()');
+            expect(fields).toContain('.Month("Month", of: "TradeDate")');
+            expect(await shown('PivotPage.razor', 'pivot')).toBe(codeRegion('PivotPage.razor', 'pivot'));
+            expect(await shown('PivotPage.razor', 'save')).toBe(codeRegion('PivotPage.razor', 'save'));
         });
     });
 }
