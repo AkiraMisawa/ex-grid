@@ -189,8 +189,11 @@ test('a group or total row paints its tint once, on its pinned and its scrollabl
             `total row, column ${i + 1}: down through the top edge ${JSON.stringify(edge.top)}, pinned ${JSON.stringify(pinned.top)}`).toBe(true);
         expect(sameColour(edge.ground, plain, 1), `total row, column ${i + 1}: the ground below the rule`).toBe(true);
     }
+    // Once, wherever the edge falls among device pixels: the darkness the rule adds down through
+    // the edge is one layer's of it over the plain ground.
     const rule = await onceOver(page, cell(page, 7, 3), plain);
-    expect(pinned.top.some((pixel) => sameColour(pixel, rule, 2)),
+    const darkness = (pixels) => pixels.reduce((sum, pixel) => sum + pixel.reduce((s, v, i) => s + plain[i] - v, 0) / 3, 0);
+    expect(Math.abs(darkness(pinned.top) - darkness([rule])) <= 3,
         `the rule once over ${plain} is ${rule}; painted ${JSON.stringify(pinned.top)}`).toBe(true);
 });
 
