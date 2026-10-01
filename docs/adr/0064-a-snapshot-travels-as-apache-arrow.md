@@ -66,12 +66,13 @@ their tests, all kept by us for ever and readable by nothing outside the family.
 
   | Arrow | Snapshot |
   |---|---|
-  | `utf8`, `large_utf8`, or a dictionary of either | Text |
-  | `decimal128`, or `decimal256` within `decimal`'s range | Decimal; a value beyond that range is refused, naming its row and column |
+  | `utf8`, `large_utf8`, `utf8_view`, or a dictionary of any of them | Text |
+  | `decimal32`, `decimal64`, `decimal128`, or `decimal256` within `decimal`'s range | Decimal; a value beyond that range is refused, naming its row and column |
   | `float64`, `float32` | Double |
   | `int8` to `int64`, `uint8` to `uint32`, and `uint64` within `long`'s range | Integer |
   | `date32`, `date64`, or `timestamp` without a time zone | Date, as the clock value written |
-  | `timestamp` in UTC | Date, as the UTC clock value |
+  | `timestamp` in UTC, under any of its IANA names | Date, as the UTC clock value |
+  | `time32`, `time64` | Date, on the first day |
   | `bool` | Boolean |
   | a null slot, in any of these | a Blank |
 
@@ -107,6 +108,37 @@ their tests, all kept by us for ever and readable by nothing outside the family.
   - The package states the version range it was built and tested with.
   - The package check reads and writes a stream through the packed package, so a break shows there
     first.
+
+## Refined while building it
+
+*(2026-10-01, when the package was built.)*
+
+- **A stream must end with Arrow's end-of-stream marker.** Arrow's specification also lets a
+  producer end a stream by closing it, but a stream cut between two record batches would then
+  read as whole, with fewer rows: the quietly short total principle 1 refuses. Every producer
+  tested — `pyarrow`, Polars, DuckDB and `Apache.Arrow` itself — writes the marker. A file must
+  end with its footer for the same reason.
+- **The type table grew where interoperation needs it** (Q51a). The first build refused three
+  things other tools write by default or in common use, and refusing them would have defeated the
+  reason Arrow was chosen:
+  - `utf8_view`, and a dictionary of it, is Text. It is what Polars writes by default.
+  - The IANA names of UTC — `GMT`, `UCT`, `Universal`, `Zulu`, each also under `Etc/`, and
+    `-00:00` — are UTC. Any other zone is still refused.
+  - `decimal32` and `decimal64` are Decimal.
+  - `time32` and `time64` are a Date on the first day, as a database's `TimeOnly` is
+    (ADR-0063).
+- **A value that cannot be held exactly is refused, never rounded.** This covers a decimal with
+  more than the 28 places `decimal` holds, and a nanosecond timestamp that is not a whole number
+  of 100 ns ticks.
+- **A read never disposes a record batch.** Arrow shares a dictionary across batches; disposing a
+  batch released it while later batches still pointed at it, which refused `pyarrow`'s delta
+  dictionaries and crashed on a compressed stream. Buffers are read into managed memory instead.
+- **gzip is named when it is found.** A payload that is still gzip-compressed — an `HttpClient`
+  without automatic decompression — is refused, saying so, rather than as an unreadable stream.
+- **The read of a demo trade carries more cost than the measurement above.** A million trades with
+  a unique `TradeId` read in about 0.4 s on CoreCLR, not 60 ms. About 220 ms of that is a million
+  distinct texts decoded and kept, and 85 ms is the Record Key's index, which the shape measured
+  above did not have. The shape without a unique key still reads in about 70 ms.
 
 ## Considered options
 
