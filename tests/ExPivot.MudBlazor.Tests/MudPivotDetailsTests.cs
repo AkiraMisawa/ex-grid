@@ -200,6 +200,21 @@ public class MudPivotDetailsTests : MudPivotTestContext
         Assert.Same(RegionProduct, mud.Instance.CurrentLayout);
     }
 
+    [Fact] // ADR-0003/0060 (PV-15): a gesture that changes nothing the tabs show — typing in the pane's search, opening an entry's menu — does not render MudTabs, which measures its tabs again on every render
+    public async Task The_pane_does_not_render_the_tabs()
+    {
+        var cut = RenderPivot(RegionProduct);
+        await DoubleClickAsync(cut, 1);
+        var tabs = cut.FindComponent<MudTabs>();
+        var renders = tabs.RenderCount;
+
+        await cut.Find(".mud-ex-pivot-search input").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "Reg" });
+        await OpenMenuAsync(cut, "Rows", "Region");
+
+        Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(renders, tabs.RenderCount);
+    }
+
     // ---- The dialog ---------------------------------------------------------------------------
 
     [Fact] // ADR-0058/0061 (PV-14): the dialog is ExPivot's frame — modal, named by the cell — with MudBlazor's controls inside: the title a heading, the records dressed by the grid Wrapper, and Close a MudButton that takes the keyboard; never a MudDialog
