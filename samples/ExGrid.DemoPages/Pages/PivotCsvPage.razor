@@ -164,6 +164,7 @@
     private PivotLayout _layout = new();
     private string _shown = "";
     private CancellationTokenSource? _reading;
+    private bool _writing;
     private long _size;
     private long _rows;
     private long _bytes;
@@ -207,7 +208,7 @@
 
     // Read in slices that yield between them: the page paints the progress, and Cancel stops the
     // read at the next slice. A value a column cannot read refuses the whole file, by name. While
-    // a file is read, nothing else can be chosen (Busy).
+    // a file is read, nothing else can be chosen.
     private async Task ReadAsync(string name, long size, Func<CancellationToken, Stream> open,
         CsvSchema schema, IReadOnlyList<PivotField>? fields, PivotLayout layout, string how)
     {
@@ -258,8 +259,6 @@
         }
     }
 
-    private bool Busy => _reading is not null;
-
     private void Cancel() => _reading?.Cancel();
 
     // Keyed by its source: another file is another report, which opens with the layout read with it.
@@ -307,13 +306,29 @@
         _refusal = null;
     }
 
+    // Nothing else is chosen while a file is read, or while a sample is written to be read.
+    private bool Busy => _reading is not null || _writing;
+
     private async Task ReadSampleAsync(int trades, bool malformed)
     {
         var name = malformed ? "trades-malformed.csv" : $"trades-{trades}.csv";
         _status = $"Writing {name}…";
-        // Lets the page paint the line above before the sample is written.
-        await Task.Delay(1);
-        var bytes = DemoCsv.TradeExportFile(trades, malformed);
+        _writing = true;
+        byte[] bytes;
+        try
+        {
+            // Written in slices, the page painting how far it has come between them.
+            bytes = await DemoCsv.TradeExportFileAsync(trades, malformed, async written =>
+            {
+                _status = $"Writing {name}: {written.ToString("N0", Culture)} of {trades.ToString("N0", Culture)} trades…";
+                StateHasChanged();
+                await Task.Delay(1);
+            });
+        }
+        finally
+        {
+            _writing = false;
+        }
         await ReadAsync(name, bytes.Length, _ => new MemoryStream(bytes, writable: false),
             DemoCsv.TradeExport, DemoCsv.TradeFields, DemoPivotData.FirstLayout(), "under the declared Schema");
     }

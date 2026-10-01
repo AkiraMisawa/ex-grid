@@ -62,18 +62,25 @@ public static class DemoCsv
 
     private static readonly NumberFormatInfo DecimalComma = new() { NumberDecimalSeparator = ",", NumberGroupSeparator = "." };
 
+    /// <summary>The trades the writer writes between two calls of its progress callback.</summary>
+    public const int WriteSlice = 5_000;
+
     /// <summary>
     /// <paramref name="trades"/> demo trades as the trade export writes them, in UTF-8 with CR LF line
     /// ends: a comma between fields, ISO dates, money with a thousands separator and in quotes where it
     /// has one. With <paramref name="malformed"/>, the notional of data record <see cref="MalformedRow"/>
-    /// has a letter O for its last zero, as a hand-edited file might.
+    /// has a letter O for its last zero, as a hand-edited file might. After every
+    /// <see cref="WriteSlice"/> trades it awaits <paramref name="written"/> with the count so far, so
+    /// a browser paints while a large sample is written.
     /// </summary>
-    public static byte[] TradeExportFile(int trades, bool malformed = false)
-        => Write(writer =>
+    public static async Task<byte[]> TradeExportFileAsync(int trades, bool malformed = false, Func<int, Task>? written = null)
+    {
+        using var bytes = new MemoryStream();
+        using (var writer = new StreamWriter(bytes, Utf8, 1 << 16))
         {
             writer.Write(TradeExportHeader + "\r\n");
             var row = 0;
-            foreach (var t in DemoPivotData.Trades(count: trades))
+            foreach (var t in DemoPivotData.Generate(trades))
             {
                 row++;
                 var notional = t.Notional.ToString("#,##0.00", CultureInfo.InvariantCulture);
@@ -103,8 +110,12 @@ public static class DemoCsv
                 writer.Write(',');
                 writer.Write(t.Confirmed ? "TRUE" : "FALSE");
                 writer.Write("\r\n");
+                if (written is not null && row % WriteSlice == 0 && row < trades)
+                    await written(row);
             }
-        });
+        }
+        return bytes.ToArray();
+    }
 
     /// <summary>
     /// The demo trades as a spreadsheet set to German saves them, a file this application has no
@@ -115,7 +126,7 @@ public static class DemoCsv
         => Write(writer =>
         {
             writer.Write("Account;Desk;Book;Trade date;Notional;P&L\r\n");
-            foreach (var t in DemoPivotData.Trades(count: trades))
+            foreach (var t in DemoPivotData.Generate(trades))
             {
                 writer.Write(AccountOf(t.Book));
                 writer.Write(';');
@@ -133,10 +144,12 @@ public static class DemoCsv
         });
 
     // UTF-8 without a byte-order mark, as the bytes a file would hold.
+    private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
+
     private static byte[] Write(Action<StreamWriter> write)
     {
         using var bytes = new MemoryStream();
-        using (var writer = new StreamWriter(bytes, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), 1 << 16))
+        using (var writer = new StreamWriter(bytes, Utf8, 1 << 16))
             write(writer);
         return bytes.ToArray();
     }

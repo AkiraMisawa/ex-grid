@@ -44,12 +44,14 @@ public static class DemoPivotData
 
     /// <summary><paramref name="count"/> trades from a fixed seed, so every run of the page — and
     /// every browser test — pivots the same numbers; the first 2,000 are the same whatever the count.</summary>
-    public static DemoPivotTrade[] Trades(decimal revaluation = 1m, int count = Count)
+    public static DemoPivotTrade[] Trades(decimal revaluation = 1m, int count = Count) => [.. Generate(count, revaluation)];
+
+    /// <summary>The same trades as <see cref="Trades"/>, made one at a time as they are enumerated.</summary>
+    public static IEnumerable<DemoPivotTrade> Generate(int count, decimal revaluation = 1m)
     {
         var random = new Random(20260930);
-        var trades = new DemoPivotTrade[count];
         var start = new DateTime(2026, 1, 2, 0, 0, 0, DateTimeKind.Unspecified);
-        for (var i = 0; i < trades.Length; i++)
+        for (var i = 0; i < count; i++)
         {
             var (region, books) = Regions[random.Next(Regions.Length)];
             var book = books[random.Next(books.Length)];
@@ -59,7 +61,7 @@ public static class DemoPivotData
                 : Desks[3];
             var notional = Math.Round((decimal)(random.Next(1, 500) * 10_000) * revaluation, 2);
             var pnl = Math.Round((decimal)(random.NextDouble() - 0.45) * notional / 100m, 2);
-            trades[i] = new DemoPivotTrade(
+            yield return new DemoPivotTrade(
                 Id: "T" + (100000 + i).ToString(CultureInfo.InvariantCulture),
                 Region: region,
                 Desk: desk,
@@ -72,7 +74,6 @@ public static class DemoPivotData
                 Quantity: random.Next(1, 50),
                 Confirmed: random.Next(10) > 0);
         }
-        return trades;
     }
 
     #region The code: fields
