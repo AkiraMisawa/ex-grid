@@ -75,6 +75,13 @@ the total width is the declared total rounded once, and the rounding never accum
   Trade date, at 100%.)* A painted width is under a Device Pixel from the declared one, and the
   estimate is charged at the widest glyph of each class on any platform (ADR-0016), which leaves more
   than that to spare. So a number never flips between shown and `####` with the scale.
+- **The report costs one geometry, not one per column.** *(Found while building, the same day.)* A
+  geometry's inline style strings were written for every column when it was built, and a Sheet has
+  16,384. Under the WebAssembly interpreter that was most of a geometry's cost, and the report, which
+  rebuilds the geometry once at attach, doubled it: /sheet arrived 1.2 s later, and SH-16's reading
+  of a Linked Table before its first snapshot came too late. The strings are now written the first
+  time a render asks for each column, so a geometry costs what is painted. /sheet arrives in 1.2 to
+  1.4 s, where it took 2.9 s before this ADR.
 - **Every grid, not only a Sheet.** A one-pixel column rule on half a Device Pixel is blurred under
   ExGrid as under ExSheet, and the row's rule (`--ex-rule-dp`) is already every grid's.
 - **What a column is declared to be does not change.** The View State, a resize's report and Auto

@@ -1,6 +1,12 @@
 {
   "chrome": {
     "DC-33 marker, keyboard copy, wasm": "kept",
-    "DC-33 marker, menu copy, wasm": "kept"
+    "DC-33 marker, menu copy, wasm": "kept",
+    "PST-6": {
+      "sourceCells": 400,
+      "bytes": 10400400,
+      "parseAndIntentMs": 6365,
+      "nextKeyMs": 31
+    }
   }
 }
