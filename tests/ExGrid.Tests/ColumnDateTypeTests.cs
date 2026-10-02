@@ -40,4 +40,14 @@ public class ColumnDateTypeTests
 
         Assert.Contains("Day", refused.Message);
     }
+
+    [Fact] // ADR-0023: a slice a Source author builds directly is held to the same rule
+    public void A_column_info_declaring_a_date_type_on_a_column_that_is_not_date_is_refused()
+    {
+        var refused = Assert.Throws<ArgumentException>(
+            () => new ColumnInfo<Row>("Book", ColumnType.Text, r => r.Day, DateType: DateType.DateOnly));
+
+        Assert.Contains("Book", refused.Message);
+        Assert.Equal(DateType.DateOnly, new ColumnInfo<Row>("Day", ColumnType.Date, r => r.Day, DateType: DateType.DateOnly).DateType);
+    }
 }

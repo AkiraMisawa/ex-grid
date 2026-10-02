@@ -1,6 +1,6 @@
 # 98: A typed date operand takes its column's date type
 
-Status: ready-for-agent
+Status: done
 
 **What to build:** a fault ticket 97 found, which predates it. It is loud, not quiet, and is left for the next PR.
 - Neither filter panel knows its column's CLR date type, so a typed date always reads as a `DateTime`. The one
@@ -13,9 +13,9 @@ Status: ready-for-agent
 - [x] **Decide how the panel learns the column's date type, and record it.** Either `FilterPanelContext` carries
       it, or a conversion rule maps a `DateTime` reading to the column's type. A `DateOnly` takes the day. A
       `DateTimeOffset` takes which offset, and that has to be stated.
-- [ ] **A condition typed on a `DateOnly`, `DateTime` or `DateTimeOffset` column applies**, under both Chromes,
+- [x] **A condition typed on a `DateOnly`, `DateTime` or `DateTimeOffset` column applies**, under both Chromes,
       and reads back as itself.
-- [ ] **Layers 1 and 2**, named after ADR-0023.
+- [x] **Layers 1 and 2**, named after ADR-0023.
 
 ## Comments
 
@@ -40,3 +40,22 @@ date.
   all three.
 - **Rejected:** converting operands in the engine (against ADR-0002), inferring from cells, splitting
   `ColumnType.Date`, a declared time zone (waits for a recorded need).
+
+2026-10-02, implemented.
+
+- `DateType` (`src/ExGrid/DateType.cs`) on `GridColumn` (and `TemplateColumn`), `ColumnInfo` and
+  `FilterPanelContext`. A `ColumnInfo` built directly is held to the same rule as a `GridColumn`.
+- The engine holds every cell and operand to the declared type in its one normalisation, naming the
+  column. That replaces the one-date-type-per-column checks, which the declaration makes redundant.
+- `ReadOperand(…, dateType)`:
+  - A `DateOnly` refuses any time written, midnight included. Whether a time was written is told from
+    the text, since `00:00` and no time read as the same `DateTime`.
+  - An offset is read only in the ISO forms: ISO 8601's extended form with seconds, fractional seconds
+    or minutes, and ticket 94's. An offset in a culture's text used to be converted to the server's
+    clock; it is now refused.
+- The MudBlazor panel draws a `MudTextField` for a `DateTimeOffset` column. DoD WR-2 is amended to say
+  so.
+- Layer 1: `ColumnDateTypeTests`, `DeclaredDateTypeTests`, `DateTypeOperandReadingTests`. Layer 2:
+  `DeclaredDateOperandTests`, `MudDeclaredDateOperandTests`. Layer 3 adds no spec, because the
+  DemoHost has no `DateOnly` or `DateTimeOffset` column. The popover and date-text specs passed
+  locally on the bundled Chromium, not Chrome, so CI's run is the one that counts.

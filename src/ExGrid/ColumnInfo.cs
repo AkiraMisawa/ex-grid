@@ -25,6 +25,14 @@ public sealed record ColumnInfo<TRow>(
     string Name, ColumnType Type, Func<TRow, object?> Value, bool IsQueryable = true, Func<object, string>? Format = null,
     DateType DateType = DateType.DateTime)
 {
+    /// <summary>Which date type a Date column's values are. Anything but the default on a column
+    /// that is not Date is refused when the slice is built, naming the column: a declaration that
+    /// does nothing (ADR-0023, section of 2026-10-02).</summary>
+    public DateType DateType { get; init; } = Type == ColumnType.Date || DateType == DateType.DateTime
+        ? DateType
+        : throw new ArgumentException(
+            $"Column '{Name}' ({Type}) declares a date type; only a Date column holds dates (ADR-0023).", nameof(DateType));
+
     /// <summary>The text a cell of this column displays for a row: empty for a Blank, the
     /// <see cref="Format"/> applied where there is one, the value's own text otherwise — for a
     /// date or a time, its ISO form by type in the invariant culture (ADR-0006, note of

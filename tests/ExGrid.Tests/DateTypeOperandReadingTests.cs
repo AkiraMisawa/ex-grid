@@ -26,7 +26,6 @@ public class DateTypeOperandReadingTests
     public void On_a_date_only_column_a_day_reads_as_a_date_only(string culture)
     {
         Assert.Equal(new DateOnly(2026, 10, 2), Read(DateType.DateOnly, "2026-10-02", culture).Value);
-        Assert.Equal(new DateOnly(2026, 10, 2), Read(DateType.DateOnly, "2026-10-02 00:00:00", culture).Value);
     }
 
     [Fact] // ADR-0023, ticket 97: a DateOnly is read in the culture's order, like any date
@@ -35,11 +34,15 @@ public class DateTypeOperandReadingTests
         Assert.Equal(new DateOnly(2026, 1, 5), Read(DateType.DateOnly, "05/01/2026", "en-GB").Value);
         Assert.Equal(new DateOnly(2026, 5, 1), Read(DateType.DateOnly, "05/01/2026", "en-US").Value);
         Assert.Equal(OperandRefusal.ReadsTwoWays, Read(DateType.DateOnly, "05/01/2026", "ja-JP").Refusal);
+        Assert.Equal(new DateOnly(2026, 1, 5), Read(DateType.DateOnly, "5 January 2026", "en-GB").Value);
     }
 
     [Theory] // ADR-0023, principle 1: on a DateOnly column a time is refused, never cut to its day
     [InlineData("2026-10-02 13:00:00", "en-US")]
+    [InlineData("2026-10-02 00:00:00", "en-US")]   // midnight is a time typed, not a day
     [InlineData("05/01/2026 09:05", "en-GB")]
+    [InlineData("05/01/2026 00:00", "en-GB")]
+    [InlineData("5 January 2026 00:00", "en-GB")]
     [InlineData("2026-10-02 13:00:00 +09:00", "ja-JP")]
     [InlineData("2026-10-02T13:00:00Z", "de-DE")]
     public void On_a_date_only_column_a_time_or_an_offset_is_refused(string typed, string culture)
@@ -75,6 +78,7 @@ public class DateTypeOperandReadingTests
     [InlineData("2026-10-02T13:00+09:00", 13, 9)]
     [InlineData("2026-10-02T04:00:00Z", 4, 0)]
     [InlineData("2026-10-02T04:00:00-05:30", 4, -5.5)]
+    [InlineData("2026-10-02T13:00:00.000+09:00", 13, 9)]   // RFC 3339's fractional seconds
     [InlineData("2026-10-02 13:00:00 +09:00", 13, 9)]
     public void On_a_date_time_offset_column_an_explicit_offset_reads(string typed, int hour, double offsetHours)
     {
