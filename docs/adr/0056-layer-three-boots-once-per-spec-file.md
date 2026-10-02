@@ -207,8 +207,15 @@ where a test reads, never what it accepts. No requirement and no threshold is re
    - Where the question is position, both pictures are drawn in black on white. A comparison is
      only as strong as its contrast.
 4. **A spec file written or changed runs repeatedly before it goes in.** Locally that is
-   `--repeat-each` on both hosts. In CI, every spec file a pull request adds or changes runs
-   three times on each host and browser (`browser-repeat`). `retries` stays 0.
+   `--repeat-each` on both hosts. In CI, the spec files a push to a pull request changes run
+   three times on each host and browser (`browser-repeat`); the push that opens the pull
+   request takes all of the pull request's. `retries` stays 0.
+   - *Changed the same day, with the user.* The job first took every spec file the pull request
+     changes, on every push. On #42 that was 17 files and 1158 tests (run 36952902974): longer
+     than the full run, and 60 minutes were not enough on WebAssembly. Two shards would still
+     have taken about 40, and the user judged that to slow development too much. Taking only
+     what each push changed keeps the job inside the full run's time. A spec file is still
+     repeated in the push that changes it.
 
 `tests/ExGrid.Browser/README.md` says how to use each, and `harness-reading.spec.mjs` pins them.
 
