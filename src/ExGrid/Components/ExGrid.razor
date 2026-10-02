@@ -5163,25 +5163,26 @@
         StateHasChanged();
     }
 
-    private static bool TryReadOperand(ColumnType type, FilterOperator op, string text, out object? operand)
+    private static bool TryReadOperand(GridColumn<TRow> column, FilterOperator op, string text, out object? operand)
     {
         operand = null;
         if (!FilterPanelChoices.TakesOperand(op) || string.IsNullOrEmpty(text))
             return true;
-        var reading = FilterPanelChoices.ReadOperand(type, text, CultureInfo.CurrentCulture);
+        var reading = FilterPanelChoices.ReadOperand(column.Type, text, CultureInfo.CurrentCulture, column.DateType);
         operand = reading.Value;
         return !reading.IsRefused;
     }
 
     /// <summary>Why the operand typed in the built-in condition form is refused, in the
     /// built-in Chrome's words, or null where it reads (ADR-0023; ticket 96): a text that is
-    /// not the column's type as the current culture writes it, or that reads as two numbers,
-    /// is said so by name, never guessed.</summary>
+    /// not the column's type as the current culture writes it, that reads as two numbers, or
+    /// whose date is not the column's declared date type (ticket 98), is said so by name, never
+    /// guessed.</summary>
     private string? PanelRefusal(int column, string text)
         => text.Length == 0
             ? null
             : FilterPanelChoices.RefusalText(
-                FilterPanelChoices.ReadOperand(Columns[column].Type, text, CultureInfo.CurrentCulture), text, CultureInfo.CurrentCulture);
+                FilterPanelChoices.ReadOperand(Columns[column].Type, text, CultureInfo.CurrentCulture, Columns[column].DateType), text, CultureInfo.CurrentCulture);
 
     /// <summary>A value as the built-in panel lists it, and as its search matches it: the text
     /// its cell shows — the column's own format, or a date's ISO form (ADR-0006) — and Blank in
@@ -5228,7 +5229,8 @@
             InnerPopupChangedFromChrome,
             _panelFocusLastRequest,
             ValueListKeyFromChrome,
-            _panelSearchRequest);
+            _panelSearchRequest,
+            declared.DateType);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
@@ -5271,10 +5273,10 @@
 
         // Each condition's operand read as the column's type. Empty is an unfinished
         // condition, left out; text that does not read applies nothing, and the panel stands.
-        if (!TryReadOperand(declared.Type, _panelOperator, _panelValueText, out var first))
+        if (!TryReadOperand(declared, _panelOperator, _panelValueText, out var first))
             return Task.CompletedTask;
         object? second = null;
-        if (_panelSecondOperator is { } secondOperator && !TryReadOperand(declared.Type, secondOperator, _panelSecondValueText, out second))
+        if (_panelSecondOperator is { } secondOperator && !TryReadOperand(declared, secondOperator, _panelSecondValueText, out second))
             return Task.CompletedTask;
         return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromConditions(
             _panelOperator, first, _panelCombinator, _panelSecondOperator, second));

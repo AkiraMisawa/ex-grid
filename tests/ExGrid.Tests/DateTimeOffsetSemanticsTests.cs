@@ -16,7 +16,7 @@ public class DateTimeOffsetSemanticsTests
     {
         Assert.True(TradeColumns.Matches(
             new Trade(TradedOn: TokyoMorning),
-            TradeColumns.FilterOn("TradedOn", new FilterClause(FilterOperator.Equals, SameInstantUtc))));
+            TradeColumns.FilterOn("TradedAt", new FilterClause(FilterOperator.Equals, SameInstantUtc))));
     }
 
     [Fact] // ADR-0023: ordering follows the instant, not the wall clock
@@ -25,7 +25,7 @@ public class DateTimeOffsetSemanticsTests
         // 10:00+09:00 is instant 01:00Z — before 09:00Z, despite the later wall clock.
         Assert.True(TradeColumns.Matches(
             new Trade(TradedOn: new DateTimeOffset(2026, 8, 30, 10, 0, 0, TimeSpan.FromHours(9))),
-            TradeColumns.FilterOn("TradedOn", new FilterClause(FilterOperator.LessThan, SameInstantUtc))));
+            TradeColumns.FilterOn("TradedAt", new FilterClause(FilterOperator.LessThan, SameInstantUtc))));
     }
 
     [Fact] // ADR-0023: same-instant values tie in sort, and the stable sort keeps input order
@@ -36,7 +36,7 @@ public class DateTimeOffsetSemanticsTests
 
         var sorted = GridQueryEngine.Apply(
             new[] { first, second }, TradeColumns.All, null,
-            [new SortSpec("TradedOn", SortDirection.Ascending)]);
+            [new SortSpec("TradedAt", SortDirection.Ascending)]);
 
         Assert.Equal(new[] { first, second }, sorted);
     }
@@ -46,9 +46,9 @@ public class DateTimeOffsetSemanticsTests
     {
         Assert.True(TradeColumns.Matches(
             new Trade(TradedOn: TokyoMorning),
-            TradeColumns.FilterOn("TradedOn", new FilterClause(FilterOperator.In, Values: [SameInstantUtc]))));
+            TradeColumns.FilterOn("TradedAt", new FilterClause(FilterOperator.In, Values: [SameInstantUtc]))));
         Assert.False(TradeColumns.Matches(
             new Trade(TradedOn: TokyoMorning.AddMinutes(1)),
-            TradeColumns.FilterOn("TradedOn", new FilterClause(FilterOperator.In, Values: [SameInstantUtc]))));
+            TradeColumns.FilterOn("TradedAt", new FilterClause(FilterOperator.In, Values: [SameInstantUtc]))));
     }
 }
