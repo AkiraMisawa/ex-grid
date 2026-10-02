@@ -103,3 +103,71 @@ otherwise than ADR-0071 read. ADR-0071, "What the fourteenth Windows run settled
 - **Not measured**: the cost of that extra layer on a sheet whose rows alternate Fills. Every cell of
   such a sheet is now `.ex-lined`. Ticket 47 measured a Fill and a line on one cell at +0.1 to
   +2.6 ms. Performance never gates; a `render-bench` mode would answer it if it matters.
+
+2026-10-02, agent cf-99: the case-16 test failed at 150% on Linux CI.
+
+### What CI drew, and why
+
+- **The failure.** In CI run 36942259307 (e709fcf), `chrome-150` shard 1/2 failed on both hosts at
+  the case-16 test's `B2 up to it (0,176,240)`. The device pixel above the gridline between B2 and B3
+  was B3's light blue, so the Fill covered two device rows. On the Mac it had covered one.
+- **The cause is the row's rule, and the cover only follows it.**
+  - A horizontal gridline is the row's rule: a gradient band `--ex-rule-width` deep, 1 CSS px. At
+    150% that is 1.5 device pixels.
+  - Chrome's GPU rasteriser draws that band one device row deep. Its software rasteriser draws it two
+    rows deep. CI's Chrome, headed under xvfb, rasterises in software, and a Mac does not.
+  - The cover is the same band by design, so that it hides the rule exactly. It was two rows deep
+    wherever the rule was.
+  - So in CI every horizontal gridline on the Sheet was two device pixels at 150%. ADR-0071 (Part C
+    of the eleventh run) says it is one, as Excel's is. The case-16 test was the first test to see a
+    horizontal gridline's width at 150%.
+- **Not the test, and not where the page puts the Sheet.**
+  - The test read the right pixel. Moving the Sheet by 0 to 0.9 of a pixel changed nothing under
+    either rasteriser on the Mac.
+  - CI's edge lay at 789.31 device pixels, read from the trace's screenshot clip. The Mac's lay at
+    761.31.
+  - Under Chrome's software rasteriser on the Mac (`--disable-gpu`), the CI failure reproduced at
+    every offset. The plain gridline, D4, was two pixels of `#E0E0E0`. B1's cover over an unfilled
+    cell was two pixels of yellow.
+
+### The fix
+
+- **The row's rule is painted in whole device pixels.**
+  - `ex-grid.css` defines `--ex-rule-dp` on `.ex-grid`, next to `--ex-dp`:
+    `max(min(var(--ex-rule-width, 1px), var(--ex-dp)), round(down, var(--ex-rule-width, 1px), var(--ex-dp)))`.
+    That is the token rounded down to the device pixel, and never thinner than a token under one
+    device pixel, so a hairline theme does not lose its rules.
+  - Every band of the row's rule reads it: `.ex-row`, a Pinned Column's cell, Row Stripes, and
+    ExSheet's pinned rule in `ex-sheet.css`.
+  - So does the Fill over a row's rule, `--ex-cover-b`, in `AppearanceStyles`.
+  - It is the token at a whole scale, as before. At 150% it is one device pixel under both
+    rasterisers, which is what the GPU drew already.
+- **The column's rule and `--ex-cover-r` keep `--ex-rule-width`.**
+  - A column edge lies on half a device pixel at 150%, which no width makes exact. ADR-0071 leaves
+    that to the next PR.
+  - The token itself is untouched, because the Focus outline places itself with it.
+
+### Verified
+
+- **Layers 1 and 2**, `nix develop -c dotnet test ExGrid.slnx`: 1089 + 198 + 2369 + 1363 (1 skipped,
+  as before) + 49 + 623, all passing.
+  - New: `ShippedStylesheetTests.A_rows_rule_is_painted_in_whole_device_pixels`, on the definition and
+    on every band of the row's rule.
+  - Changed: the cover's rule text, which now holds `--ex-rule-dp` for b and the token for r
+    (`CellAppearanceTests`), and the pinned rule's band in `PaperStylesheetTests`.
+- **Layer 3, case 16's test** now also pins the cause, at both scales:
+  - the Paper above B1's cover;
+  - a plain gridline, D3's, as one device pixel of `#E0E0E0` with the Paper on either side.
+- **On Linux at a real 150%.** Chromium 151 ran in `mcr.microsoft.com/playwright:v1.62.1-noble`
+  (linux/arm64), headed under xvfb as CI runs it, with `--force-device-scale-factor=1.5`.
+  - It drove this worktree's WebAssembly DemoHost through a relay. The project was named
+    `chrome-150` and the specs were unchanged.
+  - Without the fix, the case-16 test failed there exactly as in CI, at line 169 with
+    `B2 up to it (0,176,240)`.
+  - With it, every 150% test of `sheet-borders.spec.mjs` (35) and `appearance.spec.mjs` (28) passed.
+  - Google Chrome has no Linux arm64 build, so this is Chromium's software rasteriser, the same
+    code as CI's Chrome.
+- **On the Mac.**
+  - The same 63 tests pass with the GPU off.
+  - Both files pass under `chrome` and `chrome-150` (136).
+  - With the GPU on, nothing changed at 150%.

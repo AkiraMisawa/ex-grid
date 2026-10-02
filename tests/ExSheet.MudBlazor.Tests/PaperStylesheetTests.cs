@@ -43,7 +43,8 @@ public class PaperStylesheetTests
 
         // Unless the cell's own Fill covers it, as a Fill covers its gridlines.
         Assert.Contains(":not([class*=\" ex-fill-\"])", rule.Groups["selector"].Value, StringComparison.Ordinal);
-        Assert.Matches(@"--ex-row-rule\s*:\s*linear-gradient\(to top, var\(--ex-row-rule-color\) 0 var\(--ex-rule-width, 1px\)", body);
+        // In whole device pixels, as the row's own rule is (ticket 99).
+        Assert.Matches(@"--ex-row-rule\s*:\s*linear-gradient\(to top, var\(--ex-row-rule-color\) 0 var\(--ex-rule-dp, 1px\)", body);
         Assert.Matches(@"background-image\s*:\s*var\(--ex-row-rule\)\s*;", body);
     }
 

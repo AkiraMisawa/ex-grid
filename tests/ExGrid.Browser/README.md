@@ -393,7 +393,10 @@ nobody had asked for. What that means when writing a test:
   run's case 18 drew it); rows keeping their one height; a Fill over its four gridlines (case 4), a
   white Fill taking them away (case 5), two Fills meeting (case 6); at both scales, the gridline
   between two Fills taking the lower one's, and side by side the right one's (the fourteenth run's
-  case 16, and `fills`), a double line's middle pixel showing the Fill beneath it in each
+  case 16, and `fills`), with a horizontal gridline, and a Fill over one, a single device pixel —
+  which Chrome's software rasteriser, CI's under xvfb, drew two deep while the row's rule was 1.5
+  device pixels at 150%, and a Mac's GPU never showed (ticket 99) — a double line's middle pixel
+  showing the Fill beneath it in each
   arrangement (case 17, and `fills`), and medium dashed 9 on and 3 off with dashed 3 on and 1 off
   (case 18); a thick line over the Fill below it (case 10); the left cell's line drawn
   where both cells record one (the twelfth run's case 1); the Selection's outline lying on the

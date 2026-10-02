@@ -177,6 +177,27 @@ public class ShippedStylesheetTests
         => SelectorParser.ParseSelector(selector)?.Specificity
            ?? throw new ArgumentException($"not a selector: {selector}", nameof(selector));
 
+    [Fact] // ADR-0071 (Part C of the eleventh run) / ticket 99: a row's rule is painted in whole device pixels, so one at 150% under every rasteriser
+    public void A_rows_rule_is_painted_in_whole_device_pixels()
+    {
+        var (css, _) = CoreStylesheet();
+        var grid = Assert.Single(UnconditionalRules(), rule => rule.Selectors.SequenceEqual([".ex-grid"]) && rule.Body.Contains("--ex-rule-dp", StringComparison.Ordinal));
+        // The token rounded down to the device pixel, and never thinner than the token under one.
+        Assert.Equal(
+            "max(min(var(--ex-rule-width, 1px), var(--ex-dp)), round(down, var(--ex-rule-width, 1px), var(--ex-dp)))",
+            Declarations(grid.Body).Single(declared => declared.Property == "--ex-rule-dp").Value);
+
+        // Every band of the row's rule reads it: at 1.5 device pixels Chrome's software rasteriser
+        // drew two rows where its GPU one drew one, which a Mac never shows.
+        var bands = Regex.Matches(css, @"linear-gradient\(to top, var\(--ex-row-rule-color[^;]*");
+        Assert.Equal(3, bands.Count);
+        Assert.All(bands, band =>
+        {
+            Assert.Contains("0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px))", band.Value, StringComparison.Ordinal);
+            Assert.DoesNotContain("--ex-rule-width", band.Value, StringComparison.Ordinal);
+        });
+    }
+
     [Fact] // ADR-0006 / ADR-0029 / ticket 84: whatever a tone paints, a Cell State that paints it too outranks the tone, under every token
     public void A_cell_state_outranks_a_tone()
     {
