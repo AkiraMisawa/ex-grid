@@ -243,12 +243,18 @@ every font. It errs towards `####`, never towards a cut number.
 - **A page-level modal under every Chrome.** Rejected for the built-in Chrome. Without a design
   system, a modal needs `<dialog>.showModal()`, which would be a new entry on ADR-0021's allowlist.
 
-### A toolbar is a sample, not a product
+### A toolbar ships as an opt-in part of ExSheet *(replaced 2026-10-02)*
 
-A formatting toolbar, Excel's ribbon, is built on the DemoHost from `SetCellFormatAsync`,
-`CellFormatAt` and the notification that an edit has opened or ended. It is not shipped. A toolbar
-is buttons that call public commands. Shipping one would promise its look and the order of its
-buttons.
+*Until 2026-10-02 this section said "A toolbar is a sample, not a product": a formatting toolbar,
+Excel's ribbon, was to be built on the DemoHost from `SetCellFormatAsync`, `CellFormatAt` and the
+notification that an edit has opened or ended, and not shipped, because "a toolbar is buttons that
+call public commands. Shipping one would promise its look and the order of its buttons."*
+
+The reason was answered rather than overruled. The look is the Chrome's, as every seam's is, and the
+order is the Consumer's to declare, so neither is promised. What is promised is which commands exist
+and what each means. The Sheet Toolbar is decided in
+[ADR-0100](./0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md). It is still built only on
+the public commands above.
 
 ### A package for the MudBlazor Chrome
 
