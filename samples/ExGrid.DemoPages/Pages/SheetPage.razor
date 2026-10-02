@@ -21,7 +21,8 @@
    darkens (ADR-0071). ?case= opens one of the eleventh Windows run's set-ups instead of the page's own
    Sheet (SheetCases), for Part C to put beside Excel's screenshots. ?pin=N pins N leading columns,
    for a test that needs a case beside a Pinned Column. ?toolbar=off opens the Sheet without its
-   Sheet Toolbar, which Ctrl+F1 also hides and shows (ADR-0100). *@
+   Sheet Toolbar, which Ctrl+F1 also hides and shows (ADR-0100); a case opens without it unless
+   ?toolbar=on asks. *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
 
 <DemoNav />
@@ -189,7 +190,9 @@
     protected override void OnParametersSet()
     {
         _chrome = DemoChrome.ForSheet(ChromeName);
-        if (Toolbar == "off") _toolbarShown = false;
+        // A run's case is drawn as Excel drew it, to be put beside Excel's picture: without the
+        // toolbar, at the place the case's specs measure it.
+        if (Toolbar == "off" || (Case is not null && Toolbar != "on")) _toolbarShown = false;
     }
 
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
