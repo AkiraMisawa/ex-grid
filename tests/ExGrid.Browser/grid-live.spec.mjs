@@ -5,9 +5,9 @@ import { expectCodeIsSource } from './demo-code.mjs';
 // /grid-live (ADR-0068/0069): ExGrid alone over the demo API server's trades. The page pushes a
 // Window of GET /api/trades, hears the hub's "these trades changed", reads them again and answers
 // CellChangedAt from when each cell's value moved. What only a browser can say: that a mark is
-// keyed by row and column and stays on its cell across a scroll (DC-61); that it paints without a
+// keyed by row and column and stays on its cell across a scroll (DC-65); that it paints without a
 // transition or an animation, under the core's stylesheet and under the Wrapper's, that forced
-// colours restate it, and that the grid's live region does not announce it (DC-62); and that the
+// colours restate it, and that the grid's live region does not announce it (DC-66); and that the
 // page reads its Window from the server and turns the live updates off as it goes (PV-20).
 //
 // The API server lives for the whole run and other spec files share it: each test starts from
@@ -118,7 +118,7 @@ async function scrollTo(page, row) {
     await expect(grid(page).locator('.ex-viewport .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
 }
 
-test('DC-61/ADR-0068: a mark stays on its cell across a scroll, and never moves with an element to another row', async ({ page }) => {
+test('DC-65/ADR-0068: a mark stays on its cell across a scroll, and never moves with an element to another row', async ({ page }) => {
     test.setTimeout(150_000);
     await open(page, 'builtin');
     // Marks that outlast the test, so that what is compared is where they are, not when they end.
@@ -158,7 +158,7 @@ test('DC-61/ADR-0068: a mark stays on its cell across a scroll, and never moves 
 });
 
 for (const chrome of ['builtin', 'mud']) {
-    test(`DC-62/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (${chrome})`, async ({ page }) => {
+    test(`DC-66/ADR-0068: marks paint without animating, forced colours restate them, and the live region says nothing (${chrome})`, async ({ page }) => {
         test.setTimeout(150_000);
         await open(page, chrome);
         await page.locator('#grid-live-highlight').selectOption('60000');

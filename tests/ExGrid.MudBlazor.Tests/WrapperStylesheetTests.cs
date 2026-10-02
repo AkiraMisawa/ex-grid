@@ -55,7 +55,7 @@ public class WrapperStylesheetTests
     public void The_wrapper_writes_no_rule_against_the_change_highlight()
         => Assert.DoesNotContain("ex-changed", WrapperStylesheet());
 
-    [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-62: with the Wrapper's stylesheet loaded a mark still never animates — it transitions and animates nothing
+    [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: with the Wrapper's stylesheet loaded a mark still never animates — it transitions and animates nothing
     public void The_wrapper_transitions_and_animates_nothing()
     {
         var css = Regex.Replace(WrapperStylesheet(), @"/\*.*?\*/", "", RegexOptions.Singleline);

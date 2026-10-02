@@ -18,7 +18,7 @@ hosts and, where it has a pivot, under both Chromes. The pages are added to the 
 **Blocked by:** 13, 14, 15, 16, 17, 18, change-highlight 01
 
 - [x] PV-20, in layer 3
-- [x] change-highlight 02 (DC-61, DC-62) on `/grid-live`
+- [x] change-highlight 02 (DC-65, DC-66) on `/grid-live`
 - [x] The browser's `HttpClient` turns response streaming off for the Arrow request (ADR-0065)
 
 ## Comments

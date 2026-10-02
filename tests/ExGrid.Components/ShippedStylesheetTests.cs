@@ -624,7 +624,7 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
     }
 
-    [Fact] // ADR-0070/0021 / DC-58: the key message says whether the key is a held key's repeat — a field of the event the listener already reads, the last of the one message
+    [Fact] // ADR-0070/0021 / DC-62: the key message says whether the key is a held key's repeat — a field of the event the listener already reads, the last of the one message
     public void The_key_message_says_whether_the_key_is_a_repeat()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
@@ -1038,7 +1038,7 @@ public class ShippedStylesheetTests
             Assert.True(IndexOf(".ex-cell.ex-changed") > IndexOf(ground), $"{ground} is declared after the mark");
     }
 
-    [Fact] // ADR-0068 / ADR-0027 / DC-62 / UX-7: the forced-colors block restates the mark as a painted outline, before the states so a state keeps its own
+    [Fact] // ADR-0068 / ADR-0027 / DC-66 / UX-7: the forced-colors block restates the mark as a painted outline, before the states so a state keeps its own
     public void The_forced_colors_block_restates_the_change_highlight()
     {
         var (_, forced) = ForcedColorsSplit();
@@ -1054,7 +1054,7 @@ public class ShippedStylesheetTests
         Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-modified"));
     }
 
-    [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-62: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates
+    [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates
     public void Nothing_in_the_core_stylesheet_transitions_or_animates()
     {
         var (css, _) = CoreStylesheet();

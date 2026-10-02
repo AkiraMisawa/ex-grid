@@ -568,12 +568,12 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
-// ExGrid's ReturnKeyboardAsync, as ExPivot asks it (DC-57): the conditions only a browser can show.
+// ExGrid's ReturnKeyboardAsync, as ExPivot asks it (DC-61): the conditions only a browser can show.
 // On the Server host the request lands a round trip after the dialog or the tab went, and what the
 // user chose in that time keeps the keyboard. On WebAssembly there is no round trip to add, and the
 // same test is the case without one.
 
-test('ADR-0070 (DC-57): a control focused while the report\'s keyboard is on its way back keeps it', async ({ page }) => {
+test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its way back keeps it', async ({ page }) => {
     await open(page, 'builtin', '&details=dialog');
     await firstValue(page).dblclick({ force: true });
     const dialog = page.getByRole('dialog', { name: /^Details: / });
@@ -597,7 +597,7 @@ test('ADR-0070 (DC-57): a control focused while the report\'s keyboard is on its
     await expect(report(page)).not.toBeFocused();
 });
 
-test('ADR-0070/0018 (DC-57): a second grid pressed while the keyboard is on its way back to the first keeps it', async ({ page }) => {
+test('ADR-0070/0018 (DC-61): a second grid pressed while the keyboard is on its way back to the first keeps it', async ({ page }) => {
     // /pivot-db stands two pivots side by side: two report grids, each with its tabs (ADR-0069).
     const reset = await fetch(`${API_URL}/api/reset`, { method: 'POST' });
     expect(reset.ok).toBe(true);

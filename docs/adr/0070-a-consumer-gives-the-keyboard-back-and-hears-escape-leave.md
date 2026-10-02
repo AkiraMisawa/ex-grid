@@ -130,7 +130,7 @@ decisions are read together as they are written:
 the keyboard on its Keyboard Field rather than its root, and the grid's hand-back puts it there
 (ADR-0080). `ReturnKeyboardAsync()` is that hand-back, so on such a grid "the root", above, reads as
 the Keyboard Field; a display-only grid, as ExPivot's report and details grids are, keeps it on its
-root. DC-57 says so. Nothing else here changes: the field counts as the root for the keys (ADR-0080),
+root. DC-61 says so. Nothing else here changes: the field counts as the root for the keys (ADR-0080),
 so the Escape that raises `OnLeave` is the same press.
 
 ## Considered options
@@ -149,7 +149,7 @@ so the Escape that raises `OnLeave` is the same press.
 
 ## Consequences
 
-- **§26 gains DC-57 and DC-58**, which gate the release as the rest of §26 does. **§29 gains PV-39**
+- **§26 gains DC-61 and DC-62**, which gate the release as the rest of §26 does. **§29 gains PV-39**
   for ExPivot's use of them.
 - **Layer 2 holds both declarations to their rules**: the hand-back's conditions, and the Escapes
   that do and do not raise `OnLeave`. **Layer 3 runs them on `/pivot?details=dialog`**: Escape

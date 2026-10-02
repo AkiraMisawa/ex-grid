@@ -540,7 +540,7 @@ nobody had asked for. What that means when writing a test:
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
   the keyboard on the tab, a second tab beside it, and closing them; a dialog when the page asks
   for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the
-  page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-59); the
+  page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-63); the
   keyboard into a field's menu and back to its entry, a menu dropping down under its entry as
   wide as the pane, and a command moving the field (PV-11); the toolbar above the report — the
   report filter band on its left, Layout and the pane's toggle on its right, no Refresh for the
@@ -553,7 +553,7 @@ nobody had asked for. What that means when writing a test:
   date, moved to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in
   the Japanese words (ADR-0060); and the code the page shows under "The code" equal to the
   regions of its source it is read from (PV-20). Where the keyboard goes when the dialog or a tab
-  goes (PV-39, DC-58, ADR-0070): Escape in the dialog's grid closing the grid's Context Menu
+  goes (PV-39, DC-62, ADR-0070): Escape in the dialog's grid closing the grid's Context Menu
   first, then the dialog, and held, closing it once, its repeats leaving the report the keyboard
   (KB-44); however the dialog closes — that Escape, Escape on Close, Close, the backdrop — the
   report's grid holding the keyboard again, its arrows moving its Focus; Escape in a details tab's
@@ -561,7 +561,7 @@ nobody had asked for. What that means when writing a test:
   the tab selected next, and the last one back to the report, on the cell it left. Under MudBlazor
   alone, a MudSelect's list in Value Field Settings… taking Escape before its panel (PV-11), and
   the palette reaching the pane, the entries and the `−` button in both schemes (PV-18). Under
-  ExPivot's own markup alone, ExGrid's `ReturnKeyboardAsync` keeping to its conditions (DC-57): a
+  ExPivot's own markup alone, ExGrid's `ReturnKeyboardAsync` keeping to its conditions (DC-61): a
   control of the page focused while the report's request is on its way keeps the keyboard, and so
   does a second grid pressed meanwhile — the other pivot's report on `/pivot-db`. On the Server
   host the request lands two round trips after the Escape or the close, with 150 ms injected; on
@@ -607,10 +607,10 @@ nobody had asked for. What that means when writing a test:
   marks set to last a minute so that where they are is what is compared. A mark is keyed by row
   and column: across a three-row scroll every trade still painted keeps exactly its marked cells,
   and after a scroll far away and back, which reads the Window again into new instances and new
-  elements, the same cells are marked again (DC-61). With marks painting and going, nothing under
+  elements, the same cells are marked again (DC-65). With marks painting and going, nothing under
   the Viewport transitions or animates, under the core's stylesheet and under the Wrapper's
   (`?chrome=mud`), whose warning tint the mark takes; the grid's live region is not touched; and
-  forced colours restate the mark as a dashed outline (DC-62). The Window is read from the server
+  forced colours restate the mark as a dashed outline (DC-66). The Window is read from the server
   as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the page
   shows is equal to its source.
 

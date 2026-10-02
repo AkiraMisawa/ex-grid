@@ -116,7 +116,7 @@ the delegate with.
 
 ## Consequences
 
-- **§26 of the Definition of Done gains DC-60 to DC-62**, which gate ExGrid as every declaration
+- **§26 of the Definition of Done gains DC-64 to DC-66**, which gate ExGrid as every declaration
   there does.
 - **Without the declaration nothing changes**: no timer, no class and no call.
 - **The cost is that of Cell State**: one delegate call per painted value cell of a row that renders,

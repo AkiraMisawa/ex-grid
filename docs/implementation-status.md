@@ -722,7 +722,7 @@ package's start and ADR-0039, 2026-09-24.)*
 *(Built on `claude/expivot-mudblazor-wrapper-j25225`. Decided with the user in the ExPivot
 grilling, Q1 to Q63: [ADR-0059](adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)
 to [ADR-0069](adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md). §29 and §30 of the
-Definition of Done judge ExPivot and the data packages, and never gate ExGrid. §26's DC-59 to DC-62
+Definition of Done judge ExPivot and the data packages, and never gate ExGrid. §26's DC-63 to DC-66
 are the core changes, and those do gate it.)*
 
 **What exists.**
@@ -750,7 +750,7 @@ are the core changes, and those do gate it.)*
   - live gathering, the Change Highlight and the Stale Report.
 - **`ExPivot.MudBlazor`** draws every surface, including the toolbar, the Details tabs (in
   `MudTabs`) and the dialog's content.
-- **ExGrid's Change Highlight** (ADR-0068, DC-60 to DC-62).
+- **ExGrid's Change Highlight** (ADR-0068, DC-64 to DC-66).
 - **The demo API server, `samples/ExGrid.DemoApi`** (ADR-0069): SQLite holding money as integer
   cents, the trades as Arrow, a Pivot Source answered in SQL, and live changes said over SignalR.
 - **The six pages:** `/pivot`, `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` and
@@ -788,8 +788,8 @@ DA-17). Over a million trades in a published WebAssembly build:
   over 50 ms is the browser runtime's full collections, about 70 ms inside a slice, and the turn
   that puts the report on screen.
 - **A Consumer gives a grid the keyboard back, and hears an Escape that leaves it**
-  ([ADR-0070](adr/0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-57,
-  DC-58, PV-39, ticket 21). Show Details' dialog closes on Escape, and the report takes the
+  ([ADR-0070](adr/0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-61,
+  DC-62, PV-39, ticket 21). Show Details' dialog closes on Escape, and the report takes the
   keyboard back however it closes. Building it found that a held Escape peeled a layer per
   repeat, cancelling a half-typed formula under its closing list. A held Escape is now one
   press in every grid (ADR-0012, KB-44).

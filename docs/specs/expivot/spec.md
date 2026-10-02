@@ -9,12 +9,14 @@ grilling decided them, kept each change and its reason in the text, and added AD
 
 These ADRs were numbered 0058 to 0069 until 2026-10-01. ExSheet's Pointing Scope reached the shared
 branch first and kept ADR-0058 (#38), so ExPivot's moved up by one, and its criteria DC-52 to DC-55
-became DC-59 to DC-62. Commit messages written before then use the old numbers.
+became DC-59 to DC-62. On 2026-10-02 ExSheet's Cell Format reached it first again, with DC-57 to
+DC-60 (#42), so ExPivot's criteria in §26 moved up by four: DC-57 to DC-62 became DC-61 to DC-66.
+Commit messages written before then use the old numbers.
 
 - The vocabulary is `CONTEXT.md`'s "Pivots" section, with the family's Snapshot, Change Batch,
   Record Key, Schema and Change Highlight.
 - The exit criteria are in `docs/definition-of-done.md`: §29 for ExPivot, §30 for the data packages,
-  and DC-59 to DC-62 in §26 for the core.
+  and DC-61 to DC-66 in §26 for the core.
 
 This spec synthesises those decisions; where it and they disagree, they win. The Snapshot has a spec
 of its own (`docs/specs/exgrid-data`), and so does the Change Highlight

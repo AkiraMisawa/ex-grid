@@ -17,10 +17,10 @@ namespace ExGrid.Components.Tests;
 /// offered to it. Whether the browser grants it — DOM focus on nothing or already inside this grid,
 /// never on another control, another grid, or the grid's Formula Bar or Name Box — is the handle's
 /// to decide and layer 3's to show; here, that it is asked for under that condition, that it moves
-/// nothing else, and that nothing is asked before the grid is attached (DC-57). And it hears the
+/// nothing else, and that nothing is asked before the grid is attached (DC-61). And it hears the
 /// Escape that leaves the grid: only the one pressed on the root with nothing left to dismiss, once
 /// per press, in place of the Tab release ADR-0012 gives that Escape (rewritten 2026-10-01), and
-/// never an inner layer's (DC-58).
+/// never an inner layer's (DC-62).
 ///
 /// 20px rows in a 120px Viewport whose header takes the first 20: five rows painted. Columns, all
 /// fixed: Book 0–100 (editable), Review 100–300 (three actions), Amount 300–400.
@@ -113,9 +113,9 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
     private static string? ActiveDescendant(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
 
-    // ---- DC-57: ReturnKeyboardAsync ------------------------------------------------------------
+    // ---- DC-61: ReturnKeyboardAsync ------------------------------------------------------------
 
-    [Fact] // ADR-0070/0021 (DC-57): the keyboard given back is the grid's own hand-back, asked of the handle under its condition — and never from the Formula Bar or the Name Box
+    [Fact] // ADR-0070/0021 (DC-61): the keyboard given back is the grid's own hand-back, asked of the handle under its condition — and never from the Formula Bar or the Name Box
     public async Task Returning_the_keyboard_asks_the_handle_for_the_root()
     {
         var cut = RenderGrid();
@@ -135,7 +135,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.TabReleases);
     }
 
-    [Fact] // ADR-0070 (DC-57): the keyboard comes back to the cell it left — neither the Focus nor the Selection moves, nothing scrolls, and nothing renders
+    [Fact] // ADR-0070 (DC-61): the keyboard comes back to the cell it left — neither the Focus nor the Selection moves, nothing scrolls, and nothing renders
     public async Task Returning_the_keyboard_moves_nothing()
     {
         var selections = new List<GridSelection>();
@@ -182,7 +182,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         }
     }
 
-    [Fact] // ADR-0070 (DC-57): before the grid is attached it does nothing — no listener is on the root yet to hand keys to
+    [Fact] // ADR-0070 (DC-61): before the grid is attached it does nothing — no listener is on the root yet to hand keys to
     public async Task Returning_the_keyboard_before_the_grid_is_attached_does_nothing()
     {
         using var context = new NoListenerYet();
@@ -196,7 +196,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(["import"], context.Runtime.Asked);
     }
 
-    [Fact] // ADR-0070 (DC-57): a grid that is gone takes nothing — a Consumer may still hold it when what covered it closes
+    [Fact] // ADR-0070 (DC-61): a grid that is gone takes nothing — a Consumer may still hold it when what covered it closes
     public async Task Returning_the_keyboard_to_a_grid_that_is_gone_does_nothing()
     {
         var cut = RenderGrid();
@@ -209,9 +209,9 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(reclaims, Js.FocusReclaimed.Invocations.Count);
     }
 
-    // ---- DC-58: OnLeave ------------------------------------------------------------------------
+    // ---- DC-62: OnLeave ------------------------------------------------------------------------
 
-    [Fact] // ADR-0070 (DC-58): with OnLeave declared, an Escape on the root with nothing left to dismiss raises it once, in place of the Tab release, and the grid keeps the DOM focus
+    [Fact] // ADR-0070 (DC-62): with OnLeave declared, an Escape on the root with nothing left to dismiss raises it once, in place of the Tab release, and the grid keeps the DOM focus
     public async Task An_escape_with_nothing_left_to_dismiss_raises_on_leave_and_keeps_the_focus()
     {
         var left = 0;
@@ -226,7 +226,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(focus, ActiveDescendant(cut));
     }
 
-    [Fact] // ADR-0070/0012 (DC-58, DC-1, KB-8, KB-44): without OnLeave, Escape with nothing left to dismiss does what ADR-0012 has it do — releases Tab — once a press, as every Escape acts (ADR-0012, refined 2026-10-01)
+    [Fact] // ADR-0070/0012 (DC-62, DC-1, KB-8, KB-44): without OnLeave, Escape with nothing left to dismiss does what ADR-0012 has it do — releases Tab — once a press, as every Escape acts (ADR-0012, refined 2026-10-01)
     public async Task Without_on_leave_escape_releases_tab_as_adr_0012_has_it()
     {
         var cut = RenderGrid();
@@ -276,7 +276,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.TabReleases);
     }
 
-    [Fact] // ADR-0070 (DC-58): a held Escape raises OnLeave once — its repeats raise nothing and release nothing until the key is released, and the next press raises it again
+    [Fact] // ADR-0070 (DC-62): a held Escape raises OnLeave once — its repeats raise nothing and release nothing until the key is released, and the next press raises it again
     public async Task A_held_escape_raises_on_leave_once_per_press()
     {
         var left = 0;
@@ -295,7 +295,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.TabReleases);
     }
 
-    [Fact] // ADR-0070/0039 (DC-58): an Escape that closes a popover peels only that layer, and so do the repeats of the key held after it; the next press raises OnLeave
+    [Fact] // ADR-0070/0039 (DC-62): an Escape that closes a popover peels only that layer, and so do the repeats of the key held after it; the next press raises OnLeave
     public async Task An_escape_that_closes_a_popover_does_not_raise_on_leave()
     {
         var left = 0;
@@ -317,7 +317,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(1, left);
     }
 
-    [Fact] // ADR-0070/0039 (DC-58): an Inner Popup's Escape is its design system's — the gate leaves it to the control the core was told of — and the popover's after it is the popover's; only the next raises OnLeave
+    [Fact] // ADR-0070/0039 (DC-62): an Inner Popup's Escape is its design system's — the gate leaves it to the control the core was told of — and the popover's after it is the popover's; only the next raises OnLeave
     public async Task An_inner_popups_escape_and_its_popovers_do_not_raise_on_leave()
     {
         var left = 0;
@@ -344,7 +344,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.TabReleases);
     }
 
-    [Fact] // ADR-0070/0007 (DC-58): an Escape that cancels an edit does not raise OnLeave; the next one does
+    [Fact] // ADR-0070/0007 (DC-62): an Escape that cancels an edit does not raise OnLeave; the next one does
     public async Task An_escape_that_cancels_an_edit_does_not_raise_on_leave()
     {
         var left = 0;
@@ -364,7 +364,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.TabReleases);
     }
 
-    [Fact] // ADR-0070/0051 (DC-58): an Escape that closes a Formula Entry's list leaves the edit open and does not raise OnLeave; nor does the one that cancels the edit; the third does
+    [Fact] // ADR-0070/0051 (DC-62): an Escape that closes a Formula Entry's list leaves the edit open and does not raise OnLeave; nor does the one that cancels the edit; the third does
     public async Task An_escape_that_closes_a_formula_entrys_list_does_not_raise_on_leave()
     {
         var left = 0;
@@ -395,7 +395,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.TabReleases);
     }
 
-    [Fact] // ADR-0070/0037 (DC-58): an Escape that leaves an Interactive cell does not raise OnLeave; the next one does
+    [Fact] // ADR-0070/0037 (DC-62): an Escape that leaves an Interactive cell does not raise OnLeave; the next one does
     public async Task An_escape_that_leaves_an_interactive_cell_does_not_raise_on_leave()
     {
         var left = 0;
@@ -415,7 +415,7 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         Assert.Equal(0, Js.TabReleases);
     }
 
-    [Fact] // ADR-0070/0020 (DC-58): an Escape that returns from a control inside a cell takes the keyboard back to the root and does not raise OnLeave; the next one does
+    [Fact] // ADR-0070/0020 (DC-62): an Escape that returns from a control inside a cell takes the keyboard back to the root and does not raise OnLeave; the next one does
     public async Task An_escape_from_a_control_inside_a_cell_does_not_raise_on_leave()
     {
         var left = 0;

@@ -94,7 +94,7 @@ public partial class ExGrid<TRow>
     /// Arms the one timer for the earliest end among the marks painted now. Called after every
     /// render of the root, which is every render in which a row can paint or drop a mark: a
     /// row renders only when the root hands it something new. With no mark painted, no timer
-    /// exists (ADR-0068, DC-60).
+    /// exists (ADR-0068, DC-64).
     /// </summary>
     private void ArmHighlightTimer()
     {

@@ -306,7 +306,7 @@ public class PointedAtTests : GridTestContext
         Assert.DoesNotContain("ex-editing", RootClass(cut));
     }
 
-    [Fact] // ADR-0058 / DC-52 with ADR-0063 / DC-59: a double click handed over is not heard as the grid's
+    [Fact] // ADR-0058 / DC-52 with ADR-0063 / DC-63: a double click handed over is not heard as the grid's
     public async Task A_double_click_handed_over_raises_no_cell_double_click()
     {
         var heard = new List<CellPosition>();

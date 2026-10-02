@@ -14,7 +14,7 @@ in ExGrid's core and in ExPivot's use of it.
 
 **Blocked by:** None
 
-- [x] DC-57, DC-58 (layer 2; layer 3 for the conditions only a browser can show)
+- [x] DC-61, DC-62 (layer 2; layer 3 for the conditions only a browser can show)
 - [x] PV-39 (layer 2; layer 3 on `/pivot?details=dialog` and `/pivot`, under both Chromes)
 
 ## Comments
@@ -42,7 +42,7 @@ in ExGrid's core and in ExPivot's use of it.
   the keyboard. Escape in a tab's grid closes nothing. Nothing in `ExPivot.MudBlazor` needed
   changing: the frame, the records and the selection are ExPivot's under both Chromes.
 
-Tests: `LeaveAndReturnKeyboardTests` (13, DC-57 and DC-58: the request and its condition, nothing
+Tests: `LeaveAndReturnKeyboardTests` (13, DC-61 and DC-62: the request and its condition, nothing
 moved, nothing before attach or after disposal; `OnLeave` once per press, and not for the
 popover, the Inner Popup, the edit, the Formula Entry list, the Interactive cell or the control in
 a cell), two script-shape tests in `ShippedStylesheetTests`, `KeyboardBackTests` (11 cases, PV-39
@@ -53,7 +53,7 @@ declaration, nothing after disposal or before attach, Escape in a tab's grid, a 
 button. Layer 3, in `pivot.spec.mjs`, under both Chromes: Escape in the dialog's
 grid closing its Context Menu first and then the dialog; however the dialog closes, the report's
 arrows moving its Focus; Escape in a tab's grid closing nothing; the selected tab closed handing
-the keyboard on, and the last one back to the report. Under ExPivot's markup, DC-57's two browser
+the keyboard on, and the last one back to the report. Under ExPivot's markup, DC-61's two browser
 conditions with 150 ms injected on Server: a page control focused meanwhile keeps the keyboard, and
 so does the other pivot's report on `/pivot-db`. Run on Linux under xvfb with the container's
 Chromium (no Chrome or Edge installed; Edge is CI's): `--grep ADR-0070` 8 of 8 on both hosts, and

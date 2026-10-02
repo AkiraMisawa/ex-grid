@@ -11,7 +11,7 @@ core.
 - [x] One grid, the label columns pinned, Header Groups over the value columns, Row Kinds (PV-2)
 - [x] Expand and collapse from the button, the Context Menu and a double click; the Focus stays (PV-13)
 - [x] A refresh that changes only values keeps the Row Sequence Version (PV-13)
-- [x] Show Details from a double click and the Context Menu (PV-14); DC-59 in the core
+- [x] Show Details from a double click and the Context Menu (PV-14); DC-63 in the core
 - [x] A Field List interaction renders no grid row (PV-15)
 
 ## Comments

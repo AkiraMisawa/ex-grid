@@ -12,7 +12,7 @@ The choices most worth their attention:
 - ExPivot outside the ExGrid release, in a feed of its own (ADR-0059), as ExSheet is.
 - Aggregation in process over a snapshot, with a Consumer-answered pivot query reserved (ADR-0059).
 - What the first version holds and what it leaves for later (ADR-0059's table).
-- The one core change, `OnCellDoubleClick` (ADR-0063), which gates ExGrid through DC-59.
+- The one core change, `OnCellDoubleClick` (ADR-0063), which gates ExGrid through DC-63.
 - The Wrapper reusing `MudExGridPaper` rather than a paper of its own (ADR-0062).
 
 **Blocked by:** None

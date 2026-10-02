@@ -14,9 +14,9 @@ the rows.
 
 **Blocked by:** None
 
-- [x] DC-60: layer 2 with a fake `TimeProvider`, with render counts
+- [x] DC-64: layer 2 with a fake `TimeProvider`, with render counts
 - [x] DC-1 still holds: no declaration means no call, no class and no timer
-- [x] DC-62: no transition in either stylesheet; the forced-colors rule present; the live region
+- [x] DC-66: no transition in either stylesheet; the forced-colors rule present; the live region
   unchanged
 - [ ] The token and the class listed in ADR-0029's tables (done with the ADR) and in
   `docs/implementation-status.md`
