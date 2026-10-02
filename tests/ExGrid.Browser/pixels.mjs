@@ -213,8 +213,9 @@ export function onDeviceGrid({ x, y, width, height }, scale, margin = 0) {
 // Pictures compared with each other
 
 /**
- * How two PNG pictures of one thing differ: how many pixels differ at all, and how many by more
- * than `threshold` on some channel. Pictures of different sizes are not compared.
+ * How two PNG pictures of one thing differ: how many pixels differ at all, how many by more
+ * than `threshold` on some channel, and the largest difference, which says how near the
+ * threshold the rest came. Pictures of different sizes are not compared.
  */
 export function pixelsApart(a, b, threshold) {
     const one = decodePng(a);
@@ -224,6 +225,7 @@ export function pixelsApart(a, b, threshold) {
     }
     let differing = 0;
     let apart = 0;
+    let largest = 0;
     for (let y = 0; y < one.height; y++) {
         for (let x = 0; x < one.width; x++) {
             const p = one.at(x, y);
@@ -231,9 +233,10 @@ export function pixelsApart(a, b, threshold) {
             const d = Math.max(...p.map((v, i) => Math.abs(v - q[i])));
             differing += d > 0 ? 1 : 0;
             apart += d > threshold ? 1 : 0;
+            largest = Math.max(largest, d);
         }
     }
-    return { differing, apart };
+    return { differing, apart, largest };
 }
 
 // The page watched while stillPictures takes its pictures. Every change to the document is
