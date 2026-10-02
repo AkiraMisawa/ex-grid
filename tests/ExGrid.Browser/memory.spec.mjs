@@ -90,6 +90,13 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
     // for the page's life. The grid is the first thing on this page to handle scroll,
     // mousedown and the rest, so the first mount adds those — and nothing else may.
     await grid.cycle();
+    // Read once the module has let go of the document, as MEM-4 reads it: the handle's dispose
+    // is an interop call, a round trip after the grid leaves the page on the Server host, and
+    // read before it lands the selectionchange listener still stood (CI, Edge on the Server
+    // host, 2026-10-02). A listener the dispose never takes off still fails here.
+    await expect.poll(async () => (await grid.listenersOn('document')).map(key)
+        .filter((k) => /@ex-grid(\.\w+)?\.js$/.test(k)), { message: 'the first cycle\'s grid let go of the document' })
+        .toEqual([]);
     const baseline = await grid.counters();
     const byFramework = added(freshOnDocument, await grid.listenersOn('document'));
     // Blazor's own script is blazor.webassembly.js on the WebAssembly host and
