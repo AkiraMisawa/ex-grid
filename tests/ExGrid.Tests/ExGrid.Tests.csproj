@@ -10,6 +10,9 @@
     <IsPackable>false</IsPackable>
     <!-- Lets `dotnet test` drive the executable instead of VSTest's testhost. -->
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <!-- A failed test's name and message in `dotnet test`'s output, where CI's log shows them;
+         the summary alone names only the assembly. -->
+    <TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
     <!-- No native apphost. The one the SDK emitted for net8.0 came from a NuGet
          template stamped with the host ELF interpreter, so it starts under the host
          loader and then dlopens the nix runtime's libcoreclr.so — two glibcs in one

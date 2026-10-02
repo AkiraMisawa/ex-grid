@@ -245,6 +245,12 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   file; a listener, a timer or an observer it leaves is not seen, so that is on you. A test
   about loading itself asks for `freshDocument`.
 
+- **A layer-3 test waits for what it reads, never for a fixed time** (ADR-0056, 2026-10-02).
+  On the Server host, a reading that must see all the host will say awaits `circuitQuiet()`.
+  Two pictures to compare are taken with `stillPictures`. A colour is judged with `paints`,
+  where the boundary lies on a device pixel. A new or changed spec runs with `--repeat-each`
+  before it goes in. `tests/ExGrid.Browser/README.md` says how.
+
 - **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`
   packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net10.0`
   application that restores them from the packed files alone. CI runs it as its `package` job.
