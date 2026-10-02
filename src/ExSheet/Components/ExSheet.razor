@@ -42,7 +42,7 @@
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
-        DeclaredKeys="SheetFormatKeys.Declared" OnDeclaredKey="_formatKey" />
+        DeclaredKeys="DeclaredKeys" OnDeclaredKey="_formatKey" />
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
@@ -571,6 +571,11 @@
     /// </summary>
     private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
     {
+        if (SheetStructureKeys.KindOf(press.Key) is { } structure)
+        {
+            await OnStructureKeyAsync(press, structure);
+            return;
+        }
         if (SheetFormatKeys.KindOf(press.Key) is not { } kind) return;
         // Rows are places, so the Selection is written in version 0 (ADR-0046).
         if (press.RowSequenceVersion == 0) _selection = press.Selection;
@@ -594,6 +599,39 @@
         await FormatSelectionAsync(
             SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture),
             widen: SheetFormatKeys.WidensAsANumberFormatDoes(kind));
+    }
+
+    // The keys ExSheet declares to its grid: Excel's formatting keys (ADR-0071) and its insert and
+    // delete keys (ADR-0050 item 14, 2026-10-02). One instance, so the grid compares it by reference.
+    private static readonly IReadOnlyCollection<string> DeclaredKeys = [.. SheetFormatKeys.Declared, .. SheetStructureKeys.Declared];
+
+    /// <summary>
+    /// Ctrl+Plus and Ctrl+Minus (ADR-0050 item 14's note of 2026-10-02): over a Selection of whole
+    /// rows they insert or delete those rows, over whole columns those columns, as the Context
+    /// Menu's commands do, each one step on the undo stack. Over any other Selection, and while an
+    /// edit is open, nothing changes and the notice says why. They act on the Selection the key
+    /// carries, as a formatting key does: one pressed straight after Shift+Space arrives before the
+    /// move's notification on a circuit.
+    /// </summary>
+    private async Task OnStructureKeyAsync(GridDeclaredKeyPress press, SheetStructureKeys.Kind kind)
+    {
+        var insert = kind == SheetStructureKeys.Kind.Insert;
+        // Rows are places, so the Selection is written in version 0 (ADR-0046).
+        if (press.RowSequenceVersion == 0) _selection = press.Selection;
+        if (press.EditOpen || IsEditing)
+        {
+            Tell(SheetWords.StructureKeyWhileEditing(insert));
+            StateHasChanged();
+            return;
+        }
+        if (_selection.IsEmpty) return;
+        if (SheetStructureKeys.EditFor(kind, _selection, new GridExtent(Sheet.RowCount, Sheet.ColumnCount)) is not { } edit)
+        {
+            Tell(SheetWords.StructureKeyNeedsWholeRowsOrColumns(insert));
+            StateHasChanged();
+            return;
+        }
+        await StructureAsync(edit);
     }
 
     /// <summary>

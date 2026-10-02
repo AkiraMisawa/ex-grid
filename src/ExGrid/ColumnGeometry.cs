@@ -36,6 +36,32 @@ public sealed class ColumnGeometry
     // the rows would stop skipping, silently).
     private readonly double[] _widths;
 
+    // The widths as the columns declare them, before their edges were put on Device Pixels
+    // (ADR-0090): what the grid compares a new layout against, so a layout that did not move
+    // keeps this instance at any ratio (ADR-0003).
+    private readonly double[] _declared;
+
+    // The whole Device Pixels from the content's left edge to a declared position.
+    private static double DevicePixelsAt(double px, double ratio) => Math.Floor((px * ratio) + 0.5);
+
+    /// <summary>A length put on the nearest Device Pixel at <paramref name="devicePixelRatio"/>
+    /// (ADR-0090), or the length itself while the ratio is not told (null).</summary>
+    public static double OnDevicePixel(double px, double? devicePixelRatio)
+        => devicePixelRatio is { } ratio ? DevicePixelsAt(px, ratio) / ratio : px;
+
+    /// <summary>The Device Pixel ratio the edges were put on, or null while the browser has not
+    /// told it, when the edges are the declared ones (ADR-0090).</summary>
+    public double? DevicePixelRatio { get; }
+
+    /// <summary>The width this column declared, before its edges were put on Device Pixels
+    /// (ADR-0090). <see cref="WidthPxOf"/> is the width it is painted at.</summary>
+    public double DeclaredWidthPxOf(int columnIndex)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(columnIndex);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(columnIndex, Count);
+        return _declared[columnIndex];
+    }
+
     /// <summary>The arithmetic over <paramref name="widthsPx"/> — every column's resolved
     /// width, in display order (ADR-0016) — with the first <paramref name="pinnedCount"/>
     /// pinned, laid out in <paramref name="viewportWidthPx"/>. A total width past
@@ -53,7 +79,24 @@ public sealed class ColumnGeometry
     /// the Pinned Columns cover it, every column's offset starts after it, and no column
     /// index ever names it. Zero is the geometry without the band, exactly.</summary>
     public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx, double leadWidthPx)
+        : this(widthsPx, pinnedCount, viewportWidthPx, leadWidthPx, devicePixelRatio: null)
     {
+    }
+
+    /// <summary>The same arithmetic with every column edge put on a Device Pixel
+    /// (ADR-0090): each edge is its declared position — the lead band's width plus the
+    /// declared widths before it — rounded to the nearest Device Pixel at
+    /// <paramref name="devicePixelRatio"/>, and a column's painted width is the distance to
+    /// the next edge. The positions are summed first and rounded after, so the total is the
+    /// declared total rounded once. Null is a ratio the browser has not told yet: the edges
+    /// are the declared ones, exactly.</summary>
+    public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx, double leadWidthPx, double? devicePixelRatio)
+    {
+        if (devicePixelRatio is { } told && (!double.IsFinite(told) || told <= 0))
+        {
+            throw new ArgumentOutOfRangeException(nameof(devicePixelRatio), devicePixelRatio,
+                "A Device Pixel ratio is a finite, positive number (ADR-0090).");
+        }
         if (!double.IsFinite(leadWidthPx) || leadWidthPx < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(leadWidthPx), leadWidthPx,
@@ -73,8 +116,14 @@ public sealed class ColumnGeometry
         }
 
         _offsets = new double[widthsPx.Count + 1];
-        _offsets[0] = leadWidthPx;
         _widths = new double[widthsPx.Count];
+        _declared = new double[widthsPx.Count];
+        // Each edge is counted in whole Device Pixels from the declared position, and a width
+        // is the difference of two counts: so two equal counts give the same width bit for
+        // bit, and nothing accumulates (ADR-0090). Untold, the declared widths are painted.
+        var declaredEdge = leadWidthPx;
+        var paintedEdge = devicePixelRatio is { } ratio ? DevicePixelsAt(declaredEdge, ratio) : 0;
+        _offsets[0] = devicePixelRatio is { } leadRatio ? paintedEdge / leadRatio : leadWidthPx;
         for (var i = 0; i < widthsPx.Count; i++)
         {
             var width = widthsPx[i];
@@ -82,6 +131,14 @@ public sealed class ColumnGeometry
             {
                 throw new ArgumentOutOfRangeException(nameof(widthsPx), width,
                     $"Column {i} has a width of {width}px; a resolved width is finite and non-negative (ADR-0016).");
+            }
+            _declared[i] = width;
+            if (devicePixelRatio is { } r)
+            {
+                declaredEdge += width;
+                var next = DevicePixelsAt(declaredEdge, r);
+                width = (next - paintedEdge) / r;
+                paintedEdge = next;
             }
             _widths[i] = width;
             _offsets[i + 1] = _offsets[i] + width;
@@ -96,7 +153,8 @@ public sealed class ColumnGeometry
         }
 
         Count = widthsPx.Count;
-        LeadWidthPx = leadWidthPx;
+        LeadWidthPx = _offsets[0];
+        DevicePixelRatio = devicePixelRatio;
         RequestedPinnedCount = pinnedCount;
         // A block covering the Viewport shows only pinned columns, pans nothing visible,
         // and leaves a Focus moved into a scrollable column underneath it — unseen, which
@@ -177,8 +235,9 @@ public sealed class ColumnGeometry
         return _offsets[columnIndex];
     }
 
-    /// <summary>The width this column was built with, returned exactly — see
-    /// <c>_widths</c> for why it is not recovered from the offsets.</summary>
+    /// <summary>The width this column is painted at, returned exactly — see
+    /// <c>_widths</c> for why it is not recovered from the offsets. It is the width it was
+    /// built with until its edges are put on Device Pixels (ADR-0090).</summary>
     public double WidthPxOf(int columnIndex)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(columnIndex);

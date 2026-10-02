@@ -2237,6 +2237,36 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ceilingObserver.observe(ceilingProbe);
     }
 
+    // The Device Pixel (ADR-0090, the eighth allowlist entry). Lines are drawn in Device
+    // Pixels and column edges are put on them, so C# needs devicePixelRatio at every
+    // resolution, not only at the stylesheet's steps. It is told, never read on the path to
+    // a paint: a media query on the current resolution stops matching when the display
+    // scale or the page zoom moves, and only then is the new ratio reported and the query
+    // armed again on it. Never per render, and nothing here writes to the DOM.
+    let devicePixelRatio = -1;
+    let resolutionQuery = null;
+    const armResolution = () => {
+        resolutionQuery?.removeEventListener('change', armResolution);
+        resolutionQuery = null;
+        if (!core) {
+            return;
+        }
+        const ratio = window.devicePixelRatio;
+        resolutionQuery = window.matchMedia(`(resolution: ${ratio}dppx)`);
+        resolutionQuery.addEventListener('change', armResolution);
+        if (ratio === devicePixelRatio) {
+            return;
+        }
+        devicePixelRatio = ratio;
+        core.invokeMethodAsync('OnDevicePixelAsync', ratio)
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to take the device pixel', error);
+                }
+            });
+    };
+    armResolution();
+
     const handle = {
         // The two pointer reports' switches (ADR-0021's fifth entry): rows for the
         // hover band, rest for the error popover. Told by C#, which knows who consumes
@@ -2513,6 +2543,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // after disposal would call into a component that no longer exists.
             observer.disconnect();
             ceilingObserver.disconnect();
+            resolutionQuery?.removeEventListener('change', armResolution);
+            resolutionQuery = null;
             dropReveal();
             clearTimeout(restTimer);
             root.removeEventListener('mousemove', onPointerMove);
