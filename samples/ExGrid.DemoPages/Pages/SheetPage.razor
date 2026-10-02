@@ -20,7 +20,9 @@
 @* ?scheme=dark shows the page in the dark scheme, where the Sheet's Paper stays white and its frame
    darkens (ADR-0071). ?case= opens one of the eleventh Windows run's set-ups instead of the page's own
    Sheet (SheetCases), for Part C to put beside Excel's screenshots. ?pin=N pins N leading columns,
-   for a test that needs a case beside a Pinned Column. *@
+   for a test that needs a case beside a Pinned Column. ?toolbar=off opens the Sheet without its
+   Sheet Toolbar, which Ctrl+F1 also hides and shows (ADR-0100); a case opens without it unless
+   ?toolbar=on asks. *@
 <DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
 
 <DemoNav />
@@ -51,7 +53,6 @@
 <div class="demo-toolbar">
     <button id="sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
     <button id="sheet-redo" disabled="@_editing" @onclick="RedoAsync">Redo</button>
-    <button id="sheet-money" disabled="@_editing" @onclick="FormatMoneyAsync">Format selection as #,##0.00</button>
     <button id="sheet-format-cells" disabled="@_editing" @onclick="FormatCellsAsync">Format Cells…</button>
     <button id="sheet-insert-row" disabled="@_editing" @onclick="InsertRowAsync">Insert a row above row 2</button>
     <button id="sheet-revalue" @onclick="RevalueAsync">Revalue the positions by +1%</button>
@@ -90,6 +91,13 @@
 <p class="demo-status">
     Focus cell: <span id="sheet-focus-font">@_focusFont</span>,
     <span id="sheet-focus-number-format">@_focusNumberFormat</span>
+</p>
+
+<p>
+    The Sheet Toolbar above the Formula Bar is ExSheet's own (ADR-0100): its first row is Excel's Home
+    tab's formatting commands, each following the Focus cell and greyed out while a cell is edited,
+    and its second row is this page's, with an action of its own. The page declares what the toolbar
+    holds and in which order; Ctrl+F1 hides and shows it, and the page holds whether it is shown.
 </p>
 
 <p>
@@ -154,11 +162,38 @@
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
     private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome"
-                                              EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : 420)" ViewportWidth="720"
+                                              EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : SheetHeight)" ViewportWidth="720"
                                               SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
-                                              PointingScope="_scope" OnPointingRefused="ShowPointingRefusal" />;
+                                              PointingScope="_scope" OnPointingRefused="ShowPointingRefusal"
+                                              @bind-ShowToolbar="_toolbarShown">
+                                         <ToolbarContent>
+                                             <DefaultToolbarRow />
+                                             <ToolbarRow KeyTip="Y" Label="This page">
+                                                 <ToolbarButton Text="Mark reviewed" OnClick="MarkReviewedAsync" KeyTip="R" />
+                                             </ToolbarRow>
+                                         </ToolbarContent>
+                                     </ExSheet>;
 
-    protected override void OnParametersSet() => _chrome = DemoChrome.ForSheet(ChromeName);
+    /// <summary><c>off</c> opens the Sheet without its Sheet Toolbar (ADR-0100).</summary>
+    [SupplyParameterFromQuery(Name = "toolbar")]
+    public string? Toolbar { get; set; }
+
+    // Whether the Sheet Toolbar is shown: the page's View State, which Ctrl+F1 changes (ADR-0100).
+    private bool _toolbarShown = true;
+
+    // The Sheet's height includes its toolbar (ADR-0100). The page adds the toolbar's two rows, each
+    // the Formula Bar's height, so that the grid keeps the rows it showed before the toolbar came.
+    private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
+
+    private double SheetHeight => 420 + (_toolbarShown ? 2 * ToolbarRowPx : 0);
+
+    protected override void OnParametersSet()
+    {
+        _chrome = DemoChrome.ForSheet(ChromeName);
+        // A run's case is drawn as Excel drew it, to be put beside Excel's picture: without the
+        // toolbar, at the place the case's specs measure it.
+        if (Toolbar == "off" || (Case is not null && Toolbar != "on")) _toolbarShown = false;
+    }
 
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
@@ -308,7 +343,8 @@
 
     private Task RedoAsync() => CommandAsync(sheet => sheet.RedoAsync());
 
-    private Task FormatMoneyAsync() => CommandAsync(sheet => sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00")));
+    // The page's own action on the Sheet Toolbar (ADR-0100): Excel's light green under the Selection.
+    private Task MarkReviewedAsync() => CommandAsync(sheet => sheet.SetCellFormatAsync(new CellFormatChange { Fill = CellFill.Solid(CellColour.FromRgb(0xE2EFDA)) }));
 
     private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
 

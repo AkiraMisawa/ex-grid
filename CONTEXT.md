@@ -728,6 +728,31 @@ what the user touched. It is the one Chrome seam whose frame is the Chrome's: a 
 Sheet's box under the built-in Chrome, a page-level dialog under MudBlazor's ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: format dialog, properties, style editor
 
+**Sheet Toolbar**:
+The bands of buttons a Sheet shows above its Formula Bar when asked to, and only then. It belongs
+to one Sheet and acts on that Sheet's Selection. What it holds, and in which order, is the
+Consumer's to declare; while an edit is open, every Toolbar Item in it is unavailable ([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: ribbon, ToolBarContent (the slot of ExGrid's MudBlazor paper, outside the grid), toolbar on
+its own
+
+**Toolbar Row**:
+One band of a Sheet Toolbar. Every Toolbar Row of a Sheet is the same height, so the Sheet Toolbar's
+height is a count of rows. A Toolbar Row is what a ribbon tab is to a KeyTip ([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: toolbar line, section
+
+**Toolbar Item**:
+One element of a Toolbar Row: a formatting command ExSheet offers, or a Consumer's own action. It
+declares what it means; the Chrome decides how it looks, so swapping the Chrome keeps every item's
+meaning ([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: tool, toolbar button (a Toolbar Item need not be a button)
+
+**KeyTip**:
+Excel's letter over a Toolbar Row or a Toolbar Item, shown when Alt is released alone or F10 is
+pressed; typing the letters runs the item, as Alt, H, 1 sets bold. A letter is Excel's where Excel
+has one, and otherwise ExSheet's own or the Consumer's declared one, never assigned by position
+([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: access key, accelerator, mnemonic, shortcut (a shortcut is a chord, a KeyTip is a sequence)
+
 ## Flagged ambiguities
 
 - **"Grid" on its own does not say whether ExGrid or ExSheet is meant.** When it is ambiguous,

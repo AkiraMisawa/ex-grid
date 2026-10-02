@@ -69,7 +69,8 @@ public abstract class MudSheetTestContext : BunitContext
     /// <paramref name="chrome"/> (<see cref="MudSheetChrome.Default"/> when none is given).
     /// </summary>
     protected IRenderedComponent<ContainerFragment> RenderPage(
-        SheetDocument? document = null, ISheetChrome? chrome = null, Action<SheetDocument>? documentChanged = null, bool dialogs = true)
+        SheetDocument? document = null, ISheetChrome? chrome = null, Action<SheetDocument>? documentChanged = null, bool dialogs = true,
+        bool showToolbar = false)
     {
         if (!_rendererInfoSet)
         {
@@ -93,6 +94,7 @@ public abstract class MudSheetTestContext : BunitContext
             if (document is not null) builder.AddComponentParameter(7, nameof(SheetComponent.Document), document);
             if (documentChanged is not null)
                 builder.AddComponentParameter(8, nameof(SheetComponent.DocumentChanged), EventCallback.Factory.Create(this, documentChanged));
+            if (showToolbar) builder.AddComponentParameter(9, nameof(SheetComponent.ShowToolbar), true);
             builder.CloseComponent();
         });
     }

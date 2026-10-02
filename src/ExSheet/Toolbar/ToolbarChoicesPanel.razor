@@ -1,0 +1,147 @@
+@namespace ExSheet
+@using global::ExGrid.Chrome
+
+@*
+    A Toolbar Item's choices under the built-in Chrome (ADR-0100): a menu in the grid's popover frame,
+    as Format Cells stands there (ADR-0050 item 16). The frame is the grid's — where it stands, its
+    bound, Escape, a press elsewhere — and gives the keyboard back when it closes (ADR-0039). Colours
+    are a grid of swatches, ten across as Excel's palette is; everything else is a list. The arrow
+    keys move among the choices that can be made, Home and End go to the ends, and Enter or a press
+    makes one. A choice that cannot be made says why beside it. DOM focus moves by Blazor's
+    FocusAsync when the frame's counts ask; no script is added.
+*@
+<div class="ex-sheet-choices" role="menu" aria-label="@Title" @onkeydown="OnKeyAsync">
+    @for (var i = 0; i < Choices.Count; i++)
+    {
+        var at = i;
+        var choice = Choices[at];
+        if (choice.Colour is { } colour)
+        {
+            <button type="button" role="menuitemradio" class="ex-sheet-swatch-choice" title="@choice.Label"
+                    aria-label="@choice.Label" aria-checked="@(choice.Selected ? "true" : "false")"
+                    tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
+                    @onclick="() => ChooseAsync(at)" @onfocus="() => _focused = at">
+                <span class="ex-sheet-swatch" style="@SwatchStyle(colour)"></span>
+            </button>
+        }
+        else
+        {
+            <button type="button" role="menuitemradio" class="ex-sheet-choice" aria-checked="@(choice.Selected ? "true" : "false")"
+                    aria-disabled="@(choice.DisabledReason is null ? null : "true")" title="@choice.DisabledReason"
+                    tabindex="@(at == _focused ? 0 : -1)" @ref="_buttons[at]"
+                    @onclick="() => ChooseAsync(at)" @onfocus="() => _focused = at">
+                <span class="ex-sheet-choice-label">@choice.Label</span>
+                @if (choice.DisabledReason is { } reason)
+                {
+                    <span class="ex-sheet-choice-reason">@reason</span>
+                }
+            </button>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>The list's accessible name: the item's.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>The choices, in order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<ToolbarChoice> Choices { get; set; } = [];
+
+    /// <summary>The grid's popover frame.</summary>
+    [Parameter, EditorRequired] public GridPopoverContext Popover { get; set; } = default!;
+
+    // Ten swatches to a row, as Excel's palette lays them out.
+    private const int SwatchesAcross = 10;
+
+    private ElementReference[] _buttons = [];
+    private int _focused;
+    private int _answeredFocus = -1;
+    private int _answeredLast;
+    private bool _focusMoved;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (_buttons.Length != Choices.Count) _buttons = new ElementReference[Choices.Count];
+        if (_answeredFocus < 0)
+        {
+            var selected = Choices.Select((choice, at) => (choice, at)).FirstOrDefault(c => c.choice.Selected && c.choice.DisabledReason is null);
+            _focused = selected.choice is null ? Next(-1, 1) : selected.at;
+        }
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Popover.FocusRequest != _answeredFocus)
+        {
+            _answeredFocus = Popover.FocusRequest;
+            _answeredLast = Popover.FocusLastRequest;
+            await FocusAsync(_focused, preventScroll: firstRender);
+        }
+        else if (Popover.FocusLastRequest != _answeredLast)
+        {
+            _answeredLast = Popover.FocusLastRequest;
+            _focused = Next(Choices.Count, -1);
+            await FocusAsync(_focused, preventScroll: false);
+        }
+        else if (_focusMoved)
+        {
+            _focusMoved = false;
+            await FocusAsync(_focused, preventScroll: false);
+        }
+    }
+
+    private async Task FocusAsync(int at, bool preventScroll)
+    {
+        if (at < 0 || at >= _buttons.Length || _buttons[at].Context is null) return;
+        try
+        {
+            await _buttons[at].FocusAsync(preventScroll);
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The frame closed, or the circuit did, between the render and the focus.
+        }
+    }
+
+    // The next choice from `from` that can be made, `step` at a time; `from` itself when none is.
+    private int Next(int from, int step)
+    {
+        for (var at = from + step; at >= 0 && at < Choices.Count; at += step)
+        {
+            if (Choices[at].DisabledReason is null) return at;
+        }
+        return Math.Clamp(from, 0, Math.Max(0, Choices.Count - 1));
+    }
+
+    private void OnKeyAsync(KeyboardEventArgs e)
+    {
+        var across = Choices.Count > 0 && Choices[_focused].Colour is not null ? SwatchesAcross : 1;
+        var moved = e.Key switch
+        {
+            "ArrowDown" => Next(_focused, across),
+            "ArrowUp" => Next(_focused, -across),
+            "ArrowRight" when across > 1 => Next(_focused, 1),
+            "ArrowLeft" when across > 1 => Next(_focused, -1),
+            "Home" => Next(-1, 1),
+            "End" => Next(Choices.Count, -1),
+            _ => _focused,
+        };
+        if (moved == _focused) return;
+        _focused = moved;
+        _focusMoved = true;
+    }
+
+    private async Task ChooseAsync(int at)
+    {
+        var choice = Choices[at];
+        if (choice.DisabledReason is not null) return;
+        // The frame closes first and gives the keyboard back; the choice is then made on the Sheet.
+        Popover.Close();
+        await choice.Choose();
+    }
+
+    private static string SwatchStyle(global::ExSheet.Engine.CellColour colour) =>
+        colour.IsAutomatic ? "" : $"background-color: {colour}";
+}

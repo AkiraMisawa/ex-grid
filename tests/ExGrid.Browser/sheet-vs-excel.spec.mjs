@@ -1,5 +1,5 @@
 import { test, expect, scrollRowToTop } from './fixtures.mjs';
-import { expectCovers, expectSelectionIsCell } from './sheet-helpers.mjs';
+import { chooseNumberFormat, expectCovers, expectSelectionIsCell } from './sheet-helpers.mjs';
 
 // Excel's behaviours, observed beside ExSheet (docs/specs/exsheet/excel-behaviours.md). Each test
 // is one item of that list, driven with real keys and the real mouse on /sheet, and its
@@ -746,10 +746,10 @@ test('item 26: a number or a date too wide for a column the user sized shows ###
     // a column the user sized is never widened, by an entry (SH-26) or by a Number Format (ADR-0071,
     // "Readings until the fourteenth Windows run": Format Cells' OK and SetCellFormatAsync widen as
     // a formatting key does, and only a column the user has not sized). This item used to type a
-    // number wider than the default column and format it with the page's #,##0.00. Since ticket 58
+    // number wider than the default column and format it with the page's #,##0.00 button, which the Sheet Toolbar replaced (ADR-0100). Since ticket 58
     // that format widens the column, as the reading says, and the number shows; it was not ####.
-    // Half the default width is about Excel's four characters. The page's format is #,##0.00, where
-    // Excel's case used 0.00; neither fits.
+    // Half the default width is about Excel's four characters. The format is the Sheet Toolbar's
+    // Number, 0.00, as Excel's case used (ADR-0100); it does not fit.
     const header = sheet(page).locator('.ex-header-cell', { hasText: /^E$/ });
     const before = await header.boundingBox();
     const grip = await header.locator('.ex-resize-grip').boundingBox();
@@ -763,7 +763,7 @@ test('item 26: a number or a date too wide for a column the user sized shows ###
     await enter(page, 'E1', '123456');
     await enter(page, 'E2', '12345');
     await click(page, 'E2');
-    await page.locator('#sheet-money').click();
+    await chooseNumberFormat(page, 'Number');
     await enter(page, 'E3', '9/26/2026');
     await expect(cell(page, 'E1')).toHaveText(/^#+$/);
     await expect(cell(page, 'E2')).toHaveText(/^#+$/);
