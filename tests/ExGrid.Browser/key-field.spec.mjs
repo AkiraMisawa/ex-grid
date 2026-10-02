@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
+import { test, expect, setRoundTrip, alterPage, circuitQuiet } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     sheet, openSheet, cell, clickCell, editor, nameBox, at,
@@ -30,6 +30,18 @@ async function compose(client, ...steps) {
         await client.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
     }
 }
+
+/**
+ * One key of an IME's that ends the composition with `text` and starts the next with `next`, as the
+ * `k` of `kanji` ended `かな` and started `ｋ` in the sixteenth Windows run's k6. Sent together, so
+ * the browser has the second start waiting while the page answers the first end, as it had the
+ * IME's: on WebAssembly that answer is the Cell Editor's whole opening, its request for the
+ * keyboard included, before the start is told.
+ */
+const endAndStart = (client, text, next) => Promise.all([
+    client.send('Input.insertText', { text }),
+    client.send('Input.imeSetComposition', { text: next, selectionStart: next.length, selectionEnd: next.length }),
+]);
 
 /** What the Keyboard Field shows: its value, whether it is drawn, and whether it has the keyboard. */
 const fieldState = (grid) => keyField(grid).evaluate((field) => ({
@@ -271,6 +283,98 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(editor(grid)).toHaveCount(0);
             await expect(keyField(grid)).toBeFocused();
             expect(await fieldState(grid)).toEqual({ value: '', drawn: false, focused: true });
+            await setRoundTrip(0);
+
+            await pressAt(grid, 'D10');
+            await page.keyboard.press('Delete');
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+        });
+
+        test('ED-30 / ADR-0080 (the sixteenth run\'s k6): the key that ends a composition and starts the next leaves DOM focus in the Keyboard Field until the second ends, and D10 holds both in order (150 ms on the Server host)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressAt(grid, 'D10');
+            const before = await cell(grid, 'D10').textContent();
+            await setRoundTrip(150);
+            const client = await page.context().newCDPSession(page);
+            try {
+                await compose(client, 'ｋ', 'か', 'かｎ', 'かな');
+                await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな', drawn: true, focused: true });
+
+                // `kana`, Space, then the `k` of `kanji`.
+                await endAndStart(client, 'かな', 'ｋ');
+                // The second composes in the field, which keeps DOM focus: moved now, the IME would
+                // carry `ｋ` elsewhere without its romaji. The first one's text has opened the edit,
+                // and its request for the keyboard waits — on a circuit, once the wire is quiet, it
+                // has come.
+                await expect.poll(() => fieldState(grid)).toEqual({ value: 'かなｋ', drawn: true, focused: true });
+                await expect(editor(grid)).toHaveValue('かな');
+                await circuitQuiet();
+                expect(await fieldState(grid)).toEqual({ value: 'かなｋ', drawn: true, focused: true });
+
+                await compose(client, 'か', 'かｎ', 'かんｊ', 'かんじ');
+                expect(await fieldState(grid)).toEqual({ value: 'かなかんじ', drawn: true, focused: true });
+                await expect(editor(grid)).toHaveValue('かな');
+                await expect(editor(grid)).not.toBeFocused();
+
+                // The second ends: typed into the edit at its caret, after the first, and the editor
+                // has the keyboard.
+                await client.send('Input.insertText', { text: '感じ' });
+                await expect(editor(grid)).toHaveValue('かな感じ');
+                await expect(editor(grid)).toBeFocused();
+                await expect.poll(() => fieldState(grid)).toEqual({ value: '', drawn: false, focused: false });
+            } finally {
+                await client.detach();
+            }
+
+            await page.keyboard.press('Enter');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('かな感じ');
+            await expectFieldFocusAt(grid, 'D11');
+            await expect(keyField(grid)).toBeFocused();
+            await setRoundTrip(0);
+
+            await pressAt(grid, 'D10');
+            await page.keyboard.press('Delete');
+            await expect(cell(grid, 'D10')).toHaveText(before ?? '');
+        });
+
+        test('ED-30 / ADR-0080: with the editor\'s request already waiting, the key that ends the second composition and starts a third leaves DOM focus in the Keyboard Field until the third ends, and D10 holds all three in order (150 ms on the Server host)', async ({ page }) => {
+            const grid = sheet(page);
+            await pressAt(grid, 'D10');
+            const before = await cell(grid, 'D10').textContent();
+            await setRoundTrip(150);
+            const client = await page.context().newCDPSession(page);
+            try {
+                await compose(client, 'か', 'かな');
+                await endAndStart(client, 'かな', 'ｋ');
+                await compose(client, 'か', 'かん', 'かんじ');
+                // The edit the first text opened stands, and its request for the keyboard has come
+                // (on a circuit, once the wire is quiet) and waits for the second composition.
+                await expect(editor(grid)).toHaveValue('かな');
+                await circuitQuiet();
+                await expect.poll(() => fieldState(grid)).toEqual({ value: 'かなかんじ', drawn: true, focused: true });
+
+                // A third clause: its first key ends the second composition and starts the third.
+                // The request that waited is not granted between the two.
+                await endAndStart(client, '感じ', 'ｄ');
+                await expect.poll(() => fieldState(grid)).toEqual({ value: 'かな感じｄ', drawn: true, focused: true });
+                await compose(client, 'で', 'でｓ', 'です');
+                expect(await fieldState(grid)).toEqual({ value: 'かな感じです', drawn: true, focused: true });
+                await expect(editor(grid)).not.toBeFocused();
+
+                await client.send('Input.insertText', { text: 'です' });
+                await expect(editor(grid)).toHaveValue('かな感じです');
+                await expect(editor(grid)).toBeFocused();
+                await expect.poll(() => fieldState(grid)).toEqual({ value: '', drawn: false, focused: false });
+            } finally {
+                await client.detach();
+            }
+
+            await page.keyboard.press('Enter');
+            await expect(editor(grid)).toHaveCount(0);
+            await expect(cell(grid, 'D10')).toHaveText('かな感じです');
+            await expectFieldFocusAt(grid, 'D11');
+            await expect(keyField(grid)).toBeFocused();
             await setRoundTrip(0);
 
             await pressAt(grid, 'D10');

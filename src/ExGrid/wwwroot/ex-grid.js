@@ -1341,9 +1341,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // How much of the field's value has already been handed on: a second composition finished in
     // the field before the keyboard left it is appended to the first, and only its own text goes.
     let keyFieldCarried = 0;
-    // The editor's request for the keyboard, made while the field was composing: granted when the
-    // composition ends.
+    // The editor's request for the keyboard, made while the field was composing or as a
+    // composition ended: granted once the field has stopped composing (keyFieldEnded).
     let deferredEditorFocus = null;
+    // A composition's end holds the keyboard in the field until the task after it, for the key
+    // that ends one composition can start the next: the sixteenth Windows run's k6, where the `k`
+    // of `kanji` ended `かな` and started `ｋ`. The browser tells the page of that start only once
+    // the end's listeners, and everything they ran, have returned — and on WebAssembly that is
+    // the core's whole answer to the text, the Cell Editor opened and its request for the
+    // keyboard made, 22 ms of it in that run. Granted then, between the end and the start, the
+    // request moved DOM focus, the IME carried `ｋ` into the editor without its romaji, and the
+    // `a` composed `あ`: `かな暗示`. The events the IME's key still owes the page are waiting by the
+    // end of that task, and the browser runs waiting input ahead of a timer, so a timer of no
+    // delay is the first moment the next composition, if there is one, has said so. No layout is
+    // read, and nothing is listened to (ADR-0021's seventh entry).
+    let keyFieldEndTimer = 0;
     // The field goes back to being unseen and empty: once the keyboard has left it, or when the
     // composition's text opened nothing (a cell that does not edit).
     const settleKeyField = () => {
@@ -1378,8 +1390,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         carryKeyFieldText(field);
     };
     // The text the field holds past what has already gone takes its place among the held keys,
-    // and a request for the editor's focus that waited for it is granted.
+    // and a request for the editor's focus that waited for it, or that the core makes in answer to
+    // it before this task is over, is granted in the task after (keyFieldEndTimer).
     const carryKeyFieldText = (field) => {
+        clearTimeout(keyFieldEndTimer);
+        keyFieldEndTimer = setTimeout(keyFieldEnded, 0);
         const text = field.value.slice(keyFieldCarried);
         keyFieldCarried = field.value.length;
         held.push({ text });
@@ -1390,8 +1405,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (document.activeElement !== field) {
             settleKeyField();
         }
+    };
+    // The task after a composition's end: the request is granted unless the key that ended it
+    // started another, which it then waits for, as it waits for any composition.
+    const keyFieldEnded = () => {
+        keyFieldEndTimer = 0;
         const pending = deferredEditorFocus;
-        if (pending !== null) {
+        if (pending !== null && !keyFieldComposing) {
             deferredEditorFocus = null;
             handle.focusEditor(pending.bar, pending.fromField);
         }
@@ -2277,8 +2297,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
             // While the Keyboard Field composes, the request waits for the composition to end
             // there, and is granted then (carryKeyFieldText; ADR-0080): moving DOM focus now would
-            // end it half-typed.
-            if (keyFieldComposing) {
+            // end it half-typed. So it does in the task a composition ended in, before the browser
+            // has told the page whether the same key started the next (keyFieldEndTimer).
+            if (keyFieldComposing || keyFieldEndTimer !== 0) {
                 deferredEditorFocus = { bar, fromField };
                 return;
             }
@@ -2337,6 +2358,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);
             root.removeEventListener('focus', onFocused, true);
             root.removeEventListener('focusout', onFocusLeft, true);
+            clearTimeout(keyFieldEndTimer);
+            keyFieldEndTimer = 0;
             deferredEditorFocus = null;
             markFocusVisible(false);
             document.removeEventListener('selectionchange', onSelectionChange);
