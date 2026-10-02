@@ -329,7 +329,7 @@ public class CompletionTriggerWiringTests : SheetTestContext
         Assert.Empty(Candidates(cut));
         Assert.Equal("point", GateModesTold()[^1]);
         Assert.EndsWith(",,<span class=\"ex-reference-3 ex-reference-pointed\">E10</span>",
-            Grid(cut).Find(".ex-viewport > .ex-reference-text > .ex-reference-text-line").InnerHtml, StringComparison.Ordinal);
+            global::ReferenceText.ColouredText.Of(Grid(cut).Find(".ex-viewport > .ex-reference-text")), StringComparison.Ordinal);
         // Pointing goes on from there: ↓ moves the outline, as after any arrow that pointed.
         await PressInEditorAsync(cut, "ArrowDown", AtMatchMode + "E10", AtMatchMode.Length + 3);
         Assert.Equal(AtMatchMode + "E11", EditorText(cut));
@@ -360,7 +360,7 @@ public class CompletionTriggerWiringTests : SheetTestContext
         Assert.Empty(Candidates(cut));
         Assert.Equal("point", GateModesTold()[^1]);
         Assert.EndsWith(",,<span class=\"ex-reference-3 ex-reference-pointed\">D10:E10</span>",
-            Grid(cut).Find(".ex-viewport > .ex-reference-text > .ex-reference-text-line").InnerHtml, StringComparison.Ordinal);
+            global::ReferenceText.ColouredText.Of(Grid(cut).Find(".ex-viewport > .ex-reference-text")), StringComparison.Ordinal);
         Assert.NotEmpty(cut.FindAll(".ex-viewport .ex-editor"));
     }
 
@@ -377,7 +377,7 @@ public class CompletionTriggerWiringTests : SheetTestContext
         Assert.Empty(Candidates(cut));
         Assert.Equal("point", GateModesTold()[^1]);
         Assert.EndsWith(",,<span class=\"ex-reference-3 ex-reference-pointed\">A10</span>",
-            Grid(cut).Find(".ex-viewport > .ex-reference-text > .ex-reference-text-line").InnerHtml, StringComparison.Ordinal);
+            global::ReferenceText.ColouredText.Of(Grid(cut).Find(".ex-viewport > .ex-reference-text")), StringComparison.Ordinal);
         Assert.Equal("A10", cut.Find(".ex-name-box").GetAttribute("value"));
     }
 

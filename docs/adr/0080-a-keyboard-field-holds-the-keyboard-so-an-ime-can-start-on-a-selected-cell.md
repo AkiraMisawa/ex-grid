@@ -50,7 +50,11 @@ display-only grid has none, and keeps the keyboard on its root, as before.
 - **DOM focus never moves while a composition lasts.** Moving it ends the composition there and then,
   and the next keys start another: `kana` would come out `ｋあ` (the fifteenth run's i1y saw `k穴`).
   - The core's request that the editor take the keyboard waits while the field composes, and is
-    granted when the composition ends.
+    granted when the composition ends. *(Refined 2026-10-02, ticket 120: granted once the field has
+    stopped composing, in the task after a composition's end, and not if the IME's key started the next
+    composition there; then it waits for that one's end. The IME sends its end and the next start
+    together, and Chrome tells the page of the start only after the end's listeners and all they ran
+    have returned. On WebAssembly the edit opened, rendered and asked for the keyboard inside that run.)*
   - A second composition the IME finishes in the field before the first one's editor has the keyboard
     (a circuit, a fast typist) is typed into the edit at its caret, in order.
   - A primary press anywhere in the root during a composition ends it first: the field gives up the
@@ -164,3 +168,38 @@ user. What a screen reader then says is still owed a real one, as ADR-0033 alrea
 - **The suite.** Every layer-3 assertion that a grid's root holds DOM focus means "the keyboard is
   this grid's", and reads "the root or its Keyboard Field" (ED-26, A11Y-4, KB-8 and about 45 others).
 - **A real IME is a Windows run's**, the sixteenth (`docs/specs/exsheet/verify-on-windows-16.md`).
+
+## What the sixteenth Windows run settled *(2026-10-02)*
+
+The sixteenth run (`verification/2026-10-02-windows-16/`, at bf13de1) drove the build with the Microsoft
+Japanese IME by real keys, beside Excel. **A selected cell composed from the first key in all twelve
+configurations of `/sheet` and `/sheet?chrome=mud`** (WebAssembly, the Server host and the Server host
+behind 150 ms; Chrome and Edge), as in Excel. The Name Box's first composing key replaced its selected
+text (ticket 78), and A11Y-21 resolved over CDP. Decided with the user, or recorded:
+
+- **A defect: on WebAssembly a second composition lost its first key** (k6). `kana`, Space, then
+  `kanji`: the IME ended the first composition at the `k`, and began a second one in the field. 22 to
+  45 ms later DOM focus moved to the Cell Editor the first one had opened, while the second was
+  composing, so `ｋ` was carried there without its romaji state: D10 ended `かな暗示` where Excel and
+  the Server host gave `かな感じ`. That breaks "DOM focus never moves while a composition lasts" above,
+  and ED-30. Fixed by ticket 120 (the refinement above); a real IME rechecks it in a later run.
+- **The IME's own windows take presses, as in Excel** (k8, k16). A press that lands on the prediction
+  list or on the composition's text is the IME's and never reaches the page; the IME may choose a
+  prediction with it. Excel's click did not select the cell under the list either. A press clear of
+  those windows ends the composition first, as decided (k8x). Nothing to change.
+- **Two clauses were two compositions** (k6), in Excel too: this IME ends a converted clause's
+  composition at the next clause's first key. The procedure's reading of k6 was wrong, not the build.
+- **Under the MudBlazor Chrome the composed text moves at the hand-over.** The field stands in the Focus
+  cell's box, and Mud's editor 8 px further in and narrower, so the text shifts by that much when the
+  Chrome's editor takes it. That is the substituted Chrome's look until the commit, as recorded above;
+  kept.
+- **The ring shows again when the grid takes the keyboard back after a key** (Enter committing, Escape
+  cancelling, the Name Box or Find closed by Escape), as `:focus-visible` shows it after a key, and not
+  after a press (KB-12).
+- **Tab again stays in the grid** (Part C). ADR-0012's Tab cycles inside the selection; only Escape
+  releases it. A11Y-4's reading had said the second Tab left the grid, and was corrected with the user.
+- **A screen reader: not settled, and left owed, as the user chose.** With Narrator (NVDA is not
+  installed there), Tab into `/sheet` read "Enter Table, 1048576 by 16384, edit, Scan Off", and ↓ read
+  "Scan" while DOM focus went to `body`. The run's method sent Narrator's copy command after each step
+  to record the speech, and may have played a part. What a screen reader says stays owed, as ADR-0033
+  records.

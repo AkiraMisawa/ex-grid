@@ -1,6 +1,10 @@
 using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using AngleSharp.Css;
+using AngleSharp.Css.Parser;
+using AngleSharp.Dom;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -105,7 +109,7 @@ public class ShippedStylesheetTests
 
     /// <summary>The shipped core stylesheet without its comments, and its innermost rules — a
     /// rule inside an at-rule is read as its own — each as its selectors and its body.</summary>
-    private static (string Css, IReadOnlyList<(string[] Selectors, string Body)> Rules) CoreStylesheet()
+    internal static (string Css, IReadOnlyList<(string[] Selectors, string Body)> Rules) CoreStylesheet()
     {
         var css = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
         css = Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
@@ -115,6 +119,126 @@ public class ShippedStylesheetTests
                 rule.Groups["body"].Value))
             .ToList();
         return (css, rules);
+    }
+
+    /// <summary>The shipped core stylesheet's rules that hold under every condition — those outside
+    /// any at-rule, which a media or a feature query would scope — in the order declared, each as
+    /// its selectors and its body.</summary>
+    internal static IReadOnlyList<(string[] Selectors, string Body)> UnconditionalRules()
+    {
+        var css = CoreStylesheet().Css;
+        var outside = new StringBuilder(css.Length);
+        for (var i = 0; i < css.Length; i++)
+        {
+            if (css[i] != '@')
+            {
+                outside.Append(css[i]);
+                continue;
+            }
+            // An at-rule is left out whole: to its semicolon, or to the brace that closes its block.
+            for (var depth = 0; i < css.Length; i++)
+            {
+                if (css[i] == ';' && depth == 0)
+                    break;
+                if (css[i] == '{')
+                    depth++;
+                else if (css[i] == '}' && --depth == 0)
+                    break;
+            }
+        }
+        return Regex.Matches(outside.ToString(), @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+            .Select(rule => (
+                rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(),
+                rule.Groups["body"].Value))
+            .ToList();
+    }
+
+    /// <summary>The declarations of a rule's body, custom properties included, as written.</summary>
+    internal static IEnumerable<(string Property, string Value)> Declarations(string body)
+        => body.Split(';')
+            .Select(declaration => declaration.Split(':', 2))
+            .Where(parts => parts.Length == 2)
+            .Select(parts => (parts[0].Trim(), parts[1].Trim()));
+
+    /// <summary>What the shipped stylesheet's unconditional rules give an element's property, as the
+    /// cascade picks it — the most specific matching selector, then the last declared — or null when
+    /// none sets it. A pseudo-element's rule styles the pseudo-element, never the element.</summary>
+    internal static string? Winning(IElement element, string property)
+        => UnconditionalRules()
+            .SelectMany((rule, order) => Declarations(rule.Body)
+                .Where(declared => declared.Property == property)
+                .SelectMany(declared => rule.Selectors
+                    .Where(selector => !selector.Contains("::", StringComparison.Ordinal) && element.Matches(selector))
+                    .Select(selector => (Specificity: Specificity(selector), Order: order, declared.Value))))
+            .OrderBy(candidate => candidate.Specificity)
+            .ThenBy(candidate => candidate.Order)
+            .Select(candidate => candidate.Value)
+            .LastOrDefault();
+
+    private static readonly CssSelectorParser SelectorParser = new();
+
+    /// <summary>A selector's specificity, as the cascade weighs it.</summary>
+    internal static Priority Specificity(string selector)
+        => SelectorParser.ParseSelector(selector)?.Specificity
+           ?? throw new ArgumentException($"not a selector: {selector}", nameof(selector));
+
+    [Fact] // ADR-0071 (Part C of the eleventh run) / ticket 99: a row's rule is painted in whole device pixels, so one at 150% under every rasteriser
+    public void A_rows_rule_is_painted_in_whole_device_pixels()
+    {
+        var (css, _) = CoreStylesheet();
+        var grid = Assert.Single(UnconditionalRules(), rule => rule.Selectors.SequenceEqual([".ex-grid"]) && rule.Body.Contains("--ex-rule-dp", StringComparison.Ordinal));
+        // The token rounded down to the device pixel, and never thinner than the token under one.
+        Assert.Equal(
+            "max(min(var(--ex-rule-width, 1px), var(--ex-dp)), round(down, var(--ex-rule-width, 1px), var(--ex-dp)))",
+            Declarations(grid.Body).Single(declared => declared.Property == "--ex-rule-dp").Value);
+
+        // Every band of the row's rule reads it: at 1.5 device pixels Chrome's software rasteriser
+        // drew two rows where its GPU one drew one, which a Mac never shows.
+        var bands = Regex.Matches(css, @"linear-gradient\(to top, var\(--ex-row-rule-color[^;]*");
+        Assert.Equal(3, bands.Count);
+        Assert.All(bands, band =>
+        {
+            Assert.Contains("0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px))", band.Value, StringComparison.Ordinal);
+            Assert.DoesNotContain("--ex-rule-width", band.Value, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact] // ADR-0006 / ADR-0029 / ticket 84: whatever a tone paints, a Cell State that paints it too outranks the tone, under every token
+    public void A_cell_state_outranks_a_tone()
+    {
+        var rules = UnconditionalRules()
+            .SelectMany((rule, order) => rule.Selectors.Select(selector => (Selector: selector, rule.Body, Order: order)))
+            .ToList();
+        var tones = rules.Where(rule => rule.Selector.StartsWith(".ex-cell.ex-tone-", StringComparison.Ordinal)).ToList();
+        var states = rules.Where(rule => rule.Selector.StartsWith(".ex-cell.ex-state-", StringComparison.Ordinal)).ToList();
+
+        // A state the Consumer named outranks a tone its rule derived (ADR-0006): on every property
+        // both paint, the state's selector is the more specific, or as specific and declared later.
+        // Which colour either paints is a token's, so the order is what decides, whatever a theme sets.
+        var contested = new List<string>();
+        foreach (var tone in tones)
+        {
+            foreach (var (property, _) in Declarations(tone.Body))
+            {
+                foreach (var state in states.Where(state => Declarations(state.Body).Any(declared => declared.Property == property)))
+                {
+                    contested.Add($"{state.Selector} over {tone.Selector}: {property}");
+                    var order = Specificity(state.Selector).CompareTo(Specificity(tone.Selector));
+                    Assert.True(order > 0 || (order == 0 && state.Order > tone.Order),
+                        $"{tone.Selector} (rule {tone.Order}) outranks {state.Selector} (rule {state.Order}) on {property}");
+                }
+            }
+        }
+        // There is something to outrank: a tone paints a colour, and Stale and Error each paint one
+        // of their own. Modified's mark and Missing's tint are layers a tone never paints.
+        Assert.Equal(
+            [
+                ".ex-cell.ex-state-error over .ex-cell.ex-tone-negative: color",
+                ".ex-cell.ex-state-error over .ex-cell.ex-tone-positive: color",
+                ".ex-cell.ex-state-stale over .ex-cell.ex-tone-negative: color",
+                ".ex-cell.ex-state-stale over .ex-cell.ex-tone-positive: color",
+            ],
+            contested.Order(StringComparer.Ordinal));
     }
 
     [Fact] // ADR-0008 (2026-09-29) / UX-18: every outline drawn in the Focus outline's width lies wholly inside its box, from one rule
@@ -144,9 +268,10 @@ public class ShippedStylesheetTests
     {
         var (css, rules) = CoreStylesheet();
 
+        // The outline is the range's box of its own, its ::after (ADR-0008, 2026-10-01).
         var colours = rules
-            .Where(rule => rule.Selectors.Contains(".ex-range-single"))
-            .Select(rule => Regex.Match(rule.Body, @"outline-color:\s*(?<value>[^;]+);"))
+            .Where(rule => rule.Selectors.Contains(".ex-range-single::after"))
+            .Select(rule => Regex.Match(rule.Body, @"border-color:\s*(?<value>[^;]+);"))
             .Where(colour => colour.Success)
             .Select(colour => colour.Groups["value"].Value.Trim())
             .ToList();
@@ -201,7 +326,7 @@ public class ShippedStylesheetTests
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
         // One attribute of this instance's own root, nothing wider and nothing measured. The
-        // module's other observer is the coloured text's, on one attribute of a layer (DC-51).
+        // module's other observer is the coloured text's, on a layer's text and colours (DC-51).
         Assert.Equal(2, Regex.Matches(script.Text, @"new MutationObserver\(").Count);
         Assert.Matches(new Regex(@"revealObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-reveal'\] \}\)"), script.Text);
         // Let go as soon as the write is made or replaced, and with the instance.
@@ -350,7 +475,7 @@ public class ShippedStylesheetTests
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {", "}"], topLevel);
+        Assert.Equal(["export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -547,11 +672,10 @@ public class ShippedStylesheetTests
         var reclaim = Regex.Match(script, @"reclaimFocus: \(fromField\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
         Assert.Contains("(keyFieldOf() ?? root).focus({ preventScroll: true });", reclaim, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const keyFieldOf = \(\) => \{\s*const field = root \? root\.querySelector\('\.ex-key-field'\) : null;\s*return field !== null && isKeyField\(field\) \? field : null;"), script);
-        // The editor's request for the keyboard waits while the field composes, and is granted when
-        // the composition's text has taken its place among the held keys.
+        // The editor's request for the keyboard waits while the field composes, and through the task
+        // a composition ended in; it is granted after that (the next fact).
         var focusEditor = Regex.Match(script, @"focusEditor: \(bar, fromField\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
-        Assert.Matches(new Regex(@"if \(keyFieldComposing\) \{\s*deferredEditorFocus = \{ bar, fromField \};\s*return;\s*\}"), focusEditor);
-        Assert.Matches(new Regex(@"held\.push\(\{ text \}\);.*?const pending = deferredEditorFocus;\s*if \(pending !== null\) \{\s*deferredEditorFocus = null;\s*handle\.focusEditor\(pending\.bar, pending\.fromField\);", RegexOptions.Singleline), script);
+        Assert.Matches(new Regex(@"if \(keyFieldComposing \|\| keyFieldEndTimer !== 0\) \{\s*deferredEditorFocus = \{ bar, fromField \};\s*return;\s*\}"), focusEditor);
         // A primary press during a composition ends it first, by the field giving up the keyboard,
         // before anything else the press does.
         Assert.Matches(new Regex(@"^const onPress = \(event\) => \{\s*(//[^\n]*\s*)*if \(keyFieldComposing && core && !replaying && event\.button === 0\) \{\s*keyFieldOf\(\)\?\.blur\(\);\s*\}"), ListenerBody(script, "onPress"));
@@ -561,6 +685,34 @@ public class ShippedStylesheetTests
         // The document's selection is the field's caret, which the IME needs: a key on the field
         // does not drop it, as one on the root does (ADR-0021's clipboard note).
         Assert.Contains("if (k.onRoot && !isKeyField(event.target)) {", ListenerBody(script, "onKeyDown"), StringComparison.Ordinal);
+    }
+
+    [Fact] // ED-30 / ADR-0080 (the sixteenth Windows run's k6): the editor's request is never granted in the task a composition ended in, where the key that ended it may have started the next, but in the task after, and only while the field is not composing again
+    public void ED30_the_editors_request_is_granted_only_after_the_task_a_composition_ended_in()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var carry = Regex.Match(script, @"const carryKeyFieldText = \(field\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        var ended = Regex.Match(script, @"const keyFieldEnded = \(\) => \{.*?\n    \};", RegexOptions.Singleline).Value;
+        Assert.NotEmpty(carry);
+        Assert.NotEmpty(ended);
+
+        // The end starts the wait before anything else it does: on WebAssembly the core's answer to
+        // the text — the Cell Editor opened, and its request for the keyboard — runs inside this
+        // task, before the browser says whether the same key started another composition.
+        Assert.Matches(new Regex(@"^const carryKeyFieldText = \(field\) => \{\s*clearTimeout\(keyFieldEndTimer\);\s*keyFieldEndTimer = setTimeout\(keyFieldEnded, 0\);\s*const text = "), carry);
+        // Nothing is granted at the end itself: on WebAssembly, granted there, the request moved DOM
+        // focus between one composition's end and the next one's start, and `kanji` lost its `k`.
+        Assert.DoesNotContain("focusEditor", carry, StringComparison.Ordinal);
+        // The task after: granted unless the field composes again, when it waits for that end.
+        Assert.Matches(new Regex(@"keyFieldEndTimer = 0;\s*const pending = deferredEditorFocus;\s*if \(pending !== null && !keyFieldComposing\) \{\s*deferredEditorFocus = null;\s*handle\.focusEditor\(pending\.bar, pending\.fromField\);\s*\}"), ended);
+        // The one place a waiting request is granted, and the one timer, which goes with the instance.
+        Assert.Single(Regex.Matches(script, @"handle\.focusEditor\("));
+        Assert.Single(Regex.Matches(script, @"keyFieldEndTimer = setTimeout\("));
+        var dispose = Regex.Match(script, @"dispose: \(\) => \{.*?root = null;", RegexOptions.Singleline).Value;
+        Assert.Contains("clearTimeout(keyFieldEndTimer);", dispose, StringComparison.Ordinal);
+        // No listener of its own, and nothing measured (ADR-0021's seventh entry).
+        Assert.DoesNotMatch(new Regex(@"addEventListener"), carry + ended);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), carry + ended);
     }
 
     [Fact] // KB-12 / ADR-0080: the root's ring is drawn from the script's mark while its field holds a keyboard that did not come of a press on the grid, as from :focus-visible on a grid without one
@@ -665,8 +817,33 @@ public class ShippedStylesheetTests
         // hands it, at attach or re-told through setClaims, and that set is consulted only
         // while no edit is open. While one is, the editing sets decide, and they carry none.
         Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[zZyY]'"), script.Text);
-        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{\s*taken = new Set\(takenKeys\);"), script.Text);
         Assert.Matches(new Regex(@"if \(!taken\.has\(canonical\)\)"), script.Text);
+    }
+
+    [Fact] // ADR-0050 item 14 / ADR-0021 / DC-57 / DC-24: the gate claims declared keys only from C#'s list, beside the editor's own, and names none itself
+    public void The_gate_claims_declared_keys_only_from_the_cores_list()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+        var gate = Regex.Match(script.Text, @"const gate = \(k\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(gate.Success, "the gate is not in the module");
+
+        // Handed at attach and re-told with the claims, per instance.
+        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys\) \{"), script.Text);
+        Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
+        Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
+        // With no edit open they are among the taken keys, and only a taken one is asked about: the
+        // Consumer answers it, and may open a popover or a frame of its own (Format Cells' Ctrl+1),
+        // so the keys after it are held until that answer, and then until the keyboard has arrived
+        // where the answer sent it (ADR-0050 item 16 and ADR-0039, 2026-10-01). While an edit is
+        // open it is answered as the core's, which changes no mode and holds no key after it.
+        var noEditReturns = gate.Value.IndexOf("return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';", StringComparison.Ordinal);
+        var takenAt = gate.Value.IndexOf("if (!taken.has(canonical))", StringComparison.Ordinal);
+        var heldAt = gate.Value.IndexOf("if (declared.has(canonical)) {\n                return 'mode';", StringComparison.Ordinal);
+        Assert.True(takenAt > 0 && heldAt > takenAt && heldAt < noEditReturns, "a declared key with no edit open is not held behind until it is answered");
+        Assert.Matches(new Regex(@"if \(declared\.has\(canonical\)\) \{\s*return 'core';\s*\}"), gate.Value[noEditReturns..]);
+        // The module names no formatting key of its own: they reach it only in C#'s list.
+        Assert.DoesNotMatch(new Regex(@"'Control\+(Shift\+)?[bBiIuU2-5~!@#$%^&_]'"), script.Text);
     }
 
     [Fact] // ADR-0051 second round / ADR-0021 / DC-24 / DC-31: the caret is reported with each input and whenever it moves, and set when the core says, nothing measured
@@ -754,11 +931,11 @@ public class ShippedStylesheetTests
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
 
-        // The comparison: the layer's one attribute against the field's value, never while no
-        // edit is open, only in the surface the edit is in — the field holding DOM focus, as Excel
-        // colours only that one — and never over a field composing. One class, set in one place
-        // and taken away only when the edit closes.
-        Assert.Matches(new Regex(@"field\.classList\.toggle\('ex-reference-text-shown',\s*editing !== 'none' && field === document\.activeElement && composingIn !== field\s*&& layer\.getAttribute\('data-ex-text'\) === field\.value\);"),
+        // The comparison: the layer's text against the field's value, never while no edit is open,
+        // only in the surface the edit is in — the field holding DOM focus, as Excel colours only
+        // that one — and never over a field composing. One class, set in one place and taken away
+        // only when the edit closes; the layer is coloured exactly while it is set.
+        Assert.Matches(new Regex(@"const shown = editing !== 'none' && field === document\.activeElement && composingIn !== field\s*&& layer\.getAttribute\('data-ex-text'\) === field\.value;\s*field\.classList\.toggle\('ex-reference-text-shown', shown\);\s*if \(shown\) \{\s*colour\(layer\);\s*\} else \{\s*uncolour\(layer\);\s*\}"),
             script.Text);
         Assert.Single(Regex.Matches(script.Text, @"classList\.toggle\('ex-reference-text-shown'"));
         Assert.DoesNotMatch(new Regex(@"classList\.add\('ex-reference-text-shown'"), script.Text);
@@ -775,9 +952,9 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"const onEditorInput = \(event\) => \{\s*(?://[^\n]*\s*)*if \(isKeyField\(event\.target\)\) \{.*?\s*return;\s*\}\s*heardReferenceInput\(event\);", RegexOptions.Singleline),
             script.Text);
         Assert.Matches(new Regex(@"composingIn = event\.isComposing === true \? field : null;"), script.Text);
-        // ...when the layer's text changes: one attribute, in this root, observed only while an
-        // edit is open and let go when it closes or the instance goes...
-        Assert.Matches(new Regex(@"referenceTextObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-text'\], subtree: true \}\);"), script.Text);
+        // ...when the layer's text or its colours change: two attributes, in this root, observed
+        // only while an edit is open and let go when it closes or the instance goes...
+        Assert.Matches(new Regex(@"referenceTextObserver\.observe\(root, \{ attributes: true, attributeFilter: \['data-ex-text', 'data-ex-colours'\], subtree: true \}\);"), script.Text);
         Assert.Single(Regex.Matches(script.Text, @"referenceTextObserver\.observe\("));
         Assert.Matches(new Regex(@"referenceTextObserver\.disconnect\(\);"), script.Text);
         Assert.Matches(new Regex(@"setEditing: \(mode, reportsCaret, cyclesReferences\) => \{(?:(?!\n        \},).)*?watchReferenceTexts\(mode !== 'none'\);", RegexOptions.Singleline), script.Text);
@@ -817,6 +994,23 @@ public class ShippedStylesheetTests
         Assert.Contains("!isKeyField(field)", fieldEnd.Value, StringComparison.Ordinal);
         Assert.DoesNotContain("composingIn", fieldEnd.Value, StringComparison.Ordinal);
         Assert.DoesNotContain("gateReferenceText", fieldEnd.Value, StringComparison.Ordinal);
+
+        // The colours (ADR-0057 and ADR-0021, notes of 2026-10-01; DC-51): one Range per stretch the
+        // core wrote on the layer, over its one run of text, in the highlight of that name, which
+        // this instance registers itself and takes back with it. The names are the core's, carrying
+        // the grid's id; the script makes up none, and keeps no highlight another grid made.
+        Assert.Matches(new Regex(@"const colours = layer\.getAttribute\('data-ex-colours'\) \?\? '';"), script.Text);
+        Assert.Matches(new Regex(@"const run = layer\.firstElementChild\?\.firstChild;"), script.Text);
+        Assert.Matches(new Regex(@"const \[start, length, name\] = stretch\.split\(','\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"new Highlight\(\)"));
+        Assert.Matches(new Regex(@"highlights\.set\(name, highlight\);\s*CSS\.highlights\.set\(name, highlight\);"), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"CSS\.highlights\.set\("));
+        Assert.Matches(new Regex(@"range\.setStart\(run, from\);\s*range\.setEnd\(run, to\);\s*highlight\.add\(range\);"), script.Text);
+        Assert.Matches(new Regex(@"for \(const \[highlight, range\] of coloured\.ranges\) \{\s*highlight\.delete\(range\);"), script.Text);
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*?for \(const \[name, highlight\] of highlights\) \{\s*if \(CSS\.highlights\.get\(name\) === highlight\) \{\s*CSS\.highlights\.delete\(name\);", RegexOptions.Singleline), script.Text);
+        Assert.Single(Regex.Matches(script.Text, @"CSS\.highlights\.delete\("));
+        // Closing the edit takes every colour away with the class.
+        Assert.Matches(new Regex(@"for \(const layer of \[\.\.\.colouredLayers\.keys\(\)\]\) \{\s*uncolour\(layer\);"), script.Text);
 
         // No layout is read anywhere in the module.
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"),
@@ -869,7 +1063,9 @@ public class ShippedStylesheetTests
     {
         var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
 
-        const string towardWhite = "color-mix(in srgb, currentColor 55%, white)";
+        // Since ADR-0057's note of 2026-10-01 the layer's References are highlights, and the grid's
+        // generated stylesheet paints each from a property the layer declares: the colour of its place,
+        // its pointed shade, and the pointed ground.
         for (var place = 1; place <= Cells.ReferenceColour.PaletteLength; place++)
         {
             // Excel's: the first two as Part B of the eighth Windows run read them, the rest the tenth run.
@@ -878,25 +1074,41 @@ public class ShippedStylesheetTests
                 1 => "#0401a2", 2 => "#630101", 3 => "#44007c", 4 => "#003600",
                 5 => "#550059", 6 => "#531c00", _ => "#00323f",
             };
+            // Over a dark ground, the Reference's own colour mixed 55% toward white; ADR-0058 / SH-34:
+            // a Reference inside the XLOOKUP(...) a press on another grid wrote takes the same shade.
             Assert.Contains(
-                $".ex-reference-text .ex-reference-{place}.ex-reference-pointed {{ -webkit-text-fill-color: var(--ex-reference-{place}-pointed, light-dark({light}, {towardWhite})); }}",
+                $"--ex-reference-text-{place}-pointed: var(--ex-reference-{place}-pointed, light-dark({light}, color-mix(in srgb, var(--ex-reference-text-{place}) 55%, white)));",
                 sheet, StringComparison.Ordinal);
-            // ADR-0058 / SH-34: a Reference inside the XLOOKUP(...) a press on another grid wrote, which
-            // is pointed as a whole, takes the same shade of its own colour.
-            Assert.Contains(
-                $".ex-reference-text .ex-reference-pointed .ex-reference-{place} {{ -webkit-text-fill-color: var(--ex-reference-{place}-pointed, light-dark({light}, {towardWhite})); }}",
-                sheet, StringComparison.Ordinal);
+            Assert.Contains($"--ex-reference-text-{place}: var(--ex-reference-{place}, light-dark(", sheet, StringComparison.Ordinal);
         }
-        // Those rules alone paint the pointed text: one per place, none past the palette's end.
+        // Those properties alone paint the pointed text: one per place, none past the palette's end.
         Assert.Equal(Cells.ReferenceColour.PaletteLength,
-            Regex.Matches(sheet, @"\.ex-reference-pointed \{ -webkit-text-fill-color: var\(--ex-reference-\d+-pointed,").Count);
+            Regex.Matches(sheet, @"--ex-reference-text-\d+-pointed: var\(--ex-reference-\d+-pointed,").Count);
         Assert.DoesNotContain($"--ex-reference-{Cells.ReferenceColour.PaletteLength + 1}-pointed", sheet, StringComparison.Ordinal);
+        Assert.DoesNotContain($"--ex-reference-text-{Cells.ReferenceColour.PaletteLength + 1}", sheet, StringComparison.Ordinal);
 
         // The ground is unchanged, and the one shade for all seven is retired everywhere shipped.
         Assert.Contains(
-            ".ex-reference-text .ex-reference-pointed { background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b)); }",
+            "--ex-reference-text-pointed: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));",
             sheet, StringComparison.Ordinal);
         Assert.All(ShippedAssets(), asset => Assert.DoesNotContain("--ex-reference-pointed-color", asset.Text, StringComparison.Ordinal));
+    }
+
+    [Fact] // ADR-0057 (note of 2026-10-01) / ADR-0027/0029: under forced colours the References read as the rest of the text, and the ground goes, as the spans they replaced did
+    public void Under_forced_colours_the_highlights_take_the_system_colours()
+    {
+        var sheet = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.css", StringComparison.Ordinal)).Text;
+        var forced = sheet[sheet.IndexOf("@media (forced-colors: active)", StringComparison.Ordinal)..];
+
+        // Chrome paints a custom highlight in Highlight and HighlightText under forced colours,
+        // whatever its rule says; the line is left as authored, and its colours are the system's.
+        Assert.Contains(".ex-reference-text-line { forced-color-adjust: none; color: CanvasText; }", forced, StringComparison.Ordinal);
+        for (var place = 1; place <= Cells.ReferenceColour.PaletteLength; place++)
+        {
+            Assert.Contains($"--ex-reference-text-{place}: CanvasText;", forced, StringComparison.Ordinal);
+            Assert.Contains($"--ex-reference-text-{place}-pointed: CanvasText;", forced, StringComparison.Ordinal);
+        }
+        Assert.Contains("--ex-reference-text-pointed: transparent;", forced, StringComparison.Ordinal);
     }
 
     [Fact] // ADR-0051 second round / DC-31, ADR-0058 / SH-36: pointing claims the Shift+arrows; an open list claims only ↑/↓ beside the editing keys, and ←, →, Home, End and the Shift+arrows too while it is open over Point

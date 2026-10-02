@@ -1,0 +1,1707 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "chrome": "builtin",
+ "scheme": "light",
+ "zoom": 100,
+ "config": "wasm-chrome",
+ "started": "2026-10-01T23:35:57.934Z",
+ "cases": [
+  {
+   "case": "7x",
+   "what": "An addition: case 7 with both settings made by Format Cells, on ?case=13 (nothing set up). On B2: Ctrl+1, the Border tab, Thick, Red, Right, OK. On C2: Ctrl+1, the Border tab, Thin, More Colours #0000FF, Left, OK. Each read with the Selection parked at G14 as well",
+   "page": "?case=13",
+   "started": "2026-10-01T23:36:03.074Z",
+   "states": [
+    {
+     "state": "b2-selected",
+     "did": [
+      "a click at (319, 815) on the middle of A1",
+      "keys {DOWN}{RIGHT}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "B2",
+      "nameBox": "B2",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-3 ffffff | -2 f0f0f0 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-3 ffffff | -2 f0f0f0 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-3 ffffff | -2 f0f0f0 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-3 ffffff | -2 f0f0f0 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-3 ffffff | -2 f0f0f0 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-3 ffffff | -2 f0f0f0 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-2 ffffff | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-2 ffffff | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:4"
+        ],
+        "inkPixels": 4
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:2"
+        ],
+        "inkPixels": 2
+       }
+      }
+     },
+     "shot": "7x-b2-selected-wasm-chrome.png"
+    },
+    {
+     "state": "b2-chosen",
+     "did": [
+      "keys ^{KEY1}",
+      "a click at (628, 821) on tab 'Border' of Format Cells (1 so named)",
+      "a click at (433, 1038) on radio 'Thick' of Format Cells (1 so named)",
+      "the wheel turned 1 notch down over Format Cells to show radio 'Red' of Format Cells (1 so named); a click at (314, 1229) on radio 'Red' of Format Cells (1 so named)",
+      "a click at (608, 819) on button 'Right' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "B2",
+      "nameBox": "B2",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "button.ex-format-cells-edge",
+      "dialog": {
+       "box": {
+        "x": 122.33333587646484,
+        "y": 422.2083435058594,
+        "w": 527.3333740234375,
+        "h": 352
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border (selected)",
+        "Fill"
+       ],
+       "legends": [
+        "Style",
+        "Colour"
+       ],
+       "controls": [
+        "radio [None]",
+        "radio [Hair]",
+        "radio [Dotted]",
+        "radio [Dash-dot-dot]",
+        "radio [Dash-dot]",
+        "radio [Dashed]",
+        "radio [Thin]",
+        "radio [Medium Dash-dot-dot]",
+        "radio [Slanted Dash-dot]",
+        "radio [Medium Dash-dot]",
+        "radio [Medium Dashed]",
+        "radio [Medium]",
+        "radio [Thick] checked",
+        "radio [Double]",
+        "radio [Red] checked",
+        "text [More Colours] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "None",
+        "Hair",
+        "Dotted",
+        "Dash-dot-dot",
+        "Dash-dot",
+        "Dashed",
+        "Thin",
+        "Medium Dash-dot-dot",
+        "Slanted Dash-dot",
+        "Medium Dash-dot",
+        "Medium Dashed",
+        "Medium",
+        "Thick",
+        "Double"
+       ],
+       "buttons": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill",
+        "None",
+        "Outline",
+        "Inside disabled",
+        "Top pressed=false",
+        "Horizontal pressed=false disabled",
+        "Bottom pressed=false",
+        "Left pressed=false",
+        "Vertical pressed=false disabled",
+        "Right pressed=true",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [
+        "Right #FF0000 w3"
+       ],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..-2 000000 | -1..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": false
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..-2 000000 | -1..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": false
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-1 ffffff | 0 4b9eff | 1 2b8cff | 2..3 ffffff | 4 2288ff | 5..6 0075ff",
+        "at50": "-6..3 ffffff | 4 bfbfbf | 5..6 000000",
+        "at75": "-6..3 ffffff | 4 bfbfbf | 5..6 000000",
+        "same": false
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "808080",
+        "top": [
+         "808080:164",
+         "000000:164",
+         "767676:22",
+         "c8c8c8:9",
+         "acacac:7"
+        ],
+        "inkPixels": 461
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "6d6d6d",
+        "top": [
+         "6d6d6d:176"
+        ],
+        "inkPixels": 176
+       }
+      }
+     },
+     "shot": "7x-b2-chosen-wasm-chrome.png"
+    },
+    {
+     "state": "b2-ok",
+     "did": [
+      "the wheel turned 1 notch down over Format Cells to show button 'OK' of Format Cells (1 so named); a click at (899, 1296) on button 'OK' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-ll-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "B2",
+      "nameBox": "B2",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-3 ffffff | -2 ff0000 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-3 ffffff | -2 ff0000 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-3 ffffff | -2 ff0000 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-3 ffffff | -2 ff0000 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-3 ffffff | -2 ff0000 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-3 ffffff | -2 ff0000 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-2 ffffff | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-2 ffffff | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:4"
+        ],
+        "inkPixels": 4
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:2"
+        ],
+        "inkPixels": 2
+       }
+      }
+     },
+     "shot": "7x-b2-ok-wasm-chrome.png"
+    },
+    {
+     "state": "b2-parked",
+     "did": [
+      "keys ^{HOME}{DOWN 9}{RIGHT 5}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-ll-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "F10",
+      "nameBox": "F10",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-3 ffffff | -2..0 ff0000 | 1..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..0 ff0000 | 1..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..0 ff0000 | 1..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-3 ffffff | -2..0 ff0000 | 1..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..0 ff0000 | 1..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..0 ff0000 | 1..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "7x-b2-parked-wasm-chrome.png"
+    },
+    {
+     "state": "c2-selected",
+     "did": [
+      "keys ^{HOME}{DOWN}{RIGHT}{RIGHT}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-ll-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "C2",
+      "nameBox": "C2",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0 ff0000 | 1..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0 ff0000 | 1..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0 ff0000 | 1..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0 ff0000 | 1..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0 ff0000 | 1..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0 ff0000 | 1..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:2"
+        ],
+        "inkPixels": 2
+       }
+      }
+     },
+     "shot": "7x-c2-selected-wasm-chrome.png"
+    },
+    {
+     "state": "c2-border-tab",
+     "did": [
+      "keys ^{KEY1}",
+      "a click at (627, 822) on tab 'Border' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-ll-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "C2",
+      "nameBox": "C2",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "button#ex-format-cells-2-tab-border.ex-format-cells-tab[tab Border]",
+      "dialog": {
+       "box": {
+        "x": 122.33333587646484,
+        "y": 422.2083435058594,
+        "w": 527.3333740234375,
+        "h": 352
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border (selected)",
+        "Fill"
+       ],
+       "legends": [
+        "Style",
+        "Colour"
+       ],
+       "controls": [
+        "radio [None]",
+        "radio [Hair]",
+        "radio [Dotted]",
+        "radio [Dash-dot-dot]",
+        "radio [Dash-dot]",
+        "radio [Dashed]",
+        "radio [Thin] checked",
+        "radio [Medium Dash-dot-dot]",
+        "radio [Slanted Dash-dot]",
+        "radio [Medium Dash-dot]",
+        "radio [Medium Dashed]",
+        "radio [Medium]",
+        "radio [Thick]",
+        "radio [Double]",
+        "radio [Automatic] checked",
+        "text [More Colours] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "None",
+        "Hair",
+        "Dotted",
+        "Dash-dot-dot",
+        "Dash-dot",
+        "Dashed",
+        "Thin",
+        "Medium Dash-dot-dot",
+        "Slanted Dash-dot",
+        "Medium Dash-dot",
+        "Medium Dashed",
+        "Medium",
+        "Thick",
+        "Double"
+       ],
+       "buttons": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill",
+        "None",
+        "Outline",
+        "Inside disabled",
+        "Top pressed=false",
+        "Horizontal pressed=false disabled",
+        "Bottom pressed=false",
+        "Left pressed=false",
+        "Vertical pressed=false disabled",
+        "Right pressed=false",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "6d6d6d",
+        "top": [
+         "6d6d6d:284"
+        ],
+        "inkPixels": 284
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "101010",
+        "top": [
+         "101010:194",
+         "afafaf:176",
+         "767676:154",
+         "6d6d6d:51",
+         "000000:22"
+        ],
+        "inkPixels": 822
+       }
+      }
+     },
+     "shot": "7x-c2-border-tab-wasm-chrome.png"
+    },
+    {
+     "state": "c2-chosen",
+     "did": [
+      "a click at (290, 1065) on radio 'Thin' of Format Cells (1 so named)",
+      "the wheel turned 1 notch down over Format Cells to show the field .ex-format-cells-hex[data-target=Border], .ex-format-cells-hex; a click at (484, 1268) on the field .ex-format-cells-hex[data-target=Border], .ex-format-cells-hex; Ctrl+A; typed #0000FF",
+      "the wheel turned 1 notch up over Format Cells to show button 'Left' of Format Cells (1 so named); a click at (889, 923) on button 'Left' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-ll-thick-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "C2",
+      "nameBox": "C2",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "button.ex-format-cells-edge",
+      "dialog": {
+       "box": {
+        "x": 122.33333587646484,
+        "y": 422.2083435058594,
+        "w": 527.3333740234375,
+        "h": 352
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border (selected)",
+        "Fill"
+       ],
+       "legends": [
+        "Style",
+        "Colour"
+       ],
+       "controls": [
+        "radio [None]",
+        "radio [Hair]",
+        "radio [Dotted]",
+        "radio [Dash-dot-dot]",
+        "radio [Dash-dot]",
+        "radio [Dashed]",
+        "radio [Thin] checked",
+        "radio [Medium Dash-dot-dot]",
+        "radio [Slanted Dash-dot]",
+        "radio [Medium Dash-dot]",
+        "radio [Medium Dashed]",
+        "radio [Medium]",
+        "radio [Thick]",
+        "radio [Double]",
+        "text [More Colours] value=[#0000FF]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "None",
+        "Hair",
+        "Dotted",
+        "Dash-dot-dot",
+        "Dash-dot",
+        "Dashed",
+        "Thin",
+        "Medium Dash-dot-dot",
+        "Slanted Dash-dot",
+        "Medium Dash-dot",
+        "Medium Dashed",
+        "Medium",
+        "Thick",
+        "Double"
+       ],
+       "buttons": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill",
+        "None",
+        "Outline",
+        "Inside disabled",
+        "Top pressed=false",
+        "Horizontal pressed=false disabled",
+        "Bottom pressed=false",
+        "Left pressed=true",
+        "Vertical pressed=false disabled",
+        "Right pressed=false",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [
+        "Left #0000FF w1"
+       ],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "6d6d6d",
+        "top": [
+         "6d6d6d:284"
+        ],
+        "inkPixels": 284
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "767676",
+        "top": [
+         "767676:154",
+         "6d6d6d:65",
+         "000000:22",
+         "efefaa:16",
+         "540000:15"
+        ],
+        "inkPixels": 442
+       }
+      }
+     },
+     "shot": "7x-c2-chosen-wasm-chrome.png"
+    },
+    {
+     "state": "c2-ok",
+     "did": [
+      "the wheel turned 2 notches down over Format Cells to show button 'OK' of Format Cells (1 so named); a click at (899, 1296) on button 'OK' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-0000ff",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "C2",
+      "nameBox": "C2",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:2"
+        ],
+        "inkPixels": 2
+       }
+      }
+     },
+     "shot": "7x-c2-ok-wasm-chrome.png"
+    },
+    {
+     "state": "c2-parked",
+     "did": [
+      "keys ^{HOME}{DOWN 9}{RIGHT 5}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-0000ff",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "F10",
+      "nameBox": "F10",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 0000ff | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 0000ff | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 0000ff | 0..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 0000ff | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 0000ff | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 0000ff | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "7x-c2-parked-wasm-chrome.png"
+    }
+   ],
+   "url": "http://localhost:5299/sheet?case=13",
+   "dpr": 1.5
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-01T23:35:59.141Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  },
+  {
+   "t": "2026-10-01T23:36:03.235Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok english was=0x08090809 now=0x08090809"
+ },
+ "baseDpr": 1.5,
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 521,
+    "py": 173,
+    "client": {
+     "x": 300,
+     "y": 8
+    }
+   }
+  ]
+ },
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1686,
+   1266
+  ],
+  "dark": false,
+  "forcedColors": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+ },
+ "calibrations": [
+  {
+   "url": "http://localhost:5299/sheet?case=13",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 521,
+     "py": 173,
+     "client": null
+    },
+    {
+     "px": 521,
+     "py": 193,
+     "client": {
+      "x": 300,
+      "y": 21
+     }
+    },
+    {
+     "px": 521,
+     "py": 173,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  }
+ ],
+ "finished": "2026-10-01T23:36:25.406Z"
+}

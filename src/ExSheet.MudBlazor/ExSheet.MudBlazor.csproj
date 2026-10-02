@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExSheet.MudBlazor</RootNamespace>
+    <Description>MudBlazor for ExSheet: a Chrome that draws ExSheet's Format Cells as a MudDialog, with MudBlazor's colour picker for More Colours, and ExGrid.MudBlazor's controls in every seam of the grid. Ships at the same version as ExSheet and depends on exactly that version.</Description>
+    <PackageTags>$(PackageTags);spreadsheet;sheet;mudblazor;material</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The Wrapper's floor (ADR-0022): the application resolves it upward. -->
+    <PackageReference Include="MudBlazor" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0019's note of 2026-09-30, ADR-0071): this package
+         references ExSheet and ExGrid.MudBlazor, and nothing references it but the demo pages
+         and its tests. ExGrid.MudBlazor references no ExSheet package, and neither ExSheet nor
+         the core knows MudBlazor (SH-47). -->
+    <ProjectReference Include="..\ExSheet\ExSheet.csproj" />
+    <ProjectReference Include="..\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExSheet.MudBlazor.Tests" />
+  </ItemGroup>
+
+  <!-- It depends on exactly the ExSheet and ExGrid.MudBlazor versions it was built with, as they
+       depend on the core (ADR-0042): the Chrome draws the seam of that ExSheet, and forwards the
+       grid's seams to that Wrapper. -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

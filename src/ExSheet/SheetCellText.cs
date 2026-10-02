@@ -5,9 +5,9 @@ namespace ExSheet;
 
 /// <summary>
 /// What one cell hands ExGrid as its value: the engine's formatted text, whether it is a number,
-/// and its alignment. ExGrid's column <c>Format</c> is handed only the value, so the value carries
-/// the text the engine formatted, and the per-cell kind (ADR-0050, item 6) and alignment (item 7)
-/// are read from the same object.
+/// its alignment, and the colour its Number Format paints it in. ExGrid's column <c>Format</c> is
+/// handed only the value, so the value carries the text the engine formatted, and the per-cell kind
+/// (ADR-0050, item 6), alignment (item 7) and appearance (item 15) are read from the same object.
 /// Immutable: a row's cells are the row's, and a new row instance carries new ones.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ namespace ExSheet;
 /// the unformatted Value as the engine writes it for its own copy (<see cref="SheetCopy.Html"/>),
 /// never the text the cell paints.
 /// </remarks>
-internal sealed record SheetCellText(string Text, bool IsNumber, string Raw, CellAlign Align) : IFormattable
+internal sealed record SheetCellText(string Text, bool IsNumber, string Raw, CellAlign Align, NumberFormatColour? Colour = null) : IFormattable
 {
     /// <summary>
     /// What a number shows when it cannot be shown in its format at any width: a run of
@@ -28,15 +28,15 @@ internal sealed record SheetCellText(string Text, bool IsNumber, string Raw, Cel
 
     /// <summary>
     /// The cell's text from the engine's display, Value and alignment setting, or null for a
-    /// blank cell.
+    /// blank cell. A <c>####</c> keeps its section's colour, as Excel's does (ADR-0071).
     /// </summary>
     internal static SheetCellText? From(CellDisplay display, Value? value, HorizontalAlignment setting)
     {
         var raw = value?.ToString() ?? "";
         var align = AlignOf(display, setting);
-        if (display.CannotShow) return new SheetCellText(Unshowable, IsNumber: true, raw, align);
+        if (display.CannotShow) return new SheetCellText(Unshowable, IsNumber: true, raw, align, display.Colour);
         if (display.Text.Length == 0) return null;
-        return new SheetCellText(display.Text, display.IsNumber, raw, align);
+        return new SheetCellText(display.Text, display.IsNumber, raw, align, display.Colour);
     }
 
     /// <summary>

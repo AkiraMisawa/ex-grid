@@ -26,10 +26,10 @@ public class UndoStepTests
         sheet.Enter("C1", "=SUM(A:A)");
         sheet.Enter("C2", "=B2+B3");
         sheet.Enter("D4", "2026-09-27");
-        sheet.SetFormat(At("A2"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(At("A2"), NumberFormat.Parse("0.00"));
         sheet.SetAlignment(At("B3"), HorizontalAlignment.Center);
-        sheet.SetFormat(At("E1048576"), NumberFormat.Parse("0%"));
-        sheet.SetFormat(At("XFD9"), NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat(At("E1048576"), NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat(At("XFD9"), NumberFormat.Parse("0%"));
         return sheet;
     }
 
@@ -48,7 +48,7 @@ public class UndoStepTests
         "clear" => SheetEdit.Enter(At("A1"), ""),
         "batched enter" => SheetEdit.Enter([new(At("A1"), "10"), new(At("F1"), "12%"), new(At("A2"), "=C1"), new(At("G7"), "9/28/2026")]),
         "set entries" => SheetEdit.SetEntries([new(At("A5"), null), new(At("B9"), Entry.FromFormula("=B1"))]),
-        "format" => SheetEdit.SetFormat([At("A1"), At("A2"), At("Z1")], NumberFormat.Parse("#,##0")),
+        "format" => SheetEdit.SetNumberFormat([At("A1"), At("A2"), At("Z1")], NumberFormat.Parse("#,##0")),
         "alignment" => SheetEdit.SetAlignment([At("B3"), At("B4")], HorizontalAlignment.Right),
         "insert rows" => SheetEdit.InsertRows(0, 2),
         "insert rows inside" => SheetEdit.InsertRows(2),
@@ -198,13 +198,13 @@ public class UndoStepTests
     public void Undoing_an_insertion_restores_formatting_pushed_off_the_edge()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(At("A1048576"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(At("A1048576"), NumberFormat.Parse("0.00"));
         sheet.Enter("A1", "1");
 
         var step = sheet.Do(SheetEdit.InsertRows(0));
-        Assert.True(sheet.GetFormat(At("A1048576")).IsGeneral);
+        Assert.True(sheet.GetNumberFormat(At("A1048576")).IsGeneral);
         step.Undo();
 
-        Assert.Equal("0.00", sheet.GetFormat(At("A1048576")).Code);
+        Assert.Equal("0.00", sheet.GetNumberFormat(At("A1048576")).Code);
     }
 }

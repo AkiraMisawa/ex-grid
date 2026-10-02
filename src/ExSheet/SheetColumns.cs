@@ -51,15 +51,15 @@ internal static class SheetColumns
 
     /// <summary>
     /// The painted text (ADR-0050 item 11): General fitted to the column, as Excel's is
-    /// (ADR-0047). The grid hands the column's content width in pixels, and it is converted to
-    /// Excel's unit — characters of the default font — with the grid's own digit width, charging
-    /// every character one digit (ADR-0047, third round): the inverse of how
-    /// <see cref="DefaultWidthPx"/> is sized. It reads only the row it is handed, so it is one
-    /// instance for the process: a cell whose text changes arrives on a new row instance, and a
-    /// change of width repaints the rows on the grid's side (ADR-0003).
+    /// (ADR-0047). The grid hands the column's content width in pixels and the Cell Metrics it
+    /// judges the cell with, and the engine's text is the widest whose glyphs those metrics charge
+    /// within the content, each at its own width (ADR-0016; ticket 91), as Excel fits General to
+    /// what its font paints. It reads only the row it is handed, so it is one instance for the
+    /// process: a cell whose text changes arrives on a new row instance, and a change of width
+    /// repaints the rows on the grid's side (ADR-0003).
     /// </summary>
     internal static PaintedTextOf<SheetRow> PaintedText { get; } =
-        static (row, column, contentWidthPx, metrics) => row.PaintedAt(IndexOf(column), CharactersIn(contentWidthPx, metrics));
+        static (row, column, contentWidthPx, metrics) => row.PaintedAt(IndexOf(column), contentWidthPx, metrics);
 
     /// <summary>A content width in pixels as Excel's column width: how many of the grid's digits fit in it.</summary>
     internal static double CharactersIn(double contentWidthPx, CellTextMetrics metrics) =>
@@ -68,10 +68,10 @@ internal static class SheetColumns
     /// <summary>
     /// A width the Sheet records, in characters (ADR-0047, third round), as the column's width in
     /// pixels: the characters' digits and the cell's padding on both sides — the exact inverse of
-    /// <see cref="CharactersIn"/> over the column's content width, so a column recorded at
-    /// <c>n</c> characters paints what <see cref="PaintedText"/> fits to <c>n</c> characters.
-    /// Rounded to a millionth of a pixel, so a width that went through characters and back is the
-    /// pixel width it came from.
+    /// <see cref="CharactersIn"/> over the column's content width. The unit stays Excel's, a digit
+    /// of the default font; only what fits in it is charged glyph by glyph (ticket 91). Rounded to
+    /// a millionth of a pixel, so a width that went through characters and back is the pixel width
+    /// it came from.
     /// </summary>
     internal static double PxOf(double characters, CellTextMetrics metrics) =>
         Math.Round(characters * metrics.DigitWidthPx + 2 * metrics.CellHorizontalPaddingPx, 6);

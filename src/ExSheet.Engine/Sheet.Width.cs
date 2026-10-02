@@ -137,7 +137,8 @@ public sealed partial class Sheet
     /// and every character of a number's text is charged one digit width, so a column holds
     /// <c>⌊width⌋</c> characters. A component converts from its resolved pixel width as
     /// <c>(columnPx − 2 × cellPaddingPx) / digitWidthPx</c>, the inverse of how ExSheet sizes its
-    /// default column.
+    /// default column; ExSheet's asks at that width and one character past it, and paints the
+    /// widest text its grid's estimate holds, each glyph charged its own width (ticket 91).
     /// <list type="bullet">
     /// <item>A number in General is fitted as Excel's General fits it: decimals rounded to the
     /// width, scientific notation where the integer part does not fit or has twelve or more
@@ -158,8 +159,8 @@ public sealed partial class Sheet
         {
             return new CellDisplay("", Resolve(GetAlignment(address), null), false, false);
         }
-        var (text, cannotShow) = GetFormat(address).Format(value, Culture, characters);
-        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow);
+        var (text, cannotShow, colour) = GetNumberFormat(address).Format(value, Culture, characters);
+        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow, colour);
     }
 
     /// <summary>
@@ -181,7 +182,10 @@ public sealed partial class Sheet
     /// when the column is at its default width or one widened by entry, never one the user set,
     /// and narrower than the answer, recording the width as widened by entry
     /// (<see cref="SetAutomaticColumnWidth"/>; ADR-0046, 2026-09-28; CW-018, CW-028). How Excel
-    /// chooses the new width is observed by the case corpus; this rule is uncertain there.
+    /// chooses the new width is observed by the case corpus; this rule is uncertain there. It
+    /// calls it too after a Number Format is set, for every number the format was set on
+    /// (<see cref="EntryAddressesIn"/>), since the answer is read under the cell's Number Format
+    /// as it is now: a formatting key widens a column as an entry does (ADR-0071, case 17).
     /// </summary>
     public int? GetWidthOnEntry(CellAddress address)
     {
@@ -191,10 +195,10 @@ public sealed partial class Sheet
         var shown = entry.IsFormula ? cell.Value : entry.Constant;
         if (shown is not { Kind: ValueKind.Number } constant) return null;
         var number = constant.Number;
-        var format = GetFormat(address);
+        var format = GetNumberFormat(address);
         if (!format.ShowsNumbersAsGeneral)
         {
-            var (text, cannotShow) = format.Format(constant, Culture);
+            var (text, cannotShow, _) = format.Format(constant, Culture);
             return cannotShow ? null : text.Length;
         }
         var widest = NumberText.GeneralLimit + 1;
@@ -205,6 +209,17 @@ public sealed partial class Sheet
         }
         return null;
     }
+
+    /// <summary>
+    /// The cells in <paramref name="range"/> that hold an Entry, in no particular order: the cells
+    /// whose numbers a Number Format set on the range may widen a column for
+    /// (<see cref="GetWidthOnEntry"/>; ADR-0071, case 17). It walks the range or the Sheet's
+    /// cells, whichever are fewer, so a whole column costs what the Sheet holds rather than a
+    /// million rows, and no range is capped (ADR-0046).
+    /// </summary>
+    public IEnumerable<CellAddress> EntryAddressesIn(CellRange range) =>
+        CellsIn(new Area(range.First.Row, range.First.Column, range.Last.Row, range.Last.Column))
+            .Where(address => _cells[address].Entry is not null);
 
     private static int Characters(double width)
     {

@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # Packs ExGrid and ExGrid.MudBlazor, reads back what the packages declare, and builds and
-# publishes an application that takes them from the packed files alone (ADR-0042). ExSheet and
-# ExSheet.Engine are packed and taken the same way, into a feed of their own, and so are
-# ExPivot.Engine, ExPivot and ExPivot.MudBlazor, into another, with ExGrid.Data and
+# publishes an application that takes them from the packed files alone (ADR-0042). ExSheet,
+# ExSheet.Engine and ExSheet.MudBlazor are packed and taken the same way, into a feed of their own,
+# and so are ExPivot.Engine, ExPivot and ExPivot.MudBlazor, into another, with ExGrid.Data and
 # ExGrid.Data.Arrow, which ship beside ExPivot: .feed holds exactly what the release publishes,
 # and neither product, nor the family's data packages, is part of that release yet (ADR-0046,
-# ADR-0059, ADR-0064, ADR-0065). A Snapshot is written to an Arrow stream and read back through
-# the packed data packages, and the check fails if it comes back different (DA-16).
+# ADR-0059, ADR-0064, ADR-0065; ExSheet.MudBlazor, ADR-0019's note of 2026-09-30). A Snapshot is
+# written to an Arrow stream and read back through the packed data packages, and the check fails
+# if it comes back different (DA-16).
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #
@@ -33,7 +34,7 @@ echo "== pack $version"
 for project in ExGrid ExGrid.MudBlazor; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo
 done
-for project in ExSheet.Engine ExSheet; do
+for project in ExSheet.Engine ExSheet ExSheet.MudBlazor; do
   dotnet pack "$root/src/$project" -c Release -o "$sheetfeed" -p:Version="$version" --nologo
 done
 for project in ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor; do
@@ -44,7 +45,7 @@ echo "== what the packages declare"
 feedof() { case "$1" in ExSheet|ExSheet.*) echo "$sheetfeed" ;; ExPivot|ExPivot.*|ExGrid.Data|ExGrid.Data.*) echo "$pivotfeed" ;; *) echo "$feed" ;; esac; }
 nuspec() { unzip -p "$(feedof "$1")/$1.$version.nupkg" "$1.nuspec"; }
 entries() { unzip -Z1 "$(feedof "$1")/$1.$version.nupkg"; }
-for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor; do
+for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor; do
   [ -f "$(feedof "$id")/$id.$version.snupkg" ] || fail "$id has no symbol package"
   spec=$(nuspec "$id")
   grep -q '<license type="expression">MIT</license>' <<<"$spec" || fail "$id does not declare MIT"
@@ -72,6 +73,17 @@ sheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExShee
 [ "$sheetdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid\" version=\"[$version]\"" "<dependency id=\"ExSheet.Engine\" version=\"[$version]\"" | sort)" ] \
   || fail "ExSheet's dependencies are not exactly ExGrid $version and ExSheet.Engine $version: $sheetdeps"
 
+# ExSheet.MudBlazor depends on exactly the ExSheet and the Wrapper it was built with, and on
+# MudBlazor from the Wrapper's floor; nothing else (SH-47). And it ships no script of its own: its
+# one static asset is its stylesheet (ADR-0021).
+mudsheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExSheet.MudBlazor)" | sort)
+[ "$mudsheetdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExSheet\" version=\"[$version]\"" '<dependency id="MudBlazor" version="9.0.0"' | sort)" ] \
+  || fail "ExSheet.MudBlazor's dependencies are not exactly ExGrid.MudBlazor $version, ExSheet $version and MudBlazor 9.0.0: $mudsheetdeps"
+if entries ExSheet.MudBlazor | grep -qiE '\.(js|mjs|cjs)$'; then fail "ExSheet.MudBlazor ships a script"; fi
+entries ExSheet.MudBlazor | grep -qxF 'staticwebassets/mud-ex-sheet.css' || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.css"
+# The Wrapper still takes no ExSheet package: the direction is one-way (SH-47).
+if grep -q '<dependency id="ExSheet' <<<"$(nuspec ExGrid.MudBlazor)"; then fail "ExGrid.MudBlazor depends on an ExSheet package"; fi
+
 # The family's data package depends on nothing at all, not even on the grid (ADR-0064, DA-1).
 if grep -q '<dependency ' <<<"$(nuspec ExGrid.Data)"; then fail "ExGrid.Data declares a dependency"; fi
 # Its Arrow package depends on exactly the ExGrid.Data it was built with, and on Apache.Arrow
@@ -85,7 +97,7 @@ enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPiv
 [ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
 # Nothing else the family packs references a data package (DA-1).
-for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExPivot ExPivot.MudBlazor; do
+for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
   if grep -qE '<dependency id="ExGrid\.Data(\.Arrow)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
 done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.
@@ -109,7 +121,7 @@ dotnet publish "$here" -c Release -o "$out" --nologo \
   -p:ExGridVersion="$version" -p:RestorePackagesPath="$cache"
 
 # Restored from the packed files, not from anywhere else.
-for id in exgrid exgrid.mudblazor exsheet.engine exsheet exgrid.data exgrid.data.arrow expivot.engine expivot expivot.mudblazor; do
+for id in exgrid exgrid.mudblazor exsheet.engine exsheet exsheet.mudblazor exgrid.data exgrid.data.arrow expivot.engine expivot expivot.mudblazor; do
   meta="$cache/$id/$version/.nupkg.metadata"
   from=$feed
   case "$id" in exsheet|exsheet.*) from=$sheetfeed ;; expivot|expivot.*|exgrid.data|exgrid.data.*) from=$pivotfeed ;; esac
@@ -119,7 +131,8 @@ done
 
 # The paths the README tells a Consumer to link, and the module the component imports.
 for f in _content/ExGrid/ex-grid.css _content/ExGrid/ex-grid.js _content/ExGrid.MudBlazor/mud-ex-grid.css \
-  _content/ExPivot/ex-pivot.css _content/ExPivot.MudBlazor/mud-ex-pivot.css; do
+         _content/ExSheet/ex-sheet.css _content/ExSheet.MudBlazor/mud-ex-sheet.css \
+         _content/ExPivot/ex-pivot.css _content/ExPivot.MudBlazor/mud-ex-pivot.css; do
   [ -f "$out/wwwroot/$f" ] || fail "the published application has no $f"
 done
 grep -qF '"./_content/ExGrid/ex-grid.js"' "$root/src/ExGrid/Components/ExGrid.razor" \

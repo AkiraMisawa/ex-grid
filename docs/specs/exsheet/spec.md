@@ -143,6 +143,18 @@ from the ExGrid next to it, and its formulas cannot see the application's data.
 76. As an ExGrid Consumer, I want to take Fill Intents into my Overlay, so that my editable grid gets a fill handle too.
 77. As an ExGrid Consumer, I want to hide the column header, so that a headerless list is possible.
 
+### Cell Format (ADR-0071, added 2026-09-30)
+
+78. As a user, I want to make a cell's text bold, italic, underlined or struck through, and to colour it, so that headings and totals stand out.
+79. As a user, I want to fill a cell with a colour and draw borders around and between cells, so that a table reads as one.
+80. As a user, I want a Number Format's `[Red]` to paint negative numbers red, so that `$#,##0_);[Red]($#,##0)` looks as it does in Excel.
+81. As a user, I want the Sheet's cells to stay white with black text when my page is dark, so that the colours I chose read as I chose them.
+82. As a user, I want Excel's formatting keys (Ctrl+B, Ctrl+Shift+$, Ctrl+Shift+&, …) to work, so that I format without reaching for the mouse.
+83. As a user, I want Ctrl+1 to open Format Cells, so that I can set everything about a cell's look in one place.
+84. As a user, I want a bold number too wide for its column to show `####`, so that a bold total is never cut into a different number.
+85. As a Consumer developer, I want to set and read a Cell Format through commands, so that my own toolbar can format the Selection and show the Focus cell's state.
+86. As a Consumer developer, I want Format Cells drawn by my design system's Chrome, or by my own, so that it looks like the rest of my application.
+
 ## Implementation Decisions
 
 ### Packages and reference direction
@@ -176,8 +188,8 @@ from the ExGrid next to it, and its formulas cannot see the application's data.
   at most 15 significant digits.
 - **Culture**: typed constants are parsed under the Sheet's culture and recorded parsed.
 - **The Sheet Document**: a versioned, serialisable form holding the culture, the Entries (parsed
-  constants and invariant Formulas), formats and alignment. It is read with a refusal on an unknown
-  version (ADR-0048).
+  constants and invariant Formulas), and each cell's, row's and column's Cell Format (ADR-0071). It
+  is read with a refusal on an unknown version (ADR-0048).
 - **Linked Tables**: declared by name and column names; rows replaced by a whole snapshot; resolved
   by structured references (ADR-0049).
 - **Undo**: the engine exposes operations as reversible steps; the component keeps the stack.
@@ -223,7 +235,8 @@ Definition of Done:
 - **Fill semantics**: copy with References shifted, linear series from two or more numbers, dates
   by day; anything else refused.
 - **Commands**: insert and delete rows and columns through the Context Menu (ADR-0036), undo and
-  redo, and formatting of number format and alignment.
+  redo, and Cell Format: `SetCellFormatAsync`, `CellFormatAt`, `OpenFormatCellsAsync`, Excel's
+  formatting keys, and Format Cells as a Chrome seam whose frame the Chrome chooses (ADR-0071).
 - **Parameters** for the Sheet Document in and out, Linked Tables, the culture, and hiding each
   Heading and the Formula Bar.
 
@@ -263,7 +276,10 @@ Definition of Done:
 As ADR-0046's table: several Sheets, frozen rows, hiding rows and columns, sort and AutoFilter,
 find and replace, protecting cells, and `.xlsx`. Also:
 
-- **Fonts, fills and borders**: they wait for a render-bench measurement and an ADR.
+- ~~**Fonts, fills and borders**: they wait for a render-bench measurement and an ADR.~~ In
+  since 2026-09-30 (ADR-0071); the measurement now decides only how they are painted. Still out:
+  font size, typeface, wrapped text, vertical alignment, rotation, diagonal borders, rich text,
+  pattern fills, theme colours, conditional formatting, Paste Special and the Format Painter.
 - **Merged cells and per-row heights**: not supported (ADR-0046).
 - **Partial, paged or server-aggregated Linked Tables**, another ExSheet as a source, and writing
   back to a Linked Table (ADR-0049).

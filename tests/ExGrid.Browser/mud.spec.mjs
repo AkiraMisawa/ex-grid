@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { painted, contrast, resolvedColour } from './pixels.mjs';
+import { painted, contrast, resolvedColour, sameColour } from './pixels.mjs';
 
 // The Wrapper contract, measured with a real Wrapper (ADR-0030): ExGrid.MudBlazor on
 // /mud. The Definition of Done wrote UX-3/6/9 against a "stub Wrapper stylesheet";
@@ -84,10 +84,11 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         const css = await gridA(page).evaluate((g) => {
             const focus = [...g.querySelectorAll('.ex-focus')].find((el) => el.getBoundingClientRect().width > 0);
             const range = g.querySelector('.ex-range');
+            // Each outline is the border of its box of its own, the ::after (ADR-0008, 2026-10-01).
             return {
-                focus: getComputedStyle(focus).outlineColor,
-                focusStyle: getComputedStyle(focus).outlineStyle,
-                range: range ? getComputedStyle(range).outlineColor : null,
+                focus: getComputedStyle(focus, '::after').borderTopColor,
+                focusStyle: getComputedStyle(focus, '::after').borderTopStyle,
+                range: range ? getComputedStyle(range, '::after').borderTopColor : null,
                 fill: range ? getComputedStyle(range, '::before').backgroundColor : null,
                 ground: getComputedStyle(g).backgroundColor,
                 primary: getComputedStyle(g).getPropertyValue('--mud-palette-primary'),
@@ -132,10 +133,12 @@ test('the focus outline and the selection fill stay visible under the Wrapper th
         await page.mouse.move(0, 0);
         await expect(gridA(page).locator('.ex-hover-row')).toHaveCount(0);
         await expect(gridA(page).locator('.ex-focus-row')).not.toHaveCount(0);
+        // The outline's top lies above the cell, as Excel's does (ADR-0008, 2026-10-01), so it is
+        // read a pixel above the cell's top; the ground beside it is the band's tint in the cell.
         const box = await cellAt(2, 2).boundingBox();
-        const cellPixels = await painted(page, { x: box.x, y: box.y, width: box.width, height: box.height });
+        const cellPixels = await painted(page, { x: box.x, y: box.y - 4, width: box.width, height: box.height + 4 });
         const onBand = {
-            outline: cellPixels.at(box.x + box.width / 2, box.y + 1),
+            outline: cellPixels.at(box.x + box.width / 2, box.y - 1),
             ground: cellPixels.at(box.x + 6, box.y + 6),
         };
         expect(contrast(onBand.outline, onBand.ground), `painted over the Focus band, dark=${dark} (${JSON.stringify(onBand)})`)
@@ -277,4 +280,49 @@ test("the paper's corners: rounded with an inset, square flush; the grid's own b
     await page.locator('#toggle-square').click();
     await expect.poll(async () => paperA(page).evaluate((p) => getComputedStyle(p).borderTopLeftRadius)).toBe('0px');
     expect(await paperA(page).evaluate((p) => getComputedStyle(p).paddingLeft)).toBe('0px');
+});
+
+test('the Wrapper\'s row rule runs on across the Pinned Column, light and dark (ticket 92, ADR-0030)', async ({ page }) => {
+    await open(page);
+    await page.mouse.move(0, 0);
+    // The rule's line and the ground four pixels above it, near the right edge of the pinned Book
+    // and of a scrollable cell — inside the padding, clear of the text — on a few rows.
+    const lines = async () => {
+        const out = [];
+        for (const n of [1, 2, 3]) {
+            const row = gridA(page).locator('.ex-viewport .ex-row').nth(n);
+            const rowBox = await row.boundingBox();
+            const region = await painted(page, rowBox);
+            const last = rowBox.y + rowBox.height - 0.5;
+            const at = async (locator) => {
+                const box = await locator.boundingBox();
+                return { rule: region.at(box.x + box.width - 4, last), ground: region.at(box.x + box.width - 4, last - 4) };
+            };
+            out.push({ pinned: await at(row.locator('.ex-pinned').first()), scrollable: await at(row.locator('.ex-cell:not(.ex-pinned)').nth(1)) });
+        }
+        return out;
+    };
+    for (const dark of [false, true]) {
+        if (dark) {
+            await page.locator('#toggle-dark').click();
+            await expect(page.locator('#dark-status')).toHaveText('Dark: True');
+            await page.mouse.move(0, 0);
+        }
+        for (const [n, { pinned, scrollable }] of (await lines()).entries()) {
+            // There is a rule to carry: the scrollable cell's line differs from its ground.
+            expect(scrollable.rule, `dark=${dark}, row ${n + 1}: the Wrapper's rule shows`).not.toEqual(scrollable.ground);
+            // The rule within one level on each channel, and nothing wider. Both lines are the same
+            // rule on the same ground, but they are painted along two paths: the pinned cell paints
+            // the rule over its own ground, and the scrollable cell lies on the row, which paints it.
+            // In the dark scheme the rule is translucent, rgba(255,255,255,30/255) on (55,55,64),
+            // and the blend is 78.53 in red and green, half a level from either neighbour. Chrome and
+            // Edge on Linux round it to 79 on the pinned cell and 78 on the row, on both hosts.
+            // Giving the row an opaque ground of its own did not change that (ticket 92, CI runs
+            // 36929390859 and 36934151352). A half-level blend rounded two ways is one level apart.
+            // A rule missing from the pinned cell would leave its ground, 23 levels away.
+            expect(sameColour(pinned.rule, scrollable.rule, 1),
+                `dark=${dark}, row ${n + 1}: the pinned cell's line is the rule (${pinned.rule} beside ${scrollable.rule})`).toBe(true);
+            expect(pinned.ground, `dark=${dark}, row ${n + 1}: the grounds above it`).toEqual(scrollable.ground);
+        }
+    }
 });

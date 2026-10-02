@@ -95,3 +95,15 @@ number.
 - **UX-11** asks that no ancestor cut a popover, not only the scroll container; **WR-7**'s dialog
   clause reads "opens its popovers whole, inside the grid's box, and its Inner Popups above the
   dialog".
+
+## A dialog that is not a popover *(2026-09-30)*
+
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) has ExSheet's Format Cells shown in a `MudDialog` under the MudBlazor Chrome. This ADR
+governs the popovers whose frame the core owns.
+- **The `MudDialog` is outside it.** Its frame is the Chrome's
+  ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s note of 2026-09-30). MudBlazor's
+  own provider draws it at page level, so no ancestor of the grid cuts it, and no script of ours is
+  added.
+- **Under the built-in Chrome, Format Cells is a popover, and this ADR applies to it whole.** It
+  stays inside the Sheet's box, scrolls when its contents are taller, and closes as a Cancel when the
+  box shrinks below one row.

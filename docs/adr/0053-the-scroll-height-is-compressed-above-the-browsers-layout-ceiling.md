@@ -183,3 +183,28 @@ every row exactly.
 **The assertion is loosened only there.** `scrollbar.spec.mjs` allows `2 / devicePixelRatio` more
 slack, and only when `scrollTop × devicePixelRatio ≥ 2^24`. Everywhere else, "flush" (ADR-0012)
 still means within the one pixel it always did.
+
+## The slice's offset lands on a whole device pixel *(2026-10-01, ticket 49)*
+
+A compressed grid places its slice with `translateY` at a fraction of a CSS pixel. At 150% that was
+often a fraction of a device pixel too, for example `translateY(19.249px)`. The viewport is
+composited (`will-change: transform`), so the browser resampled the whole slice there, and every
+line in it blurred: a Sheet's thin borders became two half-dark rows.
+- The offset is now rounded to the nearest device pixel in the stylesheet:
+  `translateY(round(nearest, Npx, var(--ex-dp, 1px)))`.
+- That moves the slice by at most half a device pixel. It is inside the placement error accepted
+  above, and the Selection, the Cell Editor and the overlays move with it, because they lie in the
+  slice.
+- Ticket 49's 150% border tests failed 18 of 29 without it and pass 29 of 29 with it. Ticket 47's
+  150% check had read only the top of a small grid, where the offset is 0.
+- *(Later the same day, CI.)* **The viewport is no longer composited on its own.** On CI's Linux
+  fonts, the Sheet sat at a fraction of a device pixel on the page. The composited `.ex-viewport`
+  (`will-change: transform`, there since the first virtualisation commit with no measurement behind
+  it) was rasterised at that offset, and dotted lines read [2,1,3,1].
+  - Painted with its parent, the slice snaps to device pixels as any box does. Its inline transform
+    still makes it the stacking context ADR-0008's selection layers need.
+  - The rounding above is still needed: without it, 17 of 26 lines fail at 150% once scrolled.
+  - Scrolling measured the same either way: medians of 16.7 against 16.7 ms on `/wide`, 23.5 against
+    23.5 ms on `/sheet` at 100%, and 24.4 against 24.6 ms at 150%. These were headless runs with a
+    scratch frame-interval script, alternated, so only the comparison counts.
+  - A test moves the Sheet 0.33 px across and down, and reads the lines at 100% and 150%.

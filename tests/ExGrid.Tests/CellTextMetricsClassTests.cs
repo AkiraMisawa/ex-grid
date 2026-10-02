@@ -91,8 +91,8 @@ public class CellTextMetricsClassTests
     }
 
     [Theory] // ADR-0016: what is not full-width keeps its class
-    [InlineData('A', 9)]
-    [InlineData('ｱ', 9)] // halfwidth katakana is H, not W
+    [InlineData('A', 18)] // a letter is the other class: twice the digit, without its own width (ticket 83)
+    [InlineData('ｱ', 18)] // halfwidth katakana is H, not W: the other class
     [InlineData('7', 9)]
     [InlineData('%', 14)]
     [InlineData('.', 5)]

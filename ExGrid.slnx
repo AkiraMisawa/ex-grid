@@ -12,6 +12,7 @@
   <Project Path="src/ExPivot.MudBlazor/ExPivot.MudBlazor.csproj" />
   <Project Path="src/ExSheet/ExSheet.csproj" />
   <Project Path="src/ExSheet.Engine/ExSheet.Engine.csproj" />
+  <Project Path="src/ExSheet.MudBlazor/ExSheet.MudBlazor.csproj" />
   <Project Path="tests/ExGrid.Components/ExGrid.Components.csproj" />
   <Project Path="tests/ExGrid.Data.Arrow.Tests/ExGrid.Data.Arrow.Tests.csproj" />
   <Project Path="tests/ExGrid.Data.Tests/ExGrid.Data.Tests.csproj" />
@@ -23,4 +24,5 @@
   <Project Path="tests/ExPivot.MudBlazor.Tests/ExPivot.MudBlazor.Tests.csproj" />
   <Project Path="tests/ExSheet.Components/ExSheet.Components.csproj" />
   <Project Path="tests/ExSheet.Engine.Tests/ExSheet.Engine.Tests.csproj" />
+  <Project Path="tests/ExSheet.MudBlazor.Tests/ExSheet.MudBlazor.Tests.csproj" />
 </Solution>

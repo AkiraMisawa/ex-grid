@@ -320,7 +320,8 @@ public class MudFilterPanelTests : MudTestContext
     public void The_operand_is_the_types_own_control()
     {
         Assert.Single(RenderPanel(Context(ColumnType.Text, FilterUiMode.Condition)).FindComponents<MudTextField<string>>());
-        Assert.Single(RenderPanel(Context(ColumnType.Number, FilterUiMode.Condition)).FindComponents<MudNumericField<decimal?>>());
+        // A number is typed as text and read as the built-in panel reads it (ADR-0023, ticket 96).
+        Assert.Single(RenderPanel(Context(ColumnType.Number, FilterUiMode.Condition)).FindComponents<MudTextField<string>>());
         // Editable: the date can be typed, not only picked — its input is not read-only.
         var date = RenderPanel(Context(ColumnType.Date, FilterUiMode.Condition));
         Assert.Single(date.FindComponents<MudDatePicker>());

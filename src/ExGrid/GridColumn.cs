@@ -280,7 +280,9 @@ public sealed record GridColumn<TRow>
 
     /// <summary>
     /// The column's display format (ADR-0006): the text a non-null value paints as, or
-    /// null for the value's own <c>ToString()</c>. A null value paints empty either way —
+    /// null for the value's own text — a date or a time in one ISO form by its type, in the
+    /// invariant culture (ADR-0006, note of 2026-10-01), anything else its own
+    /// <c>ToString()</c>. A null value paints empty either way —
     /// an absent value is a Cell State, not a format's business. This is the ONE text the
     /// grid shows for a value, so it is also what copy puts in <c>text/plain</c>, what the
     /// value list offers, what the Auto width estimates over and what the editor opens

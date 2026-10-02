@@ -20,7 +20,9 @@ block on `claude/exsheet-start-8cx3v1` before it uses the first number.
 | 0059–0070 | `claude/expivot-mudblazor-wrapper-j25225` | ExPivot, PR #39 |
 | 0071–0079 | `claude/exsheet-cell-format` | Cell Format. Its ADR was numbered 0063 until 2026-10-01 |
 | 0080–0089 | `claude/exsheet-keyboard-field` | Pointing Scope's line: the Keyboard Field (ticket 79's way, decided 2026-10-02) |
-| 0090– | free | reserve a block of ten |
+| 0090–0099 | `claude/exsheet-part-c` | Part C of the eleventh Windows run: what ADR-0071 left to the next PR |
+| 0100–0109 | `claude/trusting-babbage-1tpuqo` | The Sheet Toolbar: ticket 54 shipped as part of ExSheet (grilled 2026-10-02) |
+| 0110– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
@@ -32,7 +34,9 @@ block on `claude/exsheet-start-8cx3v1` before it uses the first number.
 | 81–99 | `claude/exsheet-cell-format` | Cell Format, continued |
 | 100–119 | `claude/exsheet-cell-format` | Cell Format, the fourteenth Windows run's answers |
 | 120–139 | `claude/exsheet-after-run-16` and its successors | Pointing Scope's line, continued: the sixteenth Windows run's answers |
-| 140– | free | reserve a block of twenty |
+| 140–159 | `claude/exsheet-part-c` | Part C of the eleventh Windows run: what ADR-0071 left to the next PR |
+| 160–179 | `claude/trusting-babbage-1tpuqo` | The Sheet Toolbar |
+| 180– | free | reserve a block of twenty |
 
 Another spec's tickets (`docs/specs/<feature>/issues/`) are numbered within that spec, and are not
 reserved here.

@@ -135,3 +135,77 @@ reference implementation cannot evaluate it and does not pretend to.
   the sequence actually differs — a no-op change does not clear selection. Distinguishing
   replaced-instance-same-identity rows needs Row Identity, which `From` does not yet accept;
   that lands with its update surface and extends this ADR.
+
+## A filter operand is read in one way, or refused *(2026-10-01, tickets 94, 96 and 97)*
+
+The condition form reopened an operand in the culture's text and read it back invariant first. A
+value could therefore come back as another one, with nothing said: under en-GB, 5 January returned
+as 1 May; under de-DE, 1234.5 returned as 12345. That is principle 1's quiet wrongness.
+- **Reopening:** an operand reopens in a text that reads back as itself. Dates use ticket 94's ISO
+  forms. Numbers use the culture's own ungrouped text (`OperandText`).
+- **Reading a typed number:** `FilterPanelChoices.ReadOperand` reads it in the culture the form
+  shows numbers in, checking grouping against how that culture writes it.
+  - Another culture's separators are refused: `1234.5` under de-DE, `1.234` under fr-FR.
+  - A text that reads two ways is refused, naming both readings: `1.234` under a culture that
+    groups with a dot.
+  - The answer is an `OperandReading`, either a value or an `OperandRefusal`.
+- **Both Chromes read the same way.** The built-in panel shows the refusal and applies nothing.
+  The MudBlazor panel shows it as the field's error and makes Apply unavailable (`CanApply`).
+- **Reading a typed date** follows the same rule (ticket 97): the ISO forms exactly, and anything
+  else in the culture alone, never invariant first. Under en-GB `05/01/2026` is 5 January.
+
+## A Date column declares its date type, and a typed operand takes it *(2026-10-02, ticket 98)*
+
+`ColumnType.Date` admitted three CLR types, one per column, but no column said which. Both
+filter panels therefore read a typed date as a `DateTime`, or as a `DateTimeOffset` when the
+text carried an offset. The engine holds a column to one date type, so a condition typed on a
+`DateOnly` column, on a `DateTimeOffset` column without an offset, or on a `DateTime` column
+with one, threw when it was applied. The fault was loud, never quiet, and every Date column in
+the DemoHost was a `DateTime`, so nothing showed it.
+
+- **The declaration.** A Date column declares a `DateType`: `DateTime` (the default),
+  `DateOnly` or `DateTimeOffset`. The Column carries it, its `ColumnInfo` carries it to the
+  engine and to a fetching Source, and `FilterPanelContext` carries it to both panels.
+  Declaring a `DateType` on a column that is not Date is refused when the column is built.
+  Silently ignoring it would leave a declaration that does nothing.
+- **The declaration is the law for cells too.** "A mismatch between declared type and accessor
+  value is refused" now reaches the date type. A cell whose date type is not the declared one
+  is refused, naming the column. The check is made where the one-date-type rule is already
+  held, eagerly at extraction.
+  - This breaks a Consumer whose `DateOnly` or `DateTimeOffset` column sorted before without a
+    declaration. It now throws until the column declares its type. Accepted, on a prerelease.
+  - The alternative kept undeclared columns lenient and still read typed conditions as
+    `DateTime`, so those conditions would have gone on throwing. The break is loud, at the
+    first read, and names its fix.
+- **A typed operand reads as the column's date type, or is refused.** Ticket 97's reading
+  (the ISO forms exactly, anything else in the culture alone) is unchanged. Its result must
+  then fit the declared type:
+  - **`DateTime`**: a date, or a date and time. A text with an offset is refused: a `DateTime`
+    compares by wall clock, and either way of dropping the offset would be quietly wrong.
+  - **`DateOnly`**: a date with no time. A text with a time is refused rather than cut to
+    its day.
+  - **`DateTimeOffset`**: a date and time with an explicit offset, written as ISO 8601 /
+    RFC 3339's extended form (`2026-10-02T00:00:00+09:00`, `2026-10-02T00:00:00Z`) or as
+    ticket 94's reopening form (`2026-10-02 00:00:00 +09:00`). A text with no offset is
+    refused. ISO 8601 calls a time with no offset "local time" and leaves its zone to
+    agreement between the parties. RFC 3339 requires an offset. On the Server host the grid
+    cannot know the browser's offset, and the server's own would be wrong. A date alone with
+    an offset (`2026-10-02+09:00`) is not an ISO form and is not read.
+  - These refusals are one new `OperandRefusal`, `NotTheColumnsDateForm`. Its words name the
+    form to type. The text did read as a date, so `NotReadable` would send the user looking
+    for the wrong mistake.
+- **A reopened operand reads back as itself** under both panels, whatever the declared type.
+  The reopening forms stay ticket 94's.
+- **The MudBlazor panel draws a `DateTimeOffset` column's operand as a text field**, read
+  through `ReadOperand`, with no calendar. A calendar gives a day with no offset, which this
+  section refuses, so every pick would be refused. `DateTime` and `DateOnly` keep the date
+  picker; a picked day is the `DateOnly`'s day.
+
+*Rejected:* converting the operand to the cell's type in the engine. A serialised Query's
+`DateTime` would then mean a day on one column and an instant on another, against
+ADR-0002. Inferring the type from the first non-Blank cell fails on an empty column and on a
+fetching Source before anything is read. Splitting `ColumnType.Date` into three types would
+change every table that decides by `ColumnType`, such as the operators and the Chrome's
+words, for a distinction only the reading and the comparison need. A Consumer-declared time
+zone for reading offset-less text waits for a recorded need, the same stance as the dynamic
+date operators above.

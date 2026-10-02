@@ -112,9 +112,11 @@ export default defineConfig({
         // scrollTop of rows × row height showed a later row here, which only a run at 150%
         // could catch (verification/2026-09-28-windows-3). And a far reveal, which paints
         // the slice at its target offset through that same compressed mapping (ADR-0012).
+        // And the Border lines (DC-59), whose pixels at 150% are Excel's case 9 at that zoom: a
+        // line's widths and dashes are device pixels, which only a real display scale lays out.
         {
             name: 'chrome-150',
-            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal/,
+            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59/,
             use: {
                 channel: 'chrome',
                 viewport: null,

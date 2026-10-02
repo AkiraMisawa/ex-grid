@@ -39,7 +39,7 @@ public class FillTests
     public void Formats_repeat_from_the_source()
     {
         var sheet = Column("1", "2");
-        sheet.SetFormat(At("A1"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(At("A1"), NumberFormat.Parse("0.00"));
         sheet.SetAlignment(At("A2"), HorizontalAlignment.Center);
 
         Fill(sheet, "A1:A2", "A3:A4", FillDirection.Down);
@@ -182,7 +182,7 @@ public class FillTests
     public void Enter_into_does_not_copy_the_entered_cells_format()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(At("A1"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(At("A1"), NumberFormat.Parse("0.00"));
         sheet.Enter("C1", "1");
         sheet.Enter("D1", "1");
 

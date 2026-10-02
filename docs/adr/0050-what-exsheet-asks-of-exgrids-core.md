@@ -299,3 +299,122 @@ Menu does not offer copy with headers. On a Sheet the column letters are address
 declares it by default and offers the command only when its own Consumer switches it on
 ([ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
 Without the declaration nothing changes.
+
+## Added for Cell Format *(2026-09-30, decided with the user)*
+
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) puts Fonts,
+Fills and Borders into a Sheet, with Excel's formatting keys and a Format Cells dialog. Three more
+declarations follow from it. Each is opt-in, and a Consumer that declares none of them sees no
+change (DC-1).
+
+**14. Declared keys.** A Consumer can declare keys the core claims and raises. ExSheet declares
+Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift with `~`, `!`,
+`@`, `#`, `$`, `%`, `^`, `&` and `_`; and Ctrl+1.
+- **The core claims a declared key whether or not an edit is open, and raises it together with
+  whether one is.** While an edit is open, the Consumer decides what the key does. ExSheet refuses
+  it and says why (ADR-0071).
+- **Without the declaration, the key stays the browser's**, as today.
+- **The key table keeps its arbitration** ([ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
+  A declared key never takes a key the core already answers for itself. A declaration naming one is
+  refused by name.
+- **A declared key is raised with the Selection as the grid holds it at the key, and the Row
+  Sequence Version it is written in.** `SelectionChanged` is raised after the render that shows a
+  move, which on a circuit is a round trip later. So a key pressed straight after a move can reach
+  the Consumer before the move does. *(Found on the Server host by `format-keys.spec.mjs`, on
+  2026-10-01: Ctrl+B straight after Shift+Up formatted the Focus cell alone. The version is carried
+  for the reason every positional notification carries one,
+  [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md).)*
+- **A Consumer can read the Selection as the grid holds it now.** *(2026-10-01, ticket 56.)*
+  `ReadSelection()` returns the grid's Held Selection, with the Row Sequence Version it is written in.
+  - It is a synchronous read on the renderer's context. It is opt-in by being called, and nothing
+    reaches JavaScript.
+  - A Consumer reconciles it with `HeldSelection.Under(version)`, as ADR-0011 asks of positions.
+  - ExSheet adopts it at each command that acts on the Selection: `SetCellFormatAsync`,
+    `OpenFormatCellsAsync`, the Context Menu's "Format Cells…" and a whole-column resize's undo
+    step. So a command run within a round trip of a keyboard move acts on the cells the user sees
+    selected. The late `SelectionChanged` then names the same Selection, and is no move.
+
+**15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
+underline and strikethrough), its Fill, and its four Border sides.
+- **Without the declaration, cells look as they do today.**
+- **A bold cell is judged by bold widths.** `CellTextMetrics` gains them: each character class
+  measured at the bold weight. A bold cell's `####` decision
+  ([ADR-0016](./0016-column-width-and-overflow.md)), and the width it hands to a Consumer's painted
+  text (item 11), use them.
+- **How the appearance is painted is ADR-0071's measurement to decide.** It might be an inline
+  `style`, a per-cell custom property or interned classes for the Font and Fill, and a layer over
+  the rows or lines inside each cell for the Border. Whatever is chosen must keep P1–P9
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)). A row repaints when
+  its appearance changes and skips otherwise. Nothing per cell reaches JavaScript. The DOM does not
+  grow with the extent. *(Decided on 2026-10-01 from ticket 44's measurement; ADR-0071, "What the
+  measurement chose".)*
+  - Font and Fill use interned classes in a generated stylesheet.
+  - Borders are drawn inside each cell. Each cell paints its own share of Excel's centred line,
+    from edges resolved once per row, outside the render. So a border change repaints the rows
+    either side of the edge as well.
+  - *(2026-10-01, ticket 47, the declaration as built.)*
+    - **The lookup.** The grid parameter `CellAppearance` takes a
+      `CellAppearanceOf<TRow>(TRow row, GridColumn<TRow> column)`. It is null by default, and then
+      nothing is painted for it.
+    - **What it answers.** A `CellAppearance` holds `FontColour`, `Bold`, `Italic`, `Underline`,
+      `Strikethrough`, `Fill`, and `Top`, `Right`, `Bottom` and `Left`. Each side is a `Border`, a
+      `BorderStyle` (None and Excel's thirteen) with an `RgbColour`.
+    - **Two lines on one edge.** The grid parameter `EdgeBorder` takes an `EdgeBorderOf`. It is
+      asked only when the two cells record different lines on the same edge. Without it, the upper
+      or left cell's line is drawn.
+    - **When a row repaints.** The row instance and the lookup signal a change, as for Cell State
+      ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)). Each painted row is resolved
+      once, outside its render, from itself and the rows either side, into an immutable object the
+      row compares by reference. A row repaints only when what it paints changed.
+    - **Bold widths.** `CellTextMetrics` gains `BoldWideWidthPx`, `BoldDigitWidthPx`,
+      `BoldNarrowWidthPx` and `Bold`.
+  - *(2026-10-01, tickets 88 and 90.)*
+    - **The Cell Editor's look.** The grid parameter `EditorAppearance` (a
+      `CellAppearanceOf<TRow>`) answers how the editor looks over the cell it edits: the Fill as its
+      ground, and the Font as its text. Borders are not read.
+      - Without the parameter, the editor uses `CellAppearance`. With neither, it is unchanged.
+      - The editor's rules set `--ex-editor-background` and `--ex-editor-color`, so ADR-0057's
+        coloured References read over a Fill.
+      - ExSheet answers with the Font's own colour, not a Number Format's, because the editor shows
+        the Entry.
+    - **`--ex-row-rule`** is a layer hook on a lined cell, as `--ex-tint` is. It lies beneath the
+      lines, so a cell whose ground covers the row's gridline can paint the gridline back. ExSheet
+      sets it on pinned cells. *(Ticket 92: the core now sets it on a Pinned Column's cells
+      itself, to its row's rule, and to none under a Fill and on group and total rows, so a theme's
+      row rule no longer stops at the pinned block.)*
+- **Borders are drawn as Excel draws them.** Each line is centred on the gridline. A thick line
+  reaches into both cells. Lines lie above Fills and below the Focus, the Selection and the
+  Reference Outlines. Which of two lines recorded on one edge is drawn is the Consumer's answer, so
+  ExSheet can give Excel's rule.
+
+**16. A Consumer's popover.** A Consumer can have the grid show its own content in the grid's
+popover frame. The frame is placed inside the grid's box and bounded by it
+([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md)). It takes the keyboard and returns it
+on closing ([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md)),
+and it closes as a Cancel when the box shrinks below one row. ExSheet uses it for Format Cells under
+the built-in Chrome.
+- Without the declaration, nothing changes.
+- The MudBlazor Chrome does not use it. It shows Format Cells in a `MudDialog`, whose frame is its
+  own (ADR-0071; ADR-0010's note of 2026-09-30).
+- *(2026-10-01, ticket 93.)* **A Consumer that opens a frame of its own hands the keyboard to it
+  through the core.**
+  - On a circuit, keys typed between the command that opens Format Cells and the frame taking
+    focus reached the grid. A digit started an edit behind the dialog, under both Chromes, whether
+    the command came from Enter on the menu, a click or Ctrl+1. That is quietly wrong (principle 1).
+  - **The core's own popover:** the existing key hold waits for the popover to hold the keyboard,
+    and then replays the keys to it. A declared key that opens one is held as Alt+Down's is, and a
+    click on a menu item starts the hold as Enter does.
+  - **A frame of the Consumer's own:** the core gains `HandKeyboardToFrameAsync()`. ExSheet calls it
+    whenever it opens Format Cells in a frame of the Chrome's own. The core then:
+    - keeps the keyboard on its root after the command, until the frame takes it, and holds keys
+      typed on the root or a menu meanwhile;
+    - replays them, in order, to the element that took focus. A frame's element takes every key
+      but Tab; a tab takes its arrows, Home and End;
+    - drops them if the keyboard never arrives within the hold's fallback, or goes to another grid.
+    The keys are never the grid's.
+    *(As built: the note first said the root would not take the keyboard back. Keys typed on `body`
+    are heard only by a listener on `document`, which ADR-0021 does not allow, so the root keeps it
+    and its hold holds the keys. A key typed while focus is briefly on `body`, after a click, is lost
+    and never the grid's.)*
+  - A dynamic call was chosen over a fixed flag on the command, because the same command opens the
+    core's popover under one Chrome and a frame of its own under another.

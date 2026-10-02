@@ -218,7 +218,7 @@ public class ColumnWidthTests
         var json = sheet.ToDocument().ToJson();
 
         Assert.Equal(
-            """{"version":7,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:D","width":20,"kind":"setByUser"},{"at":"E:E","width":12.5,"kind":"setByUser"},{"at":"G:G","width":20,"kind":"setByUser"}],"cells":[{"at":"B2","number":1}]}""",
+            """{"version":8,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:D","width":20,"kind":"setByUser"},{"at":"E:E","width":12.5,"kind":"setByUser"},{"at":"G:G","width":20,"kind":"setByUser"}],"cells":[{"at":"B2","number":1}]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         Assert.Equal(20, reopened.GetColumnWidth(2)?.Width);
@@ -251,7 +251,7 @@ public class ColumnWidthTests
         Assert.Empty(document.ColumnWidths);
         Assert.Null(sheet.GetColumnWidth(1));
         Assert.Equal(
-            """{"version":7,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:B","format":"0.00"}],"cells":[]}""",
+            """{"version":8,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:B","format":"0.00"}],"cells":[]}""",
             sheet.ToDocument().ToJson());
     }
 
@@ -355,7 +355,7 @@ public class ColumnWidthTests
         var json = sheet.ToDocument().ToJson();
 
         Assert.Equal(
-            """{"version":7,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":11,"kind":"widenedByEntry"},{"at":"D:D","width":11,"kind":"setByUser"},{"at":"E:E","width":11,"kind":"widenedByEntry"}],"cells":[]}""",
+            """{"version":8,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":11,"kind":"widenedByEntry"},{"at":"D:D","width":11,"kind":"setByUser"},{"at":"E:E","width":11,"kind":"widenedByEntry"}],"cells":[]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), reopened.GetColumnWidth(2));
@@ -373,7 +373,7 @@ public class ColumnWidthTests
         Assert.True(Assert.Single(document.ColumnWidths).IsCustom);
         Assert.Equal(new SheetColumnWidth(20, SheetColumnWidthKind.SetByUser), sheet.GetColumnWidth(2));
         Assert.Equal(
-            """{"version":7,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20,"kind":"setByUser"}],"cells":[]}""",
+            """{"version":8,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:C","width":20,"kind":"setByUser"}],"cells":[]}""",
             sheet.ToDocument().ToJson());
     }
 
@@ -388,7 +388,22 @@ public class ColumnWidthTests
         Assert.Equal(new SheetColumnWidth(11, SheetColumnWidthKind.WidenedByEntry), sheet.GetColumnWidth(2));
         Assert.All(document.ColumnWidths, w => Assert.True(w.IsCustom));
         Assert.Equal(
-            """{"version":7,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"kind":"setByUser"},{"at":"C:C","width":11,"kind":"widenedByEntry"}],"cells":[]}""",
+            """{"version":8,"culture":"en-US","name":"Sheet1","columnWidths":[{"at":"B:B","width":20,"kind":"setByUser"},{"at":"C:C","width":11,"kind":"widenedByEntry"}],"cells":[]}""",
             sheet.ToDocument().ToJson());
+    }
+
+    [Fact] // ADR-0071 case 17: the cells a Number Format may widen a column for are the range's Entries, a whole column's included, and a formatted blank is not one
+    public void The_entries_in_a_range_are_its_cells_that_hold_one()
+    {
+        var sheet = NewSheet();
+        sheet.Enter(CellAddress.Parse("B2"), "1");
+        sheet.Enter(CellAddress.Parse("B1048576"), "=1/3");
+        sheet.Enter(CellAddress.Parse("C2"), "abc");
+        sheet.SetNumberFormat(CellAddress.Parse("B3"), NumberFormat.Parse("0.00"));
+
+        Assert.Equal(["B2", "B1048576"], sheet.EntryAddressesIn(Columns("B:B")).Order().Select(a => a.ToString()));
+        Assert.Equal(["B2", "C2"], sheet.EntryAddressesIn(Columns("2:2")).Order().Select(a => a.ToString()));
+        Assert.Equal(["B2"], sheet.EntryAddressesIn(Columns("A1:B3")).Select(a => a.ToString()));
+        Assert.Empty(sheet.EntryAddressesIn(Columns("B3")));
     }
 }

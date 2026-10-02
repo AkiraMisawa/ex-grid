@@ -28,4 +28,17 @@
     <ProjectReference Include="..\..\src\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The glyph-width corpus and the painted widths of each face (ADR-0016, ticket 83);
+         Roboto's estimate is held to them. tests/GlyphWidths/README.md says how they are made. -->
+    <Compile Include="..\GlyphWidths\GlyphWidthRecord.cs" Link="GlyphWidths\GlyphWidthRecord.cs" />
+    <None Include="..\GlyphWidths\*.json" Link="GlyphWidths\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What a coloured-text layer colours, read off what the core writes on it (ADR-0057, note of
+         2026-10-01): its text is one run, coloured by highlights. -->
+    <Compile Include="..\ReferenceText\ColouredText.cs" Link="ReferenceText\ColouredText.cs" />
+  </ItemGroup>
+
 </Project>

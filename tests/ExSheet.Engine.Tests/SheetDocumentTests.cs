@@ -12,13 +12,13 @@ public class SheetDocumentTests
     {
         var json = NewSheet().ToDocument().ToJson();
 
-        Assert.Equal("""{"version":7,"culture":"en-US","name":"Sheet1","cells":[]}""", json);
+        Assert.Equal("""{"version":8,"culture":"en-US","name":"Sheet1","cells":[]}""", json);
     }
 
     [Theory] // ADR-0048 (SH-12): a document of an unknown version is refused, not guessed at
-    [InlineData("""{"version":8,"culture":"en-US","name":"Sheet1","cells":[]}""", 8)]
+    [InlineData("""{"version":9,"culture":"en-US","name":"Sheet1","cells":[]}""", 9)]
     [InlineData("""{"version":0,"culture":"en-US","cells":[]}""", 0)]
-    [InlineData("""{"version":8,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 8)]
+    [InlineData("""{"version":9,"culture":"en-US","cells":[{"at":"A1","number":1}],"sheets":[]}""", 9)]
     public void An_unknown_version_is_refused(string json, int version)
     {
         var refusal = Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
@@ -91,10 +91,10 @@ public class SheetDocumentTests
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "1234.5");
-        sheet.SetFormat(CellAddress.Parse("A1"), NumberFormat.Parse("#,##0.00"));
+        sheet.SetNumberFormat(CellAddress.Parse("A1"), NumberFormat.Parse("#,##0.00"));
         sheet.SetAlignment(CellAddress.Parse("A1"), HorizontalAlignment.Center);
         sheet.Enter("B1", "9/26/2026");
-        sheet.SetFormat(CellAddress.Parse("C1"), NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat(CellAddress.Parse("C1"), NumberFormat.Parse("0%"));
         sheet.SetAlignment(CellAddress.Parse("D1"), HorizontalAlignment.Right);
 
         var reopened = Sheet.Open(SheetDocument.FromJson(sheet.ToDocument().ToJson()));
@@ -102,7 +102,7 @@ public class SheetDocumentTests
         foreach (var name in new[] { "A1", "B1", "C1", "D1" })
         {
             var address = CellAddress.Parse(name);
-            Assert.Equal(sheet.GetFormat(address), reopened.GetFormat(address));
+            Assert.Equal(sheet.GetNumberFormat(address), reopened.GetNumberFormat(address));
             Assert.Equal(sheet.GetAlignment(address), reopened.GetAlignment(address));
             Assert.Equal(sheet.GetDisplay(address), reopened.GetDisplay(address));
         }
@@ -174,7 +174,7 @@ public class SheetDocumentTests
 
         Assert.Equal("Sheet1", sheet.Name);
         Assert.Equal(6, sheet.Number("A2"));
-        Assert.StartsWith("""{"version":7,"culture":"en-US","name":"Sheet1",""", sheet.ToDocument().ToJson());
+        Assert.StartsWith("""{"version":8,"culture":"en-US","name":"Sheet1",""", sheet.ToDocument().ToJson());
     }
 
     [Fact] // ADR-0048, ADR-0047: a version 2 document still opens; its cells' formats are the cells' own
@@ -190,11 +190,11 @@ public class SheetDocumentTests
 
         Assert.Equal("25%", sheet.GetDisplay(CellAddress.Parse("A1")).Text);
         Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(CellAddress.Parse("A1")));
-        Assert.Null(document.Cells[1].Format);
+        Assert.Null(document.Cells[1].NumberFormat);
         Assert.Empty(document.Columns);
         Assert.Empty(document.Rows);
         Assert.Equal(
-            """{"version":7,"culture":"en-US","name":"Book","cells":[{"at":"A1","number":0.25,"format":"0%","align":"center"},{"at":"B1","align":"right"}]}""",
+            """{"version":8,"culture":"en-US","name":"Book","cells":[{"at":"A1","number":0.25,"format":"0%","align":"center"},{"at":"B1","align":"right"}]}""",
             sheet.ToDocument().ToJson());
     }
 
@@ -202,22 +202,22 @@ public class SheetDocumentTests
     public void Column_and_row_formats_are_recorded_as_runs()
     {
         var sheet = NewSheet();
-        sheet.SetFormat(CellRange.Parse("B:D"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(CellRange.Parse("B:D"), NumberFormat.Parse("0.00"));
         sheet.SetAlignment(CellRange.Parse("F:F"), HorizontalAlignment.Center);
-        sheet.SetFormat(CellRange.Parse("3:4"), NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat(CellRange.Parse("3:4"), NumberFormat.Parse("0%"));
         sheet.Enter("C3", "50%");
         sheet.Enter("C5", "0.5");
-        sheet.SetFormat(CellAddress.Parse("C5"), NumberFormat.General);
+        sheet.SetNumberFormat(CellAddress.Parse("C5"), NumberFormat.General);
 
         var json = sheet.ToDocument().ToJson();
 
         Assert.Equal(
-            """{"version":7,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:D","format":"0.00"},{"at":"F:F","align":"center"}],"rows":[{"at":"3:4","format":"0%"}],"cells":[{"at":"C3","number":0.5},{"at":"C5","number":0.5,"format":"General"}]}""",
+            """{"version":8,"culture":"en-US","name":"Sheet1","columns":[{"at":"B:D","format":"0.00"},{"at":"F:F","align":"center"}],"rows":[{"at":"3:4","format":"0%"}],"cells":[{"at":"C3","number":0.5},{"at":"C5","number":0.5,"format":"General"}]}""",
             json);
         var reopened = Sheet.Open(SheetDocument.FromJson(json));
         Assert.Equal("50%", reopened.GetDisplay(CellAddress.Parse("C3")).Text);
         Assert.Equal("0.5", reopened.GetDisplay(CellAddress.Parse("C5")).Text);
-        Assert.Equal("0.00", reopened.GetFormat(CellAddress.Parse("D1000")).Code);
+        Assert.Equal("0.00", reopened.GetNumberFormat(CellAddress.Parse("D1000")).Code);
         Assert.Equal(HorizontalAlignment.Center, reopened.GetAlignment(CellAddress.Parse("F7")));
         Assert.Equal(json, reopened.ToDocument().ToJson());
     }

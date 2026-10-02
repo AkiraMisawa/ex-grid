@@ -38,7 +38,7 @@ public sealed partial class Sheet
     /// Anything else is refused, never filled with copies: text Excel would continue (holding a
     /// digit, like <c>Item 1</c>, or a day or month name), two or more dates (Excel may step them
     /// by month or year), a time of day, and numbers mixed with anything else.
-    /// Formats and alignment are repeated from the source. With <paramref name="copyOnly"/>, Excel's
+    /// Cell Formats are repeated from the source. With <paramref name="copyOnly"/>, Excel's
     /// fill keys (Ctrl+D, Ctrl+R): every line is a copy, and no pattern is continued or refused.
     /// </summary>
     internal (SheetRefusal? Refusal, List<(CellAddress Address, CellState State)> States) PlanFill(CellRange source, CellRange target, FillDirection direction, bool copyOnly = false)
@@ -76,7 +76,7 @@ public sealed partial class Sheet
 
             // Position along the axis relative to the source's first cell: 0..length-1 is the
             // source; the target is length.. going forward and ..-1 going back.
-            var cells = Enumerable.Range(0, length).Select(i => ShownState(SourceAt(i))).ToArray();
+            var cells = Enumerable.Range(0, length).Select(i => CarriedState(SourceAt(i))).ToArray();
             var rule = FillRule(cells, SourceAt, copyOnly, out var refusal);
             if (refusal is not null) return (refusal, []);
             for (var k = 0; k < count; k++)
@@ -113,7 +113,7 @@ public sealed partial class Sheet
             if (constant.Kind == ValueKind.Number)
             {
                 numbers++;
-                var format = cells[i].Format!;
+                var format = cells[i].NumberFormat!;
                 if (format.IsDate)
                 {
                     if (!format.IsDateOnly || cells.Length > 1)
@@ -242,7 +242,7 @@ public sealed partial class Sheet
     {
         var format = culture.DateTimeFormat;
         return new HashSet<string>(
-            format.DayNames.Concat(format.AbbreviatedDayNames).Concat(format.MonthNames).Concat(format.AbbreviatedMonthNames).Where(n => n.Length > 0),
+            format.DayNames.Concat(format.AbbreviatedDayNames).Concat(format.MonthNames).Concat(NumberFormat.AbbreviatedMonthNamesOf(culture)).Where(n => n.Length > 0),
             StringComparer.Create(culture, ignoreCase: true));
     }
 }

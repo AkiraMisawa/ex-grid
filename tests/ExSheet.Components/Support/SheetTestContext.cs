@@ -34,13 +34,19 @@ public abstract class SheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose", "handOff" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
     }
 
     internal FakeTimeProvider Clock { get; } = new();
+
+    /// <summary>How many times the grid has asked for the keyboard back on its root (ADR-0039, ADR-0021).</summary>
+    internal int ReclaimCount => _handle.Invocations["reclaimFocus"].Count;
+
+    /// <summary>Where the grid told its key gate the keyboard is going, in order (ADR-0050 item 16, 2026-10-01).</summary>
+    internal IReadOnlyList<string> HandOffs => [.. _handle.Invocations["handOff"].Select(i => (string)i.Arguments[0]!)];
 
     /// <summary>How many times Escape with nothing to dismiss has told the gate to release Tab
     /// (ADR-0012, rewritten 2026-10-01). The handle has no blur: a call to one fails the strict
@@ -58,6 +64,27 @@ public abstract class SheetTestContext : BunitContext
               .Add(s => s.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"));
             parameters?.Invoke(ps);
         });
+    }
+
+    /// <summary>
+    /// Renders an ExSheet under a Wrapper's cascaded presentation (ADR-0030): the glyph widths the
+    /// grid inside resolves its Cell Metrics from, connected and interactive as <see cref="RenderSheet"/>
+    /// renders one.
+    /// </summary>
+    internal IRenderedComponent<SheetComponent> RenderSheetUnder(
+        ExGrid.GridPresentationDefaults presentation, Action<ComponentParameterCollectionBuilder<SheetComponent>>? parameters = null)
+    {
+        Interactive();
+        var host = Render<CascadingValue<ExGrid.GridPresentationDefaults>>(ps => ps
+            .Add(c => c.Value, presentation)
+            .AddChildContent<SheetComponent>(sheet =>
+            {
+                sheet.Add(s => s.ViewportHeight, (ViewportSize)400)
+                     .Add(s => s.ViewportWidth, (ViewportSize)700)
+                     .Add(s => s.Culture, System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+                parameters?.Invoke(sheet);
+            }));
+        return host.FindComponent<SheetComponent>();
     }
 
     /// <summary>Renders a Consumer's page holding an ExSheet, connected and interactive as <see cref="RenderSheet"/> renders one.</summary>

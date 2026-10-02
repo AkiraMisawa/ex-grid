@@ -198,7 +198,8 @@ These are the places where reaching for JS would be the easy answer, and where w
   the keyboard is still this grid's, 2026-09-30.)* *(Five since 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md): the root's own
   focus passed on to its Keyboard Field, and the field given up by a press during a composition, so
   that the composition ends and its text is held ahead of the press. The third is refined: the
-  editor's request waits while the field composes. The hand-back puts the keyboard in the field.)*
+  editor's request waits while the field composes, and until the task after a composition's end
+  (ticket 120). The hand-back puts the keyboard in the field.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.
@@ -344,6 +345,23 @@ because no `input` follows the end of an IME composition and the colours would o
 next key. It re-runs the same comparison, and nothing else.)* The ground is the first:
 Blazor cannot know that the browser's value is ahead of the value the server rendered for. Neither
 addition reads layout. They are the editor listener and the scroll offsets, not a new entry.)*
+
+*(Extended 2026-10-01 by ADR-0057's note of that date, decided with the user, ticket 86: the layer is
+coloured by the CSS Custom Highlight API.)*
+- When the editor listener shows the layer, as it already decides, it also builds one `Range` per
+  Reference over the layer's single text node. It adds each `Range` to the highlight its colour
+  names, and clears them when the layer hides.
+- The positions come from data the core renders on the layer: start, length and colour. The script
+  reads no layout and hears no new event.
+- **Each grid registers highlights under names of its own**, carrying its instance's id. Its
+  generated stylesheet paints `::highlight()` for those names from the existing colour tokens.
+  `CSS.highlights` is one registry per document, so shared names would let one grid clear another's
+  colours. Names of its own keep the instances independent (ADR-0018).
+- The `MutationObserver` watches two attributes of the layer, not one: its text and its colour
+  stretches (`data-ex-text`, `data-ex-colours`). A change of either rebuilds the ranges.
+- Under forced colours Chrome ignores `::highlight()` rules, so the layer's line opts out of forced
+  colours and takes the system colours itself.
+- It is still the editor listener, not a new entry.
 
 *(Added 2026-09-29, decided with the user, with
 [ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6: the capture-phase `mousedown`

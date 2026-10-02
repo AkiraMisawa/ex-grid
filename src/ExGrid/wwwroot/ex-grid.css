@@ -69,7 +69,15 @@
        border, which would add to the box (ADR-0028/0029). */
     background-image: linear-gradient(to top, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
 }
-.ex-viewport { position: absolute; top: var(--ex-header-height); left: 0; right: 0; will-change: transform; }
+/* The rows' layer. Its transform (inline, ADR-0053) makes it a stacking context, which the
+   selection layers inside it rely on (ADR-0008). It is not composited on its own: as a layer
+   (will-change: transform) it was rasterised at the fraction of a device pixel where the page
+   happened to put the grid, and every line a cell draws in device pixels blended across two (a
+   Sheet's dotted Border read 2, 1, 3, 1 where Excel's is 2, 2, 2, 2; CI, Linux, 150%, ticket 49).
+   Painted with its parent, it is snapped to the device pixels as any box is. Scrolling measured
+   the same either way: frame intervals on /wide and /sheet, slow and flung, at 100% and 150%,
+   headless, within 0.2 ms of each other at the median. */
+.ex-viewport { position: absolute; top: var(--ex-header-height); left: 0; right: 0; }
 /* pointer-events is inherited, so this one declaration makes every cell, spacer and
    Placeholder bar transparent to the mouse and leaves .ex-viewport as the target of every
    event in the body. The grid then reads the cell from the event's own offsets and its
@@ -79,9 +87,23 @@
 .ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); pointer-events: none; }
 /* The row rule, transparent by default: a Theme turns it on by setting the token —
    painted, never a border, so the row's box never grows (ADR-0028/0029). The Row Kind
-   blocks below override it on group and total rows, whose grounds carry their own. */
+   blocks below override it on group and total rows, whose grounds carry their own. Its
+   width is --ex-rule-width in whole device pixels (--ex-rule-dp, below), here and wherever
+   else the row's rule is painted. */
 .ex-row {
-    background-image: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
+    background-image: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px));
+}
+/* The same rule on a Pinned Column's cell (ticket 92). Its opaque ground hides the rule its row
+   paints beneath it, so the cell paints the rule itself — transparent until a theme turns it on,
+   as the row's is, so a grid without one paints as before. It is named in --ex-row-rule, and each
+   ground that paints over the cell keeps it where the scrollable cells show it: above a Row
+   Stripe, which the row paints beneath its rule, and beneath a Missing state's tint and a cell's
+   lines (.ex-lined), which a scrollable cell paints over its row's. A Fill covers it, as a Fill
+   covers its gridlines (the generated rule names none), and a group or total row names none, as
+   its row paints none. One class's specificity, so each of those wins whatever its order. */
+.ex-pinned:where(.ex-cell) {
+    --ex-row-rule: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px));
+    background-image: var(--ex-row-rule);
 }
 /* Row Stripes (ADR-0038): the class comes from the row's absolute position, so the pattern
    stays with its row however the Viewport scrolls — :nth-child() would count painted
@@ -89,14 +111,18 @@
    whose opaque ground would otherwise stop the band at the pinned block. Not on the
    scrollable cells: they are transparent over the row already, and a second layer there
    would make them darker than the pinned ones. Declared before Row Kind and Cell State, so
-   that at equal specificity the grounds that carry meaning paint over the one that does not. */
+   that at equal specificity the grounds that carry meaning paint over the one that does not.
+   A cell's tint — this one, Row Kind's and a Missing state's — is named in --ex-tint and
+   painted from it, so that a cell carrying lines can paint the same tint beneath them
+   (.ex-lined, ADR-0050 item 15); the cascade that picks the winning tint is unchanged. */
 .ex-row-stripe {
     background-image:
-        linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px)),
+        linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px)),
         linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
 }
 .ex-row-stripe .ex-pinned {
-    background-image: linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+    --ex-tint: linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+    background-image: var(--ex-row-rule, none), var(--ex-tint);
 }
 /* Row Kind (ADR-0024): the role of a row, painted without touching its geometry. Height
    stays exactly the detail row's — the virtualisation arithmetic, the selection overlay
@@ -106,19 +132,37 @@
    contains (ADR-0001). Weight and ground only. */
 .ex-row-group { font-weight: var(--ex-row-group-weight, 600); }
 .ex-row-total { font-weight: var(--ex-row-total-weight, 600); }
-/* Painted on the row AND on its cells, as a background IMAGE layer. A Pinned Column
-   carries its own opaque background-color (it has to: the columns underneath pass beneath
-   it), so a tint on the row alone stops at the pinned block and the role of the row is
-   visible everywhere except the column its name is in. An image layer sits above that
-   colour on the cell itself, and the row keeps its own for the space beyond the last
-   column. The separating rule is likewise a 1px gradient, not a border: .ex-row's height
-   is content-box, so a border would make every total row one pixel taller than the
+/* Painted on its cells, as a background IMAGE layer, and on the row only where no cell
+   is. A Pinned Column carries its own opaque background-color (it has to: the columns
+   underneath pass beneath it), and so does a cell with a Fill, so a tint on the row alone
+   stops at the pinned block and the role of the row is visible everywhere except the
+   column its name is in. An image layer sits above that colour on the cell itself. A
+   scrollable cell without a Fill is transparent, so a tint on the row as well would lie
+   beneath it, and the cell would be two tints deep where its pinned neighbour is one
+   (ticket 85): the row paints none beneath its cells. Its ::after, after the last of them,
+   grows into the space beyond the last column and paints it there, and the gap standing in
+   for the columns virtualised away paints it too, so no part of the row goes untinted while
+   a sideways scroll waits for its cells. A Placeholder paints no scrollable cell, only its
+   pinned ones and its bar, which is its ::after, so it keeps the tint on the row. Every
+   part of the row is then one tint deep over its own ground, which is what the token says.
+   The separating rule is likewise a 1px gradient, not a border: .ex-row's height is
+   content-box, so a border would make every total row one pixel taller than the
    arithmetic says — the drift ADR-0013 warns about, and invisible on screen. */
 .ex-row-group, .ex-row-group .ex-cell {
-    background-image: linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
+    --ex-tint: linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
+    --ex-row-rule: none;
 }
 .ex-row-total, .ex-row-total .ex-cell {
-    background-image: linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px);
+    --ex-tint: linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px);
+    --ex-row-rule: none;
+}
+.ex-row-group, .ex-row-total { background-image: none; }
+.ex-row-group .ex-cell, .ex-row-group .ex-gap, .ex-row-group.ex-placeholder,
+.ex-row-total .ex-cell, .ex-row-total .ex-gap, .ex-row-total.ex-placeholder { background-image: var(--ex-tint); }
+.ex-row-group:not(.ex-placeholder)::after, .ex-row-total:not(.ex-placeholder)::after {
+    content: "";
+    flex: 1 1 auto;
+    background-image: var(--ex-tint);
 }
 /* Widths come from the C#-resolved per-column widths as inline styles (ADR-0016);
    the padding is a Geometry Token from the same Grid Metrics the width estimates read,
@@ -214,6 +258,72 @@
    own box, because the cell clips anything that reaches past its edge: its width and inward
    offset are the Focus outline's, set with it in the selection's rules below. */
 .ex-action-chosen { outline-style: solid; outline-color: var(--ex-focus-outline, CanvasText); }
+/* Borders (ADR-0050 item 15; ADR-0071, "What the measurement chose"): each cell draws its own share
+   of Excel's centred line — the upper (left) cell the gridline's pixel and what lies above (left
+   of) it, the lower (right) cell the pixel a thick or double line reaches past it — so nothing is
+   painted outside a row and no row changes height. A solid line on the gridline is the cell's own
+   bottom or right border (its generated class gives a right border's width back out of the
+   padding); everything else is a background layer over the Fill and under the text. The grid's
+   generated stylesheet names each layer in custom properties (an image, its size, where it stands;
+   per side t, r, b, l), one class per side, line style and colour, and this one rule reads them, so
+   the sheet grows with the lines and never with their combinations. Beneath the lines, the cell's
+   tint (--ex-tint: a Row Stripe's, a Row Kind's or a Missing state's, as the cascade picked it),
+   which the lines never take away (ADR-0038, ADR-0024, ADR-0006). It covers the whole cell, as on
+   a cell without lines, so it also lies over a neighbour's Fill covering the gridline this cell
+   holds (--ex-cover-r, --ex-cover-b: the right or lower cell's, over this cell's own Fill too, and
+   beneath any line on that gridline) — in a group or total row that neighbour wears the same
+   tint, and a total row's rule runs on across the gridline — and beneath those the column rule,
+   an inset shadow everywhere else, which would lie over the lines. Last, the row's rule, where a
+   cell whose own ground hides the row's names it in --ex-row-rule (a Pinned Column's cell does,
+   above): beneath the covers too, as a Fill covers a gridline. All of it lies over the cell's
+   own Fill, its background colour. Declared after Row Kind, whose rules paint the tint alone, and
+   before the Cell States, so a Modified cell's mark still wins its box-shadow; Missing's rule
+   leaves a lined cell's layers to this one. */
+.ex-cell.ex-lined {
+    background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
+        var(--ex-tint, none), var(--ex-cover-r, none), var(--ex-cover-b, none),
+        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0),
+        var(--ex-row-rule, none);
+    background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
+        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
+        0 0, 0 0, 0 0, 0 0, 0 0;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+    box-shadow: none;
+}
+/* One device pixel: a line's lengths are the screen's, as Excel's are — at 150% a thin line is
+   still one pixel and thick three (the eleventh Windows run, case 9), and a dash pattern is the same
+   number of pixels at every scale, its long dash 9 (the fourteenth, case 18). The resolution follows
+   browser zoom and display scale alike; a resolution between two steps draws a little under a
+   pixel, which the browser blends. Paint only: nothing in C# computes with it.
+
+   --ex-rule-dp is a row's rule — the horizontal gridline — in whole device pixels: --ex-rule-width
+   rounded down to the device pixel, and never thinner than the token where the token is under one.
+   So 1px is one device pixel at 150%, as Excel's gridline is (ADR-0071, Part C of the eleventh run).
+   Left at 1.5 device pixels, the band was one row under Chrome's GPU rasteriser and two under its
+   software one — CI's, headed under xvfb on Linux — and so was the Fill over it (ticket 99). At a
+   whole scale it is the token, as before. A column's rule keeps --ex-rule-width: a column edge
+   lies on half a device pixel at 150%, which no width makes exact (ADR-0071, the same part). */
+.ex-grid {
+    --ex-dp: 1px;
+    --ex-rule-dp: max(min(var(--ex-rule-width, 1px), var(--ex-dp)), round(down, var(--ex-rule-width, 1px), var(--ex-dp)));
+}
+@media (min-resolution: 1.1dppx) { .ex-grid { --ex-dp: calc(1px / 1.1); } }
+@media (min-resolution: 1.25dppx) { .ex-grid { --ex-dp: 0.8px; } }
+@media (min-resolution: 1.5dppx) { .ex-grid { --ex-dp: calc(1px / 1.5); } }
+@media (min-resolution: 1.75dppx) { .ex-grid { --ex-dp: calc(1px / 1.75); } }
+@media (min-resolution: 2dppx) { .ex-grid { --ex-dp: 0.5px; } }
+@media (min-resolution: 2.5dppx) { .ex-grid { --ex-dp: 0.4px; } }
+@media (min-resolution: 3dppx) { .ex-grid { --ex-dp: calc(1px / 3); } }
+/* Tone (ADR-0006/0029): the meaning a column's rule attached to the value — a gain, a
+   loss — as the theme's tokens paint it. No default colour: the bare grid paints a
+   toned cell as an ordinary one until a token says otherwise, which is Excel's default
+   number format too. Declared before the Cell State block, at the same specificity, so a
+   state the Consumer named outranks a tone its rule derived, whatever colours a theme
+   gives the two. */
+.ex-cell.ex-tone-positive { color: var(--ex-tone-positive-color, inherit); }
+.ex-cell.ex-tone-negative { color: var(--ex-tone-negative-color, inherit); }
 /* Cell State (ADR-0006): the grid says which of the five states a cell is in, the theme
    says what that looks like — hence a variable per state with a default that only has to
    be legible. Every one of them decorates; none replaces the text. Missing in particular
@@ -222,14 +332,20 @@
    answer for (ADR-0023). The accompanying data — an as-of stamp, a failure message —
    stays with the Consumer and is not on the cell.
 
-   Written as `.ex-cell.ex-state-x`, and declared after the Row Kind block, so that a
-   state the Consumer named outranks the role of the row it happens to sit in. A state
-   is something the grid was explicitly told; a role is something about its neighbours,
-   and it is the state that must never be the one that disappears. */
+   Written as `.ex-cell.ex-state-x`, and declared after the Row Kind block and the Tone
+   block, so that a state the Consumer named outranks the role of the row it happens to sit
+   in, and the tone of its value. A state is something the grid was explicitly told; a role
+   is something about its neighbours, a tone something a rule derived, and it is the state
+   that must never be the one that disappears. */
 .ex-cell.ex-state-stale { color: var(--ex-state-stale-color, #8a6d1f); font-style: var(--ex-state-stale-style, italic); }
+/* Missing's tint is a cell's tint like a stripe's or a role's: named here, after them, so it
+   wins, and painted beneath the lines by .ex-lined, which is declared before this block and
+   would otherwise lose every layer it paints to this one. Over the row's rule a Pinned Column's
+   cell paints (above), as a scrollable cell's tint lies over the rule its row paints. */
 .ex-cell.ex-state-missing {
-    background-image: linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)));
+    --ex-tint: linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)));
 }
+.ex-cell.ex-state-missing:not(.ex-lined) { background-image: var(--ex-tint), var(--ex-row-rule, none); }
 .ex-cell.ex-state-error { color: var(--ex-state-error-color, #b3261e); text-decoration: var(--ex-state-error-decoration, underline wavy); text-decoration-skip-ink: none; }
 /* A corner mark rather than a fill: the value has been overridden, and the number itself
    is what the reader is here for. box-shadow paints inside the cell's own box, so it
@@ -285,7 +401,7 @@
    for the same reason the header is — the columns underneath pass beneath it. */
 /* background-COLOR, not the shorthand: Cell State and Row Kind paint their tints as
    background images on the same cell, and the shorthand would reset them. The colour is
-   the ground underneath; the tints layer on top. */
+   the ground underneath; the tints layer on top, and a cell's lines on top of them. */
 .ex-pinned { position: sticky; z-index: 2; background-color: var(--ex-pinned-background, Canvas); }
 .ex-header .ex-pinned { z-index: 5; background-color: var(--ex-header-background, Canvas); }
 /* The Row Headings and their corner (ADR-0050): first in each row's flow and in the
@@ -412,26 +528,46 @@
    parameter; this is only its colour, and the default is a shade lighter than the
    Focus band so the two read apart when they coincide. */
 .ex-hover-row { position: absolute; background: var(--ex-row-hover-background, rgba(128, 128, 128, 0.06)); }
-/* The Focus outline's width, and every outline drawn in it: the Focus's own, a single range's
-   (ADR-0008, 2026-09-29), the pointing outline, the chosen action, and a range's under forced
-   colors. A range's is only drawn where its style is given. Each lies wholly inside its box: an
-   outline straddling the edge lost its outer pixel beneath whatever is painted above the
-   selection layer — a Pinned Column, the Headings, the header — and was thinner on that side
-   than on the others (UX-18). Inside, nothing above the layer covers any of it, and a cell
-   scrolled beneath the pinned block still goes beneath it. */
+/* The Focus outline's width, and every outline drawn in it: the pointing outline, the chosen
+   action, and under forced colors the Focus's own and a range's. A range's is only drawn where its
+   style is given. Each lies wholly inside its box: an outline straddling the edge lost its outer
+   pixel beneath whatever is painted above the selection layer — a Pinned Column, the Headings, the
+   header — and was thinner on that side than on the others (UX-18). Inside, nothing above the
+   layer covers any of it, and a cell scrolled beneath the pinned block still goes beneath it. */
 .ex-focus, .ex-range, .ex-point, .ex-action-chosen { outline-width: 2px; outline-offset: -2px; }
 /* CanvasText, not Highlight: measured in the browser suite, Chrome's Highlight against
    Canvas is ~2:1 and UX-9 requires 3:1 — the ink colour contrasts by construction in
    both schemes, which is also roughly what Excel's own dark focus border does. */
-.ex-focus { position: absolute; outline-style: solid; outline-color: var(--ex-focus-outline, CanvasText); }
-/* The one outline a Selection of a single range carries around the whole range: the border
-   Excel draws round the range's perimeter, with the token ADR-0029 reserved for it. It
-   defaults to the Focus outline's colour, so a Theme that sets only that one colours both. */
-.ex-range-single { outline-style: solid; outline-color: var(--ex-selection-outline, var(--ex-focus-outline, CanvasText)); }
+.ex-focus { position: absolute; outline-color: var(--ex-focus-outline, CanvasText); }
+/* The Selection's outline — the Focus's, and the one a Selection of a single range carries
+   round the whole range — lies where Excel's does (ADR-0008, 2026-10-01; the eleventh Windows
+   run, case 11): on the gridline and one pixel outside the range, so it covers a Border on every
+   outer edge. That is the outline's width outside the top and the left edges, and on the bottom
+   and the right the gridline's pixel, which is the range's own last, and the outline's width less
+   it past the edge. A side whose outer pixels something above the selection layer would cover —
+   the header over a top edge, the Row Headings or the pinned block beside a left edge — stays
+   inside, as the forced-colors outline does, so its width is the others' (UX-18): the core marks
+   such a side, --ex-outline-in-t and --ex-outline-in-l, from the geometry it already holds. The
+   outline is a box of its own, so a side can move without moving the range's tint, and its width
+   is the Focus outline's, 2px, above. Paint only: nothing in C# reads the width. */
+.ex-focus::after, .ex-range-single::after {
+    content: "";
+    position: absolute;
+    box-sizing: border-box;
+    top: calc((var(--ex-outline-in-t, 0) - 1) * 2px);
+    left: calc((var(--ex-outline-in-l, 0) - 1) * 2px);
+    right: calc(var(--ex-rule-width, 1px) - 2px);
+    bottom: calc(var(--ex-rule-width, 1px) - 2px);
+    border: 2px solid var(--ex-focus-outline, CanvasText);
+}
+/* The single range's outline has the token ADR-0029 reserved for it, the border Excel draws round
+   the range's perimeter. It defaults to the Focus outline's colour, so a Theme that sets only that
+   one colours both. */
+.ex-range-single::after { border-color: var(--ex-selection-outline, var(--ex-focus-outline, CanvasText)); }
 /* The Focus inside a single range has no outline of its own; the range's tint leaves its
    cell out. Its element stays, because forced colors discard the tint that marks it, and the
    forced-colors block below outlines it again. */
-.ex-range-single ~ .ex-focus { outline-style: none; }
+.ex-range-single ~ .ex-focus::after { content: none; }
 /* The fill handle and a fill drag's target outline (ADR-0050, item 5): two more overlay
    rectangles, painted only when a Consumer declares fill. The handle's size and place are
    geometry and arrive inline from the resolved metrics (ADR-0027/0028) — the press that
@@ -672,18 +808,20 @@
     outline-offset: -1px;
 }
 /* The coloured text (ADR-0057): beneath each editor surface, a layer the core renders with the
-   field's text and each Reference in its colour (.ex-reference-1 to -8). It stands immediately
-   before its field, in the field's box, font and line, and keeps every space the field keeps, so
-   its characters stand where the field's do; the rest is what the browser gives an input and not
-   a div. Paint only: it takes no pointer, and assistive technology reads the field. Hidden unless
-   the field after it wears ex-reference-text-shown, which the editor listener sets only in the
-   surface the edit is in — the field holding DOM focus, as Excel colours only that one — only
-   while the layer's text (data-ex-text) is the field's value, and never during an IME composition
-   (ADR-0021's note of ADR-0057): uncoloured for a moment rather than coloured on the wrong
-   characters. Its line scrolls sideways with the field, and has room to scroll as far. It is
-   painted beneath the field, caret and selection included, whether or not the field is
-   positioned: at -1 it goes under everything its stacking context lays out, and over only that
-   context's own ground — the Cell Editor's box, or the Formula Bar, made one for it here. */
+   field's text, as one run of text as the field's is, so its characters stand where the field's
+   do (ADR-0057's note of 2026-10-01: a run per Reference drifted 1/64 px a run). It stands
+   immediately before its field, in the field's box, font and line, and keeps every space the field
+   keeps; the rest is what the browser gives an input and not a div. Paint only: it takes no
+   pointer, and assistive technology reads the field. Hidden unless the field after it wears
+   ex-reference-text-shown, which the editor listener sets only in the surface the edit is in — the
+   field holding DOM focus, as Excel colours only that one — only while the layer's text
+   (data-ex-text) is the field's value, and never during an IME composition (ADR-0021's note of
+   ADR-0057): uncoloured for a moment rather than coloured on the wrong characters. Its References
+   are coloured then, by highlights of the grid's own (below). Its line scrolls sideways with the
+   field, and has room to scroll as far. It is painted beneath the field, caret and selection
+   included, whether or not the field is positioned: at -1 it goes under everything its stacking
+   context lays out, and over only that context's own ground — the Cell Editor's box, or the
+   Formula Bar, made one for it here. */
 .ex-reference-text {
     position: absolute;
     z-index: -1;
@@ -710,7 +848,14 @@
 }
 .ex-reference-text-line { height: 100%; overflow: hidden; }
 .ex-reference-text-line::after { content: ""; display: inline-block; width: 100%; }
-/* The Reference Point is writing, shown selected (ADR-0051/0057; the eighth Windows run, cases 19
+/* The colours of the layer's References (ADR-0057, note of 2026-10-01). The editor listener colours
+   them with the CSS Custom Highlight API, over the layer's one run: one highlight per colour, per
+   pointed shade and for the pointed ground, each named for its grid, and the grid's own generated
+   stylesheet paints each of its names with the property here of the same place, so the colours are
+   still the Visual Tokens, read on the layer as the spans read them: a Theme, the scheme and forced
+   colours reach them as before. The palette's colours are --ex-reference-1 to -7, with the defaults
+   of the Reference Outlines above.
+   The Reference Point is writing is shown selected (ADR-0051/0057; the eighth Windows run, cases 19
    to 32): on a grey ground, its text a darker shade of its colour. A look on the layer, never a
    selection of the field's text, so a key typed next follows the Reference; and only where the
    core marks it, which it does not for a Reference straight after the text's first character.
@@ -720,26 +865,27 @@
    run), #44007c, #003600, #550059, #531c00 and #00323f (the tenth run). Excel keeps its cells white
    under its Black theme, with the same shades, so it has no dark ground to take them from; over a
    dark ground the grey stands as far from the dark Canvas as #c6c6c6 does from white, and all seven
-   shades are the Reference's colour mixed 55% toward white. The shade is the text's fill, so the
-   span's color stays its Reference's, and currentColor reads it. Text a press on another grid wrote,
+   shades are the Reference's colour mixed 55% toward white. Text a press on another grid wrote,
    such as XLOOKUP("R-4471", Positions[Id], Positions[PV]), is shown selected as a whole (ADR-0058):
-   one span on the grey, and the References inside it, each in a span of its own colour, take the
-   shade of their place in the palette. */
-.ex-reference-text .ex-reference-pointed { background: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b)); }
-.ex-reference-text .ex-reference-1.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-2.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-3.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-4.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-5.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-6.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-7.ex-reference-pointed { -webkit-text-fill-color: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-1 { -webkit-text-fill-color: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-2 { -webkit-text-fill-color: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-3 { -webkit-text-fill-color: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-4 { -webkit-text-fill-color: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-5 { -webkit-text-fill-color: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-6 { -webkit-text-fill-color: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, currentColor 55%, white))); }
-.ex-reference-text .ex-reference-pointed .ex-reference-7 { -webkit-text-fill-color: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, currentColor 55%, white))); }
+   one stretch on the grey, and the References inside it take the shade of their place in the
+   palette. */
+.ex-reference-text {
+    --ex-reference-text-1: var(--ex-reference-1, light-dark(#326ac7, color-mix(in srgb, #326ac7 67%, white)));
+    --ex-reference-text-2: var(--ex-reference-2, light-dark(#c0353e, color-mix(in srgb, #c0353e 67%, white)));
+    --ex-reference-text-3: var(--ex-reference-3, light-dark(#8157b7, color-mix(in srgb, #8157b7 67%, white)));
+    --ex-reference-text-4: var(--ex-reference-4, light-dark(#007c20, color-mix(in srgb, #007c20 67%, white)));
+    --ex-reference-text-5: var(--ex-reference-5, light-dark(#b03e84, color-mix(in srgb, #b03e84 67%, white)));
+    --ex-reference-text-6: var(--ex-reference-6, light-dark(#b64900, color-mix(in srgb, #b64900 67%, white)));
+    --ex-reference-text-7: var(--ex-reference-7, light-dark(#267392, color-mix(in srgb, #267392 67%, white)));
+    --ex-reference-text-1-pointed: var(--ex-reference-1-pointed, light-dark(#0401a2, color-mix(in srgb, var(--ex-reference-text-1) 55%, white)));
+    --ex-reference-text-2-pointed: var(--ex-reference-2-pointed, light-dark(#630101, color-mix(in srgb, var(--ex-reference-text-2) 55%, white)));
+    --ex-reference-text-3-pointed: var(--ex-reference-3-pointed, light-dark(#44007c, color-mix(in srgb, var(--ex-reference-text-3) 55%, white)));
+    --ex-reference-text-4-pointed: var(--ex-reference-4-pointed, light-dark(#003600, color-mix(in srgb, var(--ex-reference-text-4) 55%, white)));
+    --ex-reference-text-5-pointed: var(--ex-reference-5-pointed, light-dark(#550059, color-mix(in srgb, var(--ex-reference-text-5) 55%, white)));
+    --ex-reference-text-6-pointed: var(--ex-reference-6-pointed, light-dark(#531c00, color-mix(in srgb, var(--ex-reference-text-6) 55%, white)));
+    --ex-reference-text-7-pointed: var(--ex-reference-7-pointed, light-dark(#00323f, color-mix(in srgb, var(--ex-reference-text-7) 55%, white)));
+    --ex-reference-text-pointed: var(--ex-reference-pointed-background, light-dark(#c6c6c6, #4b4b4b));
+}
 /* A Chrome places the layer inside the core's box, before its control, which fills the box's
    content (IGridChrome): the layer stands over that content, inside the padding the box has from
    .ex-editor and .ex-formula-bar-text, with none of its own, as the control has none. The bar's
@@ -842,13 +988,6 @@
     visibility: hidden;
     pointer-events: none;
 }
-/* Tone (ADR-0006/0029): the meaning a column's rule attached to the value — a gain, a
-   loss — as the theme's tokens paint it. No default colour: the bare grid paints a
-   toned cell as an ordinary one until a token says otherwise, which is Excel's default
-   number format too. Declared before the Cell State block, so a state the Consumer
-   named outranks a tone its rule derived. */
-.ex-cell.ex-tone-positive { color: var(--ex-tone-positive-color, inherit); }
-.ex-cell.ex-tone-negative { color: var(--ex-tone-negative-color, inherit); }
 /* The column rule, transparent by default (ADR-0029): an inset shadow on the cell's
    right edge — painted, never a border. A Modified cell's own mark overrides it;
    the state must never be the one that disappears (ADR-0006). */
@@ -879,13 +1018,32 @@
     /* A Row Stripe is restated as nothing: it carries no meaning, and forced colours are
        kept for the things that do (ADR-0038). The discarded gradient is the whole of it. */
     /* The selection and the Focus stay visible: outlines, which forced colors keeps, drawn
-       inside the range as the Focus outline is. The Focus inside a single range is marked
-       only by its missing tint, which is discarded here, so it takes its outline back. */
+       inside the range on every side, so none is covered (UX-18). The Focus inside a single
+       range is marked only by its missing tint, which is discarded here, so it takes its
+       outline back. */
     .ex-range { outline-style: solid; outline-color: Highlight; }
-    .ex-range-single ~ .ex-focus { outline-style: solid; }
+    .ex-focus { outline-style: solid; }
+    .ex-focus::after, .ex-range-single::after { content: none; }
     .ex-focus-row { outline: 1px dotted Highlight; outline-offset: -1px; }
     .ex-hover-row { outline: 1px dotted GrayText; outline-offset: -1px; }
     /* The chosen action stays tellable from its neighbours, which keep their own
        ButtonBorder (ADR-0037). */
     .ex-action-chosen { outline-color: Highlight; }
+    /* The coloured text's References come out as the rest of the text does, as ADR-0057 says
+       of forced colours ("Not done"), and the pointed ground goes, as a ground does. Chrome
+       paints a custom highlight in the system's Highlight and HighlightText under forced
+       colours, whatever its rule says, which would set each Reference in a dark block; the
+       spans the highlights replaced (2026-10-01, ticket 86) were forced to the text's own
+       colour. So the layer's line is left as authored, and its colours are the system's. */
+    .ex-reference-text-line { forced-color-adjust: none; color: CanvasText; }
+    .ex-reference-text {
+        --ex-reference-text-1: CanvasText; --ex-reference-text-2: CanvasText; --ex-reference-text-3: CanvasText;
+        --ex-reference-text-4: CanvasText; --ex-reference-text-5: CanvasText; --ex-reference-text-6: CanvasText;
+        --ex-reference-text-7: CanvasText;
+        --ex-reference-text-1-pointed: CanvasText; --ex-reference-text-2-pointed: CanvasText;
+        --ex-reference-text-3-pointed: CanvasText; --ex-reference-text-4-pointed: CanvasText;
+        --ex-reference-text-5-pointed: CanvasText; --ex-reference-text-6-pointed: CanvasText;
+        --ex-reference-text-7-pointed: CanvasText;
+        --ex-reference-text-pointed: transparent;
+    }
 }

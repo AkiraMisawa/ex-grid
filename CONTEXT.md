@@ -224,7 +224,8 @@ Context Menu, the cell editor, the cell's message, the loading indicator. **It r
 back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
 behaviour. Each of those places is a **Chrome seam**: the core owns its frame — where it appears,
-how it opens and closes — and hands the Chrome the contents to draw.
+how it opens and closes — and hands the Chrome the contents to draw. One seam, ExSheet's **Format
+Cells**, leaves its frame to the Chrome ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
 
 **Inner Popup**:
@@ -557,7 +558,8 @@ _Avoid_: checkbox column, selection column
 
 **Column**:
 A runtime object. Beyond the header's appearance it holds **how to extract the value from a
-row**, the type (which decides the filter UI and the default format), an optional display
+row**, the type (which decides the filter UI and the default format; a date column also says
+which kind of date it holds), an optional display
 format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` /
 `MaxWidth`). A statically listed column and a column generated
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
@@ -844,6 +846,65 @@ to the Consumer to show, as the Consumer chooses
 ([ADR-0063](./docs/adr/0063-what-expivot-asks-of-exgrids-core.md)).
 _Avoid_: drill-through, drill-down (Excel's older name), underlying data
 
+**Cell Format**:
+How a Sheet's cell is shown, recorded apart from its Entry: its **Number Format**, **Alignment**,
+**Font**, **Fill** and **Border**. It is recorded at three levels, cell over row over column, so
+formatting a whole column records one thing, and a cell may hold a Cell Format and no Entry. It is
+document data, recorded in the Sheet Document: a colour in it is the user's choice and is painted
+as recorded. Not ExGrid's Column `Format`, which turns a value into the text shown for it
+([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: style (Excel's named Cell Styles, and the CSS attribute), formatting (the act of setting
+one), format on its own
+
+**Number Format**:
+Excel's format code that turns a Value into the text a cell shows — `#,##0.00`, `yyyy-mm-dd`,
+`0%`, and General, which fits its column. A date is a number with a date Number Format. A code
+ExSheet does not read is refused, never shown as General
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
+_Avoid_: format string, display format (that is ExGrid's Column `Format`)
+
+**Alignment**:
+Where a cell's text sits across its width: General (Excel's: numbers right, text left, booleans
+and Error Values centred), left, centre or right. Horizontal only — every row has one height, so
+there is nothing to align vertically.
+_Avoid_: justification, text-align
+
+**Font**:
+The colour and emphasis of a cell's text: its colour, bold, italic, underline and strikethrough.
+Not its size or typeface: every row has one height, and one digit width decides what fits. An
+**Automatic** colour is the **Ink**, not a recorded colour ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: text style, typeface
+
+**Fill**:
+The one solid colour behind a cell's text. No patterns and no gradients ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: background, shading, highlight
+
+**Border**:
+A line on one side of a cell — top, bottom, left or right — in one of Excel's line styles and a
+colour. Each cell records its own four sides, as Excel's files do, but the line between two cells is
+one line: setting it from either cell replaces it for both, and the later setting wins. Where both
+cells still record a line, after a copy or a deletion, the upper or left cell's is the one shown.
+No diagonals ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: gridline (the Sheet's own faint lines, which are not recorded), outline (that is a
+**Reference Outline**), frame
+
+**Paper / Ink**:
+The ground a Sheet's cells lie on, and the colour of text whose Font colour is Automatic: Excel's
+white and black, in every colour scheme. A dark page does not darken them, as Excel's cells stay
+white under its Black theme, so a colour a user recorded reads as it did when it was chosen. What
+lies on the Paper — the Focus, the Selection, Reference Outlines, the editor in the cell — takes
+its light-scheme appearance; what frames it — the Headings, the Name Box, the Formula Bar,
+popovers — follows the colour scheme. Both are Visual Tokens: a Consumer may change them, and
+takes on what that does to recorded colours ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: background, canvas
+
+**Format Cells**:
+Excel's dialog for setting a Cell Format, opened by Ctrl+1 or from the Context Menu: Number,
+Alignment, Font, Border and Fill. ExSheet decides what it offers and what OK means, and OK sets only
+what the user touched. It is the one Chrome seam whose frame is the Chrome's: a popover inside the
+Sheet's box under the built-in Chrome, a page-level dialog under MudBlazor's ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: format dialog, properties, style editor
+
 ## Flagged ambiguities
 
 - **"Grid" on its own does not say whether ExGrid, ExSheet or ExPivot is meant.** When it is
@@ -875,6 +936,10 @@ _Avoid_: drill-through, drill-down (Excel's older name), underlying data
   (with Overwrite) is the state F2 enters, in which the arrow keys move within the text. The
   blinking insertion point itself is the **caret position** — write that, never "the Caret", when
   the position is meant: completion and Point both act at the caret position, in any state.
+- **"Paper" is a Sheet's ground here, and a Material surface in MudBlazor.** The Wrapper's
+  outer element, `MudExGridPaper`, is named after `MudPaper`: a surface around one or more
+  grids that follows the colour scheme. A Sheet's **Paper** does not. Write the component's name
+  for the surface, and **Paper** only for the Sheet's ground.
 - **"Interactive" names a cell mode here, and a render mode in Blazor.** Blazor calls a
   component that has connected and can handle events "interactive", and its render modes are
   `InteractiveServer` / `InteractiveWebAssembly`. In this project **Interactive** is only the

@@ -1,9 +1,10 @@
-import { test, expect, alterPage, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
     expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell, expectCaretShown,
+    stretchesOf,
 } from './sheet-helpers.mjs';
 
 // The ExGrid declarations of ADR-0050, ADR-0051 and ADR-0057 (§26, DC-*), as ExSheet declares them on
@@ -195,9 +196,8 @@ const MATCH_MODES = [
     '3 - Regex match',
 ];
 
-/** The spans of a field's Reference layer the core marks as the Reference Point is writing (ADR-0057). */
-const pointedIn = (field) => field.evaluate((input) =>
-    [...input.previousElementSibling.querySelectorAll('.ex-reference-pointed')].map((span) => span.textContent));
+/** The stretches of a field's Reference layer on the grey, which the Reference Point is writing (ADR-0057). */
+const pointedIn = async (field) => (await stretchesOf(field)).filter((stretch) => stretch.pointed).map((stretch) => stretch.text);
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`SH-36 under the ${chrome} Chrome`, () => {
@@ -1537,6 +1537,11 @@ async function dragHandle(page, grid, from, to) {
     await page.mouse.move(toX + 3, toY, { steps: 8 });
     await fillDragHeard(page, grid, toX + 3, toY);
     await page.mouse.up();
+    // The release fills, and on a circuit the render that writes the fill lands a round trip
+    // later. A press straight after it caught E2 between two renders, with no box to press
+    // (CI, Server host, msedge: one run in three of DC-13's fill right, 2026-10-02), so the next
+    // step waits for the host to have said all it will (ADR-0056, note of 2026-10-02).
+    await circuitQuiet();
 }
 
 /**

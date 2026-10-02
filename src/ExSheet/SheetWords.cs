@@ -22,6 +22,10 @@ internal static class SheetWords
     internal static string EditIsOpen =>
         "Nothing was changed: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
 
+    // ADR-0071: in this state Excel formats the selected characters, and a Cell Format is per cell.
+    internal static string FormatKeyWhileEditing =>
+        "Nothing was formatted: a cell is being edited, and a format applies to whole cells, not to part of the text. Press Enter to commit the edit or Escape to cancel it, then try again.";
+
     internal static string EditDiscardedByNewDocument =>
         "What was typed was not entered: another Sheet Document was opened while the cell was being edited.";
 
@@ -65,6 +69,8 @@ internal static class SheetWords
         CopyRefusalReason.ClipboardUnavailable => "Nothing was copied: the browser refused the clipboard, which still holds what it held before.",
         _ => "Nothing was copied.",
     };
+
+    internal static string FormatCellsTitle => "Format Cells";
 
     /// <summary>What a press on a grid of a Pointing Scope, or an arrow key after one, that wrote
     /// nothing tells (ADR-0058).</summary>

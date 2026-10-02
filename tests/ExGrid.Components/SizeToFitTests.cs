@@ -56,7 +56,7 @@ public class SizeToFitTests : GridTestContext
 
         await DoubleClickGrip(cut, 1);
 
-        var expected = Metrics.CellMetrics.EstimatePx(rows[40].Book + "/01");
+        var expected = Metrics.CellMetrics.For(ColumnType.Text).EstimatePx(rows[40].Book + "/01");
         Assert.Equal([new ColumnWidthChange(TestRows.ColumnName(1), expected)], changes);
     }
 
@@ -169,8 +169,8 @@ public class SizeToFitTests : GridTestContext
 
         Assert.Equal(
         [
-            new ColumnWidthChange(TestRows.ColumnName(1), Metrics.CellMetrics.EstimatePx(rows[40].Book + "/01")),
-            new ColumnWidthChange(TestRows.ColumnName(2), Metrics.CellMetrics.EstimatePx(rows[40].Book + "/02")),
+            new ColumnWidthChange(TestRows.ColumnName(1), Metrics.CellMetrics.For(ColumnType.Text).EstimatePx(rows[40].Book + "/01")),
+            new ColumnWidthChange(TestRows.ColumnName(2), Metrics.CellMetrics.For(ColumnType.Text).EstimatePx(rows[40].Book + "/02")),
         ], changes);
     }
 

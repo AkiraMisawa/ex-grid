@@ -473,7 +473,7 @@ public class HeadingDragTests : GridTestContext
         var style = Style(tip);
         // At column 2's left edge, just under the header band, below the Formula Bar.
         Assert.Equal(200, style["left"]);
-        Assert.Equal(ExGrid<TestRow>.DefaultCellMetrics.EstimatePx("50R x 2C"), style["width"]);
+        Assert.Equal(ExGrid<TestRow>.DefaultCellMetrics.For(ColumnType.Text).EstimatePx("50R x 2C"), style["width"]);
         Assert.Equal(FormulaBarPx(cut) + RowHeightPx, style["top"]);
     }
 

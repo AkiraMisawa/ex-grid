@@ -96,6 +96,6 @@ public sealed partial class Sheet
             }
         }
 
-        NumberFormat? FormatOf(CellAddress address) => GetFormat(address) is { ShowsNumbersAsGeneral: false } format ? format : null;
+        NumberFormat? FormatOf(CellAddress address) => GetNumberFormat(address) is { ShowsNumbersAsGeneral: false } format ? format : null;
     }
 }

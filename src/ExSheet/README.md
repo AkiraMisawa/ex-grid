@@ -12,7 +12,9 @@ computes, ExGrid paints, selects, navigates and reports.
 ## Requirements
 
 - **.NET 10 or newer.** The package targets `net10.0`.
-- ExGrid's stylesheet and script, as for any ExGrid.
+- ExGrid's stylesheet and script, as for any ExGrid, and ExSheet's own stylesheet,
+  `_content/ExSheet/ex-sheet.css`, which paints the Paper and the Ink and draws the built-in Format
+  Cells.
 
 ## Showing a Sheet
 
@@ -58,7 +60,12 @@ References shifted, a series from two or more numbers, and dates by day. Any oth
 refused, and the user is told why. Ctrl+D and Ctrl+R copy the range's first row or column over the
 rest, Formulas with their References shifted, and never continue a series. Delete clears the
 Selection's contents and keeps its formats, as one undo step. Ctrl+F finds text as it is shown, in
-every row of the Sheet.
+every row of the Sheet. Excel's formatting keys format the Selection, each as one undo step: Ctrl+B,
+Ctrl+I, Ctrl+U and Ctrl+5 (and Ctrl+2 to Ctrl+4) toggle bold, italic, underline and strikethrough in
+the direction the Focus cell gives them, and Ctrl+Shift with `~ ! @ # $ % ^` applies the Number
+Format Excel applies under the Sheet's culture, `&` an outline and `_` no borders. The date, the
+time and the currency are Excel's built-ins, shown in the culture's own form: `05-Jan-26`, `09:05`
+and `£5.00` under en-GB, `5-Jan-26`, `9:05 AM` and `$5.00` under en-US.
 
 ## Linked Tables
 
@@ -200,11 +207,32 @@ await sheet.SetNumberFormatAsync(NumberFormat.Parse("#,##0.00"));   // on the se
 await sheet.UndoAsync();
 ```
 
-A format or an alignment set on a selection of whole columns or whole rows is recorded on the
-columns or rows, one entry each, as Excel records it: cell over row over column.
+`SetCellFormatAsync` sets the parts of a Cell Format a `CellFormatChange` names on every range of
+the selection, as one undo step, and leaves every other part as each cell has it. Its borders are
+relative to each range, so each range gets its own outline, as in Excel. `SetNumberFormatAsync`
+and `SetAlignmentAsync` are shorthands for a change that names that one part:
+
+```csharp
+await sheet.SetCellFormatAsync(new CellFormatChange
+{
+    Bold = true,
+    Borders = BorderChange.Outline(new BorderLine(BorderLineStyle.Thin)),
+});
+var shown = sheet.CellFormatAt(CellAddress.Parse("A1"));   // cell over row over column
+```
+
+A Cell Format set on a selection of whole columns or whole rows is recorded on the columns or
+rows, one entry each, as Excel records it, and `CellFormatAt` answers what a cell shows, part by
+part from the cell, its row or its column. Its borders are the edges as shown, which read the same
+from the cell on either side: where both cells record a line on an edge, the upper cell's is shown,
+or the left cell's for a vertical edge. It is a read, and answers while an edit is open.
+
+These commands, and `OpenFormatCellsAsync`, act on the selection as the grid holds it when they
+run. On Blazor Server, `SelectionChanged` arrives a round trip after a move, so a button pressed
+straight after Shift+arrow still formats the extended range, not the one your page last heard.
 
 While an edit is open — a cell or the Formula Bar typed in, and not yet committed or cancelled —
-these commands, `RedoAsync` and `SetAlignmentAsync` among them, are refused with
+these commands, `RedoAsync`, `SetCellFormatAsync` and `SetAlignmentAsync` among them, are refused with
 `SheetRefusalReason.EditIsOpen` and change nothing, as Excel greys out its ribbon while a cell is
 edited: a row inserted above the cell would otherwise carry the typing into another row.
 `IsEditing` says whether an edit is open, and `EditingChanged` is raised when that changes, so the
@@ -216,13 +244,66 @@ application can grey out its own buttons:
 ```
 
 A Linked Table's declaration and snapshots are data arriving, not commands, and are taken while an
-edit is open.
+edit is open. A formatting key pressed while an edit is open changes nothing, as the commands do:
+the user is told why, and `OnFormatKeyRefused` is raised with the refusal.
+
+## The Paper and the Ink
+
+A cell's Font, Fill and Borders are painted as recorded: its colour, bold, italic, underline and
+strikethrough, its one solid Fill, and a line in each of Excel's thirteen styles on each side, on
+the cells that hold nothing as well when a whole row or column records them. A line is drawn as
+Excel draws it, centred on the gridline in the screen's own pixels, a thick one reaching into both
+cells, over the Fills and under the Selection; where both cells record a line on one edge, the
+upper or left cell's is drawn. Every row keeps its one height, where Excel would raise a row for a
+medium or a thick line. A Number Format's colour (`[Red]` and the seven others) is painted in Excel's
+colour for that name, in place of the Font's. A bold number is judged by the bold widths, so one that
+does not fit shows `####` rather than being cut. A cell keeps its Fill and Font while it is edited,
+with the Font's own colour, since the editor shows the Entry and not the formatted Value.
+
+The ground the cells lie on is the **Paper**, Excel's white, and text whose Font colour is
+Automatic is the **Ink**, Excel's black — in every colour scheme, as Excel's cells stay white under
+its dark theme, so a colour a user recorded reads as it did when it was chosen. The gridlines are
+Excel's, mixed from the two. What lies on the Paper — the Selection, the Focus, Reference Outlines,
+the Cell Editor in its cell — keeps its light-scheme look; what frames it — the Headings, the Name
+Box, the Formula Bar and popovers — follows the page's scheme. Both are Visual Tokens:
+
+```css
+.my-sheets { --ex-sheet-paper: #fdf6e3; --ex-sheet-ink: #073642; }
+```
+
+A recorded colour is the user's choice, so a Paper you darken can make some of them unreadable.
+
+## Format Cells
+
+Format Cells sets a Cell Format as Excel's dialog does (ADR-0071): five tabs — Number, Alignment,
+Font, Border and Fill — in Excel's order, opened on the Focus cell's Cell Format, with what differs
+across the selection shown as Excel shows it. A code typed under Custom is read as the Sheet's
+culture spells codes: under ja-JP `dd-mmm-yy` is the date key's built-in and shows `05-1-26`, while
+`d-mmm-yy` is a code of its own and shows `5-1-26`, as in Excel. OK sets only the parts the user
+touched, as one undo step; Cancel and Escape set nothing. It opens from the Context Menu's "Format Cells…" and from your
+own button, and is refused while an edit is open:
+
+```razor
+<ExSheet @ref="_sheet" EditingChanged="open => _editing = open" />
+<button disabled="@_editing" @onclick="() => _sheet!.OpenFormatCellsAsync()">Format Cells…</button>
+```
+
+Under the built-in Chrome it is a popover inside the Sheet's box, which scrolls when the box is
+small. A Chrome that implements `ISheetChrome` draws it in a frame of its own — a page-level
+dialog — from a `FormatCellsContext`: what ExSheet offers is in `FormatCellsOffer`, and the
+context's `FormatCellsDraft` holds what the dialog opens on and what OK sets, so every Chrome sets
+the same parts. Such a Chrome calls the context's `ReturnKeyboard` once its frame has closed.
+In a MudBlazor application, [ExSheet.MudBlazor](https://www.nuget.org/packages/ExSheet.MudBlazor)'s
+`MudSheetChrome` is that Chrome: Format Cells as a `MudDialog`, and ExGrid.MudBlazor's controls in
+the grid.
 
 Column widths are part of the Sheet Document, in characters as Excel counts them. Resizing a
 column, and a number typed into a column that it widens, are steps on the undo stack like any
-other, and raise `DocumentChanged`; an opened document brings its widths with it. A width an entry
-widened the column to stays automatic, and a longer entry widens the column again; a width the
-user set — a drag or a size to fit — is custom, and entries no longer widen that column.
+other, and raise `DocumentChanged`; an opened document brings its widths with it. A Number Format
+set on the Selection — a formatting key, Format Cells' OK, `SetCellFormatAsync` — widens a column
+whose numbers it no longer fits in the same way, in its own undo step. A width an entry or a Number
+Format widened the column to stays automatic, and a longer number widens the column again; a width
+the user set — a drag or a size to fit — is custom, and nothing widens that column.
 
 ## More
 

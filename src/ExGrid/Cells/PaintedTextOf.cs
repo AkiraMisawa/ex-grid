@@ -8,7 +8,8 @@ namespace ExGrid.Cells;
 /// Consumer can fit its text to the column the way Excel fits General to a cell.
 ///
 /// <para>The answer is the text to paint, or null to paint the value's own text — the
-/// column's <c>Format</c>, or the value's <c>ToString()</c>. A Number or Date cell still
+/// column's <c>Format</c>, or without one a date's ISO form or the value's <c>ToString()</c>
+/// (ADR-0006). A Number or Date cell still
 /// becomes <c>####</c> when the painted text does not fit (ADR-0016), so an answer that
 /// overshoots is shown unreadably, never cut. Where what is painted differs from the
 /// value's own text, the cell's accessible name is the value's text, as behind

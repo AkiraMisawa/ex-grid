@@ -215,6 +215,43 @@ public class RefusedWhileEditingTests : SheetTestContext
         Assert.Equal("text", EditorText(cut));
     }
 
+    [Fact] // ADR-0071 / ADR-0048, SH-43: SetCellFormatAsync is refused while an edit is open, and no part of the change is set
+    public async Task SetCellFormatAsync_is_refused()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "1234.5");
+        await GoToAsync(cut, "A1");
+        await PressAsync(cut, "F2");
+
+        await AssertRefusedAsync(cut, () => cut.Instance.SetCellFormatAsync(new CellFormatChange
+        {
+            NumberFormat = NumberFormat.Parse("#,##0.00"),
+            Bold = true,
+            Fill = CellFill.Solid(CellColour.FromRgb(0xFFFF00)),
+            Borders = BorderChange.Outline(new BorderLine(BorderLineStyle.Thin)),
+        }));
+
+        Assert.Equal("1234.5", EditorText(cut));
+        await PressAsync(cut, "Escape");
+        Assert.Equal(CellFormat.Default, cut.Instance.CellFormatAt(CellAddress.Parse("A1")));
+        Assert.Equal("1234.5", CellText(cut, "A1"));
+    }
+
+    [Fact] // ADR-0071, SH-43 / SH-44: CellFormatAt is a read, so it answers while an edit is open, and the edit stays
+    public async Task CellFormatAt_answers_while_an_edit_is_open()
+    {
+        var cut = RenderSheet();
+        await GoToAsync(cut, "A1");
+        Assert.True(await cut.Instance.SetCellFormatAsync(new CellFormatChange { Bold = true }));
+        await OpenEditAsync(cut, "A1", "99");
+
+        var format = cut.Instance.CellFormatAt(CellAddress.Parse("A1"));
+
+        Assert.True(format.Font.Bold);
+        Assert.True(cut.Instance.IsEditing);
+        Assert.Equal("99", EditorText(cut));
+    }
+
     [Fact] // ADR-0049, SH-29: a Linked Table's declaration is data arriving, not a command, and is taken while an edit is open
     public async Task A_linked_table_declaration_is_taken()
     {

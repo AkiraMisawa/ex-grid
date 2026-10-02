@@ -1,0 +1,183 @@
+/* ExSheet's stylesheet, beside ExGrid's ex-grid.css.
+
+   The Paper and the Ink (ADR-0071; ADR-0027's note of 2026-09-30). The ground a Sheet's cells lie
+   on is Excel's white, and text whose Font colour is Automatic is Excel's black, in every colour
+   scheme: a colour a user recorded is document data, and on white Paper it reads as it did when it
+   was chosen. Both are Visual Tokens, --ex-sheet-paper and --ex-sheet-ink, with those defaults in
+   every scheme. A Consumer may set them; ExSheet and the MudBlazor packages never map them onto a
+   dark palette.
+
+   How the exception to ADR-0027 is made. Everywhere else the grid's defaults stay on system colours
+   and follow the page's scheme. ExSheet divides its grid by element, here and nowhere else:
+   - What lies on the Paper is painted from the two tokens: the rows' ground, the cells' text, the
+     ground a Pinned Column's cells stand on, the middle pixel of a double line with no Fill beneath
+     it (with one, the Fill's: the core's generated rules, ticket 99), the gridlines, and
+     the Cell Editor in its cell, unless the edited cell's own Fill and Font replace them (the
+     core's generated rules, ticket 88). Everything the grid draws over the rows — the Focus, the
+     Selection, Reference Outlines and the pointed shade, the fill handle, the Cell Editor and its
+     coloured text — stands in a light island (color-scheme: light), so whatever it takes from a
+     system colour or from light-dark() resolves as the light scheme resolves it.
+   - What frames the Paper is left alone, and follows the scheme: the Headings (the Row Headings
+     stand inside the rows, and keep their own ground and colour), the Name Box, the Formula Bar with
+     its coloured References, popovers, the Size Tip and the scrollbar.
+   A Wrapper's own token for something on the Paper stays the Wrapper's: under ExSheet.MudBlazor the
+   Focus is the palette's primary, as ExGrid.MudBlazor gives it. Forced-colors mode still wins over
+   all of it (ADR-0027). The rules carry the specificity of one class, so the core's rules for a Fill
+   and a line on a cell (ex-grid.css and the grid's generated stylesheet) win over them in any order.
+   They reach the grid's internal elements (ADR-0029), which ExSheet may do as the package that ships
+   beside ExGrid from this repository; the layer-3 test of the Paper under both schemes holds the two
+   in step. Nothing here is geometry: no rule sets a length the grid computes with.
+
+   The gridlines are Excel's, #e0e0e0 on white (the eleventh Windows run): the Ink mixed 12% into the
+   Paper, so a Consumer's Paper and Ink carry them along. Excel draws them on every row and column. */
+:where(.ex-sheet) .ex-row {
+    background-color: var(--ex-sheet-paper, #fff);
+    --ex-row-rule-color: color-mix(in srgb, var(--ex-sheet-ink, #000) 12%, var(--ex-sheet-paper, #fff));
+}
+:where(.ex-sheet) .ex-cell {
+    color: var(--ex-sheet-ink, #000);
+    --ex-background: var(--ex-sheet-paper, #fff);
+    --ex-pinned-background: var(--ex-sheet-paper, #fff);
+    --ex-column-rule-color: color-mix(in srgb, var(--ex-sheet-ink, #000) 12%, var(--ex-sheet-paper, #fff));
+}
+/* A Pinned Column's cell stands on a ground of its own, which covers the row's gridline beneath it:
+   it paints that gridline itself, unless its Fill covers it. It names the gridline in --ex-row-rule,
+   so that a cell that draws lines (.ex-lined in ex-grid.css, whose layers replace this one) paints
+   it beneath them, and beneath a neighbour's Fill over its edge (ticket 90). In whole device pixels,
+   as the row's rule is (--ex-rule-dp in ex-grid.css): one at 150%, as Excel's gridline is. */
+:where(.ex-sheet) .ex-pinned:where(:not([class*=" ex-fill-"])) {
+    --ex-row-rule: linear-gradient(to top, var(--ex-row-rule-color) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px));
+    background-image: var(--ex-row-rule);
+}
+/* A row not yet painted shows its bar in the Ink, as it would on a light page. */
+:where(.ex-sheet) .ex-placeholder { --ex-placeholder-background: var(--ex-sheet-ink, #000); }
+:where(.ex-sheet) .ex-viewport > :not(.ex-row) {
+    color-scheme: light;
+    --ex-editor-background: var(--ex-sheet-paper, #fff);
+    --ex-editor-color: var(--ex-sheet-ink, #000);
+}
+
+/* Format Cells under the built-in Chrome (ADR-0071): the contents ExSheet shows in the grid's
+   popover frame (ADR-0050 item 16). It frames the Paper rather than lying on it, so it follows the
+   colour scheme as every popover does, through the grid's own Visual Tokens (ADR-0027/0063). Its
+   classes are implementation detail (ADR-0029): a Consumer restyles Format Cells by substituting
+   its Chrome, not by writing against these. No geometry here is arithmetic the grid reads: the
+   frame's place and bound arrive inline from the core (ADR-0040). */
+.ex-format-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 36em;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.ex-format-cells-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid GrayText;
+}
+.ex-popover .ex-format-cells-tab {
+    border: 1px solid transparent;
+    border-bottom: 0;
+    background: none;
+    color: inherit;
+    padding: 4px 10px;
+}
+.ex-popover .ex-format-cells-tab[aria-selected="true"] {
+    border-color: GrayText;
+    background: var(--ex-header-background, Canvas);
+    font-weight: 600;
+    margin-bottom: -1px;
+}
+.ex-format-cells-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 16em;
+}
+.ex-format-cells fieldset {
+    margin: 0;
+    padding: 4px 8px 6px;
+    border: 1px solid GrayText;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ex-format-cells-columns {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+.ex-format-cells-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.ex-format-cells-choice,
+.ex-format-cells-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ex-format-cells-field input[type="number"] { width: 5em; }
+.ex-format-cells-reason,
+.ex-format-cells-refusal:not(:empty) {
+    display: block;
+    font-size: 0.85em;
+}
+.ex-format-cells-reason {
+    margin-left: 1.6em;
+    color: GrayText;
+}
+.ex-format-cells-refusal { color: var(--ex-state-error-color, #b3261e); }
+.ex-format-cells-types {
+    max-height: 10em;
+    overflow-y: auto;
+}
+
+/* The palette (case 23): ten swatches across. Each is a radio button drawn as its colour, which is
+   written inline as the user's choice of document data, never a Visual Token (ADR-0071). */
+.ex-format-cells-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ex-format-cells-swatches {
+    display: grid;
+    grid-template-columns: repeat(10, 16px);
+    gap: 3px;
+}
+.ex-format-cells-swatch {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1px solid GrayText;
+    cursor: pointer;
+}
+.ex-format-cells-swatch:checked {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+}
+.ex-format-cells-swatch:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+.ex-format-cells-hex { width: 7em; font-family: inherit; }
+
+/* The Border tab. */
+.ex-format-cells-line-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ex-format-cells-presets,
+.ex-format-cells-edges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.ex-popover .ex-format-cells-edge[aria-pressed="true"] { font-weight: 600; }
+.ex-format-cells-preview { border: 1px solid GrayText; }

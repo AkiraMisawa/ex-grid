@@ -161,6 +161,42 @@ button.sel { background: #1b6ec2; color: #fff; border-color: #1b6ec2; }
 
 .c.sel { background: #d6e4ff; }
 
+/* ---- the cell format page (ticket 44) ---- */
+
+/* CellFormatVars: one static rule on every cell, reading per-cell custom properties. The defaults sit
+   on the grid, so an unformatted cell inherits them. */
+.fx.vars { --fc: #1a1a1a; --fb: transparent; --fw: 400; }
+.fx.vars .c.num { color: var(--fc); background-color: var(--fb); font-weight: var(--fw); }
+
+/* BorderLayer: the layer and its runs. A run is a zero-thick box whose border is the line; its line
+   class (generated) gives the border and backs a thick line up onto the gridline's centre. */
+.blayer { position: absolute; top: 0; left: 0; pointer-events: none; }
+.bh, .bv { position: absolute; top: 0; left: 0; }
+.bh { height: 0; }
+.bv { width: 0; }
+
+/* BorderLayerPerRow: one strip per painted row, stacked in flow as the rows are. */
+.bstrip { position: relative; }
+
+/* One device pixel, in CSS pixels: Excel's line widths and dashes are device pixels at every zoom
+   (the eleventh run, case 9). The resolution media feature follows browser zoom too. The steps here
+   are the bench's; a product would need every resolution it supports. */
+.fx { --dp: 1px; }
+@media (min-resolution: 1.25dppx) { .fx { --dp: 0.8px; } }
+@media (min-resolution: 1.5dppx) { .fx { --dp: calc(1px / 1.5); } }
+@media (min-resolution: 2dppx) { .fx { --dp: 0.5px; } }
+
+/* BorderInCellExcel: one static rule reads each side's layer from the custom properties the cell's
+   generated side classes set (top, right, bottom, left), positioned against the border box so a layer
+   covers the gridline's pixel. Background images paint above the Fill and below the text. */
+.fx.xcell .c.num {
+    background-image: var(--et, none), var(--er, none), var(--eb, none), var(--el, none);
+    background-size: var(--ets, 0 0), var(--ers, 0 0), var(--ebs, 0 0), var(--els, 0 0);
+    background-position: left top, right top, left bottom, left top;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+}
+
 .sel-overlay {
     position: absolute;
     top: 0;

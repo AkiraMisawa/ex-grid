@@ -326,6 +326,35 @@ public sealed record FindContext(
     Action<bool>? InnerPopupChanged = null);
 
 /// <summary>
+/// What the grid hands a Consumer's own contents in its popover frame (ADR-0050, item 16;
+/// <c>ExGrid.OpenPopoverAsync</c>). The frame is the core's, as every popover's is: it stands
+/// inside the grid's box and is bounded by it, scrolling when the contents are taller
+/// (ADR-0040), and Escape, a pointer-down elsewhere in the instance and the box shrinking below
+/// one row each close it as a Cancel (ADR-0010/0040). However it closes, the keyboard returns
+/// to the root (ADR-0039).
+///
+/// <para><see cref="FocusRequest"/> counts the requests for the contents to put DOM focus on
+/// their first control: the opening, and Tab off their last control, which the frame wraps
+/// back. <see cref="FocusLastRequest"/> counts the requests for their last control: Shift+Tab
+/// off their first. The contents answer each change with Blazor's own <c>FocusAsync</c>, as a
+/// popover's contents do (ADR-0039); the core holds no reference to an element it did not
+/// render. <see cref="Close"/> is the contents' own way out, a Cancel as far as the grid is
+/// concerned: what the contents did before calling it is theirs. A popup the contents open of
+/// their own is reported through <see cref="InnerPopupChanged"/>, as in every popover.</para>
+/// </summary>
+/// <param name="Close">Closes the popover; the keyboard returns to the root.</param>
+/// <param name="FocusRequest">Changes whenever the contents' first control is to take DOM focus.</param>
+/// <param name="FocusLastRequest">Changes whenever the contents' last control is to take DOM focus;
+/// zero until Shift+Tab first wraps.</param>
+/// <param name="InnerPopupChanged">The contents report a popup of their own opening (<c>true</c>)
+/// and closing (<c>false</c>); while one is open, Escape is the popup's (ADR-0039).</param>
+public sealed record GridPopoverContext(
+    Action Close,
+    int FocusRequest,
+    int FocusLastRequest,
+    Action<bool> InnerPopupChanged);
+
+/// <summary>
 /// The Formula Bar's Name Box seam (ADR-0051, ADR-0010/0030). The core owns the box, its
 /// width, the form whose implicit submission is Enter, and what the text means; the Chrome
 /// renders the control. <see cref="Text"/> is what the box shows: what the user has typed

@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Components;
 namespace ExGrid.Components;
 
 // What a Consumer does with the grid's keyboard (ADR-0070). It gives the keyboard back to the root
-// when something of its own that held it over the grid goes away — a dialog, a panel, a tab — and
-// it may hear the Escape that leaves the grid, in place of the grid's own way out (ADR-0012).
+// when something of its own that held it over the grid goes away — a dialog, a panel, a tab —
+// through ReturnKeyboardAsync, the hand-back a Chrome's frame outside the grid asks for too
+// (ADR-0071), which stands beside the Consumer's popover in ExGrid.ConsumerPopover.cs. And it may
+// hear the Escape that leaves the grid, in place of the grid's own way out (ADR-0012).
 public partial class ExGrid<TRow>
 {
     /// <summary>
@@ -25,32 +27,6 @@ public partial class ExGrid<TRow>
     /// (ADR-0012).</para>
     /// </summary>
     [Parameter] public EventCallback OnLeave { get; set; }
-
-    /// <summary>
-    /// Gives the grid the keyboard back (ADR-0070): what the grid does when one of its own
-    /// popovers closes, offered to the Consumer. Call it when something of the Consumer's own that
-    /// held the keyboard over the grid goes away — a dialog, a panel, a tab — so that the user's
-    /// next key reaches the grid rather than the page.
-    ///
-    /// <para>The grid takes DOM focus — on its Keyboard Field where it has one, on its root otherwise
-    /// (ADR-0080) — only when DOM focus is on nothing (the page's <c>body</c>) or already inside
-    /// this grid. A field of the grid's own beside the rows, the Formula Bar or the
-    /// Name Box, keeps the keyboard: the user is typing there. Nothing is taken from anywhere else —
-    /// not from another control the user chose meanwhile, and not from another grid (ADR-0018). On
-    /// Blazor Server the request lands a round trip after the call, and a click made in that time
-    /// wins.</para>
-    ///
-    /// <para>It moves neither the Focus nor the Selection, and it scrolls nothing: the keyboard
-    /// comes back to the cell it left. Before the grid is attached to the page, and after it is
-    /// gone, it does nothing. It adds no JavaScript: it is the grid's own hand-back (ADR-0021).</para>
-    /// </summary>
-    /// <returns>A task that completes once the request has been made.</returns>
-    public Task ReturnKeyboardAsync()
-    {
-        // On the renderer's own context, as a placement is: a Consumer calling from outside it
-        // must not race a render, nor the attach that sets the handle.
-        return InvokeAsync(() => ReclaimFocusAsync(fromField: false));
-    }
 
     /// <summary>
     /// The Escape with nothing left to dismiss, pressed on the root (ADR-0012, ADR-0070): the

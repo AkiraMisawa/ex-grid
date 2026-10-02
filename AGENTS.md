@@ -51,7 +51,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 70 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 72 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -94,7 +94,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 70 ADRs. **A new decision that follows these will not
+The principles that run through all 72 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -108,6 +108,11 @@ collide with the existing ones.**
 4. **Chrome renders and calls back; the core decides meaning.** Swapping Chrome must not change
    behaviour.
 5. **Selection is cheap, so it is not capped. Caps belong on what cannot be executed.**
+6. **An outcome never depends on timing.** Users drive the grid with Playwright and similar
+   tools as well as by hand, at machine speed and over a circuit's round trip. When a race is
+   found, take the fix that makes the result deterministic — a gesture carries what it was
+   taken against, and is refused if that no longer holds — not one that narrows the window, or
+   a wait, retry or longer timeout. This holds for the product and for its tests alike.
 
 ## Traps that are hard to spot
 

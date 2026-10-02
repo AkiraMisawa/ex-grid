@@ -6,38 +6,44 @@ namespace ExGrid.Components;
 
 // The coloured text (ADR-0057, "The coloured text is a layer that shows only while it is up to
 // date"): an <input> cannot colour part of its text, so beneath each editor surface a layer draws
-// the same text with each Reference in its colour. The core renders it — beside its own inputs,
+// the same text, and each Reference in it is coloured. The core renders it — beside its own inputs,
 // and as a fragment a Chrome places immediately before its control — and carries on it the text it
 // was rendered for. The editor listener shows it, and makes the field's own text transparent, only
 // in the surface the edit is in — the field holding DOM focus; the other keeps its plain text, as
 // Excel's does — and only while that text is the field's value; the stylesheet does the rest. Both
 // surfaces carry the text, so the colours can follow a press from one into the other with nothing
 // to render. Only where a References function is declared: without one no layer is rendered (DC-1).
+//
+// The text is one run, as the field's is (ADR-0057's note of 2026-10-01, ticket 86): a span per
+// Reference made a run of text each, the browser rounds each run's width up to its layout unit, and
+// the layer drifted 1/64 px a run from the field's characters. The References are coloured by the
+// CSS Custom Highlight API instead: the core writes on the layer which highlight covers which
+// characters (ReferenceHighlights), and the listener builds the ranges when it shows the layer.
 public partial class ExGrid<TRow>
 {
     // A distinct object, so the Cell Editor's layer can carry a key beside the rows' and the
     // editor's own, as every sibling there does (ADR-0003).
     private static readonly object ReferenceTextLayerKey = new();
 
-    // The class of a Reference's span in each colour, and of the span of the Reference Point is
-    // writing: interned, since the few there are serve every span of every render (ADR-0027 P5).
-    private static readonly string[] ReferenceTextClasses = ReferenceTextClassesOf("");
-    private static readonly string[] PointedReferenceTextClasses = ReferenceTextClassesOf(" ex-reference-pointed");
-
     // Cached, so a render hands a Chrome's control the same delegate each time (ADR-0003). Each
     // reads the edit as it stands when it is rendered.
-    private RenderFragment? _editReferenceSpans;
-    private RenderFragment? _barReferenceSpans;
     private RenderFragment? _cellReferenceText;
     private RenderFragment? _barReferenceText;
 
-    private static string[] ReferenceTextClassesOf(string suffix)
-    {
-        var classes = new string[ReferenceColour.PaletteLength + 1];
-        for (var place = 1; place <= ReferenceColour.PaletteLength; place++)
-            classes[place] = FormattableString.Invariant($"ex-reference-{place}{suffix}");
-        return classes;
-    }
+    // This grid's highlight names and the stylesheet that paints them, made the first time a layer
+    // asks: names of its own, so two grids never touch each other's colours (ADR-0018).
+    private ReferenceHighlights? _referenceHighlights;
+
+    // What the layers' highlights cover, and the colouring and the pointed span it was written for:
+    // written again only when either changes, so a render that changed neither writes the same string.
+    private string _layerColours = "";
+    private ReferenceColouring? _layerColouredBy;
+    private (int Start, int Length)? _layerPointed;
+
+    private ReferenceHighlights Highlights => _referenceHighlights ??= new ReferenceHighlights(_idPrefix);
+
+    /// <summary>The grid's own stylesheet for its highlights (ADR-0057, note of 2026-10-01).</summary>
+    private string ReferenceHighlightStyles => Highlights.Css;
 
     /// <summary>Whether the Formula Bar shows the open edit's text (ADR-0051): while an edit is
     /// open on the Focus cell.</summary>
@@ -65,28 +71,36 @@ public partial class ExGrid<TRow>
     private (int Start, int Length)? PointedSpan
         => PointingContinues && _pointStart != 1 ? (_pointStart, _pointLength) : null;
 
-    /// <summary>The spans of the edit's text, for the core's own layers.</summary>
-    private RenderFragment EditReferenceSpans
-        => _editReferenceSpans ??= builder => AddReferenceSpans(builder, _editText, Colouring, PointedSpan);
-
-    /// <summary>The spans of what the Formula Bar's layer draws: the edit's while the bar shows
-    /// it; nothing otherwise.</summary>
-    private RenderFragment BarReferenceSpans
-        => _barReferenceSpans ??= builder =>
+    /// <summary>What the highlights of the core's own Cell Editor layer cover (<see cref="ReferenceHighlights.ColoursOf"/>).</summary>
+    private string EditReferenceColours
+    {
+        get
         {
-            if (BarShowsTheEdit)
-                AddReferenceSpans(builder, _editText, Colouring, PointedSpan);
-        };
+            var colouring = Colouring;
+            var pointed = PointedSpan;
+            if (!ReferenceEquals(colouring, _layerColouredBy) || pointed != _layerPointed)
+            {
+                _layerColours = Highlights.ColoursOf(colouring, pointed);
+                _layerColouredBy = colouring;
+                _layerPointed = pointed;
+            }
+            return _layerColours;
+        }
+    }
+
+    /// <summary>What the highlights of the Formula Bar's layer cover: the edit's while the bar shows
+    /// it; nothing otherwise.</summary>
+    private string BarReferenceColours => BarShowsTheEdit ? EditReferenceColours : "";
 
     /// <summary>The Cell Editor's layer as a Chrome places it (<see cref="Chrome.CellEditorContext.ReferenceText"/>);
     /// null where no References function is declared.</summary>
     private RenderFragment? CellReferenceTextForChrome
-        => ReferencesIn is null ? null : _cellReferenceText ??= builder => AddReferenceText(builder, _editText, EditReferenceSpans);
+        => ReferencesIn is null ? null : _cellReferenceText ??= builder => AddReferenceText(builder, _editText, EditReferenceColours);
 
     /// <summary>The Formula Bar's layer as a Chrome places it (<see cref="Chrome.FormulaBarTextContext.ReferenceText"/>);
     /// null where no References function is declared.</summary>
     private RenderFragment? BarReferenceTextForChrome
-        => ReferencesIn is null ? null : _barReferenceText ??= builder => AddReferenceText(builder, BarReferenceText, BarReferenceSpans);
+        => ReferencesIn is null ? null : _barReferenceText ??= builder => AddReferenceText(builder, BarReferenceText, BarReferenceColours);
 
     /// <summary>The Formula Bar's layer beside the core's own field: from the Name Box's right
     /// edge, where the field starts, to the band's, as the resolved metrics say (ADR-0028).</summary>
@@ -97,99 +111,20 @@ public partial class ExGrid<TRow>
     /// A layer as a Chrome places it: immediately before its control, inside the core's box, which
     /// the control fills (<see cref="Chrome.IGridChrome.CellEditor"/>). The stylesheet stands it
     /// over the box's content, so its text starts where the control's does. The text it was
-    /// rendered for is written on it, where the listener reads it (ADR-0057).
+    /// rendered for, and what its highlights cover, are written on it, where the listener reads
+    /// them (ADR-0057). Its line holds the text as one run, nothing added and nothing left out.
     /// </summary>
-    private static void AddReferenceText(RenderTreeBuilder builder, string text, RenderFragment spans)
+    private static void AddReferenceText(RenderTreeBuilder builder, string text, string colours)
     {
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", "ex-reference-text");
         builder.AddAttribute(2, "data-ex-text", text);
-        builder.AddAttribute(3, "aria-hidden", "true");
-        builder.OpenElement(4, "div");
-        builder.AddAttribute(5, "class", "ex-reference-text-line");
-        builder.AddContent(6, spans);
+        builder.AddAttribute(3, "data-ex-colours", colours);
+        builder.AddAttribute(4, "aria-hidden", "true");
+        builder.OpenElement(5, "div");
+        builder.AddAttribute(6, "class", "ex-reference-text-line");
+        builder.AddContent(7, text);
         builder.CloseElement();
         builder.CloseElement();
-    }
-
-    /// <summary>
-    /// The text, each Reference a span in its colour and the rest as it stands — nothing added,
-    /// nothing left out, so the layer's characters stand where the field's do. The colouring is
-    /// always of this very text (<see cref="Colouring"/>), and so is the pointed span, which wears
-    /// the pointed look: a Reference standing exactly there wears it beside its colour; anything
-    /// longer — a lookup a press outside the grid wrote, holding References of its own — wears it
-    /// as one span, with its References inside in their colours (ADR-0058, "What is drawn"). A
-    /// pointed span that cuts through a Reference — one the Consumer reads as beginning before
-    /// what Point wrote, or running on past it — wears none, as before: half of a Reference on the
-    /// grey would say that half alone was pointed. Only the layer of the surface the edit is in
-    /// shows, so only there is it seen.
-    /// </summary>
-    private static void AddReferenceSpans(RenderTreeBuilder builder, string text, ReferenceColouring colouring, (int Start, int Length)? pointed)
-    {
-        if (pointed is { Length: > 0 } span && !IsOneReference(colouring, span) && !CutsAReference(colouring, span))
-        {
-            var (at, next) = AddReferenceRun(builder, text, colouring, 0, 0, span.Start, pointed: null);
-            builder.OpenElement(5, "span");
-            builder.AddAttribute(6, "class", "ex-reference-pointed");
-            (at, next) = AddReferenceRun(builder, text, colouring, at, next, span.Start + span.Length, pointed: null);
-            builder.CloseElement();
-            AddReferenceRun(builder, text, colouring, at, next, text.Length, pointed: null);
-            return;
-        }
-        AddReferenceRun(builder, text, colouring, 0, 0, text.Length, pointed);
-    }
-
-    /// <summary>
-    /// The text from <paramref name="at"/> to <paramref name="end"/>, each Reference in it — from
-    /// the <paramref name="next"/>th on — a span in its colour, and the one standing exactly over
-    /// <paramref name="pointed"/> with the pointed look beside it. No Reference crosses
-    /// <paramref name="end"/>.
-    /// </summary>
-    /// <returns>Where the run ended, and the first Reference after it.</returns>
-    private static (int At, int Next) AddReferenceRun(
-        RenderTreeBuilder builder, string text, ReferenceColouring colouring, int at, int next, int end, (int Start, int Length)? pointed)
-    {
-        for (; next < colouring.References.Count && colouring.References[next].Start < end; next++)
-        {
-            var reference = colouring.References[next];
-            if (reference.Start > at)
-                builder.AddContent(0, text[at..reference.Start]);
-            var classes = pointed is { } span && span.Start == reference.Start && span.Length == reference.Length
-                ? PointedReferenceTextClasses
-                : ReferenceTextClasses;
-            builder.OpenElement(1, "span");
-            builder.AddAttribute(2, "class", classes[colouring.Colours[next].Place]);
-            builder.AddContent(3, text.Substring(reference.Start, reference.Length));
-            builder.CloseElement();
-            at = reference.Start + reference.Length;
-        }
-        if (at < end)
-            builder.AddContent(4, at == 0 && end == text.Length ? text : text[at..end]);
-        return (end, next);
-    }
-
-    /// <summary>Whether one Reference stands exactly over the span.</summary>
-    private static bool IsOneReference(ReferenceColouring colouring, (int Start, int Length) span)
-    {
-        foreach (var reference in colouring.References)
-        {
-            if (reference.Start == span.Start && reference.Length == span.Length)
-                return true;
-        }
-        return false;
-    }
-
-    /// <summary>Whether a Reference begins on one side of an end of the span and finishes on the
-    /// other.</summary>
-    private static bool CutsAReference(ReferenceColouring colouring, (int Start, int Length) span)
-    {
-        var end = span.Start + span.Length;
-        foreach (var reference in colouring.References)
-        {
-            var referenceEnd = reference.Start + reference.Length;
-            if ((reference.Start < span.Start && referenceEnd > span.Start) || (reference.Start < end && referenceEnd > end))
-                return true;
-        }
-        return false;
     }
 }

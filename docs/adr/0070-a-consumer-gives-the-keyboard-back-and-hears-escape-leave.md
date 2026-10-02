@@ -133,6 +133,15 @@ the Keyboard Field; a display-only grid, as ExPivot's report and details grids a
 root. DC-61 says so. Nothing else here changes: the field counts as the root for the keys (ADR-0080),
 so the Escape that raises `OnLeave` is the same press.
 
+*(2026-10-02, when this branch met ExSheet's Cell Format, #42.)* ExSheet asked the core for the
+same hand-back for a Chrome whose frame lies outside the grid: Format Cells as a MudDialog
+([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md); ADR-0010's note
+of 2026-09-30). It added `ReturnKeyboardAsync()` under the same name, with the same condition: DOM
+focus on nothing or inside this grid, and not on the Formula Bar or the Name Box. The two were the
+same call, so the merge keeps one method. A Chrome calls it once its frame has closed, and a
+Consumer once something of its own goes away. DC-61 states it for both, and its layer 2 and layer 3
+tests run against that one method.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the

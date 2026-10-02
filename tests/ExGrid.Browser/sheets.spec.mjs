@@ -2,7 +2,7 @@ import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, enter, candidates, typeSteadily,
-    expectCovers,
+    expectCovers, pressCell, stretchesOf,
 } from './sheet-helpers.mjs';
 
 // Two ExSheets on /sheets (ADR-0018, SH-13, DC-25, ticket 18's second criterion): keys,
@@ -186,4 +186,67 @@ test('SH-31/DC-25: each Sheet outlines a Linked Table\'s column only in the grid
     await expect(editor(right)).toHaveCount(0);
     await expect(rightPositions.locator('.ex-reference-outline')).toHaveCount(0);
     await expect(leftPositions.locator('.ex-reference-outline')).toHaveCount(0);
+});
+
+// Each grid colours its References under highlight names of its own (ADR-0057 and ADR-0021, notes of
+// 2026-10-01; ADR-0018). CSS.highlights is one registry per document: had the Sheets shared a name,
+// the one that coloured last would have registered its highlight under it in place of the other's,
+// and the other's References, coloured into a highlight no longer registered, would show plain when
+// the keyboard came back to it.
+test('ADR-0018/ADR-0057: each Sheet keeps its own colours while the other edits, under highlights named for it', async ({ page }) => {
+    const left = sheet(page, 0);
+    const right = sheet(page, 1);
+    // The References a grid's Cell Editor shows coloured, and the stretch on the grey Point wrote.
+    const coloured = async (grid) => (await stretchesOf(editor(grid))).filter((stretch) => !stretch.pointed)
+        .map((stretch) => [stretch.text, stretch.place, stretch.ink]);
+    const pointed = async (grid) => (await stretchesOf(editor(grid))).filter((stretch) => stretch.pointed).map((stretch) => stretch.text);
+
+    await pressCell(left, 'D1');
+    await page.keyboard.type('=B1+C1+');
+    await expect(editor(left)).toHaveValue('=B1+C1+');
+    await expect.poll(async () => (await coloured(left)).map(([text, place]) => [text, place])).toEqual([['B1', 1], ['C1', 2]]);
+    const leftColours = await coloured(left);
+    const leftPrefix = (await stretchesOf(editor(left)))[0].prefix;
+
+    // The right Sheet edits and colours its own References, in the palette's first place too. The
+    // left's edit stands, plain: it is not the surface the keyboard is in.
+    await pressCell(right, 'D2');
+    await page.keyboard.type('=C1+');
+    await expect(editor(right)).toHaveValue('=C1+');
+    await expect.poll(async () => (await coloured(right)).map(([text, place]) => [text, place])).toEqual([['C1', 1]]);
+    const rightPrefix = (await stretchesOf(editor(right)))[0].prefix;
+    expect(rightPrefix).not.toBe(leftPrefix);
+    await expect(editor(left)).toHaveValue('=B1+C1+');
+    await expect.poll(() => stretchesOf(editor(left))).toEqual([]);
+    // Each grid's stylesheet paints its own names, and only those.
+    const styles = async (grid) => grid.evaluate((root) => [...root.querySelectorAll(':scope > style')].map((style) => style.textContent).join(''));
+    expect(await styles(left)).toContain(`::highlight(${leftPrefix}1)`);
+    expect(await styles(left)).not.toContain(rightPrefix);
+    expect(await styles(right)).toContain(`::highlight(${rightPrefix}1)`);
+    expect(await styles(right)).not.toContain(leftPrefix);
+
+    // Back on the left's rows: the press points, and the left's References are coloured again, in
+    // the colours they wore, beside the Reference just written.
+    await clickCell(left, 'B1');
+    await expect(editor(left)).toHaveValue('=B1+C1+B1');
+    await expect(editor(left)).toBeFocused();
+    await expect.poll(async () => (await coloured(left)).map(([text, place]) => [text, place])).toEqual([['B1', 1], ['C1', 2], ['B1', 1]]);
+    expect((await coloured(left)).slice(0, 2)).toEqual(leftColours);
+    expect(await pointed(left)).toEqual(['B1']);
+
+    // And back on the right's: its own colours come back too, and the left's go with the keyboard.
+    await clickCell(right, 'B1');
+    await expect(editor(right)).toHaveValue('=C1+B1');
+    await expect.poll(async () => (await coloured(right)).map(([text, place]) => [text, place])).toEqual([['C1', 1], ['B1', 2]]);
+    expect(await pointed(right)).toEqual(['B1']);
+    await expect.poll(() => stretchesOf(editor(left))).toEqual([]);
+
+    // Each Escape cancels its own Sheet's edit; a press back on the left's rows gives it the keyboard.
+    await page.keyboard.press('Escape');
+    await expect(editor(right)).toHaveCount(0);
+    await clickCell(left, 'E5');
+    await expect(editor(left)).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(editor(left)).toHaveCount(0);
+    await expect(cell(left, 'D1')).toHaveText('');
 });

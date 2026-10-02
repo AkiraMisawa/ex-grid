@@ -1,0 +1,86 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "started": "2026-10-02T02:33:49.821Z",
+ "steps": [
+  {
+   "step": "before (Chrome back in front, the Revalue button focused)",
+   "keys": null,
+   "page": {
+    "active": "button#sheet-revalue",
+    "focus": null,
+    "ring": false,
+    "cell": null
+   },
+   "front": "ok foreground title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "copy": "ok narratorkeys front: title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "clipboard": "ok clipboard \"Scan\""
+  },
+  {
+   "step": "tab into the grid",
+   "keys": "{TAB}",
+   "sent": "ok type keys=1",
+   "page": {
+    "active": "key-field",
+    "focus": null,
+    "ring": true,
+    "cell": null
+   },
+   "front": "ok foreground title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "copy": "ok narratorkeys front: title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "clipboard": "ok clipboard \"Enter Table, 1048576 by 16384, edit, \\nScan Off\""
+  },
+  {
+   "step": "down",
+   "keys": "{DOWN}",
+   "sent": "ok type keys=1",
+   "page": {
+    "active": "body",
+    "focus": null,
+    "ring": false,
+    "cell": null
+   },
+   "front": "ok foreground title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "copy": "ok narratorkeys front: title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "clipboard": "ok clipboard \"Scan\""
+  },
+  {
+   "step": "right",
+   "keys": "{RIGHT}",
+   "sent": "ok type keys=1",
+   "page": {
+    "active": "body",
+    "focus": null,
+    "ring": false,
+    "cell": null
+   },
+   "front": "ok foreground title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "copy": "ok narratorkeys front: title=\"ime16-d5-chrome - Google Chrome\" process=chrome",
+   "clipboard": "ok clipboard \"m\""
+  }
+ ],
+ "messages": [
+  {
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "keyboard": {
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok english was=0x08090809 now=0x08090809"
+ },
+ "narratorRunningBefore": "ok narratortext []",
+ "focusBefore": true,
+ "narratorStart": "ok narrator started, running: True front: title=\"Narrator updates\" process=ShellHost",
+ "frontAfterStart": "ok foreground title=\"Narrator updates\" process=ShellHost",
+ "narratorWindowsAtStart": "ok narratortext [\"window class=HighlightCursorClass rect=2146,1436,2334,1489\",\"  names: \"]",
+ "back": [
+  "ok front"
+ ],
+ "recapOpen": "ok narratorkeys front: title=\"Speech recap\" process=Narrator",
+ "recap": "ok narratortext [\"window class=HighlightCursorClass rect=690,1009,700,1045\",\"window class=NarratorSpeechRecapDialog rect=342,342,1332,1092\",\"  names: \",\"  names: Window:Speech recap | Pane:DesktopWindowXamlSource | TitleBar:Speech recap\"]",
+ "frontWithRecap": "ok foreground title=\"Speech recap\" process=Narrator",
+ "narratorStop": "ok narrator stopped by Insert+Escape, running: True",
+ "finished": "2026-10-02T02:34:31.889Z"
+}

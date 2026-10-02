@@ -274,6 +274,18 @@ file.
   character, and below twenty References it does not show. If long Formulas show it, the fix is to
   draw the layer as one run and colour it with the CSS Custom Highlight API, which needs script of its
   own and a decision.
+  *(2026-10-01, decided with the user, ticket 86: no longer accepted. The layer is drawn as one run.)*
+  - Ticket 48 drew the Cell Editor in the Ink. The drift then showed: one edge pixel past DC-48's
+    threshold at End under `ExSheet.MudBlazor`'s Roboto.
+  - Ticket 86 measured the cause. Each span's width is rounded up to 1/64 px, so the runs start
+    1/64, 2/64, 3/64 and 4/64 px late, about 1/16 px at End of a long Formula. A single run matched
+    the field at both ends, in both surfaces and under both Chromes.
+  - The user first kept the acceptance, then chose the fix the same day. The Highlight API is a
+    standard part of the platform, not a library.
+  - **So the layer's text is one text node, and its References are coloured by the CSS Custom
+    Highlight API.** ADR-0021's note of this date says what the script does. Each grid uses
+    highlight names of its own (ADR-0018). DC-48's threshold is unchanged.
+  - The colour tokens, the pointed shade and the moments the layer shows are unchanged.
 - **Two moments leave the colours a keystroke behind, and both are accepted.**
   - Focus moved mid-edit to something that is not a text field (a button in a Consumer's cell) leaves
     the previous field coloured until the next key or caret move. The colours are still over the

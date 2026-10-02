@@ -1,0 +1,9308 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:6298",
+ "label": "server",
+ "chrome": "builtin",
+ "scheme": "light",
+ "zoom": 100,
+ "config": "server-msedge",
+ "started": "2026-10-01T23:40:57.430Z",
+ "cases": [
+  {
+   "case": "8",
+   "what": "B2's bottom thick black",
+   "page": "?case=8",
+   "started": "2026-10-01T23:41:01.605Z",
+   "states": [
+    {
+     "state": "set",
+     "did": [],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": null,
+      "nameBox": "",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "body"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "A2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "same": false
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "8-set-server-msedge.png"
+    }
+   ],
+   "url": "http://localhost:6298/sheet?case=8",
+   "dpr": 1.5
+  },
+  {
+   "case": "9",
+   "what": "B2:B14's bottoms in Excel's thirteen styles",
+   "page": "?case=9",
+   "started": "2026-10-01T23:41:05.095Z",
+   "states": [
+    {
+     "state": "set",
+     "did": [],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-hair-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-medium-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B5": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 534.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B6": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 562.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000 ex-lb-double-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B7": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 590.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-double-000000 ex-lb-dotted-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B8": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 618.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-dashed-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B9": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 646.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-dashdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B10": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 674.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-dashdotdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B11": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 702.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-mediumdashed-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B12": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 730.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-mediumdashdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B13": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 758.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-mediumdashdotdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B14": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 786.2083740234375,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-slanteddashdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": null,
+      "nameBox": "",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "body"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B4 bottom": {
+        "at": 258,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B5 bottom": {
+        "at": 300,
+        "at25": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "B6 bottom": {
+        "at": 342,
+        "at25": "-6..-3 ffffff | -2 000000 | -1 ffffff | 0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 ffffff | -2 000000 | -1 ffffff | 0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 ffffff | -2 000000 | -1 ffffff | 0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "B7 bottom": {
+        "at": 384,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "B8 bottom": {
+        "at": 426,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "same": false
+       },
+       "B9 bottom": {
+        "at": 468,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B10 bottom": {
+        "at": 510,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "same": false
+       },
+       "B11 bottom": {
+        "at": 552,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B12 bottom": {
+        "at": 594,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B13 bottom": {
+        "at": 636,
+        "at25": "-6..6 ffffff",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 ffffff",
+        "same": true
+       },
+       "B14 bottom": {
+        "at": 678,
+        "at25": "-6..6 none",
+        "at50": "-6..6 none",
+        "at75": "-6..6 none",
+        "same": true
+       },
+       "A2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "same": false
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       }
+      },
+      "along": {
+       "B2 bottom": {
+        "at": 174,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1 +1 -1",
+          "colours": [
+           "000000:72",
+           "e0e0e0:72"
+          ]
+         }
+        }
+       },
+       "B3 bottom": {
+        "at": 216,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         }
+        }
+       },
+       "B4 bottom": {
+        "at": 258,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-1": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         }
+        }
+       },
+       "B5 bottom": {
+        "at": 300,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "0": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-2": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-1": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         }
+        }
+       },
+       "B6 bottom": {
+        "at": 342,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "0": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-2": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         }
+        }
+       },
+       "B7 bottom": {
+        "at": 384,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "-2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2",
+          "colours": [
+           "000000:72",
+           "e1e1e1:36",
+           "e0e0e0:36"
+          ]
+         }
+        }
+       },
+       "B8 bottom": {
+        "at": 426,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+1 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +2",
+          "colours": [
+           "000000:108",
+           "e1e1e1:36"
+          ]
+         }
+        }
+       },
+       "B9 bottom": {
+        "at": 468,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+7 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +2",
+          "colours": [
+           "000000:96",
+           "e0e0e0:32",
+           "e1e1e1:16"
+          ]
+         }
+        }
+       },
+       "B10 bottom": {
+        "at": 510,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+7 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +2",
+          "colours": [
+           "000000:90",
+           "e1e1e1:54"
+          ]
+         }
+        }
+       },
+       "B11 bottom": {
+        "at": 552,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+7 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +2",
+          "colours": [
+           "000000:108",
+           "ffffff:36"
+          ]
+         },
+         "-1": {
+          "runs": "+7 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +2",
+          "colours": [
+           "000000:108",
+           "e0e0e0:24",
+           "e1e1e1:12"
+          ]
+         }
+        }
+       },
+       "B12 bottom": {
+        "at": 594,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+7 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +2",
+          "colours": [
+           "000000:96",
+           "ffffff:48"
+          ]
+         },
+         "-1": {
+          "runs": "+7 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +2",
+          "colours": [
+           "000000:96",
+           "e0e0e0:32",
+           "e1e1e1:16"
+          ]
+         }
+        }
+       },
+       "B13 bottom": {
+        "at": 636,
+        "from": 283,
+        "length": 144,
+        "rows": {}
+       },
+       "B14 bottom": {
+        "at": 678,
+        "from": 283,
+        "length": 144,
+        "rows": {}
+       }
+      },
+      "ink": {}
+     },
+     "shot": "9-set-server-msedge.png"
+    },
+    {
+     "state": "scrolled",
+     "did": [
+      "a click at (325, 804) on the middle of A1",
+      "keys {DOWN 15}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": null,
+       "B3": null,
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 408.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-medium-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B5": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 436.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B6": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 464.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000 ex-lb-double-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B7": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 492.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-double-000000 ex-lb-dotted-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B8": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 520.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-dashed-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B9": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 548.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-dashdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B10": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 576.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-dashdotdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B11": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 604.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-mediumdashed-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B12": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 632.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-mediumdashdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B13": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 660.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-mediumdashdotdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B14": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 688.875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-slanteddashdot-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": null,
+       "C2": null
+      },
+      "focus": "A16",
+      "nameBox": "A16",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex29-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B4 bottom": {
+        "at": 112,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B5 bottom": {
+        "at": 154,
+        "at25": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "B6 bottom": {
+        "at": 196,
+        "at25": "-6..-3 ffffff | -2 000000 | -1 ffffff | 0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 ffffff | -2 000000 | -1 ffffff | 0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 ffffff | -2 000000 | -1 ffffff | 0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "B7 bottom": {
+        "at": 238,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "B8 bottom": {
+        "at": 280,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "B9 bottom": {
+        "at": 322,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B10 bottom": {
+        "at": 364,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "B11 bottom": {
+        "at": 406,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B12 bottom": {
+        "at": 448,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B13 bottom": {
+        "at": 490,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "B14 bottom": {
+        "at": 532,
+        "at25": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-3 ffffff | -2..-1 000000 | 0..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {
+       "B4 bottom": {
+        "at": 112,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-1": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         }
+        }
+       },
+       "B5 bottom": {
+        "at": 154,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "0": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-2": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-1": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         }
+        }
+       },
+       "B6 bottom": {
+        "at": 196,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "0": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         },
+         "-2": {
+          "runs": "+144",
+          "colours": [
+           "000000:144"
+          ]
+         }
+        }
+       },
+       "B7 bottom": {
+        "at": 238,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "-2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2 -2 +2",
+          "colours": [
+           "e0e0e0:72",
+           "000000:72"
+          ]
+         }
+        }
+       },
+       "B8 bottom": {
+        "at": 280,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+1 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +3 -1 +2",
+          "colours": [
+           "000000:108",
+           "e0e0e0:36"
+          ]
+         }
+        }
+       },
+       "B9 bottom": {
+        "at": 322,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+7 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +2",
+          "colours": [
+           "000000:96",
+           "e0e0e0:48"
+          ]
+         }
+        }
+       },
+       "B10 bottom": {
+        "at": 364,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-1": {
+          "runs": "+7 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +2",
+          "colours": [
+           "000000:90",
+           "e0e0e0:54"
+          ]
+         }
+        }
+       },
+       "B11 bottom": {
+        "at": 406,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+7 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +2",
+          "colours": [
+           "000000:108",
+           "ffffff:36"
+          ]
+         },
+         "-1": {
+          "runs": "+7 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +9 -3 +2",
+          "colours": [
+           "000000:108",
+           "e0e0e0:36"
+          ]
+         }
+        }
+       },
+       "B12 bottom": {
+        "at": 448,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+7 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +2",
+          "colours": [
+           "000000:96",
+           "ffffff:48"
+          ]
+         },
+         "-1": {
+          "runs": "+7 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +9 -3 +3 -3 +2",
+          "colours": [
+           "000000:96",
+           "e0e0e0:48"
+          ]
+         }
+        }
+       },
+       "B13 bottom": {
+        "at": 490,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+7 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +2",
+          "colours": [
+           "000000:90",
+           "ffffff:54"
+          ]
+         },
+         "-1": {
+          "runs": "+7 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +9 -3 +3 -3 +3 -3 +2",
+          "colours": [
+           "000000:90",
+           "e0e0e0:54"
+          ]
+         }
+        }
+       },
+       "B14 bottom": {
+        "at": 532,
+        "from": 283,
+        "length": 144,
+        "rows": {
+         "-2": {
+          "runs": "+9 -1 +5 -1 +11 -1 +5 -1 +11 -1 +5 -1 +11 -1 +5 -1 +11 -1 +5 -1 +11 -1 +5 -1 +11 -1 +5 -1 +11 -1 +5 -1 +2",
+          "colours": [
+           "000000:128",
+           "ffffff:16"
+          ]
+         },
+         "-1": {
+          "runs": "+7 -2 +4 -2 +10 -2 +4 -2 +10 -2 +4 -2 +10 -2 +4 -2 +10 -2 +4 -2 +10 -2 +4 -2 +10 -2 +4 -2 +10 -2 +4 -2 +3",
+          "colours": [
+           "000000:112",
+           "e0e0e0:32"
+          ]
+         }
+        }
+       }
+      },
+      "ink": {}
+     },
+     "shot": "9-scrolled-server-msedge.png"
+    }
+   ],
+   "url": "http://localhost:6298/sheet?case=9",
+   "dpr": 1.5
+  },
+  {
+   "case": "11",
+   "what": "B2:C3 with every edge thin black; B2:C3 selected with real keys from A1 (Down, Right, Shift+Right, Shift+Down)",
+   "page": "?case=11",
+   "started": "2026-10-01T23:41:09.990Z",
+   "states": [
+    {
+     "state": "set",
+     "did": [],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B1": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "D2": {
+        "text": "",
+        "box": {
+         "x": 413.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": null,
+      "nameBox": "",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "body"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 left": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 right": {
+        "at": 578,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 top": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 right": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 top": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 left": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 right": {
+        "at": 578,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "A2 right": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B1 bottom": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "D2 left": {
+        "at": 578,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B4 top": {
+        "at": 216,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "11-set-server-msedge.png"
+    },
+    {
+     "state": "a1",
+     "did": [
+      "a click at (325, 804) on the middle of A1"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B1": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "D2": {
+        "text": "",
+        "box": {
+         "x": 413.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex31-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 left": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 right": {
+        "at": 578,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 top": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 right": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 top": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 left": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 right": {
+        "at": 578,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "A2 right": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B1 bottom": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "D2 left": {
+        "at": 578,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B4 top": {
+        "at": 216,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:2"
+        ],
+        "inkPixels": 2
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "11-a1-server-msedge.png"
+    },
+    {
+     "state": "selected",
+     "did": [
+      "keys {DOWN}{RIGHT}+{RIGHT}+{DOWN}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B1": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "D2": {
+        "text": "",
+        "box": {
+         "x": 413.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "B2",
+      "nameBox": "B2",
+      "bar": "",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 198,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex31-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 132,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "same": true
+       },
+       "B2 left": {
+        "at": 281,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 right": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e9f0fa | 1..6 dce7f8",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e9f0fa | 1..6 dce7f8",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e9f0fa | 1..6 dce7f8",
+        "same": true
+       },
+       "C2 top": {
+        "at": 132,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at50": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at75": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "same": true
+       },
+       "C2 left": {
+        "at": 429,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e9f0fa | 1..6 dce7f8",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e9f0fa | 1..6 dce7f8",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e9f0fa | 1..6 dce7f8",
+        "same": true
+       },
+       "C2 right": {
+        "at": 578,
+        "at25": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "B3 top": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e5edfa | 1..6 dce7f8",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 281,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 dce7f8",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 dce7f8",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 dce7f8",
+        "same": true
+       },
+       "B3 right": {
+        "at": 429,
+        "at25": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at50": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at75": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "same": true
+       },
+       "C3 top": {
+        "at": 174,
+        "at25": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at50": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at75": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "same": true
+       },
+       "C3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "C3 left": {
+        "at": 429,
+        "at25": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at50": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "at75": "-6..-2 dce7f8 | -1 0b1627 | 0..6 dce7f8",
+        "same": true
+       },
+       "C3 right": {
+        "at": 578,
+        "at25": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "A2 right": {
+        "at": 281,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B1 bottom": {
+        "at": 132,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "D2 left": {
+        "at": 578,
+        "at25": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "at50": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "at75": "-6..-3 dce7f8 | -2..0 000000 | 1..6 ffffff",
+        "same": true
+       },
+       "B4 top": {
+        "at": 216,
+        "at25": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "dce7f8",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "dce7f8",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "dce7f8",
+        "sampled": "ffffff",
+        "top": [
+         "ffffff:4",
+         "000000:2"
+        ],
+        "inkPixels": 6
+       }
+      }
+     },
+     "shot": "11-selected-server-msedge.png"
+    }
+   ],
+   "url": "http://localhost:6298/sheet?case=11",
+   "dpr": 1.5
+  },
+  {
+   "case": "16",
+   "what": "A1 = abc, A2 = def. On A1, each of Ctrl+B, Ctrl+2, Ctrl+I, Ctrl+3, Ctrl+U, Ctrl+4 and Ctrl+5: pressed twice (as Part A), then Ctrl+Z twice (its undo)",
+   "page": "?case=16",
+   "started": "2026-10-01T23:41:15.147Z",
+   "states": [
+    {
+     "state": "a1",
+     "did": [
+      "a click at (325, 804) on the middle of A1"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-a1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-b-1",
+     "did": [
+      "keys ^{KEYB}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:144",
+         "ffffde:18",
+         "8c2c00:17",
+         "298ade:7",
+         "005db5:7"
+        ],
+        "inkPixels": 325
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-b-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-b-2",
+     "did": [
+      "keys ^{KEYB}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-b-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-b-undo-1",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:144",
+         "ffffde:18",
+         "8c2c00:17",
+         "298ade:7",
+         "005db5:7"
+        ],
+        "inkPixels": 325
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-b-undo-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-b-undo-2",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-b-undo-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-2-1",
+     "did": [
+      "keys ^{KEY2}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:144",
+         "ffffde:18",
+         "8c2c00:17",
+         "298ade:7",
+         "005db5:7"
+        ],
+        "inkPixels": 325
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-2-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-2-2",
+     "did": [
+      "keys ^{KEY2}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-2-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-2-undo-1",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:144",
+         "ffffde:18",
+         "8c2c00:17",
+         "298ade:7",
+         "005db5:7"
+        ],
+        "inkPixels": 325
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-2-undo-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-2-undo-2",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-2-undo-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-i-1",
+     "did": [
+      "keys ^{KEYI}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:20",
+         "00005a:5",
+         "000029:5",
+         "deffff:4",
+         "ffb25a:4"
+        ],
+        "inkPixels": 222
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-i-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-i-2",
+     "did": [
+      "keys ^{KEYI}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-i-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-i-undo-1",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:20",
+         "00005a:5",
+         "000029:5",
+         "deffff:4",
+         "ffb25a:4"
+        ],
+        "inkPixels": 222
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-i-undo-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-i-undo-2",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-i-undo-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-3-1",
+     "did": [
+      "keys ^{KEY3}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:20",
+         "00005a:5",
+         "000029:5",
+         "deffff:4",
+         "ffb25a:4"
+        ],
+        "inkPixels": 222
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-3-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-3-2",
+     "did": [
+      "keys ^{KEY3}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-3-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-3-undo-1",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:20",
+         "00005a:5",
+         "000029:5",
+         "deffff:4",
+         "ffb25a:4"
+        ],
+        "inkPixels": 222
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-3-undo-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-3-undo-2",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-3-undo-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-u-1",
+     "did": [
+      "keys ^{KEYU}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xu",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "underline",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:100",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 298
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-u-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-u-2",
+     "did": [
+      "keys ^{KEYU}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-u-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-u-undo-1",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xu",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "underline",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:100",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 298
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-u-undo-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-u-undo-2",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-u-undo-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-4-1",
+     "did": [
+      "keys ^{KEY4}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xu",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "underline",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:100",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 298
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-4-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-4-2",
+     "did": [
+      "keys ^{KEY4}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-4-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-4-undo-1",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xu",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "underline",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:100",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 298
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-4-undo-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-4-undo-2",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-4-undo-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-5-1",
+     "did": [
+      "keys ^{KEY5}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xs",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "line-through",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:98",
+         "ffb25a:16",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 270
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-5-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-5-2",
+     "did": [
+      "keys ^{KEY5}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-5-2-server-msedge.png"
+    },
+    {
+     "state": "ctrl-5-undo-1",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xs",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "line-through",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:98",
+         "ffb25a:16",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 270
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-5-undo-1-server-msedge.png"
+    },
+    {
+     "state": "ctrl-5-undo-2",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex33-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:36",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 230
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:21",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "16-ctrl-5-undo-2-server-msedge.png"
+    }
+   ],
+   "url": "http://localhost:6298/sheet?case=16",
+   "dpr": 1.5
+  },
+  {
+   "case": "17",
+   "what": "A1 = abc (bold), A2 = def. A1:A2 with the Focus on A1 (A1, Shift+Down), Ctrl+B. Then the page opened again, and A2:A1 with the Focus on A2 (A1, Down, Shift+Up), Ctrl+B",
+   "page": "?case=17",
+   "started": "2026-10-01T23:41:42.471Z",
+   "states": [
+    {
+     "state": "focus-a1",
+     "did": [
+      "a click at (325, 804) on the middle of A1",
+      "keys +{DOWN}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex35-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:142",
+         "ffffde:18",
+         "8c2c00:17",
+         "298ade:7",
+         "005db5:7"
+        ],
+        "inkPixels": 323
+       },
+       "A2": {
+        "ground": "dce7f8",
+        "sampled": "0b1627",
+        "top": [
+         "0b1627:20",
+         "0b1649:19",
+         "7ec9f8:18",
+         "c18749:11",
+         "dce7dd:11"
+        ],
+        "inkPixels": 249
+       }
+      }
+     },
+     "shot": "17-focus-a1-server-msedge.png"
+    },
+    {
+     "state": "focus-a1-ctrl-b",
+     "did": [
+      "keys ^{KEYB}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex35-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:34",
+         "ffb25a:18",
+         "5ab2ff:11",
+         "002c8c:7",
+         "deffff:7"
+        ],
+        "inkPixels": 228
+       },
+       "A2": {
+        "ground": "dce7f8",
+        "sampled": "0b1627",
+        "top": [
+         "0b1627:20",
+         "0b1649:19",
+         "7ec9f8:18",
+         "c18749:11",
+         "dce7dd:11"
+        ],
+        "inkPixels": 249
+       }
+      }
+     },
+     "shot": "17-focus-a1-ctrl-b-server-msedge.png"
+    },
+    {
+     "state": "reopened",
+     "did": [
+      "the page opened again (http://localhost:6298/sheet?case=17)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": null,
+      "nameBox": "",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "body"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:142",
+         "ffffde:18",
+         "8c2c00:17",
+         "298ade:7",
+         "005db5:7"
+        ],
+        "inkPixels": 323
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:20",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 243
+       }
+      }
+     },
+     "shot": "17-reopened-server-msedge.png"
+    },
+    {
+     "state": "focus-a2",
+     "did": [
+      "a click at (325, 804) on the middle of A1",
+      "keys {DOWN}+{UP}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A2",
+      "nameBox": "A2",
+      "bar": "def",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex37-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "dce7f8",
+        "sampled": "0b1627",
+        "top": [
+         "0b1627:142",
+         "dce7dd:18",
+         "7e3a27:17",
+         "2d87dd:7",
+         "0b62bb:7"
+        ],
+        "inkPixels": 323
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:22",
+         "000029:19",
+         "8cdbff:18",
+         "de8a29:11",
+         "ffffde:11"
+        ],
+        "inkPixels": 245
+       }
+      }
+     },
+     "shot": "17-focus-a2-server-msedge.png"
+    },
+    {
+     "state": "focus-a2-ctrl-b",
+     "did": [
+      "keys ^{KEYB}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A2",
+      "nameBox": "A2",
+      "bar": "def",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex37-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "dce7f8",
+        "sampled": "0b1627",
+        "top": [
+         "0b1627:142",
+         "dce7dd:18",
+         "7e3a27:17",
+         "2d87dd:7",
+         "0b62bb:7"
+        ],
+        "inkPixels": 323
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:145",
+         "000029:20",
+         "5a0000:19",
+         "8cdbff:19",
+         "ffffb5:16"
+        ],
+        "inkPixels": 327
+       }
+      }
+     },
+     "shot": "17-focus-a2-ctrl-b-server-msedge.png"
+    }
+   ],
+   "url": "http://localhost:6298/sheet?case=17",
+   "dpr": 1.5
+  },
+  {
+   "case": "18",
+   "what": "A1 = 1234.5. On A1, Ctrl with each of ~ ! @ # $ % ^ as the character on the UK layout (with the Shift it needs), each followed by Ctrl+Z (its undo)",
+   "page": "?case=18",
+   "started": "2026-10-01T23:41:51.793Z",
+   "states": [
+    {
+     "state": "a1",
+     "did": [
+      "a click at (325, 804) on the middle of A1"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-a1-server-msedge.png"
+    },
+    {
+     "state": "tilde",
+     "did": [
+      "Ctrl with '~' as the character on the UK layout"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-tilde-server-msedge.png"
+    },
+    {
+     "state": "tilde-undo",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-tilde-undo-server-msedge.png"
+    },
+    {
+     "state": "bang",
+     "did": [
+      "Ctrl with '!' as the character on the UK layout"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1,234.50",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:71",
+         "de8a29:21",
+         "00005a:18",
+         "b5ffff:18",
+         "636563:16"
+        ],
+        "inkPixels": 494
+       }
+      }
+     },
+     "shot": "18-bang-server-msedge.png"
+    },
+    {
+     "state": "bang-undo",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-bang-undo-server-msedge.png"
+    },
+    {
+     "state": "at",
+     "did": [
+      "Ctrl with '@' as the character on the UK layout"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "12:00 PM",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "5/18/1903 12:00:00 PM",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:60",
+         "b5ffff:30",
+         "00005a:29",
+         "ffffb5:21",
+         "5a0000:20"
+        ],
+        "inkPixels": 593
+       }
+      }
+     },
+     "shot": "18-at-server-msedge.png"
+    },
+    {
+     "state": "at-undo",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-at-undo-server-msedge.png"
+    },
+    {
+     "state": "hash",
+     "did": [
+      "Ctrl with '#' as the character on the UK layout"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "18-May-03",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 108,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "5/18/1903 12:00:00 PM",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 108
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:60",
+         "deffff:26",
+         "002c8c:25",
+         "ffdb8c:22",
+         "290000:20"
+        ],
+        "inkPixels": 699
+       }
+      }
+     },
+     "shot": "18-hash-server-msedge.png"
+    },
+    {
+     "state": "hash-undo",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-hash-undo-server-msedge.png"
+    },
+    {
+     "state": "dollar",
+     "did": [
+      "Ctrl with '$' as the character on the UK layout"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "$1,234.50 ",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 104,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 104
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:71",
+         "ffffb5:21",
+         "5a0000:20",
+         "deffff:19",
+         "298ade:19"
+        ],
+        "inkPixels": 607
+       }
+      }
+     },
+     "shot": "18-dollar-server-msedge.png"
+    },
+    {
+     "state": "dollar-undo",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-dollar-undo-server-msedge.png"
+    },
+    {
+     "state": "percent",
+     "did": [
+      "Ctrl with '%' as the character on the UK layout"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "123450%",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "123450%",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:69",
+         "5ab2ff:16",
+         "298ade:16",
+         "636563:14",
+         "ffdb8c:14"
+        ],
+        "inkPixels": 613
+       }
+      }
+     },
+     "shot": "18-percent-server-msedge.png"
+    },
+    {
+     "state": "percent-undo",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-percent-undo-server-msedge.png"
+    },
+    {
+     "state": "caret",
+     "did": [
+      "Ctrl with '^' as the character on the UK layout"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1.23E+03",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:76",
+         "b55d00:24",
+         "636563:18",
+         "5ab2ff:17",
+         "de8a29:14"
+        ],
+        "inkPixels": 506
+       }
+      }
+     },
+     "shot": "18-caret-server-msedge.png"
+    },
+    {
+     "state": "caret-undo",
+     "did": [
+      "keys ^{KEYZ}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "1234.5",
+        "box": {
+         "x": 116.25,
+         "y": 422.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-cell-numeric",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "right"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "1234.5",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex39-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:64",
+         "5ab2ff:18",
+         "298ade:16",
+         "636563:15",
+         "290000:14"
+        ],
+        "inkPixels": 376
+       }
+      }
+     },
+     "shot": "18-caret-undo-server-msedge.png"
+    }
+   ],
+   "url": "http://localhost:6298/sheet?case=18",
+   "dpr": 1.5
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-01T23:40:58.478Z",
+   "type": "info",
+   "text": "[2026-10-01T23:40:58.477Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:40:58.486Z",
+   "type": "info",
+   "text": "[2026-10-01T23:40:58.486Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=7hHCEUgB7j1cLK1akgChTQ."
+  },
+  {
+   "t": "2026-10-01T23:41:01.653Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:01.651Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:41:01.659Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:01.659Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=qK8NhfXW7Hi_7pQHvDM-4Q."
+  },
+  {
+   "t": "2026-10-01T23:41:05.139Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:05.139Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:41:05.147Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:05.146Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=h44ybPdLw0dvEqBiIAwTAg."
+  },
+  {
+   "t": "2026-10-01T23:41:10.039Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:10.036Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:41:10.046Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:10.045Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=94KIh9zpUCUUmiZBc01ncg."
+  },
+  {
+   "t": "2026-10-01T23:41:15.192Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:15.191Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:41:15.199Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:15.199Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=w7N_qCAk3CQQFsScpS82jw."
+  },
+  {
+   "t": "2026-10-01T23:41:42.512Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:42.512Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:41:42.521Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:42.520Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=JioP0vR_Dd_Pfnv58uhY3A."
+  },
+  {
+   "t": "2026-10-01T23:41:46.737Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:46.736Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:41:46.747Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:46.743Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=Ovfb9K0YBMZQer9Cj3PZCA."
+  },
+  {
+   "t": "2026-10-01T23:41:51.835Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:51.834Z] Information: Normalizing '_blazor' to 'http://localhost:6298/_blazor'."
+  },
+  {
+   "t": "2026-10-01T23:41:51.842Z",
+   "type": "info",
+   "text": "[2026-10-01T23:41:51.842Z] Information: WebSocket connected to ws://localhost:6298/_blazor?id=eDo1zehZVcsg0B_eyNci1Q."
+  }
+ ],
+ "browserVersion": "154.0.4258.48",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok english was=0x08090809 now=0x08090809"
+ },
+ "baseDpr": 1.5,
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 527,
+    "py": 162,
+    "client": {
+     "x": 300,
+     "y": 8
+    }
+   }
+  ]
+ },
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1678,
+   1269
+  ],
+  "dark": false,
+  "forcedColors": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0"
+ },
+ "calibrations": [
+  {
+   "url": "http://localhost:6298/sheet?case=8",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 527,
+     "py": 162,
+     "client": null
+    },
+    {
+     "px": 527,
+     "py": 182,
+     "client": {
+      "x": 300,
+      "y": 21
+     }
+    },
+    {
+     "px": 527,
+     "py": 163,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:6298/sheet?case=9",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 527,
+     "py": 162,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:6298/sheet?case=11",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 527,
+     "py": 162,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:6298/sheet?case=16",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 527,
+     "py": 162,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:6298/sheet?case=17",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 527,
+     "py": 162,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:6298/sheet?case=17",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 527,
+     "py": 162,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:6298/sheet?case=18",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 527,
+     "py": 162,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  }
+ ],
+ "finished": "2026-10-01T23:42:07.426Z"
+}
