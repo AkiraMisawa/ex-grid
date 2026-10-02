@@ -191,28 +191,69 @@ for (const chrome of ['builtin', 'mud']) {
                     || (s.transition !== 'none' && !/^0s(, 0s)*$/.test(s.duration))));
         expect(offenders).toEqual([]);
 
-        // The mark is painted: the token's colour, as a layer over the cell's ground, on a marked
-        // cell and on no other.
+        // The mark is painted: the token's colour, as a layer over exactly what the cell paints
+        // without it, on a marked cell and on no other (ADR-0068). Since ExSheet's Cell Format a cell
+        // paints layers of its own — a Pinned Column's cell its row's rule (ticket 92) — so each
+        // marked cell is read beside an unmarked cell of its own kind.
         const paint = await grid(page).evaluate((root) => {
+            // A background-image's layers: its value split at the commas outside parentheses.
+            const layersOf = (cell) => {
+                const value = getComputedStyle(cell).backgroundImage;
+                const layers = [];
+                let depth = 0;
+                let from = 0;
+                for (let i = 0; i < value.length; i++) {
+                    if (value[i] === '(') {
+                        depth++;
+                    } else if (value[i] === ')') {
+                        depth--;
+                    } else if (value[i] === ',' && depth === 0) {
+                        layers.push(value.slice(from, i).trim());
+                        from = i + 1;
+                    }
+                }
+                layers.push(value.slice(from).trim());
+                return layers;
+            };
             const mark = root.querySelector('.ex-viewport .ex-cell.ex-changed');
-            const plain = mark.closest('.ex-row').querySelector('.ex-cell:not(.ex-changed)');
+            const row = mark.closest('.ex-row');
+            const pinned = mark.classList.contains('ex-pinned');
+            const plain = [...row.querySelectorAll('.ex-cell:not(.ex-changed)')]
+                .find((cell) => cell.classList.contains('ex-pinned') === pinned);
+            // The page's trade ids never change, so no Pinned Column's cell is marked here. The row's
+            // is marked for one task, read and unmarked again, before any render could land.
+            const pinnedCell = row.querySelector('.ex-cell.ex-pinned:not(.ex-changed)');
+            const pinnedPlain = layersOf(pinnedCell);
+            pinnedCell.classList.add('ex-changed');
+            const pinnedMarked = layersOf(pinnedCell);
+            pinnedCell.classList.remove('ex-changed');
             return {
-                marked: getComputedStyle(mark).backgroundImage,
-                unmarked: getComputedStyle(plain).backgroundImage,
+                marked: layersOf(mark),
+                unmarked: plain ? layersOf(plain) : null,
+                pinnedMarked,
+                pinnedPlain,
                 token: getComputedStyle(root).getPropertyValue('--ex-change-highlight-background').trim(),
             };
         });
-        expect(paint.marked, JSON.stringify(paint)).toMatch(/^linear-gradient\(/);
-        expect(paint.unmarked, JSON.stringify(paint)).toBe('none');
+        const [markLayer] = paint.marked;
+        expect(markLayer, JSON.stringify(paint)).toMatch(/^linear-gradient\(/);
+        // The mark is the top layer, and beneath it the cell paints what its neighbour paints.
+        expect(paint.unmarked, JSON.stringify(paint)).not.toBeNull();
+        expect(paint.marked.slice(1), JSON.stringify(paint)).toEqual(paint.unmarked);
+        expect(paint.unmarked, JSON.stringify(paint)).not.toContain(markLayer);
+        // A Pinned Column's cell keeps its row's rule beneath the mark.
+        expect(paint.pinnedMarked, JSON.stringify(paint)).toEqual([markLayer, ...paint.pinnedPlain]);
         if (chrome === 'mud') {
             // The Wrapper maps the token onto its palette: the warning colour at 25% (ADR-0068).
             expect(paint.token, JSON.stringify(paint)).toMatch(/0\.25\)$/);
-            expect(paint.marked, JSON.stringify(paint)).toContain(', 0.25)');
+            expect(markLayer, JSON.stringify(paint)).toContain(', 0.25)');
+            // And turns the row's rule on, so the rule the mark keeps is one that shows.
+            expect(paint.pinnedPlain[0], JSON.stringify(paint)).toMatch(/^linear-gradient\(to top, (?!rgba\(0, 0, 0, 0\))/);
         } else {
             // The core's default: a 40% tint of the system colour Mark, never opaque, so the value
             // reads through it (ADR-0068).
             expect(paint.token).toBe('');
-            expect(paint.marked, JSON.stringify(paint)).toMatch(/[/,] 0\.4\)/);
+            expect(markLayer, JSON.stringify(paint)).toMatch(/[/,] 0\.4\)/);
         }
 
         // The live region said nothing while the marks came and went.

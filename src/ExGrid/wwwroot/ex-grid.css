@@ -360,36 +360,56 @@
    are recycled, and a fade would run from another row's colour to this one's (ADR-0027 P8).
 
    A tint, so a background IMAGE over the Pinned Column's opaque ground, as every tint is
-   (ADR-0006): a translucent mark never makes a pinned cell see-through. Declared after the
-   stripes, Row Kind and Cell State, so the mark wins the cell over a stripe and a role. Their
-   own layers on the cell stay beneath the mark rather than going: a translucent mark on a
-   striped pinned cell reads as it does on the scrollable cells beside it, which show the row's
-   stripe through it, and a group's tint stays under it as under the rest of its row. A total
-   row's rule stays above the mark, as a line and not a ground. A Missing cell's tint
-   stays above it too: a state must never be the thing that disappears (ADR-0006). The overlays
-   paint above every cell, so no mark hides a selection, the Focus or a band. */
+   (ADR-0006): a translucent mark never makes a pinned cell see-through. It is laid over exactly
+   the layers the cell paints without it, and takes none of them away. Over the row's rule that
+   a Pinned Column's cell paints (--ex-row-rule), as the scrollable cells beside it lie over the
+   rule their row paints beneath them. Over a stripe's or a role's tint (--ex-tint), so the mark
+   wins the cell over a stripe and a role, and their grounds stay beneath it. Beneath a total
+   row's rule, a line and not a ground, and beneath a Missing state's tint: a state must never be
+   the thing that disappears (ADR-0006). Beneath a cell's lines (.ex-lined, ADR-0050 item 15),
+   which lie above every ground, as above a Fill (DC-59). A Fill is the cell's colour, beneath
+   every image, so the mark lies over it. Declared after the stripes, Row Kind and Cell State,
+   and after .ex-lined, so at equal specificity each rule here wins the cell it names. The
+   overlays paint above every cell, so no mark hides a selection, the Focus or a band. */
 .ex-cell.ex-changed {
-    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)));
+    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none);
 }
 .ex-row-stripe .ex-pinned.ex-changed {
-    background-image:
-        linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))),
-        linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
+    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none), var(--ex-tint);
 }
 .ex-row-group .ex-cell.ex-changed {
-    background-image:
-        linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))),
-        linear-gradient(var(--ex-row-group-background, rgba(128, 128, 128, 0.08)), var(--ex-row-group-background, rgba(128, 128, 128, 0.08)));
+    background-image: linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-tint);
 }
 .ex-row-total .ex-cell.ex-changed {
-    background-image:
-        linear-gradient(var(--ex-row-total-rule-color, rgba(128, 128, 128, 0.45)) 0 1px, transparent 1px),
-        linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)));
+    background-image: var(--ex-tint), linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)));
 }
-.ex-cell.ex-state-missing.ex-changed {
-    background-image:
-        linear-gradient(var(--ex-state-missing-background, rgba(128, 128, 128, 0.10)), var(--ex-state-missing-background, rgba(128, 128, 128, 0.10))),
-        linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)));
+.ex-cell.ex-state-missing.ex-changed:not(.ex-lined) {
+    background-image: var(--ex-tint), linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))), var(--ex-row-rule, none);
+}
+/* A marked cell with lines paints .ex-lined's layers with the mark among them: one more layer,
+   so one more size and position, whole and at the origin as the grounds are. */
+.ex-cell.ex-lined.ex-changed {
+    background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
+        linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))),
+        var(--ex-tint, none), var(--ex-cover-r, none), var(--ex-cover-b, none),
+        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0),
+        var(--ex-row-rule, none);
+    background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
+        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
+        0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+}
+.ex-row-total .ex-cell.ex-lined.ex-changed, .ex-cell.ex-lined.ex-state-missing.ex-changed {
+    background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
+        var(--ex-tint, none),
+        linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent))),
+        var(--ex-cover-r, none), var(--ex-cover-b, none),
+        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0),
+        var(--ex-row-rule, none);
+    background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
+        100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+    background-position: var(--ex-line-t-at, 0 0), var(--ex-line-r-at, 0 0), var(--ex-line-b-at, 0 0), var(--ex-line-l-at, 0 0),
+        0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
 }
 /* What stands in for the columns left out to the left of the first painted one. It must
    not be allowed to shrink: a flex-shrunk spacer would slide every painted column left

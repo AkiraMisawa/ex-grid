@@ -682,15 +682,16 @@ nobody had asked for. What that means when writing a test:
   sum of the positions; and the code the page shows, the README's `Tenors.Months` among it,
   equal to its source.
 - `grid-live.spec.mjs` — `/grid-live` (ADR-0068/0069), ExGrid alone over the server's trades, its
-  marks set to last a minute so that where they are is what is compared. A mark is keyed by row
-  and column: across a three-row scroll every trade still painted keeps exactly its marked cells,
-  and after a scroll far away and back, which reads the Window again into new instances and new
+  marks set to last a minute so that where they are is what is compared. A mark is keyed by row and
+  column: across a three-row scroll every trade still painted keeps exactly its marked cells, and
+  after a scroll far away and back, which reads the Window again into new instances and new
   elements, the same cells are marked again (DC-65). With marks painting and going, nothing under
   the Viewport transitions or animates, under the core's stylesheet and under the Wrapper's
-  (`?chrome=mud`), whose warning tint the mark takes; the grid's live region is not touched; and
-  forced colours restate the mark as a dashed outline (DC-66). The Window is read from the server
-  as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the page
-  shows is equal to its source.
+  (`?chrome=mud`), whose warning tint the mark takes; the mark lies over exactly the layers its
+  cell paints without it, a Pinned Column's row rule among them; the grid's live region is not
+  touched; and forced colours restate the mark as a dashed outline (DC-66). The Window is read from
+  the server as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the
+  page shows is equal to its source.
 
   `pivot-db`, `pivot-live` and `grid-live` share the run's one API server: each test starts from
   `POST /api/reset`, reads the trade count and the Source Version from `/api/status`, and turns

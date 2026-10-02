@@ -114,6 +114,23 @@ the delegate with.
   cell that is both marked and in that state, and under the Wrapper a Missing cell's opaque ground
   hides the mark. The mark lasts a second; the state is what the reader must not lose (ADR-0006).
 
+*(2026-10-02, when this branch met ExSheet's Cell Format, #42.)* A cell now paints more than a
+tint in its background. A Pinned Column's cell paints its row's rule itself (ticket 92), and a
+cell with Borders paints its lines (ADR-0050 item 15,
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)). Merged as it
+was, the mark replaced those layers: a marked pinned cell lost its row's rule, and a marked cell
+with lines would have lost its lines. The mark is now laid over exactly the layers the cell paints
+without it:
+
+- above the row's rule, as on the scrollable cells beside it, whose row paints the rule beneath
+  them;
+- beneath the lines, which lie above every ground (DC-59);
+- and, as before, beneath a total row's rule and a Missing state's tint.
+
+CI's repeat of `grid-live.spec.mjs` found it: the unmarked cell beside a mark no longer painted
+nothing. Layer 2 now pins each marked rule's layers. Layer 3 reads a marked cell's layers against
+an unmarked cell of its kind, a Pinned Column's cell included.
+
 ## Consequences
 
 - **§26 of the Definition of Done gains DC-64 to DC-66**, which gate ExGrid as every declaration

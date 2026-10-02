@@ -1217,37 +1217,81 @@ public class ShippedStylesheetTests
         Assert.DoesNotMatch(new Regex(@"--ex-change-highlight-background\s*:"), css);
     }
 
-    [Fact] // ADR-0068 / ADR-0006 / UX-16: the mark is a tint over the cell's ground that wins over a stripe and a role, beneath a Missing state's tint and a total row's rule
+    [Fact] // ADR-0068 / ADR-0006 / UX-16: the mark is a tint laid over exactly the layers the cell paints without it — over a stripe, a role and a Pinned Column's row rule, beneath a Missing state's tint, a total row's rule and a cell's lines
     public void The_change_highlight_is_a_tint_ordered_against_the_other_grounds()
     {
         var (rules, _) = ForcedColorsSplit();
         int IndexOf(string selector) => rules.ToList().FindIndex(rule => rule.Selectors.Contains(selector));
         const string mark = "linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)))";
+        const string rowRule = "var(--ex-row-rule, none)";
+        const string lines = "var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none)";
 
         var marked = rules.Where(rule => rule.Selectors.Any(s => s.Contains("ex-changed", StringComparison.Ordinal))).ToList();
         Assert.Equal(
             [".ex-cell.ex-changed", ".ex-row-stripe .ex-pinned.ex-changed", ".ex-row-group .ex-cell.ex-changed",
-             ".ex-row-total .ex-cell.ex-changed", ".ex-cell.ex-state-missing.ex-changed"],
-            marked.Select(rule => Assert.Single(rule.Selectors)));
+             ".ex-row-total .ex-cell.ex-changed", ".ex-cell.ex-state-missing.ex-changed:not(.ex-lined)",
+             ".ex-cell.ex-lined.ex-changed", ".ex-row-total .ex-cell.ex-lined.ex-changed, .ex-cell.ex-lined.ex-state-missing.ex-changed"],
+            marked.Select(rule => string.Join(", ", rule.Selectors)));
         foreach (var (selectors, body) in marked)
         {
+            var name = string.Join(", ", selectors);
             // An image layer, never the shorthand or a colour: either would take the Pinned
             // Column's opaque ground away, and a translucent mark would let the columns passing
             // beneath show through (ADR-0006).
             Assert.Matches(new Regex(@"(?<![\w-])background-image:"), body);
             Assert.DoesNotMatch(new Regex(@"(?<![\w-])background(-color)?\s*:"), body);
             var layers = Regex.Replace(Regex.Match(body, @"background-image:\s*(?<value>[^;]+);").Groups["value"].Value, @"\s+", " ");
-            // The mark is the top layer, except under a total row's rule and a Missing state's
-            // tint: a line stays a line, and a state is never the thing that disappears.
-            var beneath = selectors[0] is ".ex-row-total .ex-cell.ex-changed" or ".ex-cell.ex-state-missing.ex-changed";
-            Assert.Equal(beneath, !layers.StartsWith(mark, StringComparison.Ordinal));
-            Assert.Contains(mark, layers, StringComparison.Ordinal);
+            Assert.Single(Regex.Matches(layers, Regex.Escape(mark)));
+            // A cell's lines lie above every ground, the mark among them (DC-59, ADR-0050 item 15).
+            var lined = name.Contains(".ex-lined.", StringComparison.Ordinal);
+            Assert.Equal(lined, layers.StartsWith(lines, StringComparison.Ordinal));
+            var grounds = lined ? layers[(lines.Length + 2)..] : layers;
+            // Of the grounds, the mark is the top one, except under a total row's rule and a
+            // Missing state's tint: a line stays a line, and a state is never the thing that
+            // disappears.
+            var beneath = name.Contains("ex-row-total", StringComparison.Ordinal) || name.Contains("ex-state-missing", StringComparison.Ordinal);
+            Assert.Equal(beneath, !grounds.StartsWith(mark, StringComparison.Ordinal));
+            if (beneath)
+                Assert.StartsWith("var(--ex-tint", grounds, StringComparison.Ordinal);
+            // And it takes no layer away: wherever a Pinned Column's cell paints its row's rule —
+            // everywhere but a group or total row, which names none — the rule stays, beneath the
+            // mark, as the row's own rule lies beneath the scrollable cells beside it.
+            if (name is not (".ex-row-group .ex-cell.ex-changed" or ".ex-row-total .ex-cell.ex-changed"))
+                Assert.True(layers.IndexOf(rowRule, StringComparison.Ordinal) > layers.IndexOf(mark, StringComparison.Ordinal), $"{name} keeps the row's rule beneath the mark");
+        }
+        // A marked cell with lines paints .ex-lined's layers and the mark: one layer more, and a
+        // size and a position for every layer.
+        var (_, plainLined) = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-lined"]));
+        foreach (var (_, body) in marked.Where(rule => rule.Selectors.Any(s => s.Contains(".ex-lined.", StringComparison.Ordinal))))
+        {
+            Assert.Equal(LayersOf(plainLined, "background-image") + 1, LayersOf(body, "background-image"));
+            Assert.Equal(LayersOf(body, "background-image"), LayersOf(body, "background-size"));
+            Assert.Equal(LayersOf(body, "background-image"), LayersOf(body, "background-position"));
         }
         // At equal specificity the later rule wins: the mark is declared after the stripes, the
-        // Row Kinds and Cell State, whose grounds it outranks or keeps, and the combinations in
-        // the order stripe, role, state, as those grounds rank among themselves.
-        foreach (var ground in new[] { ".ex-row-stripe .ex-pinned", ".ex-row-group .ex-cell", ".ex-row-total .ex-cell", ".ex-cell.ex-state-missing" })
+        // Row Kinds, Cell State and the lines, whose grounds it outranks or keeps, and the
+        // combinations in the order stripe, role, state, lines, as those grounds rank among themselves.
+        foreach (var ground in new[] { ".ex-row-stripe .ex-pinned", ".ex-row-group .ex-cell", ".ex-row-total .ex-cell", ".ex-cell.ex-state-missing", ".ex-cell.ex-lined" })
             Assert.True(IndexOf(".ex-cell.ex-changed") > IndexOf(ground), $"{ground} is declared after the mark");
+        foreach (var combination in new[] { ".ex-row-stripe .ex-pinned.ex-changed", ".ex-row-group .ex-cell.ex-changed", ".ex-row-total .ex-cell.ex-changed" })
+            Assert.True(IndexOf(".ex-cell.ex-lined.ex-changed") > IndexOf(combination), $"{combination} is declared after the lined mark");
+
+        // The layers a background property lists: its value split at the commas outside parentheses.
+        static int LayersOf(string body, string property)
+        {
+            var value = Regex.Match(body, $@"(?<![\w-]){property}:\s*(?<value>[^;]+);").Groups["value"].Value;
+            var (count, depth) = (1, 0);
+            foreach (var c in value)
+            {
+                if (c == '(')
+                    depth++;
+                else if (c == ')')
+                    depth--;
+                else if (c == ',' && depth == 0)
+                    count++;
+            }
+            return count;
+        }
     }
 
     [Fact] // ADR-0068 / ADR-0027 / DC-66 / UX-7: the forced-colors block restates the mark as a painted outline, before the states so a state keeps its own
