@@ -787,12 +787,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Where the core has said the keyboard is going (handOff; ADR-0039 and ADR-0050 item 16,
     // 2026-10-01): 'popover' — a Consumer's popover the core opened, whose contents take the
     // keyboard on their count — or 'frame' — a frame of the Consumer's own, outside this root
-    // (HandKeyboardToFrameAsync). Until it has arrived, the keys typed on the root or the menu
-    // are held, and then handed to what took it; if it never arrives within the hold's fallback
-    // they are dropped, never gated against the grid: a digit there would open an edit behind
-    // the frame. Set by C# ahead of the key's answer and of the render that closes the menu the
-    // command ran from. Meanwhile the root keeps the keyboard where it can (the hand-back after a
-    // command), so the keys are heard here: one typed on nothing reaches no grid at all.
+    // (HandKeyboardToFrameAsync). Until it has arrived, the keys typed on the root — its Keyboard
+    // Field among them (isRoot; ADR-0080) — or the menu are held, and then handed to what took
+    // it; if it never arrives within the hold's fallback they are dropped, never gated against
+    // the grid: a digit there would open an edit behind the frame. Set by C# ahead of the key's
+    // answer and of the render that closes the menu the command ran from. Meanwhile the root
+    // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
+    // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
     let handOff = null;
     // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
     // frame, and whether the keyboard never arrived, so the held keys are dropped.

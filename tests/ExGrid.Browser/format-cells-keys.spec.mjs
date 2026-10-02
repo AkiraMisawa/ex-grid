@@ -1,5 +1,6 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
+import { expectKeyboardOn } from './keyboard.mjs';
 
 // Keys typed while Format Cells opens (ticket 93; ADR-0050 item 16 and ADR-0039, notes of
 // 2026-10-01). On a circuit, what a command or a key opens takes the keyboard a round trip or more
@@ -75,7 +76,7 @@ for (const chrome of ['builtin', 'mud']) {
                 await page.keyboard.press('Escape');
                 await expect(formatCells).toHaveCount(0);
                 await expect(cell(grid, 'C2')).toHaveText('0.5');
-                await expect(grid).toBeFocused();
+                await expectKeyboardOn(grid);
                 await page.keyboard.press('ArrowDown');
                 await expectFocusAt(grid, 'C3');
             });
@@ -96,7 +97,7 @@ for (const chrome of ['builtin', 'mud']) {
                 await expect(grid.locator('.ex-viewport .ex-editor')).toHaveCount(0);
                 await page.keyboard.press('Escape');
                 await expect(formatCells).toHaveCount(0);
-                await expect(grid).toBeFocused();
+                await expectKeyboardOn(grid);
             });
         }
     });
@@ -125,7 +126,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(formatCells.getByRole('tab', { name: 'Number', exact: true })).toBeFocused();
             await page.keyboard.press('Escape');
             await expect(formatCells).toHaveCount(0);
-            await expect(left).toBeFocused();
+            await expectKeyboardOn(left);
 
             // The right Sheet hears its own keys: nothing of the left's hold is left standing.
             await pressCell(right, 'B3');

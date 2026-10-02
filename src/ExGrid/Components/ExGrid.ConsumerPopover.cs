@@ -38,7 +38,8 @@ public partial class ExGrid<TRow>
     /// through <see cref="GridPopoverContext.FocusRequest"/> (ADR-0039), Tab and Shift+Tab wrap
     /// inside it, and Escape, a pointer-down elsewhere in the instance and the box shrinking below
     /// one row close it as a Cancel (ADR-0010/0040). However it closes, the keyboard returns to the
-    /// root. Calling it again opens new contents in place of the old.
+    /// root — to its Keyboard Field on a grid that edits (ADR-0080). Calling it again opens new
+    /// contents in place of the old.
     /// </summary>
     /// <param name="content">The contents, rendered with the frame's context.</param>
     /// <param name="label">The popover's accessible name, in the Consumer's words: the frame is a
@@ -59,8 +60,8 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// Closes the Consumer's popover if it stands (ADR-0050, item 16), and the keyboard returns to
-    /// the root, as however else it closes (ADR-0039). Another popover opened since is not the
-    /// Consumer's, and stays.
+    /// the root — to its Keyboard Field on a grid that edits (ADR-0080) — as however else it closes
+    /// (ADR-0039). Another popover opened since is not the Consumer's, and stays.
     /// </summary>
     public Task ClosePopoverAsync()
         => InvokeAsync(() =>
@@ -74,11 +75,11 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// The core's focus function for a Chrome whose frame lies outside the grid (ADR-0010's note
-    /// of 2026-09-30, ADR-0071): the keyboard goes back to the grid's root, granted only while it
-    /// is still this grid's — DOM focus inside the root or on nothing — as every hand-back is
-    /// (ADR-0021's note of 2026-09-30). A grid or a control of the page's that the user has moved
-    /// to keeps the keyboard. A Chrome calls it once its frame has closed, so that the next arrow
-    /// moves the Focus again.
+    /// of 2026-09-30, ADR-0071): the keyboard goes back to the grid's root, to its Keyboard Field on
+    /// a grid that edits (ADR-0080), granted only while it is still this grid's — DOM focus inside
+    /// the root or on nothing — as every hand-back is (ADR-0021's note of 2026-09-30). A grid or a
+    /// control of the page's that the user has moved to keeps the keyboard. A Chrome calls it once
+    /// its frame has closed, so that the next arrow moves the Focus again.
     /// </summary>
     public Task ReturnKeyboardAsync() => InvokeAsync(() => ReclaimFocusAsync());
 
@@ -88,14 +89,15 @@ public partial class ExGrid<TRow>
     /// take DOM focus once it is drawn — a round trip or more later on a circuit. Called as the
     /// Consumer opens it: from a command of the grid's menus, a declared key, or its own code.
     ///
-    /// <para>Until DOM focus has left the grid's root, the keys typed on the root or on the menu the
-    /// command ran from are held, in order, and then handed to the element that took focus, as
-    /// the keydown each would have been; a Tab, which only the browser can act on, is dropped with
-    /// every key after it (ADR-0010). The keys are never the grid's: a digit gated against the
-    /// root would open an edit behind the frame. If DOM focus does not leave the root within the
-    /// hold's fallback, or goes to another grid, the held keys are dropped. A command's menu still
-    /// hands the keyboard back to the root as it closes, so that the keys typed meanwhile land
-    /// where they are held, not on nothing, where no grid hears them.</para>
+    /// <para>Until DOM focus has left the grid's root, the keys typed on the root, its Keyboard Field
+    /// (ADR-0080) or the menu the command ran from are held, in order, and then handed to the
+    /// element that took focus, as the keydown each would have been; a Tab, which only the browser
+    /// can act on, is dropped with every key after it (ADR-0010). The keys are never the grid's: a
+    /// digit gated against the root would open an edit behind the frame. If DOM focus does not
+    /// leave the root within the hold's fallback, or goes to another grid, the held keys are
+    /// dropped. A command's menu still hands the keyboard back to the root — its Keyboard Field on
+    /// a grid that edits — as it closes, so that the keys typed meanwhile land where they are held,
+    /// not on nothing, where no grid hears them.</para>
     ///
     /// <para>A popover the Consumer opens in the grid's own frame (<see cref="OpenPopoverAsync"/>)
     /// needs no call: the grid hands the keyboard to it itself.</para>

@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
+import { expectKeyboardOn } from './keyboard.mjs';
 
 // Format Cells under ExSheet.MudBlazor's Chrome (ADR-0071, ticket 53; SH-45, SH-47): a MudDialog at
 // page level, outside the Sheet's root and its box, which MudBlazor draws. What it offers and what
@@ -75,7 +76,7 @@ test.describe('on /sheet?chrome=mud', () => {
         // The page's button opened it, and closing it hands the keyboard to the Sheet, not back to
         // the button: MudBlazor's dialog returns it to what held it, and the frame saw to it that
         // nothing on the page did.
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'C3');
         await page.keyboard.press('ControlOrMeta+Z');
@@ -93,7 +94,7 @@ test.describe('on /sheet?chrome=mud', () => {
         await expect(tab(page, 'Number')).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(formatCells(page)).toHaveCount(0);
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
     });
 
     test('SH-45: Escape sets nothing, and the next arrow moves the Focus', async ({ page }) => {
@@ -105,7 +106,7 @@ test.describe('on /sheet?chrome=mud', () => {
 
         await expect(formatCells(page)).toHaveCount(0);
         await expect(cell(grid, 'C2')).toHaveText('0.5');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'C3');
     });
@@ -135,7 +136,7 @@ test.describe('on /sheet?chrome=mud', () => {
 
         await expect(formatCells(page)).toHaveCount(0);
         await expect(cell(grid, 'C2')).toHaveText('0.5');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'C3');
     });
@@ -149,7 +150,7 @@ test.describe('on /sheet?chrome=mud', () => {
 
         await expect(formatCells(page)).toHaveCount(0);
         await expect(cell(grid, 'C2')).toHaveText('0.5');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'C3');
     });
@@ -181,7 +182,7 @@ test.describe('on /sheet?chrome=mud', () => {
 
         await expect(formatCells(page)).toHaveCount(0);
         await expect(cell(grid, 'C2')).toHaveText('0.5000');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
     });
 
     test('SH-45: Tab and Shift+Tab stay inside the dialog', async ({ page }) => {
@@ -244,18 +245,18 @@ test.describe('two Sheets on /sheets?chrome=mud', () => {
         await expect(tab(page, 'Fill')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('Escape');
         await expect(formatCells(page)).toHaveCount(0);
-        await expect(left).toBeFocused();
+        await expectKeyboardOn(left);
 
         // The tab shown is each Sheet's own: the right one opens on Number, its first opening.
         await openFromMenu(page, right, 'B1');
         await expect(tab(page, 'Number')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('Escape');
         await expect(formatCells(page)).toHaveCount(0);
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
 
         await openFromMenu(page, left, 'B1');
         await expect(tab(page, 'Fill')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('Escape');
-        await expect(left).toBeFocused();
+        await expectKeyboardOn(left);
     });
 });
