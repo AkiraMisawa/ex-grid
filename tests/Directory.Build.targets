@@ -40,4 +40,11 @@
            Condition=" '$(OutputType)' != 'Exe' " />
   </Target>
 
+  <!-- How long a bUnit wait waits before it fails, the same in every project that references
+       bUnit, a new one included: BunitWaits.cs says why it is not bUnit's one second. Here,
+       after the project body, the project's PackageReference items are already known. -->
+  <ItemGroup Condition=" '@(PackageReference->WithMetadataValue('Identity', 'bunit'))' != '' ">
+    <Compile Include="$(MSBuildThisFileDirectory)BunitWaits.cs" Link="BunitWaits.cs" />
+  </ItemGroup>
+
 </Project>

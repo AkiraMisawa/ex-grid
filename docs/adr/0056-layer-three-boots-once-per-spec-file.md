@@ -169,3 +169,55 @@ first, and `popovers.spec.mjs` pins it under both Chromes.
   read-modify-write and the Server host's proxy and log are all shared. The configuration used
   to give "the tests change each other's zoom" as the reason, and that was never one. The device
   scale is emulated per page, and each worker has a browser of its own.
+
+## How a test waits, and where it reads pixels *(2026-10-02, decided with the user)*
+
+From 2026-09-29, no CI run of `claude/exsheet-cell-format` passed whole. Most of what failed
+were defects, and they should go on failing. Some failures were the suite's own: tests that
+fail now and then whatever the branch changed. These rules are for those. Each changes when or
+where a test reads, never what it accepts. No requirement and no threshold is relaxed.
+
+1. **On the Server host, a reading that has to see all the host will say waits for the circuit
+   to go quiet.** `circuitQuiet()` returns once nothing is held in the latency proxy or unsent,
+   in either direction, and nothing has crossed for 400 ms. That is longer than the grid's
+   longest timer, the 300 ms before an error message opens. The browser acknowledges each
+   render batch once it has applied it, so by then the last one is in the DOM.
+   - A test first waits for the state it expects. `circuitQuiet` is for what follows: that
+     nothing undid it, that something did not happen, or a picture.
+   - A fixed wait does not stand in for it. On a slow runner it is too short, and a late answer
+     slips past the reading, so the test passes over the defect it is there for.
+   - On WebAssembly there is no wire, and it returns at once. A WebAssembly half that needs the
+     page's own time keeps its wait.
+   - It never waits for ever. It fails after 10 s, naming what kept crossing. A window of 5 s
+     or more is refused, because SignalR's keep-alive pings could keep it from being met.
+2. **Two pictures to be compared are taken while the page holds still** (`stillPictures`). The
+   test draws each way by a mark it sets. If anything else changes the document, or anything
+   scrolls, between the first mark and the last picture, every picture is taken again. After
+   three attempts the test fails, naming the change. Playwright's own preparation for a
+   screenshot is not counted: it writes `caret-color` inline on every field, then puts it back
+   and leaves `style=""`. DC-48's failure on the Server host showed that write between its two
+   pictures, and it was first read as a late render.
+3. **Pixels are read only where what is painted is the requirement**: Excel's pixels, a layer
+   hiding another, a blend. What the grid decided to draw is read from the DOM or in layer 2.
+   - A pixel is read where the boundary beside it lies on a device pixel. A test that reads at
+     an edge checks that first.
+   - The only allowance for rounding is `paints`. A channel whose exact value lies between two
+     bytes may be either byte: ticket 92's 78.53 came out 78 and 79. A whole value admits only
+     itself. Two paints that ought to be one paint are compared with each other exactly.
+   - Where the question is position, both pictures are drawn in black on white. A comparison is
+     only as strong as its contrast.
+4. **A spec file written or changed runs repeatedly before it goes in.** Locally that is
+   `--repeat-each` on both hosts. In CI, every spec file a pull request adds or changes runs
+   three times on each host and browser (`browser-repeat`). `retries` stays 0.
+
+`tests/ExGrid.Browser/README.md` says how to use each, and `harness-reading.spec.mjs` pins them.
+
+Rejected:
+
+- **Waiting for the circuit on every navigation.** It costs about 0.8 s a test on the Server
+  host, for readings that mostly wait for a state already.
+- **Telling the keep-alive pings apart in the proxy.** It would mean parsing masked WebSocket
+  frames, to save at most one window every 15 s.
+- **A colour tolerance of ±n.** It accepts colours no path paints, and it would have hidden
+  ticket 92.
+- **Retries** (ADR-0026).

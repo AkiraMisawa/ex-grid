@@ -83,6 +83,43 @@ export async function roundTrip() {
     return Number((await response.text()).trim().replace('rtt=', ''));
 }
 
+/**
+ * How long the wire between the browser and the Server host must stay still before
+ * circuitQuiet says the host has said all it will. Longer than the longest delay the grid
+ * renders after: 300 ms before an error message opens (PopoverDelay in ExGrid.razor), and
+ * 150 ms before Placeholders fill and an announcement is made (SettleDelay). A render a timer
+ * owes therefore lands inside the window and starts it again.
+ */
+export const CIRCUIT_QUIET_MS = 400;
+
+/**
+ * Returns once the browser and the Server host have stopped talking: nothing held in the
+ * latency proxy or unsent on a socket, in either direction, and nothing crossed for
+ * `quietFor` ms (latency-proxy.mjs). The browser acknowledges every render batch once it has
+ * applied it, so a quiet wire also means the last batch is in the DOM. Await it before reading
+ * what the host decides, where a fixed wait used to stand: a wait too short reads before the
+ * answer, and a read after one that happened to be long enough passes before a late answer
+ * could undo it. It knows nothing of a timer due after the window, nor of painting: a picture
+ * still waits for its frames. On WebAssembly, where there is no wire, it returns at once.
+ * Throws, saying what kept crossing, when the wire is not quiet within `timeout` ms.
+ * SignalR's keep-alive pings, 15 s apart, delay it by one window at most.
+ */
+export async function circuitQuiet({ quietFor = CIRCUIT_QUIET_MS, timeout = 10_000 } = {}) {
+    if (!SERVER) {
+        return;
+    }
+    const response = await fetch(`${LATENCY_CONTROL_URL}/quiet?for=${quietFor}&within=${timeout}`);
+    const answer = (await response.text()).trim();
+    if (!response.ok) {
+        throw new Error(`the circuit did not go quiet: ${answer}`);
+    }
+    // An older proxy answers any GET with its round trip, which would read as quiet at once.
+    if (!answer.startsWith('quiet for')) {
+        throw new Error(`the latency proxy at ${LATENCY_CONTROL_URL} does not know /quiet (it answered "${answer}"): `
+            + 'it was started from an older checkout, so stop it and run again');
+    }
+}
+
 // What the Server host logged while one test ran (CON-6): the file the host appends to, read
 // from where the last reading stopped, so a line written between two tests is the next test's,
 // as a console message is (ADR-0056). Answers the lines and where the reading stopped.

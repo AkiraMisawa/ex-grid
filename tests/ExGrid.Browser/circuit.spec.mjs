@@ -1,4 +1,4 @@
-import { test, expect, alterPage, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
@@ -550,7 +550,10 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
 
             await page.keyboard.type('abcdefghij', { delay: 100 });
 
-            await page.waitForTimeout(1000);          // every answer has landed
+            // Every answer has landed: on the Server host once the circuit is quiet, however long
+            // that takes; the fixed wait is the page's own time, all there is on WebAssembly.
+            await page.waitForTimeout(1000);
+            await circuitQuiet();
             await expect(editor).toHaveValue('Xabcdefghij');
             expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
             await page.keyboard.press('Enter');
@@ -572,6 +575,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
         await page.keyboard.type('nonsense', { delay: 100 });
 
         await page.waitForTimeout(1000);
+        await circuitQuiet();
         await expect(nameBox).toHaveValue('nonsense');
         expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
     });
@@ -640,8 +644,10 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('123456789');
 
             await expect.poll(() => editor.inputValue(), { timeout: 3000 }).toMatch(/123456789$/);
-            // And stays whole once every round trip has landed.
+            // And stays whole once every round trip has landed: on the Server host once the
+            // circuit is quiet, however long that takes; on WebAssembly after the fixed wait.
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await editor.inputValue()).toMatch(/123456789$/);
         });
 
@@ -653,6 +659,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('5320984.5');
 
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await field.inputValue()).toBe('5320984.5');
         });
 
@@ -665,6 +672,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('Gammadelta');
 
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await field.inputValue()).toBe('Gammadelta');
         });
 
@@ -677,6 +685,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('1234567.89');
 
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await field.inputValue()).toBe('1234567.89');
         });
     });
