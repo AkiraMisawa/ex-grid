@@ -1,4 +1,4 @@
-import { test, expect, alterPage } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet } from './fixtures.mjs';
 import { painted, sameColour } from './pixels.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 
@@ -306,13 +306,15 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
     const g = grid(page);
     const box = await g.locator('.ex-scroller').boundingBox();
 
-    // Drag from a top cell into the bottom band and hold.
+    // Drag from a top cell into the bottom band and hold. The drag's move handler arrives with
+    // the render that answered the press (ADR-0008): on a circuit a move made before it is not
+    // heard, and a pointer then held still in the band scrolls nothing (CI, Server host, chrome,
+    // 2026-10-02). So the drag moves once the host has said all it will about the press.
     await page.mouse.move(box.x + 60, box.y + 60);
     await page.mouse.down();
+    await circuitQuiet();
     await page.mouse.move(box.x + 60, box.y + box.height - 6, { steps: 4 });
-    await page.waitForTimeout(400);
-    const whileHeld = await g.locator('.ex-scroller').evaluate((el) => el.scrollTop);
-    expect(whileHeld).toBeGreaterThan(0);
+    await expect.poll(() => g.locator('.ex-scroller').evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 
     // Leave the grid with the button still down: the scroll stops where it was.
     await page.mouse.move(box.x + 60, box.y + box.height + 200, { steps: 4 });

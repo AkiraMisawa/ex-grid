@@ -104,3 +104,21 @@ All under en-US, en-GB, de-DE and ja-JP, and named after ADR-0023 and principle 
 - **Layer 3**, targeted on port 5481, headless, project chrome, WebAssembly host:
   `popovers.spec.mjs` and `date-text.spec.mjs`, 65 passed. That includes the MudBlazor date
   calendar's Inner Popup cases. The host was stopped afterwards.
+
+### Fixed later: the MudBlazor panel's refusal vanished on a later render (2026-10-02)
+
+- CI failed `MudDateOperandTests` once on #49, en-GB `01/13/2026`: the field showed no error, and
+  locally the class passed every run.
+- The cause is in the panel, not the test. It bound `Date="state.Date"`, and MudDatePicker's
+  `Date` is a setter that runs on every render of the panel. A date set again within 100 ms of
+  the last is ignored. A refused text leaves the date null, and a null set later than that clears
+  the picker's text and revalidates it, which writes the field's Error back to false over the
+  panel's own. The refusal vanished while Apply stayed unavailable. A user met it by pressing
+  Enter a second time; on the slow runner the panel's first render after the typing was already
+  late enough.
+- The panel now gives the picker its date only while the condition has one.
+- `MudDateOperandTests.A_refused_date_stays_refused_when_the_panel_renders_again_later` moves
+  MudBlazor's clock by hand: 200 ms between the render, the typing and two submits. It failed
+  before the fix with the field showing `ValueValue`, as on CI.
+- Layers 1 and 2 pass, ExGrid.MudBlazor.Tests 201. Layer 3, Linux, headed, project chrome,
+  WebAssembly host: `popovers.spec.mjs` and `date-text.spec.mjs`, 65 passed.

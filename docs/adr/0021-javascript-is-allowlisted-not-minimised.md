@@ -459,3 +459,59 @@ once the Sheet's listener has passed the place the event took in its queue.
   handler, as it already is for a press that points (ADR-0051), so DOM focus stays in the Sheet. The
   `cell` pointer is a class on the root. Whether a grid is pointed at is decided in C#, and it reaches
   the grid with a render. The round trip that leaves is accepted (ADR-0058, "On a circuit").
+
+*(Added 2026-10-02, decided with the user: a press on the rows carries the paint it was made on.)*
+The note of 2026-09-27 said a held press "is replayed with the coordinates the browser gave it",
+and that was the defect. A replayed event's offsets are measured again, against the rows painted
+at the replay. The core then resolves them against the slice and the scroll it holds when the event
+arrives. A key held before the press that moved the view therefore moved the press with it.
+- **Found on the Server host, at every round trip, 0 ms included.** On `/sheet`, F1 was pressed,
+  `1` Enter PageDown `9` typed, F6 pressed at once and `2` Enter typed. The browser showed F6 under
+  the pointer at the press (scroll offset 0, first painted row 0), and the `2` went into F18, a page
+  lower. A missed click in WR-7 on CI (PR #42) was read as this, as was one on PR #45.
+- **The capture-phase `mousedown` and `mouseup` note what each press or release on this grid's own
+  rows was taken against.** That is the offsets the browser gave it, and the first row the Viewport
+  painted (`data-ex-first-row`). It is also the horizontal scroll offset, read through the second
+  entry's API, and the row order and layout the painting render carried (`data-ex-sequence`,
+  `data-ex-layout`, on the Viewport). A layout is the column widths, the columns' names in order and
+  the row height.
+- **The core is told this just before Blazor dispatches the event.** For a press that goes on, that
+  is at once; for a held one, at its replay. It is told the way a handed-on press is told
+  (2026-09-30), and the event the core hears next is the one it was told of.
+- **The core resolves the cell against what the press was taken against**, never against the slice,
+  scroll and layout it holds by then. It keeps the last sixteen layouts it painted for that, since a
+  press is answered a few round trips after it is made at most. A replayed press lands where the user
+  pressed, however far the view has moved since, and the view is brought back to it, as after any
+  move of the Focus ([ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)). Where the view has
+  not moved, nothing scrolls.
+- **A press taken on what is no longer there lands on no cell.** The cases are:
+  - another row order;
+  - columns renamed, reordered, added or removed since;
+  - a first row off the current page;
+  - a layout older than the sixteen kept.
+
+  Its other meanings stand: it closes a popover and commits an open edit, as a press on dead space
+  does. It selects nothing. Rows that were reordered under the pointer cannot be resolved by
+  position, which is [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)'s
+  rule for the Selection, and resolving them against the new order is the quietly wrong answer
+  (principle 1).
+- **Refusing every press taken under another layout was tried first, and was wrong.** The layout is
+  resolved again whenever the browser reports the box, so the first press after a page loaded was
+  refused often. It was refused although no width had changed, and values typed next went into the
+  wrong cells (ED-22's tests on the Server host, 5 runs in 15). A refusal is right only where the press
+  cannot be resolved, so a press is now resolved against the layout it was painted under.
+- **Rejected:**
+  - **Asking where the pointer is at the replay** (`elementFromPoint`, or the Viewport's box). It is
+    a measurement, and it answers "what is under that point now", which is the defect itself.
+  - **Shifting the replay's coordinates by the scroll moved since.** That misses a slice a render
+    moved, and a compressed height
+    ([ADR-0053](./0053-the-scroll-height-is-compressed-above-the-browsers-layout-ceiling.md)).
+  - **Holding longer, or waiting for the view to settle.** It narrows the window and does not close
+    it (AGENTS.md, principle 6: an outcome never depends on timing).
+- **What it costs.** One more interop message per press and per release on the rows, and nothing per
+  cell or per move. It reads attributes and the scroll offset, measures nothing, and adds no
+  listener.
+- **Not covered, recorded:** a drag's moves, a double click, a context menu and the hover band still
+  resolve against the slice the core holds when they arrive. None of them is held, so none is
+  replayed after the view has moved. The window left is one render on a circuit, and the case
+  measured (an unheld press straight after a scroll at 80 to 300 ms) landed where it was made.

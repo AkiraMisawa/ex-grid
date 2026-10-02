@@ -315,7 +315,7 @@ public partial class ExGrid<TRow>
     {
         if (_editMode == EditMode.None || PointAt is not { } pointAt || ReferenceText is null || e.Button != 0)
             return false;
-        if (ShowsRowHeadings && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx))
+        if (ShowsRowHeadings && ColumnsOf(e).IsInLead(e.OffsetX, ScrollLeftOf(e)))
             return false;
         if (CellUnder(e) is not { } cell)
             return false;
