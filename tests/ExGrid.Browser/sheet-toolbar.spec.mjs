@@ -132,3 +132,66 @@ test('SH-50/ADR-0100: the toolbar is one tab stop; the arrows move among its ite
     await expect(page.locator('#sheet-focus-font')).toHaveText('italic');
     await expectKeyboardOn(grid);
 });
+
+// KeyTips and Ctrl+F1 (ADR-0100, ticket 160; SH-51, SH-52). The browser's own keys on Windows —
+// whether Alt's release is kept from Chrome's and Edge's menu — are a Windows run's to read; here the
+// keys reach the page and mean what ADR-0100 says.
+for (const chrome of ['builtin', 'mud']) {
+    test(`SH-52/ADR-0100: Alt released alone shows the rows' KeyTips, H shows Excel's letters, and 1 sets bold with the keyboard back on the Sheet (${chrome})`, async ({ page }) => {
+        await openSheet(page, chrome);
+        const grid = sheet(page);
+        await pressCell(grid, 'A4');
+
+        await page.keyboard.press('Alt');
+        const tips = toolbar(page).locator('.ex-sheet-keytip');
+        await expect(tips).toHaveText(['H', 'Y']);
+        await page.keyboard.press('h');
+        await expect(tips.filter({ hasText: /^1$/ })).toHaveCount(1);
+        await expect(tips.filter({ hasText: /^FC$/ })).toHaveCount(1);
+        await page.keyboard.press('1');
+
+        await expect(page.locator('#sheet-focus-font')).toHaveText('bold');
+        await expect(tips).toHaveCount(0);
+        // The letters were the KeyTips', never the cell's: no edit opened, and the next arrow moves the Focus.
+        await expect(cell(grid, 'A4')).toHaveText('Plums');
+        await expectKeyboardOn(grid);
+        await page.keyboard.press('ArrowDown');
+        await expectFocusAt(grid, 'A5');
+    });
+}
+
+test('SH-52/ADR-0100: F10, H, A, C centres the Focus cell; Escape backs out a level; Alt with an arrow is a chord', async ({ page }) => {
+    await openSheet(page, 'builtin');
+    const grid = sheet(page);
+    await pressCell(grid, 'C2');
+    const tips = toolbar(page).locator('.ex-sheet-keytip');
+
+    await page.keyboard.press('F10');
+    await expect(tips).toHaveText(['H', 'Y']);
+    await page.keyboard.press('h');
+    await page.keyboard.press('Escape');
+    await expect(tips).toHaveText(['H', 'Y']);
+    await page.keyboard.press('h');
+    await page.keyboard.press('a');
+    await expect(tips).toHaveText(['AL', 'AC', 'AR']);
+    await page.keyboard.press('c');
+    await expect(toolbarItem(page, 'Centre')).toHaveAttribute('aria-pressed', 'true');
+    await expectKeyboardOn(grid);
+
+    await page.keyboard.down('Alt');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.up('Alt');
+    await expect(tips).toHaveCount(0);
+});
+
+test('SH-51/ADR-0100: Ctrl+F1 hides the toolbar the page binds, and shows it again', async ({ page }) => {
+    await openSheet(page, 'builtin');
+    const grid = sheet(page);
+    await pressCell(grid, 'B2');
+
+    await page.keyboard.press('Control+F1');
+    await expect(page.locator('.ex-sheet-toolbar')).toHaveCount(0);
+    await expectKeyboardOn(grid);
+    await page.keyboard.press('Control+F1');
+    await expect(toolbar(page)).toBeVisible();
+});

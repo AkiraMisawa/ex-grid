@@ -189,6 +189,31 @@ None of these changes the decision. Each records how a part of it is held, or a 
   is open every item is disabled, so the toolbar is reached only by Tab, and the Point it keeps is
   the edit's own.
 
+### Found while implementing the keys *(ticket 160, 2026-10-02)*
+
+- **The Alt key alone needed one change to the core.** The core refused to declare a modifier by
+  itself. Its own keydown now canonicalises to `Alt+Alt`, the one modifier that can be declared
+  (ADR-0050 item 14's note of 2026-10-02). F10 and Ctrl+F1 were declarable already.
+- **Each key is declared only while it means something.**
+  - The Alt key alone and F10 are declared while the toolbar is shown and no edit is open.
+  - Ctrl+F1 is declared while `ShowToolbarChanged` is bound.
+  - Otherwise each stays the browser's.
+- **The KeyTips take the keyboard to the toolbar, as Excel's take it to the ribbon.** The letters
+  typed next reach the toolbar, never the cell, so no edit opens.
+  - From the KeyTips' start until DOM focus leaves the toolbar, every key's default is
+    prevented.
+  - It has to last past their end. The key that ends them gives the keyboard back while it is
+    still being dispatched. On WebAssembly that comes before the key's default runs, and the
+    letter was typed into the Sheet (layer 3).
+- **The Alt key's release is heard from a `keyup` on the Sheet's own element.** That listener is
+  there only while the toolbar is shown. Another key's release in between makes the Alt a chord's.
+  - The grid stops the keys it claims at keydown, so a chord such as Alt+↓ is seen only by its
+    release.
+  - Alt released before the ↓ of Alt+↓ therefore shows the KeyTips. Escape takes them away. This
+    is left as it is, rather than adding a listener to the grid.
+- **A KeyTip on a split control opens its list,** as Excel's Alt, H, H opens the Fill's palette. A
+  toggle's KeyTip sets it and gives the keyboard back.
+
 ## Considered options
 
 - **A DemoHost sample only** (ADR-0071 as first written). Rejected. Its reasons are answered above.

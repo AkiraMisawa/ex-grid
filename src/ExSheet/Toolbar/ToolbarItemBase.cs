@@ -106,16 +106,16 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
             Enabled: face.Kind != ToolbarItemKind.Separator && disabledReason is null,
             disabledReason, _invoke, face.Choices, face.Colour,
             Active: ReferenceEquals(context.Active, this), _openRequest, _choicesClosed, face.Content,
-            KeyTipLetters, ShowKeyTip: false);
+            KeyTipLetters, ShowKeyTip: context.ShowsKeyTip(this));
     }
 
     /// <summary>A press from the toolbar's keys (ADR-0100): a menu or a split control's arrow opens its
     /// choices; anything else runs, and the keyboard goes back to the Sheet.</summary>
-    internal async Task PressFromKeyboardAsync(bool openChoices)
+    internal async Task PressFromKeyboardAsync(bool openChoices, bool fromKeyTip = false)
     {
         var face = Face();
         if (face.Kind == ToolbarItemKind.Separator || !Describe().Enabled) return;
-        if (openChoices && face.Kind is not (ToolbarItemKind.Menu or ToolbarItemKind.Split)) return;
+        if (openChoices && !fromKeyTip && face.Kind is not (ToolbarItemKind.Menu or ToolbarItemKind.Split)) return;
         if (face.Kind == ToolbarItemKind.Menu || (openChoices && face.Kind == ToolbarItemKind.Split))
         {
             _openRequest++;
@@ -145,6 +145,7 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
         _joined = context;
         context.Join(this);
         context.Changed += OnToolbarChanged;
+        context.RefuseCollidingKeyTips();
     }
 
     /// <inheritdoc />

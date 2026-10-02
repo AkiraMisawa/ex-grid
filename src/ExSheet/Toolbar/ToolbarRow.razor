@@ -8,6 +8,10 @@
     grow it. Its KeyTip is what a ribbon tab's is: the formatting row's is H, Excel's Home.
 *@
 <div class="ex-sheet-toolbar-row" role="group" aria-label="@Label" style="@Style">
+    @if (Context.KeyTips == KeyTipStage.Rows && KeyTip is { } letters)
+    {
+        <span class="ex-sheet-keytip ex-sheet-row-keytip" aria-hidden="true">@letters</span>
+    }
     <CascadingValue Value="this" IsFixed="true">
         <CascadingValue Value="Place" IsFixed="true">@ChildContent</CascadingValue>
     </CascadingValue>
@@ -47,15 +51,38 @@
     {
         var context = Context;
         if (ReferenceEquals(context, _joined)) return;
-        _joined?.LeaveRow(this);
+        if (_joined is { } previous)
+        {
+            previous.Changed -= OnToolbarChanged;
+            previous.LeaveRow(this);
+        }
         _joined = context;
         context.JoinRow(this);
+        context.Changed += OnToolbarChanged;
+        context.RefuseCollidingKeyTips();
     }
+
+    // The row's own letter comes and goes with the KeyTips.
+    private bool _drawnLetter;
+
+    private void OnToolbarChanged()
+    {
+        var shown = Context.KeyTips == KeyTipStage.Rows && KeyTip is not null;
+        if (shown != _drawnLetter) _ = InvokeAsync(StateHasChanged);
+    }
+
+    /// <inheritdoc />
+    protected override void OnAfterRender(bool firstRender) =>
+        _drawnLetter = Context.KeyTips == KeyTipStage.Rows && KeyTip is not null;
 
     /// <inheritdoc />
     public void Dispose()
     {
-        _joined?.LeaveRow(this);
+        if (_joined is { } joined)
+        {
+            joined.Changed -= OnToolbarChanged;
+            joined.LeaveRow(this);
+        }
         _joined = null;
     }
 }

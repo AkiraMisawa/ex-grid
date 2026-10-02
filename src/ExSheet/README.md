@@ -332,7 +332,13 @@ components, laid out in markup order; `DefaultToolbarRow` is the default row, an
 ```
 
 Binding `ShowToolbar` both ways lets the user hide and show the toolbar with Ctrl+F1, Excel's
-key for the ribbon. Whether it is shown is yours to keep. ExSheet's items are `BoldItem`,
+key for the ribbon. Whether it is shown is yours to keep.
+
+Excel's KeyTips work while the toolbar is shown and no cell is being edited. Releasing Alt on its
+own, or pressing F10, shows a letter for each Toolbar Row. ExSheet's default row is H, as Excel's
+Home tab is. The row's letter then shows the items' letters, which are Excel's, so Alt, H, 1 sets
+bold. A row or a `ToolbarButton` of yours has a KeyTip only where you set its `KeyTip`. Two letters
+that collide at one level are refused when the toolbar renders. ExSheet's items are `BoldItem`,
 `ItalicItem`, `UnderlineItem`, `StrikethroughItem`, `FontColourItem`, `FillItem`, `BordersItem`,
 `AlignLeftItem`, `AlignCenterItem`, `AlignRightItem`, `NumberFormatItem`, `PercentItem`,
 `CommaItem`, `FormatCellsItem` and `ToolbarSeparator`.

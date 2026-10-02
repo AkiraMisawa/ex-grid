@@ -118,7 +118,8 @@ public partial class ExSheet : IPointingSheet, IDisposable
         if (_joinedScope is null)
         {
             // Unheard from here on: what was last heard of the keyboard would go stale.
-            _keyboardListeners.Clear();
+            _keyboardListeners.Remove("onfocusin");
+            _keyboardListeners.Remove("onfocusout");
             _keyboardMoves++;
             _holdsKeyboard = false;
             return;

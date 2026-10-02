@@ -333,6 +333,15 @@ Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift
     `OpenFormatCellsAsync`, the Context Menu's "Format Cells…" and a whole-column resize's undo
     step. So a command run within a round trip of a keyboard move acts on the cells the user sees
     selected. The late `SelectionChanged` then names the same Selection, and is no move.
+- **The Alt key alone may be declared.** *(2026-10-02, ADR-0100.)* Its canonical form is
+  `Alt+Alt`, which is what a press of the Alt key canonicalises to. It is the only modifier a
+  declaration may name by itself.
+  - ExSheet declares it, with `F10` and `Control+F1`, for the Sheet Toolbar's KeyTips and its
+    toggle.
+  - Claimed, its release cannot open Chrome's and Edge's menu on Windows. Whether it does is a
+    reading until a Windows run.
+  - The release is the Consumer's to hear, from a `keyup` that reaches it from the grid's root.
+    No listener is added to the grid.
 
 **15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
 underline and strikethrough), its Fill, and its four Border sides.

@@ -153,6 +153,71 @@ public sealed class SheetToolbarContext
     /// <summary>The Toolbar Rows in their order on the toolbar, which is the markup's.</summary>
     internal IReadOnlyList<ToolbarRow> Rows => [.. _rows.OrderBy(row => row.Place)];
 
+    // ---- KeyTips (ADR-0100) ----
+
+    /// <summary>What the KeyTips show: none, each row's letter, or the items' letters in one row.</summary>
+    internal KeyTipStage KeyTips { get; private set; }
+
+    /// <summary>The row whose items' letters are shown; null for the one row of a toolbar that declares none.</summary>
+    internal ToolbarRow? KeyTipRow { get; private set; }
+
+    /// <summary>The letters typed so far at this level.</summary>
+    internal string KeyTipTyped { get; private set; } = "";
+
+    /// <summary>The KeyTip of the one row of a toolbar that declares no rows: Excel's Home.</summary>
+    internal const string ImplicitRowKeyTip = "H";
+
+    /// <summary>Starts the KeyTips: the rows' letters. Set by the toolbar while it is shown.</summary>
+    internal Func<Task>? StartKeyTips { get; set; }
+
+    internal void ShowKeyTips(KeyTipStage stage, ToolbarRow? row = null, string typed = "")
+    {
+        if (stage == KeyTips && ReferenceEquals(row, KeyTipRow) && typed == KeyTipTyped) return;
+        KeyTips = stage;
+        KeyTipRow = row;
+        KeyTipTyped = typed;
+        Changed?.Invoke();
+    }
+
+    /// <summary>Whether <paramref name="item"/> shows its KeyTip now.</summary>
+    internal bool ShowsKeyTip(ToolbarItemBase item) =>
+        KeyTips == KeyTipStage.Items && ReferenceEquals(item.Row, KeyTipRow)
+        && item.KeyTipLetters is { } letters && letters.StartsWith(KeyTipTyped, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Refuses two KeyTips at one level when either begins the other, naming both (ADR-0100): typed,
+    /// the shorter would always be taken for the longer, or the two would be one key. The rows'
+    /// letters are one level, and the items' letters in each row another.
+    /// </summary>
+    internal void RefuseCollidingKeyTips()
+    {
+        var rows = _rows.Where(row => row.KeyTip is not null).Select(row => (Letters: row.KeyTip!, Name: $"the Toolbar Row '{row.Label ?? row.KeyTip}'"));
+        Refuse(rows);
+        foreach (var group in _items.Where(item => item.KeyTipLetters is not null).GroupBy(item => item.Row))
+        {
+            Refuse(group.Select(item => (Letters: item.KeyTipLetters!, Name: $"{item.GetType().Name} '{item.Describe().Name}'")));
+        }
+
+        static void Refuse(IEnumerable<(string Letters, string Name)> tips)
+        {
+            var seen = new List<(string Letters, string Name)>();
+            foreach (var tip in tips)
+            {
+                foreach (var other in seen)
+                {
+                    if (tip.Letters.StartsWith(other.Letters, StringComparison.OrdinalIgnoreCase)
+                        || other.Letters.StartsWith(tip.Letters, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException(
+                            $"The KeyTips '{other.Letters}' of {other.Name} and '{tip.Letters}' of {tip.Name} collide at one level: " +
+                            "typed, one would be taken for the other. Give one of them other letters (ADR-0100).");
+                    }
+                }
+                seen.Add(tip);
+            }
+        }
+    }
+
     /// <summary>Puts the keyboard on <paramref name="item"/> inside the toolbar, or on none.</summary>
     internal void Activate(ToolbarItemBase? item)
     {
@@ -160,4 +225,17 @@ public sealed class SheetToolbarContext
         Active = item;
         Changed?.Invoke();
     }
+}
+
+/// <summary>What the KeyTips show (ADR-0100).</summary>
+internal enum KeyTipStage
+{
+    /// <summary>None.</summary>
+    Off,
+
+    /// <summary>Each Toolbar Row's letter, as Excel's tabs show theirs.</summary>
+    Rows,
+
+    /// <summary>The letters of the items in one row.</summary>
+    Items,
 }

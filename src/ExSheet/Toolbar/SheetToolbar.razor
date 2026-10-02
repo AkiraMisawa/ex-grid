@@ -20,8 +20,12 @@
     Cells leaves its dialog. No script is added (ADR-0021).
 *@
 <div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
-     tabindex="0" style="@Style" aria-activedescendant="@ActiveId"
-     @onkeydown="OnKeyAsync" @onfocus="OnFocus" @onfocusout="OnFocusOut">
+     tabindex="0" style="@Style" aria-activedescendant="@ActiveId" @ref="_band"
+     @onkeydown="OnKeyAsync" @onkeydown:preventDefault="_keysAreKeyTips" @onfocus="OnFocus" @onfocusout="OnFocusOut">
+    @if (Context.KeyTips == KeyTipStage.Rows && Context.Rows.Count == 0)
+    {
+        <span class="ex-sheet-keytip ex-sheet-row-keytip" aria-hidden="true">@SheetToolbarContext.ImplicitRowKeyTip</span>
+    }
     <CascadingValue Value="Context" IsFixed="true">
         <CascadingValue Value="_order" IsFixed="true">
             @(Content ?? DefaultRow)
@@ -61,8 +65,112 @@
     private ElementReference _leavingFrom;
     private TaskCompletionSource? _handedBack;
 
+    private ElementReference _band;
+
+    private bool KeyTipsShown => Context.KeyTips != KeyTipStage.Off;
+
+    // From the KeyTips' start until the keyboard leaves the toolbar, every key typed on it is theirs,
+    // its default too: an Alt released there would open the browser's menu. It holds past their
+    // end, because the key that ends them gives the keyboard back to the Sheet while it is still
+    // being dispatched, on WebAssembly before its default runs, and a default let through would type
+    // that letter into the Sheet.
+    private bool _keysAreKeyTips;
+
     /// <inheritdoc />
-    protected override void OnInitialized() => Context.LeaveToolbar = GiveKeyboardBackAsync;
+    protected override void OnInitialized()
+    {
+        Context.LeaveToolbar = GiveKeyboardBackAsync;
+        Context.StartKeyTips = StartKeyTipsAsync;
+        Context.Changed += OnToolbarChanged;
+    }
+
+    private bool _drawnKeyTips;
+
+    private void OnToolbarChanged()
+    {
+        if (KeyTipsShown != _drawnKeyTips) _ = InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Shows the rows' KeyTips and takes the keyboard to the toolbar (ADR-0100), as Excel's Alt
+    /// takes it to the ribbon: the letters typed next are the KeyTips', never the cell's.
+    /// </summary>
+    private async Task StartKeyTipsAsync()
+    {
+        if (Context.Rows.Count > 0 && Context.Rows.All(row => row.KeyTip is null)) return;
+        Context.ShowKeyTips(KeyTipStage.Rows);
+        _keysAreKeyTips = true;
+        StateHasChanged();
+        try
+        {
+            await _band.FocusAsync(preventScroll: true);
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            Context.ShowKeyTips(KeyTipStage.Off);
+        }
+    }
+
+    // A key while the KeyTips are shown (ADR-0100): a row's letter shows its items' letters, an
+    // item's letters press it, Escape goes back one level and from the top ends them, and any other
+    // key ends them and does nothing. The keyboard goes back to the Sheet when they end.
+    private async Task OnKeyTipKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && Context.KeyTips == KeyTipStage.Items)
+        {
+            Context.ShowKeyTips(KeyTipStage.Rows);
+            return;
+        }
+        if (e.Key.Length != 1 || e.CtrlKey || e.MetaKey || e.AltKey)
+        {
+            await EndKeyTipsAsync();
+            return;
+        }
+        var typed = Context.KeyTipTyped + e.Key.ToUpperInvariant();
+        if (Context.KeyTips == KeyTipStage.Rows)
+        {
+            var rows = Context.Rows.Count == 0
+                ? [(Row: (ToolbarRow?)null, Letters: SheetToolbarContext.ImplicitRowKeyTip)]
+                : Context.Rows.Where(row => row.KeyTip is not null).Select(row => (Row: (ToolbarRow?)row, Letters: row.KeyTip!)).ToList();
+            if (rows.FirstOrDefault(r => string.Equals(r.Letters, typed, StringComparison.OrdinalIgnoreCase)) is { Letters: not null } exact)
+            {
+                Context.ShowKeyTips(KeyTipStage.Items, exact.Row);
+                return;
+            }
+            if (rows.Any(r => r.Letters.StartsWith(typed, StringComparison.OrdinalIgnoreCase)))
+            {
+                Context.ShowKeyTips(KeyTipStage.Rows, null, typed);
+                return;
+            }
+            await EndKeyTipsAsync();
+            return;
+        }
+        var items = Context.Items.Where(item => ReferenceEquals(item.Row, Context.KeyTipRow) && item.KeyTipLetters is not null).ToList();
+        if (items.FirstOrDefault(item => string.Equals(item.KeyTipLetters, typed, StringComparison.OrdinalIgnoreCase)) is { } chosen)
+        {
+            Context.ShowKeyTips(KeyTipStage.Off);
+            if (!chosen.CanPress)
+            {
+                await Context.ReturnKeyboardAsync();
+                return;
+            }
+            // Excel's Alt, H, H opens the Fill's palette rather than setting its colour: a list opens.
+            await chosen.PressFromKeyboardAsync(openChoices: true, fromKeyTip: true);
+            return;
+        }
+        if (items.Any(item => item.KeyTipLetters!.StartsWith(typed, StringComparison.OrdinalIgnoreCase)))
+        {
+            Context.ShowKeyTips(KeyTipStage.Items, Context.KeyTipRow, typed);
+            return;
+        }
+        await EndKeyTipsAsync();
+    }
+
+    private async Task EndKeyTipsAsync()
+    {
+        Context.ShowKeyTips(KeyTipStage.Off);
+        await Context.ReturnKeyboardAsync();
+    }
 
     /// <summary>
     /// Gives the keyboard back to the Sheet from the toolbar: through the toolbar's own empty
@@ -80,6 +188,7 @@
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        _drawnKeyTips = KeyTipsShown;
         if (_leaving && !_leftFromElement)
         {
             _leftFromElement = true;
@@ -104,6 +213,11 @@
             _handedBack = null;
             await Context.ReturnKeyboardToSheetAsync();
             handedBack?.TrySetResult();
+            if (_keysAreKeyTips)
+            {
+                _keysAreKeyTips = false;
+                StateHasChanged();
+            }
         }
     }
 
@@ -112,7 +226,10 @@
     /// <inheritdoc />
     public void Dispose()
     {
+        Context.Changed -= OnToolbarChanged;
         if (Context.LeaveToolbar == GiveKeyboardBackAsync) Context.LeaveToolbar = null;
+        if (Context.StartKeyTips == StartKeyTipsAsync) Context.StartKeyTips = null;
+        Context.ShowKeyTips(KeyTipStage.Off);
         _handedBack?.TrySetResult();
     }
 
@@ -128,6 +245,13 @@
     private void OnFocusOut(FocusEventArgs _)
     {
         _hasFocus = false;
+        // The KeyTips end when the keyboard leaves: a list an item opened, or a press elsewhere.
+        Context.ShowKeyTips(KeyTipStage.Off);
+        if (_keysAreKeyTips && !_leaving && !_handBackAfterRender)
+        {
+            _keysAreKeyTips = false;
+            StateHasChanged();
+        }
         // The highlight goes with DOM focus; the place is kept for the next Tab.
         if (Context.Active is null) return;
         _lastActive = Context.Active;
@@ -144,6 +268,11 @@
 
     private async Task OnKeyAsync(KeyboardEventArgs e)
     {
+        if (KeyTipsShown)
+        {
+            await OnKeyTipKeyAsync(e);
+            return;
+        }
         var items = Pressable().ToList();
         if (items.Count == 0)
         {
