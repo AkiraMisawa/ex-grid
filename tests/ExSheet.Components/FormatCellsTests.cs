@@ -415,7 +415,7 @@ public class FormatCellsTests : SheetTestContext
         Assert.True(ReclaimCount > reclaims);
     }
 
-    [Fact] // ADR-0071 (2026-10-02) / SH-50: the Font tab's Normal font box sets every part of the Font to its default, over a row's Font
+    [Fact] // ADR-0071 (2026-10-02) / SH-55: the Font tab's Normal font box sets every part of the Font to its default, over a row's Font
     public async Task Normal_font_sets_the_default_font_over_a_rows()
     {
         var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(

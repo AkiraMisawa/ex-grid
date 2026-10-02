@@ -478,7 +478,7 @@ public class ShippedStylesheetTests
         // Told as the press goes on to Blazor, and only then: where it passes on untouched, and where
         // it leaves the listener — a heading's, or one replayed after it was held here.
         Assert.Equal(2, Regex.Matches(press.Value, @"handOn\(event\);").Count);
-        Assert.Matches(new Regex(@"if \(!core \|\| replaying \|\| event\.button !== 0 \|\| !isOwnRows\(event\.target\)\) \{\s*handOn\(event\);\s*return;"), press.Value);
+        Assert.Matches(new Regex(@"if \(!core \|\| replaying \|\| event\.button !== 0 \|\| !isOwnRows\(event\.target\)\) \{\s*handOn\(event\);\s*tellTaken\('mousedown', taken\);\s*return;"), press.Value);
         // This grid's core is told of it, and of its turn when it comes, from one place each.
         Assert.Single(Regex.Matches(script.Text, @"'PressHandedOnAsync'"));
         Assert.Single(Regex.Matches(script.Text, @"'PressInTurn'"));
@@ -634,6 +634,38 @@ public class ShippedStylesheetTests
     }
 
     /// <summary>The body of the module's <c>const name = (event) =&gt; { … };</c>, at attach's level.</summary>
+    [Fact] // ED-31 / ADR-0021's note of 2026-10-02: a press on the rows is told with what it was taken against, as it goes on to Blazor or at its replay, and nothing is measured
+    public void ED31_a_press_on_the_rows_is_told_with_what_it_was_taken_against()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var taken = Regex.Match(script, @"const takenAt = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(taken.Success, "takenAt is not in the module");
+        var press = ListenerBody(script, "onPress");
+        var release = ListenerBody(script, "onRelease");
+        var replay = Regex.Match(script, @"const replayPress = async \(k\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(replay.Success, "replayPress is not in the module");
+
+        // What it was taken against: the browser's offsets, the attributes the painting render wrote
+        // on the Viewport, and the scroll offset (the second entry). No layout is read.
+        foreach (var read in new[] { "event.offsetX", "event.offsetY", "'data-ex-first-row'", "'data-ex-sequence'", "'data-ex-layout'", "scroller.scrollLeft" })
+            Assert.Contains(read, taken.Value, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|getComputedStyle|getClientRects|elementFromPoint"), taken.Value);
+
+        // Noted for this grid's own rows only, and never for a replay, which tells its own.
+        Assert.Contains("const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;", press, StringComparison.Ordinal);
+        Assert.Contains("const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;", release, StringComparison.Ordinal);
+        // Told where the event goes on to Blazor now, and kept with it where it is held.
+        Assert.Equal(2, Regex.Matches(press, @"tellTaken\('mousedown', taken\);").Count);
+        Assert.Contains("held.push({ press: 'mousedown', target: event.target, init: mouseInit(event), taken });", press, StringComparison.Ordinal);
+        Assert.Single(Regex.Matches(release, @"tellTaken\('mouseup', taken\);"));
+        Assert.Contains("held.push({ press: 'mouseup', target: event.target, init: mouseInit(event), taken });", release, StringComparison.Ordinal);
+        // At the replay, told before the event is dispatched, so the event the core hears next is
+        // the one it was told of.
+        Assert.Matches(new Regex(@"tellTaken\(k\.press, k\.taken\);\s*replaying = true;\s*try \{\s*target\.dispatchEvent\(new MouseEvent\(k\.press, k\.init\)\);"), replay.Value);
+        // One message, from one place.
+        Assert.Single(Regex.Matches(script, @"'PressTakenAt'"));
+    }
+
     private static string ListenerBody(string script, string name)
     {
         var match = Regex.Match(script, @"const " + name + @" = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);

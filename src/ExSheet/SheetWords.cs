@@ -36,6 +36,16 @@ internal static class SheetWords
         ? "Nothing was inserted: select whole rows (Shift+Space) or whole columns (Ctrl+Space) to insert. A Sheet does not shift cells."
         : "Nothing was deleted: select whole rows (Shift+Space) or whole columns (Ctrl+Space) to delete. A Sheet does not shift cells.";
 
+    // ADR-0100: the Sheet Toolbar's accessible name, and why its items cannot be pressed while an edit is open.
+    internal static string ToolbarName => "Formatting";
+
+    internal static string ToolbarWhileEditing =>
+        "A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.";
+
+    // ADR-0100: Excel's Comma Style pads with *, as Accounting does (FormatCellsOffer).
+    internal static string CommaStyleUnread =>
+        "Excel's Comma Style pads each value with * to fill its column, which ExSheet does not read. Use Number with the thousands separator in Format Cells.";
+
     internal static string EditDiscardedByNewDocument =>
         "What was typed was not entered: another Sheet Document was opened while the cell was being edited.";
 

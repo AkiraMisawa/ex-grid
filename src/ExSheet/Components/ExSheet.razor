@@ -20,11 +20,18 @@
 @* One element around the Sheet, laid out as if it were not there (display: contents), so the
    browser's focus events reach ExSheet: while the Sheet is in a Pointing Scope, whether DOM focus is
    inside it decides whether it points (ADR-0058). Without a Scope nothing listens. *@
-<div class="ex-sheet" style="display: contents" @attributes="_keyboardListeners">
+@* With the Sheet Toolbar shown (ADR-0100), the same element is the Sheet's box: the toolbar above,
+   the grid below with what the toolbar leaves. The element is always there, so showing the toolbar
+   never re-creates the grid. *@
+<div class="ex-sheet" style="@FrameStyle" @attributes="_keyboardListeners">
+@if (ShowToolbar)
+{
+    <SheetToolbar Context="_toolbar" Content="ToolbarContent" HeightPx="ToolbarPx" />
+}
 <ExGrid TRow="SheetRow" @ref="_grid"
         Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
         Columns="_columns" OnColumnWidthChanged="_columnWidthChanged" HideColumnMenu="true"
-        RowHeight="RowHeight" ViewportHeight="ViewportHeight" ViewportWidth="ViewportWidth"
+        RowHeight="RowHeight" ViewportHeight="GridViewportHeight" ViewportWidth="ViewportWidth"
         PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
         OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"
         CellType="SheetColumns.CellType" CellAlign="SheetColumns.CellAlign" EditorTextOf="SheetColumns.EditorText"
@@ -42,7 +49,7 @@
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
-        DeclaredKeys="DeclaredKeys" OnDeclaredKey="_formatKey" />
+        DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" />
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
@@ -117,6 +124,8 @@
     private RenderFragment? _formatCellsFrame;
 
     private ExGrid<SheetRow>? _grid;
+    // The Sheet Toolbar's state, cascaded to its items (ADR-0100). Made once, as the component is.
+    private SheetToolbarContext _toolbar = default!;
     private SheetColumnList _columns = SheetColumnList.Default;
     // Each cell's Font, Fill and Borders (ADR-0050 item 15, ADR-0071), read once per row for each
     // reading of the Sheet's formatting. A change that may reformat rows the engine does not name
@@ -200,6 +209,7 @@
             // notification can name the Selection already held: that is no move.
             var moved = !selection.Equals(_selection);
             _selection = selection;
+            RefreshToolbar();
             // Format Cells shows the Selection it opened over and sets what OK names on the
             // Selection: a Selection moved under it, by the Name Box or a Consumer, ends it.
             if (moved && _formatCells is not null) _ = InvokeAsync(EndFormatCellsAsync);
@@ -228,6 +238,11 @@
         _editingChanged = new EventCallback<bool>(null, (Func<bool, Task>)(open =>
         {
             IsEditing = open;
+            // The toolbar greys out once the grid has answered the key or press that opened or
+            // ended the edit, not inside that answer: drawn there, on a circuit, its render landed
+            // among the keys and presses the grid holds behind the answer and lost what was typed
+            // (layer 3, the Server host, SRV-5).
+            if (ShowToolbar) _ = InvokeAsync(RefreshToolbarLaterAsync);
             return EditingChanged.InvokeAsync(open);
         }));
         // Typing thrown away is said, whoever discarded it: the grid, or ExSheet itself for a
@@ -304,6 +319,29 @@
 
     /// <summary>Whether the Formula Bar with its Name Box is shown (ADR-0051).</summary>
     [Parameter] public bool ShowFormulaBar { get; set; } = true;
+
+    /// <summary>
+    /// Whether the Sheet Toolbar is shown (ADR-0100): off unless asked for. It stands above the
+    /// Formula Bar, inside the Sheet's box, and the Sheet's <see cref="ViewportHeight"/> includes it.
+    /// It shows and hides every Toolbar Row together, the default row included.
+    /// </summary>
+    [Parameter] public bool ShowToolbar { get; set; }
+
+    /// <summary>
+    /// Raised with the other value when the user asks to hide or show the Sheet Toolbar with Ctrl+F1,
+    /// Excel's key for the ribbon (ADR-0100). The Sheet holds nothing: whether the toolbar is shown is
+    /// View State, the Consumer's, so binding <c>@bind-ShowToolbar</c> is what lets the key work.
+    /// Unbound, Ctrl+F1 is not claimed and stays the browser's.
+    /// </summary>
+    [Parameter] public EventCallback<bool> ShowToolbarChanged { get; set; }
+
+    /// <summary>
+    /// What the Sheet Toolbar holds, in order (ADR-0100): <see cref="ToolbarRow"/>s of Toolbar Items —
+    /// ExSheet's formatting items and the Consumer's own <see cref="ToolbarButton"/>s — or Toolbar
+    /// Items alone, which are one row. Null shows the default row, Excel's Home tab's formatting
+    /// commands, which is only an example: the order is the Consumer's to declare.
+    /// </summary>
+    [Parameter] public RenderFragment? ToolbarContent { get; set; }
 
     /// <summary>
     /// Raised whenever the grid's Selection changes, as ExGrid raises it (ADR-0011/0014): what a
@@ -397,12 +435,14 @@
     {
         RefuseUnreachableRows();
         BindPointingScope();
+        ResolveToolbar();
         if (!_initialised)
         {
             _initialised = true;
             _documentParameter = Document;
             _cultureParameter = Culture;
             Open(Document);
+            RefreshToolbar();
             return;
         }
         if (!Equals(Culture, _cultureParameter))
@@ -422,6 +462,7 @@
         }
         // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
         if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
+        RefreshToolbar();
     }
 
     /// <summary>
@@ -524,6 +565,32 @@
     }
 
     /// <summary>
+    /// Sets on the Selection a change made from the Focus cell's Cell Format as it shows when the
+    /// command runs, as a toggle key reads it (ADR-0071, ADR-0100): Bold on over a Focus cell that is
+    /// not bold and off over one that is, read from the Selection as the grid holds it then, not as
+    /// it was last heard. Otherwise it acts, refuses and answers as <see cref="SetCellFormatAsync"/>.
+    /// Answers false when nothing is selected.
+    /// </summary>
+    /// <param name="change">The change, made from the Focus cell's Cell Format.</param>
+    /// <exception cref="ArgumentException">The change it makes sets no part of a Cell Format.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetCellFormatFromFocusAsync(Func<CellFormat, CellFormatChange> change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        return OnDispatcherAsync(async () =>
+        {
+            RefuseWhileEditing();
+            AdoptGridSelection();
+            if (_selection.IsEmpty) return false;
+            var focus = _selection.Focus;
+            var made = change(CellFormatAt(new CellAddress(focus.Row, focus.Column)));
+            ArgumentNullException.ThrowIfNull(made, nameof(change));
+            if (made.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
+            return await FormatSelectionAsync(made);
+        });
+    }
+
+    /// <summary>
     /// Sets the Number Format of the Selection; <see langword="null"/> is General. A shorthand for
     /// <see cref="SetCellFormatAsync"/> with a change that names the Number Format alone
     /// (ADR-0071), so it acts, refuses and answers as that change does.
@@ -571,6 +638,7 @@
     /// </summary>
     private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
     {
+        if (await OnToolbarKeyAsync(press)) return;
         if (SheetStructureKeys.KindOf(press.Key) is { } structure)
         {
             await OnStructureKeyAsync(press, structure);
@@ -600,10 +668,6 @@
             SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture),
             widen: SheetFormatKeys.WidensAsANumberFormatDoes(kind));
     }
-
-    // The keys ExSheet declares to its grid: Excel's formatting keys (ADR-0071) and its insert and
-    // delete keys (ADR-0050 item 14, 2026-10-02). One instance, so the grid compares it by reference.
-    private static readonly IReadOnlyCollection<string> DeclaredKeys = [.. SheetFormatKeys.Declared, .. SheetStructureKeys.Declared];
 
     /// <summary>
     /// Ctrl+Plus and Ctrl+Minus (ADR-0050 item 14's note of 2026-10-02): over a Selection of whole
@@ -1452,6 +1516,159 @@
     private static SheetEdit WidenedByEntry(int column, double characters) =>
         SheetEdit.SetAutomaticColumnWidth(CellRange.WholeColumns(column, column), characters);
 
+    // ---- The Sheet Toolbar (ADR-0100) ----
+
+    /// <summary>The toolbar's height: its rows' count times one row's, nothing while it is hidden.</summary>
+    private double ToolbarPx => ShowToolbar ? _toolbar.RowCount * _toolbar.RowHeightPx : 0;
+
+    /// <summary>What the grid is given: the Sheet's height less the toolbar's, where it is declared
+    /// (ADR-0028). Under Stretch the grid takes what the toolbar leaves in the Sheet's box.</summary>
+    private ViewportSize GridViewportHeight =>
+        ShowToolbar && !ViewportHeight.IsStretch ? ViewportHeight.Px - ToolbarPx : ViewportHeight;
+
+    /// <summary>
+    /// The Sheet's box. Without the toolbar the element lays out as if it were not there, as it always
+    /// has. With it, the element holds the toolbar and the grid: at the declared width, or under a
+    /// Stretch height as a column as tall as its parent, as the grid's own root is under Stretch, in
+    /// which the grid takes what the toolbar leaves.
+    /// </summary>
+    private string FrameStyle
+    {
+        get
+        {
+            if (!ShowToolbar) return "display: contents";
+            var width = ViewportWidth.IsStretch ? "; min-width: 0" : FormattableString.Invariant($"; width: {ViewportWidth.Px}px");
+            return ViewportHeight.IsStretch
+                ? "display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0" + width
+                : "display: block" + width;
+        }
+    }
+
+    private void ResolveToolbar()
+    {
+        _toolbar ??= new SheetToolbarContext(this, "ex-sheet-" + RuntimeHelpers.GetHashCode(this).ToString(CultureInfo.InvariantCulture),
+            OpenToolbarChoicesAsync, _returnKeyboard,
+            sentence => { Tell(sentence); StateHasChanged(); },
+            () => _ = InvokeAsync(StateHasChanged));
+        // One Toolbar Row is the Formula Bar's height, from the same Density (ADR-0100, ADR-0028).
+        ListenForKeyUps();
+        _toolbar.RowHeightPx = GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, RowHeight, defaults: Presentation).FormulaBarHeightPx;
+        if (ShowToolbar && !ViewportHeight.IsStretch && ViewportHeight.Px <= ToolbarPx)
+        {
+            throw new ArgumentException(FormattableString.Invariant(
+                $"ViewportHeight ({ViewportHeight.Px}px) includes the Sheet Toolbar ({ToolbarPx}px) and must exceed it, with room for the grid (ADR-0100)."));
+        }
+    }
+
+    // The Sheet Toolbar's keys (ADR-0100; ADR-0050 item 14's note of 2026-10-02): the Alt key alone
+    // and F10, declared while the toolbar is shown, which start the KeyTips unless an edit is open,
+    // and Ctrl+F1, Excel's key for the ribbon, where the Consumer binds ShowToolbarChanged. With the
+    // toolbar hidden, or the toggle unbound, each stays the browser's. They are not re-declared as
+    // an edit opens and ends: that would re-render the Sheet at every edit, which it never does, and
+    // on a circuit the re-render and the claims it re-tells landed among the keys and presses of the
+    // edit and lost what was typed (layer 3, the Server host, SRV-5).
+    private const string AltAlone = "Alt+Alt";
+    private const string KeyTipsKey = "F10";
+    private const string ToolbarToggleKey = "Control+F1";
+    // Excel's formatting keys (ADR-0071) and its insert and delete keys (ADR-0050 item 14, 2026-10-02),
+    // which every Sheet declares whether or not its toolbar is shown.
+    private static readonly IReadOnlyCollection<string> SheetKeys = [.. SheetFormatKeys.Declared, .. SheetStructureKeys.Declared];
+    private static readonly IReadOnlyCollection<string> WithKeyTips = [.. SheetKeys, AltAlone, KeyTipsKey];
+    private static readonly IReadOnlyCollection<string> WithToggle = [.. SheetKeys, ToolbarToggleKey];
+    private static readonly IReadOnlyCollection<string> WithKeyTipsAndToggle = [.. SheetKeys, AltAlone, KeyTipsKey, ToolbarToggleKey];
+
+    private IReadOnlyCollection<string> DeclaredSheetKeys => (ShowToolbar, ShowToolbarChanged.HasDelegate) switch
+    {
+        (true, true) => WithKeyTipsAndToggle,
+        (true, false) => WithKeyTips,
+        (false, true) => WithToggle,
+        _ => SheetKeys,
+    };
+
+    // The Alt key went down alone, and its release has not been heard: the release starts the
+    // KeyTips, unless another key was released first — a chord, which is not a KeyTip.
+    private bool _altAlone;
+    private KeyUpListener? _keyUpListener;
+
+    // Answers whether the key was one of the toolbar's.
+    private async Task<bool> OnToolbarKeyAsync(GridDeclaredKeyPress press)
+    {
+        switch (press.Key)
+        {
+            case ToolbarToggleKey:
+                await ShowToolbarChanged.InvokeAsync(!ShowToolbar);
+                return true;
+            case AltAlone:
+                _altAlone = ShowToolbar && !press.EditOpen && !IsEditing;
+                return true;
+            case KeyTipsKey:
+                if (ShowToolbar && !press.EditOpen && !IsEditing && _toolbar.StartKeyTips is { } start) await start();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // Every key's release, heard while the toolbar is shown: the Alt key's starts the KeyTips when
+    // it went down alone, and any other key's makes the Alt a chord's.
+    private async Task OnKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Key != "Alt")
+        {
+            _altAlone = false;
+            return;
+        }
+        if (!_altAlone) return;
+        _altAlone = false;
+        if (ShowToolbar && !IsEditing && _toolbar.StartKeyTips is { } start) await start();
+    }
+
+    // The release listener, on the Sheet's own element while the toolbar is shown. Its target is not
+    // the component: a release repaints nothing.
+    private void ListenForKeyUps()
+    {
+        if (ShowToolbar)
+        {
+            _keyUpListener ??= new KeyUpListener(this);
+            _keyboardListeners["onkeyup"] = (Func<KeyboardEventArgs, Task>)_keyUpListener.Up;
+        }
+        else
+        {
+            _keyboardListeners.Remove("onkeyup");
+            _altAlone = false;
+        }
+    }
+
+    private sealed class KeyUpListener(ExSheet sheet)
+    {
+        public Task Up(KeyboardEventArgs e) => sheet.OnKeyUpAsync(e);
+    }
+
+    private async Task RefreshToolbarLaterAsync()
+    {
+        await Task.Yield();
+        RefreshToolbar();
+    }
+
+    /// <summary>Tells the toolbar's items what they show: the Focus cell's Cell Format, and whether an edit is open.</summary>
+    private void RefreshToolbar()
+    {
+        if (_toolbar is null || _sheet is null) return;
+        var focus = _selection.IsEmpty ? CellFormat.Default : CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        _toolbar.Update(focus, !_selection.IsEmpty, IsEditing, _sheet.Culture, Chrome as ISheetChrome);
+    }
+
+    // A Toolbar Item's choices under the built-in Chrome: a menu in the grid's popover frame, which
+    // takes the keyboard and gives it back when it closes (ADR-0039, ADR-0040).
+    private async Task OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices)
+    {
+        if (_grid is not { } grid || choices.Count == 0) return;
+        await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover), title);
+    }
+
+    private static RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover) =>
+        @<ToolbarChoicesPanel Title="@title" Choices="choices" Popover="popover" />;
+
     private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);
 
     /// <summary>
@@ -1486,6 +1703,7 @@
             _window = rows;
         }
         StateHasChanged();
+        RefreshToolbar();
         if (raiseDocument && DocumentChanged.HasDelegate)
         {
             var document = sheet.ToDocument();

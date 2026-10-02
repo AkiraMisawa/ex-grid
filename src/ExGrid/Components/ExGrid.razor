@@ -183,6 +183,7 @@
                report's row-change test (ADR-0021's fifth entry). The transform no longer
                says it once the height is compressed (ADR-0053). *@
             <div class="ex-viewport" style="@ViewportStyle()" data-ex-first-row="@(_visible?.Start)"
+                 data-ex-sequence="@_sequenceVersion" data-ex-layout="@_paintLayoutId"
                  role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
@@ -2875,6 +2876,7 @@
         _visible = local is { } slice ? new RowRange(_pageStartRow + slice.Start, slice.Count) : null;
         ObserveAutoWidths();
         ResolveColumnGeometry();
+        NotePaintLayout();
         _scrollable = _columnStyles.Geometry.ScrollableSliceAt(_scrollLeftPx, VirtualiseColumns);
     }
 
@@ -3369,10 +3371,11 @@
     /// </summary>
     private CellPosition? CellUnder(MouseEventArgs e)
     {
-        if (_visible is not { } visible)
+        if (_visible is not { } visible || FirstRowOf(e, visible) is not { } first)
             return null;
-        var row = _geometry.RowAt(e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow));
-        var column = _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx);
+        // Rows of the height they were painted at, counted from the row painted first then.
+        var row = _geometry.RowAt(e.OffsetY / RowHeightOf(e) * _geometry.RowHeightPx + _geometry.OffsetPxOf(first - _pageStartRow));
+        var column = ColumnsOf(e).ColumnAt(e.OffsetX, ScrollLeftOf(e));
         // The geometry answers in page-local rows; positions are the result's (ADR-0015).
         return row is int r && column is int c ? new CellPosition(_pageStartRow + r, c) : null;
     }
@@ -3448,7 +3451,7 @@
         // begins is a Heading drag, whose moves extend by row: a cell drag's would extend by
         // cell and collapse the whole rows (ADR-0050 item 1, 2026-09-29).
         if (e.Button == 0 && ShowsRowHeadings
-            && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx) && CellUnder(e) is { } headed)
+            && ColumnsOf(e).IsInLead(e.OffsetX, ScrollLeftOf(e)) && CellUnder(e) is { } headed)
         {
             RememberHeadingPress(e, ViewportYOf(e));
             BeginHeadingDrag(HeadingAxis.Rows, headed.Row, e.ShiftKey, Toggles(e));
@@ -3479,6 +3482,14 @@
             : current.Click(cell, extent);
 
         Apply(next);
+        // A press the view has moved away from since it was made lands where it was made
+        // (ED-31), on a cell that may be off screen now: the Focus is brought back into view,
+        // as after any other move (ADR-0012). Where the view has not moved, nothing scrolls.
+        if (e is TakenMouseEventArgs taken && _visible is { } shown
+            && (taken.FirstRow != shown.Start || taken.ScrollLeftPx != _scrollLeftPx))
+        {
+            RequestFocusReveal();
+        }
         // A toggle-off takes a cell out and leaves the Focus on what remains (ADR-0052), and
         // dragging on from there would redraw a range from a cell the press never pointed
         // at (ADR-0012). Every other gesture has left a range that a drag can grow.
@@ -3557,11 +3568,11 @@
     /// </summary>
     private bool IsOnFillHandle(MouseEventArgs e)
     {
-        if (FillHandleRange is not { } range || _visible is not { } visible)
+        if (FillHandleRange is not { } range || _visible is not { } visible || FirstRowOf(e, visible) is not { } first)
             return false;
-        var geometry = _columnStyles.Geometry;
-        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, _metrics.RowHeightPx, visible.Start);
-        var scrollLeft = Math.Clamp(_scrollLeftPx, 0, geometry.MaxScrollLeftPx);
+        var geometry = ColumnsOf(e);
+        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, RowHeightOf(e), first);
+        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
         if (range.RightColumn < geometry.PinnedCount)
             cornerX += scrollLeft;
         else if (cornerX - scrollLeft < geometry.PinnedWidthPx)
@@ -5157,25 +5168,26 @@
         StateHasChanged();
     }
 
-    private static bool TryReadOperand(ColumnType type, FilterOperator op, string text, out object? operand)
+    private static bool TryReadOperand(GridColumn<TRow> column, FilterOperator op, string text, out object? operand)
     {
         operand = null;
         if (!FilterPanelChoices.TakesOperand(op) || string.IsNullOrEmpty(text))
             return true;
-        var reading = FilterPanelChoices.ReadOperand(type, text, CultureInfo.CurrentCulture);
+        var reading = FilterPanelChoices.ReadOperand(column.Type, text, CultureInfo.CurrentCulture, column.DateType);
         operand = reading.Value;
         return !reading.IsRefused;
     }
 
     /// <summary>Why the operand typed in the built-in condition form is refused, in the
     /// built-in Chrome's words, or null where it reads (ADR-0023; ticket 96): a text that is
-    /// not the column's type as the current culture writes it, or that reads as two numbers,
-    /// is said so by name, never guessed.</summary>
+    /// not the column's type as the current culture writes it, that reads as two numbers, or
+    /// whose date is not the column's declared date type (ticket 98), is said so by name, never
+    /// guessed.</summary>
     private string? PanelRefusal(int column, string text)
         => text.Length == 0
             ? null
             : FilterPanelChoices.RefusalText(
-                FilterPanelChoices.ReadOperand(Columns[column].Type, text, CultureInfo.CurrentCulture), text, CultureInfo.CurrentCulture);
+                FilterPanelChoices.ReadOperand(Columns[column].Type, text, CultureInfo.CurrentCulture, Columns[column].DateType), text, CultureInfo.CurrentCulture);
 
     /// <summary>A value as the built-in panel lists it, and as its search matches it: the text
     /// its cell shows — the column's own format, or a date's ISO form (ADR-0006) — and Blank in
@@ -5222,7 +5234,8 @@
             InnerPopupChangedFromChrome,
             _panelFocusLastRequest,
             ValueListKeyFromChrome,
-            _panelSearchRequest);
+            _panelSearchRequest,
+            declared.DateType);
     }
 
     /// <summary>The one write path a filter change takes (ADR-0009): the column's spec
@@ -5265,10 +5278,10 @@
 
         // Each condition's operand read as the column's type. Empty is an unfinished
         // condition, left out; text that does not read applies nothing, and the panel stands.
-        if (!TryReadOperand(declared.Type, _panelOperator, _panelValueText, out var first))
+        if (!TryReadOperand(declared, _panelOperator, _panelValueText, out var first))
             return Task.CompletedTask;
         object? second = null;
-        if (_panelSecondOperator is { } secondOperator && !TryReadOperand(declared.Type, secondOperator, _panelSecondValueText, out second))
+        if (_panelSecondOperator is { } secondOperator && !TryReadOperand(declared, secondOperator, _panelSecondValueText, out second))
             return Task.CompletedTask;
         return ApplyFilterSpecAsync(declared.Name, FilterPanelChoices.FromConditions(
             _panelOperator, first, _panelCombinator, _panelSecondOperator, second));

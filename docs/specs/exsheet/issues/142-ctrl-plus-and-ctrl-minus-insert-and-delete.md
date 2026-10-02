@@ -10,7 +10,7 @@ carries. Any other Selection changes nothing and says why; so does a key while a
 **Blocked by:** None (can start immediately)
 
 - [x] **Whole rows, whole columns, every cell, a part of a row, several ranges**: each answered as
-      SH-48 says.
+      SH-53 says.
 - [x] **The page does not zoom** from a key pressed inside the Sheet.
 - [x] **Layer 2** for each Selection shape; **layer 3** on both hosts, with the key straight after
       Shift+Space.

@@ -1,0 +1,40 @@
+@namespace ExSheet
+
+@*
+    The Sheet Toolbar's default row (ADR-0100), shown when the Consumer declares no ToolbarContent: the
+    formatting commands in the order Excel's Home tab has them. It is only an example — the order is
+    the Consumer's to declare — and its KeyTip is H, Excel's Home.
+*@
+<CascadingValue Value="_place" IsFixed="true">
+<ToolbarRow KeyTip="H" Label="Home">
+    <BoldItem />
+    <ItalicItem />
+    <UnderlineItem />
+    <StrikethroughItem />
+    <ToolbarSeparator />
+    <FontColourItem />
+    <FillItem />
+    <ToolbarSeparator />
+    <BordersItem />
+    <ToolbarSeparator />
+    <AlignLeftItem />
+    <AlignCenterItem />
+    <AlignRightItem />
+    <ToolbarSeparator />
+    <NumberFormatItem />
+    <PercentItem />
+    <CommaItem />
+    <ToolbarSeparator />
+    <FormatCellsItem />
+</ToolbarRow>
+</CascadingValue>
+
+@code {
+    /// <summary>The scope the row takes its place from.</summary>
+    [CascadingParameter] public ToolbarOrder? Order { get; set; }
+
+    private ToolbarOrder _place = new();
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => _place = Order?.Next() ?? _place;
+}

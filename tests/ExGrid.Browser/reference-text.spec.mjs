@@ -1,4 +1,5 @@
-import { test, expect, alterPage, setRoundTrip, twoFrames } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
+import { pixelsApart, stillPictures } from './pixels.mjs';
 import { SERVER } from './hosting.mjs';
 import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily, stretchesOf } from './sheet-helpers.mjs';
 
@@ -313,16 +314,14 @@ test("ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell 
     expect(grounds.box).not.toBe(TRANSPARENT);
     // What is seen is the layer's text, through the field: hiding the layer takes it away.
     const box = editor(grid).locator('xpath=..');
-    const shown = await box.screenshot();
     await alterPage(page, () => {
         const style = document.createElement('style');
-        style.textContent = '.ex-reference-text { visibility: hidden !important; }';
+        style.textContent = '[data-layer="hidden"] .ex-reference-text { visibility: hidden !important; }';
         document.head.append(style);
         return () => style.remove();
     });
-    await twoFrames(page);
-    const hidden = await box.screenshot();
-    expect((await pixelsApart(page, shown, hidden)).apart, 'pixels the layer puts in the Cell Editor').toBeGreaterThan(20);
+    const { shown, hidden } = await stillPictures(box, { mark: 'data-layer', ways: ['shown', 'hidden'] });
+    expect(pixelsApart(shown, hidden, 96).apart, 'pixels the layer puts in the Cell Editor').toBeGreaterThan(20);
     await page.keyboard.press('Escape');
     await expect(editor(grid)).toHaveCount(0);
 });
@@ -477,39 +476,6 @@ for (const chrome of ['builtin', 'mud']) {
 // ---------------------------------------------------------------------------------------------
 // Over the right characters (DC-48)
 
-/** Differing pixels between two PNG screenshots of one element, compared in the page, and the
- * largest difference, which says how near the threshold the rest came. */
-function pixelsApart(page, a, b) {
-    return page.evaluate(async ([a, b]) => {
-        const load = (bytes) => new Promise((resolve, reject) => {
-            const image = new Image();
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-            image.src = `data:image/png;base64,${bytes}`;
-        });
-        const [first, second] = await Promise.all([load(a), load(b)]);
-        const canvas = document.createElement('canvas');
-        canvas.width = first.width;
-        canvas.height = first.height;
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        context.drawImage(first, 0, 0);
-        const one = context.getImageData(0, 0, canvas.width, canvas.height).data;
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(second, 0, 0);
-        const other = context.getImageData(0, 0, canvas.width, canvas.height).data;
-        let differing = 0;
-        let apart = 0;
-        let largest = 0;
-        for (let i = 0; i < one.length; i += 4) {
-            const d = Math.max(Math.abs(one[i] - other[i]), Math.abs(one[i + 1] - other[i + 1]), Math.abs(one[i + 2] - other[i + 2]));
-            differing += d > 0 ? 1 : 0;
-            apart += d > 96 ? 1 : 0;
-            largest = Math.max(largest, d);
-        }
-        return { differing, apart, largest, sizes: [first.width, first.height, second.width, second.height] };
-    }, [a.toString('base64'), b.toString('base64')]);
-}
-
 /**
  * A stylesheet over the page that draws a field one of two ways, by a mark the test sets on the
  * field: `own` — by its own text, the layer hidden, as it is while the layer is behind; `layer` —
@@ -545,19 +511,12 @@ async function overlayDrawingWays(page) {
     });
 }
 
-/** The field drawn both ways. Where the layer's characters stand where the field's do, the two
- * are one picture. */
-async function drawnBothWays(page, field) {
-    const shoot = async (way) => {
-        await field.evaluate((input, drawn) => input.setAttribute('data-drawn', drawn), way);
-        await twoFrames(page);
-        return field.screenshot();
-    };
-    const own = await shoot('own');
-    const layer = await shoot('layer');
-    await field.evaluate((input) => input.removeAttribute('data-drawn'));
-    return { own, layer };
-}
+/** The field drawn both ways, pictured while the page holds still (`stillPictures`). Where the
+ * layer's characters stand where the field's do, the two are one picture. */
+const drawnBothWays = (field) => stillPictures(field, { mark: 'data-drawn', ways: ['own', 'layer'] });
+
+/** DC-48's comparison: pixels apart by more than 96 on some channel. */
+const DC48_THRESHOLD = 96;
 
 // Longer than either surface on /sheet, with a handful of References, as a Formula a user writes
 // is. The layer once drew each Reference as a span, a run of text each, and the browser rounds each
@@ -619,8 +578,8 @@ for (const chrome of ['builtin', 'mud']) {
 
             for (const end of ['End', 'Home']) {
                 await caretTo(page, field, end);
-                const { own, layer } = await drawnBothWays(page, field);
-                const apart = await pixelsApart(page, own, layer);
+                const { own, layer } = await drawnBothWays(field);
+                const apart = pixelsApart(own, layer, DC48_THRESHOLD);
                 test.info().annotations.push({ type: `DC-48 ${end}`, description: JSON.stringify(apart) });
                 expect(apart.apart, `pixels the layer's text puts somewhere the field's is not, at ${end}`).toBe(0);
             }
@@ -661,9 +620,9 @@ for (const chrome of ['builtin', 'mud']) {
 
             for (const misplacement of Object.keys(MISPLACED)) {
                 await field.evaluate((input, name) => input.setAttribute('data-misplaced', name), misplacement);
-                const { own, layer } = await drawnBothWays(page, field);
+                const { own, layer } = await drawnBothWays(field);
                 await field.evaluate((input) => input.removeAttribute('data-misplaced'));
-                const apart = await pixelsApart(page, own, layer);
+                const apart = pixelsApart(own, layer, DC48_THRESHOLD);
                 test.info().annotations.push({ type: `DC-48 ${misplacement}`, description: JSON.stringify(apart) });
                 expect(apart.apart, `pixels found apart with the layer ${misplacement}`).toBeGreaterThan(0);
             }

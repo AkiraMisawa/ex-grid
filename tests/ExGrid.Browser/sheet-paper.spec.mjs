@@ -131,7 +131,7 @@ for (const [chrome, query] of CHROMES) {
             expect(sameColour(editors[scheme].ground, WHITE, 2), `the Cell Editor's ground (${scheme}: ${editors[scheme].ground})`).toBe(true);
             expect(editors[scheme].ink, `the Cell Editor's ink (${scheme})`).toEqual(BLACK);
             // The Selection's outline reads against the Paper. Under the built-in Chrome its shade
-            // multiplies (ADR-0071, 2026-10-02; SH-49): C3's yellow Fill × 0.78, as white Paper gives
+            // multiplies (ADR-0071, 2026-10-02; SH-54): C3's yellow Fill × 0.78, as white Paper gives
             // Excel's #C7C7C7. Under MudBlazor's, the primary mixed in, which leaves it light.
             expect(contrast(looks[scheme].outline, WHITE), `the outline against the Paper (${scheme})`).toBeGreaterThanOrEqual(3);
             if (query) {

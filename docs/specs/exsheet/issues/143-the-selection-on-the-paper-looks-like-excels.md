@@ -10,7 +10,7 @@ The white line is not drawn while an edit is open. ExGrid's own selection is unc
 
 **Blocked by:** 140
 
-- [x] **SH-49's readings** at 100% and 150%, under both Chromes.
+- [x] **SH-54's readings** at 100% and 150%, under both Chromes.
 - [x] **DC-59 as amended**: a line lies above the shade, below the outline.
 - [x] **No new element per cell, and nothing per cell reaches JavaScript** (ADR-0008, ADR-0027).
 

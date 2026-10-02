@@ -3,6 +3,7 @@ using Bunit;
 using Bunit.Rendering;
 using ExGrid.Chrome;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using Xunit;
 using FilterOperator = ExGrid.FilterOperator;
@@ -90,6 +91,44 @@ public class MudDateOperandTests : MudTestContext
         await cut.Find("form").SubmitAsync();
 
         Assert.Contains($"“{typed}” {said}", cut.Find(".mud-ex-grid-filter-operand").TextContent);
+        Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
+        Assert.Empty(_applied);
+    }
+
+    /// <summary>The time MudBlazor reads, moved only by the test.</summary>
+    private sealed class ManualClock : TimeProvider
+    {
+        private DateTimeOffset _now = new(2026, 10, 2, 9, 0, 0, TimeSpan.Zero);
+
+        public override DateTimeOffset GetUtcNow() => _now;
+
+        public void Advance(TimeSpan by) => _now += by;
+    }
+
+    [Theory] // ADR-0023, principle 1: a refused date stays the field's error through later renders of the panel
+    [InlineData("ja-JP", "05/01/2026", "reads two ways")]
+    [InlineData("en-GB", "01/13/2026", "is not a value")]
+    public async Task A_refused_date_stays_refused_when_the_panel_renders_again_later(string culture, string typed, string said)
+    {
+        // MudDatePicker ignores a date set again within 100 ms of the last. The panel once bound
+        // the picker's date, which every render of the panel sets, and a render later than that
+        // cleared the text and wrote the field's Error back to false: the refusal vanished while
+        // Apply stayed unavailable. A slow CI runner put the panel's own first render that late.
+        using var _ = new CultureScope(culture);
+        var clock = new ManualClock();
+        Services.AddSingleton<TimeProvider>(clock);
+        var cut = RenderPanel(null);
+        clock.Advance(TimeSpan.FromMilliseconds(200));
+
+        await TypeAsync(cut, typed);
+        clock.Advance(TimeSpan.FromMilliseconds(200));
+        await cut.Find("form").SubmitAsync();
+        clock.Advance(TimeSpan.FromMilliseconds(200));
+        await cut.Find("form").SubmitAsync();
+
+        var field = cut.Find(".mud-ex-grid-filter-operand");
+        Assert.Contains($"\u201C{typed}\u201D {said}", field.TextContent);
+        Assert.Equal(typed, cut.Find(".mud-ex-grid-filter-operand input").GetAttribute("value"));
         Assert.True(cut.Find(".mud-ex-grid-filter-apply").HasAttribute("disabled"));
         Assert.Empty(_applied);
     }

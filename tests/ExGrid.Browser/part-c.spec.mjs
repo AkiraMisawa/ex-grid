@@ -43,9 +43,9 @@ async function selectB2toC3(page, grid) {
     await page.mouse.move(0, 0);
 }
 
-// ---- The Selection on the Paper (SH-49) ----------------------------------------------------------
+// ---- The Selection on the Paper (SH-54) ----------------------------------------------------------
 
-test('SH-49/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 with a white line inside, the shade #C7C7C7, and a black line inside stays black (ADR-0071, case 11)', async ({ page }) => {
+test('SH-54/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 with a white line inside, the shade #C7C7C7, and a black line inside stays black (ADR-0071, case 11)', async ({ page }) => {
     const grid = await openCase(page, '11');
     await selectB2toC3(page, grid);
     const scale = await page.evaluate(() => devicePixelRatio);
@@ -76,7 +76,7 @@ test('SH-49/DC-59 (built-in Chrome): the outline is 2 Device Pixels of #217346 w
     expect(sameColour(focus.pixel(-3), WHITE, 2), `inside the Focus cell: ${focus.pixel(-3)}`).toBe(true);
 });
 
-test('SH-49 (built-in Chrome): while an edit is open the white line inside the outline is not drawn (ADR-0071, the fourteenth run\'s case 19)', async ({ page }) => {
+test('SH-54 (built-in Chrome): while an edit is open the white line inside the outline is not drawn (ADR-0071, the fourteenth run\'s case 19)', async ({ page }) => {
     const grid = await openCase(page, '11');
     await pressCell(grid, 'C3');
     await page.mouse.move(0, 0);
@@ -93,7 +93,7 @@ test('SH-49 (built-in Chrome): while an edit is open the white line inside the o
     await page.keyboard.press('Escape');
 });
 
-test('SH-49/DC-59 (MudBlazor Chrome): the outline is the palette\'s primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11)', async ({ page }) => {
+test('SH-54/DC-59 (MudBlazor Chrome): the outline is the palette\'s primary and the shade the primary mixed into white, and a black line inside stays black (ADR-0071, case 11)', async ({ page }) => {
     const grid = await openCase(page, '11', '&chrome=mud');
     await selectB2toC3(page, grid);
     const outline = await resolvedColour(page, await grid.locator('.ex-range-single').first()
@@ -192,9 +192,9 @@ test('FN-12e (Part C, case 3c): #### fills its cell with whole # in the face it 
     expect(count, JSON.stringify(fill)).toBeGreaterThan(6);
 });
 
-// ---- Ctrl+Plus and Ctrl+Minus (SH-48; case 12) --------------------------------------------------------
+// ---- Ctrl+Plus and Ctrl+Minus (SH-53; case 12) --------------------------------------------------------
 
-test('SH-48 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above it, Ctrl+Minus deletes it, and neither reaches the page (ADR-0050 item 14)', async ({ page }) => {
+test('SH-53 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above it, Ctrl+Minus deletes it, and neither reaches the page (ADR-0050 item 14)', async ({ page }) => {
     const grid = await openCase(page, '3c');
     await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
     await pressCell(grid, 'A1');
@@ -216,7 +216,7 @@ test('SH-48 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above
     expect(await page.evaluate(() => devicePixelRatio)).toBe(zoom);
 });
 
-test('SH-48: Ctrl+Shift+= over a whole column inserts a column to its left, and Ctrl+Minus deletes it (ADR-0050 item 14)', async ({ page }) => {
+test('SH-53: Ctrl+Shift+= over a whole column inserts a column to its left, and Ctrl+Minus deletes it (ADR-0050 item 14)', async ({ page }) => {
     const grid = await openCase(page, '3c');
     await pressCell(grid, 'A1');
     await page.keyboard.press('Control+Space');
@@ -229,7 +229,7 @@ test('SH-48: Ctrl+Shift+= over a whole column inserts a column to its left, and 
     await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
 });
 
-test('SH-48: over a part of a row Ctrl+Minus changes nothing and says why (ADR-0050 item 14)', async ({ page }) => {
+test('SH-53: over a part of a row Ctrl+Minus changes nothing and says why (ADR-0050 item 14)', async ({ page }) => {
     const grid = await openCase(page, '3c');
     await pressCell(grid, 'A1');
 

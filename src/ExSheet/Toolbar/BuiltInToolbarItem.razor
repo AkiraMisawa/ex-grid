@@ -1,0 +1,125 @@
+@namespace ExSheet
+@using global::ExSheet.Engine
+
+@*
+    A Toolbar Item as the built-in Chrome draws it (ADR-0100): a plain button with an inline-SVG
+    picture, pressed while the Focus cell has what it sets. A pointer press does not take DOM focus
+    (mousedown's default is prevented), so the keyboard stays on the Sheet, as Excel's ribbon leaves
+    it in the cell. No button is a tab stop: the toolbar is one, and names the item the keyboard is on
+    (aria-activedescendant). A menu, and a split control's arrow, open their choices in the Sheet's
+    popover frame. Nothing here decides what an item means.
+*@
+@switch (Context.Kind)
+{
+    case ToolbarItemKind.Separator:
+        <span class="ex-sheet-toolbar-separator" role="separator" aria-orientation="vertical"></span>
+        break;
+    case ToolbarItemKind.Split:
+        <span class="@GroupClass" id="@Context.Id" role="group" aria-label="@Context.Name">
+            <button type="button" class="ex-sheet-toolbar-face" tabindex="-1" title="@Context.Tooltip"
+                    aria-label="@Context.Name" disabled="@(!Context.Enabled)"
+                    @onmousedown:preventDefault="true" @onclick="() => Context.Invoke()">
+                @Picture
+            </button>
+            <button type="button" class="ex-sheet-toolbar-arrow" tabindex="-1" title="@Context.Name"
+                    aria-label="@($"{Context.Name}, more")" aria-haspopup="menu" disabled="@(!Context.Enabled)"
+                    @onmousedown:preventDefault="true" @onclick="() => Item.OpenChoicesAsync()">
+                @ToolbarIcons.Caret
+            </button>
+            @KeyTipBadge
+        </span>
+        break;
+    case ToolbarItemKind.Menu:
+        <button type="button" class="@ItemClass ex-sheet-toolbar-menu" id="@Context.Id" tabindex="-1"
+                title="@Context.Tooltip" aria-label="@Context.Name" aria-haspopup="menu"
+                disabled="@(!Context.Enabled)" @onmousedown:preventDefault="true" @onclick="() => Context.Invoke()">
+            @Picture
+            @ToolbarIcons.Caret
+            @KeyTipBadge
+        </button>
+        break;
+    default:
+        <button type="button" class="@ItemClass" id="@Context.Id" tabindex="-1" title="@Context.Tooltip"
+                aria-label="@Context.Name" aria-pressed="@(Context.Kind == ToolbarItemKind.Toggle ? (Context.Pressed ? "true" : "false") : null)"
+                disabled="@(!Context.Enabled)" @onmousedown:preventDefault="true" @onclick="() => Context.Invoke()">
+            @Picture
+            @KeyTipBadge
+        </button>
+        break;
+}
+
+@code {
+    /// <summary>Draws <paramref name="context"/> as the built-in Chrome does.</summary>
+    internal static RenderFragment Draw(ToolbarItemContext context, ToolbarItemBase item) => builder =>
+    {
+        builder.OpenComponent<BuiltInToolbarItem>(0);
+        builder.AddComponentParameter(1, nameof(Context), context);
+        builder.AddComponentParameter(2, nameof(Item), item);
+        builder.CloseComponent();
+    };
+
+    /// <summary>The item, as the toolbar describes it.</summary>
+    [Parameter, EditorRequired] public ToolbarItemContext Context { get; set; } = default!;
+
+    /// <summary>The item itself, whose choices open in the Sheet's frame.</summary>
+    [Parameter, EditorRequired] public ToolbarItemBase Item { get; set; } = default!;
+
+    private int _answeredOpen;
+
+    private string ItemClass =>
+        "ex-sheet-toolbar-item" + (Context.Pressed ? " ex-sheet-toolbar-pressed" : "") + (Context.Active ? " ex-sheet-toolbar-active" : "");
+
+    private string GroupClass =>
+        "ex-sheet-toolbar-item ex-sheet-toolbar-split" + (Context.Active ? " ex-sheet-toolbar-active" : "");
+
+    // The picture, the text and a colour control's swatch, or a Consumer's own content in their place.
+    private RenderFragment Picture => builder =>
+    {
+        if (Context.Content is { } content)
+        {
+            builder.AddContent(0, content);
+            return;
+        }
+        if (ToolbarIcons.For(Context.Icon) is { } icon) builder.AddContent(1, icon);
+        if (Context.Text is { } text)
+        {
+            builder.OpenElement(2, "span");
+            builder.AddAttribute(3, "class", "ex-sheet-toolbar-text");
+            builder.AddContent(4, text);
+            builder.CloseElement();
+        }
+        if (Context.Colour is { } colour)
+        {
+            builder.OpenElement(5, "span");
+            builder.AddAttribute(6, "class", "ex-sheet-toolbar-swatch");
+            // The colour is the user's choice, document data painted as recorded (ADR-0071).
+            if (!colour.IsAutomatic) builder.AddAttribute(7, "style", $"background-color: {colour}");
+            builder.CloseElement();
+        }
+    };
+
+    private RenderFragment? KeyTipBadge => Context is { ShowKeyTip: true, KeyTip: { } letters }
+        ? builder =>
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "ex-sheet-keytip");
+            builder.AddAttribute(2, "aria-hidden", "true");
+            builder.AddContent(3, letters);
+            builder.CloseElement();
+        }
+        : null;
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => _answeredOpen = Context.OpenRequest;
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The toolbar's keys asked for the choices (Enter on a menu, Alt+Down on a split control).
+        if (Context.OpenRequest != _answeredOpen)
+        {
+            _answeredOpen = Context.OpenRequest;
+            await Item.OpenChoicesAsync();
+        }
+    }
+}

@@ -83,8 +83,7 @@ public static class GridQueryEngine
     private sealed record PreparedColumn<TRow>(
         ColumnInfo<TRow> Column,
         FilterCombinator Combinator,
-        IReadOnlyList<PreparedClause> Clauses,
-        Type? DateOperandType);
+        IReadOnlyList<PreparedClause> Clauses);
 
     private static List<PreparedColumn<TRow>> Prepare<TRow>(
         Dictionary<string, ColumnInfo<TRow>> columns, GridFilter filter)
@@ -118,55 +117,11 @@ public static class GridQueryEngine
                 });
             }
 
-            var dateOperandType = column.Type == ColumnType.Date
-                ? SingleDateOperandType(column, clauses)
-                : null;
-
-            prepared.Add(new PreparedColumn<TRow>(column, spec.Combinator, clauses, dateOperandType));
+            prepared.Add(new PreparedColumn<TRow>(column, spec.Combinator, clauses));
         }
 
         return prepared;
     }
-
-    /// <summary>
-    /// One date runtime type per column, across every clause and every In candidate,
-    /// checked up front like the rest of Prepare — otherwise the refusal would surface
-    /// only on the first row that compares against the odd operand (ADR-0023: a
-    /// malformed Query is refused even over an empty row set). Returns the single type,
-    /// which evaluation then holds every cell to — eagerly, so whether mixed-type cell
-    /// data is refused does not depend on which operator happens to compare (ADR-0023's
-    /// refuse-up-front spirit).
-    /// </summary>
-    private static Type? SingleDateOperandType<TRow>(ColumnInfo<TRow> column, List<PreparedClause> clauses)
-    {
-        Type? seen = null;
-        foreach (var clause in clauses)
-        {
-            Check(clause.Operand);
-            if (clause.Operands is not null)
-            {
-                foreach (var operand in clause.Operands)
-                    Check(operand);
-            }
-        }
-
-        return seen;
-
-        void Check(object? operand)
-        {
-            if (operand is null)
-                return;
-            var type = operand.GetType();
-            seen ??= type;
-            if (type != seen)
-                throw MixedDateTypes(column.Name, seen, type);
-        }
-    }
-
-    /// <summary>The one spelling of the one-date-type refusal — Prepare, evaluation and
-    /// sort all throw through here so the sites cannot drift apart.</summary>
-    private static InvalidOperationException MixedDateTypes(string columnName, Type seen, Type other)
-        => new($"Column '{columnName}' (Date) mixes {seen.Name} and {other.Name}; one date type per column.");
 
     private static PreparedClause PrepareIn<TRow>(ColumnInfo<TRow> column, FilterClause clause)
     {
@@ -192,14 +147,12 @@ public static class GridQueryEngine
 
     private static bool Matches<TRow>(TRow row, List<PreparedColumn<TRow>> prepared)
     {
-        foreach (var (column, combinator, clauses, dateOperandType) in prepared)
+        foreach (var (column, combinator, clauses) in prepared)
         {
+            // Held to the declared type eagerly at extraction, not lazily inside whichever
+            // operator happens to compare — the same data must be accepted or refused
+            // regardless of operator (ADR-0023).
             var cell = NormalizeCell(column, column.Value(row));
-            // Held eagerly at extraction, not lazily inside whichever operator happens
-            // to compare — the same data must be accepted or refused regardless of
-            // operator (ADR-0023).
-            if (cell is not null && dateOperandType is not null && cell.GetType() != dateOperandType)
-                throw MixedDateTypes(column.Name, dateOperandType, cell.GetType());
             var matches = combinator switch
             {
                 FilterCombinator.And => clauses.All(clause => MatchesClause(column, cell, clause)),
@@ -305,19 +258,8 @@ public static class GridQueryEngine
         {
             var column = levels[level].Column;
             var levelKeys = new object?[buffer.Length];
-            Type? seenDateType = null;
             for (var i = 0; i < buffer.Length; i++)
-            {
-                var cell = NormalizeCell(column, column.Value(buffer[i]));
-                if (column.Type == ColumnType.Date && cell is not null)
-                {
-                    var type = cell.GetType();
-                    seenDateType ??= type;
-                    if (type != seenDateType)
-                        throw MixedDateTypes(column.Name, seenDateType, type);
-                }
-                levelKeys[i] = cell;
-            }
+                levelKeys[i] = NormalizeCell(column, column.Value(buffer[i]));
             keys[level] = levelKeys;
         }
 
@@ -362,7 +304,7 @@ public static class GridQueryEngine
         {
             ColumnType.Text => StringComparer.OrdinalIgnoreCase.Compare((string)x, (string)y),
             ColumnType.Number => ((decimal)x).CompareTo((decimal)y),
-            ColumnType.Date => CompareDates(column.Name, x, y),
+            ColumnType.Date => ((IComparable)x).CompareTo(y),
             ColumnType.Boolean => ((bool)x).CompareTo((bool)y),
             _ => throw new ArgumentOutOfRangeException(nameof(column), column.Type, null),
         };
@@ -384,8 +326,18 @@ public static class GridQueryEngine
         {
             case ColumnType.Text when value is string:
             case ColumnType.Boolean when value is bool:
-            case ColumnType.Date when value is DateTime or DateTimeOffset or DateOnly:
                 return value;
+            // Each date type follows its own native comparison (ADR-0023): DateTime by its
+            // wall-clock ticks (DateTimeKind is not part of the value), DateTimeOffset by the
+            // instant it names (the offset is presentation), DateOnly by its day. These match
+            // what .NET itself and a SQL server do with the same data, so server-side
+            // implementations agree for free. Which of them a column holds is declared, and
+            // every cell and operand is held to it, so two values compared are always of one
+            // type (section of 2026-10-02).
+            case ColumnType.Date when value is DateTime or DateTimeOffset or DateOnly:
+                return value.GetType() == DateClrType(column.DateType)
+                    ? value
+                    : throw Mismatch(column, value, isOperand, $"is not the column's declared {column.DateType}");
             case ColumnType.Number:
                 return value switch
                 {
@@ -402,6 +354,14 @@ public static class GridQueryEngine
                 throw Mismatch(column, value, isOperand, null);
         }
     }
+
+    private static Type DateClrType(DateType declared) => declared switch
+    {
+        DateType.DateTime => typeof(DateTime),
+        DateType.DateOnly => typeof(DateOnly),
+        DateType.DateTimeOffset => typeof(DateTimeOffset),
+        _ => throw new ArgumentOutOfRangeException(nameof(declared), declared, null),
+    };
 
     private static object ToDecimalChecked<TRow>(ColumnInfo<TRow> column, double value, bool isOperand)
     {
@@ -437,18 +397,6 @@ public static class GridQueryEngine
             throw Mismatch(column, value, isOperand, "is outside the range a Number can represent");
         }
     }
-
-    // Each date type follows its own native comparison (ADR-0023): DateTime by its
-    // wall-clock ticks (DateTimeKind is not part of the value), DateTimeOffset by the
-    // instant it names (the offset is presentation — two stored values with different
-    // offsets naming the same moment are Equal and tie in sort), DateOnly by its day.
-    // These match what .NET itself and a SQL server do with the same data, so
-    // server-side implementations agree for free; a Consumer wanting different
-    // semantics normalises in the accessor.
-    private static int CompareDates(string columnName, object x, object y)
-        => x.GetType() == y.GetType()
-            ? ((IComparable)x).CompareTo(y)
-            : throw MixedDateTypes(columnName, x.GetType(), y.GetType());
 
     private static InvalidOperationException Mismatch<TRow>(
         ColumnInfo<TRow> column, object value, bool isOperand, string? reason)

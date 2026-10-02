@@ -17,6 +17,13 @@ public enum OperandRefusal
     /// panels used to take; under a culture that writes the year first, <c>05/01/2026</c> reads as
     /// 1 May and as 5 January (ticket 97).</summary>
     ReadsTwoWays,
+
+    /// <summary>The text reads as a date, but not as the column's declared <see cref="DateType"/>
+    /// (ADR-0023, section of 2026-10-02): a time on a <see cref="DateType.DateOnly"/> column, an
+    /// offset on a <see cref="DateType.DateTime"/> one, or, on a <see cref="DateType.DateTimeOffset"/>
+    /// one, no offset in an ISO form. Cutting a time to its day, dropping an offset or supplying one
+    /// would each be a guess.</summary>
+    NotTheColumnsDateForm,
 }
 
 /// <summary>
@@ -28,8 +35,10 @@ public enum OperandRefusal
 /// <param name="Value">The operand, or null where nothing was typed or the text was refused.</param>
 /// <param name="Refusal">Why the text was refused; <see cref="OperandRefusal.None"/> where it was not.</param>
 /// <param name="OtherValue">For <see cref="OperandRefusal.ReadsTwoWays"/>, the two readings: for a
-/// number, the culture's and the other, in that order; for a date, month first and day first.
-/// Null otherwise.</param>
+/// number, the culture's and the other, in that order; for a date, month first and day first. For
+/// <see cref="OperandRefusal.NotTheColumnsDateForm"/>, what the text read as — a
+/// <see cref="DateTime"/>, or a <see cref="DateTimeOffset"/> where it carried an offset — and the
+/// column's declared <see cref="DateType"/>. Null otherwise.</param>
 public readonly record struct OperandReading(object? Value, OperandRefusal Refusal, (object CultureReading, object OtherReading)? OtherValue = null)
 {
     /// <summary>Whether the text was refused, and the panel must say why rather than apply.</summary>

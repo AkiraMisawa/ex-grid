@@ -1,0 +1,46 @@
+@* A Consumer's page with a Sheet Toolbar it declares itself (ADR-0100): rows of its own in an order
+   of its own, a button of its own among them, and the toolbar's visibility held as the page's View
+   State through @bind-ShowToolbar. *@
+@using System.Globalization
+@using global::ExGrid.Chrome
+@using global::ExSheet
+@using global::ExSheet.Components
+
+<ExSheet ViewportHeight="400" ViewportWidth="700" Culture="Culture" @bind-ShowToolbar="Shown" Chrome="Chrome">
+    <ToolbarContent>
+        @if (TwoRows)
+        {
+            <ToolbarRow KeyTip="H" Label="Formatting">
+                <ItalicItem />
+                <BoldItem />
+            </ToolbarRow>
+            <ToolbarRow KeyTip="Y" Label="Actions">
+                <ToolbarButton Text="Approve" OnClick="Approve" KeyTip="A" />
+            </ToolbarRow>
+        }
+        else
+        {
+            <ItalicItem />
+            <ToolbarButton Text="Approve" OnClick="Approve" />
+            <BoldItem />
+        }
+    </ToolbarContent>
+</ExSheet>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    /// <summary>Whether the toolbar is shown: the page's View State.</summary>
+    [Parameter] public bool Shown { get; set; } = true;
+
+    /// <summary>Two rows, the page's formatting and its actions, rather than one row of items.</summary>
+    [Parameter] public bool TwoRows { get; set; }
+
+    /// <summary>The Sheet's Chrome.</summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
+    /// <summary>How many times the page's own button ran.</summary>
+    public int Approvals { get; private set; }
+
+    private void Approve() => Approvals++;
+}

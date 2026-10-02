@@ -358,7 +358,7 @@ public class FormatCellsDraftTests
 
     // ---- Normal font (ADR-0071, 2026-10-02; Part C, case 24) ----
 
-    [Fact] // SH-50: the box shows checked exactly while every part of the Font is the default
+    [Fact] // SH-55: the box shows checked exactly while every part of the Font is the default
     public void Normal_font_shows_checked_while_every_part_is_the_default()
     {
         Assert.True(Open(null, "A1", "A1").IsNormalFont);
@@ -372,7 +372,7 @@ public class FormatCellsDraftTests
         Assert.False(draft.IsNormalFont);
     }
 
-    [Fact] // SH-50: checking it sets every part of the Font to its default, and OK records each one
+    [Fact] // SH-55: checking it sets every part of the Font to its default, and OK records each one
     public void Normal_font_sets_every_part_to_its_default()
     {
         var draft = Open(sheet => Format(sheet, "A1", new() { Bold = true, Italic = true, Underline = true, Strikethrough = true, FontColour = CellColour.FromRgb(0x0000FF) }), "A1", "A1");
@@ -390,7 +390,7 @@ public class FormatCellsDraftTests
         Assert.Null(change.NumberFormat);
     }
 
-    [Fact] // SH-50: OK records the default Font on the cell, over its row's Font
+    [Fact] // SH-55: OK records the default Font on the cell, over its row's Font
     public void Normal_font_is_recorded_over_a_rows_font()
     {
         var sheet = new Sheet(EnUs);

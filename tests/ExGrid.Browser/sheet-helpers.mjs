@@ -1,4 +1,4 @@
-import { expect } from './fixtures.mjs';
+import { expect, circuitQuiet } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 
 // What the Sheet's specs share — sheet, declarations, sheets, edit-stands and pointing-scope:
@@ -137,6 +137,11 @@ export async function goTo(grid, address) {
 /** Presses the Name Box, empties it and types into it, steadily (see typeSteadily). */
 export async function typeIntoNameBox(grid, text) {
     const page = grid.page();
+    // The Name Box names the Focus as the host last said. A render renaming it that lands after
+    // Ctrl+A writes over the selection, and Backspace then took only the last character: a press
+    // on A1 straight before left "A" (CI, Server host, chrome, SH-2, 2026-10-02). So the box is
+    // pressed once the host has said all it will (ADR-0056, note of 2026-10-02).
+    await circuitQuiet();
     await nameBox(grid).click();
     await nameBox(grid).press('ControlOrMeta+A');
     await nameBox(grid).press('Backspace');
@@ -166,7 +171,31 @@ export async function typeSteadily(page, field, text) {
  * among them.
  */
 export function sheetCommands(page) {
-    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
+    return ['#sheet-undo', '#sheet-redo', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
+}
+
+/**
+ * A Toolbar Item of the Sheet Toolbar by its name, under either Chrome (ADR-0100): the control that
+ * carries the name, and for a split control its face. Its list's arrow is `toolbarArrow`.
+ */
+export function toolbarItem(page, name, index = 0) {
+    return page.locator('.ex-sheet-toolbar').nth(index)
+        .locator(`button[aria-label="${name}"], .ex-sheet-toolbar-split[aria-label="${name}"] .ex-sheet-toolbar-face`).first();
+}
+
+/** The arrow that opens a split control's list, under either Chrome. */
+export function toolbarArrow(page, name, index = 0) {
+    return page.locator('.ex-sheet-toolbar').nth(index).locator(`[aria-label="${name}, more"]`).first();
+}
+
+/**
+ * Chooses `choice` from the Number Format's list on the Sheet Toolbar (ADR-0100): the built-in
+ * Chrome's in the grid's popover, MudBlazor's in its menu.
+ */
+export async function chooseNumberFormat(page, choice) {
+    await toolbarItem(page, 'Number Format').click();
+    const item = page.locator('.ex-sheet-choice, .mud-menu-item').filter({ hasText: new RegExp(`^${choice}`) }).first();
+    await item.click();
 }
 
 /** Every command that changes the Sheet is greyed out: an edit is open. */

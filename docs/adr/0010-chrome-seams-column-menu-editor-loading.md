@@ -353,6 +353,13 @@ round trip, so on a Server circuit.
 press on the rows as well. A press is ordered among held keys by the root's capture-phase pointer
 listener ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).)*
 
+*(Added 2026-10-02, decided with the user: a held press lands where it was made.)* Keeping its
+place was not enough. A press held behind keys that moved the view was replayed at its screen
+coordinates, and landed on whatever row the move had brought there (ED-31). A press now carries
+what it was taken against, the painted rows, the scroll and the layout, and the core resolves it
+against that and brings the view back to it. It lands on no cell if the rows' order or the columns
+themselves have changed since (ADR-0021, note of the same day).
+
 ## One key the listener answers itself — 2026-09-27
 
 *(Recorded when Find was built, [ADR-0055](./0055-find-is-asked-of-the-consumer-like-sort-and-filter.md).)*

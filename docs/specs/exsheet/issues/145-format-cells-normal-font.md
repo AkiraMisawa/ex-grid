@@ -8,7 +8,7 @@ checked exactly while every part is the default.
 
 **Blocked by:** None (can start immediately)
 
-- [x] **OK records the default Font on each selected cell**, over a row's or a column's Font (SH-50).
+- [x] **OK records the default Font on each selected cell**, over a row's or a column's Font (SH-55).
 - [x] **Changing any part afterwards unchecks it.**
 - [x] **Layer 2** under both Chromes.
 
