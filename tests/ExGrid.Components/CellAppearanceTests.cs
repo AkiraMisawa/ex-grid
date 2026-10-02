@@ -133,10 +133,10 @@ public class CellAppearanceTests : GridTestContext
         // The gridlines above it and left of it are the neighbours' pixels: they cover them.
         Assert.Contains("ex-lb-cover-ffff00", Cell(cut, 0, 1).ClassList);
         Assert.Contains("ex-lr-cover-ffff00", Cell(cut, 1, 0).ClassList);
-        // Each cover is exactly the band of the rule it covers: the row's in whole device pixels
-        // (ticket 99: one at 150% on every rasteriser), the column's as the token.
+        // Each cover is exactly the band of the rule it covers, in whole device pixels: the row's
+        // since ticket 99 (one at 150% on every rasteriser), the column's since ADR-0090.
         Assert.Contains(".ex-lb-cover-ffff00{--ex-cover-b:linear-gradient(to top,#ffff00 0 var(--ex-rule-dp, 1px),transparent 0);--ex-cover-b-color:#ffff00}", Css(cut));
-        Assert.Contains(".ex-lr-cover-ffff00{--ex-cover-r:linear-gradient(to left,#ffff00 0 var(--ex-rule-width, 1px),transparent 0);--ex-cover-r-color:#ffff00}", Css(cut));
+        Assert.Contains(".ex-lr-cover-ffff00{--ex-cover-r:linear-gradient(to left,#ffff00 0 var(--ex-rule-dp, 1px),transparent 0);--ex-cover-r-color:#ffff00}", Css(cut));
         Assert.DoesNotContain("ex-lined", Cell(cut, 2, 1).ClassList);
     }
 

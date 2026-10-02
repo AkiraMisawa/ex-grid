@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // Format Cells under the built-in Chrome (ADR-0071, ticket 52; SH-45, DC-60): a popover in the
@@ -27,7 +27,7 @@ function choice(grid, name) {
 
 async function openFromMenu(grid, address) {
     await pressCell(grid, address);
-    await cell(grid, address).click({ force: true, button: 'right' });
+    await pressAt(cell(grid, address), { button: 'right' });
     await grid.page().getByRole('menuitem', { name: 'Format Cells…' }).click();
     await expect(formatCells(grid)).toBeVisible();
 }
@@ -163,8 +163,8 @@ test.describe('on /sheet', () => {
         await formatCells(grid).getByRole('button', { name: 'OK' }).click();
         await expect(formatCells(grid)).toHaveCount(0);
 
-        await cell(grid, 'A2').click({ force: true, modifiers: ['Shift'] });
-        await cell(grid, 'A2').click({ force: true, button: 'right' });
+        await pressAt(cell(grid, 'A2'), { modifiers: ['Shift'] });
+        await pressAt(cell(grid, 'A2'), { button: 'right' });
         await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
 
         // It reopens on the last tab shown (case 22).
@@ -231,7 +231,7 @@ test.describe('on /sheet', () => {
         // 600 ms this test passed with ExSheet still reading the Selection last heard: by the time
         // the click on the item reached the Sheet, the move had been heard (why was not traced).
         // The order in which it has not is staged in layer 2 (CommandSelectionTests).
-        await cell(grid, 'C3').click({ force: true, button: 'right' });
+        await pressAt(cell(grid, 'C3'), { button: 'right' });
         await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
         await expect(formatCells(grid)).toBeVisible();
         await page.waitForTimeout(600);

@@ -208,6 +208,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             + (k.shiftKey ? 'Shift+' : '') + (k.altKey ? 'Alt+' : '') + k.key;
     };
 
+    // The clipboard's keys: the browser's own copy, cut and paste commands are their default, and
+    // the events those fire are what the core answers (ADR-0005, ADR-0014) and what a field acts on.
+    // The mirror of GridKeys' AnsweredOutsideTable, with cut, which the core does not answer and a
+    // field does, and paste as plain text; one the Consumer declared is its own, and is a key.
+    // Read only while a hold stands, where such a key is not held but taken by its event
+    // (onHeldClipboard; ADR-0010, 2026-10-02).
+    const clipboardKeys = new Set([
+        'Control+c', 'Control+C', 'Control+Insert',
+        'Control+x', 'Control+X', 'Shift+Delete',
+        'Control+v', 'Control+V', 'Shift+Insert', 'Control+Shift+v', 'Control+Shift+V',
+    ]);
+    const isClipboardKey = (k) => {
+        const canonical = canonicalOf(k);
+        return clipboardKeys.has(canonical) && !declared.has(canonical);
+    };
+
     const gate = (k) => {
         // The mirror of GridKeys.Canonical — the two must move together. It exists here
         // only to decide whether to take the key: preventDefault has to happen now, and
@@ -723,6 +739,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answer has landed. Plain navigation changes no mode and is never held behind.
     const held = [];
     let answering = false;
+    // A clipboard key's keydown let through a hold, until the copy, cut or paste event its default
+    // fires in the same task takes its place among the held keys (onHeldClipboard).
+    let clipboardKeyHeld = false;
     // A press on the rows while an edit is open is a mode change too (ADR-0010, widened
     // 2026-09-29), and the keys after it wait for the core's answer to it (holdBehindPress):
     // the press still to be asked about, and the answer the keys wait for while one is awaited.
@@ -1086,6 +1105,18 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         replayInto(target, k);
     };
 
+    // The held keys dropped, every one behind the key that could not be handed on (ADR-0010). A
+    // copy among them is abandoned, and its write lands nothing: the clipboard keeps what it held,
+    // as it does when a copy is refused (ADR-0005).
+    const dropHeld = () => {
+        for (const k of held) {
+            if (k.clipboard === 'copy') {
+                k.take(false);
+            }
+        }
+        held.length = 0;
+    };
+
     // A hold begins: the keys typed from now are held, in order, and handed on by drain — at
     // once, or once `answer` has come, for a key the core is answering. The two-second fallback
     // counts from here. Each caller asks first whether a hold stands, and a drain already running
@@ -1121,7 +1152,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // The keyboard never reached what the core handed it to: the keys are dropped, not
             // gated against the grid (handOff).
             if (handOffMissed) {
-                held.length = 0;
+                dropHeld();
                 break;
             }
             const k = held.shift();
@@ -1166,6 +1197,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 }
                 continue;
             }
+            // A copy, cut or paste the keys before it held (onHeldClipboard), done where the
+            // keyboard is now.
+            if (k.clipboard !== undefined) {
+                await takeClipboard(k);
+                continue;
+            }
             // A modifier's own keydown — the Shift pressed for a capital, or for Shift+Enter —
             // is held with the rest to keep their order, and means nothing by itself: the key
             // that follows carries it. Replaying it would be a key no field can reproduce, and
@@ -1194,7 +1231,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // A held key that itself sends the keyboard across the popover holds the
                 // rest again, until DOM focus has followed it.
                 if (!reproducible(target, k)) {
-                    held.length = 0;
+                    dropHeld();
                     break;
                 }
                 const move = handsOver(target, k);
@@ -1216,7 +1253,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // made from script (ADR-0021), so it is dropped with every key behind it, as a held
                 // Tab is in a popover, rather than hand the grid keys meant for the page's next
                 // element. The release stands, for the Tab the user presses again.
-                held.length = 0;
+                dropHeld();
                 break;
             }
             if (verdict === 'mode' || verdict === 'popover') {
@@ -1294,9 +1331,23 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // its check runs a frame later: a key typed in between is the new holder's already.
         const holdOver = answering && awaitingMove !== null && held.length === 0 && moved() && handedOver();
         if (!replaying && !holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
-            event.preventDefault();
             event.stopPropagation();
-            held.push(k);
+            // A clipboard key is not held as a key: a copy or a paste dispatched from script does
+            // nothing, so held it was lost — the clipboard kept what it held before, and a paste
+            // never landed (CP-6 on the Server host, 2026-10-02). Its default runs, and the copy,
+            // cut or paste event it fires is taken in its place among the held keys
+            // (onHeldClipboard): the paste's data read now, which only the event can read, and
+            // the copy's write started now, which only the event may start. What either does is
+            // decided at its turn, against the mode and the Selection the keys before it leave.
+            if (isClipboardKey(k)) {
+                clipboardKeyHeld = true;
+                setTimeout(() => {
+                    clipboardKeyHeld = false;
+                });
+            } else {
+                event.preventDefault();
+                held.push(k);
+            }
             if (!answering) {
                 if (sentinel) {
                     // A column's popover wraps back to its commands; the find panel and a
@@ -2065,17 +2116,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Chrome accepts a promise as a ClipboardItem value, so the user-activation context
     // survives the wait. A rejected promise aborts the whole write and the clipboard
     // stays as it was — never a fraction of the selection.
-    const writeAsync = (withHeaders) => {
-        const answer = core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders)
-            .catch((error) => {
-                // A .NET failure — a Consumer delegate that threw, a circuit that
-                // dropped. Reported here, because the null it becomes reads as a
-                // refusal below and would otherwise make the copy a silent no-op.
-                if (core) {
-                    console.error('[ex-grid] the grid failed to build a copy', error);
-                }
-                return null;
-            });
+    const buildCopy = (withHeaders) => core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders)
+        .catch((error) => {
+            // A .NET failure — a Consumer delegate that threw, a circuit that
+            // dropped. Reported here, because the null it becomes reads as a
+            // refusal below and would otherwise make the copy a silent no-op.
+            if (core) {
+                console.error('[ex-grid] the grid failed to build a copy', error);
+            }
+            return null;
+        });
+    const writeAsync = (withHeaders) => writeCopy(buildCopy(withHeaders));
+    // The write of a copy whose payload is `answer`: a null one is a refusal, and lands nothing.
+    const writeCopy = (answer) => {
         const flavour = (type, field) => answer.then((p) => {
             if (!p) {
                 throw new Error('the copy was refused');
@@ -2093,23 +2146,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (error instanceof Error && error.message === 'the copy was refused') {
                 return;
             }
-            // The browser would not let the grid write. Nothing landed either — but no
-            // reason has been raised yet, and a user told nothing pastes the old
-            // clipboard believing it is the copy. It is a Refusal of its own (ADR-0005).
-            if (error instanceof DOMException && error.name === 'NotAllowedError') {
-                if (core) {
-                    core.invokeMethodAsync('OnCopyWriteRejectedAsync').catch((reportError) => {
-                        if (core) {
-                            console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
-                        }
-                    });
-                }
-                return;
-            }
-            if (core) {
-                console.error('[ex-grid] the grid failed to write a copy', error);
-            }
+            copyNotWritten(error);
         });
+    };
+    // A write the browser would not make. Nothing landed — but no reason has been raised
+    // yet, and a user told nothing pastes the old clipboard believing it is the copy. It is
+    // a Refusal of its own (ADR-0005).
+    const copyNotWritten = (error) => {
+        if (error instanceof DOMException && error.name === 'NotAllowedError') {
+            if (core) {
+                core.invokeMethodAsync('OnCopyWriteRejectedAsync').catch((reportError) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
+                    }
+                });
+            }
+            return;
+        }
+        if (core) {
+            console.error('[ex-grid] the grid failed to write a copy', error);
+        }
     };
     const onCopy = (event) => {
         // Only when the root itself holds the keyboard: a control inside a Template
@@ -2163,28 +2219,125 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // in C# (ADR-0014). preventDefault regardless: pasting into a non-editable
         // element does nothing by default, and must not start doing something later.
         event.preventDefault();
-        // Handed over as streams, never as two strings in one call (ADR-0005): on a
-        // Blazor Server circuit that call is one hub message, and a message past the
-        // hub's receive limit — 32 KB unless the application raised it — closes the
-        // connection. Excel's HTML for a few hundred cells is past it. A stream is
-        // Blazor's own route for large interop data and is not subject to that limit;
-        // its length travels with it, so C# can refuse a paste past the grid's ceiling
-        // without reading a byte. An empty flavour is sent as nothing at all.
+        sendPaste(event.clipboardData.getData('text/plain'), event.clipboardData.getData('text/html'));
+    };
+    // Handed over as streams, never as two strings in one call (ADR-0005): on a
+    // Blazor Server circuit that call is one hub message, and a message past the
+    // hub's receive limit — 32 KB unless the application raised it — closes the
+    // connection. Excel's HTML for a few hundred cells is past it. A stream is
+    // Blazor's own route for large interop data and is not subject to that limit;
+    // its length travels with it, so C# can refuse a paste past the grid's ceiling
+    // without reading a byte. An empty flavour is sent as nothing at all.
+    const sendPaste = (plain, markup) => {
         const encoder = new TextEncoder();
         const stream = (value) => (value
             ? DotNet.createJSStreamReference(encoder.encode(value))
             : null);
-        const text = stream(event.clipboardData.getData('text/plain'));
-        const html = stream(event.clipboardData.getData('text/html'));
-        core.invokeMethodAsync('OnPasteStreamsAsync', text, html)
+        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup))
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
                 }
             });
     };
+
+    // A copy, cut or paste fired by a clipboard key let through a hold (onKeyDown), taken in the
+    // key's place among the held keys and done at its turn (takeClipboard; ADR-0010, 2026-10-02).
+    // Taken before any other listener hears it, and before the default of a field that holds the
+    // keyboard: done now, it would overtake the keys typed before it — a paste into a field ahead
+    // of the text it follows, a copy of the Selection a held press is about to move.
+    const onHeldClipboard = (event) => {
+        if (!clipboardKeyHeld || !core) {
+            return;
+        }
+        clipboardKeyHeld = false;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.type === 'paste') {
+            held.push({
+                clipboard: 'paste',
+                plain: event.clipboardData.getData('text/plain'),
+                markup: event.clipboardData.getData('text/html'),
+            });
+        } else if (event.type === 'copy') {
+            // The write started inside the event, as the browser lets a copy write
+            // (writeAsync), and built at its turn: the grid's copy of the Selection then, or
+            // nothing at all.
+            let take = null;
+            const turn = new Promise((resolve) => {
+                take = resolve;
+            });
+            const answer = turn.then((grids) => (grids ? buildCopy(false) : null));
+            writeCopy(answer);
+            held.push({ clipboard: 'copy', take, answer });
+        } else {
+            held.push({ clipboard: 'cut' });
+        }
+        if (!answering) {
+            startHold();
+        }
+    };
+
+    // A held copy, cut or paste at its turn, done where the keyboard is then, as the browser
+    // would have done it there. With the keyboard the grid's, the grid's copy of the Selection or
+    // its paste, and the keys after it wait for the core's answer; no cut, which the grid does
+    // not make unheld either. In a text field — a popover's, the Name Box, the Formula Bar, the
+    // Cell Editor — the field's own: its selection copied as plain text, cut, or replaced by what
+    // is pasted, with each line break a space in a one-line field, as Chromium pastes it there.
+    // On any other control, nothing, as there.
+    const takeClipboard = async (k) => {
+        // Where the keyboard is: a control, the open edit's surface, or with no edit open the
+        // Formula Bar a press has given it — a read-only one, over a cell that is not Editable,
+        // where a paste does nothing. Only with none of these is it the grid's.
+        const active = document.activeElement;
+        let field = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+        if (field === null && editing !== 'none') {
+            field = editorInput();
+        } else if (field === null && active instanceof Element && root.contains(active) && !isRoot(active)) {
+            field = active;
+        }
+        if (field === null && editing === 'none') {
+            if (k.clipboard === 'copy') {
+                k.take(true);
+                await k.answer;
+            } else if (k.clipboard === 'paste') {
+                await sendPaste(k.plain, k.markup);
+            }
+            return;
+        }
+        if (k.clipboard === 'copy') {
+            k.take(false);
+        }
+        const writable = field !== null && isTextField(field);
+        const readable = writable || (field instanceof HTMLInputElement && field.type === 'text')
+            || field instanceof HTMLTextAreaElement;
+        if (!readable || (k.clipboard !== 'copy' && !writable)) {
+            return;
+        }
+        if (k.clipboard === 'paste') {
+            // Typed at the caret as a held key's text is (typeInto). No text, no change.
+            if (k.plain === '') {
+                return;
+            }
+            typeInto(field, { text: field instanceof HTMLInputElement ? k.plain.replace(/\r\n|\r|\n/g, ' ') : k.plain });
+            return;
+        }
+        const start = field.selectionStart ?? field.value.length;
+        const end = field.selectionEnd ?? start;
+        if (start === end || field.type === 'password') {
+            return;
+        }
+        await navigator.clipboard.writeText(field.value.slice(start, end)).catch(copyNotWritten);
+        if (k.clipboard === 'cut') {
+            // The selection deleted as a held Delete deletes it (typeInto).
+            typeInto(field, { key: 'Delete' });
+        }
+    };
     root.addEventListener('copy', onCopy);
     root.addEventListener('paste', onPaste);
+    root.addEventListener('copy', onHeldClipboard, true);
+    root.addEventListener('cut', onHeldClipboard, true);
+    root.addEventListener('paste', onHeldClipboard, true);
 
     // The Scrollbar Gutter — how much of the declared box the scrollbars take. A classic
     // scrollbar is drawn INSIDE the element's own box, so the columns and rows get about
@@ -2278,6 +2431,36 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     if (ceilingProbe) {
         ceilingObserver.observe(ceilingProbe);
     }
+
+    // The Device Pixel (ADR-0090, the eighth allowlist entry). Lines are drawn in Device
+    // Pixels and column edges are put on them, so C# needs devicePixelRatio at every
+    // resolution, not only at the stylesheet's steps. It is told, never read on the path to
+    // a paint: a media query on the current resolution stops matching when the display
+    // scale or the page zoom moves, and only then is the new ratio reported and the query
+    // armed again on it. Never per render, and nothing here writes to the DOM.
+    let devicePixelRatio = -1;
+    let resolutionQuery = null;
+    const armResolution = () => {
+        resolutionQuery?.removeEventListener('change', armResolution);
+        resolutionQuery = null;
+        if (!core) {
+            return;
+        }
+        const ratio = window.devicePixelRatio;
+        resolutionQuery = window.matchMedia(`(resolution: ${ratio}dppx)`);
+        resolutionQuery.addEventListener('change', armResolution);
+        if (ratio === devicePixelRatio) {
+            return;
+        }
+        devicePixelRatio = ratio;
+        core.invokeMethodAsync('OnDevicePixelAsync', ratio)
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to take the device pixel', error);
+                }
+            });
+    };
+    armResolution();
 
     const handle = {
         // The two pointer reports' switches (ADR-0021's fifth entry): rows for the
@@ -2555,6 +2738,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // after disposal would call into a component that no longer exists.
             observer.disconnect();
             ceilingObserver.disconnect();
+            resolutionQuery?.removeEventListener('change', armResolution);
+            resolutionQuery = null;
             dropReveal();
             clearTimeout(restTimer);
             root.removeEventListener('mousemove', onPointerMove);
@@ -2591,6 +2776,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             highlights.clear();
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
+            root.removeEventListener('copy', onHeldClipboard, true);
+            root.removeEventListener('cut', onHeldClipboard, true);
+            root.removeEventListener('paste', onHeldClipboard, true);
             lastSurface = null;
             staleField = null;
             nameBoxPressed = null;
@@ -2599,6 +2787,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // it are let go with the rest.
             pressToAsk?.resolve();
             pressToAsk = null;
+            // A copy still held has no grid left to copy from: its write lands nothing.
+            dropHeld();
             root = null;
             scroller = null;
             core = null;

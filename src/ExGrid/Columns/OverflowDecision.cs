@@ -21,7 +21,8 @@ public readonly record struct OverflowDecision
     /// Number and Date only.</summary>
     public bool IsHashed { get; }
 
-    /// <summary>What the cell paints: the formatted value, or a run of <c>#</c> filling
-    /// the cell when <see cref="IsHashed"/>.</summary>
+    /// <summary>What the cell paints: the formatted value, or, when <see cref="IsHashed"/>,
+    /// a run of <c>#</c> longer than the cell, which the cell cuts at the last whole
+    /// <c>#</c> that fits (ADR-0016, 2026-10-02).</summary>
     public string DisplayText { get; }
 }

@@ -771,6 +771,80 @@ Paper and everything on it read pixel for pixel as under the light scheme (SH-39
   - `ExSheet.MudBlazor`'s Format Cells hides Font and Fill behind its scrolling tab strip when it opens
     on Border.
 
+## What was decided after Part C *(2026-10-02, decided with the user)*
+
+Each item Part C left to the next PR, and the two the fourteenth run left (above), is decided here or
+in the ADR named. Tickets 140 to 147 build them.
+
+**Device Pixels at every scale:
+[ADR-0090](./0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md).** The browser
+tells the grid its Device Pixel, and column edges are put on Device Pixels, in every grid. A row's
+height is not rounded, so a horizontal gridline is exact only where the row height times the ratio is
+whole. That stays owed.
+
+**Ctrl+Shift+= and Ctrl+- (case 12): ADR-0050, item 14.** ExSheet declares them. Whole rows insert or
+delete rows, whole columns insert or delete columns, and any other Selection changes nothing and says
+why. They are the browser's zoom keys, and inside a Sheet they are ExSheet's.
+
+**`####` fills the cell (case 3c): [ADR-0016](./0016-column-width-and-overflow.md)'s note of this
+date.** Six `#` were not the cell full: `#` was charged the wide class's width, 14.04px, which is a
+bound for whether a number fits and not the width of `#` in the face the cell is painted in. The browser
+now cuts the run at the last whole `#` that fits, so the cell is full of `#` in its own face, as Excel's
+is. Whether a number fits is decided as before.
+
+**The Selection on the Paper (case 11).** On a Sheet the Selection looks like Excel's. ExGrid keeps its
+own. Under the built-in Chrome:
+- **The outline is 2 Device Pixels of `#217346`, on the gridline and one Device Pixel outside it,
+  with a white line of one Device Pixel inside it.** Today it is 2 CSS px in the Ink. The single range's
+  outline and the Focus's outline are drawn alike.
+- **The shade is `#C7C7C7`, and the lines inside it stay as drawn.** Excel's black lines stay
+  `#000000` over its shade.
+  - The shade multiplies with what is beneath it, rather than lying over it. On white Paper it is
+    `#C7C7C7`. Over a Fill it darkens the Fill. A black line, and the darkest pixels of any line, stay
+    black. That is what case 11 read of Excel, and it is the one way an overlay can leave lines
+    unchanged: the Selection is painted as overlay rectangles, never as a class on the selected cells
+    ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)), so it cannot pass between a cell's Fill
+    and its lines.
+  - So **DC-59 changes for the Paper only**: a line lies above the Selection's shade, and below its
+    outline and the Focus's. A coloured line is darkened by the shade as a Fill is. Excel was not read
+    over a coloured line, so that is a reading.
+  - **Not in a Pinned Column.** The pinned part of the Selection stands in a layer of its own, above the
+    pinned cells (ADR-0004, ADR-0008), and a layer can only multiply with what is inside it. So over a
+    Pinned Column the shade still lies over the lines, as before. That stays owed.
+- **The Focus cell stays unshaded**, as today.
+- **The fill handle is the outline's colour**, as Excel's is: green under the built-in Chrome, the
+  primary under `ExSheet.MudBlazor`.
+- **The shade's default is black at 22%.** Multiplied over white Paper it is `#C7C7C7`. Over a Pinned
+  Column, where it cannot multiply, it stays translucent, so the value still reads through it.
+- **While an edit is open, the white line inside the outline is not drawn**, as Excel drops it (the
+  fourteenth run, case 19).
+
+Under `ExSheet.MudBlazor`, the outline is the palette's primary, and the shade is the primary mixed
+into white, so the two read as one colour, as Google Sheets' do. The white line inside the outline
+stays. Each is a Visual Token on the Paper (`--ex-selection-outline`, `--ex-focus-outline`,
+`--ex-selection-fill`, and `--ex-sheet-selection-ring` for the white line), so a Wrapper or a Consumer
+sets them as any other. This is the exception that ADR-0027's note of 2026-09-30 already makes for the
+Focus under a Wrapper: the Paper and the Ink are not the Wrapper's, but what the grid draws over them
+is.
+
+**Format Cells' *Normal font* box (case 24).** The Font tab gains it. Checking it sets every part of the
+Font to its default: the colour Automatic, and bold, italic, underline and strikethrough off. OK
+records those parts on each selected cell, as any part touched is recorded, so a row's or a column's
+Font no longer shows through there. Excel writes the Normal style's font on the cell, which comes to
+the same. It shows checked while every part the draft holds is the default, and unchecked once one is
+changed. ExSheet has no Normal style, and the box does not give it one: a typeface and a size stay out
+(above).
+
+**Seen beside the readings.**
+- **The Row Headings' edge is `#ABABAB`**, Excel's, on a Sheet: the heading rule's grey at the alpha
+  that gives `#ABABAB` over white, so it still follows the page's scheme.
+- **`ExSheet.MudBlazor`'s Format Cells shows all five tabs whichever it opens on.** It no longer opens
+  on Border with Font and Fill scrolled out of the tab strip.
+- **`#DIV/0!`'s error triangle and the size of a Sheet's cells** each need a decision of their own,
+  and are not decided here.
+- **The other Font keys** (Ctrl+I, Ctrl+U, and the Font tab beside Ctrl+5's widening) wait for the
+  next run that asks Excel about Cell Format.
+
 ## Consequences
 
 - **Notes on other ADRs**, each saying what changed:
@@ -789,13 +863,14 @@ Paper and everything on it read pixel for pixel as under the light scheme (SH-39
 - **The code's names follow the glossary.** `AxisStyle` becomes `AxisFormat`, `SetStyle` becomes
   `SetCellFormat`, and `Sheet.SetFormat` becomes `SetNumberFormat`. `ExSheet.Engine` is not
   published (ADR-0046), so the renaming breaks nobody.
-- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done.
+- **New criteria**: SH-38 to SH-47 and DC-57 to DC-60 in the Definition of Done; SH-53 to SH-55 after Part C (numbered SH-48 to SH-50 until the merge with ADR-0100's, which took those first), and DC-59 and FN-12e amended.
 - **Tickets** 44 to 58 and 81 to 103, in `docs/specs/exsheet/issues/`:
   - ticket 55 was added by the eleventh run;
   - 56 by ticket 51's Server fix;
   - 57 and 58 by the twelfth run;
   - 81 and 82 by ticket 47, 83 by ticket 82, 84 and 85 by ticket 81, 86 to 90 by ticket 48, 91 by ticket 83, 92 by ticket 88, 93 by PR #42's CI, 94 by the user (ADR-0006's note of 2026-10-01), 95 and 96 by ticket 94, 97 by ticket 96, and 98 by ticket 97, for the PR after #42;
-  - 99 to 103 by the fourteenth Windows run.
+  - 99 to 103 by the fourteenth Windows run;
+  - 140 to 147 by what was decided after Part C.
 
   59 to 75 are `claude/exsheet-start-8cx3v1`'s, and 76 to 80 are Pointing Scope's line
   (`docs/agents/numbering.md`).

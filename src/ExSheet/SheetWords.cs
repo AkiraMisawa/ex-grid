@@ -26,6 +26,16 @@ internal static class SheetWords
     internal static string FormatKeyWhileEditing =>
         "Nothing was formatted: a cell is being edited, and a format applies to whole cells, not to part of the text. Press Enter to commit the edit or Escape to cancel it, then try again.";
 
+    // ADR-0050 item 14, 2026-10-02: the insert and delete keys while an edit is open.
+    internal static string StructureKeyWhileEditing(bool insert) => insert
+        ? "Nothing was inserted: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again."
+        : "Nothing was deleted: a cell is being edited. Press Enter to commit the edit or Escape to cancel it, then try again.";
+
+    // ADR-0050 item 14, 2026-10-02: Excel shifts cells over any other Selection, and ExSheet shifts none.
+    internal static string StructureKeyNeedsWholeRowsOrColumns(bool insert) => insert
+        ? "Nothing was inserted: select whole rows (Shift+Space) or whole columns (Ctrl+Space) to insert. A Sheet does not shift cells."
+        : "Nothing was deleted: select whole rows (Shift+Space) or whole columns (Ctrl+Space) to delete. A Sheet does not shift cells.";
+
     // ADR-0100: the Sheet Toolbar's accessible name, and why its items cannot be pressed while an edit is open.
     internal static string ToolbarName => "Formatting";
 

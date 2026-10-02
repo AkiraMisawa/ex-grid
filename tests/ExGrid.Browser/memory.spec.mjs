@@ -90,6 +90,13 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
     // for the page's life. The grid is the first thing on this page to handle scroll,
     // mousedown and the rest, so the first mount adds those — and nothing else may.
     await grid.cycle();
+    // Read once the module has let go of the document, as MEM-4 reads it: the handle's dispose
+    // is an interop call, a round trip after the grid leaves the page on the Server host, and
+    // read before it lands the selectionchange listener still stood (CI, Edge on the Server
+    // host, 2026-10-02). A listener the dispose never takes off still fails here.
+    await expect.poll(async () => (await grid.listenersOn('document')).map(key)
+        .filter((k) => /@ex-grid(\.\w+)?\.js$/.test(k)), { message: 'the first cycle\'s grid let go of the document' })
+        .toEqual([]);
     const baseline = await grid.counters();
     const byFramework = added(freshOnDocument, await grid.listenersOn('document'));
     // Blazor's own script is blazor.webassembly.js on the WebAssembly host and
@@ -130,16 +137,18 @@ test('disposal takes the module\'s listeners off the root, and the count comes b
     await grid.mount();
     await page.evaluate(() => { window.__disposedRoot = document.querySelector('.ex-grid'); });
     const attached = (await grid.listenersOn('window.__disposedRoot')).map(key).sort();
-    // The per-instance handle's thirteen on the instance root (ADR-0018): the capture-phase
+    // The per-instance handle's sixteen on the instance root (ADR-0018): the capture-phase
     // keys, the capture-phase press and release that keep a press on the rows among held
     // keys (ADR-0021/0010), the editor's input report (ADR-0051), the pointer report, the
-    // two clipboard events, the press another grid hands on while this one points
+    // two clipboard events, and copy, cut and paste again in the capture phase, which take
+    // the event a clipboard key fires while a hold stands into its place among the held keys
+    // (ADR-0010's note of 2026-10-02), the press another grid hands on while this one points
     // through a Pointing Scope (ADR-0058, DC-54), and the Keyboard Field's composition and
     // focus (ADR-0080, ADR-0021's seventh entry), on every root, with a field or not.
     expect(attached).toEqual([
-        'compositionend (capture)', 'compositionstart (capture)', 'copy', 'ex-press-handed-on',
-        'focus (capture)', 'focusout (capture)', 'input (capture)', 'keydown (capture)',
-        'mousedown (capture)', 'mouseleave', 'mousemove', 'mouseup (capture)', 'paste',
+        'compositionend (capture)', 'compositionstart (capture)', 'copy (capture)', 'copy', 'cut (capture)',
+        'ex-press-handed-on', 'focus (capture)', 'focusout (capture)', 'input (capture)', 'keydown (capture)',
+        'mousedown (capture)', 'mouseleave', 'mousemove', 'mouseup (capture)', 'paste (capture)', 'paste',
     ].map(fromModule));
     // And one on the document, the only place `selectionchange` fires: it acts only while
     // DOM focus is in this instance's editor surface (ADR-0051), and it goes with the

@@ -280,3 +280,12 @@ whole, since the Focus is Excel's active cell everywhere
   recalculation rose by 0.1 to 0.5 ms per drag. Nothing attributable to the hole was measured. The
   figures are medians whose per-drag rows were not kept. The script that writes the rows, and the
   pending re-run on a quiet machine, are in `verification/2026-09-29-selection-hole/`.
+
+*(2026-10-02, [ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)'s
+"What was decided after Part C".)* **On a Sheet's Paper the Selection's shade multiplies with the cells
+beneath it**, so the lines inside a range stay as drawn, as Excel's do. It is still one overlay per range,
+and still never a class on a cell: the shade is the range's own layer, painted with `mix-blend-mode:
+multiply`, and the selection layer stops being a stacking context of its own there so that the blend
+reaches the cells. The outline and the Focus's are not blended. Over a Pinned Column the pinned layer
+is a stacking context above the pinned cells, so the shade cannot reach them, and there it lies over
+the lines as before. ExGrid's own selection is unchanged.

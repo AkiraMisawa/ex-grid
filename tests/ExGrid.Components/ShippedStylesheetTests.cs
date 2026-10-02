@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using AngleSharp.Css;
 using AngleSharp.Css.Parser;
 using AngleSharp.Dom;
+using ExGrid.Keys;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -87,9 +88,64 @@ public class ShippedStylesheetTests
         // its place among the held keys — a second compositionend, beside the coloured text's —
         // and the root's focus, passing focus that lands on the root itself on to its field, and
         // focusout, emptying the field as it is left and ending the release of Tab when DOM focus
-        // leaves the grid (ADR-0012).
-        string[] allowed = ["compositionend", "compositionend", "compositionstart", "copy", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
+        // leaves the grid (ADR-0012). And the eighth (ADR-0090): change on a media query of the
+        // current resolution, which tells the grid its Device Pixel when the scale or the zoom moves.
+        // And the clipboard entry once more: copy, cut and paste in the capture phase, taking the
+        // event a clipboard key fires while a hold stands into its place among the held keys
+        // (ADR-0010's note of 2026-10-02) — the same events, no new use.
+        string[] allowed = ["change", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
+    }
+
+    [Fact] // ADR-0010 (2026-10-02) / ADR-0005 / ED-22: a clipboard key typed while a hold stands is let through, and the event it fires is taken among the held keys, never dropped
+    public void A_clipboard_key_is_let_through_a_hold_and_its_event_is_held()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        var listed = Regex.Match(script, @"const clipboardKeys = new Set\(\[(?<keys>[^\]]*)\]\);").Groups["keys"].Value;
+        var letThrough = Regex.Matches(listed, @"'(?<key>[^']+)'").Select(match => match.Groups["key"].Value).ToHashSet();
+
+        // Every key the core answers through the browser's own copy or paste event, which is why a
+        // Consumer may not declare it, is one the hold lets through: held as a key, it was lost.
+        foreach (var key in new[] { "Control+c", "Control+C", "Control+Insert", "Control+v", "Control+V", "Shift+Insert" })
+        {
+            var refusal = Assert.Throws<ArgumentException>(() => GridKeys.Declare([key]));
+            Assert.Matches("copy event|paste event", refusal.Message);
+            Assert.Contains(key, letThrough);
+        }
+        // Cut and paste as plain text are not the core's, so a Consumer may declare them; declared,
+        // they are its keys, held as keys, and the listener asks before it lets one through.
+        foreach (var key in new[] { "Control+x", "Control+X", "Shift+Delete", "Control+Shift+v", "Control+Shift+V" })
+        {
+            Assert.Contains(key, GridKeys.Declare([key]));
+            Assert.Contains(key, letThrough);
+        }
+        Assert.Equal(11, letThrough.Count);
+        Assert.Matches(new Regex(@"return clipboardKeys\.has\(canonical\) && !declared\.has\(canonical\);"), script);
+
+        // In the hold, such a key's default is not prevented and it is not pushed as a key: the
+        // event its default fires takes its place, in the capture phase, before any field hears it.
+        Assert.Matches(new Regex(@"if \(isClipboardKey\(k\)\) \{\s*clipboardKeyHeld = true;[^}]*\}\);\s*\} else \{\s*event\.preventDefault\(\);\s*held\.push\(k\);\s*\}"), script);
+        foreach (var type in new[] { "copy", "cut", "paste" })
+        {
+            Assert.Contains($"root.addEventListener('{type}', onHeldClipboard, true);", script);
+            Assert.Contains($"root.removeEventListener('{type}', onHeldClipboard, true);", script);
+        }
+        // Dropped with the keys before it, a held copy writes nothing: the clipboard keeps what it held.
+        Assert.Matches(new Regex(@"const dropHeld = \(\) => \{\s*for \(const k of held\) \{\s*if \(k\.clipboard === 'copy'\) \{\s*k\.take\(false\);"), script);
+        Assert.DoesNotContain("held.length = 0;\n                break;", script);
+    }
+
+    [Fact] // ADR-0090 / ADR-0021's eighth entry: the Device Pixel is told by a media query on the window's resolution, released on dispose
+    public void The_device_pixel_is_told_by_a_resolution_query_released_on_dispose()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        Assert.Contains("window.matchMedia(`(resolution: ${ratio}dppx)`)", script.Text, StringComparison.Ordinal);
+        Assert.Contains("core.invokeMethodAsync('OnDevicePixelAsync', ratio)", script.Text, StringComparison.Ordinal);
+        // Armed and released as one listener, so the dispose finds the one it added.
+        Assert.Equal(2, Regex.Matches(script.Text, @"resolutionQuery\?\.removeEventListener\('change', armResolution\)").Count);
+        Assert.Single(Regex.Matches(script.Text, @"resolutionQuery\.addEventListener\('change', armResolution\)"));
     }
 
     [Fact] // ADR-0053 / ADR-0021's sixth entry / MEM-4: the Layout Ceiling is told by an observer the instance disconnects
@@ -201,6 +257,20 @@ public class ShippedStylesheetTests
             Assert.Contains("0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px))", band.Value, StringComparison.Ordinal);
             Assert.DoesNotContain("--ex-rule-width", band.Value, StringComparison.Ordinal);
         });
+    }
+
+    [Fact] // ADR-0090: a column's rule is painted in whole device pixels too, once its edges lie on them
+    public void A_columns_rule_is_painted_in_whole_device_pixels()
+    {
+        var (css, _) = CoreStylesheet();
+        // The cell's and the Row Headings' edge, and a lined cell's layer. The Name Box's edge in the
+        // Formula Bar is no column edge, and keeps the token.
+        var shadows = Regex.Matches(css, @"box-shadow: inset calc\(0px - var\(--ex-rule-[a-z]+, 1px\)\) 0 var\(--ex-(column|heading)-rule-color");
+        Assert.Equal(2, shadows.Count);
+        Assert.All(shadows, shadow => Assert.Contains("--ex-rule-dp", shadow.Value, StringComparison.Ordinal));
+        var layers = Regex.Matches(css, @"linear-gradient\(to left, var\(--ex-column-rule-color[^)]*\)[^)]*\)");
+        Assert.NotEmpty(layers);
+        Assert.All(layers, layer => Assert.Contains("--ex-rule-dp", layer.Value, StringComparison.Ordinal));
     }
 
     [Fact] // ADR-0006 / ADR-0029 / ticket 84: whatever a tone paints, a Cell State that paints it too outranks the tone, under every token

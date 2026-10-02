@@ -329,6 +329,51 @@ Space, Enter would search for "Alpha " and apply it. The typing stops short inst
 and nothing is applied that was not typed where it was meant. It happens only faster than a
 round trip, so on a Server circuit.
 
+*(Decided with the user, 2026-10-02.)* **A clipboard key is not held as a key: the copy, cut or
+paste it fires is taken in its place, and done at its turn.** Ctrl+C and Ctrl+V — and every key
+whose default is the browser's copy, cut or paste: Ctrl+X, Ctrl+Insert, Shift+Insert,
+Shift+Delete, Ctrl+Shift+V, unless the Consumer declared it — do nothing when dispatched from
+script, so held they were lost. Nothing showed it. A lost copy left the clipboard holding what it
+held before, and the next paste pasted that, which is the outcome
+[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) refuses; a lost paste never landed.
+Found as CP-6's intermittent failure on the Server host (CI, 2026-10-02): an edit ended by Enter
+or Tab, a click on another cell straight after it was held behind the answer, and the Ctrl+C or
+Ctrl+V behind the click was lost — 4 to 7 runs in 100 locally, on this branch and on its base
+alike. No wait in a test removes it: in every failure logged, DOM focus was back on the grid
+before the click was held.
+
+So while a hold stands, a clipboard key's default runs, and the event it fires is taken before
+any listener or field hears it and put among the held keys in the key's place. The event is the
+only moment either can be taken: a paste's data is readable only inside it, and the browser lets
+a copy write only from it. So the paste's data is read then, and the copy's write is started
+then, through ADR-0005's asynchronous route, with a payload built at its turn. At its turn it is
+done where the keyboard is, against the mode and the Selection the keys before it left:
+
+- **With the keyboard the grid's**, the grid's copy of the Selection or its paste into it. The
+  keys after it wait for the core's answer. A cut does nothing, as the grid makes none unheld.
+- **In a text field** — a popover's, the Name Box, the Formula Bar, the Cell Editor — what the
+  field would have done: its selection copied as plain text, or cut, or replaced by the pasted
+  text. Pasted into a one-line field, each line break becomes a space, as Chromium pastes it
+  there (measured on Chromium 141: `a\r\nb` pastes as `a b`, where text set from script loses
+  the break).
+- **On any other control**, nothing, as there.
+
+No JavaScript is added to [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s list:
+this is its clipboard entry, and nothing is measured.
+
+Rejected: **refusing it visibly**, a notice at its turn asking for the key again. It is
+deterministic, but it asks the user to repeat a key the grid can do. And **a wait in the test**,
+the first fix tried: it narrowed the window, and the test still failed 2 runs in 100, one of them
+the step it waited before.
+
+What is still dropped: a clipboard key held behind a key that is itself dropped (above) goes with
+it, as every key behind that one does. A copy so dropped lands nothing, and the clipboard keeps
+what it held.
+
+ED-22 holds the cases. Its test types every key on a 150 ms circuit, so each one lands inside a
+hold on every run, not in 4 to 7 of 100: on the script before this decision it failed in 8 runs of
+8, and it passes in 20 of 20 after. CP-6, unchanged, passed in 100 runs of 100 after it.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached

@@ -170,6 +170,11 @@
    ever shows on Text/Boolean: a number that does not fit is painted as #### by the
    core, never clipped. */
 .ex-cell, .ex-header-cell { flex: 0 0 auto; box-sizing: border-box; padding: 0 var(--ex-cell-padding-x, 8px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A #### run (ADR-0016, 2026-10-02) is longer than its cell, and may break between any two #: the
+   cell is one line tall, so the line it shows is exactly the # that fit in the face and weight it is
+   painted in, and the rest fall to a line the cell hides. No # is cut and no ellipsis is drawn, and
+   nothing is measured. A shown number keeps the cell's nowrap, so it never wraps out of sight. */
+.ex-hashes { white-space: normal; word-break: break-all; }
 /* The header is the delegated click target the way .ex-viewport is for the rows: its
    cells and gap spacer are transparent to the mouse, so the sort click's offsets are
    measured from the header's own left edge and the column is read from the geometry
@@ -282,7 +287,7 @@
 .ex-cell.ex-lined {
     background-image: var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none),
         var(--ex-tint, none), var(--ex-cover-r, none), var(--ex-cover-b, none),
-        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent 0),
+        linear-gradient(to left, var(--ex-column-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent 0),
         var(--ex-row-rule, none);
     background-size: var(--ex-line-t-size, 0 0), var(--ex-line-r-size, 0 0), var(--ex-line-b-size, 0 0), var(--ex-line-l-size, 0 0),
         100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
@@ -298,13 +303,16 @@
    browser zoom and display scale alike; a resolution between two steps draws a little under a
    pixel, which the browser blends. Paint only: nothing in C# computes with it.
 
-   --ex-rule-dp is a row's rule — the horizontal gridline — in whole device pixels: --ex-rule-width
+   --ex-rule-dp is a gridline — a row's rule and a column's — in whole device pixels: --ex-rule-width
    rounded down to the device pixel, and never thinner than the token where the token is under one.
    So 1px is one device pixel at 150%, as Excel's gridline is (ADR-0071, Part C of the eleventh run).
    Left at 1.5 device pixels, the band was one row under Chrome's GPU rasteriser and two under its
    software one — CI's, headed under xvfb on Linux — and so was the Fill over it (ticket 99). At a
-   whole scale it is the token, as before. A column's rule keeps --ex-rule-width: a column edge
-   lies on half a device pixel at 150%, which no width makes exact (ADR-0071, the same part). */
+   whole scale it is the token, as before. A column's rule joined it when column edges were put on
+   device pixels (ADR-0090): on an edge between two, no width was exact.
+
+   These steps are the fallback. Once the browser has told the grid its device pixel (ADR-0090,
+   ADR-0021's eighth entry), C# writes --ex-dp inline on the root, exact at any resolution. */
 .ex-grid {
     --ex-dp: 1px;
     --ex-rule-dp: max(min(var(--ex-rule-width, 1px), var(--ex-dp)), round(down, var(--ex-rule-width, 1px), var(--ex-dp)));
@@ -381,7 +389,7 @@
     pointer-events: none;
     background: var(--ex-heading-background, var(--ex-header-background, Canvas));
     color: var(--ex-heading-color, var(--ex-header-color, inherit));
-    box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-heading-rule-color, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)));
+    box-shadow: inset calc(0px - var(--ex-rule-dp, 1px)) 0 var(--ex-heading-rule-color, var(--ex-header-rule-color, rgba(128, 128, 128, 0.45)));
 }
 /* The header's rule runs under every header cell (UX-17). A pinned header cell and the
    Headings' corner stand on the band with an opaque ground of their own, which covers the
@@ -509,16 +517,17 @@
    inside, as the forced-colors outline does, so its width is the others' (UX-18): the core marks
    such a side, --ex-outline-in-t and --ex-outline-in-l, from the geometry it already holds. The
    outline is a box of its own, so a side can move without moving the range's tint, and its width
-   is the Focus outline's, 2px, above. Paint only: nothing in C# reads the width. */
+   is --ex-outline-width: the Focus outline's 2px, above, unless a stylesheet draws it in device
+   pixels (ExSheet's Paper, ADR-0071). Paint only: nothing in C# reads the width. */
 .ex-focus::after, .ex-range-single::after {
     content: "";
     position: absolute;
     box-sizing: border-box;
-    top: calc((var(--ex-outline-in-t, 0) - 1) * 2px);
-    left: calc((var(--ex-outline-in-l, 0) - 1) * 2px);
-    right: calc(var(--ex-rule-width, 1px) - 2px);
-    bottom: calc(var(--ex-rule-width, 1px) - 2px);
-    border: 2px solid var(--ex-focus-outline, CanvasText);
+    top: calc((var(--ex-outline-in-t, 0) - 1) * var(--ex-outline-width, 2px));
+    left: calc((var(--ex-outline-in-l, 0) - 1) * var(--ex-outline-width, 2px));
+    right: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, 2px));
+    bottom: calc(var(--ex-rule-dp, 1px) - var(--ex-outline-width, 2px));
+    border: var(--ex-outline-width, 2px) solid var(--ex-focus-outline, CanvasText);
 }
 /* The single range's outline has the token ADR-0029 reserved for it, the border Excel draws round
    the range's perimeter. It defaults to the Focus outline's colour, so a Theme that sets only that
@@ -951,7 +960,7 @@
 /* The column rule, transparent by default (ADR-0029): an inset shadow on the cell's
    right edge — painted, never a border. A Modified cell's own mark overrides it;
    the state must never be the one that disappears (ADR-0006). */
-.ex-cell { box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-column-rule-color, transparent); }
+.ex-cell { box-shadow: inset calc(0px - var(--ex-rule-dp, 1px)) 0 var(--ex-column-rule-color, transparent); }
 /* Alignment is a closed enum painted as interned classes (ADR-0016/0029). Last in the
    file, so an explicit alignment beats the numeric derivation and a Header Group's
    centred default at equal specificity. */

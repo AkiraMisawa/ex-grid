@@ -57,6 +57,65 @@
     --ex-editor-color: var(--ex-sheet-ink, #000);
 }
 
+/* The Selection on the Paper looks like Excel's (ADR-0071, "What was decided after Part C"; SH-49).
+   ExGrid's own selection is left as it is: these rules reach its overlay elements on a Sheet only,
+   at the specificity of two classes, so they win over the core's one-class rules in any order.
+
+   The outline — the Focus's, and the one a single range carries round its perimeter — is 2 device
+   pixels on the gridline and one outside it, with a white line of one device pixel inside it, as
+   Excel draws it. Excel's green where no Theme or Wrapper names the colour: a Wrapper's token wins,
+   so under ExSheet.MudBlazor the outline is the palette's primary. The white line is not drawn while
+   an edit is open, as Excel drops it (the fourteenth run, case 19). The fill handle is the outline's
+   colour, as Excel's is. */
+.ex-sheet .ex-viewport {
+    --ex-outline-width: calc(2 * var(--ex-dp, 1px));
+}
+.ex-sheet .ex-focus::after {
+    border-color: var(--ex-focus-outline, #217346);
+    box-shadow: inset 0 0 0 var(--ex-dp, 1px) var(--ex-sheet-selection-ring, #fff);
+}
+.ex-sheet .ex-range-single::after {
+    border-color: var(--ex-selection-outline, var(--ex-focus-outline, #217346));
+    box-shadow: inset 0 0 0 var(--ex-dp, 1px) var(--ex-sheet-selection-ring, #fff);
+}
+.ex-sheet .ex-editing .ex-focus::after,
+.ex-sheet .ex-editing .ex-range-single::after {
+    box-shadow: none;
+}
+.ex-sheet .ex-fill-handle { background: var(--ex-fill-handle-color, var(--ex-focus-outline, #217346)); }
+/* The shade multiplies with the cells beneath it rather than lying over them, so the lines inside a
+   range stay as drawn: a black line stays black, as Excel's do over its #C7C7C7, and a Fill darkens
+   as it does. For the blend to reach the cells nothing between the shade and the Viewport may be a
+   stacking context of its own (an isolated group blends with nothing), so on the Paper the
+   scrollable selection layer and the range give up their z-index and isolation, and the shade paints
+   first in its range, beneath the outline, by order alone. The layer still paints above the rows,
+   which are not positioned, and below the Pinned Columns (z-index 2) and the editor (3). The pinned
+   layer stays a stacking context above the pinned cells, so over a Pinned Column the shade still lies
+   over the lines (ADR-0071; owed). Under ExSheet.MudBlazor the shade is the primary mixed into white:
+   its translucent token, multiplied over white Paper. */
+.ex-sheet .ex-selection { z-index: auto; }
+.ex-sheet .ex-selection .ex-range { isolation: auto; }
+/* The shade is black at 22%: over white Paper that is Excel's #C7C7C7 (255 × 0.78 = 199), and over a
+   Pinned Column, where it cannot multiply, it stays translucent, so the value still reads through. */
+.ex-sheet .ex-selection .ex-range::before {
+    z-index: auto;
+    mix-blend-mode: multiply;
+    background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22));
+}
+.ex-sheet .ex-selection-pinned .ex-range::before { background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22)); }
+@media (forced-colors: active) {
+    .ex-sheet .ex-focus::after, .ex-sheet .ex-range-single::after { box-shadow: none; }
+}
+
+/* The Row Headings' edge is Excel's #ABABAB over white (Part C): the core's grey at the alpha that
+   gives it, so on a dark page it still stands out from the dark ground. Only the core's own default
+   changes: a Theme's or a Wrapper's --ex-heading-rule-color, or its header rule, which the core falls
+   back to (ExGrid.MudBlazor's table lines), still wins. */
+.ex-sheet .ex-row-heading,
+.ex-sheet .ex-headings-corner {
+    box-shadow: inset calc(0px - var(--ex-rule-dp, 1px)) 0 var(--ex-heading-rule-color, var(--ex-header-rule-color, rgba(128, 128, 128, 0.66)));
+}
+
 /* Format Cells under the built-in Chrome (ADR-0071): the contents ExSheet shows in the grid's
    popover frame (ADR-0050 item 16). It frames the Paper rather than lying on it, so it follows the
    colour scheme as every popover does, through the grid's own Visual Tokens (ADR-0027/0063). Its

@@ -257,6 +257,29 @@ public sealed class FormatCellsDraft
         ForgetColourText(ColourTarget.Font);
     }
 
+    /// <summary>
+    /// Whether the Font is Excel's Normal font as ExSheet has it — the colour Automatic, and
+    /// neither bold, italic, underline nor strikethrough — which the Font tab's <i>Normal font</i>
+    /// box shows checked (ADR-0071, 2026-10-02). False while bold or italic differs across the
+    /// Selection.
+    /// </summary>
+    public bool IsNormalFont =>
+        FontStyle == global::ExSheet.FontStyle.Regular && !Underline && !Strikethrough && FontColour == CellColour.Automatic;
+
+    /// <summary>
+    /// The Font tab's <i>Normal font</i> box, checked (ADR-0071, 2026-10-02): every part of the
+    /// Font set to its default and touched, so OK records them on each selected cell over a row's
+    /// or a column's Font, as Excel writes its Normal style's font. ExSheet has no Normal style: a
+    /// typeface and a size stay out.
+    /// </summary>
+    public void SetNormalFont()
+    {
+        SetFontStyle(global::ExSheet.FontStyle.Regular);
+        SetUnderline(false);
+        SetStrikethrough(false);
+        SetFontColour(CellColour.Automatic);
+    }
+
     // ---- Fill ----
 
     /// <summary>The Fill; No Colour while the Fill differs across the Selection.</summary>

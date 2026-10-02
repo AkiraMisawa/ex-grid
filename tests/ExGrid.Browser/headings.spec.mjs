@@ -1,6 +1,6 @@
 import { test, expect, alterPage } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
-import { sheet, cell, expectFocusAt, boxOf, spanOf, nameBox, pressCell, expectSelectionIsCell } from './sheet-helpers.mjs';
+import { sheet, cell, expectFocusAt, boxOf, spanOf, nameBox, pressCell, expectSelectionIsCell, pressAt } from './sheet-helpers.mjs';
 
 // The Headings as Excel's (ADR-0050 item 1, ADR-0052 and ADR-0012, all as settled on 2026-09-29),
 // on the DemoHost's /sheet: an axis a range spans end to end is not scrolled for (SR-2c), a drag
@@ -91,7 +91,7 @@ test('SR-2c: with the view at the left, a Row Heading click then Shift+↓ leave
     const grid = sheet(page);
     expect((await scrollOf(grid)).left).toBe(0);
 
-    await rowHeading(grid, 3).click({ force: true });
+    await pressAt(rowHeading(grid, 3));
     await expectFocusAt(grid, 'A3');
     await page.keyboard.press('Shift+ArrowDown');
 
@@ -396,13 +396,13 @@ test('DC-42: Ctrl+click on a Row Heading adds the row, and a second takes it out
     await pressCell(grid, 'C2');
     const pinnedRanges = grid.locator('.ex-selection-pinned .ex-range');
 
-    await rowHeading(grid, 5).click({ force: true, modifiers: ['ControlOrMeta'] });
+    await pressAt(rowHeading(grid, 5), { modifiers: ['ControlOrMeta'] });
     await expectFocusAt(grid, 'A5');
     // Row 5 runs across the pinned A as well; C2 is scrollable only.
     await expect(pinnedRanges).toHaveCount(1);
     await expectWholeRows(grid, 5, 5);
 
-    await rowHeading(grid, 5).click({ force: true, modifiers: ['ControlOrMeta'] });
+    await pressAt(rowHeading(grid, 5), { modifiers: ['ControlOrMeta'] });
     await expectFocusAt(grid, 'C2');
     await expect(pinnedRanges).toHaveCount(0);
 });

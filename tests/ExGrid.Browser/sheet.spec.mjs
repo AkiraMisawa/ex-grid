@@ -4,6 +4,7 @@ import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
     sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
     expectCommandsGreyedOut, expectCommandsOffered, expectSelectionIsCell,
+    pressAt,
 } from './sheet-helpers.mjs';
 
 // ExSheet on the DemoHost's /sheet, driven with real keys and the real mouse (SH-18, ticket 18):
@@ -106,14 +107,14 @@ test('SH-18/DC-2/DC-3: a column heading, a Row Heading and the corner select, an
     // A Row Heading selects its row, across every column: the range starts at the pinned A and
     // runs past the right edge of what is painted.
     const heading = (n) => grid.locator('.ex-row .ex-row-heading', { hasText: new RegExp(`^${n}$`) });
-    await heading(3).click({ force: true });
+    await pressAt(heading(3));
     await expectFocusAt(grid, 'A3');
     const rowRange = await boxOf(grid.locator('.ex-selection-pinned .ex-range'));
     const a3 = await boxOf(cell(grid, 'A3'));
     expect(Math.abs(rowRange.y - a3.y)).toBeLessThanOrEqual(1);
     expect(Math.abs(rowRange.height - a3.height)).toBeLessThanOrEqual(1);
     // Shift+click extends by rows.
-    await heading(5).click({ force: true, modifiers: ['Shift'] });
+    await pressAt(heading(5), { modifiers: ['Shift'] });
     await expect.poll(async () => Math.round((await boxOf(grid.locator('.ex-selection-pinned .ex-range'))).height))
         .toBe(Math.round(3 * a3.height));
 
@@ -474,7 +475,7 @@ test('SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl
     await expect(bar(grid)).toHaveValue('=B3*C3');
 
     // By the Context Menu on a cell: rows above the Selection.
-    await cell(grid, 'A3').click({ force: true, button: 'right' });
+    await pressAt(cell(grid, 'A3'), { button: 'right' });
     await page.getByRole('menuitem', { name: 'Insert rows above' }).click();
     await expect(cell(grid, 'A4')).toHaveText('Apples');
     await clickCell(grid, 'B7');
@@ -503,7 +504,7 @@ test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted tar
     await expect(cell(grid, 'F1')).toHaveText('Pears');
 
     await clickCell(grid, 'B3');
-    await cell(grid, 'B3').click({ force: true, button: 'right' });
+    await pressAt(cell(grid, 'B3'), { button: 'right' });
     await page.getByRole('menuitem', { name: 'Delete rows' }).click();
     await expect(cell(grid, 'A3')).toHaveText('Plums');
     // The Selection stays where it was: the same address, now over the row that moved up.
@@ -540,7 +541,7 @@ test('SH-5/SH-18: inserting a column rewrites every Reference across it, and one
     // Two rows of column C: the command acts on the columns the Selection spans, one here.
     await clickCell(grid, 'C2');
     await clickCell(grid, 'C3', { modifiers: ['Shift'] });
-    await cell(grid, 'C2').click({ force: true, button: 'right' });
+    await pressAt(cell(grid, 'C2'), { button: 'right' });
     await page.getByRole('menuitem', { name: 'Insert columns to the left' }).click();
     await expect(cell(grid, 'C1')).toHaveText('');
     await expect(cell(grid, 'D1')).toHaveText('Price');
@@ -570,7 +571,7 @@ test('SH-5/SH-18: inserting a column rewrites every Reference across it, and one
 test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+Z restores it', async ({ page }) => {
     const grid = sheet(page);
     await clickCell(grid, 'C2');
-    await cell(grid, 'C2').click({ force: true, button: 'right' });
+    await pressAt(cell(grid, 'C2'), { button: 'right' });
     await page.getByRole('menuitem', { name: 'Delete columns' }).click();
     // Amount moved into C; its Price operand is gone.
     await expect(cell(grid, 'C1')).toHaveText('Amount');

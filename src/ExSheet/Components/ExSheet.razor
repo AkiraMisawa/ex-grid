@@ -639,6 +639,11 @@
     private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
     {
         if (await OnToolbarKeyAsync(press)) return;
+        if (SheetStructureKeys.KindOf(press.Key) is { } structure)
+        {
+            await OnStructureKeyAsync(press, structure);
+            return;
+        }
         if (SheetFormatKeys.KindOf(press.Key) is not { } kind) return;
         // Rows are places, so the Selection is written in version 0 (ADR-0046).
         if (press.RowSequenceVersion == 0) _selection = press.Selection;
@@ -662,6 +667,35 @@
         await FormatSelectionAsync(
             SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture),
             widen: SheetFormatKeys.WidensAsANumberFormatDoes(kind));
+    }
+
+    /// <summary>
+    /// Ctrl+Plus and Ctrl+Minus (ADR-0050 item 14's note of 2026-10-02): over a Selection of whole
+    /// rows they insert or delete those rows, over whole columns those columns, as the Context
+    /// Menu's commands do, each one step on the undo stack. Over any other Selection, and while an
+    /// edit is open, nothing changes and the notice says why. They act on the Selection the key
+    /// carries, as a formatting key does: one pressed straight after Shift+Space arrives before the
+    /// move's notification on a circuit.
+    /// </summary>
+    private async Task OnStructureKeyAsync(GridDeclaredKeyPress press, SheetStructureKeys.Kind kind)
+    {
+        var insert = kind == SheetStructureKeys.Kind.Insert;
+        // Rows are places, so the Selection is written in version 0 (ADR-0046).
+        if (press.RowSequenceVersion == 0) _selection = press.Selection;
+        if (press.EditOpen || IsEditing)
+        {
+            Tell(SheetWords.StructureKeyWhileEditing(insert));
+            StateHasChanged();
+            return;
+        }
+        if (_selection.IsEmpty) return;
+        if (SheetStructureKeys.EditFor(kind, _selection, new GridExtent(Sheet.RowCount, Sheet.ColumnCount)) is not { } edit)
+        {
+            Tell(SheetWords.StructureKeyNeedsWholeRowsOrColumns(insert));
+            StateHasChanged();
+            return;
+        }
+        await StructureAsync(edit);
     }
 
     /// <summary>
@@ -1536,16 +1570,19 @@
     private const string AltAlone = "Alt+Alt";
     private const string KeyTipsKey = "F10";
     private const string ToolbarToggleKey = "Control+F1";
-    private static readonly IReadOnlyCollection<string> WithKeyTips = [.. SheetFormatKeys.Declared, AltAlone, KeyTipsKey];
-    private static readonly IReadOnlyCollection<string> WithToggle = [.. SheetFormatKeys.Declared, ToolbarToggleKey];
-    private static readonly IReadOnlyCollection<string> WithKeyTipsAndToggle = [.. SheetFormatKeys.Declared, AltAlone, KeyTipsKey, ToolbarToggleKey];
+    // Excel's formatting keys (ADR-0071) and its insert and delete keys (ADR-0050 item 14, 2026-10-02),
+    // which every Sheet declares whether or not its toolbar is shown.
+    private static readonly IReadOnlyCollection<string> SheetKeys = [.. SheetFormatKeys.Declared, .. SheetStructureKeys.Declared];
+    private static readonly IReadOnlyCollection<string> WithKeyTips = [.. SheetKeys, AltAlone, KeyTipsKey];
+    private static readonly IReadOnlyCollection<string> WithToggle = [.. SheetKeys, ToolbarToggleKey];
+    private static readonly IReadOnlyCollection<string> WithKeyTipsAndToggle = [.. SheetKeys, AltAlone, KeyTipsKey, ToolbarToggleKey];
 
     private IReadOnlyCollection<string> DeclaredSheetKeys => (ShowToolbar, ShowToolbarChanged.HasDelegate) switch
     {
         (true, true) => WithKeyTipsAndToggle,
         (true, false) => WithKeyTips,
         (false, true) => WithToggle,
-        _ => SheetFormatKeys.Declared,
+        _ => SheetKeys,
     };
 
     // The Alt key went down alone, and its release has not been heard: the release starts the
