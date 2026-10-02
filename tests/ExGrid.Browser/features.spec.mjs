@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, setRoundTrip, circuitQuiet } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     expectKeyboardOn, keyboardIsOn, keyField, activeDescendant, expectActiveDescendant,
@@ -564,8 +564,11 @@ test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4,
     const activeIsCell = await page.evaluate(
         () => document.activeElement?.classList?.contains('ex-cell') ?? false);
     expect(activeIsCell).toBe(false);
-    // Escape releases Tab (ADR-0012, KB-8), and the next Tab leaves the grid entirely.
+    // Escape releases Tab (ADR-0012, KB-8), and the next Tab leaves the grid entirely. On a circuit
+    // the release is the Escape's answer, a round trip away, and a Tab typed before it is held behind
+    // the Escape and dropped (script cannot move DOM focus for it, ADR-0010/0021): wait for it.
     await page.keyboard.press('Escape');
+    await circuitQuiet();
     await page.keyboard.press('Tab');
     await expect(page.locator('#after-grid')).toBeFocused();
 });
