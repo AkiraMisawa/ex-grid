@@ -206,7 +206,7 @@ what cannot be executed:**
 
 A source that can be asked again, such as a server's, says so in its features (Q25).
 
-- **The report's toolbar then offers Refresh**, and the Consumer can refresh from code as well.
+- **The Pivot Toolbar then offers Refresh**, and the Consumer can refresh from code as well.
 - **The bundled source shows no button.** It is refreshed by handing ExPivot a new source, or a
   Change Batch
   ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).

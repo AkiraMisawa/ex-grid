@@ -53,8 +53,8 @@ keyboard, selection, clipboard and look differ from the ExGrid beside it.
   - Either way, the answer carries its Source Version, so the records behind a cell always add up.
 - **The user builds a report in the Field List** — Excel's "PivotTable Fields" pane — by ticking
   fields or dragging them between Filters, Columns, Rows and Values.
-- **The toolbar above the report** holds the report filter band, the Layout menu (Excel's Design
-  tab), Refresh, and the pane's toggle.
+- **The Pivot Toolbar above the report** holds the report filter band, the Layout menu (Excel's
+  Design tab), Refresh, and the pane's toggle.
 - **The user reads the report with ExGrid's Selection, keyboard and clipboard.**
 - **The numbers are Excel's** (ADR-0060).
   - Money is summed exactly.
@@ -139,9 +139,9 @@ keyboard, selection, clipboard and look differ from the ExGrid beside it.
 25. As a developer, I want the engine usable on a server with no UI, so that a scheduled report
     computes the same numbers.
 26. As a developer, I want to replace every word, so that the pivot speaks my users' language.
-27. As a developer on MudBlazor, I want one parameter to dress the pane, the toolbar, the menus, the
-    panels, the tabs and the report in MudBlazor, following the theme and dark mode, so that the
-    pivot looks like the rest of my application.
+27. As a developer on MudBlazor, I want one parameter to dress the pane, the Pivot Toolbar, the
+    menus, the panels, the tabs and the report in MudBlazor, following the theme and dark mode, so
+    that the pivot looks like the rest of my application.
 28. As a developer on another design system, I want to substitute the drawing without
     re-implementing its rules, so that my pivot behaves exactly like everyone else's.
 29. As a developer, I want a demo page for each case — basic, CSV, database, live, risk, and a plain
@@ -180,12 +180,12 @@ All of these are recorded in the ADRs; they are summarised here.
     aggregation.
   - The component gathers changes and redraws every 250 ms, keeps the Selection when only values
     change, marks the values that changed, and shows a Stale Report when it must.
-- **The Field List and the toolbar** (ADR-0061).
+- **The Field List and the Pivot Toolbar** (ADR-0061).
   - The rules are pure functions (`PivotLayoutEdits`).
   - Drag and drop uses Blazor's own events, with every target preventing `dragover`'s default.
   - Menus and panels open under their entry, at the pane's width.
   - Defer Layout Update sits at the pane's foot.
-  - The toolbar holds the report filter band, Layout ▾, Refresh, and the pane's toggle.
+  - The Pivot Toolbar holds the report filter band, Layout ▾, Refresh, and the pane's toggle.
   - `IPivotChrome` has one member per surface.
 - **Show Details** (ADR-0059) goes to a tab at the foot, a dialog, or the Consumer. The records are
   paged from the source under the report's Source Version.

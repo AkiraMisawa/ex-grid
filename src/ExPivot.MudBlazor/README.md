@@ -7,7 +7,7 @@ MudBlazor application:
   checkboxes, text fields, selects, radio groups, buttons, tabs, alerts and Material icons.
   - The PivotTable Fields pane, with Defer Layout Update, each field's menu, Filter…, Field
     Settings… and Value Field Settings….
-  - The toolbar above the report: the report filter band, Layout ▾ with its menu, Refresh when
+  - The Pivot Toolbar above the report: the report filter band, Layout ▾ with its menu, Refresh when
     the source can be refreshed, and the pane's toggle, with a refusal as an error `MudAlert`.
   - Show Details' tabs, as `MudTabs` at the report's foot, and the content of its dialog. The
     dialog itself is ExPivot's frame, not a `MudDialog`.

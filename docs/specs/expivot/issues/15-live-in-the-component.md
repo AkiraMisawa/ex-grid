@@ -52,14 +52,14 @@ and `Clock` (the registered `TimeProvider`, else the system's, as the grid resol
 - **The Stale Report.** A question for newer data (a source's notice, Refresh, Retry, a new source)
   under the layout on screen that is refused, fails, or whose report would break a rows or columns
   cap leaves the report as it was, with a notice in an always-present `role="status"` region under
-  the toolbar: "Showing the data as of {time}: {what happened}", the time in the report's culture
-  (with the date when not today's), and Retry. It goes when an answer is laid out — a new one, or
-  the held one a cap refused once a layout fits it. A layout's refusal stays the toolbar's
-  `role="alert"` notice, and the layout goes back. `IPivotChrome.StaleReport` draws it
-  (`PivotStaleReportContext`); `MudPivotChrome` draws a warning `MudAlert` with a Retry
+  the Pivot Toolbar: "Showing the data as of {time}: {what happened}", the time in the report's
+  culture (with the date when not today's), and Retry. It goes when an answer is laid out — a new
+  one, or the held one a cap refused once a layout fits it. A layout's refusal stays the
+  Pivot Toolbar's `role="alert"` notice, and the layout goes back. `IPivotChrome.StaleReport` draws
+  it (`PivotStaleReportContext`); `MudPivotChrome` draws a warning `MudAlert` with a Retry
   `MudButton`. The new words (`stale-report`, `stale-too-many-cells`, `stale-too-many-rows`,
-  `stale-too-many-columns`, `stale-source-failed`, `stale-source-refused`, `retry`) have English
-  in `StaleReportWords` until `PivotWords` holds them with their Japanese.
+  `stale-too-many-columns`, `stale-source-failed`, `stale-source-refused`, `retry`) have English in
+  `StaleReportWords` until `PivotWords` holds them with their Japanese.
 
 Layer 2: `LiveDataTests`, `ChangeHighlightTests` and `StaleReportTests` in
 `tests/ExPivot.Components` (with `LiveSource`), and `MudPivotStaleReportTests`. Layer 3 waits for

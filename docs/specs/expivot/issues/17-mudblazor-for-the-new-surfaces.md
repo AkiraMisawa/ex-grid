@@ -4,7 +4,7 @@ Status: done
 
 **What to build:** `MudPivotChrome` for the surfaces the grilling added (ADR-0062).
 
-- **The toolbar and the Layout menu.**
+- **The Pivot Toolbar and the Layout menu.**
 - **Defer Layout Update:** a `MudCheckBox` and a `MudButton`.
 - **The Details tabs:** `MudTabs`, placed at the bottom.
 - **The dialog's content**, inside ExPivot's own frame.
@@ -21,7 +21,7 @@ Status: done
 2026-10-01: Built. `MudPivotChrome` now draws every surface ExPivot hands a Chrome; none is left
 to the built-in markup.
 
-- **The toolbar** (`MudPivotToolbar`): the Mud band on its left; Layout ▾, Refresh (when the
+- **The Pivot Toolbar** (`MudPivotToolbar`): the Mud band on its left; Layout ▾, Refresh (when the
   source can be refreshed) and the pane's toggle on its right, as text `MudButton`s with Material
   icons, in ExPivot's order and with its roles — `aria-haspopup` and `aria-expanded` on Layout ▾,
   `aria-pressed` on the toggle, which is shaded while the pane is shown. Layout ▾'s wrapper is
@@ -41,7 +41,7 @@ to the built-in markup.
 - **The tokens:** the dialog frame's edge, corners and shadow became Visual Tokens of ExPivot's
   (`--ex-pivot-dialog-border-color`, `--ex-pivot-dialog-radius`, `--ex-pivot-dialog-shadow`,
   defaulting to today's look), mapped under `.mud-ex-grid` to a MudDialog's: no edge, the theme's
-  corners, elevation 24. The toolbar, tabs and dialog content are laid out by `mud-ex-pivot-*`
+  corners, elevation 24. The Pivot Toolbar, tabs and dialog content are laid out by `mud-ex-pivot-*`
   rules of the Wrapper's own; none names a class of ExPivot's or ExGrid's.
 
 Three things MudTabs does not allow, and how they are met:
@@ -58,7 +58,7 @@ Three things MudTabs does not allow, and how they are met:
 
 Also built here, from "Refined while building it": a failed Refresh is a Stale Report whose Retry
 refreshes again, and a failed layout question goes back to the report's layout, said on the
-toolbar (ADR-0067); while a new Source Version's Items are on their way, the band and Filter…
+Pivot Toolbar (ADR-0067); while a new Source Version's Items are on their way, the band and Filter…
 keep the earlier version's in view, OK enabled, the list marked busy
 (`PivotItemFilterContext.IsUpdating`) (ADR-0066).
 

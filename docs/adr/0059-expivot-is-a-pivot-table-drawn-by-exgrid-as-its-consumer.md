@@ -36,7 +36,7 @@ Layout**, asks its source and computes. ExGrid paints, selects, navigates, copie
 application  (ExPivot's Consumer: hands over the Pivot Source — a Snapshot, or its server —
    ↓            persists the Pivot Layout, and may show the records behind a cell itself)
    ↓ source / layout                        ↑ LayoutChanged, OnShowDetails
-ExPivot      (the Field List and toolbar; holds the Pivot Layout; asks the source for the
+ExPivot      (the Field List and the Pivot Toolbar; holds the Pivot Layout; asks the source for the
    ↓            Leaf Aggregates and lays the report out — ExPivot.Engine)
    ↓ pushes the report as a Window          ↑ Selection, context commands, double click
 ExGrid       (painting, Selection, Focus, keyboard, clipboard, Change Highlight, Chrome seams)
@@ -135,7 +135,7 @@ and takes DOM focus when the core's `FocusRequest` asks
   from the report's own headers. That needs two things the core does not have: a Consumer's commands
   in a column header's menu, and a menu on a Header Group. It would also move ExGrid's release
   criteria. The same commands are on each placed field's menu in the Field List, and in the Context
-  Menu; the toolbar's toggle brings the Field List back whenever it is hidden (ADR-0061). The
+  Menu; the Pivot Toolbar's toggle brings the Field List back whenever it is hidden (ADR-0061). The
   dropdown waits for an ADR on ExGrid's header menus.
 
 **Copy is ExGrid's, unchanged.** A value cell's `text/plain` is its display text, and its
@@ -230,7 +230,7 @@ measurements, and the Japanese words with Q6.
 | Four Areas, drag and drop, the field menus, ticking a field | ✓ | | |
 | Sum, Count, Average, Max, Min, Product, Count Numbers, StdDev, StdDevp, Var, Varp | ✓ | | |
 | Compact, Outline and Tabular forms; subtotals at the top or bottom, or off; grand totals | ✓ | | |
-| The **Layout menu** that sets them, and the **toolbar** above the report (ADR-0061) | ✓ | | |
+| The **Layout menu** that sets them, and the **Pivot Toolbar** above the report (ADR-0061) | ✓ | | |
 | Expand and collapse row Items, and whole fields on either axis | ✓ | | |
 | Hidden Items (the item filter), on every Area | ✓ | | |
 | Sort by label, ascending or descending, by a Value Field, and by an **Order Key** (ADR-0060) | ✓ | | |

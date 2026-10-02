@@ -30,9 +30,9 @@ nothing; otherwise the question goes out, the Field List shows the new layout at
 report stays as it was under the grid's `IsLoading`. A further change cancels the question in
 flight, and a generation counter discards an answer to a superseded question, late or early. A
 field in Filters that hides nothing does not travel (`PivotQuery.For`, `PivotCube.Holds`). A
-failure, a failed Refresh included, leaves the report as it was and is said under the toolbar
+failure, a failed Refresh included, leaves the report as it was and is said under the Pivot Toolbar
 (`LastError`). `PivotCaps` holds the leaves, the rows and the columns: a layout that breaks one
-is refused by name under the toolbar, and the layout goes back to the one before. Defer Layout
+is refused by name under the Pivot Toolbar, and the layout goes back to the one before. Defer Layout
 Update and Update stand at the pane's foot. Value Field Settings… offers the Aggregations the
 source does not answer disabled, with the reason, and never asks for them. Filter… and the band
 list Items under the report's Source Version, an open Filter… lists again when a new version

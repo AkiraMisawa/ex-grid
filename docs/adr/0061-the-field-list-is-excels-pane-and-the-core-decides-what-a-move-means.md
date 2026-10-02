@@ -8,7 +8,7 @@ for them. Commit messages before then use the old numbers.)*
 and decided with the user the same day. The grilling kept the pane and its rules as built. It added
 three things, each marked **Changed when decided** below:*
 
-- *the toolbar above the report, with the Layout menu and the pane's toggle (Q4, Q17);*
+- *the Pivot Toolbar above the report, with the Layout menu and the pane's toggle (Q4, Q17);*
 - *Defer Layout Update (Q14);*
 - *a correction to how a drop target says what it accepts, which brings the text in line with what
   was built.)*
@@ -95,13 +95,18 @@ the report does not follow.**
 
 `LayoutChanged` is raised for the layout the report shows, never for a pending one.
 
-## The toolbar above the report
+## The Pivot Toolbar above the report
+
+*(Named the Pivot Toolbar on 2026-10-02, with the user, when ExSheet's Sheet Toolbar
+([ADR-0100](./0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)) put "toolbar" on its
+own among the words to avoid. Until then this ADR and ExPivot's others called it "the toolbar".
+Nothing about it changed but the name.)*
 
 *Changed when decided* (Q4, Q17). The engine held every report-wide setting from the start, but
 nothing on screen changed them: Excel's Design tab had no counterpart, and only the Consumer's code
 could set a form. The user also asked that the pane be shown and hidden by the user. A menu in the
-pane's heading would be out of reach while the pane was hidden, so **the settings stand in a toolbar
-above the report instead.**
+pane's heading would be out of reach while the pane was hidden, so **the settings stand above the
+report instead, in the Pivot Toolbar.**
 
 - **On the left is the report filter band.** Each field in Filters is shown as Excel shows its page
   fields: its caption, followed by `(All)`, the one Item shown, or `(Multiple Items)`. Its button
@@ -119,7 +124,7 @@ above the report instead.**
   - **The Field List's toggle.** The pane's visibility is a parameter the Consumer can bind
     (`@bind-ShowFieldList`), so the Consumer can remember it. The Context Menu still offers
     Show / Hide Field List, as Excel's does.
-- **Under the toolbar**, when there is one, is the Stale Report's notice
+- **Under the Pivot Toolbar**, when there is one, is the Stale Report's notice
   ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)),
   with Retry.
 
@@ -172,8 +177,8 @@ pushing what follows down. Seen in a browser, that failed in two ways:
 The static position keeps what the in-flow version was for — nothing measured and nothing clipped —
 and drops both failures.
 
-**The toolbar's popups** — the report filter band's Filter… and the Layout menu — open under the
-toolbar, over the report, with a backdrop that closes them on a press elsewhere.
+**The Pivot Toolbar's popups** — the report filter band's Filter… and the Layout menu — open
+under it, over the report, with a backdrop that closes them on a press elsewhere.
 
 - Escape, Cancel and the backdrop close them.
 - The keyboard goes back to the button that opened them.
@@ -186,7 +191,7 @@ ExPivot's Chrome, `IPivotChrome`, has one member per surface. Each member return
 draw, or null for ExPivot's built-in plain markup. The surfaces are:
 
 - the Field List;
-- the toolbar with its report filter band;
+- the Pivot Toolbar with its report filter band;
 - a menu, which also serves the Layout menu;
 - Filter…, Field Settings… and Value Field Settings…;
 - the Details tabs;
@@ -222,6 +227,6 @@ It is [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s shape:
   against the engine's functions. The component's layer-2 tests drive the same rules through the
   built-in markup and through a substituted Chrome, and expect the same layouts.
 - **`ShowFieldList="false"`** leaves the pane out, for a report whose layout the Consumer fixes. The
-  toolbar's toggle and the Context Menu bring the pane back.
+  Pivot Toolbar's toggle and the Context Menu bring the pane back.
 - **Layer 3 drags in a real browser**, because only a browser can say that a drop lands where the
   pointer was.

@@ -105,14 +105,14 @@ learns it: SignalR, polling, or a message bus (Q57).
 - **A column that appears is marked too**, every cell of it, as a row that appears is.
 - **A new source is data**: its changed cells are marked, and a refusal of its answer is a Stale
   Report. **New caps from the Consumer are not data**: they mark nothing, and a refusal goes to
-  the toolbar's notice, as a refused layout does.
+  the Pivot Toolbar's notice, as a refused layout does.
 - **A failed Refresh is a Stale Report.** The newest data could not be shown, and the notice
   says so with the time of the version on screen and Retry. A failed question for a layout the
-  user asked for is not stale data: it goes to the toolbar's notice, and the layout goes back.
+  user asked for is not stale data: it goes to the Pivot Toolbar's notice, and the layout goes back.
   - **Retry after a failed Refresh refreshes again.** What failed was the refresh, and asking a
     source that never refreshed would show its old data as the newest.
-  - **Before the first report, a failed Refresh goes to the toolbar's notice**, because there is
-    no report to be stale.
+  - **Before the first report, a failed Refresh goes to the Pivot Toolbar's notice**, because there
+    is no report to be stale.
   - **The layout goes back only when a report is on screen.** When the first question fails, the
     pane keeps its layout, so the next change asks for it again.
 - **The as-of time is the clock's**: when the answer on screen arrived, in the clock's local zone

@@ -38,12 +38,13 @@ structure or state.
   cascaded value to size its label column, so the font on screen and the widths in the arithmetic
   still leave one hand. A second paper would be a second copy of that obligation.
 - **`MudPivotChrome`** is the `IPivotChrome` ([ADR-0061](./0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md))
-  that draws the Field List, the toolbar with its report filter band, the menus and the panels.
+  that draws the Field List, the Pivot Toolbar with its report filter band, the menus and the
+  panels.
   - It uses MudBlazor's controls: `MudCheckBox`, `MudTextField`, `MudSelect`, `MudRadioGroup`,
     `MudButton`, `MudText` and Material icons.
   - It supplies `MudGridChrome` as the report grid's Chrome, so one parameter dresses both.
   - *Changed when decided:* it also draws the surfaces the grilling added.
-    - The toolbar's Layout menu, Refresh and the pane's toggle are MudBlazor buttons and menu
+    - The Pivot Toolbar's Layout menu, Refresh and the pane's toggle are MudBlazor buttons and menu
       items.
     - Defer Layout Update is a `MudCheckBox` with a `MudButton` beside it.
     - The Details tabs are `MudTabs` placed at the bottom, as Q26 put them.
@@ -52,7 +53,7 @@ structure or state.
       `MudDialog` (the boundary below).
 - **`mud-ex-pivot.css`** maps ExPivot's own Visual Tokens onto MudBlazor's palette variables.
   - The tokens cover the `±` button, the Field List's surfaces and rules, the drop indicator, the
-    toolbar, the tabs and the Stale Report's notice.
+    Pivot Toolbar, the tabs and the Stale Report's notice.
   - They are scoped under `.mud-ex-grid`, as the grid Wrapper's rules are, so load order cannot
     matter.
   - The Change Highlight is the grid's token
@@ -87,7 +88,7 @@ reasons.
 - **No JavaScript.** MudBlazor's controls bring MudBlazor's own, as they already do for
   `ExGrid.MudBlazor`'s filter panel; the Wrapper adds none.
 
-*(Refined 2026-10-01, when the toolbar, the Details tabs and the dialog were dressed.)*
+*(Refined 2026-10-01, when the Pivot Toolbar, the Details tabs and the dialog were dressed.)*
 
 - **`MudTabs` draws the Details tabs, and ExPivot still owns which one is selected.** Four things
   `MudTabs` does by itself are held to that:

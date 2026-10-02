@@ -847,6 +847,15 @@ decides what each gesture means; its Chrome draws it
 ([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
 _Avoid_: field chooser, designer, pivot panel
 
+**Pivot Toolbar**:
+The band above a Pivot Report: the report filter band on its left, and on its right Layout ▾
+(Excel's Design tab: Subtotals, Grand Totals, Report Layout), Refresh when the source can be asked
+again, and the Field List's toggle. A Stale Report's notice stands beneath it. ExPivot decides
+what each of them means; its Chrome draws it
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+_Avoid_: toolbar on its own (a Sheet's is the Sheet Toolbar), ribbon, Design tab (Excel's, which
+the Layout menu stands in for)
+
 **Show Details**:
 The Source Records behind one cell of the report — Excel's drill-down, from a double click on a
 value or the Context Menu — which ExPivot shows in a tab beside the report or in a dialog, or hands

@@ -620,30 +620,30 @@ nobody had asked for. What that means when writing a test:
   for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the
   page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-63); the
   keyboard into a field's menu and back to its entry, a menu dropping down under its entry as
-  wide as the pane, and a command moving the field (PV-11); the toolbar above the report — the
+  wide as the pane, and a command moving the field (PV-11); the Pivot Toolbar above the report — the
   report filter band on its left, Layout and the pane's toggle on its right, no Refresh for the
-  bundled source (PV-30) — the band filtering, and its Filter… opening under the toolbar over the
-  report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
+  bundled source (PV-30) — the band filtering, and its Filter… opening under the Pivot Toolbar over
+  the report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
   Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
-  giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by
-  the page; Defer Layout Update holding the report until Update (PV-28); the words switch
-  speaking Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade
-  date, moved to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in
-  the Japanese words (ADR-0060); and the code the page shows under "The code" equal to the
-  regions of its source it is read from (PV-20). Where the keyboard goes when the dialog or a tab
-  goes (PV-39, DC-62, ADR-0070): Escape in the dialog's grid closing the grid's Context Menu
-  first, then the dialog, and held, closing it once, its repeats leaving the report the keyboard
-  (KB-44); however the dialog closes — that Escape, Escape on Close, Close, the backdrop — the
-  report's grid holding the keyboard again, its arrows moving its Focus; Escape in a details tab's
-  grid closing nothing and releasing Tab (KB-8); the selected tab closed handing the keyboard to
-  the tab selected next, and the last one back to the report, on the cell it left. Under MudBlazor
-  alone, a MudSelect's list in Value Field Settings… taking Escape before its panel (PV-11), and
-  the palette reaching the pane, the entries and the `−` button in both schemes (PV-18). Under
-  ExPivot's own markup alone, ExGrid's `ReturnKeyboardAsync` keeping to its conditions (DC-61): a
-  control of the page focused while the report's request is on its way keeps the keyboard, and so
-  does a second grid pressed meanwhile — the other pivot's report on `/pivot-db`. On the Server
-  host the request lands two round trips after the Escape or the close, with 150 ms injected; on
-  WebAssembly the same tests are the case without a round trip.
+  giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by the
+  page; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
+  Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade date, moved
+  to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in the Japanese
+  words (ADR-0060); and the code the page shows under "The code" equal to the regions of its source
+  it is read from (PV-20). Where the keyboard goes when the dialog or a tab goes (PV-39, DC-62,
+  ADR-0070): Escape in the dialog's grid closing the grid's Context Menu first, then the dialog, and
+  held, closing it once, its repeats leaving the report the keyboard (KB-44); however the dialog
+  closes — that Escape, Escape on Close, Close, the backdrop — the report's grid holding the
+  keyboard again, its arrows moving its Focus; Escape in a details tab's grid closing nothing and
+  releasing Tab (KB-8); the selected tab closed handing the keyboard to the tab selected next, and
+  the last one back to the report, on the cell it left. Under MudBlazor alone, a MudSelect's list in
+  Value Field Settings… taking Escape before its panel (PV-11), and the palette reaching the pane,
+  the entries and the `−` button in both schemes (PV-18). Under ExPivot's own markup alone, ExGrid's
+  `ReturnKeyboardAsync` keeping to its conditions (DC-61): a control of the page focused while the
+  report's request is on its way keeps the keyboard, and so does a second grid pressed meanwhile —
+  the other pivot's report on `/pivot-db`. On the Server host the request lands two round trips
+  after the Escape or the close, with 150 ms injected; on WebAssembly the same tests are the case
+  without a round trip.
 - `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0064, PV-20), **run once per
   Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
   the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through
