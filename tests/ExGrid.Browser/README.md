@@ -152,6 +152,87 @@ land — and a key pressed in that gap is lost, as it would be for a user who ig
 grid. A test that clicked and typed straight after the rows appeared failed that way on a slow
 runner.
 
+## Waiting on the Server host
+
+On the Server host, what the grid decides reaches the page a round trip after the key or the
+press that asked for it, and a timer the grid starts — 150 ms before Placeholders fill, 300 ms
+before an error message opens — renders later still. **Before a reading that has to see
+everything the host will say, a test awaits `circuitQuiet()`** from `fixtures.mjs` (ADR-0056).
+It returns once nothing is held in `latency-proxy.mjs` or unsent on a socket, in either
+direction, and nothing has crossed for 400 ms, longer than the grid's longest timer. The browser
+acknowledges every render batch once it has applied it, so by then the last one is in the DOM.
+
+- **Wait for the state you expect first, with `expect` or `expect.poll`.** `circuitQuiet` is
+  for what comes after that: a reading that nothing undid it ("stays whole once every round trip
+  has landed"), that something did not happen ("the panel still stands"), or a picture. A fixed
+  `waitForTimeout` in its place is too short on a slow runner and lets a late answer slip past
+  the reading, so the test passes while the defect it is there for is present.
+- **On WebAssembly it returns at once.** There is no wire, and nothing equivalent can be read in
+  the page. A test whose WebAssembly half needs the page's own asynchronous work to finish still
+  waits for a state, or keeps the fixed wait it had. `circuit.spec.mjs` keeps its waits and
+  awaits `circuitQuiet()` after them.
+- **It cannot see a timer that has not fired**, and it says nothing about painting: a picture
+  still waits for its frames, and `stillPictures` does both.
+- **It never waits for ever.** It throws after `timeout` (10 s), saying how many chunks crossed
+  each way while it waited. SignalR's keep-alive pings, 15 s apart, delay it by one window at
+  most, and the proxy refuses a window of 5 s or more, which the pings could keep from being met.
+  A proxy left running from an older checkout does not know `/quiet`, and `circuitQuiet` says
+  so rather than reading its answer as quiet.
+
+## Reading pixels
+
+A picture says what the browser put on the screen, and nothing else does. It is also the
+reading most exposed to things no requirement is about: a layer composited at a fraction of a
+device pixel, a blend rounded one way on one path and the other way on the next, a render that
+arrived between two pictures. So:
+
+- **What the grid decided to draw is read from the DOM, or pinned in layer 2:** the generated
+  CSS, the style attribute, `getComputedStyle`. A colour token, a class, a width the grid wrote
+  are decisions, and their values are exact.
+- **Pixels are read only where what is painted is itself the requirement:** matching Excel's
+  pixels (a line's device pixels, a dash pattern), a layer that hides or shows another, a blend
+  the browser makes.
+- **Read where the boundary lies on a device pixel.** A device pixel an edge cuts through is a
+  blend of both sides. `offDevicePixels(box, scale)` in `pixels.mjs` names the edges of a box
+  that are not on the device pixel grid; a test reading at an edge checks it first and fails
+  there, saying so. A paint is read on the pixels a box covers whole (`wholePixelCentres`),
+  through a region grown out to the device grid (`onDeviceGrid`), so each pixel of the picture
+  is one of the page's.
+- **The one allowance for rounding is `paints(pixel, exact)`, with `blend`.** A channel whose
+  exact value lies between two bytes is painted as either of them, and no other: ticket 92's
+  rule, 78.53 exactly, came out 79 on a pinned cell and 78 beside it. A whole exact value admits
+  only itself. Two paints that ought to be one paint are compared with each other exactly, not
+  through this; that is how ticket 92 found its defect. A new test that decides a colour is
+  right uses `paints`, not a tolerance of its own.
+- **Two pictures of one thing are taken with `stillPictures`.** A mark the test sets draws the
+  subject each way, through a stylesheet laid over the page with `alterPage`. It waits for the
+  circuit to be quiet, and it takes every picture again when anything but the mark changed the
+  document, or anything scrolled, between the first mark and the last picture; a page that
+  never holds still fails the test, naming what changed. Playwright's own preparation for a
+  screenshot — the caret made transparent with an inline style on every field, then put back,
+  which leaves `style=""` behind — is not counted. `pixelsApart` compares the two.
+- **When the question is where the ink stands, draw both pictures in black on white.** A
+  comparison is only as strong as the contrast it reads: under half a pixel's shift, an edge
+  pixel of #424242 text on white moves by about 95, under DC-48's threshold of 96 (found on
+  `claude/exsheet-cell-format`, 2026-10-02).
+
+## Before a new or changed spec goes in
+
+A test that passes once has passed once. **Run each spec file you wrote or changed several
+times over, on both hosts, before it goes in** — headless and on a port of your own on this
+Mac (see "Two checkouts must not share a port" below):
+
+```sh
+export EXGRID_HEADLESS=1 EXGRID_BASE_URL=http://localhost:5411
+npx playwright test harness-reading.spec.mjs --project=chrome --repeat-each=5
+EXGRID_HOSTING=server npx playwright test harness-reading.spec.mjs --project=chrome --repeat-each=5
+```
+
+`--repeat-each` runs every test of the file that many times, each repetition in a worker of its
+own, so each boots the app once as a file does. A test that fails one time in five fails in CI
+one run in a few, on a branch that did not touch it. `retries` stays 0 (ADR-0026): a retry
+would make that failure invisible, not rare.
+
 ## What a test shares with the rest of its file
 
 A spec file boots the app once; every test in it mounts its page afresh (ADR-0056). Booting
@@ -302,6 +383,14 @@ nobody had asked for. What that means when writing a test:
   `alterPage` are each named, and the next test has a document of its own; a test that fails —
   in its body or in its console — or leaves a key or a button held hands no page on;
   `freshDocument` loads the page for real.
+- `harness-reading.spec.mjs` — the harness's tools for reading the page: `circuitQuiet` waiting
+  out a 300 ms round trip so a move is there to read at once, where read straight after the key
+  it is not, returning at once on WebAssembly, refusing a window the keep-alive pings could
+  block, and naming the chunks that kept a busy wire from going quiet; `stillPictures` taking
+  every picture again after a change made between them, failing with the change named when the
+  page never holds still, and not counting Playwright's own write to the fields; `paints`
+  admitting either byte of ticket 92's 78.53 and only the byte of a whole value; and the
+  device-pixel tools.
 - `observational.spec.mjs` — the numbers that are recorded, never gated, into
   `metrics.json`: mount to first row at 10⁶ (BIG-7), the DOM with horizontal
   virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both
@@ -536,3 +625,10 @@ Two traps live in that, and the DemoHost has hit both:
   be awaited before the key is sent, or it races the key through a different channel.
   KB-15 failed half the time on Edge for exactly this, and it looked like the browser
   swallowing the shortcut.
+- A screenshot writes to the page. Before it, Playwright makes the caret transparent with an
+  inline style on every field, and after it, it puts back what was there, which leaves
+  `style=""` on a field that had no style. A trace that shows the attribute between two pictures
+  shows Playwright's write, not a render: DC-48's failure on the Server host was first read as a
+  late render for that reason (`claude/exsheet-cell-format`, 2026-10-02). `stillPictures` does
+  not count the write; a check of its own that compares markup across a screenshot has to leave
+  it out too.
