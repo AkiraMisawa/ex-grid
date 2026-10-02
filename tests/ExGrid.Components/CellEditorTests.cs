@@ -345,7 +345,7 @@ public class CellEditorTests : GridTestContext
         Assert.Equal("5x", intent.Value);
         Assert.Empty(cut.FindAll(".ex-editor"));
         // And the press kept its own meaning: the Focus stands on the clicked cell.
-        Assert.EndsWith("r2c0", cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.EndsWith("r2c0", KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
     }
 
     [Fact] // ADR-0010: a header press mid-edit commits before it sorts or grabs a column
@@ -371,7 +371,8 @@ public class CellEditorTests : GridTestContext
         var cut = RenderGrid();
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "5");
-        var before = cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        var before = KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
+        Assert.NotNull(before);
 
         // stopPropagation leaves the press with no handler anywhere on its path — the
         // exception is the assertion.
@@ -380,7 +381,7 @@ public class CellEditorTests : GridTestContext
                 new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 3, OffsetY = 3 }));
 
         Assert.Single(cut.FindAll("input.ex-editor"));
-        Assert.Equal(before, cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.Equal(before, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
     }
 
     [Fact] // An AltGr character — Control+Alt held together on Windows — is typing, not a chord

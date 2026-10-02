@@ -1,6 +1,6 @@
 # 79: A prototype: Japanese typed onto a selected cell composes
 
-Status: needs-info — the prototype is built; the user decides whether to take it (see the Comments)
+Status: done — decided with the user on 2026-10-02: option 1 is taken (ADR-0080) and built as ticket 80
 
 **What to build:** a prototype, not for merging, so that the user can decide (ADR-0010, the note of
 2026-10-01). The fifteenth Windows run found that on a selected cell with no edit open the IME cannot
@@ -224,4 +224,19 @@ expected to pass. Whatever else fails is unknown until it runs.
 
 A real IME is a Windows run's. The procedure is proposed at
 `docs/specs/exsheet/verify-on-windows-PROPOSED-ime-prototype.md`, unnumbered until the user reserves
-a run.
+a run. *(Renamed `verify-on-windows-16.md` on 2026-10-02, when run 16 was reserved.)*
+
+### Decided, 2026-10-02
+
+With the user: **option 1 is taken**, as the prototype built it, and recorded as ADR-0080. Two
+questions the prototype left open were decided with it:
+
+- **The Keyboard Field is the grid's one tab stop** on a grid that edits (`tabindex="0"` on the field,
+  `-1` on the root), so that ticket 77's release of Tab traps no one. The release also ends when DOM
+  focus leaves the grid (the root's `focusout`), which closes the case ticket 77 recorded as open.
+- **The field carries `aria-activedescendant`**, naming the Focus cell as the root did (ADR-0033),
+  checked over CDP (A11Y-21).
+
+The difference from Excel is kept and recorded: the core hears of the edit only when the composition
+ends. It is built as ticket 80, on `claude/exsheet-keyboard-field`, and a real IME is the sixteenth
+Windows run's.

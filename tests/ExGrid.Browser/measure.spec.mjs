@@ -1,5 +1,6 @@
 import { test, expect, record, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import { expectTabStopTaken } from './keyboard.mjs';
 
 // SRV-6 — ADR-0021's owed number: what the pointer reports cost on a Blazor Server
 // circuit. Observational, never a gate (Definition of Done §1). Runs only when asked for,
@@ -37,7 +38,7 @@ test('what the pointer reports cost on a circuit, at 0, 50 and 150 ms round trip
         await setRoundTrip(0);
         await page.goto('/stripes');
         const grid = page.locator('.ex-grid').first();
-        await expect(grid).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(grid);
         await setRoundTrip(rtt);
 
         const rows = grid.locator('.ex-row:not(.ex-placeholder)');
@@ -118,7 +119,7 @@ test('how long the stale band stands while the window is dragged over a Stretch 
         // A box that follows the window's height, less 220px (the /stretch page's own).
         await page.goto('/stretch?parent=window');
         const grid = page.locator('#window-box .ex-grid');
-        await expect(grid).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(grid);
         await expect(grid.locator('.ex-row').first()).toBeVisible();
         await setRoundTrip(rtt);
 

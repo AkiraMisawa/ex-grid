@@ -98,7 +98,10 @@ Rejected:
   `user-select: none` element — on the real Chrome. This was the assumption the whole event
   route stood on, and it was verified in a headed browser before the wiring was built, because
   a browser that only fired these events in editable contexts would have forced the hidden-
-  textarea trick every other grid library carries.
+  textarea trick every other grid library carries. *(Carried since 2026-10-02, for the IME rather
+  than for the clipboard: on a grid that edits, a text field of the grid's own holds the keyboard
+  while a cell is selected, so that an IME can start there ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)). The events now fire on
+  that field, inside the root, and the route is unchanged.)*
 - **The event route needs a synchronous answer, and only WebAssembly has the channel.** The
   `copy` event cannot await; the payload is asked for through `invokeMethod`, which exists on
   WASM (the first Consumer's premise, [ADR-0017](./0017-target-chromium-browsers-only.md)) and

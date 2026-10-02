@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs';
+import { expectKeyboardOn } from './keyboard.mjs';
 
 // ViewportSize.Stretch on the height (ADR-0028, rewritten 2026-09-26), against the /stretch page:
 // the grid takes a definite parent's height — a sized box, the rest of a flex column under a
@@ -107,7 +108,7 @@ test.describe('in a box that follows the window', () => {
         await page.keyboard.press('Tab');
 
         await expect(grid.locator('.ex-popover')).toHaveCount(0);
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await expect(page.locator('#sort-status')).toHaveText('Sorts: none');
     });
 
@@ -122,7 +123,7 @@ test.describe('in a box that follows the window', () => {
         await page.setViewportSize({ width: 1280, height: 250 });
 
         await expect(grid.locator('.ex-popover')).toHaveCount(0);
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.setViewportSize({ width: 1280, height: 800 });
         await page.keyboard.press('ArrowDown');
         await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c1$/);
