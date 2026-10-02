@@ -68,6 +68,12 @@ public static class MudExGridWords
     /// English.</summary>
     public const string OperandReadsTwoWays = "operand-reads-two-ways";
 
+    /// <summary>A condition's date that is not of the column's declared date type: a time on a
+    /// column of days, an offset on a column without them, or none on a column of moments
+    /// (ADR-0023, section of 2026-10-02; ticket 98). Without the Chrome's word for it, the panel
+    /// names the form to type in the core's English.</summary>
+    public const string OperandNotTheColumnsDateForm = "operand-not-the-columns-date-form";
+
     private static string English(string id) => id switch
     {
         NameBox => "Name Box",
@@ -86,6 +92,7 @@ public static class MudExGridWords
         SecondCondition => "Second condition",
         OperandNotReadable => "Not a number as this column reads numbers.",
         OperandReadsTwoWays => "This reads as two different numbers. Type it without separators.",
+        OperandNotTheColumnsDateForm => "Not a date of the kind this column holds.",
         _ => BuiltInCommandLabels.For(id),
     };
 

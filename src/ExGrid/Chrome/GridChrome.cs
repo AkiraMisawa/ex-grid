@@ -129,6 +129,12 @@ public sealed record GridCommand(string Id, bool Enabled, Func<Task> Invoke);
 /// <para><see cref="Clear"/> removes the column's filter and closes. The one popover offers
 /// it as the "clear-filter" command above the panel, so the panels this package and
 /// <c>ExGrid.MudBlazor</c> ship draw no Clear of their own (ADR-0044).</para>
+///
+/// <para><see cref="DateType"/> is a Date column's declared date type (ADR-0023, section of
+/// 2026-10-02): what a typed operand reads as, through
+/// <see cref="FilterPanelChoices.ReadOperand"/>, and what an operand in <see cref="Current"/> is.
+/// A panel hands that type to the engine or nothing: a <see cref="DateTime"/> on a
+/// <see cref="ExGrid.DateType.DateOnly"/> column is refused when it is applied.</para>
 /// </summary>
 public sealed record FilterPanelContext(
     string Column,
@@ -145,7 +151,8 @@ public sealed record FilterPanelContext(
     Action<bool>? InnerPopupChanged = null,
     int FocusLastRequest = 0,
     Func<KeyboardEventArgs, Task>? ValueListKey = null,
-    int SearchRequest = 0);
+    int SearchRequest = 0,
+    DateType DateType = DateType.DateTime);
 
 /// <summary>The column menu's contract (ADR-0010): the core decides the items. They stand
 /// at the top of the one popover Alt+↓ and the ▾ open, above the column's filter where it

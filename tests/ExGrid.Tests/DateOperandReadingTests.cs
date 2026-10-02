@@ -63,7 +63,8 @@ public class DateOperandReadingTests
     {
         Assert.Equal(new DateTime(2026, 1, 5), Read("2026-01-05", culture).Value);
         Assert.Equal(new DateTime(2026, 1, 5, 9, 5, 7), Read("2026-01-05 09:05:07", culture).Value);
-        Assert.Equal(new DateTimeOffset(2026, 1, 5, 9, 5, 7, TimeSpan.FromHours(9)), Read("2026-01-05 09:05:07 +09:00", culture).Value);
+        Assert.Equal(new DateTimeOffset(2026, 1, 5, 9, 5, 7, TimeSpan.FromHours(9)), FilterPanelChoices.ReadOperand(
+            ColumnType.Date, "2026-01-05 09:05:07 +09:00", CultureInfo.GetCultureInfo(culture), DateType.DateTimeOffset).Value);
     }
 
     [Theory, MemberData(nameof(Cultures))] // ADR-0023, principle 1: a date operand reopens in a text that reads back as itself

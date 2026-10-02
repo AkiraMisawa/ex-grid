@@ -1,4 +1,4 @@
-import { expect } from './fixtures.mjs';
+import { expect, circuitQuiet } from './fixtures.mjs';
 import { expectActiveDescendant } from './keyboard.mjs';
 
 // What the Sheet's specs share — sheet, declarations, sheets, edit-stands and pointing-scope:
@@ -137,6 +137,11 @@ export async function goTo(grid, address) {
 /** Presses the Name Box, empties it and types into it, steadily (see typeSteadily). */
 export async function typeIntoNameBox(grid, text) {
     const page = grid.page();
+    // The Name Box names the Focus as the host last said. A render renaming it that lands after
+    // Ctrl+A writes over the selection, and Backspace then took only the last character: a press
+    // on A1 straight before left "A" (CI, Server host, chrome, SH-2, 2026-10-02). So the box is
+    // pressed once the host has said all it will (ADR-0056, note of 2026-10-02).
+    await circuitQuiet();
     await nameBox(grid).click();
     await nameBox(grid).press('ControlOrMeta+A');
     await nameBox(grid).press('Backspace');
