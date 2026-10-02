@@ -477,7 +477,8 @@ for (const chrome of ['builtin', 'mud']) {
 // ---------------------------------------------------------------------------------------------
 // Over the right characters (DC-48)
 
-/** Differing pixels between two PNG screenshots of one element, compared in the page. */
+/** Differing pixels between two PNG screenshots of one element, compared in the page, and the
+ * largest difference, which says how near the threshold the rest came. */
 function pixelsApart(page, a, b) {
     return page.evaluate(async ([a, b]) => {
         const load = (bytes) => new Promise((resolve, reject) => {
@@ -498,26 +499,37 @@ function pixelsApart(page, a, b) {
         const other = context.getImageData(0, 0, canvas.width, canvas.height).data;
         let differing = 0;
         let apart = 0;
+        let largest = 0;
         for (let i = 0; i < one.length; i += 4) {
             const d = Math.max(Math.abs(one[i] - other[i]), Math.abs(one[i + 1] - other[i + 1]), Math.abs(one[i + 2] - other[i + 2]));
             differing += d > 0 ? 1 : 0;
             apart += d > 96 ? 1 : 0;
+            largest = Math.max(largest, d);
         }
-        return { differing, apart, sizes: [first.width, first.height, second.width, second.height] };
+        return { differing, apart, largest, sizes: [first.width, first.height, second.width, second.height] };
     }, [a.toString('base64'), b.toString('base64')]);
 }
 
 /**
  * A stylesheet over the page that draws a field one of two ways, by a mark the test sets on the
  * field: `own` — by its own text, the layer hidden, as it is while the layer is behind; `layer` —
- * by the layer, as the listener has it, with the colours taken off so the ink is the field's. A
- * word the spelling check marks is drawn by the field in its highlight's colour, which the
- * stylesheet takes away only while the layer shows, so `own` gives it back.
+ * by the layer, as the listener has it, with the colours taken off. A word the spelling check
+ * marks is drawn by the field in its highlight's colour, which the stylesheet takes away only while
+ * the layer shows, so `own` gives it back.
+ *
+ * Both ways draw in black, whatever ink the Chrome gives the field, on the white ground of the
+ * light scheme the tests run in. A glyph moved half a pixel changes an edge pixel by about half the
+ * ink's contrast with its ground: 128 levels in black, over DC-48's threshold of 96, but 95 in
+ * MudBlazor's #424242, which the Formula Bar wears under ExGrid.MudBlazor, so the comparison could
+ * not see a layer half a pixel out there. On Linux the self-test below found one only in the column
+ * where the field's left edge cuts through a glyph, and found none on CI's Server host, where End
+ * had left the field scrolled one pixel further: 876 px, against 875 in every local run (2026-10-01).
  */
 async function overlayDrawingWays(page) {
     await alterPage(page, () => {
         const style = document.createElement('style');
         style.textContent = `
+            .ex-reference-text:has(+ [data-drawn]), .ex-reference-text + [data-drawn] { color: #000 !important; }
             .ex-reference-text:has(+ [data-drawn="own"]) { visibility: hidden !important; }
             .ex-reference-text + [data-drawn="own"] { -webkit-text-fill-color: currentColor !important; }
             .ex-reference-text + [data-drawn="own"]::spelling-error,
