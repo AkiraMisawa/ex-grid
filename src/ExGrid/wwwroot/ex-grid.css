@@ -80,9 +80,11 @@
 .ex-row { display: flex; height: var(--ex-row-height); line-height: var(--ex-row-height); pointer-events: none; }
 /* The row rule, transparent by default: a Theme turns it on by setting the token —
    painted, never a border, so the row's box never grows (ADR-0028/0029). The Row Kind
-   blocks below override it on group and total rows, whose grounds carry their own. */
+   blocks below override it on group and total rows, whose grounds carry their own. Its
+   width is --ex-rule-width in whole device pixels (--ex-rule-dp, below), here and wherever
+   else the row's rule is painted. */
 .ex-row {
-    background-image: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
+    background-image: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px));
 }
 /* The same rule on a Pinned Column's cell (ticket 92). Its opaque ground hides the rule its row
    paints beneath it, so the cell paints the rule itself — transparent until a theme turns it on,
@@ -93,7 +95,7 @@
    covers its gridlines (the generated rule names none), and a group or total row names none, as
    its row paints none. One class's specificity, so each of those wins whatever its order. */
 .ex-pinned:where(.ex-cell) {
-    --ex-row-rule: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px));
+    --ex-row-rule: linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px));
     background-image: var(--ex-row-rule);
 }
 /* Row Stripes (ADR-0038): the class comes from the row's absolute position, so the pattern
@@ -108,7 +110,7 @@
    (.ex-lined, ADR-0050 item 15); the cascade that picks the winning tint is unchanged. */
 .ex-row-stripe {
     background-image:
-        linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-width, 1px), transparent var(--ex-rule-width, 1px)),
+        linear-gradient(to top, var(--ex-row-rule-color, transparent) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px)),
         linear-gradient(var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)), var(--ex-row-stripe-background, rgba(128, 128, 128, 0.05)));
 }
 .ex-row-stripe .ex-pinned {
@@ -287,8 +289,19 @@
    still one pixel and thick three (the eleventh Windows run, case 9), and a dash pattern is the same
    number of pixels at every scale, its long dash 9 (the fourteenth, case 18). The resolution follows
    browser zoom and display scale alike; a resolution between two steps draws a little under a
-   pixel, which the browser blends. Paint only: nothing in C# computes with it. */
-.ex-grid { --ex-dp: 1px; }
+   pixel, which the browser blends. Paint only: nothing in C# computes with it.
+
+   --ex-rule-dp is a row's rule — the horizontal gridline — in whole device pixels: --ex-rule-width
+   rounded down to the device pixel, and never thinner than the token where the token is under one.
+   So 1px is one device pixel at 150%, as Excel's gridline is (ADR-0071, Part C of the eleventh run).
+   Left at 1.5 device pixels, the band was one row under Chrome's GPU rasteriser and two under its
+   software one — CI's, headed under xvfb on Linux — and so was the Fill over it (ticket 99). At a
+   whole scale it is the token, as before. A column's rule keeps --ex-rule-width: a column edge
+   lies on half a device pixel at 150%, which no width makes exact (ADR-0071, the same part). */
+.ex-grid {
+    --ex-dp: 1px;
+    --ex-rule-dp: max(min(var(--ex-rule-width, 1px), var(--ex-dp)), round(down, var(--ex-rule-width, 1px), var(--ex-dp)));
+}
 @media (min-resolution: 1.1dppx) { .ex-grid { --ex-dp: calc(1px / 1.1); } }
 @media (min-resolution: 1.25dppx) { .ex-grid { --ex-dp: 0.8px; } }
 @media (min-resolution: 1.5dppx) { .ex-grid { --ex-dp: calc(1px / 1.5); } }

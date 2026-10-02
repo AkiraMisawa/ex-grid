@@ -242,10 +242,13 @@ internal sealed class AppearanceStyles
             // A neighbour's Fill over the gridline this cell holds: a layer of its own, beneath every
             // line, so a line along the other edge keeps its corner pixel (lines lie above Fills),
             // and the gaps of a dashed line on this gridline show it. Its colour is named as well,
-            // for a double line's middle pixel.
+            // for a double line's middle pixel. It is exactly the band of the rule it covers: the
+            // row's rule in whole device pixels (--ex-rule-dp, so one at 150% on every rasteriser,
+            // ticket 99), the column's in --ex-rule-width.
             _rules.Append('.').Append(name).Append("{--ex-cover-").Append(side)
                 .Append(":linear-gradient(to ").Append(toward).Append(',').Append(colour)
-                .Append(" 0 var(--ex-rule-width, 1px),transparent 0);--ex-cover-").Append(side)
+                .Append(" 0 ").Append(horizontal ? "var(--ex-rule-dp, 1px)" : "var(--ex-rule-width, 1px)")
+                .Append(",transparent 0);--ex-cover-").Append(side)
                 .Append("-color:").Append(colour).Append("}\n");
             Version++;
             return;

@@ -176,6 +176,16 @@ test.describe('SH-46: Fills and lines beside Excel\'s', () => {
             const { pixel } = await across(page, box, side, 0.5);
             expect(sameColour(pixel(-1), colour, 2), `the gridline ${name} (${pixel(-1)})`).toBe(true);
         }
+        // A horizontal gridline is one device pixel, as Excel's is (ADR-0071, Part C of the eleventh
+        // run), and so is a Fill over one: the Paper lies above B1's cover, as round a plain gridline.
+        // While the row's rule was 1.5 device pixels at 150%, Chrome's GPU rasteriser drew it one row
+        // deep and its software one — CI's, headed under xvfb — two, and the cover with it (ticket 99).
+        const above = (await across(page, b2, 'top', 0.5)).pixel;
+        expect(sameColour(above(-2), WHITE, 2), `B1's Paper above its cover (${above(-2)})`).toBe(true);
+        const plain = (await across(page, await cell(grid, 'D3').boundingBox(), 'bottom', 0.5)).pixel;
+        expect(sameColour(plain(-1), GRIDLINE, 2), `a plain gridline (${plain(-1)})`).toBe(true);
+        expect(sameColour(plain(-2), WHITE, 2), `the Paper above a plain gridline (${plain(-2)})`).toBe(true);
+        expect(sameColour(plain(0), WHITE, 2), `the Paper below a plain gridline (${plain(0)})`).toBe(true);
     });
 
     test('SH-46/DC-59: between two filled cells side by side the gridline is the right cell\'s Fill (ADR-0071, read from the fourteenth run\'s case 16)', async ({ page }) => {
