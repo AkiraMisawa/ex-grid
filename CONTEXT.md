@@ -515,7 +515,8 @@ _Avoid_: checkbox column, selection column
 
 **Column**:
 A runtime object. Beyond the header's appearance it holds **how to extract the value from a
-row**, the type (which decides the filter UI and the default format), an optional display
+row**, the type (which decides the filter UI and the default format; a date column also says
+which kind of date it holds), an optional display
 format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` /
 `MaxWidth`). A statically listed column and a column generated
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
