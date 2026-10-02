@@ -1,6 +1,6 @@
 # What to verify on Windows, sixteenth run
 
-Status: needs-triage — blocked by ticket 80; ready for the Windows session once it is built
+Status: ready-for-human — ticket 80 is built (PR #44, CI green at 9951ee0)
 
 *(Numbered sixteenth from `docs/agents/numbering.md`. Written as a proposal with ticket 79's prototype,
 `verify-on-windows-PROPOSED-ime-prototype.md`, and taken over for the Keyboard Field as decided,
