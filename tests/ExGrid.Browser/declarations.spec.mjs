@@ -1739,8 +1739,13 @@ for (const chrome of ['builtin', 'mud']) {
         await expectKeyboardOn(grid);
         await copied('B2', '12');
 
-        // And a paste after an edit lands where the Selection is.
+        // And a paste after an edit lands where the Selection is. The commit is waited for as
+        // every step above waits for it: a Ctrl+V pressed while the core has not yet answered it
+        // is held, and a clipboard key cannot be replayed, so it is dropped (CI, the Server host,
+        // 2026-10-02).
         await enter(page, grid, 'E6', '1');
+        await expect(cell(grid, 'E6')).toHaveText('1');
+        await expectKeyboardOn(grid);
         await page.evaluate(() => navigator.clipboard.writeText('42'));
         await clickCell(grid, 'F6');
         await page.keyboard.press('ControlOrMeta+V');
