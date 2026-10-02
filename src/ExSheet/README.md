@@ -305,6 +305,46 @@ whose numbers it no longer fits in the same way, in its own undo step. A width a
 Format widened the column to stays automatic, and a longer number widens the column again; a width
 the user set — a drag or a size to fit — is custom, and nothing widens that column.
 
+## The Sheet Toolbar
+
+The Sheet Toolbar is Excel's Home tab, shown above the Formula Bar when you ask for it (ADR-0100).
+It is off by default, and the Sheet's `ViewportHeight` includes it. Each item follows the Focus
+cell (Bold shows pressed over a bold cell), acts on the Selection as one undo step, and is greyed
+out while a cell is edited. A press with the pointer leaves the keyboard on the Sheet:
+
+```razor
+<ExSheet ShowToolbar="true" />
+```
+
+What it holds, and in which order, is yours to declare. Toolbar Rows and Toolbar Items are child
+components, laid out in markup order; `DefaultToolbarRow` is the default row, and a
+`ToolbarButton` is an action of your own, greyed out while an edit is open like ExSheet's items:
+
+```razor
+<ExSheet @bind-ShowToolbar="_toolbar">
+    <ToolbarContent>
+        <DefaultToolbarRow />
+        <ToolbarRow Label="Review">
+            <ToolbarButton Text="Approve" OnClick="ApproveAsync" />
+        </ToolbarRow>
+    </ToolbarContent>
+</ExSheet>
+```
+
+Binding `ShowToolbar` both ways lets the user hide and show the toolbar with Ctrl+F1, Excel's
+key for the ribbon. Whether it is shown is yours to keep. ExSheet's items are `BoldItem`,
+`ItalicItem`, `UnderlineItem`, `StrikethroughItem`, `FontColourItem`, `FillItem`, `BordersItem`,
+`AlignLeftItem`, `AlignCenterItem`, `AlignRightItem`, `NumberFormatItem`, `PercentItem`,
+`CommaItem`, `FormatCellsItem` and `ToolbarSeparator`.
+
+- **The look is the Chrome's.** The built-in Chrome draws plain buttons with inline-SVG pictures.
+  `MudSheetChrome` draws MudBlazor's controls. A Chrome of your own implements
+  `ISheetChrome.ToolbarItem`, which receives what the item means as a `ToolbarItemContext`.
+- **An item of your own** derives from `ToolbarItemBase`. It reads the Sheet through the cascaded
+  `SheetToolbarContext` and acts through the Sheet's public commands.
+  `SetCellFormatFromFocusAsync` is the command for a change made from the Focus cell's Cell
+  Format, as a toggle needs.
+
 ## More
 
 The decisions behind ExSheet are ADR-0046 to ADR-0051 in

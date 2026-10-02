@@ -166,7 +166,31 @@ export async function typeSteadily(page, field, text) {
  * among them.
  */
 export function sheetCommands(page) {
-    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
+    return ['#sheet-undo', '#sheet-redo', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
+}
+
+/**
+ * A Toolbar Item of the Sheet Toolbar by its name, under either Chrome (ADR-0100): the control that
+ * carries the name, and for a split control its face. Its list's arrow is `toolbarArrow`.
+ */
+export function toolbarItem(page, name, index = 0) {
+    return page.locator('.ex-sheet-toolbar').nth(index)
+        .locator(`button[aria-label="${name}"], .ex-sheet-toolbar-split[aria-label="${name}"] .ex-sheet-toolbar-face`).first();
+}
+
+/** The arrow that opens a split control's list, under either Chrome. */
+export function toolbarArrow(page, name, index = 0) {
+    return page.locator('.ex-sheet-toolbar').nth(index).locator(`[aria-label="${name}, more"]`).first();
+}
+
+/**
+ * Chooses `choice` from the Number Format's list on the Sheet Toolbar (ADR-0100): the built-in
+ * Chrome's in the grid's popover, MudBlazor's in its menu.
+ */
+export async function chooseNumberFormat(page, choice) {
+    await toolbarItem(page, 'Number Format').click();
+    const item = page.locator('.ex-sheet-choice, .mud-menu-item').filter({ hasText: new RegExp(`^${choice}`) }).first();
+    await item.click();
 }
 
 /** Every command that changes the Sheet is greyed out: an edit is open. */

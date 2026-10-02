@@ -8,7 +8,9 @@
     grow it. Its KeyTip is what a ribbon tab's is: the formatting row's is H, Excel's Home.
 *@
 <div class="ex-sheet-toolbar-row" role="group" aria-label="@Label" style="@Style">
-    <CascadingValue Value="this" IsFixed="true">@ChildContent</CascadingValue>
+    <CascadingValue Value="this" IsFixed="true">
+        <CascadingValue Value="Place" IsFixed="true">@ChildContent</CascadingValue>
+    </CascadingValue>
 </div>
 
 @code {
@@ -25,6 +27,15 @@
     [Parameter] public string? KeyTip { get; set; }
 
     private SheetToolbarContext? _joined;
+
+    /// <summary>The scope the row takes its place from.</summary>
+    [CascadingParameter] public ToolbarOrder? Order { get; set; }
+
+    /// <summary>Where the row stands on the toolbar, and the scope its items take theirs from.</summary>
+    internal ToolbarOrder Place { get; private set; } = new();
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => Place = Order?.Next() ?? Place;
 
     private SheetToolbarContext Context => Toolbar
         ?? throw new InvalidOperationException("ToolbarRow is a Toolbar Row: it stands inside an ExSheet's ToolbarContent (ADR-0100).");

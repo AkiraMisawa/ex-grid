@@ -63,8 +63,8 @@ public sealed class SheetToolbarContext
     /// <summary>How many Toolbar Rows the toolbar holds: one when its content declares none.</summary>
     internal int RowCount => Math.Max(1, _rows.Count);
 
-    /// <summary>The items in the order they joined, which is their order on the toolbar.</summary>
-    internal IReadOnlyList<ToolbarItemBase> Items => _items;
+    /// <summary>The items in their order on the toolbar, which is the markup's (<see cref="ToolbarOrder"/>).</summary>
+    internal IReadOnlyList<ToolbarItemBase> Items => [.. _items.OrderBy(item => item.Place)];
 
     /// <summary>The item the keyboard is on inside the toolbar, while the toolbar holds DOM focus.</summary>
     internal ToolbarItemBase? Active { get; private set; }
@@ -103,8 +103,18 @@ public sealed class SheetToolbarContext
         }
     }
 
-    /// <summary>Gives the keyboard back to the Sheet, as a command run from the toolbar's keys does (ADR-0100).</summary>
-    public Task ReturnKeyboardAsync() => _returnKeyboard();
+    /// <summary>
+    /// Gives the keyboard back to the Sheet, as a command run from the toolbar's keys does (ADR-0100):
+    /// from the toolbar itself when it holds DOM focus, which the core does not take the keyboard
+    /// from on its own.
+    /// </summary>
+    public Task ReturnKeyboardAsync() => LeaveToolbar?.Invoke() ?? _returnKeyboard();
+
+    /// <summary>The toolbar's own way of giving the keyboard back, while it is shown.</summary>
+    internal Func<Task>? LeaveToolbar { get; set; }
+
+    /// <summary>The core's focus function itself (ADR-0021's note of 2026-09-30).</summary>
+    internal Task ReturnKeyboardToSheetAsync() => _returnKeyboard();
 
     /// <summary>
     /// Opens <paramref name="choices"/> in the Sheet's built-in frame: a popover inside the Sheet's
@@ -140,8 +150,8 @@ public sealed class SheetToolbarContext
         if (_rows.Remove(row)) _rowsChanged();
     }
 
-    /// <summary>The Toolbar Rows in the order they joined, which is their order on the toolbar.</summary>
-    internal IReadOnlyList<ToolbarRow> Rows => _rows;
+    /// <summary>The Toolbar Rows in their order on the toolbar, which is the markup's.</summary>
+    internal IReadOnlyList<ToolbarRow> Rows => [.. _rows.OrderBy(row => row.Place)];
 
     /// <summary>Puts the keyboard on <paramref name="item"/> inside the toolbar, or on none.</summary>
     internal void Activate(ToolbarItemBase? item)

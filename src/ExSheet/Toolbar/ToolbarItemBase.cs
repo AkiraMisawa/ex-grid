@@ -57,6 +57,12 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
     /// <summary>The Toolbar Row this item stands in; null for an item of a toolbar that declares no rows.</summary>
     [CascadingParameter] public ToolbarRow? Row { get; set; }
 
+    /// <summary>The scope this item takes its place on the toolbar from.</summary>
+    [CascadingParameter] public ToolbarOrder? Order { get; set; }
+
+    /// <summary>Where the item stands on the toolbar, in markup order.</summary>
+    internal ToolbarOrder Place { get; private set; } = new();
+
     /// <summary>
     /// The item's KeyTip letters (ADR-0100). ExSheet's own items carry Excel's; a Consumer's item
     /// carries only what the Consumer declares here, and none otherwise.
@@ -122,6 +128,9 @@ public abstract class ToolbarItemBase : ComponentBase, IDisposable
 
     /// <summary>Opens the item's choices in the Sheet's built-in frame.</summary>
     internal Task OpenChoicesAsync() => Context.OpenChoicesAsync(Face().Name, Face().Choices);
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => Place = Order?.Next() ?? Place;
 
     /// <inheritdoc />
     protected override void OnParametersSet()

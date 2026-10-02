@@ -1,4 +1,5 @@
 @namespace ExSheet
+@implements IDisposable
 
 @*
     The Sheet Toolbar's band (ADR-0100), above the Formula Bar, inside the Sheet's box and outside the
@@ -10,13 +11,26 @@
     Escape gives the keyboard back to the Sheet. A press from the keys gives the keyboard back to
     the Sheet once its command has run. Its height is the rows' count times one row's, written
     inline (ADR-0028).
+
+    Giving the keyboard back from here is the one subtle part. The core's focus function is granted
+    only while DOM focus is inside the grid or on nothing (ADR-0021's note of 2026-09-30), and the
+    toolbar is neither. So the keyboard is first put on an empty element of the toolbar's own with
+    Blazor's FocusAsync, the element is removed, and once the browser has applied that render DOM
+    focus is on nothing and the core takes the keyboard back — the way ExSheet.MudBlazor's Format
+    Cells leaves its dialog. No script is added (ADR-0021).
 *@
 <div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
      tabindex="0" style="@Style" aria-activedescendant="@ActiveId"
      @onkeydown="OnKeyAsync" @onfocus="OnFocus" @onfocusout="OnFocusOut">
     <CascadingValue Value="Context" IsFixed="true">
-        @(Content ?? DefaultRow)
+        <CascadingValue Value="_order" IsFixed="true">
+            @(Content ?? DefaultRow)
+        </CascadingValue>
     </CascadingValue>
+    @if (_leaving)
+    {
+        <span class="ex-sheet-toolbar-leaving" style="position: fixed; top: 0; left: 0" tabindex="-1" aria-hidden="true" @ref="_leavingFrom"></span>
+    }
 </div>
 
 @code {
@@ -39,8 +53,72 @@
 
     private string? ActiveId => Context.Active?.Describe().Id;
 
+    // The keyboard on its way back to the Sheet: the element it leaves from stands, it has been put
+    // there, and the hand-back waits for the render that removes it.
+    private bool _leaving;
+    private bool _leftFromElement;
+    private bool _handBackAfterRender;
+    private ElementReference _leavingFrom;
+    private TaskCompletionSource? _handedBack;
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => Context.LeaveToolbar = GiveKeyboardBackAsync;
+
+    /// <summary>
+    /// Gives the keyboard back to the Sheet from the toolbar: through the toolbar's own empty
+    /// element, removed before the core is asked, so that DOM focus is on nothing when it is.
+    /// </summary>
+    private Task GiveKeyboardBackAsync()
+    {
+        if (!_hasFocus) return Context.ReturnKeyboardToSheetAsync();
+        _handedBack ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _leaving = true;
+        StateHasChanged();
+        return _handedBack.Task;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_leaving && !_leftFromElement)
+        {
+            _leftFromElement = true;
+            try
+            {
+                await _leavingFrom.FocusAsync(preventScroll: true);
+            }
+            catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+                // The page went, or the circuit did.
+            }
+            _leaving = false;
+            _handBackAfterRender = true;
+            StateHasChanged();
+            return;
+        }
+        if (_handBackAfterRender)
+        {
+            _handBackAfterRender = false;
+            _leftFromElement = false;
+            var handedBack = _handedBack;
+            _handedBack = null;
+            await Context.ReturnKeyboardToSheetAsync();
+            handedBack?.TrySetResult();
+        }
+    }
+
+    private bool _hasFocus;
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (Context.LeaveToolbar == GiveKeyboardBackAsync) Context.LeaveToolbar = null;
+        _handedBack?.TrySetResult();
+    }
+
     private void OnFocus()
     {
+        _hasFocus = true;
         // Tab arrives on the item the keyboard was on last, else on the first that can be pressed.
         if (Context.Active is { CanPress: true }) return;
         Context.Activate(Pressable().FirstOrDefault());
@@ -49,6 +127,7 @@
 
     private void OnFocusOut(FocusEventArgs _)
     {
+        _hasFocus = false;
         // The highlight goes with DOM focus; the place is kept for the next Tab.
         if (Context.Active is null) return;
         _lastActive = Context.Active;
@@ -57,6 +136,9 @@
     }
 
     private ToolbarItemBase? _lastActive;
+
+    // The scope the toolbar's rows and items take their places from, in markup order.
+    private readonly ToolbarOrder _order = new();
 
     private IEnumerable<ToolbarItemBase> Pressable() => Context.Items.Where(item => item.CanPress);
 

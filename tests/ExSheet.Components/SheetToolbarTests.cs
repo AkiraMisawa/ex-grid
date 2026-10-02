@@ -400,6 +400,32 @@ public class SheetToolbarTests : SheetTestContext
         Assert.True(ReclaimCount > reclaimed);
     }
 
+    [Fact] // ADR-0100: the keys follow the markup's order, the default row's items before a Consumer row beside it
+    public async Task The_keys_follow_the_markups_order_across_nested_rows()
+    {
+        var cut = RenderToolbarSheet(ps => ps.Add(s => s.ToolbarContent, (RenderFragment)(builder =>
+        {
+            builder.OpenComponent<DefaultToolbarRow>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<ToolbarRow>(1);
+            builder.AddComponentParameter(2, nameof(ToolbarRow.ChildContent), (RenderFragment)(row =>
+            {
+                row.OpenComponent<ToolbarButton>(0);
+                row.AddComponentParameter(1, nameof(ToolbarButton.Text), "Approve");
+                row.CloseComponent();
+            }));
+            builder.CloseComponent();
+        })));
+        var toolbar = cut.Find(".ex-sheet-toolbar");
+
+        await toolbar.FocusAsync(new FocusEventArgs());
+        Assert.Equal(Item(cut, "Bold").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "End" });
+        Assert.Equal(Item(cut, "Approve").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+        await cut.Find(".ex-sheet-toolbar").KeyDownAsync(new KeyboardEventArgs { Key = "ArrowLeft" });
+        Assert.Equal(Item(cut, "Format Cells").Id, cut.Find(".ex-sheet-toolbar").GetAttribute("aria-activedescendant"));
+    }
+
     [Fact] // ADR-0100: Escape on the toolbar gives the keyboard back to the Sheet
     public async Task Escape_gives_the_keyboard_back()
     {

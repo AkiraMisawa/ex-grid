@@ -151,6 +151,44 @@ is bold.
   If Alt's release cannot be kept from the browser, KeyTips start from F10 alone. The Alt way is
   then recorded as not taken, with the run's evidence.
 
+## Found while implementing *(ticket 54, 2026-10-02)*
+
+None of these changes the decision. Each records how a part of it is held, or a detail it left open.
+
+- **A toggle needs a public command that reads the Focus cell when it runs.** That command is
+  `SetCellFormatFromFocusAsync(Func<CellFormat, CellFormatChange>)`.
+  - It reads the Focus cell's Cell Format from the grid's Selection as it is at that moment
+    (ticket 56), and sets the change it is handed.
+  - The Focus format the toolbar last heard is not enough: on a circuit it is a round trip old.
+  - It is a new name, not an overload of `SetCellFormatAsync`. An overload made a Consumer's
+    `SetCellFormatAsync(null)` ambiguous.
+- **Comma Style is in the default row, disabled, with the reason.** Excel's Comma Style sets the
+  built-in Comma style, whose code pads with `*` as Accounting does, and ExSheet does not read
+  that code. Showing it disabled is what Format Cells does for Accounting. Setting another code
+  under Excel's name would be quietly wrong.
+- **The Number Format's list is Format Cells' categories, less two.**
+  - Special is not on Excel's ribbon list, so it is left out.
+  - Custom becomes "More Number Formats…", which opens Format Cells, as Excel's does.
+  - Each available category sets what Format Cells' Number tab sets when that category is chosen
+    with its defaults.
+- **The keyboard goes back from the toolbar through an element of its own.**
+  - The core's focus function is granted only while DOM focus is in the grid or on nothing
+    (ADR-0021's note of 2026-09-30), and the toolbar is neither.
+  - So the toolbar focuses an empty element of its own, removes it, and asks the core once the
+    browser has applied that render.
+  - This is the way `ExSheet.MudBlazor`'s Format Cells leaves its dialog (ADR-0071). No script is
+    added.
+- **The toolbar's keys follow the markup's order, which Blazor does not report.**
+  - Blazor initialises a component nested one level deeper after its parent's later siblings. The
+    default row's items would come after a Consumer row placed beside it.
+  - So each container cascades a scope (`ToolbarOrder`), and each row and item takes the next
+    place in the nearest scope.
+  - A component of the Consumer's own that holds items stands inside a `ToolbarRow`.
+- **DOM focus on the toolbar counts as the Sheet holding the keyboard** for a Pointing Scope
+  (ADR-0058). The toolbar is inside the element whose focus events the Sheet reads. While an edit
+  is open every item is disabled, so the toolbar is reached only by Tab, and the Point it keeps is
+  the edit's own.
+
 ## Considered options
 
 - **A DemoHost sample only** (ADR-0071 as first written). Rejected. Its reasons are answered above.
