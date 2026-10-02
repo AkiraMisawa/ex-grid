@@ -26,8 +26,8 @@ public class DateWithoutFormatTests : GridTestContext
     private static GridColumn<TestRow>[] Columns(FilterUiMode filterUi = FilterUiMode.Condition) =>
     [
         new("When", ColumnType.Date, r => When(r), width: Wide, editable: true, filterUi: filterUi),
-        new("Day", ColumnType.Date, r => DateOnly.FromDateTime(r.AsOf), width: Wide),
-        new("At", ColumnType.Date, r => new DateTimeOffset(When(r), TimeSpan.FromHours(9)), width: Wide),
+        new("Day", ColumnType.Date, r => DateOnly.FromDateTime(r.AsOf), width: Wide, dateType: DateType.DateOnly),
+        new("At", ColumnType.Date, r => new DateTimeOffset(When(r), TimeSpan.FromHours(9)), width: Wide, dateType: DateType.DateTimeOffset),
         new("Time", ColumnType.Date, r => TimeOnly.FromDateTime(When(r).AddHours(12)), width: Wide),
     ];
 

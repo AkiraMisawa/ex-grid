@@ -238,8 +238,8 @@ public static class FilterPanelChoices
     /// (<see cref="ReadOperand"/>): null where the text does not read, or reads two ways — an
     /// operand that cannot be read applies nothing, and the panel stands.
     /// </summary>
-    public static object? ParseOperand(ColumnType type, string text)
-        => ReadOperand(type, text, CultureInfo.CurrentCulture).Value;
+    public static object? ParseOperand(ColumnType type, string text, DateType dateType = DateType.DateTime)
+        => ReadOperand(type, text, CultureInfo.CurrentCulture, dateType).Value;
 
     /// <summary>
     /// What a condition's typed operand reads as, for a panel whose value field is text: the
@@ -255,11 +255,17 @@ public static class FilterPanelChoices
     /// invariant first — under en-GB <c>05/01/2026</c> is 5 January. A numeric date whose year
     /// stands last under a culture that writes it first (ja-JP's <c>yyyy/MM/dd</c>) has no order
     /// of day and month from the culture, so where both orders are dates it reads two ways and is
-    /// refused.</item>
+    /// refused. The date read must then be of the column's declared <paramref name="dateType"/>
+    /// (ADR-0023, section of 2026-10-02), or the text is refused as
+    /// <see cref="OperandRefusal.NotTheColumnsDateForm"/>: a <see cref="DateType.DateOnly"/> takes
+    /// a day with no time, a <see cref="DateType.DateTime"/> a date and time with no offset, and a
+    /// <see cref="DateType.DateTimeOffset"/> a date and time with an explicit offset, written in
+    /// ISO 8601's extended form (<c>2026-10-02T13:00:00+09:00</c>, <c>…Z</c>) or ticket 94's
+    /// (<c>2026-10-02 13:00:00 +09:00</c>). An offset is read in those forms only.</item>
     /// <item><b>A boolean</b> is <c>true</c> or <c>false</c>; <b>text</b> is itself.</item>
     /// </list>
     /// </summary>
-    public static OperandReading ReadOperand(ColumnType type, string text, CultureInfo culture)
+    public static OperandReading ReadOperand(ColumnType type, string text, CultureInfo culture, DateType dateType = DateType.DateTime)
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(culture);
@@ -269,7 +275,7 @@ public static class FilterPanelChoices
         {
             ColumnType.Text => new OperandReading(text, OperandRefusal.None),
             ColumnType.Number => ReadNumber(text, culture.NumberFormat),
-            ColumnType.Date => ReadDate(text, culture),
+            ColumnType.Date => AsDeclared(ReadDate(text, culture), dateType),
             ColumnType.Boolean => bool.TryParse(text, out var flag)
                 ? new OperandReading(flag, OperandRefusal.None)
                 : new OperandReading(null, OperandRefusal.NotReadable),
@@ -325,6 +331,7 @@ public static class FilterPanelChoices
             { Refusal: OperandRefusal.ReadsTwoWays, OtherValue: var (asCulture, asPoint) } => string.Format(culture,
                 "\u201C{0}\u201D reads two ways: as {1}, and as {2}. Type {1} without separators, or {3} for the other.",
                 text, OperandText(asCulture, culture), OperandText(asPoint, CultureInfo.InvariantCulture), OperandText(asPoint, culture)),
+            { Refusal: OperandRefusal.NotTheColumnsDateForm, OtherValue: (var read, DateType declared) } => DateFormRefusal(text, read, declared),
             { Refusal: OperandRefusal.NotReadable } => string.Format(culture,
                 "\u201C{0}\u201D is not a value of this column as {1} writes it.", text, culture.DisplayName),
             _ => null,
@@ -333,6 +340,11 @@ public static class FilterPanelChoices
 
     // Ticket 94's forms, which a date or a time operand reopens in: read exactly, in every culture.
     private static readonly string[] IsoDateForms = ["yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd"];
+
+    // The forms an offset is read in (ADR-0023, section of 2026-10-02): ticket 94's, which a
+    // DateTimeOffset reopens in, and ISO 8601's extended form, with an offset or Z.
+    private static readonly string[] IsoOffsetForms =
+        ["yyyy-MM-dd HH:mm:ss zzz", "yyyy-MM-dd'T'HH:mm:ssK", "yyyy-MM-dd'T'HH:mmK"];
 
     // A date written as three runs of digits — day, month and year in some order — with a time or
     // nothing after it.
@@ -350,12 +362,23 @@ public static class FilterPanelChoices
     private static OperandReading ReadDate(string text, CultureInfo culture)
     {
         var trimmed = text.Trim();
-        if (DateTimeOffset.TryParseExact(trimmed, "yyyy-MM-dd HH:mm:ss zzz", CultureInfo.InvariantCulture, DateTimeStyles.None, out var offset))
+        // An ISO 8601 offset needs a time with it, and Z is UTC; an offset-less text must not
+        // match here, where K would read it as no offset at all.
+        if (DateTimeOffset.TryParseExact(trimmed, IsoOffsetForms, CultureInfo.InvariantCulture, DateTimeStyles.None, out var offset)
+            && (trimmed.EndsWith('Z') || trimmed.LastIndexOfAny(['+', '-']) > 10))
             return new OperandReading(offset, OperandRefusal.None);
         if (DateTime.TryParseExact(trimmed, IsoDateForms, CultureInfo.InvariantCulture, DateTimeStyles.None, out var iso))
             return new OperandReading(iso, OperandRefusal.None);
         if (!DateTime.TryParse(trimmed, culture, DateTimeStyles.None, out var local))
             return new OperandReading(null, OperandRefusal.NotReadable);
+        // The culture's reading carried an offset or a Z, and .NET converted it to this machine's
+        // clock — on the Server host, the server's. An offset is read in the ISO forms only, so
+        // this one is refused, naming what it read as (ADR-0023, section of 2026-10-02).
+        if (local.Kind != DateTimeKind.Unspecified)
+        {
+            object read = DateTimeOffset.TryParse(trimmed, culture, DateTimeStyles.None, out var stated) ? stated : local;
+            return new OperandReading(null, OperandRefusal.NotTheColumnsDateForm, (read, OutsideIsoForms));
+        }
         var numeric = NumericDate.Match(trimmed);
         // Month names, or no year: the culture's own reading is the only one.
         if (!numeric.Success || numeric.Groups[1].Length != 4 && numeric.Groups[3].Length != 4)
@@ -385,6 +408,48 @@ public static class FilterPanelChoices
             _ => new OperandReading(null, OperandRefusal.NotReadable),
         };
     }
+
+    // A marker in a refusal's OtherValue, replaced by the column's declared type in AsDeclared: an
+    // offset written outside the ISO forms is refused whatever the column holds.
+    private static readonly object OutsideIsoForms = new();
+
+    /// <summary>
+    /// A date reading held to the column's declared type (ADR-0023, section of 2026-10-02): a
+    /// <see cref="DateType.DateOnly"/> takes a day with no time — midnight loses nothing, any
+    /// other time is refused rather than cut; a <see cref="DateType.DateTime"/> takes no offset; a
+    /// <see cref="DateType.DateTimeOffset"/> needs one. A refusal carries what was read and the
+    /// declared type, for its words.
+    /// </summary>
+    private static OperandReading AsDeclared(OperandReading reading, DateType dateType)
+    {
+        if (reading.Refusal == OperandRefusal.NotTheColumnsDateForm && reading.OtherValue is ({ } refused, _))
+            return reading with { OtherValue = (refused, dateType) };
+        if (reading.IsRefused || reading.Value is null)
+            return reading;
+        return (dateType, reading.Value) switch
+        {
+            (DateType.DateTime, DateTime) => reading,
+            (DateType.DateOnly, DateTime { TimeOfDay.Ticks: 0 } day) => new OperandReading(DateOnly.FromDateTime(day), OperandRefusal.None),
+            (DateType.DateTimeOffset, DateTimeOffset) => reading,
+            (DateType.DateTime or DateType.DateOnly or DateType.DateTimeOffset, var read)
+                => new OperandReading(null, OperandRefusal.NotTheColumnsDateForm, (read, dateType)),
+            _ => throw new ArgumentOutOfRangeException(nameof(dateType), dateType, null),
+        };
+    }
+
+    /// <summary>Why a date is not the column's declared type, naming the form to type
+    /// (ADR-0023, section of 2026-10-02).</summary>
+    private static string DateFormRefusal(string text, object read, DateType declared) => (declared, read) switch
+    {
+        (DateType.DateOnly, DateTimeOffset stated) => $"\u201C{text}\u201D has an offset, and this column holds days. Type the day alone, as {Iso(stated.DateTime, "yyyy-MM-dd")}.",
+        (DateType.DateOnly, DateTime date) => $"\u201C{text}\u201D has a time, and this column holds days. Type the day alone, as {Iso(date, "yyyy-MM-dd")}.",
+        (DateType.DateTime, DateTimeOffset stated) => $"\u201C{text}\u201D has an offset, and this column's dates have none. Type it without one, as {IsoDateText(stated.DateTime)}.",
+        (DateType.DateTimeOffset, DateTimeOffset stated) => $"\u201C{text}\u201D is not written in an ISO form. Type it as {stated.ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture)}.",
+        (DateType.DateTimeOffset, DateTime date) => $"\u201C{text}\u201D has no offset, and this column holds moments. Type it with one, as {Iso(date, "yyyy-MM-dd'T'HH:mm:ss")}+hh:mm, or with Z for UTC.",
+        _ => $"\u201C{text}\u201D is not a date of this column.",
+    };
+
+    private static string Iso(DateTime date, string format) => date.ToString(format, CultureInfo.InvariantCulture);
 
     /// <summary>The date of <paramref name="year"/>, <paramref name="month"/> and
     /// <paramref name="day"/> at <paramref name="time"/>'s time of day, or null where there is
