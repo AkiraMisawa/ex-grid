@@ -15,4 +15,4 @@ stylesheet's steps.
 - [ ] **`--ex-dp` is inline on the root once told**; before that the stylesheet's steps stand.
 - [ ] **A report that is not a finite positive number is ignored.**
 - [ ] **Layer 2** for the inline token; **layer 3** at an emulated `devicePixelRatio` of 2.25: a thin
-      line and the row's rule are one Device Pixel (VZ-16).
+      line is one Device Pixel and a gridline two, whole (VZ-16).

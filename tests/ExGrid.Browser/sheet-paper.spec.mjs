@@ -130,9 +130,15 @@ for (const [chrome, query] of CHROMES) {
         for (const scheme of SCHEMES) {
             expect(sameColour(editors[scheme].ground, WHITE, 2), `the Cell Editor's ground (${scheme}: ${editors[scheme].ground})`).toBe(true);
             expect(editors[scheme].ink, `the Cell Editor's ink (${scheme})`).toEqual(BLACK);
-            // The Selection's outline reads against the Paper, and its tint leaves the Paper light.
+            // The Selection's outline reads against the Paper. Under the built-in Chrome its shade is
+            // Excel's #C7C7C7 (ADR-0071, 2026-10-02; SH-49); under MudBlazor's, the primary mixed
+            // into white, which leaves the Paper light.
             expect(contrast(looks[scheme].outline, WHITE), `the outline against the Paper (${scheme})`).toBeGreaterThanOrEqual(3);
-            expect(luminance(looks[scheme].tinted), `the tinted Paper (${scheme})`).toBeGreaterThan(0.6);
+            if (query) {
+                expect(luminance(looks[scheme].tinted), `the tinted Paper (${scheme})`).toBeGreaterThan(0.6);
+            } else {
+                expect(sameColour(looks[scheme].tinted, [0xc7, 0xc7, 0xc7], 3), `the shade over the Paper (${scheme}): ${looks[scheme].tinted}`).toBe(true);
+            }
         }
         if (!query) {
             // The core's own look takes nothing from the scheme on the Paper: the same pixels in both.

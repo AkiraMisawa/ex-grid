@@ -389,6 +389,22 @@ public class MudFormatCellsTests : MudSheetTestContext
         Assert.True(font.Bold && font.Italic && font.Underline && font.Strikethrough);
     }
 
+    [Fact] // ADR-0071 (2026-10-02) / SH-50: the Font tab's Normal font box sets every part of the Font to its default
+    public async Task Normal_font_sets_the_default_font()
+    {
+        var page = RenderPage(DocumentOf(("B2", "12")));
+        await OpenAsync(page, "B2");
+        await ShowTabAsync(page, "Font");
+        await ChooseAsync(page, "Bold Italic");
+        await page.Find(".mud-ex-sheet-format-cells-strikethrough input").ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = true });
+
+        await page.Find(".mud-ex-sheet-format-cells-normal-font input").ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = true });
+        await OkAsync(page);
+
+        page.WaitForAssertion(() => Assert.False(IsOpen(page)));
+        Assert.Equal(default, FormatAt(page, "B2").Font);
+    }
+
     [Fact] // ADR-0071 / SH-45, case 23: the Fill tab offers No Colour, the theme's sixty and the ten standard colours, as the Fill tab names them
     public async Task The_fill_palette_is_case_23s()
     {

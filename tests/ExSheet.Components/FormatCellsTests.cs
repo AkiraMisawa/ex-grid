@@ -415,6 +415,25 @@ public class FormatCellsTests : SheetTestContext
         Assert.True(ReclaimCount > reclaims);
     }
 
+    [Fact] // ADR-0071 (2026-10-02) / SH-50: the Font tab's Normal font box sets every part of the Font to its default, over a row's Font
+    public async Task Normal_font_sets_the_default_font_over_a_rows()
+    {
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, DocumentOf(
+            sheet => Format(sheet, "2:2", new() { Bold = true, Underline = true, FontColour = CellColour.FromRgb(0xFF0000) }),
+            ("B2", "12"))));
+        await OpenAsync(cut, "B2");
+        await ShowTabAsync(cut, "Font");
+        Assert.False(cut.Find(".ex-format-cells-normal-font").HasAttribute("checked"));
+
+        await cut.Find(".ex-format-cells-normal-font").ChangeAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = true });
+        Assert.True(cut.Find(".ex-format-cells-normal-font").HasAttribute("checked"));
+        await OkAsync(cut);
+
+        cut.WaitForAssertion(() => Assert.False(IsOpen(cut)));
+        Assert.Equal(default, FormatAt(cut, "B2").Font);
+        Assert.True(FormatAt(cut, "C2").Font.Bold);
+    }
+
     [Fact] // ADR-0071 / SH-45 / DC-60: Escape sets nothing, closes Format Cells, and the keyboard is the Sheet's again
     public async Task Escape_sets_nothing()
     {
