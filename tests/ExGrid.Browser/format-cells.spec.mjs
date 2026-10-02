@@ -1,5 +1,6 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
+import { expectKeyboardOn } from './keyboard.mjs';
 
 // Format Cells under the built-in Chrome (ADR-0071, ticket 52; SH-45, DC-60): a popover in the
 // grid's frame (ADR-0050 item 16), opened from the Context Menu and from the page's own button,
@@ -76,7 +77,7 @@ test.describe('on /sheet', () => {
         await expect(formatCells(grid)).toHaveCount(0);
         await expect(cell(grid, 'C2')).toHaveText('50.00%');
         // The page's button opened it, and closing it hands the keyboard to the Sheet.
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'C3');
         await page.keyboard.press('ControlOrMeta+Z');
@@ -93,7 +94,7 @@ test.describe('on /sheet', () => {
         await expect(tab(grid, 'Number')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('Escape');
         await expect(formatCells(grid)).toHaveCount(0);
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
     });
 
     test('SH-45/DC-60: Escape sets nothing, closes Format Cells, and the next arrow moves the Focus', async ({ page }) => {
@@ -105,7 +106,7 @@ test.describe('on /sheet', () => {
 
         await expect(formatCells(grid)).toHaveCount(0);
         await expect(cell(grid, 'C2')).toHaveText('0.5');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowDown');
         await expectFocusAt(grid, 'C3');
     });
@@ -264,7 +265,7 @@ test.describe('in a box that follows the window', () => {
         // At 400 the box is 40px: less than a row under the Formula Bar and the header.
         await page.setViewportSize({ width: 1280, height: 400 });
         await expect(formatCells(grid)).toHaveCount(0);
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.setViewportSize({ width: 1280, height: 1000 });
         await expect(cell(grid, 'C2')).toHaveText('0.5');
     });
@@ -295,7 +296,7 @@ test.describe('two Sheets on /sheets', () => {
         await expect(tab(left, 'Number')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('Escape');
         await expect(formatCells(right)).toHaveCount(0);
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
         await expect(formatCells(left)).toBeVisible();
     });
 });

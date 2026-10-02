@@ -140,3 +140,29 @@ gap, and it is not Edge's.
   comes last. The same runs: 12 of 12 end on the grid's root, at every round trip up to 150 ms.
   Edge is CI's.
 
+*(2026-10-02, agent cf-93k: CI run 36948945745, after the merge of PR #44, the Keyboard Field.)*
+26 tests failed on each of the four jobs of shard 1/2 (chrome and msedge, WebAssembly and
+Server): `format-cells-keys.spec.mjs` (all 14, under both Chromes), `format-cells.spec.mjs` (5)
+and `format-cells-mud.spec.mjs` (7). Every one stopped at `expect(grid).toBeFocused()` after
+Format Cells closed, with the root "inactive". **It was the tests, not the product.**
+- **Where the keyboard goes now.** On a grid that edits, the keyboard with no edit open is the
+  Keyboard Field's, and focus that lands on the root is passed on to it in the same task
+  (ADR-0080). Every way Format Cells closes ends in `reclaimFocus`, which PR #44 points at the
+  field: the built-in popover's close (`ClosePopoverAndReturnFocus`), and `ExSheet.MudBlazor`'s
+  frame through `ReturnKeyboard`, which is `ReturnKeyboardAsync`. Nothing moves DOM focus to the
+  root directly. So the root alone is never seen holding it, under either Chrome. The `mud` rows
+  failed with the built-in rows; no assertion passed because the keyboard landed on the root.
+- **The hold is unchanged.** The Keyboard Field counts as the root for the gate (`isRoot`), so a
+  key typed on it while a hand-off stands is held, prevented, and never reaches the field as
+  typing. A held key is never replayed into it either: `focusedControl` excludes it. Neither
+  `HandKeyboardToFrameAsync` nor the hand-off moves focus, so neither needs a new target.
+- **Converted:** every assertion in the three specs that meant "the keyboard is the Sheet's"
+  now uses `expectKeyboardOn` (`keyboard.mjs`). It passes only when DOM focus is the Sheet's
+  own Keyboard Field, and names the root or `body` if either holds the keyboard instead. The
+  tabs' and the menu's `toBeFocused` are unchanged. The public doc comments of
+  `ExGrid.ConsumerPopover.cs` and the hand-off's comment in `ex-grid.js` now name the field.
+  Nothing else in the product changed.
+- **Run, headless on macOS, Chrome:** `format-cells-keys`, `format-cells`, `format-cells-mud`,
+  `format-keys`, `sheet-paper` and `mud`, 70 of 70 on WebAssembly and 70 of 70 on the Server
+  host (80 ms round trip where the spec sets one). Layers 1 and 2: 5,720 passed, 1 skipped.
+  Edge and Linux are CI's.
