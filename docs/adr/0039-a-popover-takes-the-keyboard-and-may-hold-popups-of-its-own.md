@@ -185,3 +185,24 @@ table assumed the popover itself could not be clipped, and inside a dialog it co
 - **ADR-0036**: the Context Menu's keyboard trigger now leads somewhere — its items take the
   keyboard.
 - **CONTEXT.md** gains **Inner Popup**.
+
+## Keys typed while a popover opens on a circuit *(2026-10-01, PR #42's CI, Format Cells)*
+
+On the Server host, a popover opened by a click takes the keyboard a round trip after the click.
+Until then, focus is on `body`, and a key typed in that gap lands wherever the browser sends it.
+- **The core's Tab wrap tells "entered from outside" from "Tab off the last control".** A focus-in on
+  the popover's body records that its contents have held the keyboard since the opening.
+  - Until they have, a focus on a sentinel means the keyboard came in from outside. The trailing
+    sentinel goes to the last control, and the leading one to the first.
+  - After that, the wrap works as before.
+  - Without this, a Shift+Tab typed in the gap reached the trailing sentinel from behind, and
+    wrapped to the first control (`format-cells.spec.mjs`, 3 of 4 at 80 ms).
+- **A Chrome whose frame is its own holds keys typed in the gap,** in order, and acts on them once
+  its contents have the keyboard. `ExSheet.MudBlazor`'s Format Cells does this on the element that
+  holds the keyboard before its tabs do. It uses no script.
+- **Ticket 93 closes the gap** (ADR-0050 item 16's note of 2026-10-01): the core holds keys typed
+  while a popover or a Consumer's frame opens, and replays them to it once it holds the keyboard.
+  They are never the grid's.
+- **A held Tab is dropped with the keys behind it**, as ADR-0010's hold already does. Script can
+  neither reproduce Tab nor move focus in its place. Typing then stops short where the user can see
+  it, rather than running on in the wrong field. That is a deliberate limit, not a defect.

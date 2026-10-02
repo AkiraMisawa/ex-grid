@@ -166,7 +166,7 @@ export async function typeSteadily(page, field, text) {
  * among them.
  */
 export function sheetCommands(page) {
-    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-insert-row'].map((id) => page.locator(id));
+    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
 }
 
 /** Every command that changes the Sheet is greyed out: an edit is open. */
@@ -303,5 +303,73 @@ export function readClipboard(page) {
             }
             throw error;
         }
+    });
+}
+
+/**
+ * What the highlights over the layer beneath a field paint (ADR-0057, note of 2026-10-01), in the
+ * order of the text. The layer's text is one run, and the editor listener colours its References with
+ * the CSS Custom Highlight API, under names of the grid's own; this reads the ranges it registered
+ * over that run, so a stretch is here only if the listener coloured it. Each Reference: its text,
+ * `pointed: false`, its `place` in the palette, the `colour` of that place, the `ink` it is painted
+ * in (its pointed shade on the grey) and the `ground` under it. The stretch Point wrote, on the grey
+ * ground: `pointed: true`, its text and its `ground`, and the `colour` and `ink` of a Reference that
+ * stands exactly there. `name` is the highlight's name past the grid's `prefix`. Nothing while the
+ * layer is hidden.
+ */
+export function stretchesOf(field) {
+    return field.evaluate((input) => {
+        const line = input.previousElementSibling?.firstElementChild;
+        const run = line?.firstChild;
+        if (!(run instanceof Text)) {
+            return [];
+        }
+        const ranges = [];
+        CSS.highlights.forEach((highlight, name) => {
+            const named = /^(ex\d+-reference-)(.+)$/.exec(name);
+            if (named === null) {
+                return;
+            }
+            for (const range of highlight) {
+                if (range.startContainer === run) {
+                    ranges.push({ start: range.startOffset, end: range.endOffset, prefix: named[1], name: named[2] });
+                }
+            }
+        });
+        const paint = (name) => getComputedStyle(line, `::highlight(${name})`);
+        const grounds = ranges.filter((range) => range.name === 'pointed');
+        const groundUnder = (range) => grounds.find((ground) => ground.start <= range.start && range.end <= ground.end);
+        const references = ranges.filter((range) => range.name !== 'pointed').map((range) => {
+            const place = Number(/^\d+/.exec(range.name)[0]);
+            const ground = groundUnder(range);
+            return {
+                start: range.start,
+                end: range.end,
+                text: run.data.slice(range.start, range.end),
+                prefix: range.prefix,
+                name: range.name,
+                pointed: false,
+                place,
+                colour: paint(`${range.prefix}${place}`).color,
+                ink: paint(`${range.prefix}${range.name}`).color,
+                ground: ground === undefined ? 'rgba(0, 0, 0, 0)' : paint(`${ground.prefix}pointed`).backgroundColor,
+            };
+        });
+        const pointed = grounds.map((range) => {
+            const exact = references.find((reference) => reference.start === range.start && reference.end === range.end);
+            return {
+                start: range.start,
+                end: range.end,
+                text: run.data.slice(range.start, range.end),
+                prefix: range.prefix,
+                name: range.name,
+                pointed: true,
+                place: exact?.place ?? null,
+                colour: exact?.colour ?? null,
+                ink: exact?.ink ?? null,
+                ground: paint(`${range.prefix}pointed`).backgroundColor,
+            };
+        });
+        return [...pointed, ...references].sort((a, b) => a.start - b.start || Number(b.pointed) - Number(a.pointed));
     });
 }

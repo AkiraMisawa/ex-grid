@@ -19,17 +19,17 @@ public class ClipboardTests
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "1.5");
-        sheet.SetFormat(At("A1"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(At("A1"), NumberFormat.Parse("0.00"));
         sheet.SetAlignment(At("A2"), HorizontalAlignment.Center);
         sheet.Enter("C1", "old");
         sheet.Enter("C2", "old");
-        sheet.SetFormat(At("C2"), NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat(At("C2"), NumberFormat.Parse("0%"));
 
         sheet.Do(SheetEdit.Paste(CopyBlock(sheet, "A1:A2"), At("C1")));
 
         Assert.Equal("1.50", sheet.GetDisplay(At("C1")).Text);
         Assert.Null(sheet.GetEntry(At("C2")));
-        Assert.True(sheet.GetFormat(At("C2")).IsGeneral);
+        Assert.True(sheet.GetNumberFormat(At("C2")).IsGeneral);
         Assert.Equal(HorizontalAlignment.Center, sheet.GetAlignment(At("C2")));
     }
 
@@ -78,7 +78,7 @@ public class ClipboardTests
         sheet.Enter("A1", "1");
         sheet.Enter("A2", "=A1+1");
         sheet.Enter("C2", "keep me");
-        sheet.SetFormat(At("C1"), NumberFormat.Parse("0%"));
+        sheet.SetNumberFormat(At("C1"), NumberFormat.Parse("0%"));
         var before = sheet.ToDocument().ToJson();
 
         var step = sheet.Do(SheetEdit.Paste(CopyBlock(sheet, "A1:A2"), At("C1")));
@@ -94,7 +94,7 @@ public class ClipboardTests
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "1234.5");
-        sheet.SetFormat(At("A1"), NumberFormat.Parse("#,##0.00"));
+        sheet.SetNumberFormat(At("A1"), NumberFormat.Parse("#,##0.00"));
         sheet.Enter("B1", "=ROUND(A1/0.5,0)"); // ROUND gives no format on entry (ADR-0047), so B1 goes out in General
         sheet.Enter("A2", "a\tb");
         sheet.Enter("B2", "=1/0");
@@ -113,7 +113,7 @@ public class ClipboardTests
     {
         var sheet = NewSheet();
         sheet.Enter("A1", "-1");
-        sheet.SetFormat(At("A1"), NumberFormat.Parse("yyyy-mm-dd"));
+        sheet.SetNumberFormat(At("A1"), NumberFormat.Parse("yyyy-mm-dd"));
 
         var copy = sheet.Copy(CellRange.Parse("A1"));
 
@@ -127,7 +127,7 @@ public class ClipboardTests
 
         sheet.Do(SheetEdit.PasteText([["=A1+1", "1,234"], ["9/27/2026", "12%"]], At("B1")));
 
-        Assert.True(sheet.GetFormat(At("B2")).IsDate);
+        Assert.True(sheet.GetNumberFormat(At("B2")).IsDate);
     }
 
     [Fact] // ADR-0048 (observed in Excel): pasted text that cannot be read as a Formula is text; typed, it is still refused

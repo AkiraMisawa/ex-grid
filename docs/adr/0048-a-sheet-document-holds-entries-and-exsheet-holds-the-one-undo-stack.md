@@ -71,6 +71,9 @@ way to reach this.
 refuses everything it will not do: `DoAsync` (an insertion, a deletion, any edit), `UndoAsync`,
 `RedoAsync`, `SetNumberFormatAsync` and `SetAlignmentAsync`. Nothing changes, and the refusal names
 the open edit. This is Excel's behaviour: its ribbon greys out while a cell is being edited.
+*(2026-09-30: `SetCellFormatAsync` and `OpenFormatCellsAsync` join the list, and a formatting key
+changes nothing and says why
+([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).)*
 **ExSheet says whether an edit is open, and when that changes**, so the application can grey out its
 own buttons in the same way. It learns this from its grid
 ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), section 6).
@@ -134,3 +137,17 @@ so this is no difference at all.)*
   narrow to show the value. It is not taken as the text `########`.
 - **Pasted text that cannot be read as a Formula is taken as text**, as Excel takes `=1+`. It is
   not refused.
+
+## The Sheet Document records Cell Format whole *(2026-09-30, decided with the user)*
+
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) adds Font, Fill
+and Border to a Sheet's Cell Format.
+- **The Sheet Document records them** for each cell, row and column, beside the Number Format and
+  the Alignment, at a new version.
+- **A document of an older version reads with none of them.**
+- **A colour is recorded as Automatic or as an RGB value.** A document holding any other kind of
+  colour, such as an `.xlsx` theme colour, is refused by name, as an unread Number Format is. It is
+  not guessed at.
+- **The version number** is fixed when the branches merge, because version 7 is already taken on
+  `claude/exsheet-pointing-scope`. *(2026-10-01: version 8. Version 7 is a Linked Table's key, which
+  reached the base branch first.)*

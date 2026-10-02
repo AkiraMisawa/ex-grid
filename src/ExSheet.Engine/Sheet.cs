@@ -57,24 +57,29 @@ public sealed partial class Sheet
         var sheet = new Sheet(SheetDocument.ResolveCulture(document.Culture), document.Name);
         // Declared before any Formula is computed: a reader shows #GETTING_DATA, never #NAME? (ADR-0049).
         foreach (var table in document.LinkedTables) sheet.Declare(table.Name, table.Columns, table.Key);
-        foreach (var style in document.Columns)
+        foreach (var run in document.Columns)
         {
-            for (var column = style.First; column <= style.Last; column++) sheet._columnStyles[column] = new AxisStyle(style.Format, style.Alignment);
+            for (var column = run.First; column <= run.Last; column++) sheet._columnFormats[column] = run.Level;
         }
         foreach (var run in document.ColumnWidths)
         {
             for (var column = run.First; column <= run.Last; column++) sheet._columnWidths[column] = new SheetColumnWidth(run.Width, run.Kind);
         }
-        foreach (var style in document.Rows)
+        foreach (var run in document.Rows)
         {
-            for (var row = style.First; row <= style.Last; row++) sheet._rowStyles[row] = new AxisStyle(style.Format, style.Alignment);
+            for (var row = run.First; row <= run.Last; row++) sheet._rowFormats[row] = run.Level;
         }
         foreach (var cell in document.Cells)
         {
-            if (cell.Format is null && cell.Alignment is null) continue;
-            var held = sheet._cells[cell.Address] = new Cell(cell.Address);
-            held.Format = cell.Format;
-            held.Alignment = cell.Alignment;
+            if (cell.NumberFormat is null && cell.Alignment is null && cell.Font is null && cell.Fill is null && cell.Borders is null) continue;
+            sheet._cells[cell.Address] = new Cell(cell.Address)
+            {
+                NumberFormat = cell.NumberFormat,
+                Alignment = cell.Alignment,
+                Font = cell.Font,
+                Fill = cell.Fill,
+                Borders = cell.Borders,
+            };
         }
         sheet.SetEntries(document.Cells.Where(c => c.Entry is not null).Select(c => new KeyValuePair<CellAddress, Entry?>(c.Address, c.Entry)));
         return sheet;
@@ -82,19 +87,19 @@ public sealed partial class Sheet
 
     /// <summary>
     /// The Sheet as a Sheet Document: its culture, its name, its Linked Tables' declarations, its
-    /// Entries, the number formats and alignments set on its columns, rows and cells, and the widths
-    /// set on its columns — never its Values, nor a table's rows (ADR-0046, ADR-0047, ADR-0048,
-    /// ADR-0049). Adjacent columns or rows formatted alike, and adjacent columns of one width, are
+    /// Entries, the Cell Formats recorded on its columns, rows and cells, and the widths set on its
+    /// columns — never its Values, nor a table's rows (ADR-0046, ADR-0047, ADR-0048, ADR-0049,
+    /// ADR-0071). Adjacent columns or rows formatted alike, and adjacent columns of one width, are
     /// recorded as one entry; a column at the default width records none.
     /// </summary>
     public SheetDocument ToDocument() =>
         new(Culture.Name, Name, TableDeclarations, [.. _cells.Values
             .Where(c => !c.IsEmpty)
             .OrderBy(c => c.Address)
-            .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.Format, c.Alignment))])
+            .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.NumberFormat, c.Alignment, c.Font, c.Fill, c.Borders))])
         {
-            Columns = Runs(_columnStyles),
-            Rows = Runs(_rowStyles),
+            Columns = Runs(_columnFormats),
+            Rows = Runs(_rowFormats),
             ColumnWidths = WidthRuns(),
         };
 
@@ -115,7 +120,7 @@ public sealed partial class Sheet
     public string GetEntryText(CellAddress address)
     {
         if (!_cells.TryGetValue(address, out var cell) || cell.Entry is not { } entry) return "";
-        return entry.Formula ?? EntryText.Write(entry.Constant!.Value, GetFormat(address), Culture);
+        return entry.Formula ?? EntryText.Write(entry.Constant!.Value, GetNumberFormat(address), Culture);
     }
 
     /// <summary>
@@ -130,8 +135,8 @@ public sealed partial class Sheet
         {
             return new CellDisplay("", Resolve(GetAlignment(address), null), false, false);
         }
-        var (text, cannotShow) = GetFormat(address).Format(value, Culture);
-        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow);
+        var (text, cannotShow, colour) = GetNumberFormat(address).Format(value, Culture);
+        return new CellDisplay(cannotShow ? "" : text, Resolve(GetAlignment(address), value.Kind), value.Kind == ValueKind.Number, cannotShow, colour);
     }
 
     private static HorizontalAlignment Resolve(HorizontalAlignment alignment, ValueKind? kind) =>
@@ -241,7 +246,7 @@ public sealed partial class Sheet
         // A plain number typed into a cell that shows percentages is read as a percentage,
         // Excel's automatic percent entry (on by default): 0.5 into a 0% cell is 0.005
         // (LVL-015, ADR-0047 second run). Only typed; a paste is taken as it is.
-        if (!pasted && value.Kind == ValueKind.Number && GetFormat(address).IsPercent && ConstantParser.IsPlainNumber(text, Culture))
+        if (!pasted && value.Kind == ValueKind.Number && GetNumberFormat(address).IsPercent && ConstantParser.IsPlainNumber(text, Culture))
         {
             value = Value.FromNumber(value.Number / 100);
         }
@@ -257,18 +262,18 @@ public sealed partial class Sheet
         var rows = new SortedSet<int>();
         foreach (var (address, format) in implied)
         {
-            if (!GetFormat(address).IsGeneral) continue;
+            if (!GetNumberFormat(address).IsGeneral) continue;
             var cell = _cells.TryGetValue(address, out var existing) ? existing : _cells[address] = new Cell(address);
-            cell.Format = format;
+            cell.NumberFormat = format;
             rows.Add(address.Row);
         }
         // A Formula entered into a General cell takes a format from what it reads, as in Excel
         // (ADR-0047): after the constants above, so it reads the formats they were just given.
         foreach (var (address, entry) in entries)
         {
-            if (entry?.Parsed is not { } parsed || !GetFormat(address).IsGeneral || FormatOnEntry(parsed) is not { } inferred) continue;
+            if (entry?.Parsed is not { } parsed || !GetNumberFormat(address).IsGeneral || FormatOnEntry(parsed) is not { } inferred) continue;
             var cell = _cells.TryGetValue(address, out var existing) ? existing : _cells[address] = new Cell(address);
-            cell.Format = inferred;
+            cell.NumberFormat = inferred;
             rows.Add(address.Row);
         }
         var change = SetEntries(entries);
@@ -521,12 +526,57 @@ public sealed partial class Sheet
 
         public Value? Value { get; set; }
 
-        /// <summary>The cell's own number format; <see langword="null"/> when it takes its row's or column's (ADR-0047).</summary>
-        public NumberFormat? Format { get; set; }
+        /// <summary>The cell's own Number Format; <see langword="null"/> when it takes its row's or column's (ADR-0047).</summary>
+        public NumberFormat? NumberFormat { get; set; }
 
         /// <summary>The cell's own alignment; <see langword="null"/> when it takes its row's or column's (ADR-0047).</summary>
         public HorizontalAlignment? Alignment { get; set; }
 
-        public bool IsEmpty => Entry is null && Format is null && Alignment is null;
+        /// <summary>The cell's own Font; <see langword="null"/> when it takes its row's or column's (ADR-0071).</summary>
+        public CellFont? Font { get; set; }
+
+        /// <summary>The cell's own Fill; <see langword="null"/> when it takes its row's or column's (ADR-0071).</summary>
+        public CellFill? Fill { get; set; }
+
+        /// <summary>The cell's own four sides; <see langword="null"/> when it takes its row's or column's (ADR-0071).</summary>
+        public CellBorders? Borders { get; set; }
+
+        /// <summary>Whether the cell records any part of a Cell Format of its own.</summary>
+        public bool IsFormatted => NumberFormat is not null || Alignment is not null || Font is not null || Fill is not null || Borders is not null;
+
+        public bool IsEmpty => Entry is null && !IsFormatted;
+
+        /// <summary>What the cell shows over <paramref name="inherited"/>: each part its own, else the level's.</summary>
+        public CellFormat Over(CellFormat inherited) => new(
+            NumberFormat ?? inherited.NumberFormat,
+            Alignment ?? inherited.Alignment,
+            Font ?? inherited.Font,
+            Fill ?? inherited.Fill,
+            Borders ?? inherited.Borders);
+
+        /// <summary>Records the Cell Format <paramref name="other"/> records of its own, and nothing else of it.</summary>
+        public void TakeFormatOf(Cell other)
+        {
+            NumberFormat = other.NumberFormat;
+            Alignment = other.Alignment;
+            Font = other.Font;
+            Fill = other.Fill;
+            Borders = other.Borders;
+        }
+
+        /// <summary>
+        /// Records each part <paramref name="change"/> sets as <paramref name="shown"/> has it, and
+        /// nothing where <paramref name="inherited"/> gives the same; whether anything changed.
+        /// </summary>
+        public bool Take(CellFormatChange change, CellFormat shown, CellFormat inherited)
+        {
+            var was = (NumberFormat, Alignment, Font, Fill, Borders);
+            if (change.NumberFormat is not null) NumberFormat = shown.NumberFormat.Equals(inherited.NumberFormat) ? null : shown.NumberFormat;
+            if (change.Alignment is not null) Alignment = Own(shown.Alignment, inherited.Alignment);
+            if (change.SetsFont) Font = Own(shown.Font, inherited.Font);
+            if (change.Fill is not null) Fill = Own(shown.Fill, inherited.Fill);
+            if (change.SetsBorders) Borders = Own(shown.Borders, inherited.Borders);
+            return !was.Equals((NumberFormat, Alignment, Font, Fill, Borders));
+        }
     }
 }

@@ -1,0 +1,305 @@
+Ticket 44: the thirteen line styles drawn by the two Excel modes ("Show the thirteen line styles"),
+one black box each, read from headless Chrome 154 screenshots at device scale 1 and 1.5 (CDP
+device-scale emulation, not browser zoom). Written as the eleventh Windows run's case 9 is
+(verification/2026-10-01-windows-excel-11/cell-format.md, group 3): '#' luminance below 64, '='
+below 128, '-' below 192, '.' otherwise; a row the line does not touch is left out.
+
+Offsets count from the boundary between the two cells. The bench's gridline is the upper (left)
+cell's last pixel, so at scale 1 it is offset -1: thin on -1 is "on the gridline", medium on -2
+and -1 is "the gridline and 1 px above", thick on -2..0 is "1 px each side", double on -2 and 0 is
+"two lines either side of a white gridline". At 1.5 the right edge's offsets count from a boundary
+at a half device pixel, so they read one lower than the bottom edge's.
+
+excel-100.png and excel-150.png are BorderInCellExcel's boxes, enlarged.
+
+
+=== BorderInCellExcel at device scale 1 (content box at 21, 266) ===
+-- thin: bottom edge (rows across it)
+   -1 ########################################
+   right edge (columns across it)
+   -1 ####################
+-- hair: bottom edge (rows across it)
+   -1 #.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.
+   right edge (columns across it)
+   -1 #.#.#.#.#.#.#.#.#.#.
+-- medium: bottom edge (rows across it)
+   -2 ########################################
+   -1 ########################################
+   right edge (columns across it)
+   -2 ####################
+   -1 ####################
+-- thick: bottom edge (rows across it)
+   -2 ########################################
+   -1 ########################################
+   +0 ########################################
+   right edge (columns across it)
+   -2 ####################
+   -1 ####################
+   +0 ####################
+-- double: bottom edge (rows across it)
+   -2 ########################################
+   +0 ########################################
+   right edge (columns across it)
+   -2 ####################
+   +0 ####################
+-- dotted: bottom edge (rows across it)
+   -1 ##..##..##..##..##..##..##..##..##..##..
+   right edge (columns across it)
+   -1 ..##..##..##..##..##
+-- dashed: bottom edge (rows across it)
+   -1 ###.###.###.###.###.###.###.###.###.###.
+   right edge (columns across it)
+   -1 #.###.###.###.###.##
+-- dash-dot: bottom edge (rows across it)
+   -1 ...###...########...###...########...###
+   right edge (columns across it)
+   -1 ######...###...#####
+-- dash-dot-dot: bottom edge (rows across it)
+   -1 ...###...###...########...###...###...##
+   right edge (columns across it)
+   -1 ######...###...###..
+-- medium dashed: bottom edge (rows across it)
+   -2 ...########...########...########...####
+   -1 ...########...########...########...####
+   right edge (columns across it)
+   -2 ######...########...
+   -1 ######...########...
+-- medium dash-dot: bottom edge (rows across it)
+   -2 ...###...########...###...########...###
+   -1 ...###...########...###...########...###
+   right edge (columns across it)
+   -2 ######...###...#####
+   -1 ######...###...#####
+-- medium dash-dot-dot: bottom edge (rows across it)
+   -2 ...###...###...########...###...###...##
+   -1 ...###...###...########...###...###...##
+   right edge (columns across it)
+   -2 ######...###...###..
+   -1 ######...###...###..
+-- slanted dash-dot: bottom edge (rows across it)
+   -2 ###.#####.###########.#####.###########.
+   -1 ###.#####.###########.#####.###########.
+   right edge (columns across it)
+   -2 #########.#####.####
+   -1 #########.#####.####
+
+=== BorderInCellExcel at device scale 1.5 (content box at 21, 266) ===
+-- thin: bottom edge (rows across it)
+   -1 ########################################
+   right edge (columns across it)
+   -2 ##############################
+-- hair: bottom edge (rows across it)
+   -1 .#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#
+   right edge (columns across it)
+   -2 .#.#.#.#.#.#.#.#.#.#.#.#.#.#.#
+-- medium: bottom edge (rows across it)
+   -1 ########################################
+   +0 ========================================
+   right edge (columns across it)
+   -2 ##############################
+   -1 ==============================
+-- thick: bottom edge (rows across it)
+   -1 ########################################
+   +0 ########################################
+   right edge (columns across it)
+   -2 ##############################
+   -1 ##############################
+-- double: bottom edge (rows across it)
+   -1 ########################################
+   +0 ========================================
+   right edge (columns across it)
+   -2 ##############################
+   -1 ==============================
+-- dotted: bottom edge (rows across it)
+   -1 #..##..##..##..##..##..##..##..##..##..#
+   right edge (columns across it)
+   -2 .##..##..##..##..##..##..##..#
+-- dashed: bottom edge (rows across it)
+   -1 ##.###.###.###.###.###.###.###.###.###.#
+   right edge (columns across it)
+   -2 .###.###.###.###.###.###.###.#
+-- dash-dot: bottom edge (rows across it)
+   -1 #...########...###...########...###...##
+   right edge (columns across it)
+   -2 #####...###...########...###..
+-- dash-dot-dot: bottom edge (rows across it)
+   -1 #...###...########...###...###...#######
+   right edge (columns across it)
+   -2 #####...###...###...########..
+-- medium dashed: bottom edge (rows across it)
+   -1 ######...########...########...########.
+   +0 ======...========...========...========.
+   right edge (columns across it)
+   -2 #####...########...########...
+   -1 =====...========...========...
+-- medium dash-dot: bottom edge (rows across it)
+   -1 #...########...###...########...###...##
+   +0 =...========...===...========...===...==
+   right edge (columns across it)
+   -2 #####...###...########...###..
+   -1 =====...===...========...===..
+-- medium dash-dot-dot: bottom edge (rows across it)
+   -1 #...###...########...###...###...#######
+   +0 =...===...========...===...===...=======
+   right edge (columns across it)
+   -2 #####...###...###...########..
+   -1 =====...===...===...========..
+-- slanted dash-dot: bottom edge (rows across it)
+   -1 ####.###########.#####.###########.#####
+   +0 ====.===========.=====.===========.=====
+   right edge (columns across it)
+   -2 ########.#####.###########.###
+   -1 ========.=====.===========.===
+
+=== BorderInCellExcelBox at device scale 1 (content box at 21, 266) ===
+-- thin: bottom edge (rows across it)
+   -1 ########################################
+   right edge (columns across it)
+   -1 ####################
+-- hair: bottom edge (rows across it)
+   -1 #.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.
+   right edge (columns across it)
+   -1 #.#.#.#.#.#.#.#.#.#.
+-- medium: bottom edge (rows across it)
+   -2 ########################################
+   -1 ########################################
+   right edge (columns across it)
+   -2 ####################
+   -1 ####################
+-- thick: bottom edge (rows across it)
+   -2 ########################################
+   -1 ########################################
+   +0 ########################################
+   right edge (columns across it)
+   -2 ####################
+   -1 ####################
+   +0 ####################
+-- double: bottom edge (rows across it)
+   -2 ########################################
+   +0 ########################################
+   right edge (columns across it)
+   -2 ####################
+   +0 ####################
+-- dotted: bottom edge (rows across it)
+   -1 ##..##..##..##..##..##..##..##..##..##..
+   right edge (columns across it)
+   -1 ..##..##..##..##..##
+-- dashed: bottom edge (rows across it)
+   -1 ###.###.###.###.###.###.###.###.###.###.
+   right edge (columns across it)
+   -1 #.###.###.###.###.##
+-- dash-dot: bottom edge (rows across it)
+   -1 ...###...########...###...########...###
+   right edge (columns across it)
+   -1 ######...###...#####
+-- dash-dot-dot: bottom edge (rows across it)
+   -1 ...###...###...########...###...###...##
+   right edge (columns across it)
+   -1 ######...###...###..
+-- medium dashed: bottom edge (rows across it)
+   -2 ...########...########...########...####
+   -1 ...########...########...########...####
+   right edge (columns across it)
+   -2 ######...########...
+   -1 ######...########...
+-- medium dash-dot: bottom edge (rows across it)
+   -2 ...###...########...###...########...###
+   -1 ...###...########...###...########...###
+   right edge (columns across it)
+   -2 ######...###...#####
+   -1 ######...###...#####
+-- medium dash-dot-dot: bottom edge (rows across it)
+   -2 ...###...###...########...###...###...##
+   -1 ...###...###...########...###...###...##
+   right edge (columns across it)
+   -2 ######...###...###..
+   -1 ######...###...###..
+-- slanted dash-dot: bottom edge (rows across it)
+   -2 ###.#####.###########.#####.###########.
+   -1 ###.#####.###########.#####.###########.
+   right edge (columns across it)
+   -2 #########.#####.####
+   -1 #########.#####.####
+
+=== BorderInCellExcelBox at device scale 1.5 (content box at 21, 266) ===
+-- thin: bottom edge (rows across it)
+   -1 ########################################
+   +0 ========================================
+   right edge (columns across it)
+   -2 ##############################
+   -1 ==============================
+-- hair: bottom edge (rows across it)
+   -1 .#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#.#
+   +0 .=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+   right edge (columns across it)
+   -2 .#.#.#.#.#.#.#.#.#.#.#.#.#.#.#
+   -1 .=.=.=.=.=.=.=.=.=.=.=.=.=.=.=
+-- medium: bottom edge (rows across it)
+   -1 ########################################
+   +0 ========================================
+   right edge (columns across it)
+   -2 ##############################
+   -1 ==============================
+-- thick: bottom edge (rows across it)
+   -1 ########################################
+   +0 ========================================
+   +1 ========================================
+   right edge (columns across it)
+   -2 ##############################
+   -1 ==============================
+   +0 ==============================
+-- double: bottom edge (rows across it)
+   -2 ########################################
+   +1 ========================================
+   right edge (columns across it)
+   -3 ##############################
+   +0 ==============================
+-- dotted: bottom edge (rows across it)
+   -1 ##..##..##..##..##..##..##..##..##..##..
+   +0 ==..==..==..==..==..==..==..==..==..==..
+   right edge (columns across it)
+   -2 .##...##..##..##..##..##..##..
+   -1 .==...==..==..==..==..==..==..
+-- dashed: bottom edge (rows across it)
+   -1 ###.###.###.###.###.###.###.###.###.###.
+   +0 ===.===.===.===.===.===.===.===.===.===.
+   right edge (columns across it)
+   -2 ..###.###.###.###.###.###.###.
+   -1 ..===.===.===.===.===.===.===.
+-- dash-dot: bottom edge (rows across it)
+   -1 #...########...###...########...###...##
+   +0 =...========...===...========...===...==
+   right edge (columns across it)
+   -2 #####...###...########...###..
+   -1 =====...===...========...===..
+-- dash-dot-dot: bottom edge (rows across it)
+   -1 #...###...########...###...###...#######
+   +0 =...===...========...===...===...=======
+   right edge (columns across it)
+   -2 #####...###...###...########..
+   -1 =====...===...===...========..
+-- medium dashed: bottom edge (rows across it)
+   -1 ######...########...########...########.
+   +0 ======...========...========...========.
+   right edge (columns across it)
+   -2 #####...########...########...
+   -1 =====...========...========...
+-- medium dash-dot: bottom edge (rows across it)
+   -1 #...########...###...########...###...##
+   +0 =...========...===...========...===...==
+   right edge (columns across it)
+   -2 #####...###...########...###..
+   -1 =====...===...========...===..
+-- medium dash-dot-dot: bottom edge (rows across it)
+   -1 #...###...########...###...###...#######
+   +0 =...===...========...===...===...=======
+   right edge (columns across it)
+   -2 #####...###...###...########..
+   -1 =====...===...===...========..
+-- slanted dash-dot: bottom edge (rows across it)
+   -1 ####.###########.#####.###########.#####
+   +0 ====.===========.=====.===========.=====
+   right edge (columns across it)
+   -2 ########.#####.###########.###
+   -1 ========.=====.===========.===
+

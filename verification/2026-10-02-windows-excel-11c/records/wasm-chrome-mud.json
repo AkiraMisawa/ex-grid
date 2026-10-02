@@ -1,0 +1,5637 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "chrome": "mud",
+ "scheme": "light",
+ "zoom": 100,
+ "config": "wasm-chrome-mud",
+ "started": "2026-10-01T23:44:29.101Z",
+ "cases": [
+  {
+   "case": "11",
+   "what": "B2:C3 with every edge thin black; B2:C3 selected with real keys from A1 (Down, Right, Shift+Right, Shift+Down)",
+   "page": "?case=11",
+   "started": "2026-10-01T23:44:34.336Z",
+   "states": [
+    {
+     "state": "set",
+     "did": [],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 308.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 376.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 308.09375,
+         "y": 376.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B1": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "D2": {
+        "text": "",
+        "box": {
+         "x": 407.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 404.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": null,
+      "nameBox": "",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "body"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 133,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 left": {
+        "at": 266,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 right": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 top": {
+        "at": 133,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 right": {
+        "at": 563,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 top": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 217,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 266,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 right": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 top": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 bottom": {
+        "at": 217,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 left": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 right": {
+        "at": 563,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "A2 right": {
+        "at": 266,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B1 bottom": {
+        "at": 133,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "D2 left": {
+        "at": 563,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B4 top": {
+        "at": 217,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "11-set-wasm-chrome-mud.png"
+    },
+    {
+     "state": "a1",
+     "did": [
+      "a click at (310, 663) on the middle of A1"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 308.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 376.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 308.09375,
+         "y": 376.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B1": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "D2": {
+        "text": "",
+        "box": {
+         "x": 407.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 404.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 133,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 left": {
+        "at": 266,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 right": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 top": {
+        "at": 133,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 left": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 right": {
+        "at": 563,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 top": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 217,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 266,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 right": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 top": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 bottom": {
+        "at": 217,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 left": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C3 right": {
+        "at": 563,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "A2 right": {
+        "at": 266,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B1 bottom": {
+        "at": 133,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "D2 left": {
+        "at": 563,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "B4 top": {
+        "at": 217,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "594ae2",
+        "top": [
+         "594ae2:2"
+        ],
+        "inkPixels": 2
+       },
+       "C2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "11-a1-wasm-chrome-mud.png"
+    },
+    {
+     "state": "selected",
+     "did": [
+      "keys {DOWN}{RIGHT}+{RIGHT}+{DOWN}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 308.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 376.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 308.09375,
+         "y": 376.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000 ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B1": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lb-thin-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "D2": {
+        "text": "",
+        "box": {
+         "x": 407.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 209.09375,
+         "y": 404.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "B2",
+      "nameBox": "B2",
+      "bar": "",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 209.09375,
+         "y": 348.79168701171875,
+         "w": 198,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 133,
+        "at25": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "same": true
+       },
+       "B2 left": {
+        "at": 266,
+        "at25": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "same": true
+       },
+       "B2 right": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "same": true
+       },
+       "C2 top": {
+        "at": 133,
+        "at25": "-6..-4 ffffff | -3..-1 594ae2 | 0 e5e2fb | 1..6 e1defa",
+        "at50": "-6..-4 ffffff | -3..-1 594ae2 | 0 e5e2fb | 1..6 e1defa",
+        "at75": "-6..-4 ffffff | -3..-1 594ae2 | 0 e5e2fb | 1..6 e1defa",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 175,
+        "at25": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at50": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at75": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "same": true
+       },
+       "C2 left": {
+        "at": 414,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "same": true
+       },
+       "C2 right": {
+        "at": 563,
+        "at25": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "at50": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "at75": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "same": true
+       },
+       "B3 top": {
+        "at": 175,
+        "at25": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at50": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "at75": "-6..-2 ffffff | -1 000000 | 0 e5e2fb | 1..6 e1defa",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 217,
+        "at25": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "at50": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "at75": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 266,
+        "at25": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 e1defa",
+        "at50": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 e1defa",
+        "at75": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 e1defa",
+        "same": true
+       },
+       "B3 right": {
+        "at": 414,
+        "at25": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at50": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at75": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "same": true
+       },
+       "C3 top": {
+        "at": 175,
+        "at25": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at50": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at75": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "same": true
+       },
+       "C3 bottom": {
+        "at": 217,
+        "at25": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "at50": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "at75": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "same": true
+       },
+       "C3 left": {
+        "at": 414,
+        "at25": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at50": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "at75": "-6..-2 e1defa | -1 100d29 | 0..6 e1defa",
+        "same": true
+       },
+       "C3 right": {
+        "at": 563,
+        "at25": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "at50": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "at75": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "same": true
+       },
+       "A2 right": {
+        "at": 266,
+        "at25": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "same": true
+       },
+       "B1 bottom": {
+        "at": 133,
+        "at25": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 594ae2 | 0..6 ffffff",
+        "same": true
+       },
+       "D2 left": {
+        "at": 563,
+        "at25": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "at50": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "at75": "-6..-3 e1defa | -2..0 594ae2 | 1..6 ffffff",
+        "same": true
+       },
+       "B4 top": {
+        "at": 217,
+        "at25": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "at50": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "at75": "-6..-2 e1defa | -1..1 594ae2 | 2..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C2": {
+        "ground": "e1defa",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "e1defa",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "e1defa",
+        "sampled": "ffffff",
+        "top": [
+         "ffffff:4",
+         "594ae2:2"
+        ],
+        "inkPixels": 6
+       }
+      }
+     },
+     "shot": "11-selected-wasm-chrome-mud.png"
+    }
+   ],
+   "url": "http://localhost:5299/sheet?case=11&chrome=mud",
+   "dpr": 1.5
+  },
+  {
+   "case": "22",
+   "what": "/sheet: Ctrl+1 on A1; each tab pressed in the order shown; Esc; Ctrl+1 again; Esc",
+   "page": "/sheet",
+   "started": "2026-10-01T23:44:41.037Z",
+   "states": [
+    {
+     "state": "a1",
+     "did": [
+      "a click at (310, 663) on the middle of A1"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:48",
+         "ffffde:26",
+         "8c2c00:26",
+         "000029:17",
+         "8cdbff:16"
+        ],
+        "inkPixels": 327
+       }
+      }
+     },
+     "shot": "22-a1-wasm-chrome-mud.png"
+    },
+    {
+     "state": "opened",
+     "did": [
+      "keys ^{KEY1}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-wx5c9sqls-tab-mudinputanmy04d0.mud-tab.mud-tab-active[tab Number]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 417.9270935058594,
+        "w": 600,
+        "h": 430.1458435058594
+       },
+       "tabs": [
+        "Number (selected)",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells"
+       ],
+       "controls": [
+        "radio [General] checked",
+        "radio [Number]",
+        "radio [Currency]",
+        "radio [Accounting] disabled",
+        "radio [Date]",
+        "radio [Time]",
+        "radio [Percentage]",
+        "radio [Fraction] disabled",
+        "radio [Scientific]",
+        "radio [Text]",
+        "radio [Special] disabled",
+        "radio [Custom]"
+       ],
+       "swatches": 0,
+       "radiosInOrder": [
+        "General",
+        "Number",
+        "Currency",
+        "Accounting",
+        "Date",
+        "Time",
+        "Percentage",
+        "Fraction",
+        "Scientific",
+        "Text",
+        "Special",
+        "Custom"
+       ],
+       "buttons": [
+        " disabled",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 593
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:48",
+         "562610:26",
+         "101025:17",
+         "567e90:16",
+         "90906b:11"
+        ],
+        "inkPixels": 290
+       }
+      }
+     },
+     "shot": "22-opened-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-number",
+     "did": [
+      "a click at (1113, 931) on tab 'Number' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-wx5c9sqls-tab-mudinputanmy04d0.mud-tab.mud-tab-active[tab Number]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 417.9270935058594,
+        "w": 600,
+        "h": 430.1458435058594
+       },
+       "tabs": [
+        "Number (selected)",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells"
+       ],
+       "controls": [
+        "radio [General] checked",
+        "radio [Number]",
+        "radio [Currency]",
+        "radio [Accounting] disabled",
+        "radio [Date]",
+        "radio [Time]",
+        "radio [Percentage]",
+        "radio [Fraction] disabled",
+        "radio [Scientific]",
+        "radio [Text]",
+        "radio [Special] disabled",
+        "radio [Custom]"
+       ],
+       "swatches": 0,
+       "radiosInOrder": [
+        "General",
+        "Number",
+        "Currency",
+        "Accounting",
+        "Date",
+        "Time",
+        "Percentage",
+        "Fraction",
+        "Scientific",
+        "Text",
+        "Special",
+        "Custom"
+       ],
+       "buttons": [
+        " disabled",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 593
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:48",
+         "562610:26",
+         "101025:17",
+         "567e90:16",
+         "90906b:11"
+        ],
+        "inkPixels": 290
+       }
+      }
+     },
+     "shot": "22-tab-number-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-alignment",
+     "did": [
+      "a click at (1353, 931) on tab 'Alignment' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-wx5c9sqls-tab-mudinput7i05b04m.mud-tab.mud-tab-active[tab Alignment]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 516.75,
+        "w": 600,
+        "h": 232.5
+       },
+       "tabs": [
+        "Number",
+        "Alignment (selected)",
+        "Font",
+        "Border",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "Horizontal",
+        "Horizontal"
+       ],
+       "controls": [
+        "text [Horizontal] value=[General]"
+       ],
+       "swatches": 0,
+       "radiosInOrder": [],
+       "buttons": [
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 494
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:48",
+         "562610:26",
+         "101025:17",
+         "567e90:16",
+         "90906b:11"
+        ],
+        "inkPixels": 290
+       }
+      }
+     },
+     "shot": "22-tab-alignment-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-font",
+     "did": [
+      "a click at (1575, 1080) on tab 'Font' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-wx5c9sqls-tab-mudinput00n48jxt.mud-tab.mud-tab-active[tab Font]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 361.75,
+        "w": 600,
+        "h": 542.4896240234375
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font (selected)",
+        "Border",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "Underline",
+        "Underline",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [Regular] checked",
+        "radio [Italic]",
+        "radio [Bold]",
+        "radio [Bold Italic]",
+        "text [Underline] value=[None]",
+        "checkbox [Strikethrough]",
+        "radio [Automatic] checked",
+        "text [mudinputidn4ihe1] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "Regular",
+        "Italic",
+        "Bold",
+        "Bold Italic"
+       ],
+       "buttons": [
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 649
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:48",
+         "562610:26",
+         "101025:17",
+         "567e90:16",
+         "90906b:11"
+        ],
+        "inkPixels": 290
+       }
+      }
+     },
+     "shot": "22-tab-font-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-border",
+     "did": [
+      "a click at (1575, 847) on tab 'Border' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-wx5c9sqls-tab-mudinput2dlkws1r.mud-tab.mud-tab-active[tab Border]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 287.6458435058594,
+        "w": 600,
+        "h": 690.6979370117188
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border (selected)",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [None]",
+        "radio [Hair]",
+        "radio [Dotted]",
+        "radio [Dash-dot-dot]",
+        "radio [Dash-dot]",
+        "radio [Dashed]",
+        "radio [Thin] checked",
+        "radio [Medium Dash-dot-dot]",
+        "radio [Slanted Dash-dot]",
+        "radio [Medium Dash-dot]",
+        "radio [Medium Dashed]",
+        "radio [Medium]",
+        "radio [Thick]",
+        "radio [Double]",
+        "radio [Automatic] checked",
+        "text [mudinput1ll5gc2j] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "None",
+        "Hair",
+        "Dotted",
+        "Dash-dot-dot",
+        "Dash-dot",
+        "Dashed",
+        "Thin",
+        "Medium Dash-dot-dot",
+        "Slanted Dash-dot",
+        "Medium Dash-dot",
+        "Medium Dashed",
+        "Medium",
+        "Thick",
+        "Double"
+       ],
+       "buttons": [
+        "None",
+        "Outline",
+        "Inside disabled",
+        "Top pressed=false",
+        "Horizontal pressed=false disabled",
+        "Bottom pressed=false",
+        "Left pressed=false",
+        "Vertical pressed=false disabled",
+        "Right pressed=false",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 723
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:48",
+         "562610:26",
+         "101025:17",
+         "567e90:16",
+         "90906b:11"
+        ],
+        "inkPixels": 290
+       }
+      }
+     },
+     "shot": "22-tab-border-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-fill",
+     "did": [
+      "a click at (1575, 736) on tab 'Fill' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-wx5c9sqls-tab-mudinputlgch5nd3.mud-tab.mud-tab-active[tab Fill]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 404.75,
+        "w": 600,
+        "h": 456.4895935058594
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill (selected)"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [No Colour] checked",
+        "text [mudinputgxhrvtfm] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [],
+       "buttons": [
+        " disabled",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 606
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:48",
+         "562610:26",
+         "101025:17",
+         "567e90:16",
+         "90906b:11"
+        ],
+        "inkPixels": 290
+       }
+      }
+     },
+     "shot": "22-tab-fill-wasm-chrome-mud.png"
+    },
+    {
+     "state": "closed",
+     "did": [
+      "keys {ESC}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:48",
+         "ffffde:26",
+         "8c2c00:26",
+         "000029:17",
+         "8cdbff:16"
+        ],
+        "inkPixels": 327
+       }
+      }
+     },
+     "shot": "22-closed-wasm-chrome-mud.png"
+    },
+    {
+     "state": "second",
+     "did": [
+      "keys ^{KEY1}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-ol1fw0jp4-tab-mudinputhljsq0nv.mud-tab.mud-tab-active[tab Fill]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 404.75,
+        "w": 600,
+        "h": 456.4895935058594
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill (selected)"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [No Colour] checked",
+        "text [mudinputakzd1aru] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [],
+       "buttons": [
+        " disabled",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 606
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:48",
+         "562610:26",
+         "101025:17",
+         "567e90:16",
+         "90906b:11"
+        ],
+        "inkPixels": 290
+       }
+      }
+     },
+     "shot": "22-second-wasm-chrome-mud.png"
+    },
+    {
+     "state": "second-closed",
+     "did": [
+      "keys {ESC}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "Item",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-pinned",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 255)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "Item",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:48",
+         "ffffde:26",
+         "8c2c00:26",
+         "000029:17",
+         "8cdbff:16"
+        ],
+        "inkPixels": 327
+       }
+      }
+     },
+     "shot": "22-second-closed-wasm-chrome-mud.png"
+    }
+   ],
+   "url": "http://localhost:5299/sheet?chrome=mud",
+   "dpr": 1.5
+  },
+  {
+   "case": "24",
+   "what": "/sheet?case=16 (A1 abc, A2 def). Set up with ExSheet's own keys and Format Cells: A1 Ctrl+B; Ctrl+1, Fill, Red, OK; Ctrl+1, Border, Thick, Bottom, OK. Then A1:A2 with the Focus on A1 (Shift+Down), Ctrl+1, the Font, Fill and Border tabs pressed; Esc",
+   "page": "?case=16",
+   "started": "2026-10-01T23:44:59.535Z",
+   "states": [
+    {
+     "state": "a1-bold",
+     "did": [
+      "a click at (310, 663) on the middle of A1",
+      "keys ^{KEYB}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-2 ffffff | -1..1 594ae2 | 2..6 ffffff",
+        "at50": "-6..-2 ffffff | -1..1 594ae2 | 2..6 ffffff",
+        "at75": "-6..-2 ffffff | -1..1 594ae2 | 2..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:127",
+         "ffb25a:17",
+         "005db5:9",
+         "298ade:9",
+         "a57d42:4"
+        ],
+        "inkPixels": 305
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:34",
+         "290000:22",
+         "ffdb8c:21",
+         "005db5:18",
+         "deffff:12"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "24-a1-bold-wasm-chrome-mud.png"
+    },
+    {
+     "state": "a1-fill-chosen",
+     "did": [
+      "keys ^{KEY1}",
+      "keys {RIGHT 4} from the tab shown, to tab 'Fill' of Format Cells (1 so named), which the tab strip did not show",
+      "a click at (968, 1261) on radio 'Red' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "input.mud-ex-sheet-swatch[Red]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 404.75,
+        "w": 600,
+        "h": 456.4895935058594
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill (selected)"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [Red] checked",
+        "text [mudinputu0qrykul] value=[#ff0000]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [],
+       "buttons": [
+        " disabled",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 606
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-2 909090 | -1..1 3d3581 | 2..6 909090",
+        "at50": "-6..-2 909090 | -1..1 3d3581 | 2..6 909090",
+        "at75": "-6..-2 909090 | -1..1 3d3581 | 2..6 909090",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:127",
+         "90693d:17",
+         "103f6b:9",
+         "25557f:9",
+         "634f31:4"
+        ],
+        "inkPixels": 298
+       },
+       "A2": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:34",
+         "251010:22",
+         "907e56:21",
+         "103f6b:18",
+         "102656:11"
+        ],
+        "inkPixels": 228
+       }
+      }
+     },
+     "shot": "24-a1-fill-chosen-wasm-chrome-mud.png"
+    },
+    {
+     "state": "a1-filled",
+     "did": [
+      "a click at (1606, 1413) on button 'OK' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-2 ff0000 | -1..1 594ae2 | 2..6 ffffff",
+        "at50": "-6..-2 ff0000 | -1..1 594ae2 | 2..6 ffffff",
+        "at75": "-6..-2 ff0000 | -1..1 594ae2 | 2..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ff0000",
+        "sampled": "000000",
+        "top": [
+         "000000:161",
+         "290000:10",
+         "100000:9",
+         "310000:7",
+         "180000:7"
+        ],
+        "inkPixels": 271
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:34",
+         "290000:22",
+         "ffdb8c:21",
+         "005db5:18",
+         "deffff:12"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "24-a1-filled-wasm-chrome-mud.png"
+    },
+    {
+     "state": "a1-border-chosen",
+     "did": [
+      "keys ^{KEY1}",
+      "keys {LEFT 1} from the tab shown, to tab 'Border' of Format Cells (1 so named), which the tab strip did not show",
+      "a click at (1092, 1036) on radio 'Thick' of Format Cells (1 so named)",
+      "a click at (1537, 933) on button 'Bottom' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "button.mud-button-root.mud-button",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 287.3125,
+        "w": 600,
+        "h": 691.3646240234375
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border (selected)",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [None]",
+        "radio [Hair]",
+        "radio [Dotted]",
+        "radio [Dash-dot-dot]",
+        "radio [Dash-dot]",
+        "radio [Dashed]",
+        "radio [Thin]",
+        "radio [Medium Dash-dot-dot]",
+        "radio [Slanted Dash-dot]",
+        "radio [Medium Dash-dot]",
+        "radio [Medium Dashed]",
+        "radio [Medium]",
+        "radio [Thick] checked",
+        "radio [Double]",
+        "radio [Automatic] checked",
+        "text [mudinputg4mgfd6d] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "None",
+        "Hair",
+        "Dotted",
+        "Dash-dot-dot",
+        "Dash-dot",
+        "Dashed",
+        "Thin",
+        "Medium Dash-dot-dot",
+        "Slanted Dash-dot",
+        "Medium Dash-dot",
+        "Medium Dashed",
+        "Medium",
+        "Thick",
+        "Double"
+       ],
+       "buttons": [
+        "None",
+        "Outline",
+        "Inside disabled",
+        "Top pressed=false",
+        "Horizontal pressed=false disabled",
+        "Bottom pressed=true",
+        "Left pressed=false",
+        "Vertical pressed=false disabled",
+        "Right pressed=false",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [
+        "Bottom currentColor w3"
+       ],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 723
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-2 901010 | -1..1 3d3581 | 2..6 909090",
+        "at50": "-6..-2 901010 | -1..1 3d3581 | 2..6 909090",
+        "at75": "-6..-2 901010 | -1..1 3d3581 | 2..6 909090",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "901010",
+        "sampled": "101010",
+        "top": [
+         "101010:161",
+         "251010:10",
+         "181010:9",
+         "291010:7",
+         "1c1010:7"
+        ],
+        "inkPixels": 261
+       },
+       "A2": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:34",
+         "251010:22",
+         "907e56:21",
+         "103f6b:18",
+         "102656:11"
+        ],
+        "inkPixels": 228
+       }
+      }
+     },
+     "shot": "24-a1-border-chosen-wasm-chrome-mud.png"
+    },
+    {
+     "state": "a1-bordered",
+     "did": [
+      "a click at (1606, 1589) on button 'OK' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-3 ff0000 | -2 000000 | -1..1 594ae2 | 2..6 ffffff",
+        "at50": "-6..-3 ff0000 | -2 000000 | -1..1 594ae2 | 2..6 ffffff",
+        "at75": "-6..-3 ff0000 | -2 000000 | -1..1 594ae2 | 2..6 ffffff",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ff0000",
+        "sampled": "000000",
+        "top": [
+         "000000:161",
+         "290000:10",
+         "100000:9",
+         "310000:7",
+         "180000:7"
+        ],
+        "inkPixels": 271
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:34",
+         "290000:22",
+         "ffdb8c:21",
+         "005db5:18",
+         "deffff:12"
+        ],
+        "inkPixels": 244
+       }
+      }
+     },
+     "shot": "24-a1-bordered-wasm-chrome-mud.png"
+    },
+    {
+     "state": "selected",
+     "did": [
+      "keys +{DOWN}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-3 ff0000 | -2..-1 000000 | 0 0e0b24 | 1..6 e1defa",
+        "at50": "-6..-3 ff0000 | -2..-1 000000 | 0 0e0b24 | 1..6 e1defa",
+        "at75": "-6..-3 ff0000 | -2..-1 000000 | 0 0e0b24 | 1..6 e1defa",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ff0000",
+        "sampled": "000000",
+        "top": [
+         "000000:161",
+         "290000:10",
+         "100000:9",
+         "310000:7",
+         "180000:7"
+        ],
+        "inkPixels": 265
+       },
+       "A2": {
+        "ground": "e1defa",
+        "sampled": "100d29",
+        "top": [
+         "100d29:34",
+         "320d29:22",
+         "e1c09c:21",
+         "1059bd:18",
+         "c6defa:12"
+        ],
+        "inkPixels": 249
+       }
+      }
+     },
+     "shot": "24-selected-wasm-chrome-mud.png"
+    },
+    {
+     "state": "opened",
+     "did": [
+      "keys ^{KEY1}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-tntz3nsjp-tab-mudinputbkm80kwd.mud-tab.mud-tab-active[tab Border]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 287.6458435058594,
+        "w": 600,
+        "h": 690.6979370117188
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border (selected)",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [None]",
+        "radio [Hair]",
+        "radio [Dotted]",
+        "radio [Dash-dot-dot]",
+        "radio [Dash-dot]",
+        "radio [Dashed]",
+        "radio [Thin] checked",
+        "radio [Medium Dash-dot-dot]",
+        "radio [Slanted Dash-dot]",
+        "radio [Medium Dash-dot]",
+        "radio [Medium Dashed]",
+        "radio [Medium]",
+        "radio [Thick]",
+        "radio [Double]",
+        "radio [Automatic] checked",
+        "text [mudinput8q60nldj] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "None",
+        "Hair",
+        "Dotted",
+        "Dash-dot-dot",
+        "Dash-dot",
+        "Dashed",
+        "Thin",
+        "Medium Dash-dot-dot",
+        "Slanted Dash-dot",
+        "Medium Dash-dot",
+        "Medium Dashed",
+        "Medium",
+        "Thick",
+        "Double"
+       ],
+       "buttons": [
+        "None",
+        "Outline",
+        "Inside",
+        "Top pressed=false",
+        "Horizontal pressed=mixed",
+        "Bottom pressed=false",
+        "Left pressed=false",
+        "Vertical pressed=false disabled",
+        "Right pressed=false",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [
+        "InsideHorizontal #808080 w1 dash 1 2 mud-ex-sheet-format-cells-differs"
+       ],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 723
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at50": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at75": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "901010",
+        "sampled": "101010",
+        "top": [
+         "101010:161",
+         "251010:10",
+         "181010:9",
+         "291010:7",
+         "1c1010:7"
+        ],
+        "inkPixels": 255
+       },
+       "A2": {
+        "ground": "817f8d",
+        "sampled": "181725",
+        "top": [
+         "181725:34",
+         "291725:22",
+         "81705e:21",
+         "183d6f:18",
+         "18295e:11"
+        ],
+        "inkPixels": 229
+       }
+      }
+     },
+     "shot": "24-opened-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-font",
+     "did": [
+      "keys {LEFT 1} from the tab shown, to tab 'Font' of Format Cells (1 so named), which the tab strip did not show"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-tntz3nsjp-tab-mudinputorgrd0yw.mud-tab.mud-tab-active[tab Font]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 361.75,
+        "w": 600,
+        "h": 542.4896240234375
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font (selected)",
+        "Border",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "Underline",
+        "Underline",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [Regular]",
+        "radio [Italic]",
+        "radio [Bold]",
+        "radio [Bold Italic]",
+        "text [Underline] value=[None]",
+        "checkbox [Strikethrough]",
+        "radio [Automatic] checked",
+        "text [mudinputmlt4hl60] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "Regular",
+        "Italic",
+        "Bold",
+        "Bold Italic"
+       ],
+       "buttons": [
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 649
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at50": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at75": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "901010",
+        "sampled": "101010",
+        "top": [
+         "101010:161",
+         "251010:10",
+         "181010:9",
+         "291010:7",
+         "1c1010:7"
+        ],
+        "inkPixels": 255
+       },
+       "A2": {
+        "ground": "817f8d",
+        "sampled": "181725",
+        "top": [
+         "181725:34",
+         "291725:22",
+         "81705e:21",
+         "183d6f:18",
+         "18295e:11"
+        ],
+        "inkPixels": 229
+       }
+      }
+     },
+     "shot": "24-tab-font-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-fill",
+     "did": [
+      "keys {RIGHT 2} from the tab shown, to tab 'Fill' of Format Cells (1 so named), which the tab strip did not show"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-tntz3nsjp-tab-mudinputhl0ok06k.mud-tab.mud-tab-active[tab Fill]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 404.75,
+        "w": 600,
+        "h": 456.4895935058594
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill (selected)"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [No Colour] checked",
+        "text [mudinput2pze74h9] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [],
+       "buttons": [
+        " disabled",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 606
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at50": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at75": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "901010",
+        "sampled": "101010",
+        "top": [
+         "101010:161",
+         "251010:10",
+         "181010:9",
+         "291010:7",
+         "1c1010:7"
+        ],
+        "inkPixels": 255
+       },
+       "A2": {
+        "ground": "817f8d",
+        "sampled": "181725",
+        "top": [
+         "181725:34",
+         "291725:22",
+         "81705e:21",
+         "183d6f:18",
+         "18295e:11"
+        ],
+        "inkPixels": 229
+       }
+      }
+     },
+     "shot": "24-tab-fill-wasm-chrome-mud.png"
+    },
+    {
+     "state": "tab-border",
+     "did": [
+      "a click at (1317, 912) on tab 'Border' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-tntz3nsjp-tab-mudinputbkm80kwd.mud-tab.mud-tab-active[tab Border]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 287.6458435058594,
+        "w": 600,
+        "h": 690.6979370117188
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font",
+        "Border (selected)",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [None]",
+        "radio [Hair]",
+        "radio [Dotted]",
+        "radio [Dash-dot-dot]",
+        "radio [Dash-dot]",
+        "radio [Dashed]",
+        "radio [Thin] checked",
+        "radio [Medium Dash-dot-dot]",
+        "radio [Slanted Dash-dot]",
+        "radio [Medium Dash-dot]",
+        "radio [Medium Dashed]",
+        "radio [Medium]",
+        "radio [Thick]",
+        "radio [Double]",
+        "radio [Automatic] checked",
+        "text [mudinputqnykqipc] value=[]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "None",
+        "Hair",
+        "Dotted",
+        "Dash-dot-dot",
+        "Dash-dot",
+        "Dashed",
+        "Thin",
+        "Medium Dash-dot-dot",
+        "Slanted Dash-dot",
+        "Medium Dash-dot",
+        "Medium Dashed",
+        "Medium",
+        "Thick",
+        "Double"
+       ],
+       "buttons": [
+        "None",
+        "Outline",
+        "Inside",
+        "Top pressed=false",
+        "Horizontal pressed=mixed",
+        "Bottom pressed=false",
+        "Left pressed=false",
+        "Vertical pressed=false disabled",
+        "Right pressed=false",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [
+        "InsideHorizontal #808080 w1 dash 1 2 mud-ex-sheet-format-cells-differs"
+       ],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 723
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at50": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "at75": "-6..-3 901010 | -2..-1 101010 | 0 171622 | 1..6 817f8d",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "901010",
+        "sampled": "101010",
+        "top": [
+         "101010:161",
+         "251010:10",
+         "181010:9",
+         "291010:7",
+         "1c1010:7"
+        ],
+        "inkPixels": 255
+       },
+       "A2": {
+        "ground": "817f8d",
+        "sampled": "181725",
+        "top": [
+         "181725:34",
+         "291725:22",
+         "81705e:21",
+         "183d6f:18",
+         "18295e:11"
+        ],
+        "inkPixels": 229
+       }
+      }
+     },
+     "shot": "24-tab-border-wasm-chrome-mud.png"
+    },
+    {
+     "state": "closed",
+     "did": [
+      "keys {ESC}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb ex-fill-ff0000 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "A1 bottom": {
+        "at": 133,
+        "at25": "-6..-3 ff0000 | -2..-1 000000 | 0 0e0b24 | 1..6 e1defa",
+        "at50": "-6..-3 ff0000 | -2..-1 000000 | 0 0e0b24 | 1..6 e1defa",
+        "at75": "-6..-3 ff0000 | -2..-1 000000 | 0 0e0b24 | 1..6 e1defa",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ff0000",
+        "sampled": "000000",
+        "top": [
+         "000000:161",
+         "290000:10",
+         "100000:9",
+         "310000:7",
+         "180000:7"
+        ],
+        "inkPixels": 265
+       },
+       "A2": {
+        "ground": "e1defa",
+        "sampled": "100d29",
+        "top": [
+         "100d29:34",
+         "320d29:22",
+         "e1c09c:21",
+         "1059bd:18",
+         "c6defa:12"
+        ],
+        "inkPixels": 249
+       }
+      }
+     },
+     "shot": "24-closed-wasm-chrome-mud.png"
+    }
+   ],
+   "url": "http://localhost:5299/sheet?case=16&chrome=mud",
+   "dpr": 1.5
+  },
+  {
+   "case": "25",
+   "what": "/sheet?case=16 (A1 abc, A2 def). A1 Ctrl+B, A2 Ctrl+I (keys). Then A1:A2 (A1, Shift+Down), Ctrl+1, the Font tab, Red, OK",
+   "page": "?case=16",
+   "started": "2026-10-01T23:45:22.263Z",
+   "states": [
+    {
+     "state": "set",
+     "did": [
+      "a click at (310, 663) on the middle of A1",
+      "keys ^{KEYB}{DOWN}^{KEYI}{UP}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:127",
+         "ffb25a:17",
+         "005db5:9",
+         "298ade:9",
+         "a57d42:4"
+        ],
+        "inkPixels": 305
+       },
+       "A2": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:52",
+         "63b6ff:6",
+         "636563:6",
+         "00004a:5",
+         "a5f3ff:5"
+        ],
+        "inkPixels": 247
+       }
+      }
+     },
+     "shot": "25-set-wasm-chrome-mud.png"
+    },
+    {
+     "state": "selected",
+     "did": [
+      "keys +{DOWN}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "000000",
+        "top": [
+         "000000:127",
+         "ffb25a:17",
+         "005db5:9",
+         "298ade:9",
+         "a57d42:4"
+        ],
+        "inkPixels": 303
+       },
+       "A2": {
+        "ground": "e1defa",
+        "sampled": "100d29",
+        "top": [
+         "100d29:52",
+         "61a2fa:6",
+         "61607a:6",
+         "100d66:5",
+         "97d4fa:5"
+        ],
+        "inkPixels": 252
+       }
+      }
+     },
+     "shot": "25-selected-wasm-chrome-mud.png"
+    },
+    {
+     "state": "opened",
+     "did": [
+      "keys ^{KEY1}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#tablist-s16t0m5my-tab-mudinputepvrncey.mud-tab.mud-tab-active[tab Number]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 417.9270935058594,
+        "w": 600,
+        "h": 430.1458435058594
+       },
+       "tabs": [
+        "Number (selected)",
+        "Alignment",
+        "Font",
+        "Border",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells"
+       ],
+       "controls": [
+        "radio [General] checked",
+        "radio [Number]",
+        "radio [Currency]",
+        "radio [Accounting] disabled",
+        "radio [Date]",
+        "radio [Time]",
+        "radio [Percentage]",
+        "radio [Fraction] disabled",
+        "radio [Scientific]",
+        "radio [Text]",
+        "radio [Special] disabled",
+        "radio [Custom]"
+       ],
+       "swatches": 0,
+       "radiosInOrder": [
+        "General",
+        "Number",
+        "Currency",
+        "Accounting",
+        "Date",
+        "Time",
+        "Percentage",
+        "Fraction",
+        "Scientific",
+        "Text",
+        "Special",
+        "Custom"
+       ],
+       "buttons": [
+        " disabled",
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 593
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:127",
+         "90693d:17",
+         "103f6b:9",
+         "25557f:9",
+         "634f31:4"
+        ],
+        "inkPixels": 296
+       },
+       "A2": {
+        "ground": "817f8d",
+        "sampled": "181725",
+        "top": [
+         "181725:52",
+         "41618d:6",
+         "41404d:6",
+         "181743:5",
+         "5c7a8d:5"
+        ],
+        "inkPixels": 232
+       }
+      }
+     },
+     "shot": "25-opened-wasm-chrome-mud.png"
+    },
+    {
+     "state": "font-red",
+     "did": [
+      "a click at (1593, 931) on tab 'Font' of Format Cells (1 so named)",
+      "a click at (968, 1326) on radio 'Red' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xb",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-xi",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "input.mud-ex-sheet-swatch[Red]",
+      "dialog": {
+       "box": {
+        "x": 543,
+        "y": 361.75,
+        "w": 600,
+        "h": 542.4896240234375
+       },
+       "tabs": [
+        "Number",
+        "Alignment",
+        "Font (selected)",
+        "Border",
+        "Fill"
+       ],
+       "legends": [
+        "Format Cells",
+        "Underline",
+        "Underline",
+        "More Colours",
+        "More Colours"
+       ],
+       "controls": [
+        "radio [Regular]",
+        "radio [Italic]",
+        "radio [Bold]",
+        "radio [Bold Italic]",
+        "text [Underline] value=[None]",
+        "checkbox [Strikethrough]",
+        "radio [Red] checked",
+        "text [mudinputpx5yxxmk] value=[#ff0000]"
+       ],
+       "swatches": 71,
+       "radiosInOrder": [
+        "Regular",
+        "Italic",
+        "Bold",
+        "Bold Italic"
+       ],
+       "buttons": [
+        "OK",
+        "Cancel"
+       ],
+       "selects": [],
+       "preview": [],
+       "alert": []
+      }
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 1115,
+      "height": 649
+     },
+     "pixels": {
+      "scale": 1.5004484304932735,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "909090",
+        "sampled": "101010",
+        "top": [
+         "101010:127",
+         "90693d:17",
+         "103f6b:9",
+         "25557f:9",
+         "634f31:4"
+        ],
+        "inkPixels": 296
+       },
+       "A2": {
+        "ground": "817f8d",
+        "sampled": "181725",
+        "top": [
+         "181725:52",
+         "41618d:6",
+         "41404d:6",
+         "181743:5",
+         "5c7a8d:5"
+        ],
+        "inkPixels": 232
+       }
+      }
+     },
+     "shot": "25-font-red-wasm-chrome-mud.png"
+    },
+    {
+     "state": "ok",
+     "did": [
+      "a click at (1606, 1477) on button 'OK' of Format Cells (1 so named)"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "A1": {
+        "text": "abc",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-ff0000b",
+        "style": {
+         "color": "rgb(255, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "700",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "def",
+        "box": {
+         "x": 110.09375,
+         "y": 348.79168701171875,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-font-ff0000i",
+        "style": {
+         "color": "rgb(255, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "italic",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A1",
+      "nameBox": "A1",
+      "bar": "abc",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 110.09375,
+         "y": 320.79168701171875,
+         "w": 99,
+         "h": 56
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 32,
+      "y": 260,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {},
+      "along": {},
+      "ink": {
+       "A1": {
+        "ground": "ffffff",
+        "sampled": "ff0000",
+        "top": [
+         "ff0000:139",
+         "ffb25a:17",
+         "ff5db5:10",
+         "ff8ade:9",
+         "ff7d42:4"
+        ],
+        "inkPixels": 299
+       },
+       "A2": {
+        "ground": "e1defa",
+        "sampled": "e10d29",
+        "top": [
+         "e10d29:66",
+         "e1607a:9",
+         "e1a2fa:6",
+         "e10d66:5",
+         "e1389c:5"
+        ],
+        "inkPixels": 235
+       }
+      }
+     },
+     "shot": "25-ok-wasm-chrome-mud.png"
+    }
+   ],
+   "url": "http://localhost:5299/sheet?case=16&chrome=mud",
+   "dpr": 1.5
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-01T23:44:30.308Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  },
+  {
+   "t": "2026-10-01T23:44:34.496Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  },
+  {
+   "t": "2026-10-01T23:44:41.173Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  },
+  {
+   "t": "2026-10-01T23:44:59.669Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  },
+  {
+   "t": "2026-10-01T23:45:22.414Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok english was=0x08090809 now=0x08090809"
+ },
+ "baseDpr": 1.5,
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 521,
+    "py": 173,
+    "client": {
+     "x": 300,
+     "y": 8
+    }
+   }
+  ]
+ },
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1686,
+   1266
+  ],
+  "dark": false,
+  "forcedColors": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+ },
+ "calibrations": [
+  {
+   "url": "http://localhost:5299/sheet?case=11&chrome=mud",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 521,
+     "py": 173,
+     "client": null
+    },
+    {
+     "px": 521,
+     "py": 193,
+     "client": {
+      "x": 300,
+      "y": 21
+     }
+    },
+    {
+     "px": 521,
+     "py": 173,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:5299/sheet?chrome=mud",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 521,
+     "py": 173,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:5299/sheet?case=16&chrome=mud",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 521,
+     "py": 173,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  },
+  {
+   "url": "http://localhost:5299/sheet?case=16&chrome=mud",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 521,
+     "py": 173,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  }
+ ],
+ "finished": "2026-10-01T23:45:33.523Z"
+}

@@ -1,0 +1,15 @@
+@page "/mud-sheet"
+@* The Sheet on a paper in src/ExSheet.MudBlazor/README.md, as written there, taken from the packed
+   ExSheet.MudBlazor. *@
+@using ExGrid.MudBlazor
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudExGridPaper>
+    <ExSheet @bind-Document="_document" Chrome="MudSheetChrome.Default" ViewportHeight="480" ViewportWidth="900" />
+</MudExGridPaper>
+
+@code {
+    private SheetDocument? _document;   // null: an empty Sheet in the current culture
+}

@@ -1,6 +1,6 @@
 import { test, expect, alterPage, setRoundTrip, twoFrames } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
-import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily } from './sheet-helpers.mjs';
+import { sheet, cell, pressCell, editor, bar, clickBarEnd, boxOf, typeSteadily, stretchesOf } from './sheet-helpers.mjs';
 
 // The coloured text in the editor (ADR-0057, "The coloured text is a layer that shows only while it
 // is up to date"; DC-47, DC-48), as ExSheet declares its References on /sheet, under the built-in
@@ -69,12 +69,26 @@ async function expectPlain(field, text) {
 /**
  * Samples every editor surface of the page in every animation frame from now to the end of the
  * test: whenever the field's text is transparent or the layer shows, the layer's text — as written
- * on it, and as drawn — must be the field's value (DC-47). The page is left as it was.
+ * on it, and as drawn — must be the field's value, and every highlight over the layer's run must
+ * cover exactly the characters the core named for it (DC-47; ADR-0057, note of 2026-10-01). A
+ * highlight over a hidden layer is a stretch coloured where nothing is shown, and is wrong too. The
+ * page is left as it was.
  */
 async function recordFrames(page) {
     await alterPage(page, () => {
-        const frames = { sampled: 0, shown: 0, wrong: [] };
+        const frames = { sampled: 0, shown: 0, coloured: 0, wrong: [] };
         let request = 0;
+        const highlighted = (run) => {
+            const ranges = [];
+            CSS.highlights.forEach((highlight, name) => {
+                for (const range of highlight) {
+                    if (range.startContainer === run) {
+                        ranges.push(`${range.startOffset},${range.endOffset - range.startOffset},${name}`);
+                    }
+                }
+            });
+            return ranges.sort();
+        };
         const sample = () => {
             for (const layer of document.querySelectorAll('.ex-reference-text')) {
                 const field = layer.nextElementSibling;
@@ -83,12 +97,18 @@ async function recordFrames(page) {
                 }
                 const transparent = getComputedStyle(field).webkitTextFillColor === 'rgba(0, 0, 0, 0)';
                 const visible = getComputedStyle(layer).visibility === 'visible';
+                const run = layer.firstElementChild?.firstChild ?? null;
+                const ranges = run === null ? [] : highlighted(run);
                 if (transparent || visible) {
                     frames.shown++;
                     const text = layer.getAttribute('data-ex-text');
-                    if (text !== field.value || layer.textContent !== field.value) {
-                        frames.wrong.push({ value: field.value, text, drawn: layer.textContent, transparent, visible });
+                    const named = (layer.getAttribute('data-ex-colours') ?? '').split(' ').filter((entry) => entry !== '').sort();
+                    frames.coloured += ranges.length > 0 ? 1 : 0;
+                    if (text !== field.value || layer.textContent !== field.value || JSON.stringify(ranges) !== JSON.stringify(named)) {
+                        frames.wrong.push({ value: field.value, text, drawn: layer.textContent, transparent, visible, ranges, named });
                     }
+                } else if (ranges.length > 0) {
+                    frames.wrong.push({ value: field.value, hidden: true, ranges });
                 }
             }
             frames.sampled++;
@@ -151,11 +171,13 @@ for (const chrome of ['builtin', 'mud']) {
         }
         await expectPlain(bar(grid), formula);
 
-        const spans = await editor(grid).evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
-            .map((span) => ({ text: span.textContent, class: span.className, colour: getComputedStyle(span).color })));
-        expect(spans.map((span) => [span.text, span.class]))
-            .toEqual([['A1', 'ex-reference-1'], ['B2', 'ex-reference-2'], ['C3:D4', 'ex-reference-3']]);
-        expect(new Set(spans.map((span) => span.colour)).size).toBe(3);
+        // The layer's text is one run, and its References are coloured over it (ADR-0057, note of
+        // 2026-10-01).
+        expect(await editor(grid).evaluate((input) => input.previousElementSibling.firstElementChild.childNodes.length)).toBe(1);
+        const references = await stretchesOf(editor(grid));
+        expect(references.map((reference) => [reference.text, reference.place]))
+            .toEqual([['A1', 1], ['B2', 2], ['C3:D4', 3]]);
+        expect(new Set(references.map((reference) => reference.ink)).size).toBe(3);
         expect((await framesRecorded(page)).wrong).toEqual([]);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
@@ -245,15 +267,19 @@ for (const chrome of ['builtin', 'mud']) {
 
         await expect(editor(grid)).toHaveValue('=A1&にほ');
         // Long past the round trip, the core has rendered the composing text, and the field still
-        // draws it itself.
+        // draws it itself: no highlight is left over the hidden layer.
         await expect.poll(async () => (await colouring(editor(grid))).text).toBe('=A1&にほ');
         await page.waitForTimeout(400);
         await expectPlain(editor(grid), '=A1&にほ');
+        expect(await stretchesOf(editor(grid))).toEqual([]);
 
-        // The composition ends, and nothing is typed after it.
+        // The composition ends, and nothing is typed after it: compositionend shows the layer, and
+        // its Reference is coloured again over the one run (ADR-0057, note of 2026-10-01).
         await client.send('Input.insertText', { text: '日本' });
         await expect(editor(grid)).toHaveValue('=A1&日本');
         await expectColoured(editor(grid), '=A1&日本');
+        await expect.poll(async () => (await stretchesOf(editor(grid))).map((stretch) => [stretch.text, stretch.place, stretch.ink === stretch.colour]))
+            .toEqual([['A1', 1, true]]);
         expect((await framesRecorded(page)).wrong).toEqual([]);
         await client.detach();
         await setRoundTrip(0);
@@ -304,20 +330,6 @@ test("ADR-0057: under the Mud Chrome without the Wrapper's stylesheet, the Cell 
 // ---------------------------------------------------------------------------------------------
 // The Reference Point is writing, shown selected (ADR-0051; ADR-0057, "What cases 24–32 settled")
 
-/** Each span of a field's layer: its text, whether the core marked it as the Reference being
- * pointed, and how the stylesheet paints it — its ground, its ink, and the colour it wears. */
-const spansOf = (field) => field.evaluate((input) => [...input.previousElementSibling.querySelectorAll('span')]
-    .map((span) => {
-        const style = getComputedStyle(span);
-        return {
-            text: span.textContent,
-            pointed: span.classList.contains('ex-reference-pointed'),
-            ground: style.backgroundColor,
-            ink: style.webkitTextFillColor,
-            colour: style.color,
-        };
-    }));
-
 /** The field's selection: the look is never one. */
 const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, input.selectionEnd]);
 
@@ -325,10 +337,10 @@ const selectionOf = (field) => field.evaluate((input) => [input.selectionStart, 
 // --ex-reference-pointed-background).
 const POINTED_GROUND = 'rgb(198, 198, 198)';
 
-/** The one span pointed, on the grey, its ink a shade of its colour and not the colour itself. */
+/** The one stretch pointed, on the grey, its ink a shade of its colour and not the colour itself. */
 async function expectPointedLook(field, text) {
-    await expect.poll(async () => (await spansOf(field)).filter((span) => span.pointed).map((span) => span.text)).toEqual([text]);
-    const span = (await spansOf(field)).find((one) => one.pointed);
+    await expect.poll(async () => (await stretchesOf(field)).filter((span) => span.pointed).map((span) => span.text)).toEqual([text]);
+    const span = (await stretchesOf(field)).find((one) => one.pointed);
     expect(span.ground).toBe(POINTED_GROUND);
     expect(span.ink).not.toBe(span.colour);
     expect(span.ink).not.toBe(TRANSPARENT);
@@ -342,10 +354,10 @@ const SECOND_COLOUR = 'rgb(192, 53, 62)';
 const FIRST_POINTED = 'rgb(4, 1, 162)';
 const SECOND_POINTED = 'rgb(99, 1, 1)';
 
-/** The one span pointed wears this colour, and on the grey its text is this shade of it. */
+/** The one stretch pointed wears this colour, and on the grey its text is this shade of it. */
 async function expectPointedShade(field, text, colour, ink) {
     await expectPointedLook(field, text);
-    const span = (await spansOf(field)).find((one) => one.pointed);
+    const span = (await stretchesOf(field)).find((one) => one.pointed);
     expect({ colour: span.colour, ink: span.ink, ground: span.ground }).toEqual({ colour, ink, ground: POINTED_GROUND });
 }
 
@@ -400,7 +412,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         await expectColoured(editor(grid), '=F5');
         await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(1);
-        const spans = await spansOf(editor(grid));
+        const spans = await stretchesOf(editor(grid));
         expect(spans.map((span) => [span.text, span.pointed])).toEqual([['F5', false]]);
         expect(spans[0].ground).not.toBe(POINTED_GROUND);
         expect(spans[0].ink).toBe(spans[0].colour);
@@ -425,7 +437,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         await expectColoured(editor(grid), '=D11+F55');
         await expect(grid.locator('.ex-selection .ex-point')).toHaveCount(0);
-        expect((await spansOf(editor(grid))).map((span) => [span.text, span.pointed])).toEqual([['D11', false], ['F55', false]]);
+        expect((await stretchesOf(editor(grid))).map((span) => [span.text, span.pointed])).toEqual([['D11', false], ['F55', false]]);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
     });
@@ -465,7 +477,8 @@ for (const chrome of ['builtin', 'mud']) {
 // ---------------------------------------------------------------------------------------------
 // Over the right characters (DC-48)
 
-/** Differing pixels between two PNG screenshots of one element, compared in the page. */
+/** Differing pixels between two PNG screenshots of one element, compared in the page, and the
+ * largest difference, which says how near the threshold the rest came. */
 function pixelsApart(page, a, b) {
     return page.evaluate(async ([a, b]) => {
         const load = (bytes) => new Promise((resolve, reject) => {
@@ -486,32 +499,47 @@ function pixelsApart(page, a, b) {
         const other = context.getImageData(0, 0, canvas.width, canvas.height).data;
         let differing = 0;
         let apart = 0;
+        let largest = 0;
         for (let i = 0; i < one.length; i += 4) {
             const d = Math.max(Math.abs(one[i] - other[i]), Math.abs(one[i + 1] - other[i + 1]), Math.abs(one[i + 2] - other[i + 2]));
             differing += d > 0 ? 1 : 0;
             apart += d > 96 ? 1 : 0;
+            largest = Math.max(largest, d);
         }
-        return { differing, apart, sizes: [first.width, first.height, second.width, second.height] };
+        return { differing, apart, largest, sizes: [first.width, first.height, second.width, second.height] };
     }, [a.toString('base64'), b.toString('base64')]);
 }
 
 /**
  * A stylesheet over the page that draws a field one of two ways, by a mark the test sets on the
  * field: `own` — by its own text, the layer hidden, as it is while the layer is behind; `layer` —
- * by the layer, as the listener has it, with the colours taken off so the ink is the field's. A
- * word the spelling check marks is drawn by the field in its highlight's colour, which the
- * stylesheet takes away only while the layer shows, so `own` gives it back.
+ * by the layer, as the listener has it, with the colours taken off. A word the spelling check
+ * marks is drawn by the field in its highlight's colour, which the stylesheet takes away only while
+ * the layer shows, so `own` gives it back.
+ *
+ * Both ways draw in black, whatever ink the Chrome gives the field, on the white ground of the
+ * light scheme the tests run in. A glyph moved half a pixel changes an edge pixel by about half the
+ * ink's contrast with its ground: 128 levels in black, over DC-48's threshold of 96, but 95 in
+ * MudBlazor's #424242, which the Formula Bar wears under ExGrid.MudBlazor, so the comparison could
+ * not see a layer half a pixel out there. On Linux the self-test below found one only in the column
+ * where the field's left edge cuts through a glyph, and found none on CI's Server host, where End
+ * had left the field scrolled one pixel further: 876 px, against 875 in every local run (2026-10-01).
  */
 async function overlayDrawingWays(page) {
     await alterPage(page, () => {
         const style = document.createElement('style');
         style.textContent = `
+            .ex-reference-text:has(+ [data-drawn]), .ex-reference-text + [data-drawn] { color: #000 !important; }
             .ex-reference-text:has(+ [data-drawn="own"]) { visibility: hidden !important; }
             .ex-reference-text + [data-drawn="own"] { -webkit-text-fill-color: currentColor !important; }
             .ex-reference-text + [data-drawn="own"]::spelling-error,
             .ex-reference-text + [data-drawn="own"]::grammar-error { color: inherit !important; }
             .ex-reference-text + input.ex-editor[data-drawn="own"] { background: var(--ex-editor-background, Canvas) !important; }
-            .ex-reference-text:has(+ [data-drawn="layer"]) span { color: inherit !important; }`;
+            .ex-reference-text:has(+ [data-drawn="layer"]) {
+                --ex-reference-text-1: currentColor; --ex-reference-text-2: currentColor; --ex-reference-text-3: currentColor;
+                --ex-reference-text-4: currentColor; --ex-reference-text-5: currentColor; --ex-reference-text-6: currentColor;
+                --ex-reference-text-7: currentColor;
+            }`;
         document.head.append(style);
         return () => style.remove();
     });
@@ -532,33 +560,51 @@ async function drawnBothWays(page, field) {
 }
 
 // Longer than either surface on /sheet, with a handful of References, as a Formula a user writes
-// is. The layer draws each span as a text of its own, and the browser snaps each one's width to its
-// layout unit, where the field's text is one run: measured on 2026-09-30, the layer's text runs
-// about 1/128 px long per span, so at the far end of a Formula the error is 0.1 px with ten
-// References, 0.6 px with forty, 1.3 px with eighty — never a character, but past twenty
-// References no longer the same picture. This Formula is the same picture.
+// is. The layer once drew each Reference as a span, a run of text each, and the browser rounds each
+// run's width up to its layout unit, 1/64 px, where the field's text is one run: at End of this
+// Formula the layer stood 1/16 px right of the field, and under ExSheet.MudBlazor's Roboto one edge
+// pixel crossed the threshold below (ticket 86). The layer is one run now, coloured by highlights
+// (ADR-0057, note of 2026-10-01), so the two are one picture at both ends.
 const FORMULA = '=IF(AND(B2>0,C2>0),ROUND(B2*C2*(1+D2),2),"Enter both the quantity and the price '
     + 'before the amount of this line is worked out, and check the discount in the next column")'
     + '&" as of "&TEXT(B7,"yyyy-mm-dd")&", due "&TEXT(B8,"yyyy-mm-dd")';
 
+/** Opens an edit of FORMULA on F3 in one surface, in Caret, and lays the drawing ways over the page. */
+async function editFormula(page, chrome, surface) {
+    await underChrome(page, chrome);
+    const grid = sheet(page);
+    await pressCell(grid, 'F3');
+    const field = surface === 'cell' ? editor(grid) : bar(grid);
+    // Caret, where Home and End move the caret rather than the Focus (ADR-0010) — on macOS
+    // too, where the listener answers them (ticket 32).
+    if (surface === 'cell') {
+        await page.keyboard.press('F2');
+    } else {
+        await clickBarEnd(grid);
+    }
+    await expect(field).toBeFocused();
+    await page.keyboard.insertText(FORMULA);
+    await expectColoured(field, FORMULA);
+    await overlayDrawingWays(page);
+    return { grid, field };
+}
+
+/** Moves the caret to an end, and waits until the field — and the layer's line with it — has
+ * scrolled to show it: past the start at the end, back to it at the start (DC-48). */
+async function caretTo(page, field, end) {
+    await page.keyboard.press(end);
+    await expect.poll(() => field.evaluate((input, at) => {
+        const line = input.previousElementSibling.firstElementChild;
+        const scrolled = at === 'End' ? input.scrollLeft > 0 : input.scrollLeft === 0;
+        return scrolled && line.scrollLeft === input.scrollLeft ? 'with the field' : `field ${input.scrollLeft}, layer ${line.scrollLeft}`;
+    }, end)).toBe('with the field');
+    await expectColoured(field, FORMULA);
+}
+
 for (const chrome of ['builtin', 'mud']) {
     for (const surface of ['cell', 'bar']) {
         test(`DC-48: a Formula longer than the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} keeps its colours over the right characters at either end (${chrome} Chrome)`, async ({ page }) => {
-            await underChrome(page, chrome);
-            const grid = sheet(page);
-            await pressCell(grid, 'F3');
-            const field = surface === 'cell' ? editor(grid) : bar(grid);
-            // Caret, where Home and End move the caret rather than the Focus (ADR-0010) — on macOS
-            // too, where the listener answers them (ticket 32).
-            if (surface === 'cell') {
-                await page.keyboard.press('F2');
-            } else {
-                await clickBarEnd(grid);
-            }
-            await expect(field).toBeFocused();
-            await page.keyboard.insertText(FORMULA);
-            await expectColoured(field, FORMULA);
-            await overlayDrawingWays(page);
+            const { grid, field } = await editFormula(page, chrome, surface);
 
             // The same font, size, padding and letter spacing (DC-48).
             const metrics = await field.evaluate((input) => {
@@ -572,19 +618,54 @@ for (const chrome of ['builtin', 'mud']) {
             expect(metrics.layer).toEqual(metrics.field);
 
             for (const end of ['End', 'Home']) {
-                await page.keyboard.press(end);
-                // The field scrolled to show its caret — past the start at the end, back to it at the
-                // start — and the layer's line with it (DC-48).
-                await expect.poll(() => field.evaluate((input, at) => {
-                    const line = input.previousElementSibling.firstElementChild;
-                    const scrolled = at === 'End' ? input.scrollLeft > 0 : input.scrollLeft === 0;
-                    return scrolled && line.scrollLeft === input.scrollLeft ? 'with the field' : `field ${input.scrollLeft}, layer ${line.scrollLeft}`;
-                }, end)).toBe('with the field');
-                await expectColoured(field, FORMULA);
+                await caretTo(page, field, end);
                 const { own, layer } = await drawnBothWays(page, field);
                 const apart = await pixelsApart(page, own, layer);
                 test.info().annotations.push({ type: `DC-48 ${end}`, description: JSON.stringify(apart) });
                 expect(apart.apart, `pixels the layer's text puts somewhere the field's is not, at ${end}`).toBe(0);
+            }
+
+            await page.keyboard.press('Escape');
+            await expect(editor(grid)).toHaveCount(0);
+        });
+    }
+}
+
+// The comparison above finds a layer that stands where the field does not. Each misplacement here is
+// a rule over the line of a layer whose field the test marks, drawn only while the layer draws the
+// field (`data-drawn="layer"`), at End: half a pixel either way, another font, other letter spacing.
+// Each is on the line, which the computed-style check above does not read, so only the pixels can
+// tell. Were a rule not to apply, nothing would be found apart, and the test would fail. The threshold
+// is DC-48's own, with no allowance: the layer is one run, as the field is (ADR-0057, note of
+// 2026-10-01), and stands exactly where the field does.
+const MISPLACED = {
+    'half a pixel right': 'position: relative; left: 0.5px;',
+    'half a pixel left': 'position: relative; left: -0.5px;',
+    'in Georgia': 'font-family: Georgia, "Times New Roman", serif;',
+    'with 0.5px letter spacing': 'letter-spacing: 0.5px;',
+};
+
+for (const chrome of ['builtin', 'mud']) {
+    for (const surface of ['cell', 'bar']) {
+        test(`DC-48: the comparison finds a layer half a pixel out, in another font or with other letter spacing, in the ${surface === 'cell' ? 'Cell Editor' : 'Formula Bar'} (${chrome} Chrome)`, async ({ page }) => {
+            const { grid, field } = await editFormula(page, chrome, surface);
+            await alterPage(page, (misplaced) => {
+                const style = document.createElement('style');
+                style.textContent = Object.entries(misplaced)
+                    .map(([name, rule]) => `.ex-reference-text:has(+ [data-drawn="layer"][data-misplaced="${name}"]) .ex-reference-text-line { ${rule} }`)
+                    .join('\n');
+                document.head.append(style);
+                return () => style.remove();
+            }, MISPLACED);
+            await caretTo(page, field, 'End');
+
+            for (const misplacement of Object.keys(MISPLACED)) {
+                await field.evaluate((input, name) => input.setAttribute('data-misplaced', name), misplacement);
+                const { own, layer } = await drawnBothWays(page, field);
+                await field.evaluate((input) => input.removeAttribute('data-misplaced'));
+                const apart = await pixelsApart(page, own, layer);
+                test.info().annotations.push({ type: `DC-48 ${misplacement}`, description: JSON.stringify(apart) });
+                expect(apart.apart, `pixels found apart with the layer ${misplacement}`).toBeGreaterThan(0);
             }
 
             await page.keyboard.press('Escape');

@@ -3,7 +3,7 @@ using ExSheet.Engine.Formulas;
 namespace ExSheet.Engine;
 
 /// <summary>
-/// One user operation on a Sheet, described before it is done: an edit, a paste, a format, an
+/// One user operation on a Sheet, described before it is done: an edit, a paste, a Cell Format, an
 /// insertion or deletion, a fill. <see cref="Sheet.Do"/> does it and returns the one
 /// <see cref="SheetStep"/> that undoes it (ADR-0048): a paste over a thousand cells is one step.
 /// </summary>
@@ -33,12 +33,12 @@ public abstract class SheetEdit
         return new CellsEdit(list.Select(p => p.Key), sheet => sheet.SetEntries(list));
     }
 
-    /// <summary>A number format set on cells; <see langword="null"/> is General.</summary>
-    public static SheetEdit SetFormat(IEnumerable<CellAddress> addresses, NumberFormat? format)
+    /// <summary>A Number Format set on cells; <see langword="null"/> is General.</summary>
+    public static SheetEdit SetNumberFormat(IEnumerable<CellAddress> addresses, NumberFormat? format)
     {
         ArgumentNullException.ThrowIfNull(addresses);
         var list = addresses.ToList();
-        return new CellsEdit(list, sheet => sheet.SetFormat(list, format));
+        return new CellsEdit(list, sheet => sheet.SetNumberFormat(list, format));
     }
 
     /// <summary>A horizontal alignment set on cells.</summary>
@@ -50,34 +50,32 @@ public abstract class SheetEdit
     }
 
     /// <summary>
-    /// A number format set on a range (<see cref="Sheet.SetFormat(CellRange, NumberFormat?)"/>);
+    /// A Number Format set on a range (<see cref="Sheet.SetNumberFormat(CellRange, NumberFormat?)"/>);
     /// <see langword="null"/> is General. Whole columns and whole rows are recorded as one entry
     /// each, and undoing the step puts back every level exactly (ADR-0047).
     /// </summary>
-    public static SheetEdit SetFormat(CellRange range, NumberFormat? format) =>
-        new StyleEdit(range, new StylePatch(format ?? NumberFormat.General, null));
+    public static SheetEdit SetNumberFormat(CellRange range, NumberFormat? format) =>
+        new CellFormatEdit(range, new CellFormatChange { NumberFormat = format ?? NumberFormat.General });
 
-    /// <summary>A horizontal alignment set on a range, recorded as <see cref="SetFormat(CellRange, NumberFormat?)"/> records a format.</summary>
+    /// <summary>A horizontal alignment set on a range, recorded as <see cref="SetNumberFormat(CellRange, NumberFormat?)"/> records a Number Format.</summary>
     public static SheetEdit SetAlignment(CellRange range, HorizontalAlignment alignment)
     {
         if (!Enum.IsDefined(alignment)) throw new ArgumentOutOfRangeException(nameof(alignment), alignment, "Not an alignment.");
-        return new StyleEdit(range, new StylePatch(null, alignment));
+        return new CellFormatEdit(range, new CellFormatChange { Alignment = alignment });
     }
 
     /// <summary>
-    /// A number format, an alignment or both set on several ranges as one step (ADR-0046), such as
-    /// a selection of several rectangles, whole columns and whole rows among them; each range is
-    /// recorded as <see cref="SetFormat(CellRange, NumberFormat?)"/> records one. Here
-    /// <see langword="null"/> leaves that property as it is, and <see cref="NumberFormat.General"/>
-    /// sets General. Undoing the step puts back every level exactly.
+    /// The parts <paramref name="change"/> names set on several ranges as one step (ADR-0046,
+    /// ADR-0071), such as a selection of several rectangles, whole columns and whole rows among
+    /// them; each range is recorded as <see cref="SetNumberFormat(CellRange, NumberFormat?)"/>
+    /// records one, and every part the change does not name stays as each cell has it. The change's
+    /// Borders are relative to each range, so each range gets its own outline. Undoing the step puts
+    /// back every level exactly (<see cref="Sheet.SetCellFormat"/>).
     /// </summary>
-    /// <exception cref="ArgumentException">There is no range, or the style sets neither property.</exception>
+    /// <exception cref="ArgumentException">There is no range, or the change sets nothing.</exception>
     /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
-    public static SheetEdit SetStyle(IEnumerable<CellRange> ranges, NumberFormat? format = null, HorizontalAlignment? alignment = null)
-    {
-        var (list, patch) = Sheet.CheckStyle(ranges, format, alignment);
-        return new StylesEdit(list, patch);
-    }
+    public static SheetEdit SetCellFormat(IEnumerable<CellRange> ranges, CellFormatChange change) =>
+        new CellFormatsEdit(Sheet.CheckCellFormat(ranges, change), change);
 
     /// <summary>
     /// A width the user set on every column <paramref name="columns"/> spans, in characters
@@ -115,7 +113,7 @@ public abstract class SheetEdit
     /// <summary>
     /// A block copied inside ExSheet, pasted with its top-left cell at <paramref name="origin"/>:
     /// Entries with their relative References shifted by the distance pasted (a Reference shifted
-    /// off the Sheet is <c>#REF!</c>, as in Excel), formats and alignment with them (ADR-0048). A
+    /// off the Sheet is <c>#REF!</c>, as in Excel), Cell Formats with them (ADR-0048, ADR-0071). A
     /// block that would run past the Sheet's edge is refused by name (ADR-0050).
     /// </summary>
     public static SheetEdit Paste(SheetBlock block, CellAddress origin)
@@ -204,7 +202,7 @@ public abstract class SheetEdit
     /// Excel's fill keys, Ctrl+D and Ctrl+R (ADR-0035; ADR-0050, item 5, 2026-09-28):
     /// <paramref name="target"/> extends <paramref name="source"/> in <paramref name="direction"/>
     /// as a copy of it, repeated — Formulas with their relative References shifted, constants as
-    /// they are, formats and alignment with them — and never as a series. Where the fill handle
+    /// they are, Cell Formats with them — and never as a series. Where the fill handle
     /// continues a date or two numbers, or refuses <c>Item 1</c>, the keys copy, as Excel's do.
     /// Only a target that does not extend the source along one axis is refused.
     /// </summary>
@@ -222,7 +220,7 @@ public abstract class SheetEdit
     /// into every other cell with its relative References shifted by that cell's offset from
     /// <paramref name="enteredAt"/>, by the rule <see cref="FillCopy"/> shifts them: absolute parts
     /// stay, and a Reference shifted off the Sheet is <c>#REF!</c>. Anything else is entered into
-    /// every cell as typed. No format or alignment is copied from <paramref name="enteredAt"/>; each
+    /// every cell as typed. No Cell Format is copied from <paramref name="enteredAt"/>; each
     /// cell takes what typing implies for it, as Excel's Ctrl+Enter does. Overlapping ranges write
     /// their shared cells once.
     /// </summary>
@@ -275,7 +273,7 @@ public abstract class SheetEdit
     }
 
     /// <summary>
-    /// Cells written whole — Entry, format and alignment — such as a paste of Entries or a fill:
+    /// Cells written whole — Entry and Cell Format — such as a paste of Entries or a fill:
     /// the states are computed when the edit is done, and a refusal known in advance stops it.
     /// </summary>
     internal sealed class PlacedEdit(SheetRefusal? refusal, Func<IEnumerable<(CellAddress Address, CellState State)>> states) : SheetEdit
@@ -304,25 +302,25 @@ public abstract class SheetEdit
     }
 
     /// <summary>
-    /// A format or alignment set on a range: undone by the row and column levels and the cells it
-    /// touched put back exactly, redone by setting it again.
+    /// A change set on a range: undone by the row and column levels and the cells it touched put
+    /// back exactly, redone by setting it again.
     /// </summary>
-    internal sealed class StyleEdit(CellRange range, StylePatch patch) : SheetEdit
+    internal sealed class CellFormatEdit(CellRange range, CellFormatChange change) : SheetEdit
     {
         internal override SheetStep Apply(Sheet sheet)
         {
-            var outcome = sheet.ApplyStyle(range, patch);
-            return new SheetStep(sheet, outcome.Change, s => s.UndoStyle(outcome), s => s.ApplyStyle(range, patch).Change);
+            var outcome = sheet.ApplyCellFormat(range, change);
+            return new SheetStep(sheet, outcome.Change, s => s.UndoCellFormat(outcome), s => s.ApplyCellFormat(range, change).Change);
         }
     }
 
-    /// <summary>A style set on several ranges: undone by every range's part undone in reverse, redone by setting it again.</summary>
-    internal sealed class StylesEdit(IReadOnlyList<CellRange> ranges, StylePatch patch) : SheetEdit
+    /// <summary>A change set on several ranges: undone by every range's part undone in reverse, redone by setting it again.</summary>
+    internal sealed class CellFormatsEdit(IReadOnlyList<CellRange> ranges, CellFormatChange change) : SheetEdit
     {
         internal override SheetStep Apply(Sheet sheet)
         {
-            var outcome = sheet.ApplyStyles(ranges, patch);
-            return new SheetStep(sheet, outcome.Change, s => s.UndoStyles(outcome), s => s.ApplyStyles(ranges, patch).Change);
+            var outcome = sheet.ApplyCellFormats(ranges, change);
+            return new SheetStep(sheet, outcome.Change, s => s.UndoCellFormats(outcome), s => s.ApplyCellFormats(ranges, change).Change);
         }
     }
 

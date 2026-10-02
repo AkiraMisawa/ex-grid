@@ -14,7 +14,8 @@ ex-grid/                      ← one repository
 │   ├── ExGrid.MudBlazor/     → NuGet: ExGrid.MudBlazor  (a Chrome implementation)
 │   ├── ExGrid.Fluxor/        → NuGet: ExGrid.Fluxor     (push interface ↔ store)
 │   ├── ExSheet/              → NuGet: ExSheet           (the component; ADR-0046)
-│   └── ExSheet.Engine/       → NuGet: ExSheet.Engine    (the formula engine, no UI; ADR-0047)
+│   ├── ExSheet.Engine/       → NuGet: ExSheet.Engine    (the formula engine, no UI; ADR-0047)
+│   └── ExSheet.MudBlazor/    → NuGet: ExSheet.MudBlazor (ExSheet's Chrome on MudBlazor; ADR-0071)
 ├── tests/
 │   ├── ExGrid.Tests/         ← pure logic (xUnit)
 │   ├── ExGrid.Components/    ← component (bUnit)
@@ -115,3 +116,15 @@ may be too aggressive for a sheet.
   Nothing in `src/` knows that directory exists; the rule this bullet states is about what ships.)*
 - **The repository name stays `ex-grid`.** When ExSheet is actually built, whether an umbrella
   name is wanted can be reconsidered then. No single umbrella noun is invented now.
+
+## `ExSheet.MudBlazor` *(2026-09-30, decided with the user)*
+
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) gives ExSheet a
+Format Cells dialog with a MudBlazor Chrome. It lives in its own package, `ExSheet.MudBlazor`.
+- **What it references**: `ExSheet`, `ExGrid.MudBlazor` and MudBlazor.
+- **Why it is not in `ExGrid.MudBlazor`**: Cell Format is ExSheet's concept. Putting its Chrome in
+  `ExGrid.MudBlazor` would pull ExSheet into every ExGrid-only Consumer on MudBlazor.
+- **The reference direction stays one-way.** Nothing references `ExSheet.MudBlazor`, and
+  `ExGrid.MudBlazor` still references no ExSheet package.
+- **Release**: it stays outside the release while ExSheet does (Definition of Done §2). The package
+  smoke check packs it.

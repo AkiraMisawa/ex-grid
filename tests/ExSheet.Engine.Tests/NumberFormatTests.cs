@@ -11,7 +11,7 @@ public class NumberFormatTests
         var sheet = new Sheet(CultureInfo.GetCultureInfo(culture));
         var a1 = CellAddress.Parse("A1");
         sheet.SetEntry(a1, Entry.FromValue(Value.FromNumber(number)));
-        sheet.SetFormat(a1, NumberFormat.Parse(code));
+        sheet.SetNumberFormat(a1, NumberFormat.Parse(code));
         return sheet.GetDisplay(a1);
     }
 
@@ -20,7 +20,7 @@ public class NumberFormatTests
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         var a1 = CellAddress.Parse("A1");
         sheet.SetEntry(a1, Entry.FromValue(Value.FromText(text)));
-        sheet.SetFormat(a1, NumberFormat.Parse(code));
+        sheet.SetNumberFormat(a1, NumberFormat.Parse(code));
         return sheet.GetDisplay(a1);
     }
 
@@ -82,7 +82,7 @@ public class NumberFormatTests
         var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
         var a1 = CellAddress.Parse("A1");
 
-        var change = sheet.SetFormat(a1, NumberFormat.Parse("0.00"));
+        var change = sheet.SetNumberFormat(a1, NumberFormat.Parse("0.00"));
         sheet.Enter(a1, "3");
 
         Assert.Equal([0], change.Rows);
@@ -111,6 +111,9 @@ public class NumberFormatTests
     [InlineData("\"open")]
     [InlineData("##0.0E+0")]
     [InlineData("0@")]
+    [InlineData("@;0")]       // @ ends a format; no run has seen it elsewhere
+    [InlineData("0;@;0")]
+    [InlineData("0;0;@;0")]
     public void An_unsupported_code_is_refused(string code)
     {
         Assert.False(NumberFormat.TryParse(code, out _, out var reason));
@@ -118,18 +121,29 @@ public class NumberFormatTests
         Assert.Throws<FormatException>(() => NumberFormat.Parse(code));
     }
 
-    [Theory] // ADR-0047: a colour named at the start of a section is kept in the code, and not painted
+    [Theory] // ADR-0047: a colour named at the start of a section is kept in the code, so the format goes back to Excel intact (what it paints: NumberFormatColourTests, ADR-0071)
     [InlineData("[Red]0", 5, "5")]
     [InlineData("[red]0", 5, "5")]
     [InlineData("0.00_);[Red](0.00)", -1.5, "(1.50)")]
     [InlineData("0.00_);[Red](0.00)", 1.5, "1.50 ")]
     [InlineData("[Blue]0;[Magenta]-0;[Green]\"zero\"", 0, "zero")]
     [InlineData("0;[Yellow]-0", -7, "-7")]
-    public void A_colour_is_kept_and_not_painted(string code, double number, string shown)
+    public void A_colour_is_kept_in_the_code(string code, double number, string shown)
     {
         Assert.True(NumberFormat.TryParse(code, out var format, out _));
         Assert.Equal(code, format.Code);
         Assert.Equal(shown, Show(number, code).Text);
+    }
+
+    [Theory] // ADR-0047, ADR-0071 (the eleventh Windows run, case 3b): Excel took 0;[Red]@ and kept it as written; @ may end a format of two or three sections
+    [InlineData("0;[Red]@")]
+    [InlineData("0;@")]
+    [InlineData("0;-0;[Red]@")]
+    public void A_text_section_may_end_a_shorter_format(string code)
+    {
+        Assert.True(NumberFormat.TryParse(code, out var format, out _));
+        Assert.Equal(code, format.Code);
+        Assert.False(format.IsGeneral);
     }
 
     [Fact] // ADR-0047 (TYPED-021): $5 typed is 5 with Excel's currency format, colour included
@@ -141,7 +155,7 @@ public class NumberFormatTests
         sheet.Enter(a1, "$5");
 
         Assert.Equal(5, sheet.GetValue(a1)!.Value.Number);
-        Assert.Equal("$#,##0_);[Red]($#,##0)", sheet.GetFormat(a1).Code);
+        Assert.Equal("$#,##0_);[Red]($#,##0)", sheet.GetNumberFormat(a1).Code);
         Assert.Equal("$5 ", sheet.GetDisplay(a1).Text);
     }
 }

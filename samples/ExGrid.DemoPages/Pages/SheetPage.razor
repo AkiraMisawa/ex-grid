@@ -15,8 +15,13 @@
    Sheet stands on the Wrapper's paper with its stylesheet: the Chrome's fields meet the coloured
    text's contract (no padding, no ground, filling the core's box) only through that stylesheet,
    and the Chrome used alone is not supported where References are coloured (ADR-0057, "The
-   Wrapper's shape is required…"; ADR-0030). *@
-<DemoChromeAssets Name="@ChromeName" Paper="true" />
+   Wrapper's shape is required…"; ADR-0030). Its Chrome is ExSheet.MudBlazor's, which is the
+   Wrapper's in every seam of the grid and draws Format Cells as a MudDialog (ADR-0071). *@
+@* ?scheme=dark shows the page in the dark scheme, where the Sheet's Paper stays white and its frame
+   darkens (ADR-0071). ?case= opens one of the eleventh Windows run's set-ups instead of the page's own
+   Sheet (SheetCases), for Part C to put beside Excel's screenshots. ?pin=N pins N leading columns,
+   for a test that needs a case beside a Pinned Column. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
 
 <DemoNav />
 
@@ -47,6 +52,7 @@
     <button id="sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
     <button id="sheet-redo" disabled="@_editing" @onclick="RedoAsync">Redo</button>
     <button id="sheet-money" disabled="@_editing" @onclick="FormatMoneyAsync">Format selection as #,##0.00</button>
+    <button id="sheet-format-cells" disabled="@_editing" @onclick="FormatCellsAsync">Format Cells…</button>
     <button id="sheet-insert-row" disabled="@_editing" @onclick="InsertRowAsync">Insert a row above row 2</button>
     <button id="sheet-revalue" @onclick="RevalueAsync">Revalue the positions by +1%</button>
 </div>
@@ -55,7 +61,10 @@
     <span id="sheet-status">@_status</span>
 </p>
 
-<div class="demo-side-by-side">
+@* ?box=window gives the Sheet a box that follows the window's height (ViewportSize.Stretch), so a
+   popover's room changes with the window: the browser tests shrink it under Format Cells
+   (DC-60, ADR-0040). *@
+<div class="demo-side-by-side" style="@(InWindowBox ? "height: calc(100vh - 360px); min-height: 0" : null)">
     @if (DemoChrome.IsMud(ChromeName))
     {
         <MudExGridPaper>@Sheet</MudExGridPaper>
@@ -78,6 +87,21 @@
 
 @* Below the Sheet, not above it: the page's tests press cells by where the grid stands in a
    720 px window, and text above the grid moves every row down. *@
+<p class="demo-status">
+    Focus cell: <span id="sheet-focus-font">@_focusFont</span>,
+    <span id="sheet-focus-number-format">@_focusNumberFormat</span>
+</p>
+
+<p>
+    Excel's formatting keys work on the Selection, each as one step Ctrl+Z undoes (ADR-0071): Ctrl+B,
+    Ctrl+I, Ctrl+U and Ctrl+5 (or Ctrl+2 to Ctrl+4) toggle bold, italic, underline and
+    strikethrough from the Focus cell's state, and Ctrl+Shift with <code>~ ! @@ # $ % ^</code> applies
+    General, <code>#,##0.00</code>, a time, a date, the currency, a percentage and scientific; with
+    <code>&amp;</code> an outline, and with <code>_</code> no borders. The line above reads the
+    Focus cell's Cell Format back. While a cell is being edited the keys change nothing, and the
+    Sheet says why.
+</p>
+
 <p>
     The Sheet and the positions grid are in one Pointing Scope (ADR-0058). While a Formula is typed,
     wherever a Reference can go — after <code>=</code>, an operator, <code>(</code> or <code>,</code>
@@ -101,14 +125,40 @@
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
+    /// <summary><c>window</c> sizes the Sheet's height by the window's rather than declaring it.</summary>
+    [SupplyParameterFromQuery(Name = "box")]
+    public string? Box { get; set; }
+
+    private bool InWindowBox => Box == "window";
+
+    /// <summary><c>dark</c> shows the page in the dark scheme (<see cref="DemoChrome.IsDark"/>).</summary>
+    [SupplyParameterFromQuery(Name = "scheme")]
+    public string? Scheme { get; set; }
+
+    /// <summary>One of the eleventh Windows run's cases (<see cref="SheetCases"/>), opened in place of the page's own Sheet.</summary>
+    [SupplyParameterFromQuery(Name = "case")]
+    public string? Case { get; set; }
+
+    /// <summary>How many leading columns to pin, in place of the page's own choice.</summary>
+    [SupplyParameterFromQuery(Name = "pin")]
+    public int? Pin { get; set; }
+
+    private bool Dark => DemoChrome.IsDark(Scheme);
+
+    // The page's own Sheet pins column A; a run's case does not, as Excel's workbook in the run had
+    // no frozen panes, so what Part C puts beside Excel's picture is drawn as Excel drew it. ?pin=
+    // overrides both, for a test about a Pinned Column.
+    private int PinnedColumns => Pin ?? (Case is null ? 1 : 0);
+
     private IGridChrome? _chrome;
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
-    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="1" Chrome="_chrome"
-                                              EditingChanged="_editingChanged" ViewportHeight="420" ViewportWidth="720"
+    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome"
+                                              EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : 420)" ViewportWidth="720"
+                                              SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
                                               PointingScope="_scope" OnPointingRefused="ShowPointingRefusal" />;
 
-    protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
+    protected override void OnParametersSet() => _chrome = DemoChrome.ForSheet(ChromeName);
 
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
@@ -144,7 +194,7 @@
     private readonly InMemoryGridSource<Position> _positionsShown = GridSource.From(OpeningPositions);
 
     private ExSheet? _sheet;
-    private SheetDocument? _document = Opening();
+    private SheetDocument? _document;
     // The Sheet and the positions grid, pointed at while the Sheet points (ADR-0058). The grid is
     // registered with the table it shows and how its rows are the table's rows: its columns are
     // named as the table's are declared, so no column needs an entry. The Scope also outlines there
@@ -159,6 +209,14 @@
     // greyed out while it is (ADR-0048).
     private bool _editing;
     private EventCallback<bool> _editingChanged;
+    // The Focus cell's Cell Format, read back from the Sheet whenever the Selection or the Sheet
+    // changes (ADR-0071's CellFormatAt), and a formatting key the Sheet refused, said in the status
+    // line as the page says a refused command (ADR-0071, SH-43).
+    private EventCallback<GridSelection> _selectionChanged;
+    private EventCallback<SheetRefusal> _formatKeyRefused;
+    private GridSelection _selection = GridSelection.Empty;
+    private string _focusFont = "";
+    private string _focusNumberFormat = "";
 
     // A few values, Formulas over them, and a date: the tracer's A1 + B1 and a little more.
     private static SheetDocument Opening()
@@ -186,10 +244,13 @@
 
     protected override void OnInitialized()
     {
+        _document = SheetCases.Document(Case, Culture) ?? Opening();
         _positionsPointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
         // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
         // the Blazor traps).
         _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
+        _selectionChanged = EventCallback.Factory.Create<GridSelection>(this, OnSelectionChanged);
+        _formatKeyRefused = EventCallback.Factory.Create<SheetRefusal>(this, refusal => _status = refusal.Message);
         Count();
     }
 
@@ -251,6 +312,9 @@
 
     private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
 
+    // The Consumer's own button for Format Cells (ADR-0071), beside the Context Menu's command.
+    private Task FormatCellsAsync() => CommandAsync(sheet => sheet.OpenFormatCellsAsync());
+
     // A command ExSheet refuses changes nothing and says why (ADR-0048): an insertion that would
     // push an Entry off the Sheet, or any command while an edit is open. The buttons are greyed
     // out then, but a press can still land before the render that greys them does.
@@ -268,5 +332,34 @@
         }
     }
 
-    private void Count() => _status = $"{_document?.Cells.Count ?? 0} cells in the Sheet Document.";
+    private void Count()
+    {
+        _status = $"{_document?.Cells.Count ?? 0} cells in the Sheet Document.";
+        ReadFocus();
+    }
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        ReadFocus();
+    }
+
+    private void ReadFocus()
+    {
+        if (_sheet is null || _selection.IsEmpty)
+        {
+            _focusFont = _focusNumberFormat = "";
+            return;
+        }
+        var format = _sheet.CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        string[] emphases =
+        [
+            .. format.Font.Bold ? ["bold"] : Array.Empty<string>(),
+            .. format.Font.Italic ? ["italic"] : Array.Empty<string>(),
+            .. format.Font.Underline ? ["underline"] : Array.Empty<string>(),
+            .. format.Font.Strikethrough ? ["strikethrough"] : Array.Empty<string>(),
+        ];
+        _focusFont = emphases.Length == 0 ? "regular" : string.Join(" ", emphases);
+        _focusNumberFormat = format.NumberFormat.Code;
+    }
 }

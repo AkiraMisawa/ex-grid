@@ -7,12 +7,15 @@ namespace ExSheet.Engine;
 /// </summary>
 public sealed class SheetChange
 {
-    internal SheetChange(IReadOnlyList<CellAddress> valueChanges, IReadOnlyList<CellAddress> recalculated, IReadOnlyList<int> rows, IReadOnlyList<int>? columns = null)
+    internal SheetChange(
+        IReadOnlyList<CellAddress> valueChanges, IReadOnlyList<CellAddress> recalculated, IReadOnlyList<int> rows,
+        IReadOnlyList<int>? columns = null, bool reformatsUnnamedRows = false)
     {
         ValueChanges = valueChanges;
         Recalculated = recalculated;
         Rows = rows;
         Columns = columns ?? [];
+        ReformatsUnnamedRows = reformatsUnnamedRows;
     }
 
     /// <summary>A change that changed nothing.</summary>
@@ -39,6 +42,26 @@ public sealed class SheetChange
     /// </summary>
     public IReadOnlyList<int> Columns { get; }
 
+    /// <summary>
+    /// Whether the Cell Format shown in rows <see cref="Rows"/> does not name may have changed
+    /// (ADR-0071). <see cref="Rows"/> names the rows of the cells a change wrote, and the row across
+    /// each top or bottom side it changed (<see cref="Sheet.GetBorders"/>). Two kinds of change reach
+    /// further, into cells that hold nothing:
+    /// <list type="bullet">
+    /// <item>a whole row's or a whole column's Cell Format set, cleared or moved, which every cell
+    /// of that row or column shows;</item>
+    /// <item>rows or columns inserted or deleted, which bring two cells' sides together on one
+    /// edge, so the line shown on it can change from a cell that holds nothing.</item>
+    /// </list>
+    /// After either, a component that paints a Cell Format reads again what each row it paints
+    /// shows, and repaints the rows where that differs.
+    /// </summary>
+    public bool ReformatsUnnamedRows { get; }
+
+    /// <summary>This change, also reporting that it may have reformatted rows it does not name.</summary>
+    internal SheetChange ReformattingUnnamedRows() =>
+        ReformatsUnnamedRows ? this : new SheetChange(ValueChanges, Recalculated, Rows, Columns, reformatsUnnamedRows: true);
+
     /// <summary>Several changes made as one, such as the parts of one step.</summary>
     internal static SheetChange Merge(IEnumerable<SheetChange> changes)
     {
@@ -47,8 +70,9 @@ public sealed class SheetChange
         var recalculated = list.SelectMany(c => c.Recalculated).Distinct().Order().ToList();
         var rows = list.SelectMany(c => c.Rows).Distinct().Order().ToList();
         var columns = list.SelectMany(c => c.Columns).Distinct().Order().ToList();
-        return valueChanges.Count == 0 && recalculated.Count == 0 && rows.Count == 0 && columns.Count == 0
+        var reformats = list.Any(c => c.ReformatsUnnamedRows);
+        return valueChanges.Count == 0 && recalculated.Count == 0 && rows.Count == 0 && columns.Count == 0 && !reformats
             ? None
-            : new SheetChange(valueChanges, recalculated, rows, columns);
+            : new SheetChange(valueChanges, recalculated, rows, columns, reformats);
     }
 }

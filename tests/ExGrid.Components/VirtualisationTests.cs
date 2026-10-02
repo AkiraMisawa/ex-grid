@@ -44,13 +44,13 @@ public class VirtualisationTests : GridTestContext
         // 100,000 rows of 20px, and one row height for the header standing at the top of
         // the content — which is also why the row offsets below carry no header term.
         Assert.Contains("height: 2000020px", cut.Find(".ex-spacer").GetAttribute("style"));
-        Assert.Contains("translateY(0px)", cut.Find(".ex-viewport").GetAttribute("style"));
+        Assert.Contains("translateY(round(nearest, 0px, var(--ex-dp, 1px)))", cut.Find(".ex-viewport").GetAttribute("style"));
 
         // Five rows — one Viewport exactly, so this is ordinary scrolling and the rows
         // are painted for real (a longer jump is a fling; FlingTests covers that).
         await ScrollToAsync(cut.Find(".ex-scroller"), 5 * RowHeightPx);
 
-        Assert.Contains("translateY(100px)", cut.Find(".ex-viewport").GetAttribute("style"));
+        Assert.Contains("translateY(round(nearest, 100px, var(--ex-dp, 1px)))", cut.Find(".ex-viewport").GetAttribute("style"));
         Assert.Equal("Row 000005", cut.FindAll(".ex-row")[0].QuerySelector(".ex-cell")!.TextContent);
     }
 

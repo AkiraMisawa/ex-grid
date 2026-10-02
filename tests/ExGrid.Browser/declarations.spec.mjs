@@ -4,6 +4,7 @@ import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
     expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell, expectCaretShown,
+    stretchesOf,
 } from './sheet-helpers.mjs';
 
 // The ExGrid declarations of ADR-0050, ADR-0051 and ADR-0057 (§26, DC-*), as ExSheet declares them on
@@ -195,9 +196,8 @@ const MATCH_MODES = [
     '3 - Regex match',
 ];
 
-/** The spans of a field's Reference layer the core marks as the Reference Point is writing (ADR-0057). */
-const pointedIn = (field) => field.evaluate((input) =>
-    [...input.previousElementSibling.querySelectorAll('.ex-reference-pointed')].map((span) => span.textContent));
+/** The stretches of a field's Reference layer on the grey, which the Reference Point is writing (ADR-0057). */
+const pointedIn = async (field) => (await stretchesOf(field)).filter((stretch) => stretch.pointed).map((stretch) => stretch.text);
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`SH-36 under the ${chrome} Chrome`, () => {

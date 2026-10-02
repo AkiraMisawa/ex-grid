@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>other-verify-11</title>
+<style> body { font: 16px system-ui, sans-serif; margin: 16px; background: #fff; color: #111; } </style>
+</head>
+<body>
+<h1 id="name">another tab</h1>
+<p>One of the six other tabs open beside keys.html (docs/specs/exsheet/verify-on-windows-11.md, Part B).</p>
+<script>
+  const n = new URLSearchParams(location.search).get('n');
+  document.title = `tab-${n}-verify-11`;
+  document.getElementById('name').textContent = `Tab ${n}`;
+</script>
+</body>
+</html>

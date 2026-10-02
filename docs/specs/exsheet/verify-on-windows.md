@@ -79,7 +79,9 @@ case or an ADR changes is the user's decision.
    results file, and add the Excel build to its Comments.
 2. **Formatting of inserted rows and columns.** Give row 2 a number format and a fill, then insert
    a row at 3 (`Rows(3).Insert()` with the default `CopyOrigin`). Does row 3 take row 2's format?
-   Do the same for columns. The engine inserts them blank today.
+   Do the same for columns. The engine inserts them blank today. *(Since settled: an inserted row
+   takes the formatting of the row above and a column that of the column to its left, as ADR-0046
+   records, and the engine does so. Noted 2026-09-30.)*
 3. **Inserting where a Reference would be pushed off the Sheet.**
    - Put a value in `A1048576` and `=A1048576` in `B1`, then insert a row at 1. Is it refused, and
      with what message?

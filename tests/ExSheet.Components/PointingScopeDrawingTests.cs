@@ -41,7 +41,7 @@ public partial class PointingScopeTests
 
     /// <summary>What the layer beneath a Sheet's Cell Editor draws, as markup.</summary>
     private static string CellEditorLayer(IRenderedComponent<SheetComponent> sheet)
-        => Grid(sheet).Find(".ex-viewport > .ex-reference-text > .ex-reference-text-line").InnerHtml;
+        => global::ReferenceText.ColouredText.Of(Grid(sheet).Find(".ex-viewport > .ex-reference-text"));
 
     private static int ScrollsAsked(BunitJSInterop js)
         => js.Invocations.Count(i => i.Identifier is "setScrollOffset" or "anchorScrollTop");

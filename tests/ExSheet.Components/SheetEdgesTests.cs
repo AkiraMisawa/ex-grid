@@ -75,7 +75,7 @@ public class SheetEdgesTests
     public void A_cell_is_filled_by_an_entry_not_by_formatting()
     {
         var sheet = SheetWith("A1", "A2");
-        sheet.SetFormat(CellAddress.Parse("A3"), NumberFormat.Parse("0.00"));
+        sheet.SetNumberFormat(CellAddress.Parse("A3"), NumberFormat.Parse("0.00"));
         sheet.Enter(CellAddress.Parse("A5"), "=\"\"");
         var edges = SheetEdges.Of(sheet);
 

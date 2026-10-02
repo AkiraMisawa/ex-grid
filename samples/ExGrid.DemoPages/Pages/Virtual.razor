@@ -35,10 +35,17 @@
         RowHeight="24"
         ViewportHeight="480"
         IsLoading="_isLoading"
+        ShowFormulaBar="Bar is not null"
         OnRangeNeeded="OnRangeNeededAsync" />
 
 @code {
     private const int Total = 100_000;
+
+    /// <summary><c>?bar=1</c> switches the Formula Bar on (ADR-0051), so the focused cell's full
+    /// value can be read: an unformatted Trade date shows in its ISO form there too (ADR-0006,
+    /// ticket 95).</summary>
+    [SupplyParameterFromQuery(Name = "bar")]
+    public string? Bar { get; set; }
 
     /// <summary>Rows either side of the Viewport to answer with, so ordinary scrolling
     /// does not ask again immediately (ADR-0001: read-ahead belongs to the Consumer).</summary>

@@ -9,9 +9,10 @@
 
 @* ?chrome=mud runs both Sheets with ExGrid.MudBlazor's Chrome, each on the Wrapper's paper, whose
    stylesheet maps the grid's Visual Tokens onto MudBlazor's palette (ADR-0030) — so the browser
-   tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). Without the
-   parameter each Sheet stands on the page as it always did. *@
-<DemoChromeAssets Name="@ChromeName" Paper="true" />
+   tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). The Chrome is
+   ExSheet.MudBlazor's, so each Sheet's Format Cells is a MudDialog of its own (ADR-0071). Without
+   the parameter each Sheet stands on the page as it always did. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
 
 <DemoNav />
 
@@ -67,7 +68,7 @@
 
     private IGridChrome? _chrome;
 
-    protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
+    protected override void OnParametersSet() => _chrome = DemoChrome.ForSheet(ChromeName);
 
     // A Sheet under the Wrapper's Chrome stands on its paper; under the core's, on the page.
     private RenderFragment OnPaper(RenderFragment sheet)

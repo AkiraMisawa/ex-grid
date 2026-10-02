@@ -11,15 +11,17 @@ namespace ExSheet.Engine;
 /// marks decimals — and shown with the Sheet's culture's separators and month and day names.
 /// </summary>
 /// <remarks>
-/// The subset read: up to four sections (positive; negative; zero; text); the digit placeholders
+/// The subset read: up to four sections (positive; negative; zero; text), where a text section
+/// (<c>@</c>) may also end a format of two or three, as in <c>0;[Red]@</c>; the digit placeholders
 /// <c>0 # ?</c>, the decimal point, thousands separators and scaling commas, <c>%</c>, scientific
 /// <c>E+00</c> with one integer placeholder, <c>@</c>, quoted text, <c>\</c> escapes, <c>_</c>
 /// spacing, and the date and time codes <c>y m d h s</c> with <c>AM/PM</c> and <c>A/P</c>. A
-/// colour named at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, …) is accepted and kept
-/// in the code, so the format goes back to Excel intact, but it is not painted
-/// until per-cell styling has its ADR (ADR-0047, ADR-0046). A numbered colour (<c>[Color10]</c>,
-/// in any case and any section) is refused, as Excel refused it (FMT-075..077, ADR-0047 third
-/// run). A code outside the subset — conditions,
+/// colour named at the start of a section (<c>[Red]</c>, <c>[Blue]</c>, …) is kept in the code,
+/// so the format goes back to Excel intact, and formatting a Value answers it with the text when
+/// that section shows the Value, to be painted over the Font colour
+/// (<see cref="NumberFormatColour"/>, ADR-0071). A numbered colour (<c>[Color10]</c>, in any case
+/// and any section) is refused, as Excel refused it (FMT-075..077, ADR-0047 third run). A code
+/// outside the subset — conditions,
 /// locales and elapsed time in brackets, fractions, fractional seconds, <c>*</c> fill, era codes,
 /// unquoted letters — is refused rather than shown some other way.
 /// </remarks>
@@ -80,9 +82,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         {
             var section = Section.Parse(parts[i], out reason);
             if (section is null) return Refuse(out reason, reason);
-            if (section.Kind == SectionKind.Text && i < 3 && parts.Count > 1)
+            if (section.Kind == SectionKind.Text && i < parts.Count - 1)
             {
-                reason = "@ belongs in the fourth section, or in a format of one section.";
+                reason = "@ belongs in the last section.";
                 return false;
             }
             if (i == 3 && section.Kind is not (SectionKind.Text or SectionKind.Literal))
@@ -98,23 +100,35 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>Whether a number shows in Excel's General form: the format is General, or holds only a text section (<c>@</c>).</summary>
-    internal bool ShowsNumbersAsGeneral => _sections.Length == 0 || (_sections.Length == 1 && _sections[0].Kind == SectionKind.Text);
+    internal bool ShowsNumbersAsGeneral => NumberSections == 0;
+
+    /// <summary>
+    /// How many sections show numbers. A text section (<c>@</c>) that ends a format of fewer than
+    /// four shows none, so <c>0;[Red]@</c> shows every number by its first section, as a format
+    /// of one section does (case 3b of the eleventh Windows run, ADR-0071).
+    /// </summary>
+    private int NumberSections => _sections.Length is > 0 and < 4 && _sections[^1].Kind == SectionKind.Text ? _sections.Length - 1 : _sections.Length;
+
+    /// <summary>The section that shows text: the fourth, or a text section that ends a shorter format; <see langword="null"/> when there is none.</summary>
+    private Section? TextSection => _sections.Length == 4 ? _sections[3] : _sections.Length > 0 && _sections[^1].Kind == SectionKind.Text ? _sections[^1] : null;
 
     /// <summary>
     /// A Value as this format shows it in a column <paramref name="characters"/> wide, each
     /// character charged one digit width (ADR-0047): a number in General is fitted to the width
     /// as Excel's General fits it, and any other number whose text is longer than the width
     /// cannot be shown (<c>####</c>, ADR-0016). Text, booleans and Error Values are never fitted.
+    /// The colour is the section's, as <see cref="Format(Value, CultureInfo)"/> answers it, and a
+    /// number that cannot be shown keeps it; General fitted to the width uses no section and has none.
     /// </summary>
-    internal (string Text, bool CannotShow) Format(Value value, CultureInfo culture, int characters)
+    internal (string Text, bool CannotShow, NumberFormatColour? Colour) Format(Value value, CultureInfo culture, int characters)
     {
         if (value.Kind != ValueKind.Number) return Format(value, culture);
         if (ShowsNumbersAsGeneral)
         {
-            return NumberText.General(value.Number, characters, culture) is { } fitted ? (fitted, false) : ("", true);
+            return NumberText.General(value.Number, characters, culture) is { } fitted ? (fitted, false, null) : ("", true, null);
         }
-        var (text, cannotShow) = Format(value, culture);
-        return cannotShow || text.Length > characters ? ("", true) : (text, false);
+        var (text, cannotShow, colour) = Format(value, culture);
+        return cannotShow || text.Length > characters ? ("", true, colour) : (text, false, colour);
     }
 
     /// <summary>
@@ -186,32 +200,315 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         }
     }
 
-    /// <summary>A Value as this format shows it under <paramref name="culture"/>; booleans and Error Values show as themselves.</summary>
-    internal (string Text, bool CannotShow) Format(Value value, CultureInfo culture)
+    /// <summary>
+    /// Excel's built-in date with the month's name (<c>d-mmm-yy</c>, format 15): what Ctrl+#
+    /// records under every culture, and what a date typed with a month name and a year records.
+    /// </summary>
+    private const string DayMonthYearCode = "d-mmm-yy";
+
+    /// <summary>Excel's built-in hour and minute (<c>h:mm</c>, format 20): what Ctrl+Shift+@ records where the culture's own time is 24-hour.</summary>
+    private const string HourMinuteCode = "h:mm";
+
+    private static readonly Dictionary<(string Culture, string Code), NumberFormat> DatesAndTimes = [];
+
+    /// <summary>
+    /// The built-ins 15 and 20 in <paramref name="culture"/>'s own form, as the twelfth Windows run
+    /// read them (ADR-0071, case 19); <see langword="null"/> for any other format, or where the
+    /// culture's form is the code itself. Like the built-in short date and currency, each is
+    /// recorded in its invariant code and is not the pattern it spells.
+    /// <list type="bullet">
+    /// <item><c>d-mmm-yy</c> writes the day with two digits where the culture's short date does, as
+    /// the built-in <c>d-mmm</c> does: <c>05-Jan-26</c> under en-GB, <c>5-Jan-26</c> under en-US,
+    /// and <c>05-1-26</c> under ja-JP, where <c>mmm</c> is the month's number
+    /// (<see cref="AbbreviatedMonthNamesOf"/>).</item>
+    /// <item><c>h:mm</c> writes the hour with two digits where the culture's short time does:
+    /// <c>09:05</c> under en-GB, <c>9:05</c> under en-US and ja-JP.</item>
+    /// </list>
+    /// </summary>
+    private NumberFormat? DateOrTimeIn(CultureInfo culture)
     {
-        if (value.Kind == ValueKind.Number && ShortDateIn(culture) is { } local) return local.Format(value, culture);
+        string code;
+        if (string.Equals(Code, DayMonthYearCode, StringComparison.OrdinalIgnoreCase))
+        {
+            var day = culture.DateTimeFormat.ShortDatePattern.Contains("dd", StringComparison.Ordinal) ? "dd" : "d";
+            code = $"{day}-mmm-yy";
+        }
+        else if (string.Equals(Code, HourMinuteCode, StringComparison.OrdinalIgnoreCase))
+        {
+            var time = culture.DateTimeFormat.ShortTimePattern;
+            code = time.Contains("HH", StringComparison.Ordinal) || time.Contains("hh", StringComparison.Ordinal) ? "hh:mm" : HourMinuteCode;
+        }
+        else
+        {
+            return null;
+        }
+        if (string.Equals(code, Code, StringComparison.Ordinal)) return null;
+        lock (DatesAndTimes)
+        {
+            if (!DatesAndTimes.TryGetValue((culture.Name, code), out var local))
+            {
+                local = Parse(code);
+                DatesAndTimes[(culture.Name, code)] = local;
+            }
+            return local;
+        }
+    }
+
+    /// <summary>
+    /// Excel's built-in currency format under <paramref name="culture"/>: what Ctrl+Shift+$
+    /// records (ADR-0071; the eleventh Windows run, cases 18 and 20). It is format 8,
+    /// <c>$#,##0.00_);[Red]($#,##0.00)</c> in the invariant codes, or format 6,
+    /// <c>$#,##0_);[Red]($#,##0)</c>, where the culture's currency has no decimals, as Excel chose
+    /// under ja-JP. Like the built-in short date, it is recorded in those codes and is not the
+    /// pattern they spell: it shows in the culture's own currency, <c>£1,234.50</c> under en-GB
+    /// and <c>¥1,235</c> under ja-JP, its negative section red.
+    /// </summary>
+    public static NumberFormat BuiltInCurrency(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        return culture.NumberFormat.CurrencyDecimalDigits == 0 ? WholeCurrency : Currency;
+    }
+
+    private const string CurrencyCode = "$#,##0.00_);[Red]($#,##0.00)";
+    private const string WholeCurrencyCode = "$#,##0_);[Red]($#,##0)";
+    private static readonly NumberFormat Currency = Parse(CurrencyCode);
+    private static readonly NumberFormat WholeCurrency = Parse(WholeCurrencyCode);
+    private static readonly Dictionary<(string Culture, bool Decimals), NumberFormat> Currencies = [];
+
+    /// <summary>
+    /// The built-in currency format (<see cref="BuiltInCurrency"/>) in <paramref name="culture"/>'s
+    /// own form; <see langword="null"/> for any other format, or where the culture's form is the
+    /// code itself (en-US).
+    /// </summary>
+    private NumberFormat? CurrencyIn(CultureInfo culture)
+    {
+        var decimals = string.Equals(Code, CurrencyCode, StringComparison.OrdinalIgnoreCase);
+        if (!decimals && !string.Equals(Code, WholeCurrencyCode, StringComparison.OrdinalIgnoreCase)) return null;
+        lock (Currencies)
+        {
+            if (!Currencies.TryGetValue((culture.Name, decimals), out var local))
+            {
+                var code = LocalCurrencyCode(culture, decimals);
+                local = string.Equals(code, Code, StringComparison.Ordinal) || !TryParse(code, out var parsed, out _) ? this : parsed;
+                Currencies[(culture.Name, decimals)] = local;
+            }
+            return ReferenceEquals(local, this) || string.Equals(local.Code, Code, StringComparison.Ordinal) ? null : local;
+        }
+    }
+
+    /// <summary>
+    /// The built-ins shown in the Sheet culture's own form (<see cref="LocalIn"/>): the short date
+    /// and the short date with a time (14 and 22), the day and month (16), the day, month and year
+    /// (15), the hour and minute (20), and the currency (6 and 8).
+    /// </summary>
+    private static readonly NumberFormat[] LocalisedBuiltIns =
+        [ShortDate, ShortDateTime, Parse(DayMonthCode), Parse(DayMonthYearCode), Parse(HourMinuteCode), Currency, WholeCurrency];
+
+    /// <summary>
+    /// The form this format shows in under <paramref name="culture"/> where it is a built-in shown in
+    /// the culture's own form; <see langword="null"/> for any other format, or where the culture's
+    /// form is the code itself.
+    /// </summary>
+    private NumberFormat? LocalIn(CultureInfo culture) => ShortDateIn(culture) ?? DateOrTimeIn(culture) ?? CurrencyIn(culture);
+
+    /// <summary>
+    /// The code as Format Cells' Custom box spells it under <paramref name="culture"/>, as Excel's
+    /// local code does (ADR-0071; the fourteenth Windows run, case 11). A built-in shown in the
+    /// culture's own form is spelled in that form: the built-in <c>d-mmm-yy</c> is
+    /// <c>dd-mmm-yy</c> under ja-JP and en-GB. A code of its own that spells such a built-in's code
+    /// (<see cref="TryParseLocal"/>) is spelled as it was typed, and any other code as it is.
+    /// <see cref="TryParseLocal"/> reads the spelling back as this format under the same culture.
+    /// The one exception is a code of its own under a culture that spells the built-in the same way,
+    /// where the two show alike: typed again, it is the built-in, as the rule reads it.
+    /// </summary>
+    public string LocalCode(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        return LocalIn(culture)?.Code ?? BuiltInSpelled(Code) ?? Code;
+    }
+
+    /// <summary>
+    /// Reads a code typed into Format Cells' Custom box under <paramref name="culture"/> (ADR-0071;
+    /// the fourteenth Windows run, case 11). A code is a built-in only when it spells that
+    /// built-in's code under the culture (<see cref="LocalCode"/>), in any case. Under ja-JP,
+    /// <c>dd-mmm-yy</c> is the built-in <c>d-mmm-yy</c> and shows <c>05-1-26</c>, and
+    /// <c>d-mmm-yy</c> is a code of its own and shows <c>5-1-26</c>, as Excel showed them. Under
+    /// en-US the two spellings are one, and <c>d-mmm-yy</c> is the built-in.
+    /// </summary>
+    /// <remarks>
+    /// A code of its own that spells a built-in's invariant code is recorded with its separators
+    /// escaped, <c>d\-mmm\-yy</c>: the same code to Excel, shown as it is spelled under every
+    /// culture, and no built-in's, so a Sheet Document keeps it apart from the built-in. Any other
+    /// code is read as <see cref="TryParse"/> reads it.
+    /// </remarks>
+    public static bool TryParseLocal(string code, CultureInfo culture, [NotNullWhen(true)] out NumberFormat? format, [NotNullWhen(false)] out string? reason)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        if (!TryParse(code, out format, out reason)) return false;
+        foreach (var builtIn in LocalisedBuiltIns)
+        {
+            if (string.Equals(format.Code, builtIn.LocalCode(culture), StringComparison.OrdinalIgnoreCase))
+            {
+                format = builtIn;
+                return true;
+            }
+        }
+        // The engine would show it as the built-in it spells, in the culture's own form.
+        if (format.LocalIn(culture) is not null) format = Parse(OwnSpelling(format.Code));
+        return true;
+    }
+
+    /// <summary>
+    /// A built-in's invariant code as a code of its own: each separator escaped, so that it shows
+    /// as it is spelled and is no built-in's. A built-in's code holds no quote or backslash.
+    /// </summary>
+    private static string OwnSpelling(string builtIn)
+    {
+        var spelled = new StringBuilder(builtIn.Length * 2);
+        foreach (var c in builtIn)
+        {
+            if (c is '-' or '/' or ':' or '$') spelled.Append('\\');
+            spelled.Append(c);
+        }
+        return spelled.ToString();
+    }
+
+    /// <summary>The built-in's code a code of its own spells (<see cref="OwnSpelling"/>), or <see langword="null"/> when it is not one.</summary>
+    private static string? BuiltInSpelled(string code)
+    {
+        if (!code.Contains('\\')) return null;
+        var unescaped = code.Replace("\\", "", StringComparison.Ordinal);
+        return string.Equals(OwnSpelling(unescaped), code, StringComparison.Ordinal)
+            && LocalisedBuiltIns.Any(builtIn => string.Equals(builtIn.Code, unescaped, StringComparison.OrdinalIgnoreCase))
+            ? unescaped
+            : null;
+    }
+
+    /// <summary>
+    /// The abbreviated month names Excel shows under <paramref name="culture"/>, which <c>mmm</c>
+    /// shows: the culture's own, with the two differences found between the ICU data .NET reads and
+    /// Windows' regional settings, which Excel reads. Windows' are taken everywhere, so a Sheet's
+    /// text does not differ by the machine it ran on.
+    /// <list type="bullet">
+    /// <item>ICU on Linux (Ubuntu 24.04's) abbreviates September as <c>Sept</c> under en-GB and its
+    /// kin, where Windows and macOS write <c>Sep</c> (the twelfth Windows run, case 19).</item>
+    /// <item>ICU abbreviates a Japanese month as its full name, <c>1月</c>, on every platform, where
+    /// Windows writes the month's number alone, <c>1</c>. So under ja-JP <c>mmm</c> shows the month as
+    /// a number with no leading zero, in every code, and <c>mmmm</c> shows <c>1月</c> (the fourteenth
+    /// Windows run, cases 10 and 11).</item>
+    /// </list>
+    /// </summary>
+    public static string[] AbbreviatedMonthNamesOf(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        var names = (string[])culture.DateTimeFormat.AbbreviatedMonthNames.Clone();
+        var japanese = culture.TwoLetterISOLanguageName == "ja";
+        for (var i = 0; i < names.Length; i++)
+        {
+            var number = (i + 1).ToString(CultureInfo.InvariantCulture);
+            if (names[i] == "Sept") names[i] = "Sep";
+            else if (japanese && names[i] == number + "月") names[i] = number;
+        }
+        return names;
+    }
+
+    /// <summary>
+    /// The currency symbol Excel shows under <paramref name="culture"/>: the culture's own, with
+    /// the one difference the runs found between the data .NET reads and Windows' regional
+    /// settings. Windows' ja-JP symbol, which Excel shows (the eleventh Windows run, case 20), is
+    /// the yen sign U+00A5. The ICU data .NET reads on Linux (Ubuntu 24.04's) gives the full-width
+    /// U+FFE5, and macOS's gives U+00A5, so a Sheet's text would differ by the machine it ran on.
+    /// Windows' sign is taken everywhere.
+    /// </summary>
+    public static string CurrencySymbolOf(CultureInfo culture)
+    {
+        ArgumentNullException.ThrowIfNull(culture);
+        return culture.NumberFormat.CurrencySymbol.Replace('\uFFE5', '\u00A5');
+    }
+
+    /// <summary>
+    /// The built-in currency format as Excel spells it under <paramref name="culture"/>, built from
+    /// the culture's currency symbol and where it puts the symbol and the sign, as Windows' regional
+    /// settings give Excel the same three: <c>£#,##0.00;[Red]-£#,##0.00</c> under en-GB and
+    /// <c>¥#,##0;[Red]-¥#,##0</c> under ja-JP, as the eleventh Windows run read them (case 20). A
+    /// negative amount in parentheses pads the positive one by a parenthesis, as the invariant code
+    /// does. A symbol holding anything but currency signs is quoted, so its letters are not read as
+    /// codes.
+    /// </summary>
+    private static string LocalCurrencyCode(CultureInfo culture, bool decimals)
+    {
+        var info = culture.NumberFormat;
+        var currencySymbol = CurrencySymbolOf(culture);
+        var symbol = currencySymbol.All(c => char.GetUnicodeCategory(c) == UnicodeCategory.CurrencySymbol)
+            ? currencySymbol
+            : "\"" + currencySymbol.Replace("\"", "", StringComparison.Ordinal) + "\"";
+        var n = decimals ? "#,##0.00" : "#,##0";
+        // Windows' regional default for en-US writes a negative amount in parentheses, and Excel
+        // follows it (case 20: $#,##0.00_);[Red]($#,##0.00)). .NET's ICU data writes it with a
+        // minus. Elsewhere .NET's data is read, and it agreed with Excel under en-GB and ja-JP.
+        var negativePattern = culture.Name == "en-US" ? 0 : info.CurrencyNegativePattern;
+        var negative = negativePattern switch
+        {
+            0 => $"({symbol}{n})",
+            2 => $"{symbol}-{n}",
+            3 => $"{symbol}{n}-",
+            4 => $"({n}{symbol})",
+            5 => $"-{n}{symbol}",
+            6 => $"{n}-{symbol}",
+            7 => $"{n}{symbol}-",
+            8 => $"-{n} {symbol}",
+            9 => $"-{symbol} {n}",
+            10 => $"{n} {symbol}-",
+            11 => $"{symbol} {n}-",
+            12 => $"{symbol} -{n}",
+            13 => $"{n}- {symbol}",
+            14 => $"({symbol} {n})",
+            15 => $"({n} {symbol})",
+            16 => $"{symbol}- {n}",
+            _ => $"-{symbol}{n}",
+        };
+        var positive = info.CurrencyPositivePattern switch
+        {
+            0 => $"{symbol}{n}",
+            1 => $"{n}{symbol}",
+            2 => $"{symbol} {n}",
+            _ => $"{n} {symbol}",
+        };
+        if (negative.EndsWith(')')) positive += "_)";
+        return $"{positive};[Red]{negative}";
+    }
+
+    /// <summary>
+    /// A Value as this format shows it under <paramref name="culture"/>, and the colour the
+    /// section that showed it names (ADR-0071, SH-40), or <see langword="null"/> where it names
+    /// none or no section showed the Value: General, booleans and Error Values, which show as
+    /// themselves, and text in a format with no text section.
+    /// </summary>
+    internal (string Text, bool CannotShow, NumberFormatColour? Colour) Format(Value value, CultureInfo culture)
+    {
+        if (value.Kind == ValueKind.Number && LocalIn(culture) is { } local) return local.Format(value, culture);
         switch (value.Kind)
         {
             case ValueKind.Boolean:
             case ValueKind.Error:
-                return (value.ToString(), false);
+                return (value.ToString(), false, null);
             case ValueKind.Text:
-                var textSection = _sections.Length == 4 ? _sections[3] : _sections.Length == 1 && _sections[0].Kind == SectionKind.Text ? _sections[0] : null;
-                return (textSection is null ? value.Text : textSection.FormatText(value.Text), false);
+                var textSection = TextSection;
+                return textSection is null ? (value.Text, false, null) : (textSection.FormatText(value.Text), false, textSection.Colour);
         }
 
         var number = value.Number;
         if (ShowsNumbersAsGeneral)
         {
-            return (NumberText.General(number, culture), false);
+            return (NumberText.General(number, culture), false, null);
         }
         Section chosen;
         var automaticMinus = false;
-        if (number < 0 && _sections.Length >= 2)
+        if (number < 0 && NumberSections >= 2)
         {
             chosen = _sections[1];
         }
-        else if (number == 0 && _sections.Length >= 3)
+        else if (number == 0 && NumberSections >= 3)
         {
             chosen = _sections[2];
         }
@@ -220,7 +517,8 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
             chosen = _sections[0];
             automaticMinus = number < 0;
         }
-        return chosen.FormatNumber(Math.Abs(number), automaticMinus, culture);
+        var (text, cannotShow) = chosen.FormatNumber(Math.Abs(number), automaticMinus, culture);
+        return (text, cannotShow, chosen.Colour);
     }
 
     /// <summary>Two formats are equal when their codes are (ordinal).</summary>
@@ -358,6 +656,9 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
 
         public int Percent { get; private set; }
 
+        /// <summary>The colour named at the start of the section, or <see langword="null"/>.</summary>
+        public NumberFormatColour? Colour { get; private set; }
+
         /// <summary>Whether a date section shows a time of day.</summary>
         public bool HasTime => _parts.Any(p => p.Kind == PartKind.AmPm || (p.Kind == PartKind.DateCode && p.Code is 'h' or 's'));
 
@@ -372,7 +673,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
         {
             reason = null;
             var parts = new List<Part>();
-            var coloured = false;
+            NumberFormatColour? colour = null;
             for (var i = 0; i < text.Length; i++)
             {
                 var c = text[i];
@@ -412,16 +713,16 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                             reason = "a numbered colour ([Color n]) is refused, as Excel refuses it; name one of the eight colours instead.";
                             return null;
                         }
-                        if (bracketEnd > i && IsColour(text[(i + 1)..bracketEnd]))
+                        if (bracketEnd > i && NumberFormatColours.Named(text[(i + 1)..bracketEnd]) is { } named)
                         {
-                            // A colour is kept in the code and not painted (ADR-0047). Excel reads
-                            // one at the start of a section; anywhere else it is refused.
-                            if (parts.Count > 0 || coloured)
+                            // The section's colour (ADR-0071). Excel reads one at the start of a
+                            // section; anywhere else it is refused.
+                            if (parts.Count > 0 || colour is not null)
                             {
                                 reason = "a colour is read only once, at the start of its section.";
                                 return null;
                             }
-                            coloured = true;
+                            colour = named;
                             i = bracketEnd;
                             continue;
                         }
@@ -478,13 +779,10 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                 }
                 parts.Add(new Part(PartKind.Literal, c.ToString()));
             }
-            return Classify(parts, out reason);
+            var section = Classify(parts, out reason);
+            if (section is not null) section.Colour = colour;
+            return section;
         }
-
-        private static readonly string[] ColourNames = ["Black", "Blue", "Cyan", "Green", "Magenta", "Red", "White", "Yellow"];
-
-        /// <summary>One of Excel's eight colour names, in any case.</summary>
-        private static bool IsColour(string name) => ColourNames.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
 
         private static Section? Classify(List<Part> parts, out string? reason)
         {
@@ -844,7 +1142,7 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
                                 {
                                     1 => month.ToString(CultureInfo.InvariantCulture),
                                     2 => month.ToString("00", CultureInfo.InvariantCulture),
-                                    3 => names.AbbreviatedMonthNames[month - 1],
+                                    3 => AbbreviatedMonthNamesOf(culture)[month - 1],
                                     4 => names.MonthNames[month - 1],
                                     _ => names.MonthNames[month - 1][..1],
                                 });

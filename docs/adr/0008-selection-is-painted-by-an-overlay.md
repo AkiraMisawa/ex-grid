@@ -222,6 +222,17 @@ whole, since the Focus is Excel's active cell everywhere
   chosen action already do, and nothing above the layer can cover part of it. The fill handle
   stays centred on the outline's corner. The forced-colors outline of a range is drawn the same
   way.
+  *(2026-10-01, decided with the user, ticket 49: outside where nothing covers it.)*
+  - Excel draws the Selection's outline on the gridline and one pixel outside the range, so it
+    covers a Border on all four outer edges (the eleventh Windows run, case 11). Drawn inside, ours
+    covered the bottom and right lines but left the top and left ones showing just outside it,
+    1 to 2 px from Excel's picture.
+  - So the outline lies as Excel's does, on the gridline and one pixel out, on every side.
+  - Only where something above the selection layer would cover that outer pixel does a side stay
+    inside, as above, so that its width stays equal (UX-18). That is beside the Headings, beside a
+    Pinned Column, and under the header.
+  - A range reaching column A, the pinned boundary or row 1 therefore has that side one pixel
+    further in than its others. Part C of the eleventh run compares that with Excel's picture.
 - **The Focus cell is not tinted, and a selection of one cell is not tinted at all.** The
   Consequences above say "this is also what Excel looks like" of the translucent fill. That holds
   for the range and not for the active cell: Excel leaves the active cell untinted inside a tinted

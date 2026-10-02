@@ -69,11 +69,12 @@
             var value = column.Value(Row);
             var text = column.Info.TextFor(value);
             var decision = Paint(column, i, type, text);
+            var cellClass = CellClasses.For(numeric, pinned: true, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value));
             @* aria-label only when what is painted is not the value's text: the accessible
                name of a #### cell, or of a cell whose painted text the Consumer supplied, is
                the real value (ADR-0016/0033/0050), and on every other cell the text names
                itself. *@
-            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value))" style="@Styles.PinnedCell(i)"
+            <div class="@(Appearance?.ClassOf(i, cellClass) ?? cellClass)" style="@Styles.PinnedCell(i)"
                  role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                  aria-label="@AccessibleName(decision, text)">@decision.DisplayText</div>
         }
@@ -100,7 +101,8 @@
                 var value = column.Value(Row);
                 var text = column.Info.TextFor(value);
                 var decision = Paint(column, i, type, text);
-                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value))" style="@Styles.Cell(i)"
+                var cellClass = CellClasses.For(numeric, pinned: false, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value));
+                <div class="@(Appearance?.ClassOf(i, cellClass) ?? cellClass)" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
                      aria-label="@AccessibleName(decision, text)">@decision.DisplayText</div>
             }
@@ -221,6 +223,14 @@
     /// content, so only a row whose label moved re-renders.</summary>
     [Parameter] public string? Heading { get; set; }
 
+    /// <summary>
+    /// What this row paints of its cells' Font, Fill and Borders (ADR-0050, item 15), or null
+    /// for none. Resolved by the grid outside this render, from this row and the rows either
+    /// side of it, and replaced only when what it paints changed: compared by reference, as a
+    /// row instance is (ADR-0003).
+    /// </summary>
+    [Parameter] public RowAppearance? Appearance { get; set; }
+
     /// <summary>The Row Headings' inline width, or null while there is no band
     /// (ADR-0050/0028). One string for every row, rebuilt by the grid only when the width
     /// moves.</summary>
@@ -245,6 +255,7 @@
     private Func<TRow, bool, Task>? _renderedOnMark;
     private string? _renderedHeading;
     private string? _renderedHeadingStyle;
+    private RowAppearance? _renderedAppearance;
 
     protected override void OnInitialized()
     {
@@ -279,7 +290,8 @@
             && _renderedMarked == Marked
             && ReferenceEquals(_renderedOnMark, OnMark)
             && string.Equals(_renderedHeading, Heading, StringComparison.Ordinal)
-            && ReferenceEquals(_renderedHeadingStyle, HeadingStyle))
+            && ReferenceEquals(_renderedHeadingStyle, HeadingStyle)
+            && ReferenceEquals(_renderedAppearance, Appearance))
         {
             return false;
         }
@@ -309,6 +321,7 @@
         _renderedOnMark = OnMark;
         _renderedHeading = Heading;
         _renderedHeadingStyle = HeadingStyle;
+        _renderedAppearance = Appearance;
     }
 
     // Each cell's id, composed the first time the cell is painted in this row and kept
@@ -503,7 +516,8 @@
     /// <summary>The one string a cell paints, measures and decides overflow on — count
     /// and render must see the same text — and the one copy, the value list and the
     /// editor show for the value (ADR-0005/0006): the column's Format where it declares
-    /// one, the bare ToString where it does not. Null is a Blank and paints empty
+    /// one, and where it does not a date's or a time's ISO form by type, or the value's own
+    /// ToString (ADR-0006, note of 2026-10-01). Null is a Blank and paints empty
     /// (ADR-0023).</summary>
     internal static string CellText(GridColumn<TRow> column, TRow row)
         => column.Info.TextOf(row);
@@ -512,13 +526,15 @@
     /// What one value cell paints: the Consumer's painted text where it supplies one
     /// (ADR-0050, item 11), the value's text where it does not — and in either case the
     /// <c>####</c> rule decides on what would be painted, so a Number or Date that does
-    /// not fit is never shown cut (ADR-0016).
+    /// not fit is never shown cut (ADR-0016). A bold cell is judged by the bold widths,
+    /// and its painted text is fitted with them (ADR-0050, item 15).
     /// </summary>
     private OverflowDecision Paint(GridColumn<TRow> column, int index, ColumnType type, string text)
     {
         var widthPx = Styles.Geometry.WidthPxOf(index);
-        var painted = PaintedText?.Invoke(Row, column, Metrics.ContentWidthPx(widthPx), Metrics) ?? text;
-        return OverflowRules.Decide(type, painted, widthPx, Metrics);
+        var metrics = Appearance?.IsBold(index) == true ? Metrics.Bold : Metrics;
+        var painted = PaintedText?.Invoke(Row, column, metrics.ContentWidthPx(widthPx), metrics) ?? text;
+        return OverflowRules.Decide(type, painted, widthPx, metrics);
     }
 
     /// <summary>The cell's aria-label: the value's own text wherever the cell paints

@@ -41,10 +41,16 @@
  *   — the core's own constant, so the number lives in one place (ADR-0034)
  * @param {boolean} canFind whether a search is wired — Ctrl+F then opens the find panel,
  *   and the keys after it wait for the panel; otherwise it is refused (ADR-0055)
+ * @param {string[]} declaredKeys canonical forms of the keys the Consumer declared (ADR-0050,
+ *   item 14), already among takenKeys: the editing branch claims them too
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys) {
     let taken = new Set(takenKeys);
+    // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
+    // edit open they are in `taken`; while one is open they are claimed beside the editor's keys,
+    // and the Consumer is told an edit is open. This file names none of them.
+    let declared = new Set(declaredKeys ?? []);
 
     // A reveal's scroll write, held until the render that paints its slice has reached the
     // DOM (ADR-0012, 2026-09-29). The core sends the write from inside that render, so on a
@@ -311,6 +317,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (findKeys.has(canonical)) {
                 return canFind ? 'popover' : 'core';
             }
+            // A declared key is the Consumer's to answer, and may open a popover or a frame of
+            // the Consumer's own (Format Cells' Ctrl+1): the keys after it wait for its answer,
+            // and then for wherever the answer said the keyboard is going (handOff; ADR-0050
+            // item 16, 2026-10-01).
+            if (declared.has(canonical)) {
+                return 'mode';
+            }
             // Space and Backspace open an editor (ADR-0010/0035): a mode change.
             return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';
         }
@@ -322,6 +335,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // descendant (ADR-0010).
         if (!k.onRoot && !k.inEditor) {
             return null;
+        }
+        // A declared key changes nothing in the editor and no mode: the core raises it with the
+        // edit open, and the Consumer decides (ADR-0050, item 14). Taken, so the browser's own
+        // meaning — Ctrl+U's page source — does not run either.
+        if (declared.has(canonical)) {
+            return 'core';
         }
         // A list of candidates painted is open, whatever the gate was last told: on a circuit
         // the render that paints it and the message that tells the gate are two messages, and a
@@ -547,32 +566,93 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
     document.addEventListener('selectionchange', onSelectionChange);
 
-    // The coloured text (ADR-0057): beneath an editor surface, a layer the core renders with each
-    // Reference in its colour stands immediately before the field, and carries the text it was
-    // rendered for (data-ex-text). On a circuit that is a round trip behind the typing, and colours
-    // on text typed past would stand on the wrong characters, so the layer shows — and the field's
-    // own text turns transparent — only while the two texts are one: the listener sets one class on
-    // the field then, and the stylesheet does the rest. Only in the surface the edit is in, as Excel
-    // colours it: the field holding DOM focus, the one held keys are handed to (ADR-0051) — the
-    // other surface keeps its plain text, and a press from one into the other takes the colours
-    // with it. Compared on each input, when a layer's text changes (that one attribute, observed
-    // while an edit is open) and whenever the selection moves, which is how a field that has just
-    // taken focus, or just opened over its layer, is heard. A field holding an IME composition is
-    // ahead of anything rendered, and is never shown over; every input of a composition, its last
-    // included, says so, and the composition's end comes with no input after it, so the end is
-    // heard too, and the colours come back then rather than at the next keystroke. The layer's
-    // line scrolls with the field: the scroll-offset entry, on one more element (ADR-0021). Reads
-    // values, one attribute, which element has focus and scroll offsets; no layout.
+    // The coloured text (ADR-0057): beneath an editor surface, a layer the core renders with the
+    // field's text stands immediately before the field, and carries the text it was rendered for
+    // (data-ex-text). On a circuit that is a round trip behind the typing, and colours on text typed
+    // past would stand on the wrong characters, so the layer shows — and the field's own text turns
+    // transparent — only while the two texts are one: the listener sets one class on the field then,
+    // and the stylesheet does the rest. Only in the surface the edit is in, as Excel colours it: the
+    // field holding DOM focus, the one held keys are handed to (ADR-0051) — the other surface keeps
+    // its plain text, and a press from one into the other takes the colours with it. Compared on each
+    // input, when a layer's text or colours change (those two attributes, observed while an edit is
+    // open) and whenever the selection moves, which is how a field that has just taken focus, or just
+    // opened over its layer, is heard. A field holding an IME composition is ahead of anything
+    // rendered, and is never shown over; every input of a composition, its last included, says so,
+    // and the composition's end comes with no input after it, so the end is heard too, and the
+    // colours come back then rather than at the next keystroke. The layer's line scrolls with the
+    // field: the scroll-offset entry, on one more element (ADR-0021). Reads values, two attributes,
+    // which element has focus and scroll offsets; no layout.
+    //
+    // The layer's text is one run, as the field's is, and its References are coloured by the CSS
+    // Custom Highlight API (ADR-0057 and ADR-0021, notes of 2026-10-01): when the layer shows, one
+    // Range per stretch the core wrote on it (data-ex-colours: "start,length,name" each), over its
+    // one text node, in the highlight of that name; when it hides, they are taken out again. The
+    // names are this grid's own, and so are the highlights registered under them, which go with the
+    // grid: CSS.highlights is one registry per document, and a shared name would let one grid clear
+    // another's colours (ADR-0018). The grid's generated stylesheet paints them.
     let composingIn = null;
     let watchingReferenceTexts = false;
+    const highlights = new Map();
+    const colouredLayers = new Map();
     const referenceTextOf = (field) => {
         const layer = field.previousElementSibling;
         return layer !== null && layer.classList.contains('ex-reference-text') ? layer : null;
     };
+    const uncolour = (layer) => {
+        const coloured = colouredLayers.get(layer);
+        if (coloured !== undefined) {
+            for (const [highlight, range] of coloured.ranges) {
+                highlight.delete(range);
+            }
+            colouredLayers.delete(layer);
+        }
+    };
+    // Built again only when the layer's text, its colours or its run has changed since, or a range
+    // no longer spans what it was built over — a change to the run's text moves the ranges in it.
+    const colour = (layer) => {
+        const text = layer.getAttribute('data-ex-text');
+        const colours = layer.getAttribute('data-ex-colours') ?? '';
+        const run = layer.firstElementChild?.firstChild;
+        const coloured = colouredLayers.get(layer);
+        if (coloured !== undefined && coloured.text === text && coloured.colours === colours && coloured.run === run
+            && coloured.ranges.every(([, range, length]) => range.endOffset - range.startOffset === length)) {
+            return;
+        }
+        uncolour(layer);
+        if (!(run instanceof Text) || colours === '' || typeof Highlight !== 'function') {
+            return;
+        }
+        const ranges = [];
+        for (const stretch of colours.split(' ')) {
+            const [start, length, name] = stretch.split(',');
+            const from = Number(start);
+            const to = from + Number(length);
+            if (!(from >= 0 && to <= run.length)) {
+                continue;
+            }
+            let highlight = highlights.get(name);
+            if (highlight === undefined) {
+                highlight = new Highlight();
+                highlights.set(name, highlight);
+                CSS.highlights.set(name, highlight);
+            }
+            const range = new Range();
+            range.setStart(run, from);
+            range.setEnd(run, to);
+            highlight.add(range);
+            ranges.push([highlight, range, to - from]);
+        }
+        colouredLayers.set(layer, { text, colours, run, ranges });
+    };
     const gateReferenceText = (field, layer) => {
-        field.classList.toggle('ex-reference-text-shown',
-            editing !== 'none' && field === document.activeElement && composingIn !== field
-            && layer.getAttribute('data-ex-text') === field.value);
+        const shown = editing !== 'none' && field === document.activeElement && composingIn !== field
+            && layer.getAttribute('data-ex-text') === field.value;
+        field.classList.toggle('ex-reference-text-shown', shown);
+        if (shown) {
+            colour(layer);
+        } else {
+            uncolour(layer);
+        }
         layer.firstElementChild.scrollLeft = field.scrollLeft;
     };
     const gateReferenceTexts = () => {
@@ -615,7 +695,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         }
         watchingReferenceTexts = on;
         if (on) {
-            referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text'], subtree: true });
+            referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text', 'data-ex-colours'], subtree: true });
             root.addEventListener('scroll', onFieldScroll, true);
             root.addEventListener('compositionend', onCompositionEnd, true);
             return;
@@ -626,6 +706,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         composingIn = null;
         for (const field of root.querySelectorAll('.ex-reference-text-shown')) {
             field.classList.remove('ex-reference-text-shown');
+        }
+        for (const layer of [...colouredLayers.keys()]) {
+            uncolour(layer);
         }
     };
 
@@ -700,6 +783,33 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return active instanceof Element && root.contains(active) && active.closest('.ex-popover') !== null;
     };
     let awaitingPopover = false;
+
+    // Where the core has said the keyboard is going (handOff; ADR-0039 and ADR-0050 item 16,
+    // 2026-10-01): 'popover' — a Consumer's popover the core opened, whose contents take the
+    // keyboard on their count — or 'frame' — a frame of the Consumer's own, outside this root
+    // (HandKeyboardToFrameAsync). Until it has arrived, the keys typed on the root — its Keyboard
+    // Field among them (isRoot; ADR-0080) — or the menu are held, and then handed to what took
+    // it; if it never arrives within the hold's fallback they are dropped, never gated against
+    // the grid: a digit there would open an edit behind the frame. Set by C# ahead of the key's
+    // answer and of the render that closes the menu the command ran from. Meanwhile the root
+    // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
+    // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
+    let handOff = null;
+    // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
+    // frame, and whether the keyboard never arrived, so the held keys are dropped.
+    let deliveringOutside = false;
+    let handOffMissed = false;
+    // Outside this root and not on nothing: where a frame of the Consumer's own has the keyboard.
+    const outsideControl = () => {
+        const active = document.activeElement;
+        return active instanceof Element && active !== document.body && active !== document.documentElement
+            && !(root && root.contains(active)) ? active : null;
+    };
+    // Another grid has the keyboard: the user moved there before it reached what this one handed it
+    // to, and the keys held here are not that grid's (ADR-0018).
+    const inOtherGrid = () => outsideControl()?.closest('.ex-grid') != null;
+    const handedOver = () => handOff === null
+        || (handOff === 'popover' ? popoverFocused() : outsideControl() !== null && !inOtherGrid());
 
     // The keyboard handed on inside a popover, or out of it (ADR-0044): Tab, Shift+Tab or E on
     // a command moves it into the filter below, E on the value list to the search box, and a
@@ -782,9 +892,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             const disposed = !core;
             const editorReady = disposed || editing === 'none' || editorFocused() || focusDeclined;
             const popoverReady = disposed || !awaitingPopover || popoverFocused();
-            if (disposed || (editorReady && popoverReady && moved()) || performance.now() - holdStartedAt > 2000) {
+            const handOffReady = disposed || handedOver() || (handOff !== null && inOtherGrid());
+            if (disposed || (editorReady && popoverReady && handOffReady && moved()) || performance.now() - holdStartedAt > 2000) {
                 awaitingPopover = false;
                 awaitingMove = null;
+                if (handOff !== null) {
+                    handOffMissed = !disposed && !handedOver();
+                    deliveringOutside = handOff === 'frame' && !handOffMissed;
+                    handOff = null;
+                }
                 resolve();
             } else {
                 requestAnimationFrame(look);
@@ -915,6 +1031,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // dropped: the typing stops short rather than going on in a field it was not meant for
     // ("Alpha", Tab, Space, Enter would otherwise search for "Alpha " and apply it).
     const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter']);
+    // The keys a tab of ARIA's tabs pattern answers itself.
+    const tabKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
     // The keys that move the caret in a field without changing its text.
     const caretMoveKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
     const reproducible = (target, k) => {
@@ -924,7 +1042,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (isTextField(target)) {
             return !k.ctrlKey && !k.metaKey && !k.altKey && (k.key.length === 1 || caretKeys.has(k.key));
         }
+        // A frame of the Consumer's own took the keyboard (HandKeyboardToFrameAsync): what a key
+        // means there is its handlers' to say, and every key but Tab — the browser's alone to
+        // act on — is handed to it.
+        if (root && !root.contains(target)) {
+            return k.key !== 'Tab';
+        }
         const role = target.getAttribute('role');
+        // A tab of ARIA's tabs pattern answers its arrows, Home and End with its own handlers.
+        if (role === 'tab' && tabKeys.has(k.key) && !k.ctrlKey && !k.metaKey && !k.altKey) {
+            return true;
+        }
         return k.key.length === 1 && k.key !== ' ' && !k.ctrlKey && !k.metaKey && !k.altKey
             && target.tagName !== 'SELECT' && role !== 'combobox' && role !== 'listbox';
     };
@@ -988,6 +1116,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // gap must still be held, not gated against the root.
         await editorSettled();
         while (held.length > 0 && core) {
+            // The keyboard never reached what the core handed it to: the keys are dropped, not
+            // gated against the grid (handOff).
+            if (handOffMissed) {
+                held.length = 0;
+                break;
+            }
             const k = held.shift();
             if (k.barPress) {
                 await answerBarPress();
@@ -1037,7 +1171,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (modifierKeys.has(k.key)) {
                 continue;
             }
-            const target = focusedControl();
+            const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
             // Find's key held behind a popover is the grid's there too (ADR-0055), and is not
             // replayed into the popover — a menu would take it as a keydown of its own, and a
             // text field cannot reproduce a Ctrl chord at all, which would drop it and every
@@ -1099,6 +1233,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             }
         }
         answering = false;
+        handOffMissed = false;
+        deliveringOutside = false;
     };
 
     const onKeyDown = (event) => {
@@ -1154,18 +1290,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const sentinel = !replaying && !answering && onSentinel(event.target);
         // A hold behind a move or a close is over the moment DOM focus has followed, though
         // its check runs a frame later: a key typed in between is the new holder's already.
-        const holdOver = answering && awaitingMove !== null && held.length === 0 && moved();
+        const holdOver = answering && awaitingMove !== null && held.length === 0 && moved() && handedOver();
         if (!replaying && !holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
             event.preventDefault();
             event.stopPropagation();
             held.push(k);
             if (!answering) {
                 if (sentinel) {
-                    // A column's popover wraps back to its commands; the find panel, which
-                    // has none, to its own contents (ADR-0044/0055).
+                    // A column's popover wraps back to its commands; the find panel and a
+                    // Consumer's popover, which have none, to their own contents
+                    // (ADR-0044/0055; ADR-0050 item 16).
                     const into = popoverOf(event.target)?.querySelector('.ex-popover-commands')
                         ? '.ex-popover-commands'
-                        : '.ex-popover-find-body';
+                        : '.ex-popover-body';
                     awaitingMove = { from: event.target, into };
                 }
                 startHold();
@@ -1747,6 +1884,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             standingField()?.focus({ preventScroll: true });
             focusDeclined = false;
         }
+        // A press on one of the menu's items runs its command and closes the menu, as Enter on it
+        // does (handsOver): a change of who holds the keyboard, and the keys typed after it wait
+        // until the keyboard has followed — to the root, or to what the command opened (handOff;
+        // ADR-0039, 2026-10-01).
+        if (core && !replaying && event.button === 0 && event.target instanceof Element) {
+            const item = event.target.closest('[role=menuitem]');
+            const menu = item ? popoverOf(item) : null;
+            if (item && menu && !item.matches(':disabled, [aria-disabled=true]')) {
+                awaitingMove = { from: item, closes: menu };
+                if (answering) {
+                    holdStartedAt = performance.now();
+                } else {
+                    startHold();
+                }
+            }
+        }
         // Only a press on this grid's own rows is held or holds the keys after it: one on a
         // nested grid's rows is that grid's to answer, and this core never hears it. A press that
         // goes on to Blazor from here, or is replayed, is told to the grid that points, if this
@@ -2183,6 +2336,24 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 reportedCaret = caret;
             }
         },
+        // Where the keyboard is going (handOff above): to a Consumer's popover the core has
+        // opened, or to a frame of the Consumer's own outside this root. Told before the key's
+        // answer and before the render that closes the menu a command ran from, so the hold
+        // already standing waits for it; with none standing, one starts, for the keys typed on
+        // the root until the keyboard arrives. No focus is moved and no layout is read: what
+        // holds DOM focus is read, as the hold always has.
+        handOff: (to) => {
+            if (!core || (to !== 'popover' && to !== 'frame')) {
+                return;
+            }
+            handOff = to;
+            handOffMissed = false;
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold();
+            }
+        },
         // A popover's contents reported a popup of their own opening or closing
         // (ADR-0039): while one is open, a descendant's Escape is left to it.
         setInnerPopup: (open) => {
@@ -2191,11 +2362,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Which keys this grid takes, whether any column edits and whether a search is
         // wired — re-told when a parameter change changes the answer, so a grid that
         // becomes display-only stops taking printable keys, and one whose Consumer stops
-        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055).
-        setClaims: (takenKeys, editable, findable) => {
+        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055) — and
+        // which of them the Consumer declared (ADR-0050, item 14).
+        setClaims: (takenKeys, editable, findable, declaredKeys) => {
             taken = new Set(takenKeys);
             canEdit = editable;
             canFind = findable;
+            declared = new Set(declaredKeys ?? []);
         },
         getScrollOffset: () => (pendingReveal
             ? { top: pendingReveal.top, left: pendingReveal.left }
@@ -2366,6 +2539,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             cancelAnimationFrame(caretFrame);
             caretFrame = 0;
             watchReferenceTexts(false);
+            // The grid's highlights go with it: their names are its own, and nothing else paints
+            // or empties them.
+            for (const [name, highlight] of highlights) {
+                if (CSS.highlights.get(name) === highlight) {
+                    CSS.highlights.delete(name);
+                }
+            }
+            highlights.clear();
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
             lastSurface = null;

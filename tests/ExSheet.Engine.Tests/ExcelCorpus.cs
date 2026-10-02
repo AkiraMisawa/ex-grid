@@ -164,7 +164,7 @@ internal static class ExcelCorpus
 
         if (expect.TryGetProperty("numberFormat", out var numberFormat))
         {
-            var code = sheet.GetFormat(at).Code;
+            var code = sheet.GetNumberFormat(at).Code;
             if (code != numberFormat.GetString()) differences.Add($"numberFormat: expected \"{numberFormat.GetString()}\", got \"{code}\"");
         }
 
@@ -191,7 +191,7 @@ internal static class ExcelCorpus
         c.GetProperty("expect") is var expect && (expect.TryGetProperty("widens", out _) || expect.TryGetProperty("widthAtMost", out _) || expect.TryGetProperty("widthAtLeast", out _));
 
     /// <summary>
-    /// The component's widening on entry (<c>ExSheet.razor</c>, <c>WidenOnEntry</c>): a column
+    /// The component's widening on entry (<c>SheetWidening.Of</c>, called from <c>ExSheet.razor</c>): a column
     /// whose width the user did not set that is narrower than what the entry needs
     /// (<see cref="Sheet.GetWidthOnEntry"/>) is widened to it, and the width is recorded as widened
     /// by entry: marked custom, as Excel's file marks it (CW-018), and widened again by a longer
@@ -236,7 +236,7 @@ internal static class ExcelCorpus
         {
             foreach (var format in formats.EnumerateObject())
             {
-                sheet.SetFormat(CellAddress.Parse(format.Name), NumberFormat.Parse(format.Value.GetString()!));
+                sheet.SetNumberFormat(CellAddress.Parse(format.Name), NumberFormat.Parse(format.Value.GetString()!));
             }
         }
         return sheet;
@@ -315,13 +315,13 @@ internal static class ExcelCorpus
                 if (a.TryGetProperty("automatic", out var automatic) && automatic.GetBoolean()) return SheetEdit.SetAutomaticColumnWidth(Range("range"), w.GetDouble());
                 return SheetEdit.SetColumnWidth(Range("range"), w.ValueKind == JsonValueKind.Null ? null : w.GetDouble());
             case "rename": return SheetEdit.Rename(a.GetProperty("name").GetString()!);
-            case "format" or "align" or "style":
-                // A range written with commas is several ranges styled in one step (ADR-0046).
+            case "format" or "align" or "cellFormat":
+                // A range written with commas is several ranges formatted in one step (ADR-0046).
                 var ranges = a.GetProperty("range").GetString()!.Split(',').Select(CellRange.Parse).ToList();
                 NumberFormat? format = a.TryGetProperty("format", out var f) ? NumberFormat.Parse(f.GetString()!) : null;
                 HorizontalAlignment? align = a.TryGetProperty("align", out var al) ? Enum.Parse<HorizontalAlignment>(al.GetString()!, ignoreCase: true) : null;
-                if (what == "style" || ranges.Count > 1) return SheetEdit.SetStyle(ranges, format, align);
-                return what == "format" ? SheetEdit.SetFormat(ranges[0], format) : SheetEdit.SetAlignment(ranges[0], align!.Value);
+                if (what == "cellFormat" || ranges.Count > 1) return SheetEdit.SetCellFormat(ranges, new CellFormatChange { NumberFormat = format, Alignment = align });
+                return what == "format" ? SheetEdit.SetNumberFormat(ranges[0], format) : SheetEdit.SetAlignment(ranges[0], align!.Value);
             default: throw new InvalidDataException($"Unknown action \"{what}\".");
         }
     }

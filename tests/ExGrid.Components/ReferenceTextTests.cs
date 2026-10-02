@@ -16,9 +16,10 @@ namespace ExGrid.Components.Tests;
 /// <summary>
 /// The coloured text (ADR-0057; DC-1, DC-47 and DC-48's layer 2 half): with the Consumer's
 /// References function declared, beneath each editor surface the core renders a layer holding the
-/// editor's text, each Reference a span in its colour, and the text it was rendered for on the
-/// layer itself — immediately before the core's own field, or handed to a Chrome to place before
-/// its control. Whether it shows is the listener's to decide in the browser (layer 3). Without the
+/// editor's text as one run, and on the layer itself the text it was rendered for and which of the
+/// grid's highlights covers which characters (ADR-0057, note of 2026-10-01) — immediately before the
+/// core's own field, or handed to a Chrome to place before its control. The tests read the colouring
+/// back as markup, each Reference a span in its colour (<c>ColouredText</c>). Whether it shows is the listener's to decide in the browser (layer 3). Without the
 /// declaration there is no layer. 50 rows of 20px in a 350 × 200 Viewport; Book (A) and Note (B)
 /// edit, Amount (C) does not.
 /// </summary>
@@ -99,13 +100,9 @@ public partial class ReferenceTextTests : GridTestContext
             await TypeAsync(cut, formula);
     }
 
-    /// <summary>What a layer draws, as markup: its text, each Reference a span in its colour.</summary>
-    private static string Drawn(IElement layer)
-    {
-        var line = Assert.Single(layer.Children);
-        Assert.Equal("ex-reference-text-line", line.ClassName);
-        return line.InnerHtml;
-    }
+    /// <summary>What a layer colours, written as markup: its text, each Reference a span in its colour
+    /// (<c>ColouredText</c>).</summary>
+    private static string Drawn(IElement layer) => global::ReferenceText.ColouredText.Of(layer);
 
     [Fact] // ADR-0057 / DC-47: beneath the Cell Editor, immediately before it and in its box, the text with each Reference in its colour
     public async Task The_cell_editors_layer_draws_each_reference_in_its_colour()
@@ -372,6 +369,56 @@ public partial class ReferenceTextTests : GridTestContext
         Assert.Equal("=<span class=\"ex-reference-1\">C3</span>", Drawn(cut.Find(".ex-viewport > .ex-reference-text")));
     }
 
+    [Fact] // ADR-0057 (note of 2026-10-01) / ADR-0018 / DC-48 / DC-51: the layer's text is one run; its colours are highlights named for the grid, which its own stylesheet paints from the layer's properties
+    public async Task The_layer_is_one_run_coloured_by_highlights_of_the_grids_own()
+    {
+        var first = RenderGrid(more: ps => ps.Add(g => g.ShowFormulaBar, true));
+        var second = RenderGrid(more: ps => ps.Add(g => g.ShowFormulaBar, true));
+        await TypeFormulaAsync(first, "=A1+B2+A1");
+        await TypeFormulaAsync(second, "=B2");
+
+        var prefixes = new List<string>();
+        foreach (var cut in new[] { first, second })
+        {
+            // The grid's id prefix, as its cells carry it.
+            var cellId = cut.Find("[id$='-r0c0']").Id!;
+            var prefix = cellId[..^"r0c0".Length] + "reference-";
+            prefixes.Add(prefix);
+
+            // One run: the line holds the text and no element, on both surfaces.
+            foreach (var layer in cut.FindAll(".ex-reference-text"))
+            {
+                var line = Assert.Single(layer.Children);
+                Assert.Empty(line.Children);
+                Assert.Equal(layer.GetAttribute("data-ex-text"), line.TextContent);
+            }
+
+            // Each stretch names one of this grid's highlights.
+            var colours = cut.Find(".ex-viewport > .ex-reference-text").GetAttribute("data-ex-colours")!;
+            Assert.All(colours.Split(' '), entry => Assert.StartsWith(prefix, entry.Split(',')[2], StringComparison.Ordinal));
+
+            // The grid's own stylesheet paints its names, and only them: each colour, each pointed
+            // shade and the ground, from the property the shipped stylesheet declares on the layer.
+            var css = string.Concat(cut.FindAll(".ex-grid > style").Select(style => style.TextContent));
+            for (var place = 1; place <= ReferenceColour.PaletteLength; place++)
+            {
+                var n = place.ToString(CultureInfo.InvariantCulture);
+                Assert.Contains($"::highlight({prefix}{n}){{color:var(--ex-reference-text-{n})}}", css, StringComparison.Ordinal);
+                Assert.Contains($"::highlight({prefix}{n}-pointed){{color:var(--ex-reference-text-{n}-pointed)}}", css, StringComparison.Ordinal);
+            }
+            Assert.Contains($"::highlight({prefix}pointed){{background-color:var(--ex-reference-text-pointed)}}", css, StringComparison.Ordinal);
+            Assert.Equal((2 * ReferenceColour.PaletteLength) + 1, Regex.Matches(css, @"::highlight\(").Count);
+            Assert.DoesNotContain("#", css, StringComparison.Ordinal);
+        }
+        Assert.NotEqual(prefixes[0], prefixes[1]);
+        Assert.Equal($"1,2,{prefixes[0]}1 4,2,{prefixes[0]}2 7,2,{prefixes[0]}1",
+            first.Find(".ex-viewport > .ex-reference-text").GetAttribute("data-ex-colours"));
+        Assert.Equal($"1,2,{prefixes[1]}1", second.Find(".ex-viewport > .ex-reference-text").GetAttribute("data-ex-colours"));
+        // The bar's layer is written for the same text, while it shows the edit.
+        Assert.Equal(first.Find(".ex-viewport > .ex-reference-text").GetAttribute("data-ex-colours"),
+            first.Find(".ex-formula-bar > .ex-reference-text").GetAttribute("data-ex-colours"));
+    }
+
     [Fact] // ADR-0057 / DC-1: without the function there is no layer, on either surface, and a Chrome is handed none
     public async Task Without_the_function_there_is_no_layer()
     {
@@ -385,6 +432,8 @@ public partial class ReferenceTextTests : GridTestContext
             await PressAsync(cut, "=");
             Assert.Empty(cut.FindAll(".ex-reference-text"));
             Assert.Empty(cut.FindAll("[data-ex-text]"));
+            // And no highlight is painted: the grid writes no stylesheet for them.
+            Assert.DoesNotContain("::highlight(", cut.Markup, StringComparison.Ordinal);
         }
         Assert.Null(chrome.Editor!.ReferenceText);
         Assert.Null(chrome.Bar!.ReferenceText);

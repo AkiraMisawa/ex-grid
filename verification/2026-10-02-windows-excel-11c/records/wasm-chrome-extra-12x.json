@@ -1,0 +1,1331 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "chrome": "builtin",
+ "scheme": "light",
+ "zoom": 100,
+ "config": "wasm-chrome",
+ "started": "2026-10-01T23:43:43.172Z",
+ "cases": [
+  {
+   "case": "12x",
+   "what": "An addition: case 12 with ExSheet's own insert, the Context Menu's \"Insert rows above\" (ADR-0071: insert is a Consumer command there, not a key). Row 3 selected with real keys (A3, Shift+Space), a right click on A3, the menu item clicked",
+   "page": "?case=12",
+   "started": "2026-10-01T23:43:48.315Z",
+   "states": [
+    {
+     "state": "row3-selected",
+     "did": [
+      "a click at (319, 815) on the middle of A1",
+      "keys {DOWN}{DOWN}+{SPACE}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-fill-ffff00 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A3": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-cover-ffff00",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A3",
+      "nameBox": "A3",
+      "bar": "",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 116.25,
+         "y": 478.2083435058594,
+         "w": 1622016,
+         "h": 28
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce7f8",
+        "at50": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce7f8",
+        "at75": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce7f8",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-2 dce7f8 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 281,
+        "at25": "-6..-3 ffffff | -2 f0f0f0 | -1 dcdee0 | 0..6 dce7f8",
+        "at50": "-6..-3 ffffff | -2 f0f0f0 | -1 dcdee0 | 0..6 dce7f8",
+        "at75": "-6..-3 ffffff | -2 f0f0f0 | -1 dcdee0 | 0..6 dce7f8",
+        "same": true
+       },
+       "B3 right": {
+        "at": 429,
+        "at25": "-6..-2 dce7f8 | -1 c3cedf | 0..6 dce7f8",
+        "at50": "-6..-2 dce7f8 | -1 c3cedf | 0..6 dce7f8",
+        "at75": "-6..-2 dce7f8 | -1 c3cedf | 0..6 dce7f8",
+        "same": true
+       },
+       "B4 bottom": {
+        "at": 258,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "A2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffff00",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "dce7f8",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B4": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "A3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "dce7f8",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "12x-row3-selected-wasm-chrome.png"
+    },
+    {
+     "state": "menu",
+     "did": [
+      "a right click at (319, 899) on the middle of A3"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-fill-ffff00 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A3": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-cover-ffff00",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A3",
+      "nameBox": "A3",
+      "bar": "",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 116.25,
+         "y": 478.2083435058594,
+         "w": 1622016,
+         "h": 28
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "button"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce7f8",
+        "at50": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce7f8",
+        "at75": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce7f8",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..6 efefef",
+        "at50": "-6..6 efefef",
+        "at75": "-6..6 efefef",
+        "same": true
+       },
+       "B3 left": {
+        "at": 281,
+        "at25": "-6..-3 ffffff | -2 f0f0f0 | -1 dcdee0 | 0..6 dce7f8",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 efefef",
+        "same": false
+       },
+       "B3 right": {
+        "at": 429,
+        "at25": "-6..-2 dce7f8 | -1 c3cedf | 0..6 dce7f8",
+        "at50": "-6..6 ffffff",
+        "at75": "-6..6 efefef",
+        "same": false
+       },
+       "B4 bottom": {
+        "at": 258,
+        "at25": "-6..6 efefef",
+        "at50": "-6..6 efefef",
+        "at75": "-6..6 efefef",
+        "same": true
+       },
+       "A2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffff00",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "dce7f8",
+        "sampled": "ffffff",
+        "top": [
+         "ffffff:852",
+         "0078d7:142",
+         "767676:142"
+        ],
+        "inkPixels": 1136
+       },
+       "B4": {
+        "ground": "efefef",
+        "sampled": "767676",
+        "top": [
+         "767676:284"
+        ],
+        "inkPixels": 284
+       },
+       "A3": {
+        "ground": "ffffff",
+        "sampled": "0078d7",
+        "top": [
+         "0078d7:90",
+         "767676:71",
+         "c9c9c9:2",
+         "8b8b8b:2",
+         "d3d3d3:2"
+        ],
+        "inkPixels": 168
+       },
+       "C3": {
+        "ground": "dce7f8",
+        "sampled": "ffffff",
+        "top": [
+         "ffffff:511",
+         "0078d7:92",
+         "767676:73",
+         "8b8b8b:2",
+         "c9c9c9:2"
+        ],
+        "inkPixels": 683
+       }
+      }
+     },
+     "shot": "12x-menu-wasm-chrome.png"
+    },
+    {
+     "state": "inserted",
+     "did": [
+      "a click at (468, 971) on the menu item 'Insert rows above'"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-fill-ffff00 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-fill-ffff00 ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A3": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-cover-ffff00",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-cover-ffff00",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "A3",
+      "nameBox": "A3",
+      "bar": "",
+      "editing": false,
+      "ranges": [
+       {
+        "cls": "ex-range ex-range-single",
+        "box": {
+         "x": 116.25,
+         "y": 478.2083435058594,
+         "w": 1622016,
+         "h": 28
+        }
+       }
+      ],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce727",
+        "at50": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce727",
+        "at75": "-6..-4 ffff00 | -3..-1 000000 | 0 08111d | 1..6 dce727",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..-2 dce727 | -1..1 000000 | 2..6 ffffff",
+        "at50": "-6..-2 dce727 | -1..1 000000 | 2..6 ffffff",
+        "at75": "-6..-2 dce727 | -1..1 000000 | 2..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1 fafc05 | 0..6 dce727",
+        "at50": "-6..-2 ffffff | -1 fafc05 | 0..6 dce727",
+        "at75": "-6..-2 ffffff | -1 fafc05 | 0..6 dce727",
+        "same": true
+       },
+       "B3 right": {
+        "at": 429,
+        "at25": "-6..-1 dce727 | 0..6 dce7f8",
+        "at50": "-6..-1 dce727 | 0..6 dce7f8",
+        "at75": "-6..-1 dce727 | 0..6 dce7f8",
+        "same": true
+       },
+       "B4 bottom": {
+        "at": 258,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "A2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0..6 ffffff",
+        "same": true
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "at50": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "at75": "-6..-4 ffffff | -3..-1 000000 | 0 e4edf9 | 1..6 dce7f8",
+        "same": true
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffff00",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "dce727",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B4": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "A3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "dce7f8",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "12x-inserted-wasm-chrome.png"
+    },
+    {
+     "state": "parked",
+     "did": [
+      "keys ^{HOME}{DOWN 9}{RIGHT 5}"
+     ],
+     "read": {
+      "dpr": 1.5,
+      "cells": {
+       "B2": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-fill-ffff00 ex-lined ex-lb-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B3": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-fill-ffff00 ex-lined ex-lt-thick-000000",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgb(255, 255, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "B4": {
+        "text": "",
+        "box": {
+         "x": 215.25,
+         "y": 506.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A3": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-cover-ffff00",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C3": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 478.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "A2": {
+        "text": "",
+        "box": {
+         "x": 116.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell ex-lined ex-lr-cover-ffff00",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       },
+       "C2": {
+        "text": "",
+        "box": {
+         "x": 314.25,
+         "y": 450.2083435058594,
+         "w": 99,
+         "h": 28
+        },
+        "cls": "ex-cell",
+        "style": {
+         "color": "rgb(0, 0, 0)",
+         "background": "rgba(0, 0, 0, 0)",
+         "weight": "400",
+         "italic": "normal",
+         "decoration": "none",
+         "align": "start"
+        },
+        "inner": null
+       }
+      },
+      "focus": "F10",
+      "nameBox": "F10",
+      "bar": "",
+      "editing": false,
+      "ranges": [],
+      "rowHeights": [
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28,
+       28
+      ],
+      "columnWidths": [
+       {
+        "text": "A",
+        "w": 99
+       },
+       {
+        "text": "B",
+        "w": 99
+       },
+       {
+        "text": "C",
+        "w": 99
+       },
+       {
+        "text": "D",
+        "w": 99
+       },
+       {
+        "text": "E",
+        "w": 99
+       },
+       {
+        "text": "F",
+        "w": 99
+       },
+       {
+        "text": "G",
+        "w": 99
+       }
+      ],
+      "active": "div#ex1-root.ex-grid"
+     },
+     "clip": {
+      "x": 28,
+      "y": 362,
+      "width": 728,
+      "height": 429
+     },
+     "pixels": {
+      "scale": 1.5,
+      "edges": {
+       "B2 top": {
+        "at": 132,
+        "at25": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at50": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "at75": "-6..-2 ffffff | -1 000000 | 0..6 ffff00",
+        "same": true
+       },
+       "B2 bottom": {
+        "at": 174,
+        "at25": "-6..-3 ffff00 | -2..0 000000 | 1..6 ffff00",
+        "at50": "-6..-3 ffff00 | -2..0 000000 | 1..6 ffff00",
+        "at75": "-6..-3 ffff00 | -2..0 000000 | 1..6 ffff00",
+        "same": true
+       },
+       "B3 bottom": {
+        "at": 216,
+        "at25": "-6..-1 ffff00 | 0..6 ffffff",
+        "at50": "-6..-1 ffff00 | 0..6 ffffff",
+        "at75": "-6..-1 ffff00 | 0..6 ffffff",
+        "same": true
+       },
+       "B3 left": {
+        "at": 281,
+        "at25": "-6..-2 ffffff | -1..6 ffff00",
+        "at50": "-6..-2 ffffff | -1..6 ffff00",
+        "at75": "-6..-2 ffffff | -1..6 ffff00",
+        "same": true
+       },
+       "B3 right": {
+        "at": 429,
+        "at25": "-6..-1 ffff00 | 0..6 ffffff",
+        "at50": "-6..-1 ffff00 | 0..6 ffffff",
+        "at75": "-6..-1 ffff00 | 0..6 ffffff",
+        "same": true
+       },
+       "B4 bottom": {
+        "at": 258,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       },
+       "A2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "same": false
+       },
+       "C2 bottom": {
+        "at": 174,
+        "at25": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "at50": "-6..-2 ffffff | -1 e1e1e1 | 0..6 ffffff",
+        "at75": "-6..-2 ffffff | -1 e0e0e0 | 0..6 ffffff",
+        "same": false
+       }
+      },
+      "along": {},
+      "ink": {
+       "B2": {
+        "ground": "ffff00",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B3": {
+        "ground": "ffff00",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "B4": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "A3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       },
+       "C3": {
+        "ground": "ffffff",
+        "sampled": "no text",
+        "top": [],
+        "inkPixels": 0
+       }
+      }
+     },
+     "shot": "12x-parked-wasm-chrome.png"
+    }
+   ],
+   "url": "http://localhost:5299/sheet?case=12",
+   "dpr": 1.5
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-01T23:43:44.364Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  },
+  {
+   "t": "2026-10-01T23:43:48.466Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok english was=0x08090809 now=0x08090809"
+ },
+ "baseDpr": 1.5,
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 521,
+    "py": 173,
+    "client": {
+     "x": 300,
+     "y": 8
+    }
+   }
+  ]
+ },
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1686,
+   1266
+  ],
+  "dark": false,
+  "forcedColors": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+ },
+ "calibrations": [
+  {
+   "url": "http://localhost:5299/sheet?case=12",
+   "dpr": 1.5,
+   "tries": [
+    {
+     "px": 521,
+     "py": 173,
+     "client": null
+    },
+    {
+     "px": 521,
+     "py": 193,
+     "client": {
+      "x": 300,
+      "y": 21
+     }
+    },
+    {
+     "px": 521,
+     "py": 173,
+     "client": {
+      "x": 300,
+      "y": 8
+     }
+    }
+   ]
+  }
+ ],
+ "finished": "2026-10-01T23:43:58.365Z"
+}

@@ -26,4 +26,15 @@
     <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The glyph-width corpus (ADR-0016, ticket 83), checked against what the built-in formats paint. -->
+    <None Include="..\GlyphWidths\corpus.json" Link="GlyphWidths\corpus.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What a coloured-text layer colours, read off what the core writes on it (ADR-0057, note of
+         2026-10-01): its text is one run, coloured by highlights. -->
+    <Compile Include="..\ReferenceText\ColouredText.cs" Link="ReferenceText\ColouredText.cs" />
+  </ItemGroup>
+
 </Project>

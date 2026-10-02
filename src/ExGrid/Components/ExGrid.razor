@@ -212,6 +212,7 @@
                 @if (_visible is { } visible)
                 {
                     var pointDashes = PointDashesRange(visible);
+                    var outlineCover = OutlineCoverAt(visible);
                     @if (!_selection.Selection.IsEmpty || HoverRowRange is not null || _columnOutlines.Length > 0 || pointDashes is not null)
                     {
                         @* One element per range, so what selection costs to paint depends
@@ -246,12 +247,12 @@
                                    2026-09-29). *@
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } fill)
                                     {
                                         <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
-                                @if (SelectionStyles.Pinned(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } pinnedFocus)
+                                @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: true, outlineCover) is { } pinnedFocus)
                                 {
                                     <div class="ex-focus" style="@pinnedFocus"></div>
                                 }
@@ -315,12 +316,12 @@
                                 }
                                 @foreach (var range in _selection.Selection.Ranges)
                                 {
-                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false) is { } fill)
+                                    @if (SelectionStyles.Range(range, _selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } fill)
                                     {
                                         <div class="@RangeClass" style="@fill"></div>
                                     }
                                 }
-                                @if (SelectionStyles.Scrollable(FocusRange, _columnStyles.Geometry, _metrics.RowHeightPx, visible) is { } focus)
+                                @if (SelectionStyles.Focus(_selection.Selection.Focus, _columnStyles.Geometry, _metrics.RowHeightPx, visible, pinnedLayer: false, outlineCover) is { } focus)
                                 {
                                     <div class="ex-focus" style="@focus"></div>
                                 }
@@ -366,6 +367,11 @@
                     {
                         var editorChrome = Chrome?.CellEditor(BuildEditorContext());
                         _editorIsChrome = editorChrome is not null;
+                        @* The edited cell's Fill and Font (ADR-0050, item 15): on the field, on the
+                           box a Chrome's control stands in, and on the coloured text beneath. *@
+                        var editorLook = EditorAppearanceClass();
+                        var editorClass = WithEditorAppearance("ex-editor", editorLook);
+                        var referenceTextClass = WithEditorAppearance("ex-reference-text ex-reference-text-cell", editorLook);
                         @if (_editingCell.Column < _columnStyles.Geometry.PinnedCount)
                         {
                             <div class="ex-editor-pinned" @key="EditorLayerKey">
@@ -378,7 +384,7 @@
                                        cell under the live editor. *@
                                     @if (editorChrome is not null)
                                     {
-                                        <div class="ex-editor" style="@pinnedBox" @onmousedown:stopPropagation>@editorChrome</div>
+                                        <div class="@editorClass" style="@pinnedBox" @onmousedown:stopPropagation>@editorChrome</div>
                                     }
                                     else
                                     {
@@ -387,9 +393,9 @@
                                            stylesheet look for it. A Chrome places its own. *@
                                         @if (ReferencesIn is not null)
                                         {
-                                            <div class="ex-reference-text ex-reference-text-cell" style="@pinnedBox" data-ex-text="@_editText" aria-hidden="true"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                            <div class="@referenceTextClass" style="@pinnedBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@_editText</div></div>
                                         }
-                                        <input class="ex-editor" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
+                                        <input class="@editorClass" style="@pinnedBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @onmousedown:stopPropagation @ref="_editorElement" />
                                     }
                                 }
                             </div>
@@ -398,15 +404,15 @@
                         {
                             @if (editorChrome is not null)
                             {
-                                <div class="ex-editor" style="@editorBox" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
+                                <div class="@editorClass" style="@editorBox" @key="EditorLayerKey" @onmousedown:stopPropagation>@editorChrome</div>
                             }
                             else
                             {
                                 @if (ReferencesIn is not null)
                                 {
-                                    <div class="ex-reference-text ex-reference-text-cell" style="@editorBox" data-ex-text="@_editText" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@EditReferenceSpans</div></div>
+                                    <div class="@referenceTextClass" style="@editorBox" data-ex-text="@_editText" data-ex-colours="@EditReferenceColours" aria-hidden="true" @key="ReferenceTextLayerKey"><div class="ex-reference-text-line">@_editText</div></div>
                                 }
-                                <input class="ex-editor" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
+                                <input class="@editorClass" style="@editorBox" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant" aria-invalid="@EditorInvalid" aria-describedby="@(_editError is null ? null : MessageId)" @bind:get="_editText" @bind:set="OnEditorInput" @bind:event="oninput" @key="EditorLayerKey" @onmousedown:stopPropagation @ref="_editorElement" />
                             }
                         }
                     }
@@ -417,6 +423,7 @@
                        identity objects and Placeholder keys are boxed indices, so the
                        two can never collide — and a position turning from Placeholder
                        into a row correctly reads as a fresh mount. *@
+                    BeginAppearances();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
                         var slice = row - _windowStart;
@@ -434,7 +441,8 @@
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
                                        Marked="@MarkedAt(data)" OnMark="@(_onMark ??= RaiseRowMarkAsync)"
-                                       Heading="@RowHeadingAt(row)" HeadingStyle="@_rowHeadingStyle" />
+                                       Heading="@RowHeadingAt(row)" HeadingStyle="@_rowHeadingStyle"
+                                       Appearance="@AppearanceAt(row, slice)" />
                         }
                         else
                         {
@@ -502,7 +510,7 @@
                    edit opening is a change of its text that the listener hears. *@
                 @if (ReferencesIn is not null)
                 {
-                    <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceSpans</div></div>
+                    <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" data-ex-colours="@BarReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceText</div></div>
                 }
                 <input class="ex-editor ex-formula-bar-text" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarPressedAsync"
@@ -632,6 +640,10 @@
                                     }
                                 </select>
                                 <input @bind="_panelValueText" @bind:event="oninput" @ref="_panelValueField" />
+                                @if (PanelRefusal(panelColumn, _panelValueText) is { } refusedFirst)
+                                {
+                                    <p class="ex-popover-refusal" role="alert">@refusedFirst</p>
+                                }
                                 @* A second condition, joined by And or Or, as Excel's Custom AutoFilter
                                    (ADR-0009). Left at "(none)" it applies nothing of its own. *@
                                 <div class="ex-popover-join" role="radiogroup">
@@ -651,6 +663,10 @@
                                 @if (_panelSecondOperator is { } second && FilterPanelChoices.TakesOperand(second))
                                 {
                                     <input class="ex-popover-second" @bind="_panelSecondValueText" @bind:event="oninput" />
+                                    @if (PanelRefusal(panelColumn, _panelSecondValueText) is { } refusedSecond)
+                                    {
+                                        <p class="ex-popover-refusal" role="alert">@refusedSecond</p>
+                                    }
                                 }
                             }
                             <div class="ex-popover-actions">
@@ -691,7 +707,7 @@
         <div class="ex-popover ex-popover-find" style="@FindPopoverStyle()" role="dialog"
              aria-label="@Label(FindPanelLabelIds.Title)" @key="_popoverFocusRequest">
             <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
-            <div class="ex-popover-find-body">
+            <div class="ex-popover-find-body ex-popover-body">
                 @if (Chrome?.FindPanel(findContext) is { } findFragment)
                 {
                     @findFragment
@@ -723,6 +739,20 @@
                 }
             </div>
             <span class="ex-focus-wrap" tabindex="0" @onfocus="ReturnKeyboardToFindAsync"></span>
+        </div>
+    }
+    @if (_consumerPopover is { } consumerPopover)
+    {
+        @* A Consumer's popover (ADR-0050, item 16): the Consumer's contents in the core's frame,
+           a popover by every popover rule (ADR-0039/0040) and keyed by its opening like the
+           others. A sentinel either side wraps Tab inside it: the trailing one asks the contents
+           for their first control, the leading one for their last — once the contents have held
+           the keyboard; before, a sentinel was entered from outside, and asks for the near end. *@
+        <div class="ex-popover ex-popover-consumer" style="@ConsumerPopoverStyle()" role="dialog"
+             aria-label="@consumerPopover.Label" @key="_popoverFocusRequest">
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerLeadingSentinel"></span>
+            <div class="ex-popover-body" @onfocusin="ConsumerContentsHeld">@consumerPopover.Content(BuildConsumerPopoverContext())</div>
+            <span class="ex-focus-wrap" tabindex="0" @onfocus="OnConsumerTrailingSentinel"></span>
         </div>
     }
     @if (MessageOnShow() is var (messageCell, messageText, isEditorError) && messageText is not null)
@@ -845,6 +875,24 @@
        tallest length it will, and a ResizeObserver reports that size — the ceiling in CSS
        pixels at this scale and zoom. Paint nothing, take nothing, say nothing. *@
     <div class="ex-ceiling-probe" aria-hidden="true"><div style="@CeilingProbeStyle"></div></div>
+    @if ((CellAppearance is not null || EditorAppearance is not null) && _appearances is { } appearances)
+    {
+        @* The generated stylesheet of a per-cell appearance (ADR-0050, item 15; ADR-0071): one
+           rule per Font, per Fill colour and per line on each side, never per combination, added
+           the first time a cell asks for one. Last in the root, because the rows above, and the
+           Cell Editor, resolved their appearance in this same render and the rules they named must
+           be in it. The text is one held string until a rule is added, so the diff compares a
+           reference. *@
+        <style>@appearances.Styles.Css</style>
+    }
+    @if (ReferencesIn is not null)
+    {
+        @* The coloured text's highlights (ADR-0057, note of 2026-10-01): one rule per highlight of
+           this grid's own, each reading a custom property the shipped stylesheet declares on the
+           layer from the Visual Tokens. Names of its own, so no other grid's rule paints them
+           (ADR-0018). One held string, so the diff compares a reference. *@
+        <style>@ReferenceHighlightStyles</style>
+    }
 </div>
 
 @code {
@@ -1159,9 +1207,9 @@
     /// to align or hash.
     ///
     /// <para>The text a cell paints is unchanged by it: the column's <c>Format</c> where it
-    /// declares one, the value's own <c>ToString()</c> where it does not — the core's
-    /// default format is the same for every kind, so there is nothing kind-dependent to
-    /// follow.</para>
+    /// declares one, the value's own text where it does not — a date's ISO form follows the
+    /// value's type, not the cell's kind (ADR-0006, note of 2026-10-01), so there is nothing
+    /// kind-dependent to follow.</para>
     ///
     /// <para><b>Hold it in a field and hand over a new one when the kinds change.</b> Its
     /// identity is the change signal, as <see cref="CellState"/>'s is (ADR-0003/0006).</para>
@@ -1200,6 +1248,50 @@
     /// change of column width repaints the rows on its own.</para>
     /// </summary>
     [Parameter] public PaintedTextOf<TRow>? PaintedText { get; set; }
+
+    /// <summary>
+    /// A per-cell appearance (ADR-0050, item 15): asked for by (row, column), it answers the
+    /// cell's Font — a colour, bold, italic, underline and strikethrough — its Fill, and the
+    /// Border on each of its four sides, all painted as Excel paints them (ADR-0071). Font and
+    /// Fill are interned classes in a stylesheet the grid generates, one rule per distinct
+    /// Font and Fill. Each line is centred on its gridline, a thick one reaching into both
+    /// cells, above the Fills and below the Focus, the Selection and the Reference Outlines,
+    /// and each cell draws its own share of it, so nothing is painted outside a painted row. A
+    /// bold cell's <c>####</c> decision and the width its <see cref="PaintedText"/> is fitted
+    /// to use the bold widths of <see cref="CellMetrics"/> (ADR-0016). Null, the default,
+    /// paints every cell exactly as before (DC-1). Asked of value cells only, as
+    /// <see cref="CellType"/> is.
+    ///
+    /// <para><b>Hold it in a field; a row's identity and its identity are the change
+    /// signal</b> (ADR-0003/0006). The grid resolves each painted row once, outside its
+    /// render, from the row and the rows either side of it — a cell's top line is the edge it
+    /// shares with the row above — and repaints a row only when what it paints changed. A new
+    /// instance therefore repaints its own row, and a neighbour only where a line they share
+    /// moved; a new lookup asks every painted row again.</para>
+    /// </summary>
+    [Parameter] public CellAppearanceOf<TRow>? CellAppearance { get; set; }
+
+    /// <summary>
+    /// The look the Cell Editor takes over the cell it edits (ADR-0050, item 15): that cell's
+    /// Fill as the editor's ground, and its Font — a colour, bold, italic, underline and
+    /// strikethrough — as the editor's text, so a cell keeps its look while it is edited, as
+    /// Excel's does. Its Borders are not read. The editor's box, its padding and its outline stay
+    /// as they are, and the Formula Bar keeps its own look. Null, the default, takes the
+    /// <see cref="CellAppearance"/> answer: a Consumer declares this only where the editor looks
+    /// unlike the cell, as ExSheet does for a Number Format's colour, which paints the formatted
+    /// Value and not the Entry the editor shows (ADR-0071). Asked for the cell an edit is open
+    /// on, at each render while it is open; without either declaration nothing is asked and
+    /// the editor is as before.
+    /// </summary>
+    [Parameter] public CellAppearanceOf<TRow>? EditorAppearance { get; set; }
+
+    /// <summary>
+    /// Which line is drawn on an edge whose two cells record different lines (ADR-0050, item
+    /// 15): asked with the upper (left) cell's line and the lower (right) cell's. Null, the
+    /// default, draws the upper or left cell's. Its identity is a change signal, as
+    /// <see cref="CellAppearance"/>'s is.
+    /// </summary>
+    [Parameter] public EdgeBorderOf? EdgeBorder { get; set; }
 
     /// <summary>
     /// What role each row plays — detail, group or total (ADR-0024). Null means every
@@ -2030,6 +2122,64 @@
     /// <summary>A painted row's Row Heading label, or null while there is no band.</summary>
     private string? RowHeadingAt(int row) => RowHeadings?.Invoke(row);
 
+    // The painted rows' appearances (ADR-0050, item 15), resolved outside the rows' renders;
+    // made the first time a Consumer declares one, and its rules kept for the grid's life.
+    private CellAppearances<TRow>? _appearances;
+
+    /// <summary>Starts the rows' render for their appearances: which columns are painted, so
+    /// which a row is resolved for. A Placeholder paints its Pinned Columns only.</summary>
+    private void BeginAppearances()
+    {
+        if (CellAppearance is not { } lookup)
+            return;
+        (_appearances ??= new()).Begin(lookup, EdgeBorder, Columns, _columnStyles.Geometry.PinnedCount,
+            _placeholderMode ? null : _scrollable);
+    }
+
+    /// <summary>The appearance the row at <paramref name="row"/> paints, resolved with the rows
+    /// either side of it that the Window holds; null without the declaration.</summary>
+    private RowAppearance? AppearanceAt(int row, int slice)
+    {
+        if (CellAppearance is null || _appearances is not { } appearances)
+            return null;
+        var above = slice > 0 ? _window[slice - 1] : null;
+        var below = slice + 1 < _window.Count ? _window[slice + 1] : null;
+        return appearances.At(row, _window[slice], above, below);
+    }
+
+    /// <summary>
+    /// The appearance classes the Cell Editor wears over the cell it edits (ADR-0050, item 15):
+    /// that cell's Font and Fill, from <see cref="EditorAppearance"/> or else
+    /// <see cref="CellAppearance"/>; null without either declaration, or while the edited row is
+    /// not in hand. Interned, so a render that changes nothing writes no class: the listener's
+    /// class on the field (ADR-0057) stays where it set it.
+    /// </summary>
+    private string? EditorAppearanceClass()
+    {
+        if ((EditorAppearance ?? CellAppearance) is not { } lookup || _editMode == EditMode.None)
+            return null;
+        var slice = _editingCell.Row - _windowStart;
+        if (slice < 0 || slice >= _window.Count || _editingCell.Column < 0 || _editingCell.Column >= Columns.Count
+            || !Columns[_editingCell.Column].PaintsValue)
+            return null;
+        return (_appearances ??= new()).Styles.EditorClassFor(lookup(_window[slice], Columns[_editingCell.Column]));
+    }
+
+    /// <summary>A class attribute with the Cell Editor's appearance classes after it, interned per pair.</summary>
+    private string WithEditorAppearance(string baseClass, string? look)
+        => look is null || _appearances is not { } appearances ? baseClass : appearances.Styles.Join(baseClass, look);
+
+    /// <summary>The metrics a cell's text is estimated with for an Auto width or a fit: the
+    /// bold widths for a bold cell (ADR-0050, item 15), and the other class at its own width
+    /// for a value that can become <c>####</c> (ADR-0016; ticket 83), so a width fitted to it
+    /// never shows its value as <c>####</c>. A Text or Boolean cell charges it at the digit,
+    /// as it always did.</summary>
+    private CellTextMetrics EstimateMetricsFor(GridColumn<TRow> column, TRow row)
+    {
+        var metrics = _metrics.CellMetrics.For(column.TypeAt(row, CellType));
+        return CellAppearance?.Invoke(row, column).Bold == true ? metrics.Bold : metrics;
+    }
+
     /// <summary>
     /// The Row Headings' width, resolved once per push (ADR-0028): the Consumer's number
     /// where it gave one, otherwise the wider of the first and last rows' labels as the
@@ -2052,9 +2202,8 @@
             else
             {
                 var last = Math.Max(0, TotalRows - 1);
-                width = Math.Max(
-                    _metrics.CellMetrics.EstimatePx(label(0) ?? ""),
-                    _metrics.CellMetrics.EstimatePx(label(last) ?? ""));
+                var asText = _metrics.CellMetrics.For(ColumnType.Text);
+                width = Math.Max(asText.EstimatePx(label(0) ?? ""), asText.EstimatePx(label(last) ?? ""));
             }
         }
         if (width != _rowHeadingWidthPx || (_rowHeadingStyle is null) != (width == 0))
@@ -2103,15 +2252,24 @@
     /// filtering, and visible columns (ADR-0011).</summary>
     private GridExtent Extent => new(_total ?? _window.Count, Columns.Count);
 
-    /// <summary>The Focus as a one-cell rectangle, so the outline and a block travel the
-    /// same arithmetic. Only read where the selection is known not to be empty — an empty
-    /// one has no Focus to draw.</summary>
-    private SelectionRange FocusRange => SelectionStyles.CellRange(_selection.Selection.Focus);
-
     /// <summary>A range's classes (ADR-0008, 2026-09-29): a Selection of one range carries
     /// one outline, around the whole range, and several ranges carry none. Interned, so a
     /// render composes nothing for them.</summary>
     private string RangeClass => _selection.Selection.Ranges.Count == 1 ? "ex-range ex-range-single" : "ex-range";
+
+    /// <summary>
+    /// What lies above the selection layer at its edges as the slice is painted (ADR-0008,
+    /// 2026-10-01): the first row whose top edge is below the readable area's top — every row
+    /// before it is under the header, or above the Viewport — and the horizontal offset that
+    /// takes a scrollable column under the Row Headings or the pinned block. The Selection's
+    /// outline keeps a side inside the range where its outer pixels would lie there.
+    /// </summary>
+    private SelectionStyles.OutlineCover OutlineCoverAt(RowRange visible)
+    {
+        var first = visible.Start;
+        var open = _geometry.ViewportTopPxOf(first, _scrollTopPx) > 0.01 ? first : first + 1;
+        return new SelectionStyles.OutlineCover(open, _scrollLeftPx);
+    }
 
     /// <summary>The Focus row, every column wide — the Focus band's rectangle
     /// (ADR-0008): which row am I on, in a grid a hundred columns wide.</summary>
@@ -2211,6 +2369,7 @@
     protected override void OnParametersSet()
     {
         ValidatePointDeclaration();
+        ResolveDeclaredKeys();
         BindPointedAt();
         ResolveOutlinedColumns();
         // The Source's own change notification lands in the same pipeline (ApplyState),
@@ -2498,9 +2657,11 @@
                         // column narrower than the single button it holds, which
                         // `overflow: hidden` then clips: the very outcome this estimate
                         // exists to prevent.
-                        var required = _metrics.CellMetrics.EstimatePx(0);
+                        // A label is text: its letters are charged at the digit (ticket 83).
+                        var asText = _metrics.CellMetrics.For(ColumnType.Text);
+                        var required = asText.EstimatePx(0);
                         foreach (var action in Columns[i].Actions)
-                            required += _metrics.CellMetrics.TextWidthPx(action.Label) + _metrics.ActionButtonChromePx;
+                            required += asText.TextWidthPx(action.Label) + _metrics.ActionButtonChromePx;
                         auto = auto.Observe(required);
                     }
                 }
@@ -2789,7 +2950,7 @@
                 if (!column.Width.Width.IsAuto || !column.PaintsValue)
                     continue;
                 _autoWidths[c] = _autoWidths[c].Observe(
-                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(column, data)));
+                    EstimateMetricsFor(column, data).EstimatePx(ExGridRow<TRow>.CellText(column, data)));
             }
         }
     }
@@ -2860,14 +3021,16 @@
         // (ADR-0010/0020), nor a grid nobody listens to take Ctrl+Z (ADR-0007) — the
         // gate is told which keys this grid takes, and re-told when a parameter change
         // changes the answer.
+        // A Consumer's declared keys are re-told the same way (ADR-0050, item 14).
         var claims = KeyClaims();
-        if (_scrollHandle is not null && !_disposed && claims != _jsClaims)
+        if (_scrollHandle is not null && !_disposed && (claims != _jsClaims || !ReferenceEquals(_declared, _jsDeclared)))
         {
             _jsClaims = claims;
+            _jsDeclared = _declared;
             try
             {
                 await _scrollHandle.InvokeVoidAsync(
-                    "setClaims", GridKeys.TakenFor(claims), claims.CanEdit, claims.CanFind);
+                    "setClaims", TakenKeys(claims), claims.CanEdit, claims.CanFind, DeclaredForGate());
             }
             catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
             {
@@ -2960,9 +3123,10 @@
             _self ??= DotNetObjectReference.Create(this);
             var claims = KeyClaims();
             _jsClaims = claims;
+            _jsDeclared = _declared;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
-                "attach", _root, _scroller, _self, GridKeys.TakenFor(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind);
+                "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate());
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -4094,6 +4258,7 @@
 
         _menuColumn = -1;
         _findOpen = false;
+        _consumerPopover = null;
         _contextCell = cell;
         BeginPopoverFocus();
         // The offsets are relative to the Viewport, whose left edge is the content's and
@@ -4123,6 +4288,7 @@
         (_contextLeftPx, _contextTopPx) = CellCorner(focus);
         _menuColumn = -1;
         _findOpen = false;
+        _consumerPopover = null;
         _contextCell = focus;
         BeginPopoverFocus();
     }
@@ -4405,7 +4571,7 @@
             {
                 required = Math.Max(
                     required,
-                    _metrics.CellMetrics.EstimatePx(ExGridRow<TRow>.CellText(declared, row)));
+                    EstimateMetricsFor(declared, row).EstimatePx(ExGridRow<TRow>.CellText(declared, row)));
             }
             changes.Add(new ColumnWidthChange(declared.Name, declared.Width.SizeToFit(required).FixedPx));
         }
@@ -4448,7 +4614,10 @@
         await command.Invoke();
         // Only the popover the command ran from closes, and the keyboard goes back to the
         // root (ADR-0039/0044): a command that took its time may find another popover
-        // opened meanwhile, which is not its to close.
+        // opened meanwhile, which is not its to close. A command that handed the keyboard to a
+        // frame of the Consumer's own (HandKeyboardToFrameAsync) is handed back to the root
+        // too: there the keys typed until the frame takes it are held for the frame, where on
+        // nothing no grid would hear them (ADR-0050 item 16, 2026-10-01).
         if (_popoverFocusRequest == opening)
             ClosePopoverAndReturnFocus();
     }
@@ -4526,6 +4695,7 @@
         _menuColumn = column;
         _contextCell = null;
         _findOpen = false;
+        _consumerPopover = null;
         BeginPopoverFocus();
         if (IsFilterable(column))
             await BeginFilterAsync(column);
@@ -4544,8 +4714,9 @@
         await OpenMenuAsync(column);
     }
 
-    /// <summary>Whether any popover stands: a column's, the Context Menu or the find panel.</summary>
-    private bool AnyPopoverOpen => _menuColumn >= 0 || _contextCell is not null || _findOpen;
+    /// <summary>Whether any popover stands: a column's, the Context Menu, the find panel or a
+    /// Consumer's (ADR-0050, item 16).</summary>
+    private bool AnyPopoverOpen => _menuColumn >= 0 || _contextCell is not null || _findOpen || _consumerPopover is not null;
 
     private void CloseMenus()
     {
@@ -4556,6 +4727,7 @@
         _innerPopupOpen = false;
         _contextCell = null;
         _menuColumn = -1;
+        _consumerPopover = null;
         _shownMenuCommands = null;
         _panelValues = null;
         _panelChecked = null;
@@ -4615,7 +4787,7 @@
     /// so that side is its room (ADR-0040).</summary>
     private double? PopoverRoomPx()
     {
-        if (_menuColumn >= 0 || _findOpen)
+        if (_menuColumn >= 0 || _findOpen || _consumerPopover is not null)
             return HeaderPopoverRoomPx;
         if (_contextCell is not null)
         {
@@ -4941,10 +5113,13 @@
         // substituted panel starts from (ADR-0009/0010).
         var current = CurrentSpecOf(declared.Name);
         _panelOperator = FilterPanelChoices.InitialOperator(declared.Type, current, tooMany: false);
-        _panelValueText = FilterPanelChoices.InitialOperand(current)?.ToString() ?? "";
+        // An operand reopens in a text that reads back as itself (ADR-0006, note of
+        // 2026-10-01): a date in its ISO form, a number in the current culture's own
+        // separators, ungrouped (tickets 94 and 96).
+        _panelValueText = FilterPanelChoices.OperandText(FilterPanelChoices.InitialOperand(current), CultureInfo.CurrentCulture);
         var (secondOperator, secondOperand, combinator) = FilterPanelChoices.InitialSecond(current);
         _panelSecondOperator = secondOperator;
-        _panelSecondValueText = secondOperand?.ToString() ?? "";
+        _panelSecondValueText = FilterPanelChoices.OperandText(secondOperand, CultureInfo.CurrentCulture);
         _panelCombinator = combinator;
         var startedOn = _panelOperator;
 
@@ -4982,16 +5157,26 @@
         operand = null;
         if (!FilterPanelChoices.TakesOperand(op) || string.IsNullOrEmpty(text))
             return true;
-        operand = FilterPanelChoices.ParseOperand(type, text);
-        return operand is not null;
+        var reading = FilterPanelChoices.ReadOperand(type, text, CultureInfo.CurrentCulture);
+        operand = reading.Value;
+        return !reading.IsRefused;
     }
 
-    /// <summary>A value as the built-in panel lists it, and as its search matches it: the
-    /// column's own format, and Blank in the built-in Chrome's words.</summary>
+    /// <summary>Why the operand typed in the built-in condition form is refused, in the
+    /// built-in Chrome's words, or null where it reads (ADR-0023; ticket 96): a text that is
+    /// not the column's type as the current culture writes it, or that reads as two numbers,
+    /// is said so by name, never guessed.</summary>
+    private string? PanelRefusal(int column, string text)
+        => text.Length == 0
+            ? null
+            : FilterPanelChoices.RefusalText(
+                FilterPanelChoices.ReadOperand(Columns[column].Type, text, CultureInfo.CurrentCulture), text, CultureInfo.CurrentCulture);
+
+    /// <summary>A value as the built-in panel lists it, and as its search matches it: the text
+    /// its cell shows — the column's own format, or a date's ISO form (ADR-0006) — and Blank in
+    /// the built-in Chrome's words.</summary>
     private string PanelText(object? value, int column)
-        => value is null
-            ? "(Blanks)"
-            : Columns[column].Format is { } format ? format(value) : value.ToString() ?? "";
+        => value is null ? "(Blanks)" : Columns[column].Info.TextFor(value);
 
     private static string AriaCheckedOf(SelectAllState state) => state switch
     {
@@ -5099,7 +5284,8 @@
 
     /// <summary>Whether OK shows it can apply: not while the value list's answer keeps
     /// nothing (ADR-0009, as Excel's OK). The condition form's OK stays available, and an
-    /// operand that does not read applies nothing when it is pressed.</summary>
+    /// operand that does not read applies nothing when it is pressed, while the form says why
+    /// (<see cref="PanelRefusal"/>).</summary>
     private bool PanelCanApply(int column)
         => !TryValueListAnswer(column, out var answer) || FilterPanelChoices.CanApply(answer);
 
@@ -5788,6 +5974,10 @@
         {
             AdoptKeyText(editorText, editorCaret);
             var canonical = GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary);
+            // A declared key is the Consumer's to answer, told that an edit is open; the edit
+            // stays as it is (ADR-0050, item 14).
+            if (await RaiseDeclaredKeyAsync(canonical, editOpen: true))
+                return;
             // F4 is claimed only where the Consumer declared what it does (ADR-0051,
             // 2026-09-29), and is decided from the selection its own message carries.
             if (canonical == "F4" && CycleReference is not null)
@@ -5829,6 +6019,12 @@
                 StateHasChanged();
             }
         }
+
+        // A declared key is the Consumer's, and resolves to nothing of the core's (ADR-0050,
+        // item 14): raised, and it moves nothing.
+        if (action.Kind == GridKeyKind.None
+            && await RaiseDeclaredKeyAsync(GridKeys.Canonical(key, ctrl, shift, alt, meta, metaIsPrimary), editOpen: false))
+            return;
 
         switch (action.Kind)
         {
@@ -6144,6 +6340,19 @@
         StateHasChanged();
         return true;
     }
+
+    /// <summary>
+    /// The Selection as the grid holds it now, with the Row Sequence Version it is written in: the
+    /// grid's Held Selection (ADR-0011; ADR-0050, item 14's note of 2026-10-01). A read the
+    /// Consumer opts into, for a command of its own that acts on the Selection.
+    /// <see cref="SelectionChanged"/> is raised after the render that shows a move, which on a
+    /// circuit is a round trip later, so a toolbar button pressed straight after Shift+arrow
+    /// reaches the Consumer before the move does; acting on the Selection it last heard, the
+    /// command would act on fewer cells than are selected, or on others. Read on the renderer's
+    /// context, where the Consumer's handlers run. The positions mean something only under the
+    /// version they carry: <see cref="HeldSelection.Under"/> drops them under any other.
+    /// </summary>
+    public HeldSelection ReadSelection() => _selection;
 
     /// <summary>
     /// Discards the open edit for a reason of the Consumer's own (ADR-0050 section 6): what
@@ -6598,7 +6807,8 @@
     /// What the Formula Bar shows for the Focus cell (ADR-0051/0016): the uncommitted text
     /// while it is being edited — the bar is the editor's second surface — and otherwise the
     /// Consumer's opening text where it supplies one, or the full value: never the
-    /// <c>####</c> and never a rounding format, in the current culture's own spelling.
+    /// <c>####</c> and never a rounding format, in the current culture's own spelling — except
+    /// an unformatted date or time, which reads in its cell's ISO form (ADR-0006, ticket 95).
     /// Empty with no Focus, or over a row not in hand.
     /// </summary>
     private string FormulaBarText()
@@ -6620,6 +6830,11 @@
         return column.Value(row) switch
         {
             null => "",
+            // An unformatted date or time reads as its cell does, in its ISO form by type
+            // (ADR-0006, note of 2026-10-01; ticket 95): the current culture is the server's on
+            // the Server host, and a day and a month read the wrong way round are quietly wrong.
+            var date when column.Format is null && date is DateOnly or DateTime or DateTimeOffset or TimeOnly
+                => DisplayText.Of(date),
             IFormattable formattable => formattable.ToString(null, CultureInfo.CurrentCulture),
             var value => value.ToString() ?? "",
         };
@@ -7084,7 +7299,10 @@
             _suppressRender = true;
             return;
         }
-        if (_menuColumn >= 0 || _contextCell is not null)
+        // A Consumer's popover closes too, as a press elsewhere in the instance closes a popover
+        // (ADR-0010): the edit this opens must not stand under contents that hold the keyboard
+        // (ADR-0050, item 16).
+        if (_menuColumn >= 0 || _contextCell is not null || _consumerPopover is not null)
             CloseMenus();
         EndInteractive();
         var focus = _selection.Selection.Focus;
@@ -8448,9 +8666,16 @@
         // Placed from the offset the slice is painted at — the browser's, or the one a
         // reveal is writing in this same render (ADR-0012): compressed, where the rows stand
         // depends on it and not only on the slice (ADR-0053); otherwise this is the first
-        // painted row's own offset, as it always was.
+        // painted row's own offset, as it always was. Rounded to the nearest device pixel
+        // (--ex-dp, ex-grid.css): compressed, the slice stands at a fraction of one, and is
+        // painted there, so a cell's line drawn in device pixels blends across two (DC-59, the
+        // eleventh Windows run's case 9 at 150%; 17 of 26 lines on the Sheet failed without the
+        // rounding). The layer itself is not composited, so it is painted on the device pixels
+        // wherever the page puts the grid (ex-grid.css, .ex-viewport). Rows, the selection layers
+        // and the editor all stand in this layer, so they move together; a popover placed from
+        // the unrounded offset lies under a device pixel away.
         var transform = FormattableString.Invariant(
-            $"transform: translateY({_geometry.PaintedTopPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow, _scrollTopPx)}px)");
+            $"transform: translateY(round(nearest, {_geometry.PaintedTopPxOf((_visible?.Start ?? _pageStartRow) - _pageStartRow, _scrollTopPx)}px, var(--ex-dp, 1px)))");
         // The stylesheet's default is one header tier; tiers and a hidden header
         // (ADR-0050) both move where the rows begin, so the band's height travels inline.
         return _headerLayout.TierCount == 0 && !HideHeader

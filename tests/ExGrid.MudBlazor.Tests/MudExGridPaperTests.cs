@@ -1,4 +1,5 @@
 using Bunit;
+using ExGrid.Columns;
 using ExGrid.Components;
 using Microsoft.AspNetCore.Components;
 using Xunit;
@@ -172,7 +173,7 @@ public class MudExGridPaperTests : MudTestContext
     [Fact] // ADR-0027/0030: another font brings its widths in the same value, and the paper writes both
     public void Another_font_brings_its_widths_in_one_value()
     {
-        // A font with a 10px digit: twelve digits plus padding is 136px, past the 112px column.
+        // A font with a 10px digit: twelve digits plus padding is 136px, past the 116px column.
         var inter = new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14);
         var cut = RenderPaper(ps => ps.Add(p => p.Font, inter).Add(p => p.Style, "margin: 4px"));
 
@@ -181,6 +182,39 @@ public class MudExGridPaperTests : MudTestContext
         Assert.StartsWith("#", cut.FindAll(".ex-row .ex-cell")[1].TextContent);
         // Roboto is the stylesheet's, so nothing is written inline for it.
         Assert.DoesNotContain("--ex-font-family", RenderPaper().Find(".mud-ex-grid").GetAttribute("style") ?? "");
+    }
+
+    [Fact] // ADR-0016 / ADR-0030 / ticket 83: a font's other class is cascaded with its widths, or derived by the allowance
+    public void Another_fonts_other_class_is_cascaded_or_derived()
+    {
+        var measured = new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14, 12.5, 10.5, 5.5, 15, 16);
+        var unmeasured = new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14);
+
+        var given = MudExGridPresentation.For(measured, dense: false, hover: false);
+        var derived = MudExGridPresentation.For(unmeasured, dense: false, hover: false);
+
+        Assert.Equal(15, given.OtherWidthPx);
+        Assert.Equal(16, given.BoldOtherWidthPx);
+        Assert.Equal(10 * CellTextMetrics.OtherWidthAllowance, derived.OtherWidthPx);
+        Assert.Equal(10 * CellTextMetrics.BoldWidthAllowance * CellTextMetrics.OtherWidthAllowance, derived.BoldOtherWidthPx, precision: 9);
+        Assert.Equal(MudExGridPresentation.RobotoOtherPx, MudExGridPresentation.For(MudExGridFont.Roboto, false, false).OtherWidthPx);
+        Assert.Equal(MudExGridPresentation.Roboto.OtherWidthPx, MudExGridPresentation.For(dense: true, hover: true).OtherWidthPx);
+    }
+
+    [Fact] // ADR-0016 / ADR-0030 / ticket 83: Roboto's glyph table is cascaded with its widths, and a font's own with it
+    public void The_glyph_table_is_cascaded_with_the_widths()
+    {
+        var table = new GlyphWidthTable(14, [("M", 13, 14)]);
+        var withTable = new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14, GlyphWidths: table);
+
+        Assert.Same(MudExGridPresentation.RobotoGlyphWidths, MudExGridPresentation.Roboto.GlyphWidths);
+        Assert.Same(MudExGridPresentation.RobotoGlyphWidths, MudExGridPresentation.For(dense: true, hover: false).GlyphWidths);
+        Assert.Same(MudExGridPresentation.RobotoGlyphWidths, MudExGridPresentation.For(MudExGridFont.Roboto, false, false).GlyphWidths);
+        Assert.Same(table, MudExGridPresentation.For(withTable, false, false).GlyphWidths);
+        Assert.Null(MudExGridPresentation.For(new MudExGridFont("Inter, sans-serif", 12, 10, 5, 14), false, false).GlyphWidths);
+        var metrics = GridMetrics.Resolve(GridDensity.Standard, defaults: MudExGridPresentation.Roboto).CellMetrics;
+        Assert.True(metrics.WidthOf('i') < metrics.DigitWidthPx);
+        Assert.True(metrics.WidthOf('M') < MudExGridPresentation.RobotoOtherPx);
     }
 
     [Fact] // ADR-0030: an elevation MudBlazor does not have is refused, not silently clamped

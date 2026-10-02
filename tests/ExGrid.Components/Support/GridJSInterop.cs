@@ -155,10 +155,15 @@ internal sealed class GridJSInterop
             return true;
         });
         focusEditor.SetVoidResult();
+        // Where the keyboard is going, told to the key gate (ADR-0039 and ADR-0050 item 16,
+        // 2026-10-01): to a Consumer's popover, or to a frame of the Consumer's own.
+        var handOff = handle.SetupVoid("handOff", _ => true);
+        handOff.SetVoidResult();
         var dispose = handle.SetupVoid("dispose");
         dispose.SetVoidResult();
         return new GridJSInterop(offset, releaseTab, dispose)
         {
+            HandedOff = handOff,
             _context = context,
             _module = module,
             _handle = handle,
@@ -172,6 +177,10 @@ internal sealed class GridJSInterop
             _focusLog = focusLog,
         };
     }
+
+    /// <summary>Every time the core told the key gate where the keyboard is going (ADR-0039 and
+    /// ADR-0050 item 16, 2026-10-01): <c>popover</c> or <c>frame</c>.</summary>
+    internal JSRuntimeInvocationHandler HandedOff { get; private init; } = default!;
 
     /// <summary>Every time the core asked for the keyboard back on its root (ADR-0021/0018) —
     /// granted by the browser only while DOM focus is still inside the root or on nothing.</summary>
@@ -222,6 +231,11 @@ internal sealed class GridJSInterop
     /// <summary>The keys the gate was told at attach: the fourth argument of <c>attach</c>.</summary>
     internal IReadOnlyList<string> TakenAtAttach =>
         (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[3]!;
+
+    /// <summary>The Consumer's declared keys the gate was handed at attach for its editing
+    /// branch (ADR-0050, item 14): the last argument of <c>attach</c>.</summary>
+    internal IReadOnlyList<string> DeclaredAtAttach =>
+        (IReadOnlyList<string>)_module!.Invocations["attach"][^1].Arguments[7]!;
 
     /// <summary>Every time the key gate was told whether a popover's contents have a popup
     /// of their own open (ADR-0039).</summary>
