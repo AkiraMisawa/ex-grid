@@ -14,7 +14,7 @@ stylesheet's steps.
       disposed with the grid.
 - [x] **`--ex-dp` is inline on the root once told**; before that the stylesheet's steps stand.
 - [x] **A report that is not a finite positive number is ignored.**
-- [x] **Layer 2** for the inline token; **layer 3**: a change told, and at an emulated
+- [x] **Layer 2** for the inline token; **layer 3**: the report at attach, and at an emulated
       `devicePixelRatio` of 2.25 a gridline two whole Device Pixels (VZ-16). A thin line at a real
       225% is read by hand on Windows: emulation blends it at any scale.
 
@@ -23,7 +23,9 @@ stylesheet's steps.
 2026-10-02, claude/exsheet-part-c. `ex-grid.js` arms a `matchMedia('(resolution: <ratio>dppx)')`
 listener at attach and re-arms it on each `change`; `OnDevicePixelAsync` keeps the ratio and
 `RootStyle` writes `--ex-dp` inline. Layer 2: `DevicePixelTests`, and the allowlist count in
-`ShippedStylesheetTests`. Layer 3: `part-c.spec.mjs` (a change told and told back, through a CDP
-override) and `device-pixel-225.spec.mjs` (a gridline two whole Device Pixels at an emulated 2.25).
+`ShippedStylesheetTests`. Layer 3: `device-pixel-225.spec.mjs` (the report at attach, and a gridline
+two whole Device Pixels at an emulated 2.25). A change driven by a CDP override was told under
+Playwright's Chromium but never under CI's branded Chrome and Edge, which fire no change for it, so it
+is not a layer-3 test: a real zoom is read by hand on Windows, with the thin line.
 Emulation blends a thin Border line over two Device Pixels even at 1.5, where the real `chrome-150`
 project draws it in one, so a thin line at a real 225% is the next Windows run's.

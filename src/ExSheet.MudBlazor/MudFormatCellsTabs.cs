@@ -21,6 +21,9 @@ internal sealed class MudFormatCellsTabs : MudTabs
     /// <summary>Called once the tab shown holds the keyboard after <see cref="FocusOnOpen"/>.</summary>
     [Parameter] public Func<Task>? Focused { get; set; }
 
+    /// <summary>How many panels stand: fewer than the tabs while they register, and while they are removed as the dialog closes.</summary>
+    internal int PanelCount => Panels.Count;
+
     /// <summary>A key, as if pressed on the tab shown.</summary>
     internal Task KeyAsync(KeyboardEventArgs key) =>
         ActivePanel is { } shown ? HandleTabKeyDownAsync(key, shown) : Task.CompletedTask;

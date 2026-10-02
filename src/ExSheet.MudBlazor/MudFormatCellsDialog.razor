@@ -85,6 +85,12 @@
 
     private void ShowTab(int index)
     {
+        // MudTabs moves its own active index while its panels register and, as the dialog closes,
+        // while they are removed one at a time, and raises each move as a change. Those are not tabs
+        // the user showed: taken as one, the closing dialog wrote Number over the tab shown last, and
+        // the next opening came up on it, on a circuit whenever the panels went before the tabs did.
+        // Only a move made while every panel stands is one (ADR-0071, case 22).
+        if (index < 0 || _tabs?.PanelCount != FormatCellsOffer.Tabs.Count) return;
         _tab = index;
         Context.TabShown(FormatCellsOffer.Tabs[index]);
     }

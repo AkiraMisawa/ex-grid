@@ -106,6 +106,7 @@ test.describe('on /sheet?chrome=mud', () => {
         await expect(tab(page, 'Border')).toHaveAttribute('aria-selected', 'true');
         await page.keyboard.press('Escape');
         await expect(formatCells(page)).toHaveCount(0);
+        await expectKeyboardOn(grid);
 
         // It opens on the tab shown last in this Sheet: Border, the fourth.
         await page.keyboard.press('Control+1');
