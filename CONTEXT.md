@@ -260,6 +260,14 @@ breaks row memoisation
 uncommitted text lives.
 _Avoid_: input, editing cell
 
+**Keyboard Field**:
+The unseen text field of a grid's own that holds the keyboard while a cell is selected and no edit
+is open, on a grid with an editable column, so that an IME can start there. It stands over the
+Focus cell; a composition in it is drawn there, and its end opens the **Cell Editor** holding the
+composed text. It is the grid's one tab stop. A display-only grid has none
+([ADR-0080](./docs/adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)).
+_Avoid_: hidden input, hidden textarea, proxy input
+
 **Overwrite / Caret**:
 The two states of cell **editing** (four modes in total, with **Interactive** and **Point**). **Overwrite** is
 entered by typing straight onto a selected cell: the original value is replaced, and **the arrow

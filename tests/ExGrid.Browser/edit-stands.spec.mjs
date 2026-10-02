@@ -1,5 +1,6 @@
 import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, expectFocusAt, pressCell, typeSteadily,
 } from './sheet-helpers.mjs';
@@ -12,7 +13,8 @@ import {
 // DOM focus neither commits nor discards an edit; a key pressed in another grid is that
 // grid's; and a press on the Sheet's rows or headings puts the keyboard back into the surface
 // that last held it before the press is handled, so the press points, or commits and hands
-// the keyboard to the root, as if the keyboard had never left.
+// the keyboard back to the grid — its Keyboard Field, since a Sheet edits (ADR-0080) — as if
+// the keyboard had never left.
 //
 // /sheet: the positions grid beside the Sheet is in its Pointing Scope (ADR-0058), and is an
 // ordinary grid once the keyboard has left the Sheet; a page button stands for a control of the
@@ -43,7 +45,7 @@ async function pressPositions(page) {
     await expect(fx).toBeVisible();
     // Cells are pointer-events: none; the press lands on the Viewport (ADR-0004).
     await fx.click({ force: true });
-    await expect(positions(page)).toBeFocused();
+    await expectKeyboardOn(positions(page));
 }
 
 // Under the built-in Chrome and ExGrid.MudBlazor's: a Chrome paints the surfaces as boxes around
@@ -72,7 +74,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('ArrowDown');
             await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
             await page.keyboard.press('Escape');
-            await expect(positions(page)).toBeFocused();
+            await expectKeyboardOn(positions(page));
             await expect(editor(grid)).toHaveValue('=');
             await expect(cell(grid, 'C4')).toHaveText('0.2');
 
@@ -86,11 +88,11 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);
             await expect(cell(grid, 'C4')).toHaveText('0.2');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
             await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
         });
 
-        test('ADR-0018/ED-26: a press back where no Reference can go commits, moves, and gives the Sheet\'s root the keyboard', async ({ page }) => {
+        test('ADR-0018/ADR-0080/ED-26: a press back where no Reference can go commits, moves, and gives the Sheet the keyboard', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'C4');
             await page.keyboard.type('99');
@@ -103,7 +105,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(cell(grid, 'C4')).toHaveText('99');
             await expect(editor(grid)).toHaveCount(0);
             await expectFocusAt(grid, 'B2');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
             // The next keys are the Sheet's, at the Focus the press moved to.
             await page.keyboard.type('7');
             await expect(editor(grid)).toHaveValue('7');
@@ -127,10 +129,10 @@ for (const chrome of ['builtin', 'mud']) {
             await typeSteadily(page, bar(grid), '+1');
             await page.keyboard.press('Enter');
             await expect(cell(grid, 'E4')).toHaveText('13');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
         });
 
-        test('ADR-0018/ADR-0021/ED-26: a press back that commits an edit last typed in the Formula Bar gives the root the keyboard, not the bar', async ({ page }) => {
+        test('ADR-0018/ADR-0021/ADR-0080/ED-26: a press back that commits an edit last typed in the Formula Bar gives the grid the keyboard, not the bar', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');
             await clickBarEnd(grid);
@@ -141,7 +143,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect(cell(grid, 'E4')).toHaveText('5');
             await expectFocusAt(grid, 'B2');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
             await page.keyboard.type('7');
             await page.keyboard.press('Enter');
             await expect(cell(grid, 'B2')).toHaveText('7');
@@ -150,8 +152,9 @@ for (const chrome of ['builtin', 'mud']) {
         // The same press without leaving: the core keeps DOM focus where it is through a press on
         // the rows while an edit is open (ADR-0051), so the bar kept it after the commit and the
         // hand-back left it there — typing went into a bar with no edit open, and nowhere else.
-        // The bar's focus was left standing by the press, and the hand-back takes it (ADR-0021).
-        test('ADR-0021/ED-26: a press on the rows that commits an edit typed in the Formula Bar gives the root the keyboard', async ({ page }) => {
+        // The bar's focus was left standing by the press, and the hand-back takes it (ADR-0021),
+        // into the grid's Keyboard Field (ADR-0080).
+        test('ADR-0021/ADR-0080/ED-26: a press on the rows that commits an edit typed in the Formula Bar gives the grid the keyboard', async ({ page }) => {
             const grid = sheet(page);
             await pressCell(grid, 'E4');
             await clickBarEnd(grid);
@@ -161,7 +164,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect(cell(grid, 'E4')).toHaveText('5');
             await expectFocusAt(grid, 'B2');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
             await page.keyboard.type('7');
             await page.keyboard.press('Enter');
             await expect(cell(grid, 'B2')).toHaveText('7');
@@ -185,7 +188,7 @@ for (const chrome of ['builtin', 'mud']) {
             await clickCell(grid, 'B2');
             await expect(cell(grid, 'C4')).toHaveText('99');
             await expectFocusAt(grid, 'B2');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
         });
     });
 }
@@ -210,7 +213,7 @@ test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after 
 
     await expect(editor(grid)).toHaveCount(0);
     await expect(cell(grid, 'C4')).toHaveText('0.2');
-    await expect(grid).toBeFocused();
+    await expectKeyboardOn(grid);
     await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
 });
 
@@ -272,7 +275,7 @@ test.describe('/sheets', () => {
         await page.keyboard.type('=');
         await expect(editor(left)).toHaveValue('=');
         await pressCell(right, 'D2');
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
         await page.keyboard.type('5');
         await expect(editor(right)).toHaveValue('5');
         await expect(editor(left)).toHaveValue('=');
@@ -286,7 +289,7 @@ test.describe('/sheets', () => {
         await page.keyboard.press('Escape');
         await expect(editor(left)).toHaveCount(0);
         await expect(cell(left, 'D1')).toHaveText('');
-        await expect(left).toBeFocused();
+        await expectKeyboardOn(left);
         await expect(editor(right)).toHaveValue('5');
 
         // Back on the right's rows, where no Reference can go after 5: it commits, and the right
@@ -294,38 +297,38 @@ test.describe('/sheets', () => {
         await clickCell(right, 'E3');
         await expect(cell(right, 'D2')).toHaveText('5');
         await expectFocusAt(right, 'E3');
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
         await page.keyboard.type('7');
         await page.keyboard.press('Enter');
         await expect(cell(right, 'E3')).toHaveText('7');
         await expect(cell(left, 'E3')).toHaveText('');
     });
 
-    test('ADR-0018/ED-26: a press back on a column heading or a Row Heading commits the edit left standing, and the root has the keyboard', async ({ page }) => {
+    test('ADR-0018/ADR-0080/ED-26: a press back on a column heading or a Row Heading commits the edit left standing, and the Sheet has the keyboard', async ({ page }) => {
         const left = sheet(page, 0);
         const right = sheet(page, 1);
         await pressCell(left, 'D3');
         await page.keyboard.type('4');
         await expect(editor(left)).toHaveValue('4');
         await pressCell(right, 'A5');
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
         await expect(editor(left)).toHaveValue('4');
 
         await left.locator('.ex-header-cell', { hasText: /^C$/ }).click({ force: true });
         await expect(cell(left, 'D3')).toHaveText('4');
         await expectFocusAt(left, 'C1');
-        await expect(left).toBeFocused();
+        await expectKeyboardOn(left);
 
         await pressCell(left, 'D4');
         await page.keyboard.type('6');
         await expect(editor(left)).toHaveValue('6');
         await clickCell(right, 'A6');
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
 
         await left.locator('.ex-row .ex-row-heading', { hasText: /^6$/ }).click({ force: true });
         await expect(cell(left, 'D4')).toHaveText('6');
         await expectFocusAt(left, 'A6');
-        await expect(left).toBeFocused();
+        await expectKeyboardOn(left);
     });
 
     test('ADR-0018/ADR-0021/ED-26: with a 150 ms round trip, the key straight after the press back is that Sheet\'s', async ({ page }) => {
@@ -335,7 +338,7 @@ test.describe('/sheets', () => {
         await page.keyboard.type('=');
         await expect(editor(left)).toBeFocused();
         await pressCell(right, 'D2');
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
         await setRoundTrip(150);
 
         // No wait between the two: Escape in the right Sheet would release its Tab (ADR-0012).
@@ -344,7 +347,7 @@ test.describe('/sheets', () => {
 
         await expect(editor(left)).toHaveCount(0);
         await expect(cell(left, 'D1')).toHaveText('');
-        await expect(left).toBeFocused();
+        await expectKeyboardOn(left);
         await expect(editor(right)).toHaveCount(0);
         await expectFocusAt(right, 'D2');
     });
@@ -392,7 +395,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         // The keyboard goes to the other Sheet: the left edit stands, outlined 1px, same colour.
         await pressCell(right, 'D2');
-        await expect(right).toBeFocused();
+        await expectKeyboardOn(right);
         await expect.poll(() => outline(left)).toEqual({ ...full, width: '1px' });
         await page.keyboard.type('5');
         await expect(editor(right)).toBeFocused();
@@ -469,7 +472,7 @@ for (const chrome of ['builtin', 'mud']) {
             await pressCell(left, 'D1');
             await page.keyboard.type('=1');
             await pressCell(right, 'D2');
-            await expect(right).toBeFocused();
+            await expectKeyboardOn(right);
             await expect(editor(left)).toHaveValue('=1');
             await page.waitForTimeout(200);
             expect(await inRoot(page, 1)).toBe(true);
@@ -481,7 +484,7 @@ for (const chrome of ['builtin', 'mud']) {
             // The press back: no Reference can go after =1, so it commits, and the left has the keyboard.
             await clickCell(left, 'B1');
             await expect(cell(left, 'D1')).toHaveText('1');
-            await expect(left).toBeFocused();
+            await expectKeyboardOn(left);
         });
     });
 }
@@ -504,7 +507,7 @@ for (const rtt of [0, 150]) {
             const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
             await expect(at(2, 1)).toBeVisible();
             await at(0, 1).click({ force: true });                // Trader, editable
-            await expect(grid).toHaveAttribute('aria-activedescendant', /-r0c1$/);
+            await expectActiveDescendant(grid, /-r0c1$/);
             await page.keyboard.type('99');
             await expect(grid.locator('input.ex-editor')).toHaveValue('99');
             await setRoundTrip(rtt);
@@ -515,7 +518,7 @@ for (const rtt of [0, 150]) {
 
             await expect(page.locator('#edit-status')).toContainText('Trader=99');
             await expect(grid.locator('input.ex-editor')).toHaveValue('7');
-            await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            await expectActiveDescendant(grid, /-r2c1$/);
             await page.keyboard.press('Enter');
             await expect(at(0, 1)).toHaveText('99');
             await expect(at(2, 1)).toHaveText('7');
@@ -587,7 +590,7 @@ for (const rtt of [0, 150]) {
             await page.keyboard.press('Shift');
 
             await expect.poll(heard).toEqual(['Shift']);
-            await expect(grid).toHaveAttribute('aria-activedescendant', /-r1c0$/);
+            await expectActiveDescendant(grid, /-r1c0$/);
 
             // What the listener would see of a hold: behind a press that commits an edit, the
             // Shift is held, and a modifier alone is dropped when the hold is handed on. Only a
@@ -601,13 +604,14 @@ for (const rtt of [0, 150]) {
                 await at(2, 1).click({ force: true });
                 await page.keyboard.press('Shift');
                 await expect(page.locator('#edit-status')).toContainText('Trader=9');
-                await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+                await expectActiveDescendant(grid, /-r2c1$/);
                 expect(await heard()).toEqual([]);
             }
         });
 
         // The same double click on a plain grid, whose press on the rows keeps its default: DOM
-        // focus goes to the rows, and the root, while the hold stands.
+        // focus goes to the rows, and on through the root to its Keyboard Field (ADR-0080), while
+        // the hold stands.
         test('ADR-0010/ED-22: on a plain editable grid, a double click on another cell commits the edit and opens that cell\'s text', async ({ page }) => {
             await page.goto('/features');
             const grid = page.locator('.ex-grid').first();
@@ -616,7 +620,7 @@ for (const rtt of [0, 150]) {
             await expect(at(2, 1)).toBeVisible();
             const trader = (await at(2, 1).textContent()).trim();
             await at(0, 1).click({ force: true });                // Trader, editable
-            await expect(grid).toHaveAttribute('aria-activedescendant', /-r0c1$/);
+            await expectActiveDescendant(grid, /-r0c1$/);
             await page.keyboard.type('99');
             await expect(field).toHaveValue('99');
             await setRoundTrip(rtt);
@@ -626,7 +630,7 @@ for (const rtt of [0, 150]) {
             await expect(page.locator('#edit-status')).toContainText('Trader=99');
             await expect(field).toHaveValue(trader);
             await expect(field).toBeFocused();
-            await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c1$/);
+            await expectActiveDescendant(grid, /-r2c1$/);
             await page.keyboard.press('Escape');
             await expect(field).toHaveCount(0);
             await expect(at(2, 1)).toHaveText(trader);

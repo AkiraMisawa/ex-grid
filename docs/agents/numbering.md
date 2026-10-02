@@ -19,7 +19,8 @@ block on `claude/exsheet-start-8cx3v1` before it uses the first number.
 | 0001–0058 | `claude/exsheet-start-8cx3v1` and earlier | in |
 | 0059–0070 | `claude/expivot-mudblazor-wrapper-j25225` | ExPivot, PR #39 |
 | 0071–0079 | `claude/exsheet-cell-format` | Cell Format. Its ADR was numbered 0063 until 2026-10-01 |
-| 0080– | free | reserve a block of ten |
+| 0080–0089 | `claude/exsheet-keyboard-field` | Pointing Scope's line: the Keyboard Field (ticket 79's way, decided 2026-10-02) |
+| 0090– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
@@ -29,7 +30,8 @@ block on `claude/exsheet-start-8cx3v1` before it uses the first number.
 | 44–58 | `claude/exsheet-cell-format` | Cell Format |
 | 76–80 | `claude/exsheet-after-run-13` and its successors | Pointing Scope's line. 76 is PR #41 |
 | 81–99 | `claude/exsheet-cell-format` | Cell Format, continued |
-| 100– | free | reserve a block of twenty |
+| 100–119 | `claude/exsheet-cell-format` | Cell Format, the fourteenth Windows run's answers |
+| 120– | free | reserve a block of twenty |
 
 Another spec's tickets (`docs/specs/<feature>/issues/`) are numbered within that spec, and are not
 reserved here.
@@ -41,7 +43,8 @@ reserved here.
 | 1–13 | written and run | the thirteenth is Pointing Scope's |
 | 14 | `claude/exsheet-cell-format` | Cell Format, Excel only |
 | 15 | `claude/exsheet-ime-and-scaling` | a real Japanese IME, VZ-14 at the current base, and ticket 74's readings asked of Excel |
-| 16– | free | reserve one at a time |
+| 16 | `claude/exsheet-keyboard-field` | a real Japanese IME on a selected cell (the Keyboard Field), and the Name Box and Escape cases left by the fifteenth |
+| 17– | free | reserve one at a time |
 
 ## Sheet Document versions (`SheetDocument.CurrentVersion`)
 

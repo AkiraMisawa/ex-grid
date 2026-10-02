@@ -139,12 +139,13 @@ public class ValidationTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "a");
         await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
-        var focusBefore = cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        var focusBefore = KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
+        Assert.NotNull(focusBefore);
 
         await ClickCellAsync(cut, 150, 50);
 
         Assert.NotEmpty(cut.FindAll(".ex-editor"));
-        Assert.Equal(focusBefore, cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.Equal(focusBefore, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
     }
 
     [Fact] // ADR-0034 / ED-15: Escape remains the only exit without applying
@@ -436,12 +437,13 @@ public class ValidationTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "a");
         await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
-        var focusBefore = cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        var focusBefore = KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
+        Assert.NotNull(focusBefore);
 
         await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 150, OffsetY = 50 });
 
         Assert.NotEmpty(cut.FindAll(".ex-editor"));
-        Assert.Equal(focusBefore, cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.Equal(focusBefore, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
         Assert.Empty(cut.FindAll("[role=menu] button[role=menuitem]"));
     }
 

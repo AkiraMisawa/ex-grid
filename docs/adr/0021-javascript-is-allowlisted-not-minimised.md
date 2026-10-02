@@ -17,7 +17,9 @@ Every entry names the reason it cannot be done from Blazor.
 | **A `ResizeObserver` reporting the Layout Ceiling** | Added 2026-09-27 ([ADR-0053](./0053-the-scroll-height-is-compressed-above-the-browsers-layout-ceiling.md)). The tallest element the browser will lay out depends on the display scale and the page zoom, and `devicePixelRatio` does not reliably say which (emulation moves one without the other). A hidden element declared 2²⁵ px tall is observed; the size reported is the ceiling. It fires at attach and when the scale or zoom changes, never per render. Blazor has no resize observation at all. |
 | **A `mousemove` listener reporting the pointer — when it moves onto another row, and when it comes to rest** | Added when two decisions needed it at once; the section after the gutter's is the argument. Blazor's `@onmousemove` has no client-side predicate: every event crosses to .NET, and on Blazor Server every crossing is a wire round trip. |
 
-That is the entire list. **Six entries.**
+| **The Keyboard Field's composition and focus, on the grid root** | Added 2026-10-02 ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)). An IME starts only in an element that is editable, and no Blazor API gives the root, a `div`, an input context. So on a grid that edits a text field of the grid's own holds the keyboard. Its composition's end has to take its place among the held keys and presses, which exist only in the browser (the first entry's hold), so `compositionstart` and `compositionend` on the root are heard there, always on. The root's own `focus` is passed on to the field at once: Blazor's `@onfocus` and `FocusAsync` land a round trip later on a circuit, and a key typed in between was read as a descendant's (ADR-0033's scroller, 2026-09-26). The root's `focusout` empties the field as it is left, and ends the release of Tab when DOM focus leaves the grid (ADR-0012). No layout is read. |
+
+That is the entire list. **Seven entries.**
 
 ### The fourth entry, and why it is not the text measurement this ADR refuses
 
@@ -187,7 +189,10 @@ These are the places where reaching for JS would be the easy answer, and where w
   and dropped, so a held Space engages once.)* *(Three decisions about focus are now made in script,
   all in notes at the end of this ADR: the hand-back of 2026-09-27, the press that brings the
   keyboard back to an edit left standing, 2026-09-29, and the editor's own focus, taken only while
-  the keyboard is still this grid's, 2026-09-30.)*
+  the keyboard is still this grid's, 2026-09-30.)* *(Five since 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md): the root's own
+  focus passed on to its Keyboard Field, and the field given up by a press during a composition, so
+  that the composition ends and its text is held ahead of the press. The third is refined: the
+  editor's request waits while the field composes. The hand-back puts the keyboard in the field.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.

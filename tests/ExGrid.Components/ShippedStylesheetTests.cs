@@ -82,8 +82,13 @@ public class ShippedStylesheetTests
         // (ticket 29, decided with the user 2026-09-30); and ex-press-handed-on, the one event a grid
         // pointed at through a Pointing Scope dispatches on the root of the grid that points, heard on
         // that root so the press keeps its place among the keys held there (ADR-0021's note of
-        // 2026-09-30, ADR-0058, DC-54).
-        string[] allowed = ["compositionend", "copy", "ex-press-handed-on", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
+        // 2026-09-30, ADR-0058, DC-54). And the seventh entry (ADR-0080): the Keyboard Field's own
+        // compositionstart and compositionend, always on, so a composition on a selected cell takes
+        // its place among the held keys — a second compositionend, beside the coloured text's —
+        // and the root's focus, passing focus that lands on the root itself on to its field, and
+        // focusout, emptying the field as it is left and ending the release of Tab when DOM focus
+        // leaves the grid (ADR-0012).
+        string[] allowed = ["compositionend", "compositionend", "compositionstart", "copy", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
     }
 
@@ -367,9 +372,11 @@ public class ShippedStylesheetTests
         // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
-        // Script moves DOM focus in these three places only: this, the hand-back to the root, and
-        // the open edit's own focus, each only while the keyboard is this grid's (ADR-0021).
-        Assert.Equal(3, Regex.Matches(script.Text, @"\.focus\(").Count);
+        // Script moves DOM focus in these five places only (ADR-0021, five since ADR-0080): this,
+        // the hand-back to the root or its Keyboard Field, the open edit's own focus, each only
+        // while the keyboard is this grid's; the root's own focus passed on to its Keyboard Field;
+        // and the field given up by a press during a composition.
+        Assert.Equal(5, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -522,9 +529,10 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*nameBoxPressed = null;\s*nameBoxSelected = null;", RegexOptions.Singleline), script);
 
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
-        // press's default gives the field the keyboard (ADR-0021's three decisions about focus stay three).
+        // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
+        // added to: five since ADR-0080, none of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(3, Regex.Matches(script, @"\.focus\(").Count);
+        Assert.Equal(5, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -596,6 +604,122 @@ public class ShippedStylesheetTests
         // the keyboard last held, never to the grid it went to (ADR-0010, same day).
         Assert.Contains("editing === 'none' || editorFocused() || focusDeclined", script.Text, StringComparison.Ordinal);
         Assert.Contains("focusDeclined ? standingField()", script.Text, StringComparison.Ordinal);
+    }
+
+    /// <summary>The body of the module's <c>const name = (event) =&gt; { … };</c>, at attach's level.</summary>
+    private static string ListenerBody(string script, string name)
+    {
+        var match = Regex.Match(script, @"const " + name + @" = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(match.Success, $"{name} is not in the module");
+        return match.Value;
+    }
+
+    [Fact] // ADR-0080 / ADR-0021's seventh entry / ADR-0018: the Keyboard Field's listeners are on the root, on every grid, and go with the instance
+    public void ADR0080_the_keyboard_fields_listeners_are_on_every_root_and_go_with_the_instance()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // At attach's own level, behind no condition: every grid hears them, with a field or not —
+        // the release of Tab ends on a display-only grid too (ADR-0012).
+        Assert.Matches(new Regex(@"\n    root\.addEventListener\('compositionstart', onKeyFieldCompositionStart, true\);\n    root\.addEventListener\('compositionend', onKeyFieldCompositionEnd, true\);"), script);
+        Assert.Matches(new Regex(@"\n    root\.addEventListener\('focus', onFocused, true\);\n    root\.addEventListener\('focusout', onFocusLeft, true\);"), script);
+        var dispose = Regex.Match(script, @"dispose: \(\) => \{.*?root = null;", RegexOptions.Singleline).Value;
+        foreach (var removed in new[]
+        {
+            "root.removeEventListener('compositionstart', onKeyFieldCompositionStart, true);",
+            "root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);",
+            "root.removeEventListener('focus', onFocused, true);",
+            "root.removeEventListener('focusout', onFocusLeft, true);",
+        })
+        {
+            Assert.Contains(removed, dispose, StringComparison.Ordinal);
+        }
+        // The field is this grid's own, never a nested grid's, and stands for the root: a key, a
+        // copy or a paste aimed at it is the root's (ADR-0010's guard, widened).
+        Assert.Matches(new Regex(@"const isKeyField = \(target\) => target instanceof HTMLInputElement && target\.classList\.contains\('ex-key-field'\)\s*&& root !== null && target\.closest\('\.ex-grid'\) === root;"), script);
+        Assert.Contains("const isRoot = (target) => target === root || (!!scroller && target === scroller) || isKeyField(target);", script, StringComparison.Ordinal);
+        // Nothing measured in any of them.
+        var bodies = string.Concat(new[] { "onKeyFieldCompositionStart", "onKeyFieldCompositionEnd", "onFocused", "onFocusLeft" }
+            .Select(name => ListenerBody(script, name)));
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), bodies);
+    }
+
+    [Fact] // ADR-0012 (2026-10-02) / ADR-0080 / KB-8: the release of Tab ends when DOM focus leaves the grid, told by the root's focusout, and a release answered after the departure is not granted
+    public void ADR0080_the_release_of_tab_ends_when_dom_focus_leaves_the_grid()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var left = ListenerBody(script, "onFocusLeft");
+
+        // Leaving: the next holder is nothing, or outside this root. Not the window losing focus,
+        // which leaves DOM focus where it is, the document's active element still.
+        Assert.Matches(new Regex(@"const next = event\.relatedTarget;\s*if \(event\.target === document\.activeElement \|\| \(next instanceof Node && root && root\.contains\(next\)\)\) \{\s*return;\s*\}\s*tabReleased = false;\s*releaseEndsHeard\+\+;"), left);
+        // Counted with the presses, so a release the core answers for an Escape forwarded before the
+        // departure is not granted.
+        Assert.Contains("releaseEndsAtEscape = releaseEndsHeard;", script, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"releaseTab: \(\) => \{\s*tabReleased = releaseEndsHeard === releaseEndsAtEscape;\s*\},"), script);
+        Assert.Equal(2, Regex.Matches(script, @"releaseEndsHeard\+\+;").Count);
+        Assert.Contains("releaseEndsHeard++;", ListenerBody(script, "onPress"), StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0080 / ADR-0021 (five decisions about focus): focus on the root itself goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
+    public void ADR0080_the_keyboard_goes_to_the_field_and_never_moves_while_it_composes()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        // The root's own focus, passed on at once, without scrolling; heard in the capture phase.
+        Assert.Matches(new Regex(@"if \(event\.target === root\) \{\s*field\.focus\(\{ preventScroll: true \}\);"), ListenerBody(script, "onFocused"));
+        // The hand-back: the field where the grid has one, the root where it has none.
+        var reclaim = Regex.Match(script, @"reclaimFocus: \(fromField\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
+        Assert.Contains("(keyFieldOf() ?? root).focus({ preventScroll: true });", reclaim, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"const keyFieldOf = \(\) => \{\s*const field = root \? root\.querySelector\('\.ex-key-field'\) : null;\s*return field !== null && isKeyField\(field\) \? field : null;"), script);
+        // The editor's request for the keyboard waits while the field composes, and is granted when
+        // the composition's text has taken its place among the held keys.
+        var focusEditor = Regex.Match(script, @"focusEditor: \(bar, fromField\) => \{.*?\n        \},", RegexOptions.Singleline).Value;
+        Assert.Matches(new Regex(@"if \(keyFieldComposing\) \{\s*deferredEditorFocus = \{ bar, fromField \};\s*return;\s*\}"), focusEditor);
+        Assert.Matches(new Regex(@"held\.push\(\{ text \}\);.*?const pending = deferredEditorFocus;\s*if \(pending !== null\) \{\s*deferredEditorFocus = null;\s*handle\.focusEditor\(pending\.bar, pending\.fromField\);", RegexOptions.Singleline), script);
+        // A primary press during a composition ends it first, by the field giving up the keyboard,
+        // before anything else the press does.
+        Assert.Matches(new Regex(@"^const onPress = \(event\) => \{\s*(//[^\n]*\s*)*if \(keyFieldComposing && core && !replaying && event\.button === 0\) \{\s*keyFieldOf\(\)\?\.blur\(\);\s*\}"), ListenerBody(script, "onPress"));
+        // The composition's start is told to the core only with no edit open.
+        Assert.Matches(new Regex(@"if \(editing === 'none' && !answering\) \{\s*core\.invokeMethodAsync\('OnKeyFieldCompositionStartAsync'\)"), ListenerBody(script, "onKeyFieldCompositionStart"));
+        Assert.Single(Regex.Matches(script, @"'OnKeyFieldTextAsync'"));
+        // The document's selection is the field's caret, which the IME needs: a key on the field
+        // does not drop it, as one on the root does (ADR-0021's clipboard note).
+        Assert.Contains("if (k.onRoot && !isKeyField(event.target)) {", ListenerBody(script, "onKeyDown"), StringComparison.Ordinal);
+    }
+
+    [Fact] // KB-12 / ADR-0080: the root's ring is drawn from the script's mark while its field holds a keyboard that did not come of a press on the grid, as from :focus-visible on a grid without one
+    public void KB12_the_roots_ring_is_drawn_from_the_scripts_mark_on_a_grid_that_edits()
+    {
+        var assets = ShippedAssets();
+        var script = assets.Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var (_, rules) = CoreStylesheet();
+
+        // One rule draws the ring for both, so they cannot drift apart; :focus-visible stays for a
+        // grid without a field.
+        var (selectors, body) = Assert.Single(rules, rule => rule.Selectors.Contains(".ex-grid:focus-visible"));
+        Assert.Equal([".ex-grid:focus-visible", ".ex-grid[data-ex-focus-visible]"], selectors.Order(StringComparer.Ordinal));
+        Assert.Contains("outline: var(--ex-grid-focus-outline, 2px solid Highlight);", body, StringComparison.Ordinal);
+        // The field draws no ring of its own.
+        Assert.Contains(rules, rule => rule.Selectors.SequenceEqual([".ex-key-field"]) && Regex.IsMatch(rule.Body, @"outline:\s*none;"));
+
+        // An attribute, set in one place: the root's class is the core's render, and a render
+        // rewrites it whole.
+        Assert.Single(Regex.Matches(script, @"'data-ex-focus-visible'"));
+        Assert.Contains("root.toggleAttribute('data-ex-focus-visible', on);", script, StringComparison.Ordinal);
+        Assert.DoesNotMatch(new Regex(@"classList\.(add|toggle)\('ex-focus-visible'"), script);
+        // Marked as the field takes the keyboard, from how it came; unmarked as the field gives it up,
+        // and with the instance.
+        Assert.Matches(new Regex(@"\} else if \(event\.target === field\) \{\s*markFocusVisible\(!keyboardByPress\);"), ListenerBody(script, "onFocused"));
+        Assert.Matches(new Regex(@"if \(isKeyField\(event\.target\)\) \{\s*settleKeyField\(\);\s*markFocusVisible\(false\);"), ListenerBody(script, "onFocusLeft"));
+        Assert.Matches(new Regex(@"dispose: \(\) => \{.*?markFocusVisible\(false\);.*?root = null;", RegexOptions.Singleline), script);
+        // A press on the grid says the keyboard came by a press; any key, or DOM focus leaving the
+        // grid — Tab back in is the keyboard's — says it did not. Read off the listeners already
+        // allowlisted: no listener of its own.
+        Assert.Contains("keyboardByPress = true;", ListenerBody(script, "onPress"), StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"^const onKeyDown = \(event\) => \{\s*if \(!core\) \{\s*return;\s*\}\s*(//[^\n]*\s*)*keyboardByPress = false;"), ListenerBody(script, "onKeyDown"));
+        Assert.Matches(new Regex(@"releaseEndsHeard\+\+;\s*keyboardByPress = false;"), ListenerBody(script, "onFocusLeft"));
+        Assert.Equal(3, Regex.Matches(script, @"(?<!let )keyboardByPress = (true|false);").Count);
     }
 
     [Fact] // ADR-0037 / KB-26: a held Space engages once — the gate takes and drops a repeated plain Space
@@ -783,8 +907,10 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"for \(const layer of root\.getElementsByClassName\('ex-reference-text'\)\)"), script.Text);
 
         // On each input — from the editor listener itself, which reads the composition off the
-        // event — ...
-        Assert.Matches(new Regex(@"const onEditorInput = \(event\) => \{\s*heardReferenceInput\(event\);"), script.Text);
+        // event — ... (first of all, but for an input into the Keyboard Field, which is no editor
+        // surface and has no layer: that one is the field's own, ADR-0080)...
+        Assert.Matches(new Regex(@"const onEditorInput = \(event\) => \{\s*(?://[^\n]*\s*)*if \(isKeyField\(event\.target\)\) \{.*?\s*return;\s*\}\s*heardReferenceInput\(event\);", RegexOptions.Singleline),
+            script.Text);
         Assert.Matches(new Regex(@"composingIn = event\.isComposing === true \? field : null;"), script.Text);
         // ...when the layer's text or its colours change: two attributes, in this root, observed
         // only while an edit is open and let go when it closes or the instance goes...
@@ -809,9 +935,25 @@ public class ShippedStylesheetTests
         // clears the composing mark and compares again; nothing else.
         Assert.Matches(new Regex(@"root\.addEventListener\('scroll', onFieldScroll, true\);\s*root\.addEventListener\('compositionend', onCompositionEnd, true\);"), script.Text);
         Assert.Matches(new Regex(@"root\.removeEventListener\('scroll', onFieldScroll, true\);\s*root\.removeEventListener\('compositionend', onCompositionEnd, true\);"), script.Text);
-        Assert.Single(Regex.Matches(script.Text, @"addEventListener\('compositionend'"));
+        Assert.Single(Regex.Matches(script.Text, @"addEventListener\('compositionend', onCompositionEnd, true\)"));
+        var watch = Regex.Match(script.Text, @"const watchReferenceTexts = \(on\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(watch.Success, "watchReferenceTexts is not in the module");
+        Assert.Contains("root.addEventListener('compositionend', onCompositionEnd, true);", watch.Value, StringComparison.Ordinal);
         Assert.Matches(new Regex(@"const onCompositionEnd = \(event\) => \{\s*const field = event\.target;\s*const layer = [^;]*referenceTextOf\(field\) : null;\s*if \(layer !== null\) \{\s*composingIn = null;\s*gateReferenceText\(field, layer\);\s*\}\s*\};"),
             script.Text);
+        // The module's one other compositionend is the Keyboard Field's (ADR-0080), always on, for a
+        // composition with no edit open: told apart by its handler, which hears only this grid's own
+        // field and touches neither the composing mark nor any layer.
+        var compositionEnds = Regex.Matches(script.Text, @"addEventListener\('compositionend', (?<handler>\w+), true\)")
+            .Select(match => match.Groups["handler"].Value)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+        Assert.Equal(["onCompositionEnd", "onKeyFieldCompositionEnd"], compositionEnds);
+        var fieldEnd = Regex.Match(script.Text, @"const onKeyFieldCompositionEnd = \(event\) => \{.*?\n    \};", RegexOptions.Singleline);
+        Assert.True(fieldEnd.Success, "onKeyFieldCompositionEnd is not in the module");
+        Assert.Contains("!isKeyField(field)", fieldEnd.Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("composingIn", fieldEnd.Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("gateReferenceText", fieldEnd.Value, StringComparison.Ordinal);
 
         // The colours (ADR-0057 and ADR-0021, notes of 2026-10-01; DC-51): one Range per stretch the
         // core wrote on the layer, over its one run of text, in the highlight of that name, which

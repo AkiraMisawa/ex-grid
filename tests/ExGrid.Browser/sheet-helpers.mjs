@@ -1,4 +1,5 @@
 import { expect } from './fixtures.mjs';
+import { expectActiveDescendant } from './keyboard.mjs';
 
 // What the Sheet's specs share — sheet, declarations, sheets, edit-stands and pointing-scope:
 // opening /sheet, finding an ExSheet's grid, a cell of it by its A1 address, and the surfaces
@@ -111,10 +112,13 @@ export function nameBox(grid) {
     return grid.locator('input.ex-name-box, .ex-name-box input');
 }
 
-/** Where the Focus is, read from the root's aria-activedescendant (ADR-0033). */
+/**
+ * Where the Focus is, read from aria-activedescendant on the element that carries it: a Sheet's
+ * Keyboard Field, since a Sheet edits (ADR-0033, ADR-0080).
+ */
 export async function expectFocusAt(grid, address) {
     const { row, column } = at(address);
-    await expect(grid).toHaveAttribute('aria-activedescendant', new RegExp(`-r${row}c${column}$`));
+    await expectActiveDescendant(grid, new RegExp(`-r${row}c${column}$`));
     await expect(nameBox(grid)).toHaveValue(address);
 }
 

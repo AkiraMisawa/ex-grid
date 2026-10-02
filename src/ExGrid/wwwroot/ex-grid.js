@@ -11,7 +11,12 @@
 // its place among the keys held there (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30);
 // that same mousedown and mouseup, and the keydown, selecting the Name Box's text for the press
 // that gives it the keyboard (ADR-0051, ticket 78);
-// and the editor listener keeping the coloured text beneath a field honest (ADR-0057). Anything
+// and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
+// seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
+// `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
+// place among the held keys; the root's `focus`, passing focus that lands on the root itself on to
+// its field; and the root's `focusout`, emptying the field as it is left and ending the release of
+// Tab when DOM focus leaves the grid (ADR-0012). Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
 // ADR.
 //
@@ -118,13 +123,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     let innerPopup = false;
     // Whether Escape with nothing to dismiss has released Tab (ADR-0012, rewritten 2026-10-01),
     // told by C#: the next Tab or Shift+Tab on the root is the browser's. Spent by that Tab, and
-    // ended by any other key (gate) or a press on the grid (onPress). The presses this root has
-    // heard, and how many it had heard when the last Escape was forwarded: a press the hold does
-    // not take — on a heading, in the Name Box — reaches the core at once, and a release answered
-    // for an Escape that press came after is not granted (releaseTab).
+    // ended by any other key (gate), a press on the grid (onPress), or DOM focus leaving the grid
+    // (onFocusLeft; ADR-0080). The presses this root has heard and the times DOM focus has left it,
+    // and how many there had been when the last Escape was forwarded: a press the hold does not
+    // take — on a heading, in the Name Box — reaches the core at once, DOM focus can leave while
+    // the Escape is being answered, and a release answered for an Escape either came after is not
+    // granted (releaseTab).
     let tabReleased = false;
-    let pressesHeard = 0;
-    let pressesAtEscape = 0;
+    let releaseEndsHeard = 0;
+    let releaseEndsAtEscape = 0;
     // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
     // edited, and the browser's own find would search only the painted rows (ADR-0055).
     const editingKeys = new Set(
@@ -298,7 +305,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // Escape may release Tab, which changes the keys this gate claims (ADR-0012,
             // rewritten 2026-10-01): a mode change, so the keys after it wait for its answer.
             if (canonical === 'Escape') {
-                pressesAtEscape = pressesHeard;
+                releaseEndsAtEscape = releaseEndsHeard;
                 return 'mode';
             }
             if (popoverOpeners.has(canonical)) {
@@ -369,7 +376,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // on the rows give it DOM focus, and C# hands focus on to the root — a round trip later
     // on a circuit. A key, a copy or a paste in between is the root's, as it would have
     // been a moment on.
-    const isRoot = (target) => target === root || (!!scroller && target === scroller);
+    //
+    // The Keyboard Field (ADR-0080). While the grid has an editable column, the keyboard with no
+    // edit open is held by a text field of the grid's own instead of the root itself, so that an
+    // IME has somewhere to start (the fifteenth Windows run: on the root, Chrome and Edge give it
+    // no input context). It stands for the root in everything here — ADR-0010's guard widens to
+    // it: a key, a copy or a paste aimed at it is the root's. It is this grid's own, never a nested
+    // grid's.
+    const isKeyField = (target) => target instanceof HTMLInputElement && target.classList.contains('ex-key-field')
+        && root !== null && target.closest('.ex-grid') === root;
+    const isRoot = (target) => target === root || (!!scroller && target === scroller) || isKeyField(target);
+    // This grid's Keyboard Field, where the grid has one: the first in its markup, the Viewport's
+    // first child, ahead of any grid nested in a cell.
+    const keyFieldOf = () => {
+        const field = root ? root.querySelector('.ex-key-field') : null;
+        return field !== null && isKeyField(field) ? field : null;
+    };
     const snapshot = (event) => ({
         key: event.key,
         ctrlKey: event.ctrlKey,
@@ -482,6 +504,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Each input reports at once: Blazor's input event is on its way, and the core waits for
     // this report before it asks anything about the new text.
     const onEditorInput = (event) => {
+        // Text an IME inserts into the Keyboard Field without composing it — a full-width space, a
+        // character some IMEs commit at once — is carried as a composition's text is; anything
+        // else put there outside a composition — the browser's own undo, a drop — is not typing
+        // the grid takes, and goes (ADR-0080). The field is no editor surface.
+        if (isKeyField(event.target)) {
+            if (!event.isComposing && !keyFieldComposing) {
+                if (event.inputType === 'insertText' || event.inputType === 'insertReplacementText') {
+                    event.target.classList.add('ex-key-field-composing');
+                    carryKeyFieldText(event.target);
+                } else {
+                    event.target.value = event.target.value.slice(0, keyFieldCarried);
+                }
+            }
+            return;
+        }
         heardReferenceInput(event);
         // Text put into the Name Box without a key — pasted from a menu, dropped — is the user's,
         // and the first key after it types on (nameBoxSelected).
@@ -877,8 +914,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const typeInto = (input, k) => {
         const start = input.selectionStart ?? input.value.length;
         const end = input.selectionEnd ?? start;
-        if (k.key.length === 1) {
-            input.setRangeText(k.key, start, end, 'end');
+        // A composition's text from the Keyboard Field (ADR-0080) is typed as a character is.
+        if (k.text !== undefined || k.key.length === 1) {
+            input.setRangeText(k.text ?? k.key, start, end, 'end');
         } else if (k.key === 'Backspace') {
             input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
         } else if (k.key === 'Delete') {
@@ -1100,6 +1138,31 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 await editorSettled();
                 continue;
             }
+            // A composition that ended in the Keyboard Field (ADR-0080): with no edit open, the
+            // core opens one holding its text, as a typed character opens one holding it, and the
+            // keys after it wait for the editor; with one open — a second composition the IME
+            // finished there before the first one's editor had the keyboard — it is typed into
+            // the edit at its caret, as a held character is.
+            if (k.text !== undefined) {
+                if (editing === 'none') {
+                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text).catch((error) => {
+                        if (core) {
+                            console.error('[ex-grid] the grid failed to take a composition', error);
+                        }
+                        return false;
+                    });
+                    if (!opened) {
+                        settleKeyField();
+                    }
+                    await editorSettled();
+                } else {
+                    const input = editorInput();
+                    if (input && k.text.length > 0) {
+                        typeInto(input, k);
+                    }
+                }
+                continue;
+            }
             // A modifier's own keydown — the Shift pressed for a capital, or for Shift+Enter —
             // is held with the rest to keep their order, and means nothing by itself: the key
             // that follows carries it. Replaying it would be a key no field can reproduce, and
@@ -1177,6 +1240,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!core) {
             return;
         }
+        // The keyboard is in use: whatever puts it in the Keyboard Field next did not come of a
+        // press on the grid (KB-12, onFocused).
+        keyboardByPress = false;
         // A key typed in an editor surface: that surface holds the keyboard.
         noteSurface(event.target);
         // The first key after a press selected the Name Box's text replaces the whole name, whatever
@@ -1206,7 +1272,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // here, in the keydown, before the browser runs the command it is the default of. The
         // user's own selection is never the grid's to copy (CP-10); a selection inside a field
         // is not touched, since the root does not hold the keyboard then.
-        if (k.onRoot) {
+        // Not from the Keyboard Field (ADR-0080): the document's selection is the caret inside it
+        // then, which the IME needs, and copy and paste are aimed at the field already.
+        if (k.onRoot && !isKeyField(event.target)) {
             const selection = document.getSelection();
             if (selection && selection.rangeCount > 0) {
                 selection.removeAllRanges();
@@ -1387,6 +1455,139 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the page would receive every keystroke, and in the bubble phase a cell editor would
     // already have moved its caret (ADR-0010 / ADR-0018).
     root.addEventListener('keydown', onKeyDown, true);
+
+    // The seventh entry (ADR-0021, ADR-0080): the Keyboard Field's composition. The listener above
+    // leaves every composing key alone (ADR-0010), so an IME composes in the field that holds the
+    // keyboard. The field is drawn over the Focus cell while it composes (a class, which the
+    // stylesheet turns into the Cell Editor's look), and the core is told, so the Focus is
+    // revealed if a scroll had taken it away. When the composition ends, its text takes its place
+    // among the held keys (drain): the core opens the Cell Editor in Overwrite holding it, and the
+    // keys typed after it wait for the editor, as after a typed character. The field keeps showing
+    // the text until the keyboard has gone to the editor, so nothing blinks out for a round trip.
+    // Heard always, where the coloured text's own compositionend is heard only while an edit is
+    // open (ADR-0057): this one is for a composition with no edit open.
+    //
+    // DOM focus never moves while a composition lasts: moving it would end the composition there
+    // and then, and the next keys would start another — `kana` would come out `ｋあ`, as the
+    // fifteenth Windows run saw `k穴` in i1y. So a request that the editor take the keyboard
+    // waits while the field composes (focusEditor), and a press that would take it — on the rows,
+    // the headings, or a field beside them — ends the composition first, so that its text
+    // reaches the core ahead of the press (onPress).
+    let keyFieldComposing = false;
+    // How much of the field's value has already been handed on: a second composition finished in
+    // the field before the keyboard left it is appended to the first, and only its own text goes.
+    let keyFieldCarried = 0;
+    // The editor's request for the keyboard, made while the field was composing: granted when the
+    // composition ends.
+    let deferredEditorFocus = null;
+    // The field goes back to being unseen and empty: once the keyboard has left it, or when the
+    // composition's text opened nothing (a cell that does not edit).
+    const settleKeyField = () => {
+        const field = keyFieldOf();
+        if (field === null || keyFieldComposing) {
+            return;
+        }
+        field.value = '';
+        keyFieldCarried = 0;
+        field.classList.remove('ex-key-field-composing');
+    };
+    const onKeyFieldCompositionStart = (event) => {
+        if (!core || !isKeyField(event.target)) {
+            return;
+        }
+        keyFieldComposing = true;
+        event.target.classList.add('ex-key-field-composing');
+        if (editing === 'none' && !answering) {
+            core.invokeMethodAsync('OnKeyFieldCompositionStartAsync').catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear a composition', error);
+                }
+            });
+        }
+    };
+    const onKeyFieldCompositionEnd = (event) => {
+        const field = event.target;
+        if (!core || !isKeyField(field)) {
+            return;
+        }
+        keyFieldComposing = false;
+        carryKeyFieldText(field);
+    };
+    // The text the field holds past what has already gone takes its place among the held keys,
+    // and a request for the editor's focus that waited for it is granted.
+    const carryKeyFieldText = (field) => {
+        const text = field.value.slice(keyFieldCarried);
+        keyFieldCarried = field.value.length;
+        held.push({ text });
+        if (!answering) {
+            startHold();
+        }
+        // Ended by the keyboard leaving the field, the text stays only as long as it is on its way.
+        if (document.activeElement !== field) {
+            settleKeyField();
+        }
+        const pending = deferredEditorFocus;
+        if (pending !== null) {
+            deferredEditorFocus = null;
+            handle.focusEditor(pending.bar, pending.fromField);
+        }
+    };
+    root.addEventListener('compositionstart', onKeyFieldCompositionStart, true);
+    root.addEventListener('compositionend', onKeyFieldCompositionEnd, true);
+
+    // The seventh entry's focus listeners (ADR-0021, ADR-0080), on every grid, with a field or not.
+    //
+    // KB-12: the root's ring says the grid holds the keyboard. A text field matches :focus-visible
+    // on every focus, a click's too, so on a grid that edits the root is marked instead
+    // (data-ex-focus-visible, which the stylesheet draws as it draws .ex-grid:focus-visible) while
+    // its field holds the keyboard that did not come of a press on the grid. The capture-phase
+    // mousedown and keydown above say which came last (keyboardByPress), and DOM focus leaving the
+    // grid forgets it: Tab back in is the keyboard's. An attribute, which no render of the core
+    // touches: the root's class is rewritten whole whenever it changes. Reads no layout.
+    let keyboardByPress = false;
+    const markFocusVisible = (on) => {
+        if (root) {
+            root.toggleAttribute('data-ex-focus-visible', on);
+        }
+    };
+    // Focus that lands on the root itself — a press on a part of it that takes no focus of its
+    // own, a Consumer's or the scroller's hand-back — goes on to the Keyboard Field at once, before
+    // the next key: Blazor's own focus would land a round trip later on a circuit. One of the five
+    // decisions about focus made in script (ADR-0021). Heard in the capture phase, where the
+    // field's own focus, which does not bubble, is heard too.
+    const onFocused = (event) => {
+        const field = keyFieldOf();
+        if (field === null) {
+            return;
+        }
+        if (event.target === root) {
+            field.focus({ preventScroll: true });
+        } else if (event.target === field) {
+            markFocusVisible(!keyboardByPress);
+        }
+    };
+    // The Keyboard Field left: emptied and unseen again, and the root's ring goes with it. DOM
+    // focus leaving the grid — for another grid, a control of the page's, or nothing — ends the
+    // release of Tab (ADR-0012, ADR-0080): Escape, a press elsewhere, then Tab back into the grid,
+    // and Tab cycles inside the selection again. Counted, so a release answered for an Escape the
+    // departure came after is not granted (releaseTab). The window losing focus is not a
+    // departure: the browser says so with no next holder too, but DOM focus stays where it is,
+    // still the document's active element while the event is told, and comes back there.
+    const onFocusLeft = (event) => {
+        if (isKeyField(event.target)) {
+            settleKeyField();
+            markFocusVisible(false);
+        }
+        const next = event.relatedTarget;
+        if (event.target === document.activeElement || (next instanceof Node && root && root.contains(next))) {
+            return;
+        }
+        tabReleased = false;
+        releaseEndsHeard++;
+        keyboardByPress = false;
+    };
+    root.addEventListener('focus', onFocused, true);
+    root.addEventListener('focusout', onFocusLeft, true);
 
     // A press into the Formula Bar's text, with no edit open, opens one (ADR-0051): a change of
     // editing mode, which this listener is told a round trip later on a circuit. Until then the
@@ -1606,11 +1807,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     root.addEventListener('ex-press-handed-on', onPressHandedOn);
 
     const onPress = (event) => {
+        // A press while the Keyboard Field composes (ADR-0080): the press would end the
+        // composition by its default, after the core had heard the press, and the composed text
+        // would open an edit wherever the press had moved the Focus. So the composition ends
+        // here first — the field gives up the keyboard, and the IME ends it there — and its text
+        // is held ahead of the press, which is then held behind it as behind any key. One of the
+        // five decisions about focus made in script (ADR-0021).
+        if (keyFieldComposing && core && !replaying && event.button === 0) {
+            keyFieldOf()?.blur();
+        }
         // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012,
         // 2026-10-01). A held press ends it again at its replay, after the answer it waited for.
+        // And the keyboard this press brings to the Keyboard Field shows no ring (KB-12).
         tabReleased = false;
         if (!replaying) {
-            pressesHeard++;
+            releaseEndsHeard++;
+            keyboardByPress = true;
         }
         // A press into a field beside the rows gives that field a focus of its own, which a
         // late hand-back leaves alone (reclaimFocus).
@@ -1639,10 +1851,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the keyboard had never left: where the core keeps DOM focus through a press on the rows
         // (ADR-0051) it keeps it in the edit, and the hand-back after a commit finds it inside
         // this root. Handed back from C#, a round trip later, the keys typed in between would
-        // reach the grid the user had just left. This is one of the three decisions about focus
-        // made in script (ADR-0021, added 2026-09-29), beside reclaimFocus and focusEditor; it
-        // reads document.activeElement and no layout. Held or not, the press keeps its place among
-        // the keys: only where the keyboard is has changed.
+        // reach the grid the user had just left. This is one of the five decisions about focus
+        // made in script (ADR-0021, added 2026-09-29), beside reclaimFocus, focusEditor, the
+        // root's own focus passed on to its Keyboard Field (onFocused) and the field given up by a
+        // press during a composition (above; ADR-0080); it reads document.activeElement and no
+        // layout. Held or not, the press keeps its place among the keys: only where the keyboard
+        // is has changed.
         const focusAtPress = document.activeElement;
         if (core && !replaying && editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))
             && isOwnRowsOrHeadings(event.target)) {
@@ -2002,7 +2216,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         ceilingObserver.observe(ceilingProbe);
     }
 
-    return {
+    const handle = {
         // The two pointer reports' switches (ADR-0021's fifth entry): rows for the
         // hover band, rest for the error popover. Told by C#, which knows who consumes
         // what; off, the listener above computes nothing for that report.
@@ -2177,14 +2391,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             scroller.scrollTop = top;
             return true;
         },
-        // The keyboard back to this grid's root, asked for by the core a round trip after the
-        // gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus is still inside
-        // this root, or on nothing. A second grid the user has pressed in the meantime keeps
-        // its keyboard. The condition reads document.activeElement and no layout. It is one of
-        // the three decisions about focus made in script, all for the same reason — made from
-        // C#, a round trip late, they would take or leave the keyboard in the wrong grid; the
-        // others are the press that brings the keyboard back to an edit left standing (onPress,
-        // ADR-0018 section 6) and the open edit's own focus (focusEditor).
+        // The keyboard back to this grid's root — to its Keyboard Field where it has one, the
+        // element that holds the keyboard with no edit open (ADR-0080) — asked for by the core a
+        // round trip after the gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus
+        // is still inside this root, or on nothing. A second grid the user has pressed in the
+        // meantime keeps its keyboard. The condition reads document.activeElement and no layout.
+        // It is one of the five decisions about focus made in script, all for the same reason —
+        // made from C#, a round trip late, they would take or leave the keyboard in the wrong
+        // grid, or end a composition; the others are the press that brings the keyboard back to
+        // an edit left standing (onPress, ADR-0018 section 6), the open edit's own focus
+        // (focusEditor), the root's own focus passed on to its Keyboard Field (onFocused) and the
+        // field given up by a press during a composition (onPress).
         //
         // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
         // Box, built in or drawn by a Chrome, all inside the band the core renders them into
@@ -2203,7 +2420,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (root && (!active || active === document.body || active === document.documentElement
                 || (root.contains(active) && (fromField === true || !own)))) {
                 staleField = null;
-                root.focus({ preventScroll: true });
+                (keyFieldOf() ?? root).focus({ preventScroll: true });
             }
         },
         // The core's request that the open edit's surface take the keyboard: on opening, on F2,
@@ -2216,7 +2433,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // keyboard, and the edit is left standing there (ADR-0018 section 6). The third decision
         // about focus made in script (ADR-0021's note of 2026-09-30); it reads
         // document.activeElement and no layout. Declined, the keys held behind the key that
-        // opened the edit go into it (focusDeclined).
+        // opened the edit go into it (focusDeclined). While the Keyboard Field composes it waits
+        // (ADR-0080, below).
         //
         // Nor from a field beside the rows with focus of its own, as reclaimFocus leaves it — the
         // Formula Bar's text or the Name Box the user pressed while the request was on its way,
@@ -2227,6 +2445,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // key typed next opened an edit in the cell (found on CI, msedge, the Server host).
         focusEditor: (bar, fromField) => {
             if (!root) {
+                return;
+            }
+            // While the Keyboard Field composes, the request waits for the composition to end
+            // there, and is granted then (carryKeyFieldText; ADR-0080): moving DOM focus now would
+            // end it half-typed.
+            if (keyFieldComposing) {
+                deferredEditorFocus = { bar, fromField };
                 return;
             }
             const box = [...root.querySelectorAll('.ex-editor')]
@@ -2257,7 +2482,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // or Shift+Tab is the browser's, and DOM focus stays where it is meanwhile. Told before
         // the Escape's answer, so the keys held behind it meet the release.
         releaseTab: () => {
-            tabReleased = pressesHeard === pressesAtEscape;
+            tabReleased = releaseEndsHeard === releaseEndsAtEscape;
         },
         dispose: () => {
             // Left attached, a grid that is gone goes on eating every key its root still
@@ -2280,6 +2505,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 k.handedOn?.inTurn();
             }
             root.removeEventListener('input', onEditorInput, true);
+            root.removeEventListener('compositionstart', onKeyFieldCompositionStart, true);
+            root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);
+            root.removeEventListener('focus', onFocused, true);
+            root.removeEventListener('focusout', onFocusLeft, true);
+            deferredEditorFocus = null;
+            markFocusVisible(false);
             document.removeEventListener('selectionchange', onSelectionChange);
             cancelAnimationFrame(caretFrame);
             caretFrame = 0;
@@ -2307,4 +2538,5 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             core = null;
         },
     };
+    return handle;
 }

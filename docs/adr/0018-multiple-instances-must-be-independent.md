@@ -29,6 +29,10 @@ keystroke.**
 
 **Make the root focusable with `tabindex` and attach the listener there.** Which grid is active is
 then answered by the browser's focus.
+*(Refined 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md).)* On a grid that edits, DOM focus with no edit open is on the
+grid's own Keyboard Field, inside the root, and the field is the tab stop. The listener stays on the
+root and hears the field's keys first. Which grid is active is answered by
+`root.contains(document.activeElement)`. Each grid has its own field; nothing is shared.
 
 Ctrl+C ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)), Ctrl+A
 ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) and the

@@ -1,5 +1,6 @@
 import { test, expect, setRoundTrip, alterPage } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
     sheet, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter, expectCovers, boxOf, spanOf, typeSteadily, typeIntoNameBox, pressCell,
     expectCommandsGreyedOut, expectCommandsOffered, expectSelectionIsCell,
@@ -178,7 +179,7 @@ test('SH-18/DC-11: the Name Box takes the Focus to an address, scrolled into vie
     const d200 = await boxOf(cell(grid, 'D200'));
     expect(d200.y).toBeGreaterThanOrEqual(scroller.y);
     expect(d200.y + d200.height).toBeLessThanOrEqual(scroller.y + scroller.height);
-    await expect(grid).toBeFocused();
+    await expectKeyboardOn(grid);
     await page.keyboard.press('ArrowDown');
     await expectFocusAt(grid, 'D201');
 
@@ -186,7 +187,7 @@ test('SH-18/DC-11: the Name Box takes the Focus to an address, scrolled into vie
     await typeIntoNameBox(grid, 'nonsense');
     await nameBox(grid).press('Enter');
     await expect(page.locator('.ex-sheet-notice')).not.toBeEmpty();
-    await expect(grid).toHaveAttribute('aria-activedescendant', /-r200c3$/);
+    await expectActiveDescendant(grid, /-r200c3$/);
 });
 
 test('SH-18/DC-11: the Name Box pressed with an edit open commits it, then navigates', async ({ page }) => {
@@ -248,7 +249,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(nameBox(grid)).toHaveValue('B2');
             await page.keyboard.press('Enter');
             await expectFocusAt(grid, 'B2');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
 
             // A second press, into the Name Box that holds the keyboard, places the caret where it
             // lands: here past the text's end.
@@ -259,7 +260,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => selectionOf(nameBox(grid))).toEqual([2, 2]);
             // Escape still gives the keyboard back, the Focus where it was.
             await page.keyboard.press('Escape');
-            await expect(grid).toBeFocused();
+            await expectKeyboardOn(grid);
             await expectFocusAt(grid, 'B2');
         });
 
@@ -440,7 +441,7 @@ test('SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commit
     await expect(editor(grid)).toHaveCount(0);
     await expect(cell(grid, 'E3')).toHaveText('8');
     await expectFocusAt(grid, 'E4');
-    await expect(grid).toBeFocused();
+    await expectKeyboardOn(grid);
     await page.keyboard.press('ControlOrMeta+Z');
     await expect(cell(grid, 'E3')).toHaveText('');
     await page.keyboard.press('ControlOrMeta+Y');
@@ -456,7 +457,7 @@ test('SH-18/DC-22: the Formula Bar and the Cell Editor are one text; each commit
     await expect(editor(grid)).toHaveCount(0);
     await expect(bar(grid)).toHaveValue('=B3+1');
     await expect(cell(grid, 'E3')).toHaveText('8');
-    await expect(grid).toBeFocused();
+    await expectKeyboardOn(grid);
 });
 
 test('SH-18: inserting a row keeps every Reference naming its cell, and one Ctrl+Z restores it', async ({ page }) => {
@@ -508,7 +509,7 @@ test('SH-5/SH-18: deleting a row rewrites the References below it, a deleted tar
     // The Selection stays where it was: the same address, now over the row that moved up.
     await expectFocusAt(grid, 'B3');
     await expectSelectionIsCell(grid, 'B3');
-    await expect(grid).toBeFocused();
+    await expectKeyboardOn(grid);
     // The total moved up a row and shrank with its range; the row below kept its own cells.
     await expect(cell(grid, 'B4')).toHaveText('32');
     await expect(cell(grid, 'D3')).toHaveText('4');
@@ -545,7 +546,7 @@ test('SH-5/SH-18: inserting a column rewrites every Reference across it, and one
     await expect(cell(grid, 'D1')).toHaveText('Price');
     // The Selection stays over C2:C3, now the new blank column.
     await expectCovers(grid.locator('.ex-selection .ex-range'), grid, 'C2', 'C3');
-    await expect(grid).toBeFocused();
+    await expectKeyboardOn(grid);
     // Amount moved right and still multiplies Qty by Price.
     await expect(cell(grid, 'E2')).toHaveText('6');
     await expect(cell(grid, 'E5')).toHaveText('15.25');
@@ -575,7 +576,7 @@ test('SH-5/SH-18: deleting a column makes a Reference to it #REF!, and one Ctrl+
     await expect(cell(grid, 'C1')).toHaveText('Amount');
     await expectFocusAt(grid, 'C2');
     await expectSelectionIsCell(grid, 'C2');
-    await expect(grid).toBeFocused();
+    await expectKeyboardOn(grid);
     await expect(cell(grid, 'C2')).toHaveText('#REF!');
     await expect(cell(grid, 'C5')).toHaveText('#REF!');
     // Qty, left of the deletion, is untouched, and so is its total.
@@ -749,13 +750,13 @@ for (const chrome of ['builtin', 'mud']) {
         // after it on the Server host.
         await page.keyboard.press('Escape');
         await page.waitForTimeout(500);
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await expectFocusAt(grid, 'D10');
 
         await page.keyboard.type('x');
         await expect(editor(grid)).toHaveValue('x');
         await expect(editor(grid)).toBeFocused();
-        await expect(grid).toHaveAttribute('aria-activedescendant', /-r9c3$/);
+        await expectActiveDescendant(grid, /-r9c3$/);
         await page.keyboard.press('Escape');
         await expect(editor(grid)).toHaveCount(0);
         await expect(cell(grid, 'D10')).toHaveText('');
@@ -784,7 +785,7 @@ for (const chrome of ['builtin', 'mud']) {
         await expectFocusAt(grid, 'D11');
         await page.keyboard.press('Tab');
         await expectFocusAt(grid, 'E11');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
 
         // So does a press on the grid, made once the release has landed.
         await page.keyboard.press('Escape');
@@ -792,7 +793,7 @@ for (const chrome of ['builtin', 'mud']) {
         await pressCell(grid, 'E12');
         await page.keyboard.press('Tab');
         await expectFocusAt(grid, 'F12');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await page.keyboard.press('ArrowUp');
         await expectFocusAt(grid, 'F11');
         await page.keyboard.press('ArrowLeft');
