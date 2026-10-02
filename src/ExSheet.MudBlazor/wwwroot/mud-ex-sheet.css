@@ -132,3 +132,12 @@ button.mud-ex-sheet-swatch { padding: 0; }
     outline: 2px solid var(--mud-palette-primary);
     outline-offset: 1px;
 }
+/* Compact, as a ribbon is: the toolbar's controls keep their words as written, and a split
+   control's arrow and an icon button take no more room than their picture needs. */
+.mud-ex-sheet-toolbar-item .mud-button-root { text-transform: none; }
+.mud-ex-sheet-toolbar-item .mud-icon-button { padding: 4px; }
+.mud-ex-sheet-toolbar-split { display: inline-flex; align-items: center; }
+.mud-ex-sheet-toolbar-arrow .mud-icon-button { padding: 4px 0; min-width: 0; }
+.mud-ex-sheet-toolbar-arrow .mud-icon-button .mud-icon-root { font-size: 1.1rem; }
+.mud-ex-sheet-toolbar-menu .mud-button-root { min-width: 0; padding: 2px 6px; }
+.mud-ex-sheet-toolbar-separator { margin: 6px 2px; }

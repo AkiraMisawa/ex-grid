@@ -19,7 +19,7 @@
             <MudDivider Vertical="true" FlexItem="true" Class="mud-ex-sheet-toolbar-separator" />
             break;
         case ToolbarItemKind.Toggle:
-            <MudTooltip Text="@Context.Tooltip">
+            <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
                 <MudToggleIconButton Toggled="Context.Pressed" ToggledChanged="OnToggledAsync"
                                      Icon="@IconOf(Context.Icon)" ToggledIcon="@IconOf(Context.Icon)"
                                      ToggledColor="Color.Primary" Size="Size.Small" Disabled="!Context.Enabled"
@@ -27,30 +27,31 @@
             </MudTooltip>
             break;
         case ToolbarItemKind.Menu:
-            <MudTooltip Text="@Context.Tooltip">
+            <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
                 <MudMenu @ref="_menu" Label="@(Context.Text ?? Context.Name)" EndIcon="@Icons.Material.Filled.ArrowDropDown"
                          Size="Size.Small" Variant="Variant.Text" Dense="true" Disabled="!Context.Enabled"
-                         AriaLabel="@Context.Name" OpenChanged="OnOpenChangedAsync" MaxHeight="360">
+                         AriaLabel="@Context.Name" OpenChanged="OnOpenChangedAsync" MaxHeight="360"
+                         AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="mud-ex-sheet-toolbar-menu">
                     @Choices
                 </MudMenu>
             </MudTooltip>
             break;
         case ToolbarItemKind.Split:
-            <MudButtonGroup Variant="Variant.Text" Size="Size.Small" OverrideStyles="false" Class="mud-ex-sheet-toolbar-split">
-                <MudTooltip Text="@Context.Tooltip">
+            <span class="mud-ex-sheet-toolbar-split" role="group" aria-label="@Context.Name">
+                <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
                     <MudIconButton Icon="@IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled"
                                    tabindex="-1" aria-label="@Context.Name" OnClick="() => Context.Invoke()"
                                    Style="@SwatchStyle" Class="mud-ex-sheet-toolbar-face" />
                 </MudTooltip>
-                <MudMenu @ref="_menu" Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" Dense="true"
+                <MudMenu @ref="_menu" Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
                          Disabled="!Context.Enabled" AriaLabel="@($"{Context.Name}, more")" OpenChanged="OnOpenChangedAsync"
                          MaxHeight="420" Class="mud-ex-sheet-toolbar-arrow">
                     @Choices
                 </MudMenu>
-            </MudButtonGroup>
+            </span>
             break;
         default:
-            <MudTooltip Text="@Context.Tooltip">
+            <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
                 @if (Context.Content is { } content)
                 {
                     <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
