@@ -224,7 +224,7 @@
                               Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                               Error="@DateReading(state).IsRefused" ErrorText="@DateRefusal(state)"
                               Class="mud-ex-grid-filter-operand" />,
-        ColumnType.Date => @<MudDatePicker @ref="state.DateField" Date="state.Date" DateChanged="@(v => state.Date = v)" Editable="true"
+        ColumnType.Date => @<MudDatePicker @ref="state.DateField" @attributes="DateOf(state)" DateChanged="@(v => state.Date = v)" Editable="true"
                                            Converter="@(state.DateConverter ??= new OperandDateConverter(state, DateReading))" DateFormat="yyyy-MM-dd"
                                            Error="@DateReading(state).IsRefused" ErrorText="@DateRefusal(state)"
                                            PickerOpened="() => ReportPopup(true)" PickerClosed="() => ReportPopup(false)"
@@ -275,6 +275,19 @@
             };
         }
     }
+
+    /// <summary>
+    /// The picker's date, given only while the condition has one. MudDatePicker's Date is a
+    /// setter, run on every render of the panel. A date set again within 100 ms of the last is
+    /// ignored, but a null one set later, after a refused text, clears the text and revalidates
+    /// the field, which writes its Error back to false over the panel's own: the refusal
+    /// vanished while Apply stayed unavailable (ADR-0023, principle 1). Not given, a parameter
+    /// keeps its value, and the picker its text and its error.
+    /// </summary>
+    private static IReadOnlyDictionary<string, object> DateOf(OperandState state)
+        => state.Date is { } date ? new Dictionary<string, object> { [nameof(MudDatePicker.Date)] = date } : NoDate;
+
+    private static readonly IReadOnlyDictionary<string, object> NoDate = new Dictionary<string, object>();
 
     /// <summary>A condition's date as FilterPanelChoices reads the text last typed into the picker;
     /// nothing typed reads as no refusal.</summary>

@@ -183,6 +183,7 @@
                report's row-change test (ADR-0021's fifth entry). The transform no longer
                says it once the height is compressed (ADR-0053). *@
             <div class="ex-viewport" style="@ViewportStyle()" data-ex-first-row="@(_visible?.Start)"
+                 data-ex-sequence="@_sequenceVersion" data-ex-layout="@_paintLayoutId"
                  role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
@@ -2873,6 +2874,7 @@
         _visible = local is { } slice ? new RowRange(_pageStartRow + slice.Start, slice.Count) : null;
         ObserveAutoWidths();
         ResolveColumnGeometry();
+        NotePaintLayout();
         _scrollable = _columnStyles.Geometry.ScrollableSliceAt(_scrollLeftPx, VirtualiseColumns);
     }
 
@@ -3366,10 +3368,11 @@
     /// </summary>
     private CellPosition? CellUnder(MouseEventArgs e)
     {
-        if (_visible is not { } visible)
+        if (_visible is not { } visible || FirstRowOf(e, visible) is not { } first)
             return null;
-        var row = _geometry.RowAt(e.OffsetY + _geometry.OffsetPxOf(visible.Start - _pageStartRow));
-        var column = _columnStyles.Geometry.ColumnAt(e.OffsetX, _scrollLeftPx);
+        // Rows of the height they were painted at, counted from the row painted first then.
+        var row = _geometry.RowAt(e.OffsetY / RowHeightOf(e) * _geometry.RowHeightPx + _geometry.OffsetPxOf(first - _pageStartRow));
+        var column = ColumnsOf(e).ColumnAt(e.OffsetX, ScrollLeftOf(e));
         // The geometry answers in page-local rows; positions are the result's (ADR-0015).
         return row is int r && column is int c ? new CellPosition(_pageStartRow + r, c) : null;
     }
@@ -3445,7 +3448,7 @@
         // begins is a Heading drag, whose moves extend by row: a cell drag's would extend by
         // cell and collapse the whole rows (ADR-0050 item 1, 2026-09-29).
         if (e.Button == 0 && ShowsRowHeadings
-            && _columnStyles.Geometry.IsInLead(e.OffsetX, _scrollLeftPx) && CellUnder(e) is { } headed)
+            && ColumnsOf(e).IsInLead(e.OffsetX, ScrollLeftOf(e)) && CellUnder(e) is { } headed)
         {
             RememberHeadingPress(e, ViewportYOf(e));
             BeginHeadingDrag(HeadingAxis.Rows, headed.Row, e.ShiftKey, Toggles(e));
@@ -3476,6 +3479,14 @@
             : current.Click(cell, extent);
 
         Apply(next);
+        // A press the view has moved away from since it was made lands where it was made
+        // (ED-31), on a cell that may be off screen now: the Focus is brought back into view,
+        // as after any other move (ADR-0012). Where the view has not moved, nothing scrolls.
+        if (e is TakenMouseEventArgs taken && _visible is { } shown
+            && (taken.FirstRow != shown.Start || taken.ScrollLeftPx != _scrollLeftPx))
+        {
+            RequestFocusReveal();
+        }
         // A toggle-off takes a cell out and leaves the Focus on what remains (ADR-0052), and
         // dragging on from there would redraw a range from a cell the press never pointed
         // at (ADR-0012). Every other gesture has left a range that a drag can grow.
@@ -3554,11 +3565,11 @@
     /// </summary>
     private bool IsOnFillHandle(MouseEventArgs e)
     {
-        if (FillHandleRange is not { } range || _visible is not { } visible)
+        if (FillHandleRange is not { } range || _visible is not { } visible || FirstRowOf(e, visible) is not { } first)
             return false;
-        var geometry = _columnStyles.Geometry;
-        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, _metrics.RowHeightPx, visible.Start);
-        var scrollLeft = Math.Clamp(_scrollLeftPx, 0, geometry.MaxScrollLeftPx);
+        var geometry = ColumnsOf(e);
+        var (cornerX, cornerY) = SelectionStyles.HandleCornerPx(range, geometry, RowHeightOf(e), first);
+        var scrollLeft = Math.Clamp(ScrollLeftOf(e), 0, geometry.MaxScrollLeftPx);
         if (range.RightColumn < geometry.PinnedCount)
             cornerX += scrollLeft;
         else if (cornerX - scrollLeft < geometry.PinnedWidthPx)

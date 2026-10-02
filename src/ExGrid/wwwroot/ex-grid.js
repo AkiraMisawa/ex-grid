@@ -10,7 +10,9 @@
 // of the grid that points, and the listener for that event on each root, which gives the press
 // its place among the keys held there (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30);
 // that same mousedown and mouseup, and the keydown, selecting the Name Box's text for the press
-// that gives it the keyboard (ADR-0051, ticket 78);
+// that gives it the keyboard (ADR-0051, ticket 78); that same mousedown and mouseup telling the
+// core what each press on the rows was taken against, so a held one lands where it was made
+// (ED-31, ADR-0021's note of 2026-10-02);
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
 // seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
@@ -1669,8 +1671,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // rows is held too, in order, and its release with it: a click straight after Enter
     // reached C# before the held Enter, and the Enter's move carried the Focus past the
     // clicked cell. When nothing is held the press passes through untouched, and while an edit
-    // is open the keys after it wait for its answer (holdBehindPress). No layout is read: the
-    // press is replayed with the coordinates the browser gave it.
+    // is open the keys after it wait for its answer (holdBehindPress). No layout is read.
     const mouseInit = (event) => ({
         bubbles: true, cancelable: true, view: window, detail: event.detail,
         screenX: event.screenX, screenY: event.screenY, clientX: event.clientX, clientY: event.clientY,
@@ -1687,6 +1688,39 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const isOwnRows = (target) => inOwnScroller(target) && target.classList.contains('ex-viewport');
     const isOwnRowsOrHeadings = (target) => isOwnRows(target)
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
+    // What a press or release on this grid's own rows was taken against (ED-31; ADR-0021, note of
+    // 2026-10-02): the offsets the browser gave it, the first row the Viewport painted, the
+    // horizontal scroll, and the row order and the columns and row height the painting render
+    // carried (data-ex-sequence, data-ex-layout). A replayed event is measured again, against the
+    // rows painted at the replay, so a held press replayed after a key had moved the view landed on
+    // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
+    // Server host: the `2` typed next went into F18). The core is told this just before Blazor
+    // dispatches the event — at once, or at the replay of a held one — and resolves the cell
+    // against it. Reads attributes and the scroll offset; nothing is measured.
+    const takenAt = (event) => {
+        const viewport = event.target;
+        const number = (name) => {
+            const value = viewport.getAttribute(name);
+            return value === null ? -1 : Number(value);
+        };
+        return {
+            x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
+            left: scroller ? scroller.scrollLeft : 0,
+            sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
+        };
+    };
+    const tellTaken = (kind, taken) => {
+        if (!core || !taken) {
+            return;
+        }
+        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
+            taken.sequence, taken.layout).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to hear where a press was taken', error);
+            }
+        });
+    };
+
     // The text field to put the keyboard back into: the surface that last held it while it is
     // still there, or else the first of this grid's own (surfaceField).
     const standingField = () => surfaceField(ownSurface(lastSurface));
@@ -1904,8 +1938,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // nested grid's rows is that grid's to answer, and this core never hears it. A press that
         // goes on to Blazor from here, or is replayed, is told to the grid that points, if this
         // one is pointed at (handOn).
+        // What the press was taken against, told as it goes on to Blazor (takenAt).
+        const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;
         if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {
             handOn(event);
+            tellTaken('mousedown', taken);
             return;
         }
         // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
@@ -1923,6 +1960,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // through the other grid's, and this press, which may point too, would overtake it.
         if (held.length === 0 && (!answering || (pressAnswer !== null && pressAnswer !== handedOnAnswer))) {
             handOn(event);
+            tellTaken('mousedown', taken);
             // While an edit is open, the keys after it wait for its answer (holdBehindPress).
             // Where a press may point, the core also suppresses its default so the keyboard stays
             // in the edit (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus
@@ -1956,7 +1994,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (field !== null) {
             markStale(field);
         }
-        held.push({ press: 'mousedown', target: event.target, init: mouseInit(event) });
+        held.push({ press: 'mousedown', target: event.target, init: mouseInit(event), taken });
     };
     // A release is held only behind its press: once the press has been handed on, the
     // release follows it to Blazor as it comes, and Blazor keeps the two in order.
@@ -1975,23 +2013,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             nameBox.select();
             nameBoxSelected = nameBox;
         }
+        const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;
         if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
+            tellTaken('mouseup', taken);
             return;
         }
         event.stopPropagation();
-        held.push({ press: 'mouseup', target: event.target, init: mouseInit(event) });
+        held.push({ press: 'mouseup', target: event.target, init: mouseInit(event), taken });
     };
     // A held press or release, handed to Blazor as the event it was, in its place: on the
-    // element it landed on, or on the Viewport if a render has replaced that one. The keys
-    // held behind it wait until the core says it has answered it — a press can commit an open
-    // edit and wait on the Consumer hearing it, and those keys must be gated against the mode
-    // it leaves (ExGrid.PressAnsweredAsync). The listener asks straight after dispatching, so
+    // element it landed on, or on the Viewport if a render has replaced that one, with the core
+    // told first what it was taken against (takenAt): its own offsets and rows, not the replay's.
+    // The keys held behind it wait until the core says it has answered it — a press can commit
+    // an open edit and wait on the Consumer hearing it, and those keys must be gated against the
+    // mode it leaves (ExGrid.PressAnsweredAsync). The listener asks straight after dispatching, so
     // the core has always heard the press first; the answer is the core's, never a guess.
     const replayPress = async (k) => {
         const target = k.target.isConnected ? k.target : root.querySelector('.ex-viewport');
         if (!target) {
             return;
         }
+        tellTaken(k.press, k.taken);
         replaying = true;
         try {
             target.dispatchEvent(new MouseEvent(k.press, k.init));
