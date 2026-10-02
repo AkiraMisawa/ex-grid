@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import {
     expectKeyboardOn, keyboardIsOn, keyField, activeDescendant, expectActiveDescendant,
@@ -223,7 +223,10 @@ test('Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, K
     await page.keyboard.down('Escape');
     await page.keyboard.down('Escape');
     await page.keyboard.up('Escape');
+    // Every answer has landed: on the Server host once the circuit is quiet (ADR-0056); the fixed
+    // wait is the page's own time, all there is on WebAssembly.
     await page.waitForTimeout(500);
+    await circuitQuiet();
     await expectKeyboardOn(grid(page));
     await expectActiveDescendant(grid(page), /r0c1$/);
 

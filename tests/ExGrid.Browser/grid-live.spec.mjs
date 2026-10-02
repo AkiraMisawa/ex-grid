@@ -1,4 +1,4 @@
-import { test, expect, scrollRowToTop } from './fixtures.mjs';
+import { test, expect, circuitQuiet, scrollRowToTop } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
@@ -55,12 +55,14 @@ async function open(page, chrome) {
 }
 
 /** Turns the live updates off and waits until the page has read again every trade the hub named,
- *  up to the version the server holds now: from then on the marks on screen are all there will be. */
+ *  up to the version the server holds now, and the host has said all it will about them
+ *  (ADR-0056): from then on the marks on screen are all there will be. */
 async function holdStill(page) {
     await toggle(page).click();
     await expect(toggle(page)).toHaveText("Turn the server's live updates on");
     const { version } = await api('/api/status');
     await expect(page.locator('#grid-live-notices')).toContainText(`Read again up to version ${version}.`, { timeout: 15_000 });
+    await circuitQuiet();
 }
 
 /** The positions of the rows that carry a mark. */
@@ -133,6 +135,8 @@ test('DC-61/ADR-0068: a mark stays on its cell across a scroll, and never moves 
     // painted keeps exactly its marked cells, whatever element paints it now. An element that
     // paints another trade than before carries that trade's marks, never the ones it had.
     await scrollTo(page, 2);
+    // Read once the host has said all it will about the rows that came in (ADR-0056).
+    await circuitQuiet();
     const after = await reading(page);
     expect(expectSameMarks(before, after, 'after a scroll of three rows')).toBeGreaterThan(10);
     expect(Object.keys(after.marks).some((trade) => trade in before.marks), 'a marked trade is still in view').toBe(true);
@@ -147,6 +151,7 @@ test('DC-61/ADR-0068: a mark stays on its cell across a scroll, and never moves 
     // and the marks come back on the same cells, from what the page knows about each trade.
     await scrollTo(page, 400);
     await scrollTo(page, 5);
+    await circuitQuiet();
     const back = await reading(page);
     expect(expectSameMarks(before, back, 'after the Window was read again')).toBeGreaterThan(10);
     expect(Object.keys(back.marks).sort()).toEqual(Object.keys(before.marks).sort());

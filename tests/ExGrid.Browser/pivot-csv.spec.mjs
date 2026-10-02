@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import fs from 'node:fs';
 
@@ -118,6 +118,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#csv-refusal')).toHaveText("Row 3, column 'Quantity': '12.5' is not an integer (line 4).");
             await expect(page.locator('#csv-refusal')).toHaveAttribute('role', 'alert');
             await expect(status(page)).toHaveText('trades-malformed.csv was refused: nothing was read.');
+            await circuitQuiet();
             await expect(pivot(page)).toHaveCount(0);
 
             // The page's own sample, with row 1,234 edited by hand.
@@ -125,6 +126,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect(page.locator('#csv-refusal')).toHaveText(/^Row 1,234, column 'Notional': '[\d,]+O\.00' is not a number \(line 1,235\)\.$/);
             await expect(status(page)).toHaveText('trades-malformed.csv was refused: nothing was read.');
+            await circuitQuiet();
             await expect(pivot(page)).toHaveCount(0);
         });
 
@@ -150,6 +152,8 @@ for (const chrome of ['builtin', 'mud']) {
             await page.locator('#csv-cancel').click();
 
             await expect(status(page)).toHaveText(/^Cancelled after [\d,]+ rows: nothing was read\.$/);
+            // And nothing read after it, once the host has said all it will (ADR-0056).
+            await circuitQuiet();
             expect(Number(await progress.getAttribute('value'))).toBeLessThan(size);
             await expect(pivot(page)).toHaveCount(0);
             await expect(page.locator('#csv-refusal')).toHaveText('');
@@ -185,6 +189,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(column('Notional')).toContainText('is read as the decimal point');
             await expect(column('Trade date').getByRole('combobox')).toHaveValue('Date');
             // A proposal: nothing is read until the user confirms it.
+            await circuitQuiet();
             await expect(pivot(page)).toHaveCount(0);
             await expect(status(page)).toHaveText('A Schema is suggested for desk-export.csv: confirm it to read the file.');
 

@@ -1,4 +1,4 @@
-import { test, expect, setRoundTrip } from './fixtures.mjs';
+import { test, expect, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
 import { API_URL } from './hosting.mjs';
 
@@ -174,6 +174,8 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(dialog).toBeVisible();
             await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
             await expect(dialog.locator('.ex-grid .ex-viewport .ex-row').first()).toBeVisible();
+            // And no tab beside it, once the host has said all it will (ADR-0056).
+            await circuitQuiet();
             await expect(pivot(page).getByRole('tablist')).toHaveCount(0);
             // Modal: what it covers takes neither the keyboard nor the pointer.
             await expect(pivot(page).locator('.ex-pivot-report')).toHaveAttribute('inert', '');
@@ -205,6 +207,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(menu).toBeVisible();
             await page.keyboard.press('Escape');
             await expect(menu).toHaveCount(0);
+            await circuitQuiet();
             await expect(dialog).toBeVisible();
             await expect(records).toBeFocused();
 
@@ -237,6 +240,8 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.down('Escape');
             await page.keyboard.up('Escape');
 
+            // Once every answer to the repeats has landed (ADR-0056).
+            await circuitQuiet();
             await expect(report(page)).toBeFocused();
             await page.keyboard.press('ArrowDown');
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
@@ -279,16 +284,20 @@ for (const chrome of ['builtin', 'mud']) {
             // A tab is a sheet of its own, and Escape does not close a sheet: its grid keeps the
             // keyboard and releases Tab, as any grid's Escape with nothing to dismiss does (KB-8,
             // ADR-0012 rewritten 2026-10-01), and the tab stays. The answer is a round trip away on
-            // the Server host, and a Tab typed before it would be held and dropped.
+            // the Server host, and a Tab typed before it would be held and dropped: on that host the
+            // circuit goes quiet first (ADR-0056); the fixed wait is the page's own time, all there
+            // is on WebAssembly.
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
             await expect(records).toBeFocused();
             await page.keyboard.press('Escape');
             await page.waitForTimeout(500);
+            await circuitQuiet();
             await expect(records).toBeFocused();
             await expect(details).toHaveCount(1);
             await expect(panel).toBeVisible();
             await page.keyboard.press('Tab');
             await expect(records).not.toBeFocused();
+            await circuitQuiet();
             await expect(details).toHaveCount(1);
 
             // A second tab, from the report once it is shown again (on Server, a round trip after
@@ -322,6 +331,7 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect(page.locator('#pivot-details-caption')).toContainText(/\d+ trades behind Sum of P&L where Region = Americas, Desk = \w+, Product = \w+\./);
             await expect(page.locator('#pivot-details .ex-viewport .ex-row').first()).toBeVisible();
+            await circuitQuiet();
             await expect(pivot(page).getByRole('tablist')).toHaveCount(0);
             await expect(page.getByRole('dialog')).toHaveCount(0);
         });
@@ -490,6 +500,8 @@ for (const chrome of ['builtin', 'mud']) {
 
             await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk', 'Month']);
             await expect(update).toBeEnabled();
+            // The report did not move, once the host has said all it will (ADR-0056).
+            await circuitQuiet();
             expect(await reportRows(page)).toBe(before);
             await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
 
@@ -577,8 +589,10 @@ test('ADR-0070 (DC-57): a control focused while the report\'s keyboard is on its
     await page.locator('#pivot-save').focus();
 
     await expect(dialog).toHaveCount(0);
-    // Past the report's request, which on Server comes two round trips after the Escape.
+    // Past the report's request, which on Server comes two round trips after the Escape: there,
+    // once the circuit is quiet (ADR-0056); the fixed wait is the page's own time on WebAssembly.
     await page.waitForTimeout(delayed ? 1000 : 100);
+    await circuitQuiet();
     await expect(page.locator('#pivot-save')).toBeFocused();
     await expect(report(page)).not.toBeFocused();
 });
@@ -606,6 +620,7 @@ test('ADR-0070/0018 (DC-57): a second grid pressed while the keyboard is on its 
 
     await expect(tabs).toHaveCount(0);
     await page.waitForTimeout(delayed ? 1000 : 100);
+    await circuitQuiet();
     await expect(reportOf(second)).toBeFocused();
     await expect(reportOf(second)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
     await page.keyboard.press('ArrowDown');
@@ -628,6 +643,7 @@ test('ADR-0039/0062: a MudSelect list inside Value Field Settings takes Escape b
     await page.keyboard.press('Escape');
 
     await expect(list).toHaveCount(0);
+    await circuitQuiet();
     await expect(panel).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(panel).toHaveCount(0);

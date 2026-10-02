@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
@@ -63,6 +63,11 @@ for (const chrome of ['builtin', 'mud']) {
         test(`PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (${chrome})`, async ({ page }) => {
             test.setTimeout(90_000);
             await open(page, chrome);
+            // Only the page's own batches change anything here. The server's live updates, which
+            // the page turned on, are turned off, so that once the batches are paused the circuit
+            // goes quiet and a reading can see all the host will say (ADR-0056).
+            await page.locator('#pivot-live-server-toggle').click();
+            await expect(page.locator('#pivot-live-server-toggle')).toHaveText("Turn the server's live updates on");
             // The page's timer applies a batch four times a second, and ExPivot redraws from the
             // newest Snapshot, marking the values whose painted text changed.
             const from = await batches(page);
@@ -76,16 +81,19 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#pivot-live-local-toggle')).toHaveText("Resume the page's changes");
             const paused = await batches(page);
             await expect(marked(page, 'local')).toHaveCount(0, { timeout: 10_000 });
+            await circuitQuiet();
             expect(await batches(page)).toBeLessThanOrEqual(paused + 1);
 
             // A collapse lays the report out again from the answer held: no data changed, so no
-            // value is marked (ADR-0067), however long after.
+            // value is marked (ADR-0067), however long after: on the Server host once the circuit
+            // is quiet; the fixed wait is the page's own time, all there is on WebAssembly.
             const toggle = report(page, 'local').locator('.ex-pivot-toggle').first();
             await expect(toggle).toHaveAttribute('aria-expanded', 'true');
             await toggle.click();
             await expect(report(page, 'local').locator('.ex-pivot-toggle').first()).toHaveAttribute('aria-expanded', 'false');
             await expect(marked(page, 'local')).toHaveCount(0);
             await page.waitForTimeout(600);
+            await circuitQuiet();
             await expect(marked(page, 'local')).toHaveCount(0);
 
             // Resumed, the batches mark values again.
