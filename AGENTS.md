@@ -106,6 +106,11 @@ collide with the existing ones.**
 4. **Chrome renders and calls back; the core decides meaning.** Swapping Chrome must not change
    behaviour.
 5. **Selection is cheap, so it is not capped. Caps belong on what cannot be executed.**
+6. **An outcome never depends on timing.** Users drive the grid with Playwright and similar
+   tools as well as by hand, at machine speed and over a circuit's round trip. When a race is
+   found, take the fix that makes the result deterministic — a gesture carries what it was
+   taken against, and is refused if that no longer holds — not one that narrows the window, or
+   a wait, retry or longer timeout. This holds for the product and for its tests alike.
 
 ## Traps that are hard to spot
 
