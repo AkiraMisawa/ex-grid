@@ -3,6 +3,7 @@ import { expectKeyboardOn } from './keyboard.mjs';
 import {
     sheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, enter, candidates, typeSteadily,
     expectCovers, pressCell, stretchesOf,
+    pressAt,
 } from './sheet-helpers.mjs';
 
 // Two ExSheets on /sheets (ADR-0018, SH-13, DC-25, ticket 18's second criterion): keys,
@@ -115,7 +116,7 @@ test('ADR-0018: a completion list, a pointing outline and the Formula Bar belong
 test('ADR-0018: a Context Menu opens in the Sheet it was asked of, and its command acts there', async ({ page }) => {
     const left = sheet(page, 0);
     const right = sheet(page, 1);
-    await cell(right, 'A1').click({ force: true, button: 'right' });
+    await pressAt(cell(right, 'A1'), { button: 'right' });
     await expect(right.locator('.ex-popover')).toHaveCount(1);
     await expect(left.locator('.ex-popover')).toHaveCount(0);
     await page.getByRole('menuitem', { name: 'Insert rows above' }).click();

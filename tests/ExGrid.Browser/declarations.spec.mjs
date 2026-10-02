@@ -5,6 +5,7 @@ import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, nameBox, expectFocusAt, goTo, enter,
     expectCovers, boxOf, readClipboard, candidates, typeSteadily, pressCell, expectSelectionIsCell, expectCaretShown,
     stretchesOf,
+    pressAt,
 } from './sheet-helpers.mjs';
 
 // The ExGrid declarations of ADR-0050, ADR-0051 and ADR-0057 (§26, DC-*), as ExSheet declares them on
@@ -1870,7 +1871,7 @@ test('DC-33: whether the invariant marker survives the asynchronous clipboard ro
     await clickCell(grid, 'C3', { modifiers: ['Shift'] });
     // A copy invoked from a menu fires no copy event: it always takes navigator.clipboard.write,
     // on both hosts (ADR-0036).
-    await cell(grid, 'B2').click({ force: true, button: 'right' });
+    await pressAt(cell(grid, 'B2'), { button: 'right' });
     await page.getByRole('menuitem', { name: /^Copy$/ }).click();
     await expect.poll(async () => (await readClipboard(page))['text/plain'] ?? '', { timeout: 5000 }).toMatch(/^12\t0\.5/);
     // Pasted into a cell of another Sheet region: the paste is what the browser hands over.
@@ -1972,7 +1973,7 @@ test('SRV-5/ED-22: a Formula typed into an open editor at 10 keys a second on a 
 
 test('DC-30/DC-25: on the grid that declares no undo, Ctrl+Z stays the browser\'s', async ({ page }) => {
     const positionsGrid = positions(page);
-    await positionsGrid.locator("[id$='-r1c1']").click({ force: true });
+    await pressAt(positionsGrid.locator("[id$='-r1c1']"));
     await expectKeyboardOn(positionsGrid);
     await alterPage(page, () => {
         window.__undoPrevented = null;
@@ -2023,7 +2024,7 @@ test('DC-25: the positions grid, declaring nothing, keeps ExGrid\'s own behaviou
     const positionsGrid = positions(page);
     await expect(positionsGrid.locator('.ex-formula-bar, .ex-row-heading, .ex-headings-corner, .ex-fill-handle')).toHaveCount(0);
     // Ctrl+↓ goes to the grid's edge, not to a block's end: it has no edge answer.
-    await positionsGrid.locator("[id$='-r0c0']").click({ force: true });
+    await pressAt(positionsGrid.locator("[id$='-r0c0']"));
     await page.keyboard.press('ControlOrMeta+ArrowDown');
     await expect(positionsGrid).toHaveAttribute('aria-activedescendant', /-r4c0$/);
     await expect(positionsGrid.locator('.ex-fill-handle')).toHaveCount(0);

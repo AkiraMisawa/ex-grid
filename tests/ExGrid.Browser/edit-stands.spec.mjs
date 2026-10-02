@@ -3,6 +3,7 @@ import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, clickBarEnd, editor, bar, expectFocusAt, pressCell, typeSteadily,
+    pressAt,
 } from './sheet-helpers.mjs';
 
 // An edit stands when the keyboard leaves the grid, and a press brings it back (ED-26,
@@ -44,7 +45,7 @@ async function pressPositions(page) {
     const fx = positions(page).locator('.ex-cell', { hasText: /^FX$/ }).first();
     await expect(fx).toBeVisible();
     // Cells are pointer-events: none; the press lands on the Viewport (ADR-0004).
-    await fx.click({ force: true });
+    await pressAt(fx);
     await expectKeyboardOn(positions(page));
 }
 
@@ -325,7 +326,7 @@ test.describe('/sheets', () => {
         await clickCell(right, 'A6');
         await expectKeyboardOn(right);
 
-        await left.locator('.ex-row .ex-row-heading', { hasText: /^6$/ }).click({ force: true });
+        await pressAt(left.locator('.ex-row .ex-row-heading', { hasText: /^6$/ }));
         await expect(cell(left, 'D4')).toHaveText('6');
         await expectFocusAt(left, 'A6');
         await expectKeyboardOn(left);
@@ -506,14 +507,14 @@ for (const rtt of [0, 150]) {
             const grid = page.locator('.ex-grid').first();
             const at = (row, column) => grid.locator(`[id$='-r${row}c${column}']`);
             await expect(at(2, 1)).toBeVisible();
-            await at(0, 1).click({ force: true });                // Trader, editable
+            await pressAt(at(0, 1));                // Trader, editable
             await expectActiveDescendant(grid, /-r0c1$/);
             await page.keyboard.type('99');
             await expect(grid.locator('input.ex-editor')).toHaveValue('99');
             await setRoundTrip(rtt);
 
             // No wait between the two.
-            await at(2, 1).click({ force: true });
+            await pressAt(at(2, 1));
             await page.keyboard.type('7');
 
             await expect(page.locator('#edit-status')).toContainText('Trader=99');
@@ -585,7 +586,7 @@ for (const rtt of [0, 150]) {
             const heard = () => page.evaluate(() => [...window.__editStandsHeard]);
             await setRoundTrip(rtt);
 
-            await at(0, 0).click({ force: true });               // Book: not editable, no edit
+            await pressAt(at(0, 0));               // Book: not editable, no edit
             await page.keyboard.press('ArrowDown');
             await page.keyboard.press('Shift');
 
@@ -597,11 +598,11 @@ for (const rtt of [0, 150]) {
             // round trip makes that window wide enough to type into on purpose.
             if (rtt > 0) {
                 await page.evaluate(() => { window.__editStandsHeard.length = 0; });
-                await at(0, 1).click({ force: true });           // Trader, editable
+                await pressAt(at(0, 1));           // Trader, editable
                 await page.keyboard.type('9');
                 await expect(grid.locator('input.ex-editor')).toHaveValue('9');
                 await page.evaluate(() => { window.__editStandsHeard.length = 0; });
-                await at(2, 1).click({ force: true });
+                await pressAt(at(2, 1));
                 await page.keyboard.press('Shift');
                 await expect(page.locator('#edit-status')).toContainText('Trader=9');
                 await expectActiveDescendant(grid, /-r2c1$/);
@@ -619,13 +620,13 @@ for (const rtt of [0, 150]) {
             const field = grid.locator('input.ex-editor');
             await expect(at(2, 1)).toBeVisible();
             const trader = (await at(2, 1).textContent()).trim();
-            await at(0, 1).click({ force: true });                // Trader, editable
+            await pressAt(at(0, 1));                // Trader, editable
             await expectActiveDescendant(grid, /-r0c1$/);
             await page.keyboard.type('99');
             await expect(field).toHaveValue('99');
             await setRoundTrip(rtt);
 
-            await at(2, 1).dblclick({ force: true });
+            await pressAt(at(2, 1), { double: true });
 
             await expect(page.locator('#edit-status')).toContainText('Trader=99');
             await expect(field).toHaveValue(trader);
@@ -645,7 +646,7 @@ for (const rtt of [0, 150]) {
             await setRoundTrip(rtt);
 
             await expect(cell(grid, 'B2')).toBeVisible();
-            await cell(grid, 'B2').dblclick({ force: true });
+            await pressAt(cell(grid, 'B2'), { double: true });
 
             await expect(cell(grid, 'C4')).toHaveText('99');
             await expect(editor(grid)).toHaveValue('12');

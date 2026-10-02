@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // Format Cells under ExSheet.MudBlazor's Chrome (ADR-0071, ticket 53; SH-45, SH-47): a MudDialog at
@@ -29,7 +29,7 @@ function choice(page, name) {
 
 async function openFromMenu(page, grid, address) {
     await pressCell(grid, address);
-    await cell(grid, address).click({ force: true, button: 'right' });
+    await pressAt(cell(grid, address), { button: 'right' });
     await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
     await expect(formatCells(page)).toBeVisible();
 }

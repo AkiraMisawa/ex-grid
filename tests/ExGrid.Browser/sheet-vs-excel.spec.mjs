@@ -1,5 +1,5 @@
 import { test, expect, scrollRowToTop } from './fixtures.mjs';
-import { chooseNumberFormat, expectCovers, expectSelectionIsCell } from './sheet-helpers.mjs';
+import { chooseNumberFormat, expectCovers, expectSelectionIsCell, pressAt } from './sheet-helpers.mjs';
 
 // Excel's behaviours, observed beside ExSheet (docs/specs/exsheet/excel-behaviours.md). Each test
 // is one item of that list, driven with real keys and the real mouse on /sheet, and its
@@ -46,7 +46,7 @@ const announced = (page) => sheet(page).locator('.ex-announce');
 // on the Server host, verification/2026-09-27-windows-excel/typing-probe-2.mjs), and these
 // probes ask about Excel's behaviours, not that race.
 async function click(page, a1, options = {}) {
-    await cell(page, a1).click({ force: true, ...options });
+    await pressAt(cell(page, a1), options);
     await page.waitForTimeout(PACE_MS);
     if (Object.keys(options).length === 0) await expect(nameBox(page)).toHaveValue(a1);
 }
@@ -203,14 +203,14 @@ test('item 3: a column letter selects the column, Shift+click extends, the Focus
 test('item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ADR-0052, ticket 06)', async ({ page }) => {
     const heading = (n) => sheet(page).locator('.ex-row-heading', { hasText: new RegExp(`^${n}$`) }).first();
     await click(page, 'C3');
-    await heading(2).click({ force: true });
+    await pressAt(heading(2));
     await expectSelection(page, 'A2', 'XFD2');
     await expectActive(page, 'A2');
-    await heading(5).click({ force: true, modifiers: ['Shift'] });
+    await pressAt(heading(5), { modifiers: ['Shift'] });
     await expectSelection(page, 'A2', 'XFD5');
     await expectActive(page, 'A2');
-    await heading(5).click({ force: true });
-    await heading(2).click({ force: true, modifiers: ['Shift'] });
+    await pressAt(heading(5));
+    await pressAt(heading(2), { modifiers: ['Shift'] });
     await expectSelection(page, 'A2', 'XFD5');
     await expectActive(page, 'A5');
 });
@@ -432,7 +432,7 @@ test('item 10: Point mode by mouse writes the clicked cell, then the dragged ran
     await click(page, 'E10');
     await page.keyboard.type('=');
     // A click while pointing: no waiting for the Name Box, which is the question here.
-    await cell(page, 'C3').click({ force: true });
+    await pressAt(cell(page, 'C3'));
     await page.waitForTimeout(PACE_MS);
     await expect(cellEditor(page)).toHaveValue('=C3');
     // Excel's Name Box names the pointed cell while pointing (C3 in its screenshot).
