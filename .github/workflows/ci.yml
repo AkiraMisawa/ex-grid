@@ -229,6 +229,76 @@ jobs:
       - name: Every shard passed
         run: test "${{ needs.browser-server.result }}" = success
 
+  # The spec files a pull request adds or changes, each run three times over on each host and
+  # browser (tests/ExGrid.Browser/README.md, "Before a new or changed spec goes in"). A test that
+  # fails one time in a few fails here, on the branch that wrote it, rather than later on a
+  # branch that did not touch it. Only the files themselves: a change to a helper they import is
+  # the full run's to cover. retries stays 0 (ADR-0026), so a repeat that fails is a failure.
+  browser-repeat:
+    name: Changed specs, three times, against ${{ matrix.hosting }} on ${{ matrix.project }} (Linux, headed)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        hosting: [wasm, server]
+        project: [chrome, msedge]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # The pull request's merge commit against its base: what the pull request adds or changes.
+      - name: The spec files this pull request adds or changes
+        id: changed
+        run: |
+          specs=$(git diff --name-only --diff-filter=AMR "origin/${{ github.base_ref }}...HEAD" \
+            -- 'tests/ExGrid.Browser/*.spec.mjs' | sed 's#^tests/ExGrid.Browser/##' | tr '\n' ' ')
+          echo "specs=${specs}" >> "$GITHUB_OUTPUT"
+          echo "Repeated: ${specs:-none}"
+
+      - uses: actions/setup-dotnet@v6
+        if: steps.changed.outputs.specs != ''
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v7
+        if: steps.changed.outputs.specs != ''
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+
+      - name: Install the suite
+        if: steps.changed.outputs.specs != ''
+        working-directory: tests/ExGrid.Browser
+        run: npm ci
+
+      - name: Build the host
+        if: steps.changed.outputs.specs != ''
+        run: dotnet build ${{ matrix.hosting == 'server' && 'samples/ExGrid.DemoHost.Server' || 'samples/ExGrid.DemoHost' }}
+
+      - name: The changed specs, three times, headed under xvfb
+        if: steps.changed.outputs.specs != ''
+        working-directory: tests/ExGrid.Browser
+        env:
+          EXGRID_HOSTING: ${{ matrix.hosting }}
+        run: >
+          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
+          npx playwright test ${{ steps.changed.outputs.specs }} --project=${{ matrix.project }} --repeat-each=3
+
+      - name: Keep the run's records
+        if: always() && steps.changed.outputs.specs != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-repeat-${{ matrix.hosting }}-${{ matrix.project }}
+          path: |
+            verification/
+            tests/ExGrid.Browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
+
   package:
     name: Packages, taken as a Consumer takes them
     runs-on: ubuntu-latest
