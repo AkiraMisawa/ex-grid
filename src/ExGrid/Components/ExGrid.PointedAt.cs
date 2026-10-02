@@ -175,6 +175,7 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
 
     private Task OnPointedRowsPress(MouseEventArgs e)
     {
+        e = AsTaken(e, "mousedown");
         var handedOn = ClaimHandedOnPress(e);
         _pointedPressHandOver = HandOverRowsPressAsync(e, handedOn);
         return _pressAnswer = AnswerHandedOnAsync(_pointedPressHandOver, handedOn);
@@ -314,9 +315,9 @@ public partial class ExGrid<TRow> : IPointedAtGrid<TRow>
         _suppressRender = !dragging;
         if (e.Button != 0 || PointedAt is not { } pointedAt || !double.IsFinite(e.OffsetX) || !double.IsFinite(e.OffsetY))
             return;
-        var geometry = _columnStyles.Geometry;
+        var geometry = ColumnsOf(e);
         GridPointedPress<TRow> press;
-        if (ShowsRowHeadings && geometry.IsInLead(e.OffsetX, _scrollLeftPx))
+        if (ShowsRowHeadings && geometry.IsInLead(e.OffsetX, ScrollLeftOf(e)))
         {
             if (CellUnder(e) is null)
                 return;
