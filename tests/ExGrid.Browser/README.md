@@ -233,6 +233,11 @@ own, so each boots the app once as a file does. A test that fails one time in fi
 one run in a few, on a branch that did not touch it. `retries` stays 0 (ADR-0026): a retry
 would make that failure invisible, not rare.
 
+CI does the same for a pull request. Its `browser-repeat` jobs run each spec file the pull
+request adds or changes three times, against each host on Chrome and on Edge (ADR-0056, note of
+2026-10-02). They take the files themselves, not those that import a helper the pull request
+changed: the full run covers those.
+
 ## What a test shares with the rest of its file
 
 A spec file boots the app once; every test in it mounts its page afresh (ADR-0056). Booting
