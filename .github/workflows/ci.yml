@@ -234,16 +234,20 @@ jobs:
   # fails one time in a few fails here, on the branch that wrote it, rather than later on a
   # branch that did not touch it. Only the files themselves: a change to a helper they import is
   # the full run's to cover. retries stays 0 (ADR-0026), so a repeat that fails is a failure.
+  # In two shards of whole files, as the full run is: a pull request that changed seventeen spec
+  # files ran 1158 tests here, and the WebAssembly host did not finish them in an hour (PR #42).
+  # A pull request that changed one file leaves a shard empty, which passes.
   browser-repeat:
-    name: Changed specs, three times, against ${{ matrix.hosting }} on ${{ matrix.project }} (Linux, headed)
+    name: Changed specs, three times, against ${{ matrix.hosting }} on ${{ matrix.project }}, shard ${{ matrix.shard }}/2 (Linux, headed)
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         hosting: [wasm, server]
         project: [chrome, msedge]
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
         with:
@@ -287,12 +291,13 @@ jobs:
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
           npx playwright test ${{ steps.changed.outputs.specs }} --project=${{ matrix.project }} --repeat-each=3
+          --shard=${{ matrix.shard }}/2 --pass-with-no-tests
 
       - name: Keep the run's records
         if: always() && steps.changed.outputs.specs != ''
         uses: actions/upload-artifact@v7
         with:
-          name: layer3-repeat-${{ matrix.hosting }}-${{ matrix.project }}
+          name: layer3-repeat-${{ matrix.hosting }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
             verification/
             tests/ExGrid.Browser/test-results/
