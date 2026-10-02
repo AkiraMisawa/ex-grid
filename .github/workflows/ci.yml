@@ -229,7 +229,7 @@ jobs:
       - name: Every shard passed
         run: test "${{ needs.browser-server.result }}" = success
 
-  # The spec files a pull request adds or changes, each run three times over on each host and
+  # The spec files a push to a pull request changes, each run three times over on each host and
   # browser (tests/ExGrid.Browser/README.md, "Before a new or changed spec goes in"). A test that
   # fails one time in a few fails here, on the branch that wrote it, rather than later on a
   # branch that did not touch it. Only the files themselves: a change to a helper they import is
@@ -253,12 +253,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      # The pull request's merge commit against its base: what the pull request adds or changes.
-      - name: The spec files this pull request adds or changes
+      # The spec files the pull request adds or changes against its base (its merge commit is
+      # HEAD here) that this push changed. A merge of the base brings the base's changes, which
+      # are not the pull request's and drop out. The push that opens the pull request, and one
+      # whose earlier head is not in the history, take all of the pull request's. Only what the
+      # push changed, so the job ends inside the full run's time: it first took every spec file
+      # the pull request changes, on every push, and on #42 that was 17 files and 1158 tests,
+      # longer than the full run (run 36952902974).
+      - name: The spec files this push changes
         id: changed
+        env:
+          BASE: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.action == 'synchronize' && github.event.before || '' }}
+          AFTER: ${{ github.event.pull_request.head.sha }}
         run: |
-          specs=$(git diff --name-only --diff-filter=AMR "origin/${{ github.base_ref }}...HEAD" \
-            -- 'tests/ExGrid.Browser/*.spec.mjs' | sed 's#^tests/ExGrid.Browser/##' | tr '\n' ' ')
+          in_pr=$(git diff --name-only --diff-filter=AMR "origin/${BASE}...HEAD" -- 'tests/ExGrid.Browser/*.spec.mjs')
+          if [ -n "${BEFORE}" ] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            in_push=$(git diff --name-only "${BEFORE}" "${AFTER}" -- 'tests/ExGrid.Browser/*.spec.mjs')
+            changed=$(comm -12 <(printf '%s\n' "${in_pr}" | sort -u) <(printf '%s\n' "${in_push}" | sort -u))
+          else
+            changed=${in_pr}
+          fi
+          specs=$(printf '%s\n' "${changed}" | sed '/^$/d; s#^tests/ExGrid.Browser/##' | tr '\n' ' ')
           echo "specs=${specs}" >> "$GITHUB_OUTPUT"
           echo "Repeated: ${specs:-none}"
 
