@@ -270,6 +270,14 @@ and CP-6's "the `copy` event route" is a WebAssembly criterion; what it protects
 permission prompt on an everyday copy — is asserted on Server instead (§24 of the
 [Definition of Done](../definition-of-done.md)).
 
+*(Added 2026-10-02, with [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s note of
+the day.)* **A Ctrl+C pressed while the grid is still answering a key or a press before it takes
+the asynchronous route too, on every host.** Its write is started in its `copy` event, the only
+moment the browser lets it start, and its payload is built at its turn, from the Selection the
+keys and presses before it leave. Before this, such a copy was lost, and the clipboard kept what
+it held: the silent outcome this ADR refuses. A Ctrl+V pressed then has its data read in its
+`paste` event and is pasted at its turn (ADR-0014).
+
 ## Consequences
 
 - **It presupposes the selection model** — rectangular ranges (anchor plus focus), whole rows and

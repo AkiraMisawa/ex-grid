@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using AngleSharp.Css;
 using AngleSharp.Css.Parser;
 using AngleSharp.Dom;
+using ExGrid.Keys;
 using Xunit;
 
 namespace ExGrid.Components.Tests;
@@ -89,8 +90,50 @@ public class ShippedStylesheetTests
         // focusout, emptying the field as it is left and ending the release of Tab when DOM focus
         // leaves the grid (ADR-0012). And the eighth (ADR-0090): change on a media query of the
         // current resolution, which tells the grid its Device Pixel when the scale or the zoom moves.
-        string[] allowed = ["change", "compositionend", "compositionend", "compositionstart", "copy", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "scroll", "selectionchange"];
+        // And the clipboard entry once more: copy, cut and paste in the capture phase, taking the
+        // event a clipboard key fires while a hold stands into its place among the held keys
+        // (ADR-0010's note of 2026-10-02) — the same events, no new use.
+        string[] allowed = ["change", "compositionend", "compositionend", "compositionstart", "copy", "copy", "cut", "ex-press-handed-on", "focus", "focusout", "input", "keydown", "mousedown", "mousemove", "mouseleave", "mouseup", "paste", "paste", "scroll", "selectionchange"];
         Assert.Equal(allowed.OrderBy(name => name, StringComparer.Ordinal), listeners);
+    }
+
+    [Fact] // ADR-0010 (2026-10-02) / ADR-0005 / ED-22: a clipboard key typed while a hold stands is let through, and the event it fires is taken among the held keys, never dropped
+    public void A_clipboard_key_is_let_through_a_hold_and_its_event_is_held()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+
+        var listed = Regex.Match(script, @"const clipboardKeys = new Set\(\[(?<keys>[^\]]*)\]\);").Groups["keys"].Value;
+        var letThrough = Regex.Matches(listed, @"'(?<key>[^']+)'").Select(match => match.Groups["key"].Value).ToHashSet();
+
+        // Every key the core answers through the browser's own copy or paste event, which is why a
+        // Consumer may not declare it, is one the hold lets through: held as a key, it was lost.
+        foreach (var key in new[] { "Control+c", "Control+C", "Control+Insert", "Control+v", "Control+V", "Shift+Insert" })
+        {
+            var refusal = Assert.Throws<ArgumentException>(() => GridKeys.Declare([key]));
+            Assert.Matches("copy event|paste event", refusal.Message);
+            Assert.Contains(key, letThrough);
+        }
+        // Cut and paste as plain text are not the core's, so a Consumer may declare them; declared,
+        // they are its keys, held as keys, and the listener asks before it lets one through.
+        foreach (var key in new[] { "Control+x", "Control+X", "Shift+Delete", "Control+Shift+v", "Control+Shift+V" })
+        {
+            Assert.Contains(key, GridKeys.Declare([key]));
+            Assert.Contains(key, letThrough);
+        }
+        Assert.Equal(11, letThrough.Count);
+        Assert.Matches(new Regex(@"return clipboardKeys\.has\(canonical\) && !declared\.has\(canonical\);"), script);
+
+        // In the hold, such a key's default is not prevented and it is not pushed as a key: the
+        // event its default fires takes its place, in the capture phase, before any field hears it.
+        Assert.Matches(new Regex(@"if \(isClipboardKey\(k\)\) \{\s*clipboardKeyHeld = true;[^}]*\}\);\s*\} else \{\s*event\.preventDefault\(\);\s*held\.push\(k\);\s*\}"), script);
+        foreach (var type in new[] { "copy", "cut", "paste" })
+        {
+            Assert.Contains($"root.addEventListener('{type}', onHeldClipboard, true);", script);
+            Assert.Contains($"root.removeEventListener('{type}', onHeldClipboard, true);", script);
+        }
+        // Dropped with the keys before it, a held copy writes nothing: the clipboard keeps what it held.
+        Assert.Matches(new Regex(@"const dropHeld = \(\) => \{\s*for \(const k of held\) \{\s*if \(k\.clipboard === 'copy'\) \{\s*k\.take\(false\);"), script);
+        Assert.DoesNotContain("held.length = 0;\n                break;", script);
     }
 
     [Fact] // ADR-0090 / ADR-0021's eighth entry: the Device Pixel is told by a media query on the window's resolution, released on dispose

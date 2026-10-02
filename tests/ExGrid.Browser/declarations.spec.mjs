@@ -1740,17 +1740,71 @@ for (const chrome of ['builtin', 'mud']) {
         await expectKeyboardOn(grid);
         await copied('B2', '12');
 
-        // And a paste after an edit lands where the Selection is. The commit is waited for as
-        // every step above waits for it: a Ctrl+V pressed while the core has not yet answered it
-        // is held, and a clipboard key cannot be replayed, so it is dropped (CI, the Server host,
-        // 2026-10-02).
+        // And a paste after an edit lands where the Selection is.
         await enter(page, grid, 'E6', '1');
-        await expect(cell(grid, 'E6')).toHaveText('1');
-        await expectKeyboardOn(grid);
         await page.evaluate(() => navigator.clipboard.writeText('42'));
         await clickCell(grid, 'F6');
         await page.keyboard.press('ControlOrMeta+V');
         await expect(cell(grid, 'F6')).toHaveText('42');
+    });
+}
+
+// A clipboard key typed while the grid is still answering a key or a press before it (ED-22,
+// ADR-0010 of 2026-10-02). Held as a key it was lost: a copy or a paste dispatched from script does
+// nothing, so the clipboard kept what it held and the paste never landed — CP-6 above failed so in
+// 4 to 7 runs of 100 on the Server host, wherever its click came inside the answer to an edit's
+// end. On a 150 ms circuit every key here is typed inside a hold, so every run takes that path; the
+// copy or paste its key fires is taken in its place and done at its turn, where the keyboard is
+// then. On WebAssembly it is the case without a round trip.
+for (const chrome of ['builtin', 'mud']) {
+    test(`ED-22/ADR-0010: Ctrl+C and Ctrl+V typed at once behind an edit's end, a press and F2 are done in their turn on a 150 ms circuit (${chrome} Chrome)`, async ({ page }) => {
+        await underChrome(page, chrome);
+        const grid = sheet(page);
+        await setRoundTrip(150);
+
+        // Enter, then Ctrl+V at once: the paste lands in the cell the Focus moved to.
+        await page.evaluate(() => navigator.clipboard.writeText('42'));
+        await clickCell(grid, 'E1');
+        await page.keyboard.type('5');
+        await expect(editor(grid)).toHaveValue('5');
+        await page.keyboard.press('Enter');
+        await page.keyboard.press('ControlOrMeta+V');
+        await expect(cell(grid, 'E2')).toHaveText('42');
+        await expect(cell(grid, 'E1')).toHaveText('5');
+
+        // Enter, a press on another cell and Ctrl+V at once: the paste lands in the pressed cell.
+        await clickCell(grid, 'E3');
+        await page.keyboard.type('6');
+        await expect(editor(grid)).toHaveValue('6');
+        await page.keyboard.press('Enter');
+        await clickCell(grid, 'F3');
+        await page.keyboard.press('ControlOrMeta+V');
+        await expect(cell(grid, 'F3')).toHaveText('42');
+        await expect(cell(grid, 'E3')).toHaveText('6');
+        await expect(cell(grid, 'E4')).toHaveText('');
+
+        // Tab, a press on another cell and Ctrl+C at once: the clipboard holds the pressed cell,
+        // not what it held before.
+        await page.evaluate(() => navigator.clipboard.writeText('SENTINEL'));
+        await clickCell(grid, 'E5');
+        await page.keyboard.type('7');
+        await expect(editor(grid)).toHaveValue('7');
+        await page.keyboard.press('Tab');
+        await clickCell(grid, 'B2');
+        await page.keyboard.press('ControlOrMeta+C');
+        await expect.poll(async () => ((await readClipboard(page))['text/plain'] ?? '').trimEnd(), { timeout: 5000 })
+            .toBe('12');
+        await expect(cell(grid, 'E5')).toHaveText('7');
+
+        // F2, then Ctrl+V at once: the text is pasted into the edit F2 opened, at its caret.
+        await page.evaluate(() => navigator.clipboard.writeText('42'));
+        await pressCell(grid, 'B3');
+        await page.keyboard.press('F2');
+        await page.keyboard.press('ControlOrMeta+V');
+        await expect(editor(grid)).toHaveValue('742');
+        await page.keyboard.press('Escape');
+        await expect(editor(grid)).toHaveCount(0);
+        await expect(cell(grid, 'B3')).toHaveText('7');
     });
 }
 
