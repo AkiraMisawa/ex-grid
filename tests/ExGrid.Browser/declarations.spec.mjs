@@ -1,4 +1,4 @@
-import { test, expect, alterPage, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip, record, watchNextKey, keySeenUntouched } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 import { expectKeyboardOn, expectActiveDescendant } from './keyboard.mjs';
 import {
@@ -1537,6 +1537,11 @@ async function dragHandle(page, grid, from, to) {
     await page.mouse.move(toX + 3, toY, { steps: 8 });
     await fillDragHeard(page, grid, toX + 3, toY);
     await page.mouse.up();
+    // The release fills, and on a circuit the render that writes the fill lands a round trip
+    // later. A press straight after it caught E2 between two renders, with no box to press
+    // (CI, Server host, msedge: one run in three of DC-13's fill right, 2026-10-02), so the next
+    // step waits for the host to have said all it will (ADR-0056, note of 2026-10-02).
+    await circuitQuiet();
 }
 
 /**
