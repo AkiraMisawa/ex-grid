@@ -50,7 +50,11 @@ display-only grid has none, and keeps the keyboard on its root, as before.
 - **DOM focus never moves while a composition lasts.** Moving it ends the composition there and then,
   and the next keys start another: `kana` would come out `ｋあ` (the fifteenth run's i1y saw `k穴`).
   - The core's request that the editor take the keyboard waits while the field composes, and is
-    granted when the composition ends.
+    granted when the composition ends. *(Refined 2026-10-02, ticket 120: granted once the field has
+    stopped composing, in the task after a composition's end, and not if the IME's key started the next
+    composition there; then it waits for that one's end. The IME sends its end and the next start
+    together, and Chrome tells the page of the start only after the end's listeners and all they ran
+    have returned. On WebAssembly the edit opened, rendered and asked for the keyboard inside that run.)*
   - A second composition the IME finishes in the field before the first one's editor has the keyboard
     (a circuit, a fast typist) is typed into the edit at its caret, in order.
   - A primary press anywhere in the root during a composition ends it first: the field gives up the
@@ -178,7 +182,7 @@ text (ticket 78), and A11Y-21 resolved over CDP. Decided with the user, or recor
   45 ms later DOM focus moved to the Cell Editor the first one had opened, while the second was
   composing, so `ｋ` was carried there without its romaji state: D10 ended `かな暗示` where Excel and
   the Server host gave `かな感じ`. That breaks "DOM focus never moves while a composition lasts" above,
-  and ED-30. Ticket 120.
+  and ED-30. Fixed by ticket 120 (the refinement above); a real IME rechecks it in a later run.
 - **The IME's own windows take presses, as in Excel** (k8, k16). A press that lands on the prediction
   list or on the composition's text is the IME's and never reaches the page; the IME may choose a
   prediction with it. Excel's click did not select the cell under the list either. A press clear of
