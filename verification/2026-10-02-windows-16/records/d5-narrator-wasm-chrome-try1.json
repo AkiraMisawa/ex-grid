@@ -1,0 +1,24 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "started": "2026-10-02T02:32:20.546Z",
+ "steps": [],
+ "messages": [
+  {
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "keyboard": {
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "Error: front ime16-d5-chrome: err the window 'ime16-d5-chrome...' is not in front t=8091"
+ },
+ "narratorRunningBefore": "ok narratortext []",
+ "focusBefore": true,
+ "narratorStart": "ok narrator started, running: True front: title=\"Narrator updates\" process=ShellHost",
+ "frontAfterStart": "ok foreground title=\"Narrator updates\" process=ShellHost",
+ "narratorWindowsAtStart": "ok narratortext [\"window class=HighlightCursorClass rect=2146,1436,2334,1489\",\"  names: \"]",
+ "narratorStop": "Error: narrator stop: err Cannot stop process \"Narrator (3856)\" because of the following error: Access is denied t=7756",
+ "finished": "2026-10-02T02:32:29.457Z"
+}
