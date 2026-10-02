@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet } from './fixtures.mjs';
 
 // The Wrapper verified against a Consumer (Definition of Done §23): /mud-app is an ordinary
 // MudBlazor application — MudLayout with an AppBar and a Drawer, MudTabs, a MudDialog, a
@@ -385,6 +385,16 @@ test('WR-7: a grid in a MudDialog opens its popovers whole inside its box, and i
     await operator.click();
     const item = page.locator('.mud-popover-open .mud-list-item').first();
     await expect(item).toBeVisible();
+    // MudBlazor places an open popover from its own script, in a frame after the render that
+    // opened it: it writes where the list stands and how high it stacks. Until then the list has
+    // only MudBlazor's stylesheet, which stacks it under the dialog, and a reading taken as soon
+    // as it showed found its centre not on it (CI, Server host, msedge, 2026-10-02). So the
+    // reading waits for the host to have said all it will (ADR-0056), then for the placement.
+    await circuitQuiet();
+    await expect.poll(() => item.evaluate((el) => {
+        const list = el.closest('.mud-popover');
+        return list.style.top !== '' && list.style.zIndex !== '';
+    }), 'MudBlazor has placed the list').toBe(true);
     const onTop = await item.evaluate((el) => {
         const r = el.getBoundingClientRect();
         return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
