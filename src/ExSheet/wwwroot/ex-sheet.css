@@ -95,22 +95,25 @@
    its translucent token, multiplied over white Paper. */
 .ex-sheet .ex-selection { z-index: auto; }
 .ex-sheet .ex-selection .ex-range { isolation: auto; }
+/* The shade is black at 22%: over white Paper that is Excel's #C7C7C7 (255 × 0.78 = 199), and over a
+   Pinned Column, where it cannot multiply, it stays translucent, so the value still reads through. */
 .ex-sheet .ex-selection .ex-range::before {
     z-index: auto;
     mix-blend-mode: multiply;
-    background: var(--ex-selection-fill, #c7c7c7);
+    background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22));
 }
-.ex-sheet .ex-selection-pinned .ex-range::before { background: var(--ex-selection-fill, #c7c7c7); }
+.ex-sheet .ex-selection-pinned .ex-range::before { background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22)); }
 @media (forced-colors: active) {
     .ex-sheet .ex-focus::after, .ex-sheet .ex-range-single::after { box-shadow: none; }
 }
 
 /* The Row Headings' edge is Excel's #ABABAB over white (Part C): the core's grey at the alpha that
-   gives it, so on a dark page it still stands out from the dark ground. Where no Theme or Wrapper
-   names --ex-heading-rule-color: the header's rule, which the core falls back to, is left as it is. */
+   gives it, so on a dark page it still stands out from the dark ground. Only the core's own default
+   changes: a Theme's or a Wrapper's --ex-heading-rule-color, or its header rule, which the core falls
+   back to (ExGrid.MudBlazor's table lines), still wins. */
 .ex-sheet .ex-row-heading,
 .ex-sheet .ex-headings-corner {
-    box-shadow: inset calc(0px - var(--ex-rule-dp, 1px)) 0 var(--ex-heading-rule-color, rgba(128, 128, 128, 0.66));
+    box-shadow: inset calc(0px - var(--ex-rule-dp, 1px)) 0 var(--ex-heading-rule-color, var(--ex-header-rule-color, rgba(128, 128, 128, 0.66)));
 }
 
 /* Format Cells under the built-in Chrome (ADR-0071): the contents ExSheet shows in the grid's

@@ -3853,7 +3853,9 @@
             return;
         _resizeColumn = column;
         _resizeStartClientX = e.ClientX;
-        _resizeStartWidthPx = _columnStyles.Geometry.WidthPxOf(column);
+        // The width the column declares, not the one painted on Device Pixels (ADR-0090): a resize
+        // reports the declared width moved by the drag, never a rounding the Consumer did not ask for.
+        _resizeStartWidthPx = _columnStyles.Geometry.DeclaredWidthPxOf(column);
         _resizeGuideLeftPx = GuideLeftPx(column, _resizeStartWidthPx);
         AttachRootGesture();
     }

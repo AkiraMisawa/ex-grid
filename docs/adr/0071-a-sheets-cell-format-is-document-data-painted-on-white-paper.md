@@ -806,6 +806,10 @@ own. Under the built-in Chrome:
     pinned cells (ADR-0004, ADR-0008), and a layer can only multiply with what is inside it. So over a
     Pinned Column the shade still lies over the lines, as before. That stays owed.
 - **The Focus cell stays unshaded**, as today.
+- **The fill handle is the outline's colour**, as Excel's is: green under the built-in Chrome, the
+  primary under `ExSheet.MudBlazor`.
+- **The shade's default is black at 22%.** Multiplied over white Paper it is `#C7C7C7`. Over a Pinned
+  Column, where it cannot multiply, it stays translucent, so the value still reads through it.
 - **While an edit is open, the white line inside the outline is not drawn**, as Excel drops it (the
   fourteenth run, case 19).
 

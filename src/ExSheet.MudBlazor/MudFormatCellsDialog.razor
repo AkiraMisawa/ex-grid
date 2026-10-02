@@ -301,7 +301,7 @@
                              Label="Strikethrough" Class="mud-ex-sheet-format-cells-strikethrough" />
                 @* Excel's Normal font (ADR-0071, 2026-10-02): checking it sets every part of the Font to
                    its default, and it shows checked while they are. *@
-                <MudCheckBox T="bool" Value="Draft.IsNormalFont" ValueChanged="NormalFont" Dense="true" Size="Size.Small"
+                <MudCheckBox T="bool" Value="Draft.IsNormalFont" ValueChanged="_normalFont" Dense="true" Size="Size.Small"
                              Label="Normal font" Class="mud-ex-sheet-format-cells-normal-font" />
             </div>
         </div>
@@ -314,6 +314,10 @@
     {
         if (normal) Draft.SetNormalFont();
     }
+
+    // Cached, so a render hands MudCheckBox the same delegate (AGENTS.md: a method group is a new one each time).
+    private Action<bool>? _normalFontCached;
+    private Action<bool> _normalFont => _normalFontCached ??= NormalFont;
 
     // The Font tab's underline, as Excel names it: single, or none.
     private static readonly Func<bool, string?> UnderlineName = underline => underline ? "Single" : "None";

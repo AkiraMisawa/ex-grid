@@ -100,6 +100,14 @@ test('SH-49/DC-59 (MudBlazor Chrome): the outline is the palette\'s primary and 
         .evaluate((el) => getComputedStyle(el, '::after').borderTopColor));
     expect(sameColour(outline, EXCEL_GREEN, 8)).toBe(false);
 
+    // Two Device Pixels of the primary on C3's bottom, the white line inside them, as under the
+    // built-in Chrome.
+    const c3 = await cell(grid, 'C3').boundingBox();
+    const edge = await across(page, c3, 'bottom', 0.5);
+    for (const offset of [-1, 0]) expect(sameColour(edge.pixel(offset), outline, 2), `the outline at ${offset}: ${edge.pixel(offset)}`).toBe(true);
+    expect(sameColour(edge.pixel(1), outline, 2), `only two Device Pixels of outline: ${edge.pixel(1)}`).toBe(false);
+    expect(sameColour(edge.pixel(-2), WHITE, 2), `the white line inside: ${edge.pixel(-2)}`).toBe(true);
+
     const c2 = await cell(grid, 'C2').boundingBox();
     const inside = await across(page, c2, 'bottom', 0.5);
     expect(sameColour(inside.pixel(-1), BLACK, 2), `the line between C2 and C3: ${inside.pixel(-1)}`).toBe(true);
@@ -152,7 +160,7 @@ test('VZ-16: a change of resolution is told to the grid, and back again (ADR-009
 
 // ---- The Row Headings' edge (Part C) ----------------------------------------------------------------
 
-test('SH-46 (Part C): the Row Headings\' edge is Excel\'s #ABABAB on a light page (ADR-0071)', async ({ page }) => {
+test('Part C (ticket 146): the Row Headings\' edge is Excel\'s #ABABAB on a light page (ADR-0071)', async ({ page }) => {
     const grid = await openCase(page, '11');
     const a8 = await cell(grid, 'A8').boundingBox();
     const { pixel } = await across(page, a8, 'left', 0.5);
@@ -217,7 +225,22 @@ test('SH-48 (Part C, case 12): Ctrl+Shift+= over a whole row inserts a row above
     await page.keyboard.press('Control+Minus');
     expect(await keySeenUntouched(page)).toBeNull();
     await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
+    // keySeenUntouched above is what says the page never had the key; the ratio is read only to show
+    // nothing zoomed meanwhile.
     expect(await page.evaluate(() => devicePixelRatio)).toBe(zoom);
+});
+
+test('SH-48: Ctrl+Shift+= over a whole column inserts a column to its left, and Ctrl+Minus deletes it (ADR-0050 item 14)', async ({ page }) => {
+    const grid = await openCase(page, '3c');
+    await pressCell(grid, 'A1');
+    await page.keyboard.press('Control+Space');
+
+    await page.keyboard.press('Control+Shift+Equal');
+    await expect(cell(grid, 'B1')).toHaveAccessibleName('-123456789');
+    await expect(cell(grid, 'A1')).toHaveText('');
+
+    await page.keyboard.press('Control+Minus');
+    await expect(cell(grid, 'A1')).toHaveAccessibleName('-123456789');
 });
 
 test('SH-48: over a part of a row Ctrl+Minus changes nothing and says why (ADR-0050 item 14)', async ({ page }) => {

@@ -118,12 +118,14 @@ public sealed class ColumnGeometry
         _offsets = new double[widthsPx.Count + 1];
         _widths = new double[widthsPx.Count];
         _declared = new double[widthsPx.Count];
-        // Each edge is counted in whole Device Pixels from the declared position, and a width
-        // is the difference of two counts: so two equal counts give the same width bit for
-        // bit, and nothing accumulates (ADR-0090). Untold, the declared widths are painted.
+        // Each edge is counted in whole Device Pixels from the declared position: an edge is its
+        // count over the ratio and a width the difference of two counts, so neither carries the
+        // noise of a running sum, and two equal counts give the same width bit for bit (ADR-0090).
+        // Untold, the declared widths are painted, summed as before.
+        var ratio = devicePixelRatio ?? 0;
         var declaredEdge = leadWidthPx;
-        var paintedEdge = devicePixelRatio is { } ratio ? DevicePixelsAt(declaredEdge, ratio) : 0;
-        _offsets[0] = devicePixelRatio is { } leadRatio ? paintedEdge / leadRatio : leadWidthPx;
+        var paintedEdge = devicePixelRatio is null ? 0 : DevicePixelsAt(declaredEdge, ratio);
+        _offsets[0] = devicePixelRatio is null ? leadWidthPx : paintedEdge / ratio;
         for (var i = 0; i < widthsPx.Count; i++)
         {
             var width = widthsPx[i];
@@ -133,15 +135,17 @@ public sealed class ColumnGeometry
                     $"Column {i} has a width of {width}px; a resolved width is finite and non-negative (ADR-0016).");
             }
             _declared[i] = width;
-            if (devicePixelRatio is { } r)
+            if (devicePixelRatio is null)
             {
-                declaredEdge += width;
-                var next = DevicePixelsAt(declaredEdge, r);
-                width = (next - paintedEdge) / r;
-                paintedEdge = next;
+                _widths[i] = width;
+                _offsets[i + 1] = _offsets[i] + width;
+                continue;
             }
-            _widths[i] = width;
-            _offsets[i + 1] = _offsets[i] + width;
+            declaredEdge += width;
+            var next = DevicePixelsAt(declaredEdge, ratio);
+            _widths[i] = (next - paintedEdge) / ratio;
+            _offsets[i + 1] = next / ratio;
+            paintedEdge = next;
         }
 
         if (_offsets[widthsPx.Count] > MaxScrollWidthPx)

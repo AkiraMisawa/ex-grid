@@ -62,23 +62,25 @@ the total width is the declared total rounded once, and the rounding never accum
 
 - **One place does it**: where the grid builds its column geometry from the resolved widths. Every
   reader of that geometry — the cells, the header, the Selection and the other overlays, the Cell
-  Editor and the Keyboard Field, the hit test and the `####` decision — reads the same edges, so none
-  can drift from another (ADR-0013).
+  Editor and the Keyboard Field, and the hit test — reads the same edges, so none can drift from
+  another (ADR-0013).
 - **The Row Headings' width is rounded the same way**, so column 0's edge lies on a Device Pixel too.
 - **A column's rule is drawn in whole Device Pixels**, as a row's already is (`--ex-rule-dp`): the
   rule's width rounded down to the Device Pixel, and never thinner than the token where the token is
   under one. Until now it kept the CSS width, because no width made a line exact on an edge between two
   Device Pixels. On an edge that lies on one, 1px is one Device Pixel at 150%, as Excel's gridline is.
+- **The `####` decision reads the declared width**, the one exception. *(Changed while building, the
+  same day: this bullet first said the painted width. The full layer-3 run found an Auto column, which
+  is exactly as wide as its widest estimate, turned to `####` when its edge rounded down: /virtual's
+  Trade date, at 100%.)* A painted width is under a Device Pixel from the declared one, and the
+  estimate is charged at the widest glyph of each class on any platform (ADR-0016), which leaves more
+  than that to spare. So a number never flips between shown and `####` with the scale.
 - **Every grid, not only a Sheet.** A one-pixel column rule on half a Device Pixel is blurred under
   ExGrid as under ExSheet, and the row's rule (`--ex-rule-dp`) is already every grid's.
 - **What a column is declared to be does not change.** The View State, a resize's report and Auto
   width keep the widths as declared. Only the painted geometry is rounded. A painted width differs from
   the declared one by under one Device Pixel, and two columns of one declared width may be painted one
   Device Pixel apart.
-- **The `####` decision reads the painted width**, because that is the space the text has. A value that
-  fits its declared width with less than a Device Pixel to spare may be `####` at one scale and shown
-  at another. That is the direction ADR-0016's rule allows: an early `####` costs a hover, a cut number
-  a misread.
 - **A change of resolution rebuilds the geometry** as a change of width does. The rows repaint once,
   at the zoom, and skip as before afterwards (ADR-0003).
 

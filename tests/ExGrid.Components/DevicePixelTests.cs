@@ -62,6 +62,25 @@ public class DevicePixelTests : GridTestContext
             pair => Assert.Equal(pair.Second + 1, pair.First));
     }
 
+    [Theory] // ADR-0090 (changed while building): an Auto column is exactly its estimate wide, and its edge rounding down never turns its own values to ####
+    [InlineData(1.0)]
+    [InlineData(1.25)]
+    [InlineData(1.5)]
+    [InlineData(1.75)]
+    [InlineData(2.25)]
+    public async Task An_auto_column_never_hashes_the_values_it_grew_for(double ratio)
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.ViewportWidth, 900)
+            .Add(g => g.ViewportHeight, 400));
+
+        await cut.InvokeAsync(() => cut.Instance.OnDevicePixelAsync(ratio));
+
+        Assert.Empty(cut.FindAll(".ex-hashes"));
+    }
+
     [Theory] // ADR-0090: a report that is not a finite, positive ratio is ignored
     [InlineData(0.0)]
     [InlineData(-2.0)]

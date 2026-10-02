@@ -220,9 +220,10 @@ public class ShippedStylesheetTests
     public void A_columns_rule_is_painted_in_whole_device_pixels()
     {
         var (css, _) = CoreStylesheet();
-        // The cell's, the header cell's and the Row Headings' edge, and a lined cell's layer.
-        var shadows = Regex.Matches(css, @"box-shadow: inset calc\(0px - var\(--ex-rule-[a-z]+, 1px\)\) 0 var\(--ex-(column|header|heading)-rule-color");
-        Assert.Equal(3, shadows.Count);
+        // The cell's and the Row Headings' edge, and a lined cell's layer. The Name Box's edge in the
+        // Formula Bar is no column edge, and keeps the token.
+        var shadows = Regex.Matches(css, @"box-shadow: inset calc\(0px - var\(--ex-rule-[a-z]+, 1px\)\) 0 var\(--ex-(column|heading)-rule-color");
+        Assert.Equal(2, shadows.Count);
         Assert.All(shadows, shadow => Assert.Contains("--ex-rule-dp", shadow.Value, StringComparison.Ordinal));
         var layers = Regex.Matches(css, @"linear-gradient\(to left, var\(--ex-column-rule-color[^)]*\)[^)]*\)");
         Assert.NotEmpty(layers);

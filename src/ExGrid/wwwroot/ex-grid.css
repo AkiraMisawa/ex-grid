@@ -427,7 +427,7 @@
 }
 .ex-name-box {
     flex: 0 0 auto;
-    box-shadow: inset calc(0px - var(--ex-rule-dp, 1px)) 0 var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
+    box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
 }
 .ex-formula-bar-text { flex: 1 1 auto; min-width: 0; }
 /* The text field's padding is the coloured text's beside it too (ADR-0057): one rule, so the
