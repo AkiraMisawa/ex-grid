@@ -71,9 +71,15 @@
         if (shown != _drawnLetter) _ = InvokeAsync(StateHasChanged);
     }
 
+    // What the render about to be drawn shows, noted as it is drawn: on a circuit OnAfterRender
+    // waits for the browser, and a change and its undoing within that wait would be judged against
+    // a render that was never the last one (layer 3, the Server host).
     /// <inheritdoc />
-    protected override void OnAfterRender(bool firstRender) =>
+    protected override bool ShouldRender()
+    {
         _drawnLetter = Context.KeyTips == KeyTipStage.Rows && KeyTip is not null;
+        return true;
+    }
 
     /// <inheritdoc />
     public void Dispose()

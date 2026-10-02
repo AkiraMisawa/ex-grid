@@ -185,10 +185,17 @@
         return _handedBack.Task;
     }
 
+    // Noted as the render is drawn, not after it: see ToolbarRow.
+    /// <inheritdoc />
+    protected override bool ShouldRender()
+    {
+        _drawnKeyTips = KeyTipsShown;
+        return true;
+    }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _drawnKeyTips = KeyTipsShown;
         if (_leaving && !_leftFromElement)
         {
             _leftFromElement = true;
