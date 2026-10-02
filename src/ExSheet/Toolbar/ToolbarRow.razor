@@ -1,0 +1,50 @@
+@namespace ExSheet
+@implements IDisposable
+
+@*
+    One band of a Sheet Toolbar (ADR-0100). Every Toolbar Row of a Sheet is the same height, resolved
+    in C# and written here inline, so the toolbar's height is a count of rows and the Sheet gives the
+    grid what they leave (ADR-0028). What the row holds is fitted to it and clipped, never allowed to
+    grow it. Its KeyTip is what a ribbon tab's is: the formatting row's is H, Excel's Home.
+*@
+<div class="ex-sheet-toolbar-row" role="group" aria-label="@Label" style="@Style">
+    <CascadingValue Value="this" IsFixed="true">@ChildContent</CascadingValue>
+</div>
+
+@code {
+    /// <summary>The Sheet Toolbar this row stands in.</summary>
+    [CascadingParameter] public SheetToolbarContext? Toolbar { get; set; }
+
+    /// <summary>The row's Toolbar Items, in order.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The row's accessible name.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>The row's KeyTip letter, as a ribbon tab's (ADR-0100). None unless declared, except on ExSheet's default row, which is H.</summary>
+    [Parameter] public string? KeyTip { get; set; }
+
+    private SheetToolbarContext? _joined;
+
+    private SheetToolbarContext Context => Toolbar
+        ?? throw new InvalidOperationException("ToolbarRow is a Toolbar Row: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
+
+    private string Style => FormattableString.Invariant($"height: {Context.RowHeightPx}px");
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var context = Context;
+        if (ReferenceEquals(context, _joined)) return;
+        _joined?.LeaveRow(this);
+        _joined = context;
+        context.JoinRow(this);
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        _joined?.LeaveRow(this);
+        _joined = null;
+    }
+}

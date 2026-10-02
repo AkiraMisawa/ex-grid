@@ -1,0 +1,28 @@
+@namespace ExSheet
+
+@*
+    The Sheet Toolbar's default row (ADR-0100), shown when the Consumer declares no ToolbarContent: the
+    formatting commands in the order Excel's Home tab has them. It is only an example — the order is
+    the Consumer's to declare — and its KeyTip is H, Excel's Home.
+*@
+<ToolbarRow KeyTip="H" Label="Home">
+    <BoldItem />
+    <ItalicItem />
+    <UnderlineItem />
+    <StrikethroughItem />
+    <ToolbarSeparator />
+    <FontColourItem />
+    <FillItem />
+    <ToolbarSeparator />
+    <BordersItem />
+    <ToolbarSeparator />
+    <AlignLeftItem />
+    <AlignCenterItem />
+    <AlignRightItem />
+    <ToolbarSeparator />
+    <NumberFormatItem />
+    <PercentItem />
+    <CommaItem />
+    <ToolbarSeparator />
+    <FormatCellsItem />
+</ToolbarRow>

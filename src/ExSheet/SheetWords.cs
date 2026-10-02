@@ -26,6 +26,16 @@ internal static class SheetWords
     internal static string FormatKeyWhileEditing =>
         "Nothing was formatted: a cell is being edited, and a format applies to whole cells, not to part of the text. Press Enter to commit the edit or Escape to cancel it, then try again.";
 
+    // ADR-0100: the Sheet Toolbar's accessible name, and why its items cannot be pressed while an edit is open.
+    internal static string ToolbarName => "Formatting";
+
+    internal static string ToolbarWhileEditing =>
+        "A cell is being edited. Press Enter to commit the edit or Escape to cancel it first.";
+
+    // ADR-0100: Excel's Comma Style pads with *, as Accounting does (FormatCellsOffer).
+    internal static string CommaStyleUnread =>
+        "Excel's Comma Style pads each value with * to fill its column, which ExSheet does not read. Use Number with the thousands separator in Format Cells.";
+
     internal static string EditDiscardedByNewDocument =>
         "What was typed was not entered: another Sheet Document was opened while the cell was being edited.";
 

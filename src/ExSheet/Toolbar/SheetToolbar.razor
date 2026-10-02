@@ -1,0 +1,104 @@
+@namespace ExSheet
+
+@*
+    The Sheet Toolbar's band (ADR-0100), above the Formula Bar, inside the Sheet's box and outside the
+    grid's root, so the grid's key listener never hears a key pressed here (ADR-0010, ADR-0018).
+
+    It is ARIA's toolbar: one tab stop, which names the item the keyboard is on through
+    aria-activedescendant. ← and → move among the items that can be pressed, Home and End go to the
+    ends, Enter and Space press one, ↓ or Alt+↓ open a menu's or a split control's choices, and
+    Escape gives the keyboard back to the Sheet. A press from the keys gives the keyboard back to
+    the Sheet once its command has run. Its height is the rows' count times one row's, written
+    inline (ADR-0028).
+*@
+<div class="ex-sheet-toolbar" role="toolbar" aria-label="@SheetWords.ToolbarName" aria-orientation="horizontal"
+     tabindex="0" style="@Style" aria-activedescendant="@ActiveId"
+     @onkeydown="OnKeyAsync" @onfocus="OnFocus" @onfocusout="OnFocusOut">
+    <CascadingValue Value="Context" IsFixed="true">
+        @(Content ?? DefaultRow)
+    </CascadingValue>
+</div>
+
+@code {
+    /// <summary>What the toolbar cascades.</summary>
+    [Parameter, EditorRequired] public SheetToolbarContext Context { get; set; } = default!;
+
+    /// <summary>The Consumer's declared content; null for the default row.</summary>
+    [Parameter] public RenderFragment? Content { get; set; }
+
+    /// <summary>The toolbar's height in pixels, which the Sheet subtracts from the grid's.</summary>
+    [Parameter] public double HeightPx { get; set; }
+
+    private static readonly RenderFragment DefaultRow = builder =>
+    {
+        builder.OpenComponent<DefaultToolbarRow>(0);
+        builder.CloseComponent();
+    };
+
+    private string Style => FormattableString.Invariant($"height: {HeightPx}px; --ex-sheet-toolbar-row-height: {Context.RowHeightPx}px");
+
+    private string? ActiveId => Context.Active?.Describe().Id;
+
+    private void OnFocus()
+    {
+        // Tab arrives on the item the keyboard was on last, else on the first that can be pressed.
+        if (Context.Active is { CanPress: true }) return;
+        Context.Activate(Pressable().FirstOrDefault());
+        StateHasChanged();
+    }
+
+    private void OnFocusOut(FocusEventArgs _)
+    {
+        // The highlight goes with DOM focus; the place is kept for the next Tab.
+        if (Context.Active is null) return;
+        _lastActive = Context.Active;
+        Context.Activate(null);
+        StateHasChanged();
+    }
+
+    private ToolbarItemBase? _lastActive;
+
+    private IEnumerable<ToolbarItemBase> Pressable() => Context.Items.Where(item => item.CanPress);
+
+    private async Task OnKeyAsync(KeyboardEventArgs e)
+    {
+        var items = Pressable().ToList();
+        if (items.Count == 0)
+        {
+            if (e.Key == "Escape") await Context.ReturnKeyboardAsync();
+            return;
+        }
+        var active = Context.Active ?? _lastActive;
+        var at = active is null ? -1 : items.IndexOf(active);
+        switch (e.Key)
+        {
+            case "ArrowRight":
+                Move(items[at < 0 || at == items.Count - 1 ? 0 : at + 1]);
+                break;
+            case "ArrowLeft":
+                Move(items[at <= 0 ? items.Count - 1 : at - 1]);
+                break;
+            case "Home":
+                Move(items[0]);
+                break;
+            case "End":
+                Move(items[^1]);
+                break;
+            case "Enter" or " " when at >= 0:
+                await items[at].PressFromKeyboardAsync(openChoices: false);
+                break;
+            case "ArrowDown" when at >= 0:
+                await items[at].PressFromKeyboardAsync(openChoices: true);
+                break;
+            case "Escape":
+                await Context.ReturnKeyboardAsync();
+                break;
+        }
+    }
+
+    private void Move(ToolbarItemBase item)
+    {
+        Context.Activate(item);
+        StateHasChanged();
+    }
+}
