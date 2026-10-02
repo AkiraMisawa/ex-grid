@@ -25,6 +25,32 @@ async function open(page) {
     // The Wrapper's stylesheet has landed when one of its tokens reaches a root.
     await expect.poll(async () => positions(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--ex-editor-outline').trim()))
         .not.toBe('');
+    // MudBlazor's own stylesheet lays the page out — the AppBar, the Drawer, the main content
+    // beside it — and lands on its own time. The page's stylesheets are links in its head, put
+    // back by each visit to it on the shared document (ADR-0056), and the Wrapper's, the smaller,
+    // can land first. Taken before MudBlazor's landed, a point for a click lands where the cell no
+    // longer is: on CI (WebAssembly host, msedge, 2026-10-02) a press on Positions' r1c1 landed in
+    // the Drawer, and the grid took no Focus. So a test starts once every stylesheet of the page,
+    // and every font they ask for, has loaded, and the main content is at rest (mainAtRest).
+    await expect.poll(() => page.evaluate(() =>
+        [...document.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet !== null)
+            && document.fonts.status === 'loaded'),
+    { message: 'every stylesheet of the page, and every font they ask for, has loaded' }).toBe(true);
+    await mainAtRest(page);
+}
+
+// MudLayout mounts with the main content at the window's edge and then slides it over to an open
+// Drawer's (MudBlazor animates its margin). Measured or pressed during that slide, the grid is
+// further left and wider than it will be. Waited for until nothing animates the main content and,
+// with the Drawer open, it meets the Drawer's edge.
+async function mainAtRest(page) {
+    await expect.poll(() => page.evaluate(() => {
+        const main = document.querySelector('.mud-main-content');
+        const drawer = document.querySelector('#app-drawer');
+        return main.getAnimations().length === 0
+            && (!drawer.classList.contains('mud-drawer--open')
+                || Math.abs(main.getBoundingClientRect().left - drawer.getBoundingClientRect().right) < 0.5);
+    }), { message: 'the main content has come to rest beside the Drawer' }).toBe(true);
 }
 
 // Cells are pointer-events: none by design and the Viewport is the delegated target
@@ -173,13 +199,7 @@ test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (A
     // received against 1223.3 expected, the grid measured at 983.3 of the 974 it settles at).
     // Whether the slide is over by the time the page is ready is only a matter of how long the
     // page took to load — the file's first test pays for MudBlazor's stylesheet, a later one
-    // on the shared page does not (ADR-0056).
-    await expect.poll(() => page.evaluate(() => {
-        const main = document.querySelector('.mud-main-content');
-        const drawer = document.querySelector('#app-drawer');
-        return main.getAnimations().length === 0
-            && Math.abs(main.getBoundingClientRect().left - drawer.getBoundingClientRect().right) < 0.5;
-    }), { message: 'the main content has come to rest against the open Drawer' }).toBe(true);
+    // on the shared page does not (ADR-0056). open() waits for it (mainAtRest), for every test.
     const drawerWidth = (await page.locator('#app-drawer').boundingBox()).width;
     expect(drawerWidth).toBeGreaterThan(0);
 
