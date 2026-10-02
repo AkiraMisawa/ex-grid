@@ -1,6 +1,6 @@
 # What to verify on Windows, sixteenth run
 
-Status: ready-for-human — ticket 80 is built (PR #44, CI green at 9951ee0)
+Status: done — run at bf13de1 on 2026-10-02 (`verification/2026-10-02-windows-16/`); what it settled is in ADR-0080
 
 *(Numbered sixteenth from `docs/agents/numbering.md`. Written as a proposal with ticket 79's prototype,
 `verify-on-windows-PROPOSED-ime-prototype.md`, and taken over for the Keyboard Field as decided,

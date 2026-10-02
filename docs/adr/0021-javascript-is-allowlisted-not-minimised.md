@@ -192,7 +192,8 @@ These are the places where reaching for JS would be the easy answer, and where w
   the keyboard is still this grid's, 2026-09-30.)* *(Five since 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md): the root's own
   focus passed on to its Keyboard Field, and the field given up by a press during a composition, so
   that the composition ends and its text is held ahead of the press. The third is refined: the
-  editor's request waits while the field composes. The hand-back puts the keyboard in the field.)*
+  editor's request waits while the field composes, and until the task after a composition's end
+  (ticket 120). The hand-back puts the keyboard in the field.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.
