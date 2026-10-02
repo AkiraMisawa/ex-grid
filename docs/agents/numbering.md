@@ -31,7 +31,8 @@ block on `claude/exsheet-start-8cx3v1` before it uses the first number.
 | 76–80 | `claude/exsheet-after-run-13` and its successors | Pointing Scope's line. 76 is PR #41 |
 | 81–99 | `claude/exsheet-cell-format` | Cell Format, continued |
 | 100–119 | `claude/exsheet-cell-format` | Cell Format, the fourteenth Windows run's answers |
-| 120– | free | reserve a block of twenty |
+| 120–139 | `claude/exsheet-after-run-16` and its successors | Pointing Scope's line, continued: the sixteenth Windows run's answers |
+| 140– | free | reserve a block of twenty |
 
 Another spec's tickets (`docs/specs/<feature>/issues/`) are numbered within that spec, and are not
 reserved here.
