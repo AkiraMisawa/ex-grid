@@ -555,17 +555,19 @@ test('the grid is one tab stop, its Keyboard Field on a grid that edits (A11Y-4,
     await expect(first).toHaveAttribute('data-ex-focus-visible', /.*/);
     await expect.poll(() => first.evaluate((el) => getComputedStyle(el).outlineStyle)).not.toBe('none');
 
-    // One more Tab: no cell is a tab stop.
+    // One more Tab is the grid's own key (ADR-0012's cycle): it moves the Focus, and the keyboard
+    // stays in the field. No cell and no ▾ takes DOM focus. (A11Y-4's reading, corrected with the
+    // user on 2026-10-02: it said this Tab left the grid, which ADR-0012 never did. The sixteenth
+    // Windows run, Part C.)
     await page.keyboard.press('Tab');
-    const activeInsideGrid = await first.evaluate(
-        (el) => el === document.activeElement || el.contains(document.activeElement));
-    // Tab is the grid's own key here (ADR-0012's cycle), so the keyboard can stay in the field;
-    // what the next stop must not be is a cell of the first grid, or one of its ▾ buttons.
-    expect(String(await keyboardIsOn(first))).not.toMatch(/ex-menu-button/);
+    await expectKeyboardOn(first);
     const activeIsCell = await page.evaluate(
         () => document.activeElement?.classList?.contains('ex-cell') ?? false);
     expect(activeIsCell).toBe(false);
-    void activeInsideGrid;
+    // Escape releases Tab (ADR-0012, KB-8), and the next Tab leaves the grid entirely.
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#after-grid')).toBeFocused();
 });
 
 test('two instances stay independent: no --ex-* on :root, no window global (DOM-4)', async ({ page }) => {

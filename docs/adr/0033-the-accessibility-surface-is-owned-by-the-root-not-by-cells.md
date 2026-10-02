@@ -141,6 +141,9 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   reader says is still owed a real one. A display-only grid keeps both on its root. The header's ▾
   buttons left the tab sequence on every grid the same day, as the action buttons did (ADR-0037), so
   that a Tab into the grid reaches the cells first; Alt+↓ opens a column's popover by keyboard.
+  *(The sixteenth Windows run, 2026-10-02, tried Narrator: Tab into `/sheet` read "Enter Table, 1048576
+  by 16384, edit", and ↓ sent DOM focus to `body`, though the run's own way of recording the speech
+  may have caused that. Not settled; the real screen reader stays owed, as the user chose. ADR-0080.)*
 - **The scroller is not a tab stop either** *(found while implementing, 2026-09-26)*. Chrome makes
   a scroll container with no tabbable content a tab stop of its own once it overflows, so every
   overflowing display-only grid had a second stop inside it — `/wide` at any size, and `/cells`
