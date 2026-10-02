@@ -1,0 +1,4939 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1586,
+   956
+  ],
+  "forcedColors": false,
+  "dark": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+ },
+ "label": "wasm",
+ "rtt": 0,
+ "keyboardAsked": "english",
+ "ax": true,
+ "started": "2026-10-02T02:30:07.855Z",
+ "cases": [
+  {
+   "case": "pc",
+   "what": "Part C on features: C1 pressed; 150, Enter, 200, Enter at full speed; the arrows, Ctrl+arrows, Home, End, PageDown, Ctrl+Home; F2 and Escape; Ctrl+C of C1 and Ctrl+V into C4; Tab into the grid from the element before it (the navigation's link, given focus by script) and Tab again; Shift+Tab from the element after it (the second grid's root, given focus by script: a grid of its own, which takes the first Shift+Tab as its own key, so Escape there releases Tab before the Shift+Tab that is read as the procedure's) and Shift+Tab again; a press on the display-only grid. Expected: as at the base, but the keyboard in the Keyboard Field on a grid that edits, the root on a display-only grid; the root's ring after Tab, not after a click (KB-12); Shift+Tab from after the grid lands in it and Shift+Tab again leaves it (A11Y-4)",
+   "started": "2026-10-02T02:30:11.345Z",
+   "states": [
+    {
+     "state": "typed",
+     "did": [
+      "keys 150{ENTER}200{ENTER} at full speed (every key event in one SendInput call: ok burst keys=8 events=16 ms=12)"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r2c2",
+       "role": "gridcell",
+       "name": "1024691.34",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C3",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 331.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r2c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 331.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C3",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 2494,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "1",
+        "code": "Digit1",
+        "keyCode": 49,
+        "isComposing": false,
+        "value": ""
+       },
+       {
+        "t": 2504,
+        "type": "keydown",
+        "target": "cell",
+        "key": "5",
+        "code": "Digit5",
+        "keyCode": 53,
+        "isComposing": false,
+        "value": "1"
+       },
+       {
+        "t": 2504,
+        "type": "keydown",
+        "target": "cell",
+        "key": "0",
+        "code": "Digit0",
+        "keyCode": 48,
+        "isComposing": false,
+        "value": "1"
+       },
+       {
+        "t": 2504,
+        "type": "keydown",
+        "target": "cell",
+        "key": "Enter",
+        "code": "Enter",
+        "keyCode": 13,
+        "isComposing": false,
+        "value": "1"
+       },
+       {
+        "t": 2504,
+        "type": "keydown",
+        "target": "cell",
+        "key": "2",
+        "code": "Digit2",
+        "keyCode": 50,
+        "isComposing": false,
+        "value": "1"
+       },
+       {
+        "t": 2504,
+        "type": "keydown",
+        "target": "cell",
+        "key": "0",
+        "code": "Digit0",
+        "keyCode": 48,
+        "isComposing": false,
+        "value": "1"
+       },
+       {
+        "t": 2504,
+        "type": "keydown",
+        "target": "cell",
+        "key": "0",
+        "code": "Digit0",
+        "keyCode": 48,
+        "isComposing": false,
+        "value": "1"
+       },
+       {
+        "t": 2504,
+        "type": "keydown",
+        "target": "cell",
+        "key": "Enter",
+        "code": "Enter",
+        "keyCode": 13,
+        "isComposing": false,
+        "value": "1"
+       },
+       {
+        "t": 2506,
+        "type": "input",
+        "target": "cell",
+        "value": "15"
+       },
+       {
+        "t": 2508,
+        "type": "input",
+        "target": "cell",
+        "value": "150"
+       },
+       {
+        "t": 2528,
+        "type": "input",
+        "target": "cell",
+        "value": "20"
+       },
+       {
+        "t": 2530,
+        "type": "input",
+        "target": "cell",
+        "value": "200"
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 2503,
+        "out": "key-field",
+        "to": "cell"
+       },
+       {
+        "t": 2503,
+        "el": "cell"
+       },
+       {
+        "t": 2512,
+        "out": "cell",
+        "to": "key-field"
+       },
+       {
+        "t": 2512,
+        "el": "key-field"
+       },
+       {
+        "t": 2526,
+        "out": "key-field",
+        "to": "cell"
+       },
+       {
+        "t": 2526,
+        "el": "cell"
+       },
+       {
+        "t": 2531,
+        "out": "cell",
+        "to": "key-field"
+       },
+       {
+        "t": 2531,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5316",
+        "colours": 148,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-typed-wasm-chrome.png",
+     "tookMs": 738
+    },
+    {
+     "state": "up",
+     "did": [
+      "keys {UP}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r1c2",
+       "role": "gridcell",
+       "name": "200",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C2",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 307.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r1c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 307.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C2",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 3247,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowUp",
+        "code": "ArrowUp",
+        "keyCode": 38,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5823",
+        "colours": 91,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-up-wasm-chrome.png",
+     "tookMs": 686
+    },
+    {
+     "state": "down",
+     "did": [
+      "keys {DOWN}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r2c2",
+       "role": "gridcell",
+       "name": "1024691.34",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C3",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 331.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r2c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 331.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C3",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 3972,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowDown",
+        "code": "ArrowDown",
+        "keyCode": 40,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5316",
+        "colours": 148,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-down-wasm-chrome.png",
+     "tookMs": 684
+    },
+    {
+     "state": "right",
+     "did": [
+      "keys {RIGHT}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r2c3",
+       "role": "gridcell",
+       "name": "1024691.34",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D3",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 402,
+        "t": 331.54,
+        "w": 48,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r2c3"
+      },
+      "focusCellBox": {
+       "l": 402,
+       "t": 331.54,
+       "w": 48,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D3",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 4689,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowRight",
+        "code": "ArrowRight",
+        "keyCode": 39,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:1788",
+        "colours": 35,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-right-wasm-chrome.png",
+     "tookMs": 682
+    },
+    {
+     "state": "left",
+     "did": [
+      "keys {LEFT}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r2c2",
+       "role": "gridcell",
+       "name": "1024691.34",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C3",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 331.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r2c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 331.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C3",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 5405,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "keyCode": 37,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5316",
+        "colours": 148,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-left-wasm-chrome.png",
+     "tookMs": 684
+    },
+    {
+     "state": "ctrl-down",
+     "did": [
+      "keys ^{DOWN}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r399c2",
+       "role": "gridcell",
+       "name": "5925922.33",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C400",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 523.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r399c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 523.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "",
+       "B1": "",
+       "C1": "",
+       "C2": "",
+       "C3": "",
+       "C4": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C400",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 6127,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Control",
+        "code": "ControlLeft",
+        "keyCode": 17,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 6128,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowDown",
+        "code": "ArrowDown",
+        "keyCode": 40,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5333",
+        "colours": 145,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-ctrl-down-wasm-chrome.png",
+     "tookMs": 691
+    },
+    {
+     "state": "ctrl-up",
+     "did": [
+      "keys ^{UP}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c2",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 283.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 283.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 6853,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Control",
+        "code": "ControlLeft",
+        "keyCode": 17,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 6853,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowUp",
+        "code": "ArrowUp",
+        "keyCode": 38,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 80,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-ctrl-up-wasm-chrome.png",
+     "tookMs": 680
+    },
+    {
+     "state": "ctrl-right",
+     "did": [
+      "keys ^{RIGHT}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c5",
+       "role": "gridcell",
+       "name": "False",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "F1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 570,
+        "t": 283.54,
+        "w": 120,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c5"
+      },
+      "focusCellBox": {
+       "l": 570,
+       "t": 283.54,
+       "w": 120,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "F1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 7567,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Control",
+        "code": "ControlLeft",
+        "keyCode": 17,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 7567,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowRight",
+        "code": "ArrowRight",
+        "keyCode": 39,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:4862",
+        "colours": 101,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-ctrl-right-wasm-chrome.png",
+     "tookMs": 689
+    },
+    {
+     "state": "ctrl-left",
+     "did": [
+      "keys ^{LEFT}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c0",
+       "role": "gridcell",
+       "name": "Alpha",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "A1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 32,
+        "t": 283.54,
+        "w": 110,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c0"
+      },
+      "focusCellBox": {
+       "l": 32,
+       "t": 283.54,
+       "w": 110,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 8289,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Control",
+        "code": "ControlLeft",
+        "keyCode": 17,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 8290,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "ArrowLeft",
+        "code": "ArrowLeft",
+        "keyCode": 37,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:4324",
+        "colours": 100,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-ctrl-left-wasm-chrome.png",
+     "tookMs": 683
+    },
+    {
+     "state": "home",
+     "did": [
+      "keys {HOME}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c0",
+       "role": "gridcell",
+       "name": "Alpha",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "A1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 32,
+        "t": 283.54,
+        "w": 110,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c0"
+      },
+      "focusCellBox": {
+       "l": 32,
+       "t": 283.54,
+       "w": 110,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 9006,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Home",
+        "code": "Home",
+        "keyCode": 36,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:4324",
+        "colours": 100,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-home-wasm-chrome.png",
+     "tookMs": 684
+    },
+    {
+     "state": "end",
+     "did": [
+      "keys {END}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c5",
+       "role": "gridcell",
+       "name": "False",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "F1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 570,
+        "t": 283.54,
+        "w": 120,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c5"
+      },
+      "focusCellBox": {
+       "l": 570,
+       "t": 283.54,
+       "w": 120,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "F1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 9723,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "End",
+        "code": "End",
+        "keyCode": 35,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:4862",
+        "colours": 101,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-end-wasm-chrome.png",
+     "tookMs": 684
+    },
+    {
+     "state": "pagedown",
+     "did": [
+      "keys {PGDN}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r11c5",
+       "role": "gridcell",
+       "name": "True",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "F12",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 570,
+        "t": 283.54,
+        "w": 120,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r11c5"
+      },
+      "focusCellBox": {
+       "l": 570,
+       "t": 283.54,
+       "w": 120,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "",
+       "B1": "",
+       "C1": "",
+       "C2": "",
+       "C3": "",
+       "C4": ""
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "F12",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 10440,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "PageDown",
+        "code": "PageDown",
+        "keyCode": 34,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:4960",
+        "colours": 86,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-pagedown-wasm-chrome.png",
+     "tookMs": 687
+    },
+    {
+     "state": "ctrl-home",
+     "did": [
+      "keys ^{HOME}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c0",
+       "role": "gridcell",
+       "name": "Alpha",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "A1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 32,
+        "t": 283.54,
+        "w": 110,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c0"
+      },
+      "focusCellBox": {
+       "l": 32,
+       "t": 283.54,
+       "w": 110,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 11160,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Control",
+        "code": "ControlLeft",
+        "keyCode": 17,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 11161,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Home",
+        "code": "Home",
+        "keyCode": 36,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:4324",
+        "colours": 100,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-ctrl-home-wasm-chrome.png",
+     "tookMs": 678
+    },
+    {
+     "state": "pressed-first",
+     "did": [
+      "a wait of 700 ms",
+      "a press at (569, 634), the middle of main's C1"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c2",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 283.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 283.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 12600,
+        "type": "mousedown",
+        "target": "div.ex-viewport",
+        "x": 332,
+        "y": 295,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 12661,
+        "type": "mouseup",
+        "target": "div.ex-viewport",
+        "x": 332,
+        "y": 295,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 12663,
+        "type": "click",
+        "target": "div.ex-viewport",
+        "x": 332,
+        "y": 295,
+        "button": 0,
+        "detail": 1
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 12603,
+        "out": "key-field",
+        "to": "div.ex-scroller"
+       },
+       {
+        "t": 12603,
+        "out": "div.ex-scroller",
+        "to": "key-field"
+       },
+       {
+        "t": 12603,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 80,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-pressed-first-wasm-chrome.png",
+     "tookMs": 689
+    },
+    {
+     "state": "f2",
+     "did": [
+      "keys {F2}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-editor",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": null
+     },
+     "read": {
+      "active": "cell",
+      "editing": true,
+      "focus": "C1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 283.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 283.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid ex-editing",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": {
+       "value": "150",
+       "selection": [
+        3,
+        3
+       ],
+       "box": {
+        "l": 262,
+        "t": 283.54,
+        "w": 140,
+        "h": 24
+       },
+       "scrollLeft": 0,
+       "scrollWidth": 140,
+       "clientWidth": 140,
+       "shown": false,
+       "fill": "#000000",
+       "color": "#000000",
+       "layer": null
+      },
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": true,
+        "editorValue": "150",
+        "focus": "C1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 13352,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "F2",
+        "code": "F2",
+        "keyCode": 113,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 13355,
+        "out": "key-field",
+        "to": "cell"
+       },
+       {
+        "t": 13355,
+        "el": "cell"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the whole field)",
+        "ground": "#ffffff:6831",
+        "colours": 83,
+        "saturated": [
+         "#0078d7:488"
+        ],
+        "darkest": "#000000"
+       },
+       {
+        "text": "(the Focus cell)",
+        "ground": "#ffffff:6831",
+        "colours": 83,
+        "saturated": [
+         "#0078d7:488"
+        ],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-f2-wasm-chrome.png",
+     "tookMs": 681
+    },
+    {
+     "state": "f2-escape",
+     "did": [
+      "keys {ESC}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c2",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 283.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 283.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 14067,
+        "type": "keydown",
+        "target": "cell",
+        "key": "Escape",
+        "code": "Escape",
+        "keyCode": 27,
+        "isComposing": false,
+        "value": "150"
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 14067,
+        "out": "cell",
+        "to": "key-field"
+       },
+       {
+        "t": 14067,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 80,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-f2-escape-wasm-chrome.png",
+     "tookMs": 681
+    },
+    {
+     "state": "ctrl-c",
+     "did": [
+      "keys ^{KEYC}",
+      "the clipboard read: ok clipboard \"150\\r\\n\""
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r0c2",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C1",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 283.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r0c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 283.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C1",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 14780,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Control",
+        "code": "ControlLeft",
+        "keyCode": 17,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 14781,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "c",
+        "code": "KeyC",
+        "keyCode": 67,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 14781,
+        "type": "copy",
+        "target": "key-field",
+        "text": "",
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 80,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-ctrl-c-wasm-chrome.png",
+     "tookMs": 683
+    },
+    {
+     "state": "pressed-paste-to",
+     "did": [
+      "a wait of 700 ms",
+      "a press at (569, 742), the middle of main's C4"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r3c2",
+       "role": "gridcell",
+       "name": "1037037.01",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 355.54,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 355.54,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "1037037.01"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 16550,
+        "type": "mousedown",
+        "target": "div.ex-viewport",
+        "x": 332,
+        "y": 367,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 16611,
+        "type": "mouseup",
+        "target": "div.ex-viewport",
+        "x": 332,
+        "y": 367,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 16613,
+        "type": "click",
+        "target": "div.ex-viewport",
+        "x": 332,
+        "y": 367,
+        "button": 0,
+        "detail": 1
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 16552,
+        "out": "key-field",
+        "to": "div.ex-scroller"
+       },
+       {
+        "t": 16553,
+        "out": "div.ex-scroller",
+        "to": "key-field"
+       },
+       {
+        "t": 16553,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 223,
+      "width": 1530,
+      "height": 578
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5363",
+        "colours": 123,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-pressed-paste-to-wasm-chrome.png",
+     "tookMs": 688
+    },
+    {
+     "state": "ctrl-v",
+     "did": [
+      "keys ^{KEYV}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r3c2",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 376.88,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 376.88,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 17302,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Control",
+        "code": "ControlLeft",
+        "keyCode": 17,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 17304,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "v",
+        "code": "KeyV",
+        "keyCode": 86,
+        "isComposing": false,
+        "ctrl": true,
+        "value": ""
+       },
+       {
+        "t": 17305,
+        "type": "paste",
+        "target": "key-field",
+        "text": "150\r\n",
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-ctrl-v-wasm-chrome.png",
+     "tookMs": 679
+    },
+    {
+     "state": "focus-before",
+     "did": [
+      "focus given by script to the navigation's link (nav.demo-nav a): it holds focus"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "a",
+      "cls": null,
+      "role": "link",
+      "name": "All pages",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": null
+     },
+     "read": {
+      "active": "a",
+      "editing": false,
+      "focus": "C4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 376.88,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 376.88,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [],
+      "focusLog": [
+       {
+        "t": 18013,
+        "out": "key-field",
+        "to": "a"
+       },
+       {
+        "t": 18014,
+        "el": "a"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-focus-before-wasm-chrome.png",
+     "tookMs": 686
+    },
+    {
+     "state": "tab-in",
+     "did": [
+      "keys {TAB}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r3c2",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 376.88,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 376.88,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 18703,
+        "type": "keydown",
+        "target": "a",
+        "key": "Tab",
+        "code": "Tab",
+        "keyCode": 9,
+        "isComposing": false
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 18703,
+        "out": "a",
+        "to": "key-field"
+       },
+       {
+        "t": 18703,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-tab-in-wasm-chrome.png",
+     "tookMs": 687
+    },
+    {
+     "state": "tab-again",
+     "did": [
+      "keys {TAB}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r3c3",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 402,
+        "t": 376.88,
+        "w": 48,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c3"
+      },
+      "focusCellBox": {
+       "l": 402,
+       "t": 376.88,
+       "w": 48,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 19424,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Tab",
+        "code": "Tab",
+        "keyCode": 9,
+        "isComposing": false,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:1739",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-tab-again-wasm-chrome.png",
+     "tookMs": 687
+    },
+    {
+     "state": "focus-after",
+     "did": [
+      "focus given by script to the second grid's root (.ex-grid): it holds focus"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "div",
+      "cls": "ex-grid",
+      "role": "grid",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": null
+     },
+     "read": {
+      "active": "grid1:root",
+      "editing": false,
+      "focus": "D4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 402,
+        "t": 376.88,
+        "w": 48,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c3"
+      },
+      "focusCellBox": {
+       "l": 402,
+       "t": 376.88,
+       "w": 48,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": null,
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": true
+       }
+      ],
+      "events": [],
+      "focusLog": [
+       {
+        "t": 20141,
+        "out": "key-field",
+        "to": "grid1:root"
+       },
+       {
+        "t": 20142,
+        "el": "grid1:root"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:1739",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-focus-after-wasm-chrome.png",
+     "tookMs": 712
+    },
+    {
+     "state": "shift-tab-claimed",
+     "did": [
+      "keys +{TAB}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "div",
+      "cls": "ex-grid",
+      "role": "grid",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex2-r0c0",
+       "role": "gridcell",
+       "name": "Alpha",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "grid1:root",
+      "editing": false,
+      "focus": "D4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 402,
+        "t": 376.88,
+        "w": 48,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c3"
+      },
+      "focusCellBox": {
+       "l": 402,
+       "t": 376.88,
+       "w": 48,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": true
+       }
+      ],
+      "events": [
+       {
+        "t": 20857,
+        "type": "keydown",
+        "target": "grid1:root",
+        "key": "Shift",
+        "code": "ShiftLeft",
+        "keyCode": 16,
+        "isComposing": false,
+        "shift": true
+       },
+       {
+        "t": 20857,
+        "type": "keydown",
+        "target": "grid1:root",
+        "key": "Tab",
+        "code": "Tab",
+        "keyCode": 9,
+        "isComposing": false,
+        "shift": true
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:1739",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-shift-tab-claimed-wasm-chrome.png",
+     "tookMs": 690
+    },
+    {
+     "state": "escape-after",
+     "did": [
+      "keys {ESC}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "div",
+      "cls": "ex-grid",
+      "role": "grid",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex2-r0c0",
+       "role": "gridcell",
+       "name": "Alpha",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "grid1:root",
+      "editing": false,
+      "focus": "D4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 402,
+        "t": 376.88,
+        "w": 48,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c3"
+      },
+      "focusCellBox": {
+       "l": 402,
+       "t": 376.88,
+       "w": 48,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": true
+       }
+      ],
+      "events": [
+       {
+        "t": 21580,
+        "type": "keydown",
+        "target": "grid1:root",
+        "key": "Escape",
+        "code": "Escape",
+        "keyCode": 27,
+        "isComposing": false
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:1739",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-escape-after-wasm-chrome.png",
+     "tookMs": 690
+    },
+    {
+     "state": "shift-tab-in",
+     "did": [
+      "keys +{TAB}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r3c3",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "D4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": true,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 402,
+        "t": 376.88,
+        "w": 48,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c3"
+      },
+      "focusCellBox": {
+       "l": 402,
+       "t": 376.88,
+       "w": 48,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": true
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "D4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 22304,
+        "type": "keydown",
+        "target": "grid1:root",
+        "key": "Shift",
+        "code": "ShiftLeft",
+        "keyCode": 16,
+        "isComposing": false,
+        "shift": true
+       },
+       {
+        "t": 22304,
+        "type": "keydown",
+        "target": "grid1:root",
+        "key": "Tab",
+        "code": "Tab",
+        "keyCode": 9,
+        "isComposing": false,
+        "shift": true
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 22304,
+        "out": "grid1:root",
+        "to": "key-field"
+       },
+       {
+        "t": 22304,
+        "el": "key-field"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:1739",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-shift-tab-in-wasm-chrome.png",
+     "tookMs": 685
+    },
+    {
+     "state": "shift-tab-again",
+     "did": [
+      "keys +{TAB}"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "input",
+      "cls": "ex-key-field",
+      "role": "textbox",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex1-r3c2",
+       "role": "gridcell",
+       "name": "150",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "key-field",
+      "editing": false,
+      "focus": "C4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 376.88,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 376.88,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": true,
+       "matchesFocusVisible": false,
+       "outline": "solid 2px #0078d7"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": true,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 23021,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Shift",
+        "code": "ShiftLeft",
+        "keyCode": 16,
+        "isComposing": false,
+        "shift": true,
+        "value": ""
+       },
+       {
+        "t": 23022,
+        "type": "keydown",
+        "target": "key-field",
+        "key": "Tab",
+        "code": "Tab",
+        "keyCode": 9,
+        "isComposing": false,
+        "shift": true,
+        "value": ""
+       }
+      ],
+      "focusLog": []
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-shift-tab-again-wasm-chrome.png",
+     "tookMs": 687
+    },
+    {
+     "state": "pressed-display-only",
+     "did": [
+      "a wait of 700 ms",
+      "a press at (202, 1253), the middle of second's A1"
+     ],
+     "readAtMs": 600,
+     "settled": true,
+     "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+     "front": "ok foreground title=\"ime16-features-wasm-chrome - Google Chro\" process=chrome",
+     "ax": {
+      "tag": "div",
+      "cls": "ex-grid",
+      "role": "grid",
+      "name": "",
+      "focused": true,
+      "ignored": false,
+      "activeDescendant": {
+       "idref": "ex2-r0c0",
+       "role": "gridcell",
+       "name": "Alpha",
+       "selected": null
+      }
+     },
+     "read": {
+      "active": "grid1:root",
+      "editing": false,
+      "focus": "C4",
+      "keyField": {
+       "value": "",
+       "selection": [
+        0,
+        0
+       ],
+       "composing": false,
+       "cls": "ex-key-field",
+       "readOnly": false,
+       "tabIndex": "0",
+       "opacity": "0",
+       "caretColor": "#000000/0",
+       "outline": "none 2.66667px #000000",
+       "background": "#ffffff",
+       "color": "#000000",
+       "box": {
+        "l": 262,
+        "t": 376.88,
+        "w": 140,
+        "h": 24
+       },
+       "layer": "ex-key-field-layer",
+       "ariaActiveDescendant": "ex1-r3c2"
+      },
+      "focusCellBox": {
+       "l": 262,
+       "t": 376.88,
+       "w": 140,
+       "h": 24
+      },
+      "root": {
+       "tabIndex": "-1",
+       "cls": "ex-grid",
+       "ariaActiveDescendant": null,
+       "focusVisibleMark": false,
+       "matchesFocusVisible": false,
+       "outline": "none 2.66667px #000000"
+      },
+      "nameBox": null,
+      "nameBoxField": null,
+      "cell": null,
+      "bar": null,
+      "completion": null,
+      "hints": [],
+      "outlines": [],
+      "points": [],
+      "selected": [],
+      "sorted": [],
+      "find": null,
+      "message": [],
+      "cells": {
+       "A1": "Alpha",
+       "B1": "Ishikawa",
+       "C1": "150",
+       "C2": "200",
+       "C3": "1024691.34",
+       "C4": "150"
+      },
+      "grids": [
+       {
+        "i": 0,
+        "in": "app",
+        "hasKeyboard": false,
+        "keyField": {
+         "value": "",
+         "composing": false,
+         "readOnly": false
+        },
+        "editing": false,
+        "editorValue": null,
+        "focus": "C4",
+        "rootTabIndex": "-1",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       },
+       {
+        "i": 1,
+        "in": "app",
+        "hasKeyboard": true,
+        "keyField": null,
+        "editing": false,
+        "editorValue": null,
+        "focus": "A1",
+        "rootTabIndex": "0",
+        "focusVisibleMark": false,
+        "rootFocusVisible": false
+       }
+      ],
+      "events": [
+       {
+        "t": 24476,
+        "type": "mousedown",
+        "target": "grid1:div.ex-viewport",
+        "x": 87,
+        "y": 708,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 24537,
+        "type": "mouseup",
+        "target": "grid1:div.ex-viewport",
+        "x": 87,
+        "y": 708,
+        "button": 0,
+        "detail": 1
+       },
+       {
+        "t": 24538,
+        "type": "click",
+        "target": "grid1:div.ex-viewport",
+        "x": 87,
+        "y": 708,
+        "button": 0,
+        "detail": 1
+       }
+      ],
+      "focusLog": [
+       {
+        "t": 24477,
+        "out": "key-field",
+        "to": "grid1:div.ex-scroller"
+       },
+       {
+        "t": 24477,
+        "out": "grid1:div.ex-scroller",
+        "to": "grid1:root"
+       },
+       {
+        "t": 24478,
+        "el": "grid1:root"
+       }
+      ]
+     },
+     "clip": {
+      "x": 28,
+      "y": 244,
+      "width": 1530,
+      "height": 579
+     },
+     "pixels": {
+      "scale": 1.5,
+      "boxes": [
+       {
+        "text": "(the Focus cell)",
+        "ground": "#f2f2f2:5879",
+        "colours": 79,
+        "saturated": [],
+        "darkest": "#000000"
+       }
+      ]
+     },
+     "shot": "features-pc-pressed-display-only-wasm-chrome.png",
+     "tookMs": 690
+    }
+   ],
+   "before": {
+    "escapes": 0,
+    "offByKey": false,
+    "offInAnEdit": false,
+    "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809"
+   },
+   "focusMs": 4,
+   "targetsBefore": [],
+   "beforeRead": {
+    "active": "key-field",
+    "editing": false,
+    "focus": "C1",
+    "keyField": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "composing": false,
+     "cls": "ex-key-field",
+     "readOnly": false,
+     "tabIndex": "0",
+     "opacity": "0",
+     "caretColor": "#000000/0",
+     "outline": "none 2.66667px #000000",
+     "background": "#ffffff",
+     "color": "#000000",
+     "box": {
+      "l": 262,
+      "t": 283.54,
+      "w": 140,
+      "h": 24
+     },
+     "layer": "ex-key-field-layer",
+     "ariaActiveDescendant": "ex1-r0c2"
+    },
+    "focusCellBox": {
+     "l": 262,
+     "t": 283.54,
+     "w": 140,
+     "h": 24
+    },
+    "root": {
+     "tabIndex": "-1",
+     "cls": "ex-grid",
+     "ariaActiveDescendant": null,
+     "focusVisibleMark": false,
+     "matchesFocusVisible": false,
+     "outline": "none 2.66667px #000000"
+    },
+    "nameBox": null,
+    "nameBoxField": null,
+    "cell": null,
+    "bar": null,
+    "completion": null,
+    "hints": [],
+    "outlines": [],
+    "points": [],
+    "selected": [],
+    "sorted": [],
+    "find": null,
+    "message": [],
+    "cells": {
+     "A1": "Alpha",
+     "B1": "Ishikawa",
+     "C1": "1000000.00",
+     "C2": "1012345.67",
+     "C3": "1024691.34",
+     "C4": "1037037.01"
+    },
+    "grids": [
+     {
+      "i": 0,
+      "in": "app",
+      "hasKeyboard": true,
+      "keyField": {
+       "value": "",
+       "composing": false,
+       "readOnly": false
+      },
+      "editing": false,
+      "editorValue": null,
+      "focus": "C1",
+      "rootTabIndex": "-1",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     },
+     {
+      "i": 1,
+      "in": "app",
+      "hasKeyboard": false,
+      "keyField": null,
+      "editing": false,
+      "editorValue": null,
+      "focus": null,
+      "rootTabIndex": "0",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     }
+    ],
+    "events": [
+     {
+      "t": 1628,
+      "type": "keydown",
+      "target": "body",
+      "key": "Unidentified",
+      "code": "",
+      "keyCode": 26,
+      "isComposing": false
+     },
+     {
+      "t": 2075,
+      "type": "mousedown",
+      "target": "div.ex-viewport",
+      "x": 332,
+      "y": 295,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 2145,
+      "type": "mouseup",
+      "target": "div.ex-viewport",
+      "x": 332,
+      "y": 295,
+      "button": 0,
+      "detail": 1
+     },
+     {
+      "t": 2148,
+      "type": "click",
+      "target": "div.ex-viewport",
+      "x": 332,
+      "y": 295,
+      "button": 0,
+      "detail": 1
+     }
+    ],
+    "focusLog": [
+     {
+      "t": 2086,
+      "out": "div.ex-scroller",
+      "to": "key-field"
+     },
+     {
+      "t": 2086,
+      "el": "key-field"
+     }
+    ]
+   },
+   "imeBefore": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+   "axBefore": {
+    "tag": "input",
+    "cls": "ex-key-field",
+    "role": "textbox",
+    "name": "",
+    "focused": true,
+    "ignored": false,
+    "activeDescendant": {
+     "idref": "ex1-r0c2",
+     "role": "gridcell",
+     "name": "1000000.00",
+     "selected": null
+    }
+   },
+   "after": {
+    "escapes": 0,
+    "offByKey": false,
+    "offInAnEdit": false,
+    "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809"
+   },
+   "afterRead": {
+    "active": "grid1:root",
+    "editing": false,
+    "focus": "C4",
+    "keyField": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "composing": false,
+     "cls": "ex-key-field",
+     "readOnly": false,
+     "tabIndex": "0",
+     "opacity": "0",
+     "caretColor": "#000000/0",
+     "outline": "none 2.66667px #000000",
+     "background": "#ffffff",
+     "color": "#000000",
+     "box": {
+      "l": 262,
+      "t": 376.88,
+      "w": 140,
+      "h": 24
+     },
+     "layer": "ex-key-field-layer",
+     "ariaActiveDescendant": "ex1-r3c2"
+    },
+    "focusCellBox": {
+     "l": 262,
+     "t": 376.88,
+     "w": 140,
+     "h": 24
+    },
+    "root": {
+     "tabIndex": "-1",
+     "cls": "ex-grid",
+     "ariaActiveDescendant": null,
+     "focusVisibleMark": false,
+     "matchesFocusVisible": false,
+     "outline": "none 2.66667px #000000"
+    },
+    "nameBox": null,
+    "nameBoxField": null,
+    "cell": null,
+    "bar": null,
+    "completion": null,
+    "hints": [],
+    "outlines": [],
+    "points": [],
+    "selected": [],
+    "sorted": [],
+    "find": null,
+    "message": [],
+    "cells": {
+     "A1": "Alpha",
+     "B1": "Ishikawa",
+     "C1": "150",
+     "C2": "200",
+     "C3": "1024691.34",
+     "C4": "150"
+    },
+    "grids": [
+     {
+      "i": 0,
+      "in": "app",
+      "hasKeyboard": false,
+      "keyField": {
+       "value": "",
+       "composing": false,
+       "readOnly": false
+      },
+      "editing": false,
+      "editorValue": null,
+      "focus": "C4",
+      "rootTabIndex": "-1",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     },
+     {
+      "i": 1,
+      "in": "app",
+      "hasKeyboard": true,
+      "keyField": null,
+      "editing": false,
+      "editorValue": null,
+      "focus": "A1",
+      "rootTabIndex": "0",
+      "focusVisibleMark": false,
+      "rootFocusVisible": false
+     }
+    ],
+    "events": [],
+    "focusLog": []
+   }
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-10-02T02:30:09.560Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "altTarget": {
+  "open": "ok alttarget open front: title=\"exgrid-alttab-16\" process=powershell",
+  "closed": "ok alttarget closed"
+ },
+ "browserVersion": "153.0.8010.54",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "ime": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809",
+  "after": "ok english was=0x08090809 now=0x08090809",
+  "imeAfter": "ok imestate open=False mode=0x1 (hiragana, half-width) layout=0x08090809"
+ },
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 671,
+    "py": 371,
+    "client": {
+     "x": 400,
+     "y": 120
+    }
+   }
+  ]
+ },
+ "finished": "2026-10-02T02:30:35.504Z"
+}
