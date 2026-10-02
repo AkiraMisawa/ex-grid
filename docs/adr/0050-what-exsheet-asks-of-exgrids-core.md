@@ -333,6 +333,23 @@ Excel's formatting keys: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+2 to Ctrl+5; Ctrl+Shift
     `OpenFormatCellsAsync`, the Context Menu's "Format Cells…" and a whole-column resize's undo
     step. So a command run within a round trip of a keyboard move acts on the cells the user sees
     selected. The late `SelectionChanged` then names the same Selection, and is no move.
+- **ExSheet also declares Excel's insert and delete keys** *(2026-10-02, decided with the user after
+  Part C of the eleventh Windows run, case 12; ADR-0071)*: Ctrl with `+`, typed with Shift or without
+  it (Ctrl+Shift+`=` on a US or UK layout, the numeric keypad's `+`), and Ctrl with `-`.
+  - **They are the browser's zoom keys.** Declared, they are claimed while the keyboard is the grid's,
+    so the page does not zoom from a Sheet. That is the price, taken deliberately: the instance root's
+    capture listener hears only keys pressed inside the grid (ADR-0018), so outside the Sheet, and
+    with Ctrl+0 or the browser's menu anywhere, the zoom stays the browser's. ExGrid declares none of
+    them by default.
+  - **Whole rows insert or delete rows, and whole columns insert or delete columns**, as the Context
+    Menu's commands do, at the rows or columns the Selection spans.
+  - **Any other Selection changes nothing and says why**: a range that is not whole rows or whole
+    columns, every cell at once, or several ranges. Excel opens a dialog there that shifts cells right
+    or down. ExSheet has no shifting of cells: it would rewrite References that point into part of a
+    range, spread a row's or column's Cell Format into each cell it moves, and move the cells of a
+    Linked Table, which are the Consumer's data. That is a decision of its own if it is ever wanted.
+  - **The key acts on the Selection it carries** (above), and is refused like a formatting key while
+    an edit is open.
 
 **15. A per-cell appearance.** A Consumer can supply a cell's Font (a colour, bold, italic,
 underline and strikethrough), its Fill, and its four Border sides.

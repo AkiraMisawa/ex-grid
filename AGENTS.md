@@ -27,7 +27,7 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **six** permitted uses:
+shows the Blazor-side approach is too slow. There are currently **eight** permitted uses:
 capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
 reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
 it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
@@ -35,7 +35,10 @@ popover, ADR-0034 — a Blazor handler would be a wire round trip per frame on S
 two turn on a distinction worth keeping: the grid never **measures** (a synchronous read it
 performs, on the path to a paint), it is **told** when something the browser already knows has
 changed or settled. The sixth is a `ResizeObserver` reporting the Layout Ceiling, the tallest
-element the browser lays out at the current scale and zoom (ADR-0053).
+element the browser lays out at the current scale and zoom (ADR-0053). The seventh is the Keyboard
+Field's composition and focus on the root, so an IME can start on a selected cell (ADR-0080). The
+eighth is a `matchMedia` listener that reports the Device Pixel when the resolution changes, so lines
+and column edges lie on Device Pixels at every scale and zoom (ADR-0090).
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
