@@ -206,6 +206,19 @@ report). Mid-composition Enter, Escape and the arrows choose and commit a candid
 them there breaks typing in any language that needs an IME, and moves the grid under a
 half-finished word.
 
+*(A real IME, the fifteenth Windows run, 2026-10-01, `verification/2026-10-01-windows-15/`.)* With
+the Microsoft Japanese IME driven by real keys, in an open edit (F2 first) and in the Formula Bar,
+the Name Box and Find, under both Chromes and both browsers, on both hosts and behind 150 ms, every
+composing key reached the field and the core took none: nothing committed or moved while composing,
+the first Enter ended the composition and the second committed, the first Escape ended only the
+composition, and ↓ chose among the candidates without pointing. **On a selected cell with no edit
+open, the IME cannot start.** DOM focus is on the root, an element that is not editable; Chrome and
+Edge give it no input context, so the IME's key leaves it off and `kana` types Latin text, which
+opens an edit with `k`. Excel composes from the first key on a selected cell. The user chose to have a
+prototype built and tried on Windows before deciding (ticket 79): a text field that holds the
+keyboard while a cell is selected, whose composition is carried into the Cell Editor. Until then,
+Japanese is typed after F2 or in the Formula Bar.
+
 ### Keys that follow a mode change are held until it lands *(added 2026-09-25)*
 
 The gate decides from the mode it was **last told**. The mode is C#'s, and C# tells the

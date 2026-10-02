@@ -276,14 +276,20 @@ for (const chrome of ['builtin', 'mud']) {
             const records = panel.locator('.ex-grid');
             await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
 
-            // A tab is a sheet of its own, and Escape does not close a sheet: its grid lets go of the
-            // keyboard, as any grid's Escape does, and the tab stays.
+            // A tab is a sheet of its own, and Escape does not close a sheet: its grid keeps the
+            // keyboard and releases Tab, as any grid's Escape with nothing to dismiss does (KB-8,
+            // ADR-0012 rewritten 2026-10-01), and the tab stays. The answer is a round trip away on
+            // the Server host, and a Tab typed before it would be held and dropped.
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
             await expect(records).toBeFocused();
             await page.keyboard.press('Escape');
-            await expect(records).not.toBeFocused();
+            await page.waitForTimeout(500);
+            await expect(records).toBeFocused();
             await expect(details).toHaveCount(1);
             await expect(panel).toBeVisible();
+            await page.keyboard.press('Tab');
+            await expect(records).not.toBeFocused();
+            await expect(details).toHaveCount(1);
 
             // A second tab, from the report once it is shown again (on Server, a round trip after
             // its tab is pressed); closed while selected, it hands the keyboard to the tab selected

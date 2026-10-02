@@ -34,13 +34,18 @@ public abstract class SheetTestContext : BunitContext
         _handle.Setup<bool>("metaIsPrimary").SetResult(false);
         _handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         _handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "blur", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose" })
         {
             _handle.SetupVoid(name, _ => true).SetVoidResult();
         }
     }
 
     internal FakeTimeProvider Clock { get; } = new();
+
+    /// <summary>How many times Escape with nothing to dismiss has told the gate to release Tab
+    /// (ADR-0012, rewritten 2026-10-01). The handle has no blur: a call to one fails the strict
+    /// stub.</summary>
+    internal int TabReleases => JSInterop.Invocations.Count(i => i.Identifier == "releaseTab");
 
     /// <summary>Renders an ExSheet as a connected, interactive component.</summary>
     internal IRenderedComponent<SheetComponent> RenderSheet(Action<ComponentParameterCollectionBuilder<SheetComponent>>? parameters = null)

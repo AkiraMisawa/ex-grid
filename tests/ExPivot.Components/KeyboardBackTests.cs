@@ -40,7 +40,7 @@ public class KeyboardBackTests : PivotTestContext
         => grid.InvokeAsync(() => grid.Instance.OnKeyAsync(
             key, ctrl: false, shift: shift, alt: false, meta: false, metaIsPrimary: false, fromDescendant: fromDescendant));
 
-    private int Blurs() => JSInterop.Invocations.Count(invocation => invocation.Identifier == "blur");
+    private int TabReleases() => JSInterop.Invocations.Count(invocation => invocation.Identifier == "releaseTab");
 
     private int FocusCalls() => JSInterop.Invocations.Count(invocation => invocation.Identifier == BlazorFocus);
 
@@ -82,16 +82,16 @@ public class KeyboardBackTests : PivotTestContext
         var records = RecordsGrid(cut);
         Assert.True(records.Instance.OnLeave.HasDelegate);
         var returns = KeyboardReturns(report);
-        var blurs = Blurs();
+        var releases = TabReleases();
 
         await PressAsync(records, "Escape");
 
         Assert.Empty(cut.FindAll(".ex-pivot-dialog"));
         Assert.Empty(cut.FindAll(".ex-pivot-dialog-backdrop"));
         Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
-        // The records grid kept the keyboard rather than dropping it on the page; the report's grid
-        // takes it back.
-        Assert.Equal(blurs, Blurs());
+        // The records grid raised OnLeave in place of releasing Tab (ADR-0070, beside ADR-0012's
+        // rewrite); the report's grid takes the keyboard back.
+        Assert.Equal(releases, TabReleases());
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
@@ -159,20 +159,20 @@ public class KeyboardBackTests : PivotTestContext
 
     // ---- The tabs -------------------------------------------------------------------------------
 
-    [Fact] // ADR-0070 (PV-39): Escape in a details tab's grid closes nothing — a tab is a sheet of its own — and the grid lets go of the keyboard as any grid does
+    [Fact] // ADR-0070 (PV-39, KB-8): Escape in a details tab's grid closes nothing — a tab is a sheet of its own — and the grid releases Tab, as any grid's Escape with nothing to dismiss does
     public async Task Escape_in_a_details_tabs_grid_closes_nothing()
     {
         var cut = RenderPivot(ByRegionAndProduct);
         await DoubleClickAsync(cut, 0, 1);
         var records = RecordsGrid(cut);
         Assert.False(records.Instance.OnLeave.HasDelegate);
-        var blurs = Blurs();
+        var releases = TabReleases();
 
         await PressAsync(records, "Escape");
 
         Assert.Equal(["PivotTable", "Details: East / Apples"], TabTitles(cut));
         Assert.Single(cut.FindAll(".ex-pivot-details-panel"));
-        Assert.Equal(blurs + 1, Blurs());
+        Assert.Equal(releases + 1, TabReleases());
     }
 
     [Fact] // ADR-0070 (PV-39): closing the last details tab, the selected one, selects the report's tab, and the report's grid takes the keyboard back once its records no longer cover it — no tab is left to hold it

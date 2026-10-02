@@ -107,6 +107,25 @@ two gaps in what a Consumer can do with a grid's keyboard.
 - **The capture-phase listener passes on whether a key is a repeat** (ADR-0021, note of the same
   day). It adds no listener, and only the browser knows a repeat from a press.
 
+## Beside ADR-0012's rewrite
+
+*(2026-10-02, when this branch met the base's rewrite of ADR-0012, decided with the user on
+2026-10-01 in the fifteenth Windows run.)* That rewrite has the Escape with nothing left to dismiss
+release Tab, the root keeping DOM focus, where it used to release the focus (KB-8). The two
+decisions are read together as they are written:
+
+- **Without `OnLeave`, the grid does what ADR-0012 says**, and that is now to release Tab. "Releases
+  the grid's DOM focus", above, is what ADR-0012 said when this was decided.
+- **With `OnLeave`, the grid raises it in place of the release**, as it was raised in place of the
+  blur, and its Tab stays in the cycle. The Consumer decides where the keyboard goes next. The
+  reason given above for raising it first — a released keyboard lands on `body` — does not hold
+  for a release that keeps DOM focus. "Instead" stands because the decision says it, and ExPivot's
+  dialog closes on `OnLeave` either way.
+- **A held Escape's repeats leave a release standing.** The rewrite ends a release at any other
+  key, and a repeat is the same press (KB-44), so the gate does not count it; the core answers it
+  with nothing. Merged as they were, the press released Tab and its first repeat ended the release.
+  KB-44 now says so, and layer 3 holds Escape on `/features` and then presses Tab.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the

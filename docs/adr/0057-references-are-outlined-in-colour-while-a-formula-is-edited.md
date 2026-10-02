@@ -99,6 +99,9 @@ on the wrong characters. That is SRV-7's failure (`…123456789` became `…1289
   the colours follow each keystroke. On a circuit behind 150 ms, they go while the user types fast
   and come back when the user pauses. **Uncoloured for a moment is chosen over coloured on the wrong
   characters.**
+- *(Seen with a real IME, the fifteenth Windows run, 2026-10-01: while `あ` was composed after
+  `=A1+`, the layer was hidden and `A1` read in the field's own colour, once; Excel too drew `A1`
+  black while composing.)*
 - **Text selected in the field stays readable.** The field's selection colour is set so that the
   selected text is drawn by the field, not left transparent.
 - **Two additions to the editor listener that ADR-0021 already allows**, neither of which reads

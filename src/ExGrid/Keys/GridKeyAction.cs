@@ -46,7 +46,9 @@ public enum GridKeyKind
     /// <summary>Space: engage with the cell's content (ADR-0020).</summary>
     Engage,
 
-    /// <summary>Escape: leave the grid, which is the way out of Tab's cycle.</summary>
+    /// <summary>Escape with nothing left to dismiss: the way out of Tab's cycle. The grid keeps
+    /// DOM focus and releases Tab, so the next Tab or Shift+Tab is the browser's (ADR-0012,
+    /// rewritten 2026-10-01).</summary>
     Leave,
 
     /// <summary>The Context Menu key and Shift+F10: open the context menu on the Focus

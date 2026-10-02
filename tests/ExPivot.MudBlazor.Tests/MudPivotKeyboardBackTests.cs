@@ -41,7 +41,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
     private static Task CloseTabAsync(IRenderedComponent<PivotComponent> cut, string title)
         => cut.FindAll(".mud-ex-pivot-tab-close").Single(b => b.GetAttribute("aria-label") == $"Close {title}").ClickAsync(new MouseEventArgs());
 
-    private int Blurs() => JSInterop.Invocations.Count(invocation => invocation.Identifier == "blur");
+    private int TabReleases() => JSInterop.Invocations.Count(invocation => invocation.Identifier == "releaseTab");
 
     private int FocusCalls() => JSInterop.Invocations.Count(invocation => invocation.Identifier == Focus);
 
@@ -74,13 +74,13 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.NotNull(cut.Find(".ex-pivot-dialog .mud-ex-pivot-dialog-records .ex-grid"));
         Assert.True(records.Instance.OnLeave.HasDelegate);
         var returns = KeyboardReturns(report);
-        var blurs = Blurs();
+        var releases = TabReleases();
 
         await EscapeAsync(records);
 
         Assert.Empty(cut.FindAll(".ex-pivot-dialog"));
         Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
-        Assert.Equal(blurs, Blurs());
+        Assert.Equal(releases, TabReleases());
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
@@ -118,7 +118,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal([true], seen);
     }
 
-    [Fact] // ADR-0070/0062 (PV-39): under MudBlazor, Escape in a details tab's grid closes nothing — a tab is a sheet of its own
+    [Fact] // ADR-0070/0062 (PV-39, KB-8): under MudBlazor, Escape in a details tab's grid closes nothing — a tab is a sheet of its own — and releases Tab
     public async Task Escape_in_a_details_tabs_grid_closes_nothing()
     {
         ReportGridHandle();
@@ -126,13 +126,13 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         await DoubleClickAsync(cut, 1);
         var records = RecordsGrid(cut);
         Assert.False(records.Instance.OnLeave.HasDelegate);
-        var blurs = Blurs();
+        var releases = TabReleases();
 
         await EscapeAsync(records);
 
         Assert.Equal(["PivotTable", "Details: East / Apples"], TabTitles(cut));
         Assert.Single(cut.FindAll(".ex-pivot-details-panel"));
-        Assert.Equal(blurs + 1, Blurs());
+        Assert.Equal(releases + 1, TabReleases());
     }
 
     [Fact] // ADR-0070/0062 (PV-39): under MudBlazor, the last details tab closed takes MudTabs away, and the report's grid takes the keyboard back once its records no longer cover it

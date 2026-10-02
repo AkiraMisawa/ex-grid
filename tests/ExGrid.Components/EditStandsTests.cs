@@ -113,21 +113,21 @@ public class EditStandsTests : GridTestContext
         Assert.Empty(intents);
     }
 
-    [Fact] // ADR-0018 sections 1 and 6 / ED-26 / KB-1: Escape and typing in another grid are that grid's, and this grid's edit stands
+    [Fact] // ADR-0018 sections 1 and 6 / ED-26 / KB-1 / KB-8: Escape and typing in another grid are that grid's, and this grid's edit stands
     public async Task Keys_in_another_grid_leave_this_grids_edit_standing()
     {
         var intents = new List<GridEditIntent<TestRow>>();
         var (sheet, other) = await LeaveAnEditAsync(intents, "=");
 
-        // The other grid opens an edit of its own and cancels it; then Escape releases it.
+        // The other grid opens an edit of its own and cancels it; then Escape releases its Tab.
         await PressAsync(other, "x");
         Assert.Equal("x", EditorText(other));
         await PressAsync(other, "Escape", text: "x", caret: 1);
         Assert.Null(EditorText(other));
-        var blurs = Js.BlurCount;
+        var releases = Js.TabReleases;
         await PressAsync(other, "Escape");
 
-        Assert.Equal(blurs + 1, Js.BlurCount);
+        Assert.Equal(releases + 1, Js.TabReleases);
         // Two edits could stand at once, and the Sheet's still does, untouched.
         Assert.Equal("=", EditorText(sheet));
         Assert.Equal("=", Bar(sheet).GetAttribute("value"));

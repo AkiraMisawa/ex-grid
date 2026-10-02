@@ -5775,8 +5775,9 @@
             return;
         // A held Escape is one press (ADR-0012, refined with ADR-0070): the press peels its one
         // layer, and the repeats dismiss nothing more. Otherwise a held key closed a Formula
-        // Entry's list and then cancelled the edit under it, or closed a dialog and then released
-        // the keyboard of the grid it had just been handed back to.
+        // Entry's list and then cancelled the edit under it, or closed a dialog and then took the
+        // Tab of the grid it had just been handed back to out of its cycle. The gate leaves a Tab
+        // released by the press released through its repeats.
         if (repeat && key == "Escape")
             return;
         // While editing, the keys the gate forwarded are the editor's contract
@@ -5883,7 +5884,7 @@
                 // Escape peels the outermost layer first: an open popover closes and
                 // the grid keeps the keyboard — one press, one dismissal. Only with
                 // nothing left to dismiss is it the way out of Enter/Tab cycling
-                // (ADR-0012), releasing the grid's DOM focus.
+                // (ADR-0012), releasing Tab while the root keeps DOM focus.
                 if (AnyPopoverOpen)
                 {
                     // The keyboard comes back after the render that removes the popover,
@@ -5916,7 +5917,8 @@
                 // The Interactive layer, between the popover and the grid (ADR-0037,
                 // ADR-0012's layering): Escape leaves the cell, the Focus stays where it
                 // is, and the grid keeps the keyboard. Only with nothing engaged is it
-                // the way out — or, where the Consumer listens, its OnLeave (ADR-0070).
+                // the way out: Tab released (ADR-0012, rewritten 2026-10-01) — or, where
+                // the Consumer listens, its OnLeave in place of the release (ADR-0070).
                 if (EndInteractive())
                 {
                     _suppressRender = false;
@@ -6794,7 +6796,7 @@
         {
             case "Escape":
                 // Cancel discards: the uncommitted text was the grid's and dies with
-                // the editor (ADR-0007). Esc never blurs the grid from here.
+                // the editor (ADR-0007). Esc never releases Tab from here.
                 await EndEditingAsync();
                 StateHasChanged();
                 return;
@@ -7609,13 +7611,22 @@
         }
     }
 
-    private async Task LeaveAsync()
+    /// <summary>
+    /// Escape's way out of Enter/Tab cycling (ADR-0012, rewritten 2026-10-01): the gate stops
+    /// claiming the next Tab or Shift+Tab, so the browser moves on to the page's next or previous
+    /// element, and the root keeps DOM focus meanwhile. Any other key, or a press on the grid,
+    /// ends the release and means what it always means. The release is the gate's bookkeeping, as
+    /// an Inner Popup's Escape is: the core keeps none, since every key after it is answered
+    /// exactly as before. Told before this Escape's answer, so the keys held behind it are
+    /// replayed against it (ADR-0010).
+    /// </summary>
+    private async Task ReleaseTabAsync()
     {
         if (_scrollHandle is null || _disposed)
             return;
         try
         {
-            await _scrollHandle.InvokeVoidAsync("blur");
+            await _scrollHandle.InvokeVoidAsync("releaseTab");
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

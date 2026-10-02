@@ -1534,8 +1534,23 @@ async function dragHandle(page, grid, from, to) {
     const toX = target.x + target.width / 2;
     const toY = target.y + target.height / 2;
     await page.mouse.move(toX + 3, toY, { steps: 8 });
-    await expect(grid.locator('.ex-fill-target')).toHaveCount(1);
+    await fillDragHeard(page, grid, toX + 3, toY);
     await page.mouse.up();
+}
+
+/**
+ * Waits until the fill drag's target outline is painted, nudging the held pointer a pixel back and
+ * forth at (x, y) meanwhile. The drag's move handler arrives with the render that answered the
+ * press (ADR-0008, ADR-0021): on a circuit, a move made within that round trip is not heard, and a
+ * pointer held still after it paints no target until it moves again, as a hand does. The release
+ * fills to where it lands either way. Found on CI, Server host: a press, one row down and still.
+ */
+async function fillDragHeard(page, grid, x, y) {
+    let nudge = 0;
+    await expect.poll(async () => {
+        await page.mouse.move(x + (nudge++ % 2), y);
+        return grid.locator('.ex-fill-target').count();
+    }).toBe(1);
 }
 
 for (const chrome of ['builtin', 'mud']) {
@@ -1582,7 +1597,7 @@ test('DC-13: the edge auto-scroll carries a fill past the bottom of the Viewport
     await page.mouse.down();
     // A row down first: the fill drag has begun once its target outline is painted.
     await page.mouse.move(handle.x + handle.width / 2, handle.y + 28, { steps: 3 });
-    await expect(grid.locator('.ex-fill-target')).toHaveCount(1);
+    await fillDragHeard(page, grid, handle.x + handle.width / 2, handle.y + 28);
     // Held in the band at the Viewport's bottom edge (ADR-0008): the rows scroll under the
     // pointer and the target follows them.
     await page.mouse.move(handle.x + handle.width / 2, scroller.y + scroller.height - 22, { steps: 10 });

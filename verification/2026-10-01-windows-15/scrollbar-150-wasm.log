@@ -1,0 +1,13 @@
+
+Running 8 tests using 1 worker
+
+  ok 1 [chrome] › scrollbar.spec.mjs:227:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (1.4s)
+  ok 2 [chrome] › scrollbar.spec.mjs:237:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (674ms)
+  ok 3 [chrome] › scrollbar.spec.mjs:263:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (1.1s)
+  ok 4 [chrome] › scrollbar.spec.mjs:342:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (881ms)
+  ok 5 [msedge] › scrollbar.spec.mjs:227:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (1.1s)
+  ok 6 [msedge] › scrollbar.spec.mjs:237:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (723ms)
+  ok 7 [msedge] › scrollbar.spec.mjs:263:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (1.2s)
+  ok 8 [msedge] › scrollbar.spec.mjs:342:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (948ms)
+
+  8 passed (11.2s)

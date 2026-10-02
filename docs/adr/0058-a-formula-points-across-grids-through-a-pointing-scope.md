@@ -562,3 +562,23 @@ heading (`$B$2`, then `$B$3`). Three things were decided with the user.
   existing Formula wider than the field is edited in its middle.)*
 
 Tickets 74 and 75 build these.
+
+## What the fifteenth Windows run found *(2026-10-01)*
+
+`docs/specs/exsheet/verify-on-windows-15.md`, Part C, asked Excel the readings decided while ticket
+74 was built (`verification/2026-10-01-windows-15/report.md`). Excel agreed for `+1`, `-0`, `50%` and
+`Positions[Id]`, and differed on six. **The user kept ExSheet's rule, and recorded the differences**
+*(decided 2026-10-01)*:
+
+- `1.0` and `1 ` list nothing in Excel; ExSheet lists `1` alone, as the number they are.
+- `--1` lists `1` alone in Excel; ExSheet lists every value, as text the grammar does not read as one
+  number constant.
+- `(` lists every value in Excel, and so does `(A`; ExSheet lists nothing after `(`, and the functions
+  after `(A`, as inside any grouping parenthesis.
+- `(1)` lists nothing in Excel; ExSheet lists every value, as text that is not a number.
+- `Positions[` lists `@ - This Row`, the columns, `#All`, `#Data`, `#Headers` and `#Totals` in Excel;
+  ExSheet lists the columns, the deliberate difference recorded above ("After `Table[`").
+
+No rule reproduces Excel's answers: `--1` and `(1)` are both 1, and Excel lists `1` for one and nothing
+for the other. Each of these is typed at a value-list argument only on purpose, and ExSheet's rule is
+one a user can predict.

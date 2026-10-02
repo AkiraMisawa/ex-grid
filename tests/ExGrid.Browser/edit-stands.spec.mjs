@@ -65,13 +65,14 @@ for (const chrome of ['builtin', 'mud']) {
             // Neither committed nor discarded.
             await expect(editor(grid)).toHaveValue('=');
             await expect(bar(grid)).toHaveValue('=');
-            // The positions grid's keys are its own (KB-1): ↓ moves its Focus, Escape lets its
-            // keyboard go (ADR-0012), and the Sheet's edit stands through both.
+            // The positions grid's keys are its own (KB-1): ↓ moves its Focus, Escape releases its
+            // Tab and it keeps the keyboard (ADR-0012, rewritten 2026-10-01; KB-8), and the Sheet's
+            // edit stands through both.
             await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
             await page.keyboard.press('ArrowDown');
             await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r3c1$/);
             await page.keyboard.press('Escape');
-            await expect(positions(page)).not.toBeFocused();
+            await expect(positions(page)).toBeFocused();
             await expect(editor(grid)).toHaveValue('=');
             await expect(cell(grid, 'C4')).toHaveText('0.2');
 
@@ -337,7 +338,7 @@ test.describe('/sheets', () => {
         await expect(right).toBeFocused();
         await setRoundTrip(150);
 
-        // No wait between the two: Escape in the right Sheet would release it (ADR-0012).
+        // No wait between the two: Escape in the right Sheet would release its Tab (ADR-0012).
         await clickCell(left, 'B1');
         await page.keyboard.press('Escape');
 
