@@ -6169,15 +6169,15 @@
                 // The Interactive layer, between the popover and the grid (ADR-0037,
                 // ADR-0012's layering): Escape leaves the cell, the Focus stays where it
                 // is, and the grid keeps the keyboard. Only with nothing engaged is it
-                // the way out: Tab released (ADR-0012, rewritten 2026-10-01) — or, where
-                // the Consumer listens, its OnLeave in place of the release (ADR-0070).
+                // the way out: Tab released (ADR-0012, rewritten 2026-10-01) — and, where
+                // the Consumer listens, its OnLeave raised beside the release (ADR-0070).
                 if (EndInteractive())
                 {
                     _suppressRender = false;
                     StateHasChanged();
                     return;
                 }
-                await LeaveOrRaiseAsync();
+                await LeaveAsync();
                 return;
             case GridKeyKind.Engage:
                 // With no Focus, Space is a first key like any other: it only places the

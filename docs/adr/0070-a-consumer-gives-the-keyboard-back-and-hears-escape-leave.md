@@ -59,7 +59,8 @@ two gaps in what a Consumer can do with a grid's keyboard.
 - With it, the grid raises `OnLeave` for that Escape instead, and keeps DOM focus. The Consumer
   decides what leaving means — closing its dialog, for example — and where the keyboard goes next.
   Releasing focus first would drop it on the page's `body` before the Consumer could put it
-  anywhere.
+  anywhere. *(Since 2026-10-02 it is raised beside the grid's release of Tab, not instead of it:
+  see "Raised beside the release", below.)*
 - **Only the outermost Escape raises it.** ADR-0012's layering is unchanged, and each of these
   Escapes still peels only its own layer:
   - one that closes an Inner Popup, then the popover that holds it
@@ -120,7 +121,8 @@ decisions are read together as they are written:
   blur, and its Tab stays in the cycle. The Consumer decides where the keyboard goes next. The
   reason given above for raising it first — a released keyboard lands on `body` — does not hold
   for a release that keeps DOM focus. "Instead" stands because the decision says it, and ExPivot's
-  dialog closes on `OnLeave` either way.
+  dialog closes on `OnLeave` either way. *(It stood until 2026-10-02: see "Raised beside the
+  release", below.)*
 - **A held Escape's repeats leave a release standing.** The rewrite ends a release at any other
   key, and a repeat is the same press (KB-44), so the gate does not count it; the core answers it
   with nothing. Merged as they were, the press released Tab and its first repeat ended the release.
@@ -142,6 +144,25 @@ same call, so the merge keeps one method. A Chrome calls it once its frame has c
 Consumer once something of its own goes away. DC-61 states it for both, and its layer 2 and layer 3
 tests run against that one method.
 
+## Raised beside the release
+
+*(2026-10-02, decided with the user.)* With `OnLeave` declared, the Escape with nothing left to
+dismiss releases Tab, as ADR-0012 has every grid's do (KB-8), and raises `OnLeave` as well.
+
+- **Why.** Raised in place of the release, `OnLeave` left the grid's Tab cycling. A Consumer that
+  hears it and keeps the grid on screen — to show a hint, or to do nothing — kept a keyboard user
+  in the grid: Tab could not leave it unless the Consumer moved the keyboard. Raised beside the
+  release, Escape and then Tab leaves every grid, declared or not. The Consumer can still put the
+  keyboard somewhere first: DOM focus leaving the grid ends its release (ADR-0012's note of
+  2026-10-02, with [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)).
+- **The release comes first.** It is sent before the Consumer's handler runs, so the gate holds it
+  before anything the handler sends and before this Escape's answer. The handler does not wait for
+  its round trip.
+- **Nothing else changes.** Only the outermost Escape does either, once per press: a held key's
+  repeats do neither again (KB-44). ExPivot's dialog closes on `OnLeave` as before, and its grid's
+  release goes with it.
+- DC-62 says so, and layer 2 counts the release beside each `OnLeave`.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the
@@ -154,7 +175,9 @@ tests run against that one method.
   to another grid. That is the problem ADR-0018 moved the listener to the root to avoid. A
   declaration says which Consumer listens.
 - **`OnLeave` raised after releasing focus** — rejected. Focus would land on `body`, and the
-  Consumer's dialog would close over a page with no keyboard anywhere.
+  Consumer's dialog would close over a page with no keyboard anywhere. *(That was the release of
+  DOM focus. Since ADR-0012's rewrite the release is of Tab, and keeps DOM focus, and since
+  2026-10-02 `OnLeave` is raised beside it: see "Raised beside the release".)*
 
 ## Consequences
 

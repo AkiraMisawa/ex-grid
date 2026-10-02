@@ -89,9 +89,9 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-dialog"));
         Assert.Empty(cut.FindAll(".ex-pivot-dialog-backdrop"));
         Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
-        // The records grid raised OnLeave in place of releasing Tab (ADR-0070, beside ADR-0012's
-        // rewrite); the report's grid takes the keyboard back.
-        Assert.Equal(releases, TabReleases());
+        // The records grid released Tab and raised OnLeave beside it (ADR-0070, 2026-10-02); the
+        // dialog closed on it, and the report's grid takes the keyboard back.
+        Assert.Equal(releases + 1, TabReleases());
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 

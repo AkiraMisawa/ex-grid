@@ -77,3 +77,7 @@ Two things were found that need a decision, and are not built:
 refinement — a held Escape is one press in every grid (KB-44) — and `pivot.spec.mjs` holds Escape
 in the dialog's grid to show the report keeps the keyboard. The ADR-0070 tests pass on both hosts
 (10 each), with a clean console.
+
+2026-10-02, decided with the user: `OnLeave` is raised beside the grid's release of Tab, not in
+place of it (ADR-0070, "Raised beside the release"; DC-62). The dialog's grid releases Tab and
+raises `OnLeave`, and the dialog closes on it as before.

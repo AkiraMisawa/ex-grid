@@ -80,7 +80,8 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
 
         Assert.Empty(cut.FindAll(".ex-pivot-dialog"));
         Assert.False(cut.Find(".ex-pivot-report").HasAttribute("inert"));
-        Assert.Equal(releases, TabReleases());
+        // The records grid released Tab and raised OnLeave beside it (ADR-0070, 2026-10-02).
+        Assert.Equal(releases + 1, TabReleases());
         Assert.Equal(returns + 1, KeyboardReturns(report));
     }
 
