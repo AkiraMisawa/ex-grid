@@ -191,6 +191,14 @@ public interface ISheetChrome : IGridChrome
     /// Cells, shown in the grid's popover frame (ADR-0050, item 16).
     /// </summary>
     RenderFragment? FormatCells(FormatCellsContext context) => null;
+
+    /// <summary>
+    /// A Toolbar Item of the Sheet Toolbar, drawn in this Chrome's controls (ADR-0100). The item's
+    /// meaning — whether it is pressed or available, what pressing it and each choice does — is
+    /// ExSheet's, in <paramref name="context"/>; the Chrome draws it and calls back. A pointer press
+    /// must not take DOM focus, so the keyboard stays on the Sheet. Null draws the built-in item.
+    /// </summary>
+    RenderFragment? ToolbarItem(ToolbarItemContext context) => null;
 }
 
 /// <summary>

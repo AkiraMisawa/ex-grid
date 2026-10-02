@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // Format Cells under ExSheet.MudBlazor's Chrome (ADR-0071, ticket 53; SH-45, SH-47): a MudDialog at
@@ -29,7 +29,7 @@ function choice(page, name) {
 
 async function openFromMenu(page, grid, address) {
     await pressCell(grid, address);
-    await cell(grid, address).click({ force: true, button: 'right' });
+    await pressAt(cell(grid, address), { button: 'right' });
     await page.getByRole('menuitem', { name: 'Format Cells…' }).click();
     await expect(formatCells(page)).toBeVisible();
 }
@@ -95,6 +95,42 @@ test.describe('on /sheet?chrome=mud', () => {
         await page.keyboard.press('Escape');
         await expect(formatCells(page)).toHaveCount(0);
         await expectKeyboardOn(grid);
+    });
+
+    test('SH-45 (Part C): opened again on Border, every tab is in view and the strip does not scroll (ticket 147)', async ({ page }) => {
+        const grid = sheet(page);
+        await pressCell(grid, 'C2');
+        await page.keyboard.press('Control+1');
+        await expect(formatCells(page)).toBeVisible();
+        await tab(page, 'Border').click();
+        await expect(tab(page, 'Border')).toHaveAttribute('aria-selected', 'true');
+        await page.keyboard.press('Escape');
+        await expect(formatCells(page)).toHaveCount(0);
+        await expectKeyboardOn(grid);
+
+        // It opens on the tab shown last in this Sheet: Border, the fourth.
+        await page.keyboard.press('Control+1');
+        await expect(tab(page, 'Border')).toHaveAttribute('aria-selected', 'true');
+        // Every tab inside the tab bar's own box, read at one moment (the dialog may still be moving
+        // in), and the bar not scrolled: a tab scrolled out of it lies a whole tab away.
+        const bar = await formatCells(page).locator('.mud-tabs-tabbar').evaluate((el) => {
+            const box = el.getBoundingClientRect();
+            const tabs = [...el.querySelectorAll('[role="tab"]')].map((t) => {
+                const r = t.getBoundingClientRect();
+                return { name: t.textContent.trim(), left: r.left, right: r.right };
+            });
+            const wrapper = el.querySelector('.mud-tabs-tabbar-wrapper');
+            return { left: box.left, right: box.right, tabs, transform: wrapper ? getComputedStyle(wrapper).transform : 'none' };
+        });
+        expect(bar.tabs.map((t) => t.name), JSON.stringify(bar)).toEqual(['Number', 'Alignment', 'Font', 'Border', 'Fill']);
+        for (const t of bar.tabs) {
+            expect(t.left, `${t.name} starts inside the bar: ${JSON.stringify(bar)}`).toBeGreaterThanOrEqual(bar.left - 1);
+            expect(t.right, `${t.name} ends inside the bar: ${JSON.stringify(bar)}`).toBeLessThanOrEqual(bar.right + 1);
+        }
+        expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(bar.transform);
+        await expect(formatCells(page).locator('.mud-tabs-scroll-button:visible')).toHaveCount(0);
+        await page.keyboard.press('Escape');
+        await expect(formatCells(page)).toHaveCount(0);
     });
 
     test('SH-45: Escape sets nothing, and the next arrow moves the Focus', async ({ page }) => {

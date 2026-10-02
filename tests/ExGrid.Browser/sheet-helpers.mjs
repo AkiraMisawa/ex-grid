@@ -58,14 +58,54 @@ export function cell(grid, address) {
 
 /**
  * Presses a cell. Cells are pointer-events: none by design — the Viewport is the delegated
- * target (ADR-0004) — so the actionability check is bypassed and the browser hit-tests the
- * press through to the Viewport, as a user's does.
+ * target (ADR-0004) — so the press is made where the cell is painted, and the browser hit-tests
+ * it through to the Viewport, as a user's is (pressAt).
  */
 export async function clickCell(grid, address, options = {}) {
-    // Painted first: force skips the actionability checks, and a cell caught between two
-    // renders has no box to press.
-    await expect(cell(grid, address)).toBeVisible();
-    await cell(grid, address).click({ force: true, ...options });
+    await pressAt(cell(grid, address), options);
+}
+
+/**
+ * Presses where an element is painted, as a user does, never on the element itself. A row of a
+ * Sheet is a new element whenever its Row is a new one (RowKey: an edit, a paste or a format in
+ * it), so a cell resolved before such a render can be detached by the press. Clicked as an
+ * element with `force`, Playwright then fails it as "not visible" at once (format-cells-mud's
+ * More Colours, CI on the Server host, 2026-10-02: C2's row was replaced 100 to 200 ms after OK,
+ * in every run sampled). The element is found, brought into view and its place read in one step
+ * in the page, so no render comes between; what lies at that place takes the press, as it would
+ * a user's. Not scrollIntoViewIfNeeded and then boundingBox: each resolves the element again, and
+ * the first waits two frames for it to be stable, which only widened the window (3 of 30 runs).
+ * `options` takes `button`, `modifiers`, `position` (within the element, as Playwright's) and
+ * `double`.
+ */
+export async function pressAt(locator, options = {}) {
+    const { button = 'left', modifiers = [], position = null, double = false } = options;
+    let box = null;
+    await expect.poll(async () => {
+        box = await locator.evaluate((element) => {
+            element.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            const rect = element.getBoundingClientRect();
+            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+        });
+        return box.width > 0 && box.height > 0;
+    }).toBe(true);
+    const x = box.x + (position ? position.x : box.width / 2);
+    const y = box.y + (position ? position.y : box.height / 2);
+    const page = locator.page();
+    const keys = modifiers.map((key) => (key === 'ControlOrMeta'
+        ? (process.platform === 'darwin' ? 'Meta' : 'Control')
+        : key));
+    for (const key of keys) {
+        await page.keyboard.down(key);
+    }
+    if (double) {
+        await page.mouse.dblclick(x, y, { button });
+    } else {
+        await page.mouse.click(x, y, { button });
+    }
+    for (const key of keys.reverse()) {
+        await page.keyboard.up(key);
+    }
 }
 
 /**
@@ -171,7 +211,31 @@ export async function typeSteadily(page, field, text) {
  * among them.
  */
 export function sheetCommands(page) {
-    return ['#sheet-undo', '#sheet-redo', '#sheet-money', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
+    return ['#sheet-undo', '#sheet-redo', '#sheet-format-cells', '#sheet-insert-row'].map((id) => page.locator(id));
+}
+
+/**
+ * A Toolbar Item of the Sheet Toolbar by its name, under either Chrome (ADR-0100): the control that
+ * carries the name, and for a split control its face. Its list's arrow is `toolbarArrow`.
+ */
+export function toolbarItem(page, name, index = 0) {
+    return page.locator('.ex-sheet-toolbar').nth(index)
+        .locator(`button[aria-label="${name}"], .ex-sheet-toolbar-split[aria-label="${name}"] .ex-sheet-toolbar-face`).first();
+}
+
+/** The arrow that opens a split control's list, under either Chrome. */
+export function toolbarArrow(page, name, index = 0) {
+    return page.locator('.ex-sheet-toolbar').nth(index).locator(`[aria-label="${name}, more"]`).first();
+}
+
+/**
+ * Chooses `choice` from the Number Format's list on the Sheet Toolbar (ADR-0100): the built-in
+ * Chrome's in the grid's popover, MudBlazor's in its menu.
+ */
+export async function chooseNumberFormat(page, choice) {
+    await toolbarItem(page, 'Number Format').click();
+    const item = page.locator('.ex-sheet-choice, .mud-menu-item').filter({ hasText: new RegExp(`^${choice}`) }).first();
+    await item.click();
 }
 
 /** Every command that changes the Sheet is greyed out: an edit is open. */

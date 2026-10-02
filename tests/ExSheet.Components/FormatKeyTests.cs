@@ -102,7 +102,8 @@ public class FormatKeyTests : SheetTestContext
         Assert.Equal(expected.Order(StringComparer.Ordinal), SheetFormatKeys.Declared.Order(StringComparer.Ordinal));
         // Ctrl+Shift+U is another key in Excel.
         Assert.DoesNotContain("Control+Shift+U", SheetFormatKeys.Declared);
-        Assert.Equal(expected.Length, Grid(RenderSheet()).Instance.DeclaredKeys!.Count);
+        // Beside them, the insert and delete keys (ADR-0050 item 14, 2026-10-02): StructureKeyTests.
+        Assert.Equal(expected.Length + SheetStructureKeys.Declared.Count, Grid(RenderSheet()).Instance.DeclaredKeys!.Count);
     }
 
     [Fact] // SH-42: a key Excel does not have changes nothing and adds no step

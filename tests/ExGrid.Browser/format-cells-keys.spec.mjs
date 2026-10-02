@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { sheet, openSheet, cell, pressCell, expectFocusAt } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, pressCell, expectFocusAt, pressAt } from './sheet-helpers.mjs';
 import { expectKeyboardOn } from './keyboard.mjs';
 
 // Keys typed while Format Cells opens (ticket 93; ADR-0050 item 16 and ADR-0039, notes of
@@ -28,7 +28,7 @@ async function openBy(page, grid, address, how) {
         await page.keyboard.press('Control+1');
         return;
     }
-    await cell(grid, address).click({ force: true, button: 'right' });
+    await pressAt(cell(grid, address), { button: 'right' });
     const item = page.getByRole('menuitem', { name: 'Format Cells…' });
     if (how === 'Enter') {
         // The menu answers keys from its own place, which starts on its first item.

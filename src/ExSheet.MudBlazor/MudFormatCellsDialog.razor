@@ -85,6 +85,12 @@
 
     private void ShowTab(int index)
     {
+        // MudTabs moves its own active index while its panels register and, as the dialog closes,
+        // while they are removed one at a time, and raises each move as a change. Those are not tabs
+        // the user showed: taken as one, the closing dialog wrote Number over the tab shown last, and
+        // the next opening came up on it, on a circuit whenever the panels went before the tabs did.
+        // Only a move made while every panel stands is one (ADR-0071, case 22).
+        if (index < 0 || _tabs?.PanelCount != FormatCellsOffer.Tabs.Count) return;
         _tab = index;
         Context.TabShown(FormatCellsOffer.Tabs[index]);
     }
@@ -109,7 +115,10 @@
         builder.AddComponentParameter(5, nameof(MudFormatCellsTabs.KeepPanelsAlive), false);
         builder.AddComponentParameter(6, nameof(MudFormatCellsTabs.ChildContent), TabPanels);
         builder.AddComponentParameter(7, nameof(MudFormatCellsTabs.Focused), _tabsHoldTheKeyboard);
-        builder.AddComponentReferenceCapture(8, tabs => _tabs = (MudFormatCellsTabs)tabs);
+        // Each tab as wide as its name, not MudTabs' 160px: five of those overflow a Small dialog, and
+        // opened on Border the strip scrolled Font and Fill out of view (Part C; ticket 147).
+        builder.AddComponentParameter(8, nameof(MudFormatCellsTabs.MinimumTabWidth), "0px");
+        builder.AddComponentReferenceCapture(9, tabs => _tabs = (MudFormatCellsTabs)tabs);
         builder.CloseComponent();
     };
 
@@ -296,10 +305,25 @@
                 </MudSelect>
                 <MudCheckBox T="bool" Value="Draft.Strikethrough" ValueChanged="Draft.SetStrikethrough" Dense="true" Size="Size.Small"
                              Label="Strikethrough" Class="mud-ex-sheet-format-cells-strikethrough" />
+                @* Excel's Normal font (ADR-0071, 2026-10-02): checking it sets every part of the Font to
+                   its default, and it shows checked while they are. *@
+                <MudCheckBox T="bool" Value="Draft.IsNormalFont" ValueChanged="_normalFont" Dense="true" Size="Size.Small"
+                             Label="Normal font" Class="mud-ex-sheet-format-cells-normal-font" />
             </div>
         </div>
         @Palette(ColourTarget.Font, Draft.FontColour)
     };
+
+    // The Normal font box (ADR-0071, 2026-10-02): checked, it sets the default Font; unchecked, there
+    // is nothing to set, and the box shows checked again while the Font is the default.
+    private void NormalFont(bool normal)
+    {
+        if (normal) Draft.SetNormalFont();
+    }
+
+    // Cached, so a render hands MudCheckBox the same delegate (AGENTS.md: a method group is a new one each time).
+    private Action<bool>? _normalFontCached;
+    private Action<bool> _normalFont => _normalFontCached ??= NormalFont;
 
     // The Font tab's underline, as Excel names it: single, or none.
     private static readonly Func<bool, string?> UnderlineName = underline => underline ? "Single" : "None";

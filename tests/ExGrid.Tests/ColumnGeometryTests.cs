@@ -372,4 +372,83 @@ public class ColumnGeometryTests
         Assert.False(geometry.IsPinningSuspended);
         Assert.Equal(0, geometry.RequestedPinnedCount);
     }
+
+    // Whether a CSS length lies on a whole Device Pixel at a ratio, within a float's noise.
+    private static bool OnADevicePixel(double px, double ratio)
+        => Math.Abs((px * ratio) - Math.Round(px * ratio)) < 1e-9;
+
+    [Theory] // ADR-0090 / VZ-17: every column edge lies on a Device Pixel, at whole and fractional ratios alike
+    [InlineData(1.0)]
+    [InlineData(1.25)]
+    [InlineData(1.5)]
+    [InlineData(2.25)]
+    public void Every_column_edge_lies_on_a_device_pixel(double ratio)
+    {
+        var geometry = new ColumnGeometry([99, 99, 99, 64.4, 8.55], 0, 350, leadWidthPx: 37.3, devicePixelRatio: ratio);
+
+        for (var c = 0; c <= geometry.Count; c++)
+            Assert.True(OnADevicePixel(geometry.OffsetPxOf(c), ratio), $"edge {c} at {geometry.OffsetPxOf(c)}px");
+        Assert.True(OnADevicePixel(geometry.LeadWidthPx, ratio));
+        Assert.Equal(ratio, geometry.DevicePixelRatio);
+    }
+
+    [Theory] // ADR-0090 / VZ-17: the edges are the declared positions rounded once, so the total never drifts
+    [InlineData(1.25)]
+    [InlineData(1.5)]
+    [InlineData(2.25)]
+    public void Edges_are_the_declared_positions_rounded_once(double ratio)
+    {
+        var widths = Enumerable.Repeat(99.0, 200).ToArray();
+        var geometry = new ColumnGeometry(widths, 0, 350, leadWidthPx: 0, devicePixelRatio: ratio);
+
+        for (var c = 0; c <= geometry.Count; c++)
+        {
+            // Never more than half a Device Pixel from where the columns declare the edge.
+            Assert.InRange(geometry.OffsetPxOf(c) - (99.0 * c), (-0.5 / ratio) - 1e-9, (0.5 / ratio) + 1e-9);
+        }
+        // 99 CSS px is 148.5 Device Pixels at 150%: the columns alternate 149 and 148, never all one.
+        if (ratio == 1.5)
+        {
+            Assert.Equal(149.0 / 1.5, geometry.WidthPxOf(0), 9);
+            Assert.Equal(148.0 / 1.5, geometry.WidthPxOf(1), 9);
+        }
+    }
+
+    [Fact] // ADR-0090: what a column declares is kept beside what it is painted at
+    public void The_declared_widths_are_kept_beside_the_painted_ones()
+    {
+        var geometry = new ColumnGeometry([99, 99], 0, 350, leadWidthPx: 0, devicePixelRatio: 1.5);
+
+        Assert.Equal(99, geometry.DeclaredWidthPxOf(0));
+        Assert.Equal(99, geometry.DeclaredWidthPxOf(1));
+        Assert.NotEqual(99, geometry.WidthPxOf(0));
+    }
+
+    [Fact] // ADR-0090: untold, the edges are the declared ones, exactly
+    public void Untold_the_edges_are_the_declared_ones()
+    {
+        var told = new ColumnGeometry([120.3, 80.25], 0, 350, leadWidthPx: 10.1, devicePixelRatio: null);
+        var plain = new ColumnGeometry([120.3, 80.25], 0, 350, leadWidthPx: 10.1);
+
+        Assert.Null(told.DevicePixelRatio);
+        for (var c = 0; c <= told.Count; c++)
+            Assert.Equal(plain.OffsetPxOf(c), told.OffsetPxOf(c));
+        Assert.Equal(120.3, told.WidthPxOf(0));
+    }
+
+    [Theory] // ADR-0090: a ratio is a finite, positive number
+    [InlineData(0.0)]
+    [InlineData(-1.5)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void A_ratio_that_is_not_a_positive_number_is_refused(double ratio)
+        => Assert.Throws<ArgumentOutOfRangeException>(() => new ColumnGeometry([100], 0, 350, 0, ratio));
+
+    [Fact] // ADR-0090: a single length is put on the nearest Device Pixel, and untold is left as it is
+    public void A_length_is_put_on_the_nearest_device_pixel()
+    {
+        Assert.Equal(37.0 / 1.0, ColumnGeometry.OnDevicePixel(37.3, 1.0));
+        Assert.Equal(56.0 / 1.5, ColumnGeometry.OnDevicePixel(37.3, 1.5), 12);
+        Assert.Equal(37.3, ColumnGeometry.OnDevicePixel(37.3, null));
+    }
 }

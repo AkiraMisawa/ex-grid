@@ -155,6 +155,13 @@ function hostLogFrom(offset) {
 async function ready(page) {
     await page.locator('#demo-interactive').waitFor({ state: 'attached' });
     await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+    // The HeadOutlet's first interactive render takes the head's static <title> and renders it as
+    // its own, behind its comment (Blazor's getAndRemoveExistingTitle), on both hosts — on the
+    // Server host a round trip after the page is interactive. Until it has, the head is not the
+    // one the app keeps: read then at boot, the document differed from the same document read
+    // after the file's first test (UX-2, CI on the Server host, 2026-10-02; ADR-0056).
+    await page.waitForFunction(() => [...document.head.getElementsByTagName('title')]
+        .every((title) => title.previousSibling instanceof Comment));
 }
 
 // A real navigation — goto or reload — that returns once the page is ready.

@@ -1,0 +1,209 @@
+@*
+    A Toolbar Item as the MudBlazor Chrome draws it (ADR-0100): MudBlazor's controls, the same item
+    ExSheet describes. A toggle is a MudToggleIconButton, pressed in the palette's primary while the
+    Focus cell has what it sets; a menu is a MudMenu; a split control is the face's MudIconButton
+    beside a MudMenu that holds the choices, colours drawn as Excel's palette ten across. Nothing here
+    decides what an item means: every press and choice calls back into the context.
+
+    The wrapper prevents mousedown's default, so a pointer press does not take DOM focus and the
+    keyboard stays on the Sheet, as Excel's ribbon leaves it in the cell. When a list closes, the
+    keyboard is given back to the Sheet once the list has left the page: the core's focus function
+    is granted only while DOM focus is in the grid or on nothing (ADR-0021's note of 2026-09-30). The
+    toolbar's keys open a list by OpenRequest, as a popover answers its focus requests. No script is
+    added (ADR-0021).
+*@
+<span class="@WrapperClass" id="@Context.Id" @onmousedown:preventDefault="true">
+    @switch (Context.Kind)
+    {
+        case ToolbarItemKind.Separator:
+            <MudDivider Vertical="true" FlexItem="true" Class="mud-ex-sheet-toolbar-separator" />
+            break;
+        case ToolbarItemKind.Toggle:
+            <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
+                <MudToggleIconButton Toggled="Context.Pressed" ToggledChanged="OnToggledAsync"
+                                     Icon="@IconOf(Context.Icon)" ToggledIcon="@IconOf(Context.Icon)"
+                                     ToggledColor="Color.Primary" Size="Size.Small" Disabled="!Context.Enabled"
+                                     tabindex="-1" aria-label="@Context.Name" aria-pressed="@(Context.Pressed ? "true" : "false")" />
+            </MudTooltip>
+            break;
+        case ToolbarItemKind.Menu:
+            <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
+                <MudMenu @ref="_menu" Label="@(Context.Text ?? Context.Name)" EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                         Size="Size.Small" Variant="Variant.Text" Dense="true" Disabled="!Context.Enabled"
+                         AriaLabel="@Context.Name" OpenChanged="OnOpenChangedAsync" MaxHeight="360"
+                         AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Class="mud-ex-sheet-toolbar-menu">
+                    @Choices
+                </MudMenu>
+            </MudTooltip>
+            break;
+        case ToolbarItemKind.Split:
+            <span class="mud-ex-sheet-toolbar-split" role="group" aria-label="@Context.Name">
+                <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
+                    <MudIconButton Icon="@IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled"
+                                   tabindex="-1" aria-label="@Context.Name" OnClick="() => Context.Invoke()"
+                                   Style="@SwatchStyle" Class="mud-ex-sheet-toolbar-face" />
+                </MudTooltip>
+                <MudMenu @ref="_menu" Icon="@Icons.Material.Filled.ArrowDropDown" Size="Size.Small" Dense="true" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft"
+                         Disabled="!Context.Enabled" AriaLabel="@($"{Context.Name}, more")" OpenChanged="OnOpenChangedAsync"
+                         MaxHeight="420" Class="mud-ex-sheet-toolbar-arrow">
+                    @Choices
+                </MudMenu>
+            </span>
+            break;
+        default:
+            <MudTooltip Text="@Context.Tooltip" Placement="Placement.Top">
+                @if (Context.Content is { } content)
+                {
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
+                               aria-label="@Context.Name" OnClick="() => Context.Invoke()">@content</MudButton>
+                }
+                else if (Context.Icon == ToolbarIcon.None || IconOf(Context.Icon) is null)
+                {
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
+                               aria-label="@Context.Name" OnClick="() => Context.Invoke()">@(Context.Text ?? TextOf(Context.Icon) ?? Context.Name)</MudButton>
+                }
+                else
+                {
+                    <MudIconButton Icon="@IconOf(Context.Icon)" Size="Size.Small" Disabled="!Context.Enabled" tabindex="-1"
+                                   aria-label="@Context.Name" OnClick="() => Context.Invoke()" />
+                }
+            </MudTooltip>
+            break;
+    }
+    @if (Context is { ShowKeyTip: true, KeyTip: { } letters })
+    {
+        <span class="ex-sheet-keytip mud-ex-sheet-keytip" aria-hidden="true">@letters</span>
+    }
+</span>
+
+@code {
+    /// <summary>The item, as ExSheet describes it.</summary>
+    [Parameter, EditorRequired] public ToolbarItemContext Context { get; set; } = default!;
+
+    private MudMenu? _menu;
+    private int _answeredOpen;
+    private bool _giveBackAfterRender;
+
+    private string WrapperClass => "mud-ex-sheet-toolbar-item" + (Context.Active ? " mud-ex-sheet-toolbar-active" : "");
+
+    // A colour control's face is underlined in the colour it applies, as Excel's is. The colour is
+    // the user's choice, document data painted as recorded (ADR-0071).
+    private string? SwatchStyle => Context.Colour is { IsAutomatic: false } colour
+        ? $"border-bottom: 3px solid {colour}; border-radius: 0"
+        : null;
+
+    private RenderFragment Choices => builder =>
+    {
+        var swatches = Context.Choices.Where(choice => choice.Colour is not null).ToList();
+        var seq = 0;
+        foreach (var choice in Context.Choices.Where(choice => choice.Colour is null))
+        {
+            var made = choice;
+            builder.OpenComponent<MudMenuItem>(seq++);
+            builder.AddComponentParameter(seq++, nameof(MudMenuItem.Disabled), made.DisabledReason is not null);
+            builder.AddComponentParameter(seq++, nameof(MudMenuItem.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseAsync(made)));
+            builder.AddAttribute(seq++, "aria-checked", made.Selected ? "true" : "false");
+            builder.AddAttribute(seq++, "role", "menuitemradio");
+            builder.AddComponentParameter(seq++, nameof(MudMenuItem.ChildContent), (RenderFragment)(item =>
+            {
+                item.OpenComponent<MudText>(0);
+                item.AddComponentParameter(1, nameof(MudText.Typo), Typo.body2);
+                item.AddComponentParameter(2, nameof(MudText.Style), made.Selected ? "font-weight: 600" : null);
+                item.AddComponentParameter(3, nameof(MudText.ChildContent), (RenderFragment)(text => text.AddContent(0, made.Label)));
+                item.CloseComponent();
+                if (made.DisabledReason is { } reason)
+                {
+                    item.OpenComponent<MudText>(4);
+                    item.AddComponentParameter(5, nameof(MudText.Typo), Typo.caption);
+                    item.AddComponentParameter(6, nameof(MudText.Class), "mud-ex-sheet-choice-reason");
+                    item.AddComponentParameter(7, nameof(MudText.ChildContent), (RenderFragment)(text => text.AddContent(0, reason)));
+                    item.CloseComponent();
+                }
+            }));
+            builder.CloseComponent();
+        }
+        if (swatches.Count == 0) return;
+        builder.OpenElement(seq++, "div");
+        builder.AddAttribute(seq++, "class", "mud-ex-sheet-swatches");
+        builder.AddAttribute(seq++, "role", "group");
+        foreach (var swatch in swatches)
+        {
+            var made = swatch;
+            builder.OpenElement(seq++, "button");
+            builder.SetKey(made.Label);
+            builder.AddAttribute(seq++, "type", "button");
+            builder.AddAttribute(seq++, "role", "menuitemradio");
+            builder.AddAttribute(seq++, "class", "mud-ex-sheet-swatch" + (made.Selected ? " mud-ex-sheet-swatch-selected" : ""));
+            builder.AddAttribute(seq++, "title", made.Label);
+            builder.AddAttribute(seq++, "aria-label", made.Label);
+            builder.AddAttribute(seq++, "aria-checked", made.Selected ? "true" : "false");
+            builder.AddAttribute(seq++, "style", $"background-color: {made.Colour}");
+            builder.AddAttribute(seq++, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, () => ChooseSwatchAsync(made)));
+            builder.CloseElement();
+        }
+        builder.CloseElement();
+    };
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => _answeredOpen = Context.OpenRequest;
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The toolbar's keys asked for the list (Enter on a menu, ↓ on a split control).
+        if (Context.OpenRequest != _answeredOpen)
+        {
+            _answeredOpen = Context.OpenRequest;
+            if (_menu is not null) await _menu.OpenMenuAsync(EventArgs.Empty);
+        }
+        if (_giveBackAfterRender)
+        {
+            _giveBackAfterRender = false;
+            await Context.ChoicesClosed();
+        }
+    }
+
+    private Task OnToggledAsync(bool _) => Context.Invoke();
+
+    private async Task ChooseAsync(ToolbarChoice choice)
+    {
+        if (choice.DisabledReason is not null) return;
+        await choice.Choose();
+    }
+
+    private async Task ChooseSwatchAsync(ToolbarChoice choice)
+    {
+        if (_menu is not null) await _menu.CloseMenuAsync();
+        await choice.Choose();
+    }
+
+    private Task OnOpenChangedAsync(bool open)
+    {
+        if (open) return Task.CompletedTask;
+        // The list has closed, with a choice or without: the keyboard goes back to the Sheet once
+        // the list has left the page.
+        _giveBackAfterRender = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private static string? IconOf(ToolbarIcon icon) => icon switch
+    {
+        ToolbarIcon.Bold => Icons.Material.Filled.FormatBold,
+        ToolbarIcon.Italic => Icons.Material.Filled.FormatItalic,
+        ToolbarIcon.Underline => Icons.Material.Filled.FormatUnderlined,
+        ToolbarIcon.Strikethrough => Icons.Material.Filled.StrikethroughS,
+        ToolbarIcon.FontColour => Icons.Material.Filled.FormatColorText,
+        ToolbarIcon.Fill => Icons.Material.Filled.FormatColorFill,
+        ToolbarIcon.Borders => Icons.Material.Filled.BorderBottom,
+        ToolbarIcon.AlignLeft => Icons.Material.Filled.FormatAlignLeft,
+        ToolbarIcon.AlignCenter => Icons.Material.Filled.FormatAlignCenter,
+        ToolbarIcon.AlignRight => Icons.Material.Filled.FormatAlignRight,
+        ToolbarIcon.Percent => Icons.Material.Filled.Percent,
+        ToolbarIcon.FormatCells => Icons.Material.Outlined.TableChart,
+        _ => null,
+    };
+
+    // Material has no picture for the comma style; it shows Excel's.
+    private static string? TextOf(ToolbarIcon icon) => icon == ToolbarIcon.Comma ? "," : null;
+}

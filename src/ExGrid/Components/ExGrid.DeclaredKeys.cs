@@ -17,7 +17,8 @@ public partial class ExGrid<TRow>
     /// <c>#</c> needs none on a UK layout — in both forms. A key the core answers itself, in any
     /// state, is refused by name, as is a key not in the canonical form, which nothing would ever
     /// match. Claimed only while the grid holds the keyboard on its root or in an editor surface:
-    /// a control inside the grid keeps its own keys. Requires <see cref="OnDeclaredKey"/>. Null —
+    /// a control inside the grid keeps its own keys. The Alt key alone is <c>Alt+Alt</c>, the one modifier
+    /// that may be declared by itself (ADR-0100). Requires <see cref="OnDeclaredKey"/>. Null —
     /// the default — claims none, and every key stays the browser's as before. Nothing per cell
     /// reaches JavaScript: the listener is handed this list with the core's own (ADR-0021).
     /// </summary>

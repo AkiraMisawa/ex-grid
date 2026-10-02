@@ -1,5 +1,5 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
-import { sheet, openSheet, cell, editor, nameBox, pressCell } from './sheet-helpers.mjs';
+import { sheet, openSheet, cell, editor, nameBox, pressCell, toolbarItem } from './sheet-helpers.mjs';
 
 // Excel's formatting keys on /sheet (ticket 51; ADR-0071 "Keys", ADR-0050 item 14), with real keys:
 // each toggle and Number Format key reaching the Sheet before the browser's own meaning, and with
@@ -91,20 +91,20 @@ test('SH-42/ADR-0071: the toggle follows the Focus cell over a range', async ({ 
     await expect(font(page)).toHaveText('bold');
 });
 
-test('ADR-0050 item 14 (note of 2026-10-01)/ticket 56: the page\'s button pressed straight after Shift+ArrowDown formats the extended range, as one step', async ({ page }) => {
+test('ADR-0050 item 14 (note of 2026-10-01)/ticket 56/ADR-0100: a Toolbar Item pressed straight after Shift+ArrowDown formats the extended range, as one step', async ({ page }) => {
     const grid = sheet(page);
     await pressCell(grid, 'B2');
     await expect(cell(grid, 'B3')).toHaveText('7');
     await setRoundTrip(150);
 
     // On the Server host the grid raises the move a round trip after the key, from after the render
-    // that shows it; the button's click, sent straight after the key, reaches the Sheet first. On
+    // that shows it; the item's click, sent straight after the key, reaches the Sheet first. On
     // WebAssembly this is the case without a round trip.
     await page.keyboard.press('Shift+ArrowDown');
-    await page.locator('#sheet-money').click();
+    await toolbarItem(page, 'Percent Style').click();
 
-    await expect(cell(grid, 'B2')).toHaveText('12.00');
-    await expect(cell(grid, 'B3')).toHaveText('7.00');
+    await expect(cell(grid, 'B2')).toHaveText('1200%');
+    await expect(cell(grid, 'B3')).toHaveText('700%');
     await expect(cell(grid, 'B4')).toHaveText('20');
     await setRoundTrip(0);
     await page.locator('#sheet-undo').click();

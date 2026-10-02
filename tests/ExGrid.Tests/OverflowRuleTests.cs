@@ -87,25 +87,26 @@ public class OverflowRuleTests
         Assert.True(OverflowRules.Decide(ColumnType.Number, "12345", 42.9, Metrics).IsHashed);
     }
 
-    [Fact] // ADR-0016: the #### fill covers the content width, as in Excel
-    public void The_hash_fill_matches_the_content_width()
+    [Fact] // ADR-0016 (2026-10-02): the #### run is longer than the content, so the cell cuts it at the last whole # in its own face
+    public void The_hash_run_is_longer_than_the_content_width()
     {
-        // 32px column - 8px padding = 24px content; 24 / 7 = 3 whole hashes.
+        // 32px column - 8px padding = 24px content; at half a 7px digit, 24 / 3.5 = 6.86, so 7.
         var decision = OverflowRules.Decide(ColumnType.Number, "12,345,678,901", 32, Metrics);
 
-        Assert.Equal("###", decision.DisplayText);
+        Assert.Equal("#######", decision.DisplayText);
     }
 
-    [Fact] // ADR-0016 (2026-09-25): the fill counts # at its own width, so the run fits its cell
-    public void The_hash_fill_counts_the_hash_at_its_own_width()
+    [Fact] // ADR-0016 (2026-10-02): the run is counted at half a digit, not at #'s wide-class charge, which left the cell part empty (Part C, case 3c)
+    public void The_hash_run_is_counted_at_half_a_digit_not_at_the_wide_charge()
     {
-        // # charges wide: 60px column - 16px padding = 44px content; 44 / 14 = 3 hashes.
-        // Counted at the digit (9px) it was 4, and 4 x 11.731px overflowed on DejaVu Sans.
+        // 60px column - 16px padding = 44px content. At the wide class's 14px it was 3, and in
+        // Part C six # filled two thirds of a cell nine fitted. At half the 9px digit: 44 / 4.5, so 10.
         var metrics = new CellTextMetrics(14, 9, 5, 8);
 
         var decision = OverflowRules.Decide(ColumnType.Number, "12,345,678,901", 60, metrics);
 
-        Assert.Equal("###", decision.DisplayText);
+        Assert.Equal(new string('#', 10), decision.DisplayText);
+        Assert.True(decision.DisplayText.Length * metrics.WidthOf('#') > metrics.ContentWidthPx(60));
     }
 
     [Fact] // ADR-0016: at least one # even when padding eats the whole width

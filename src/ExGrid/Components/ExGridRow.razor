@@ -82,7 +82,7 @@
                itself. *@
             <div class="@(Appearance?.ClassOf(i, cellClass) ?? cellClass)" style="@Styles.PinnedCell(i)"
                  role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                 aria-label="@AccessibleName(decision, text)">@decision.DisplayText</div>
+                 aria-label="@AccessibleName(decision, text)">@if (decision.IsHashed) {<span class="ex-hashes">@decision.DisplayText</span>} else {@decision.DisplayText}</div>
         }
     }
     @if (!Placeholder && Scrollable is { } scrollable)
@@ -110,7 +110,7 @@
                 var cellClass = CellClasses.For(numeric, pinned: false, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value), Changed(column));
                 <div class="@(Appearance?.ClassOf(i, cellClass) ?? cellClass)" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                     aria-label="@AccessibleName(decision, text)">@decision.DisplayText</div>
+                     aria-label="@AccessibleName(decision, text)">@if (decision.IsHashed) {<span class="ex-hashes">@decision.DisplayText</span>} else {@decision.DisplayText}</div>
             }
         }
     }
@@ -624,7 +624,11 @@
     /// </summary>
     private OverflowDecision Paint(GridColumn<TRow> column, int index, ColumnType type, string text)
     {
-        var widthPx = Styles.Geometry.WidthPxOf(index);
+        // The declared width, not the one painted on Device Pixels (ADR-0090): an Auto column is
+        // exactly as wide as its widest estimate, and rounding it by under a Device Pixel must not
+        // turn the value it grew for into ####. The estimate is a bound charged at the widest glyph
+        // of each class, which leaves more than that pixel to spare.
+        var widthPx = Styles.Geometry.DeclaredWidthPxOf(index);
         var metrics = Appearance?.IsBold(index) == true ? Metrics.Bold : Metrics;
         var painted = PaintedText?.Invoke(Row, column, metrics.ContentWidthPx(widthPx), metrics) ?? text;
         return OverflowRules.Decide(type, painted, widthPx, metrics);

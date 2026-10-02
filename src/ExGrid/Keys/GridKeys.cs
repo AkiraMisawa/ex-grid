@@ -191,9 +191,14 @@ public static class GridKeys
         var rest = declared ?? "";
         control = TakePrefix(ref rest, "Control+");
         meta = TakePrefix(ref rest, "Meta+");
-        TakePrefix(ref rest, "Shift+");
+        var shift = TakePrefix(ref rest, "Shift+");
         alt = TakePrefix(ref rest, "Alt+");
         key = rest;
+        // The Alt key's own keydown, with nothing else held, is the one modifier a Consumer may
+        // declare: Alt+Alt, as a press of it canonicalises (ExSheet's KeyTips, ADR-0100; ADR-0050
+        // item 14's note of 2026-10-02). Claimed, its release cannot open the browser's menu.
+        if (rest == "Alt" && alt && !control && !meta && !shift)
+            return true;
         return rest.Length > 0
             && (rest == "+" || !rest.Contains('+', StringComparison.Ordinal))
             && rest is not ("Control" or "Meta" or "Shift" or "Alt");

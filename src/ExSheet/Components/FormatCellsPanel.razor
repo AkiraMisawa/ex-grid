@@ -332,6 +332,15 @@
                            @onchange="e => Draft.SetStrikethrough(e.Value is true)" />
                     Strikethrough
                 </label>
+                @* Excel's Normal font (ADR-0071, 2026-10-02): checking it sets every part of the Font to
+                   its default. It shows checked while they are, so unchecking it changes nothing, and
+                   the click that would only clear the box is not let through. *@
+                <label class="ex-format-cells-choice">
+                    <input type="checkbox" class="ex-format-cells-normal-font" checked="@Draft.IsNormalFont"
+                           @onclick:preventDefault="Draft.IsNormalFont"
+                           @onchange="e => { if (e.Value is true) Draft.SetNormalFont(); }" />
+                    Normal font
+                </label>
             </div>
         </div>
         <fieldset class="ex-format-cells-colour">

@@ -66,6 +66,9 @@ public class DeclaredKeyTests
     [InlineData("Control+")]
     [InlineData("Control+Control+b")]
     [InlineData("Control+Shift")]
+    [InlineData("Alt")]
+    [InlineData("Control+Alt+Alt")]
+    [InlineData("Shift+Alt+Alt")]
     [InlineData("++")]
     [InlineData("")]
     public void A_key_not_in_the_canonical_form_is_refused_by_name(string key)
@@ -74,6 +77,16 @@ public class DeclaredKeyTests
 
         Assert.Contains($"'{key}'", refused.Message, StringComparison.Ordinal);
         Assert.Contains("canonical form", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact] // ADR-0050 item 14 (note of 2026-10-02) / ADR-0100: the Alt key alone may be declared, in the form its own keydown canonicalises to
+    public void The_alt_key_alone_may_be_declared()
+    {
+        var declared = GridKeys.Declare(["Alt+Alt", "F10", "Control+F1"]);
+
+        Assert.Contains(GridKeys.Canonical("Alt", ctrl: false, shift: false, alt: true, meta: false, metaIsPrimary: false), declared);
+        Assert.Contains("F10", declared);
+        Assert.Contains("Control+F1", declared);
     }
 
     [Fact] // ADR-0050 item 14 / ADR-0012: a declared key is matched in the form a press canonicalises to, Command folded where it is primary

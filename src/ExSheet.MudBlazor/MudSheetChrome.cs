@@ -98,6 +98,22 @@ public sealed class MudSheetChrome : ISheetChrome
     public RenderFragment? EditorCompletion(EditorCompletionContext context) => GridSeams.EditorCompletion(context);
 
     /// <summary>
+    /// A Toolbar Item of the Sheet Toolbar in MudBlazor's controls (ADR-0100): a toggle as a
+    /// <c>MudToggleIconButton</c>, a list as a <c>MudMenu</c>, a split control as a
+    /// <c>MudIconButton</c> beside one. What it means is ExSheet's, in <paramref name="context"/>.
+    /// </summary>
+    public RenderFragment? ToolbarItem(ToolbarItemContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudToolbarItem>(0);
+            builder.AddComponentParameter(1, nameof(MudToolbarItem.Context), context);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>
     /// Format Cells as a <c>MudDialog</c> (ADR-0071). ExSheet renders the fragment beside the grid
     /// from the opening until OK or Cancel; each opening is a dialog of its own.
     /// </summary>

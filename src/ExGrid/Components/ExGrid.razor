@@ -2227,6 +2227,8 @@
                 width = Math.Max(asText.EstimatePx(label(0) ?? ""), asText.EstimatePx(label(last) ?? ""));
             }
         }
+        // On a Device Pixel, so column 0's edge is on one too (ADR-0090).
+        width = ColumnGeometry.OnDevicePixel(width, _devicePixelRatio);
         if (width != _rowHeadingWidthPx || (_rowHeadingStyle is null) != (width == 0))
         {
             _rowHeadingWidthPx = width;
@@ -2990,11 +2992,12 @@
         if (geometry.Count == Columns.Count
             && geometry.RequestedPinnedCount == PinnedColumnCount
             && geometry.ViewportWidthPx == _visibleWidthPx
-            && geometry.LeadWidthPx == _rowHeadingWidthPx)
+            && geometry.LeadWidthPx == _rowHeadingWidthPx
+            && geometry.DevicePixelRatio == _devicePixelRatio)
         {
             var moved = false;
             for (var c = 0; !moved && c < Columns.Count; c++)
-                moved = geometry.WidthPxOf(c) != Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
+                moved = geometry.DeclaredWidthPxOf(c) != Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
             if (!moved)
                 return;
         }
@@ -3002,7 +3005,7 @@
         var widths = new double[Columns.Count];
         for (var c = 0; c < Columns.Count; c++)
             widths[c] = Columns[c].Width.ResolveWidthPx(_autoWidths[c]);
-        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, _visibleWidthPx, _rowHeadingWidthPx));
+        _columnStyles = new ColumnStyles(new ColumnGeometry(widths, PinnedColumnCount, _visibleWidthPx, _rowHeadingWidthPx, _devicePixelRatio));
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -3887,7 +3890,9 @@
             return;
         _resizeColumn = column;
         _resizeStartClientX = e.ClientX;
-        _resizeStartWidthPx = _columnStyles.Geometry.WidthPxOf(column);
+        // The width the column declares, not the one painted on Device Pixels (ADR-0090): a resize
+        // reports the declared width moved by the drag, never a rounding the Consumer did not ask for.
+        _resizeStartWidthPx = _columnStyles.Geometry.DeclaredWidthPxOf(column);
         _resizeGuideLeftPx = GuideLeftPx(column, _resizeStartWidthPx);
         AttachRootGesture();
     }
@@ -8610,13 +8615,14 @@
     private string RootStyle()
     {
         var stretch = (ViewportWidth.IsStretch, ViewportHeight.IsStretch);
-        if (_rootStyle.Length == 0 || stretch != _rootStyleStretch || FormulaBarPx != _rootStyleBarPx)
+        if (_rootStyle.Length == 0 || stretch != _rootStyleStretch || FormulaBarPx != _rootStyleBarPx || _rootStyleRatio != _devicePixelRatio)
         {
             _rootStyleStretch = stretch;
             _rootStyleBarPx = FormulaBarPx;
+            _rootStyleRatio = _devicePixelRatio;
             _rootStyle = string.Create(
                 CultureInfo.InvariantCulture,
-                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{StretchRootStyle(stretch.Item1, stretch.Item2)}{FormulaBarRootStyle()}");
+                $"--ex-row-height: {_metrics.RowHeightPx}px; --ex-header-height: {_metrics.HeaderHeightPx}px; --ex-font-size: {_metrics.FontSizePx}px; --ex-cell-padding-x: {_metrics.CellPaddingXPx}px; --ex-action-padding-x: {_metrics.ActionPaddingXPx}px; --ex-action-border-width: {_metrics.ActionBorderPx}px; --ex-action-gap: {_metrics.ActionGapPx}px; --ex-menu-button-width: {_metrics.MenuButtonWidthPx}px; --ex-menu-button-inset: {_metrics.MenuButtonInsetPx}px; --ex-sort-mark-width: {_metrics.SortMarkWidthPx}px{StretchRootStyle(stretch.Item1, stretch.Item2)}{FormulaBarRootStyle()}{DevicePixelRootStyle()}");
         }
         return _rootStyle;
     }
@@ -8633,6 +8639,22 @@
             : "";
 
     private double _rootStyleBarPx;
+    private double? _rootStyleRatio;
+
+    /// <summary>
+    /// One Device Pixel in CSS pixels, once the browser has told it (ADR-0090): every line the
+    /// stylesheet draws in Device Pixels reads <c>--ex-dp</c>, and inline it outranks the
+    /// stylesheet's <c>resolution</c> steps, which stand only until the first report. It is
+    /// geometry — the column edges are put on the same Device Pixel — so it arrives from here
+    /// (ADR-0027).
+    /// </summary>
+    private string DevicePixelRootStyle()
+        => _devicePixelRatio is { } ratio
+            ? FormattableString.Invariant($"; --ex-dp: {1 / ratio}px")
+            : "";
+
+    // The ratio the browser last told (ADR-0090), or null until it has.
+    private double? _devicePixelRatio;
 
     /// <summary>The Formula Bar's height, or zero while it is off (ADR-0051).</summary>
     private double FormulaBarPx => ShowFormulaBar ? _metrics.FormulaBarHeightPx : 0;
@@ -8662,6 +8684,38 @@
         (true, false) => "; min-width: 0",
         _ => "",
     };
+
+    /// <summary>
+    /// The browser told the grid its Device Pixel (ADR-0090, ADR-0021's eighth entry): the
+    /// <c>devicePixelRatio</c>, at attach and again only when the resolution changes — a zoom,
+    /// or the window moved to a display of another scale. The column edges are put on the new
+    /// Device Pixel and the lines are drawn in it, in one render; the rows repaint once, at the
+    /// change, as they do when a width moves (ADR-0003).
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    [JSInvokable]
+    public async Task OnDevicePixelAsync(double devicePixelRatio)
+    {
+        // It crosses the JS boundary, so nothing here is trusted: a NaN or a zero would put
+        // every column edge nowhere.
+        if (_disposed || !double.IsFinite(devicePixelRatio) || devicePixelRatio <= 0
+            || devicePixelRatio == _devicePixelRatio)
+            return;
+        _devicePixelRatio = devicePixelRatio;
+        try
+        {
+            ResolveRowHeadingWidth();
+            PrepareRender();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Not a UI event, so nothing else would surface this.
+            await DispatchExceptionAsync(ex);
+        }
+    }
 
     /// <summary>What the Layout Ceiling's probe is declared: 2^25 px, more than any
     /// browser lays out, so the size it is laid out at is the ceiling (ADR-0053). Inline,

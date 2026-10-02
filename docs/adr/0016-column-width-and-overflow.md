@@ -458,3 +458,27 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   defaults to Center ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)).
   There is no vertical alignment anywhere: a single-line fixed row centres by construction, and
   a multi-tier header cell centres in its rectangle by arithmetic.
+
+## The `####` fill is cut by the browser at the last whole `#` *(2026-10-02, decided with the user)*
+
+Part C of the eleventh Windows run (case 3c) showed six `#` where Excel showed nine, in a cell that was
+wider than Excel's. The rule above, "the `####` fill counts `#` at its own width", was not what the
+code did: `#` is in the wide class for whether a number fits, and the fill was counted at that class's
+width, 14.04px, the widest `%` measured on any platform. In the face a cell is painted in, `#` is
+narrower, so the run left the cell part empty. The user's criterion for the fill is that it fills the
+cell, as Excel's does, and not that it matches Excel's count, because the face and the cell size
+differ.
+
+- **The run is longer than the cell, and the browser cuts it at the last whole `#` that fits.** The core
+  emits a run counted at half a digit's width, which no supported face draws `#` under. The run may
+  break between any two `#`, and a cell is one line tall, so what does not fit falls to a second line
+  that the cell hides. So the line shown is exactly as many `#` as fit, in the face and the weight the
+  cell is painted in, and never a cut `#` and never an ellipsis.
+- **No measurement.** The browser lays out the run as it lays out any text. Nothing reads its width,
+  and no script is involved (ADR-0021's "text measurement for overflow" stays out).
+- **Whether a number fits is decided exactly as before.** Only the fill's length changes. A number
+  that does not fit is still `####`, its accessible name is still the value (A11Y-7), and the clipboard
+  still takes the value (CP-5).
+- **Only a `####` run may break.** A number that is shown keeps `white-space: nowrap`, so an estimate
+  that came out under the painted width would still show its ellipsis rather than wrap a digit out of
+  sight.
