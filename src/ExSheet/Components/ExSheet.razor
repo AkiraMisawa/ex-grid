@@ -238,9 +238,11 @@
         _editingChanged = new EventCallback<bool>(null, (Func<bool, Task>)(open =>
         {
             IsEditing = open;
-            RefreshToolbar();
-            // The KeyTips' keys are declared only while no edit is open.
-            if (ShowToolbar) StateHasChanged();
+            // The toolbar greys out once the grid has answered the key or press that opened or
+            // ended the edit, not inside that answer: drawn there, on a circuit, its render landed
+            // among the keys and presses the grid holds behind the answer and lost what was typed
+            // (layer 3, the Server host, SRV-5).
+            if (ShowToolbar) _ = InvokeAsync(RefreshToolbarLaterAsync);
             return EditingChanged.InvokeAsync(open);
         }));
         // Typing thrown away is said, whoever discarded it: the grid, or ExSheet itself for a
@@ -1525,9 +1527,12 @@
     }
 
     // The Sheet Toolbar's keys (ADR-0100; ADR-0050 item 14's note of 2026-10-02): the Alt key alone
-    // and F10, which start the KeyTips while the toolbar is shown and no edit is open, and Ctrl+F1,
-    // Excel's key for the ribbon, where the Consumer binds ShowToolbarChanged. Each is declared only
-    // while it means something here; otherwise it stays the browser's.
+    // and F10, declared while the toolbar is shown, which start the KeyTips unless an edit is open,
+    // and Ctrl+F1, Excel's key for the ribbon, where the Consumer binds ShowToolbarChanged. With the
+    // toolbar hidden, or the toggle unbound, each stays the browser's. They are not re-declared as
+    // an edit opens and ends: that would re-render the Sheet at every edit, which it never does, and
+    // on a circuit the re-render and the claims it re-tells landed among the keys and presses of the
+    // edit and lost what was typed (layer 3, the Server host, SRV-5).
     private const string AltAlone = "Alt+Alt";
     private const string KeyTipsKey = "F10";
     private const string ToolbarToggleKey = "Control+F1";
@@ -1535,7 +1540,7 @@
     private static readonly IReadOnlyCollection<string> WithToggle = [.. SheetFormatKeys.Declared, ToolbarToggleKey];
     private static readonly IReadOnlyCollection<string> WithKeyTipsAndToggle = [.. SheetFormatKeys.Declared, AltAlone, KeyTipsKey, ToolbarToggleKey];
 
-    private IReadOnlyCollection<string> DeclaredSheetKeys => (ShowToolbar && !IsEditing, ShowToolbarChanged.HasDelegate) switch
+    private IReadOnlyCollection<string> DeclaredSheetKeys => (ShowToolbar, ShowToolbarChanged.HasDelegate) switch
     {
         (true, true) => WithKeyTipsAndToggle,
         (true, false) => WithKeyTips,
@@ -1600,6 +1605,12 @@
     private sealed class KeyUpListener(ExSheet sheet)
     {
         public Task Up(KeyboardEventArgs e) => sheet.OnKeyUpAsync(e);
+    }
+
+    private async Task RefreshToolbarLaterAsync()
+    {
+        await Task.Yield();
+        RefreshToolbar();
     }
 
     /// <summary>Tells the toolbar's items what they show: the Focus cell's Cell Format, and whether an edit is open.</summary>

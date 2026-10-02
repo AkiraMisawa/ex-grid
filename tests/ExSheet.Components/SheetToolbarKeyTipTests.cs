@@ -73,8 +73,8 @@ public class SheetToolbarKeyTipTests : SheetTestContext
 
     // ---- Which keys are declared (SH-52) ----
 
-    [Fact] // ADR-0100, SH-52: Alt alone and F10 are claimed only while the toolbar is shown and no edit is open
-    public async Task The_keytip_keys_are_claimed_only_while_they_mean_something()
+    [Fact] // ADR-0100, SH-52: Alt alone and F10 are claimed while the toolbar is shown, and with an edit open they start nothing
+    public async Task The_keytip_keys_are_claimed_while_the_toolbar_is_shown()
     {
         Assert.DoesNotContain("Alt+Alt", Declared(RenderSheet()));
 
@@ -85,11 +85,12 @@ public class SheetToolbarKeyTipTests : SheetTestContext
         await GoToAsync(cut, "B2");
         await PressAsync(cut, "x");
         Assert.True(cut.Instance.IsEditing);
-        Assert.DoesNotContain("Alt+Alt", Declared(cut));
-        Assert.DoesNotContain("F10", Declared(cut));
+        await PressAsync(cut, "F10");
+        await AltDownAsync(cut);
+        await KeyUpAsync(cut, "Alt");
 
-        await PressAsync(cut, "Escape");
-        Assert.Contains("Alt+Alt", Declared(cut));
+        Assert.Empty(ShownKeyTips(cut));
+        Assert.True(cut.Instance.IsEditing);
     }
 
     // ---- KeyTips (SH-52) ----

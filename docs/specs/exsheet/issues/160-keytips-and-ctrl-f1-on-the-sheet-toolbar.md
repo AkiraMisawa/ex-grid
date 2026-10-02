@@ -11,7 +11,7 @@ KeyTips over the Sheet Toolbar, and Ctrl+F1.
 - [x] **Ctrl+F1** raises `ShowToolbarChanged` with the other value, only where the Consumer binds it.
       Unbound, the key is not claimed (SH-51).
 - [x] **KeyTips start** when Alt (Option on macOS, read by `code`) is released alone, or with F10.
-      This works only while the Sheet holds the keyboard, its toolbar is shown and no edit is open
+      This works only while the Sheet holds the keyboard and its toolbar is shown. While an edit is open the keys are claimed and start nothing
       (SH-52).
   - The existing capture-phase `keydown` claims Alt alone and F10.
   - A Blazor `keyup` handler on the root hears the release. It bubbles there from the Keyboard
@@ -43,7 +43,7 @@ implementing the keys" records the details.
 
 - **The core.** `Alt+Alt` can be declared (ADR-0050 item 14's note).
 - **ExSheet.**
-  - It declares `Alt+Alt` and `F10` while the toolbar is shown and no edit is open, and
+  - It declares `Alt+Alt` and `F10` while the toolbar is shown, and
     `Control+F1` while the toggle is bound.
   - It hears the Alt key's release from a `keyup` on its own element.
   - The toolbar takes the keyboard for the KeyTips.

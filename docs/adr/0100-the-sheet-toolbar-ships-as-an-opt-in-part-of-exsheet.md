@@ -194,10 +194,19 @@ None of these changes the decision. Each records how a part of it is held, or a 
 - **The Alt key alone needed one change to the core.** The core refused to declare a modifier by
   itself. Its own keydown now canonicalises to `Alt+Alt`, the one modifier that can be declared
   (ADR-0050 item 14's note of 2026-10-02). F10 and Ctrl+F1 were declarable already.
-- **Each key is declared only while it means something.**
-  - The Alt key alone and F10 are declared while the toolbar is shown and no edit is open.
+- **Each key is declared only while the toolbar can use it.**
+  - The Alt key alone and F10 are declared while the toolbar is shown. With an edit open they are
+    still claimed, and start nothing.
   - Ctrl+F1 is declared while `ShowToolbarChanged` is bound.
   - Otherwise each stays the browser's.
+  - *(Corrected the same day.)* The first build also withdrew Alt and F10 while an edit was open,
+    as "Otherwise both keys stay the browser's" reads above. That meant re-rendering the Sheet at
+    every edit, which it never otherwise does. On a circuit the re-render, and the claims it
+    re-told the grid, landed among the edit's own keys and presses, and lost what was typed
+    (layer 3, the Server host: SRV-5 and two others).
+  - So with an edit open the browser does not get Alt or F10 while the toolbar is shown. Its menu
+    does not open from the Sheet then. This replaces the KeyTips paragraph's "otherwise both keys
+    stay the browser's" for the open edit.
 - **The KeyTips take the keyboard to the toolbar, as Excel's take it to the ribbon.** The letters
   typed next reach the toolbar, never the cell, so no edit opens.
   - From the KeyTips' start until DOM focus leaves the toolbar, every key's default is
@@ -211,6 +220,13 @@ None of these changes the decision. Each records how a part of it is held, or a 
     release.
   - Alt released before the ↓ of Alt+↓ therefore shows the KeyTips. Escape takes them away. This
     is left as it is, rather than adding a listener to the grid.
+- **The toolbar greys out after the grid has answered what opened the edit, not inside that
+  answer.** *(Found on the Server host, SRV-5.)*
+  - The edit's opening and ending are raised from inside the grid's answer to a key or a press.
+  - Drawn there, every item's change of state landed, on a circuit, among the keys and presses
+    the grid holds behind that answer, and a value typed into the next cell clicked was lost.
+  - So the toolbar is told after the answer, by order rather than by a delay. A press on an item
+    in between is refused by the command and said in the notice, as every press during an edit is.
 - **A KeyTip on a split control opens its list,** as Excel's Alt, H, H opens the Fill's palette. A
   toggle's KeyTip sets it and gives the keyboard back.
 
