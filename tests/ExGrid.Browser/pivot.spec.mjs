@@ -194,6 +194,10 @@ for (const chrome of ['builtin', 'mud']) {
             const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
             const records = dialog.locator('.ex-grid');
             await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+            // The dialog gives Close the keyboard as it opens, on the Server host a round trip after
+            // the render that shows it: a press in the records before then loses the keyboard to Close
+            // when it lands (seen on the Server host, 2026-10-02). So Close is waited for first.
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
 
             // Into the records: their grid holds the keyboard, and the arrows are its own.
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
@@ -228,6 +232,10 @@ for (const chrome of ['builtin', 'mud']) {
             const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
             const records = dialog.locator('.ex-grid');
             await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+            // The dialog gives Close the keyboard as it opens, on the Server host a round trip after
+            // the render that shows it: a press in the records before then loses the keyboard to Close
+            // when it lands (seen on the Server host, 2026-10-02). So Close is waited for first.
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
             await expect(records).toBeFocused();
 
@@ -280,6 +288,11 @@ for (const chrome of ['builtin', 'mud']) {
             const panel = pivot(page).getByRole('tabpanel');
             const records = panel.locator('.ex-grid');
             await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+            // The new tab takes the keyboard on its tab (ADR-0070), on the Server host a round trip
+            // after the render that opened it. A press in its records made before then loses the
+            // keyboard to the tab when it lands (seen on the Server host, 2026-10-02), so the tab is
+            // waited for first, as the second tab is below.
+            await expect(details).toBeFocused();
 
             // A tab is a sheet of its own, and Escape does not close a sheet: its grid keeps the
             // keyboard and releases Tab, as any grid's Escape with nothing to dismiss does (KB-8,
@@ -579,6 +592,10 @@ test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its
     const dialog = page.getByRole('dialog', { name: /^Details: / });
     const records = dialog.locator('.ex-grid');
     await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+    // The dialog gives Close the keyboard as it opens, on the Server host a round trip after the
+    // render that shows it: a press in the records before then loses the keyboard to Close when it
+    // lands (seen on the Server host, 2026-10-02). So Close is waited for first.
+    await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
     await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
     await expect(records).toBeFocused();
     const delayed = await setRoundTrip(150);
