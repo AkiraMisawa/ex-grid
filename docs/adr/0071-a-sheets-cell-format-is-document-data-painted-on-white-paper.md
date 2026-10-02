@@ -729,6 +729,12 @@ Paper and everything on it read pixel for pixel as under the light scheme (SH-39
 - **A vertical gridline does not.** It is one CSS pixel over a column edge that lies on half a device
   pixel (a column is 99 CSS px), so it shows as two device pixels, `#F0F0F0` and `#E0E0E0`. Excel's is one
   pixel of `#E0E0E0`. A horizontal gridline is one pixel, because rows lie on device pixels (ADR-0053).
+  - *(Ticket 99's follow-up, 2026-10-02.)* A horizontal gridline was one pixel only where Chrome
+    rasterises on the GPU. Its software rasteriser, which CI's Chrome uses under xvfb, drew the 1 CSS px
+    band two device pixels deep at 150%. A row's rule, and a Fill's cover over it, are now painted in
+    whole device pixels (`--ex-rule-dp`, the rule's width rounded down to the device pixel). That is one
+    at 150% under either rasteriser, and unchanged at whole scales. It holds for every grid, not only a
+    Sheet. A column's rule is left as it is, with the rest of this item.
 - **At a browser zoom of 150% on that display** (`devicePixelRatio` 2.25), the device pixel is taken from
   the nearest step below, 2. So:
   - a gridline is two device pixels, and thin covers one of them;
