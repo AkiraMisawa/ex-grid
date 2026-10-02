@@ -219,6 +219,15 @@ prototype built and tried on Windows before deciding (ticket 79): a text field t
 keyboard while a cell is selected, whose composition is carried into the Cell Editor. Until then,
 Japanese is typed after F2 or in the Formula Bar.
 
+*(Decided with the user on 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md).)* On a grid that edits, the keyboard with no
+edit open is held by the **Keyboard Field**, a text field of the grid's own inside the root, over the
+Focus cell and unseen. The guard above widens to it: a key aimed at the root or at this grid's own
+field is the root's. A composing key reaches the field and the IME composes there, drawn over the
+Focus cell; no edit is open while it lasts. Its end opens Overwrite holding its text, as a typed
+character does: the text is one more kind of held item, in order among the keys and presses. The
+editor's request for the keyboard waits while the field composes, since DOM focus moving would end
+the composition. A Chrome's editor receives the text as `InitialText`, so this seam is unchanged.
+
 ### Keys that follow a mode change are held until it lands *(added 2026-09-25)*
 
 The gate decides from the mode it was **last told**. The mode is C#'s, and C# tells the

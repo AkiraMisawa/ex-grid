@@ -230,6 +230,30 @@ public class MudMenuTests : MudTestContext
         Assert.Empty(cut.FindAll(".ex-popover"));
     }
 
+    [Fact] // ADR-0080 (2026-10-02) / A11Y-4 / WR-4: under the Mud Chrome the header's ▾ is the core's, out of the tab sequence as under the built-in one, and a press still opens the Mud menu
+    public async Task ADR0080_under_the_mud_chrome_the_headers_menu_buttons_are_not_tab_stops()
+    {
+        var cut = Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 400)
+            .Add(g => g.Chrome, MudGridChrome.Default)
+            .Add(g => g.OnSortChanged, _ => { }));
+
+        var menus = cut.FindAll(".ex-header .ex-menu-button");
+        Assert.NotEmpty(menus);
+        Assert.All(menus, button => Assert.Equal("-1", button.GetAttribute("tabindex")));
+        // Nothing else in the header is reached by Tab either: the Chrome draws no button of its own there.
+        Assert.DoesNotContain(cut.FindAll(".ex-header button, .ex-header input, .ex-header a[href], .ex-header [tabindex]"),
+            element => element.GetAttribute("tabindex") is not { } index || !index.StartsWith('-'));
+
+        await menus[1].ClickAsync(new MouseEventArgs());
+        Assert.NotEmpty(cut.FindAll(".ex-popover .mud-ex-grid-menu button[role=menuitem]"));
+    }
+
     [Fact] // WR-4 / KB-34 / ADR-0039: in the grid the Mud menu asks the core, so keys typed together run the item they chose
     public async Task In_the_grid_keys_typed_together_run_the_item_they_chose()
     {

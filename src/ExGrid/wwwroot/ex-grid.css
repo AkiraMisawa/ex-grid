@@ -30,9 +30,16 @@
    when it holds the keyboard. :focus-visible rather than :focus — a click already shows
    itself by moving the selection, and a permanent ring around a clicked grid is noise.
    Distinct from the selection's own Focus outline: this one says "keys come here", that
-   one says "and they start from this cell". */
+   one says "and they start from this cell".
+   On a grid that edits, the keyboard is held by its Keyboard Field inside the root (ADR-0080),
+   and a text field matches :focus-visible on every focus, a click's too, so it cannot say how the
+   keyboard arrived. The script marks the root (data-ex-focus-visible) while its field holds the
+   keyboard that did not come from a press on the grid, and the same ring is drawn from the mark.
+   An attribute, not a class: the root's class is the core's render, rewritten whole whenever it
+   changes (an edit ending, rows loading), which would take a class the script added with it. */
 .ex-grid:focus { outline: none; }
-.ex-grid:focus-visible { outline: var(--ex-grid-focus-outline, 2px solid Highlight); outline-offset: 1px; }
+.ex-grid:focus-visible,
+.ex-grid[data-ex-focus-visible] { outline: var(--ex-grid-focus-outline, 2px solid Highlight); outline-offset: 1px; }
 /* One scroll container for both axes. The header and the Pinned Columns are held in
    place inside it with `position: sticky`, which is why there can only be one: a nested
    container with a non-visible overflow on one axis computes `auto` on the other (CSS
@@ -580,6 +587,7 @@
    text beneath the core's own input (ADR-0057) takes the same box, padding, line and colours,
    from the same rule, so its characters stand where the input's do; it paints the editor's
    ground, over which the input turns see-through while it shows (below). */
+.ex-key-field,
 .ex-editor,
 .ex-reference-text.ex-reference-text-cell {
     position: absolute;
@@ -606,6 +614,23 @@
 .ex-grid:not(:focus-within) .ex-viewport .ex-editor { outline-width: 1px; }
 /* The pinned editor's zero-size sticky anchor — the pinned selection layer's trick. */
 .ex-editor-pinned { position: sticky; left: 0; width: 0; height: 0; z-index: 3; }
+/* The Keyboard Field (ADR-0080), which holds the keyboard on a grid that edits while no edit is
+   open, so that an IME has a text field to start in. Its box is the Cell Editor's, written inline
+   from the same arithmetic, in a zero-size layer that rides the pinned editor's sticky anchor over
+   a Pinned Column (and while it waits, with the Focus not painted). Never seen, and never in the
+   pointer's way, until an IME composes in it: then it is drawn as the Cell Editor is, over the
+   Focus cell, with the composition in it. The script marks it composing, and keeps the mark until
+   the keyboard leaves it for the editor the composition opened. Its own focus ring is never drawn:
+   the root's says the grid holds the keyboard (above). */
+.ex-key-field-layer { position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 3; pointer-events: none; }
+.ex-key-field-layer.ex-key-field-held { position: sticky; }
+.ex-key-field { opacity: 0; caret-color: transparent; outline: none; pointer-events: none; }
+.ex-key-field.ex-key-field-composing {
+    opacity: 1;
+    caret-color: auto;
+    outline: var(--ex-editor-outline, 2px solid Highlight);
+    outline-offset: -1px;
+}
 /* The coloured text (ADR-0057): beneath each editor surface, a layer the core renders with the
    field's text and each Reference in its colour (.ex-reference-1 to -8). It stands immediately
    before its field, in the field's box, font and line, and keeps every space the field keeps, so

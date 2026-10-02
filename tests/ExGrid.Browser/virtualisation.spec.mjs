@@ -248,7 +248,11 @@ async function countGridInterop(page) {
         return { scriptId: module.scriptId, lineNumber: before.length - 1, columnNumber: before.at(-1).length };
     };
     const sites = [];
-    const handle = scriptSource.lastIndexOf('\n    return {');
+    // The handle is the object `attach` returns. Since ADR-0080 it is named first
+    // (`const handle = {`), because the Keyboard Field's composition end grants the editor's
+    // waiting request through it, and returned after; before, it was returned as written.
+    const named = scriptSource.lastIndexOf('\n    const handle = {');
+    const handle = named >= 0 ? named : scriptSource.lastIndexOf('\n    return {');
     for (const m of scriptSource.slice(handle).matchAll(/^ {8}(\w+): \([^)]*\) =>\s*/gm)) {
         sites.push({ name: `.NET→JS ${m[1]}`, index: handle + m.index + m[0].length });
     }

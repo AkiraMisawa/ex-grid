@@ -1,4 +1,5 @@
 import { test, expect, watchNextKey, keySeenUntouched } from './fixtures.mjs';
+import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 
 // Find with real keys (ADR-0055): Ctrl+F on a focused grid opens the grid's own panel — never
 // the browser's find bar, which sees only the painted rows — the keys typed straight after it
@@ -14,7 +15,7 @@ function grid(page) {
 }
 
 async function focusedCell(page) {
-    return grid(page).getAttribute('aria-activedescendant');
+    return activeDescendant(grid(page));
 }
 
 for (const chrome of ['builtin', 'mud']) {
@@ -135,7 +136,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
             await page.keyboard.press('Escape');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect(grid(page)).toBeFocused();
+            await expectKeyboardOn(grid(page));
 
             // Book's filter is a value list with a search box: E puts the keyboard in it.
             await page.keyboard.press('Alt+ArrowDown');
@@ -170,7 +171,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('Escape');
 
             await expect(grid(page).locator('.ex-popover-find')).toHaveCount(0);
-            await expect(grid(page)).toBeFocused();
+            await expectKeyboardOn(grid(page));
             await page.keyboard.press('ArrowDown');
             await expect.poll(() => focusedCell(page)).toMatch(/r1c0$/);
         });

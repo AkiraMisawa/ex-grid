@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures.mjs';
+import { expectKeyboardOn, keyboardIsOn } from './keyboard.mjs';
 
 // Row inspectors on /inspectors (docs/specs/row-inspectors, page A). An Action Column
 // whose action opens that row's inspector — the grid reports the press and does nothing
@@ -89,7 +90,7 @@ for (const handler of ['shown', 'await']) {
         await open(page, query);
         // The keyboard starts in the grid, on the row about to be inspected.
         await cell(page, 3, 1).click({ force: true });
-        await expect(grid(page)).toBeFocused();
+        await expectKeyboardOn(grid(page));
         await inspectButton(page, 3).click();
         const dialog = page.locator('.mud-dialog');
         await expect(dialog.locator(`[data-inspector-key="${id(3)}"]`)).toBeVisible();
@@ -99,7 +100,7 @@ for (const handler of ['shown', 'await']) {
         // amended — the grid does not take it; the dialog gives it back).
         await dialog.locator('.demo-inspector-close').click();
         await expect(dialog).toHaveCount(0);
-        await expect(grid(page)).toBeFocused();
+        await expectKeyboardOn(grid(page));
     });
 
     test(`RI-26: modal, by click from outside the grid, handler ${style}: closing gives the keyboard back to where it was, not to the grid (ADR-0037)`, async ({ page }) => {
@@ -110,7 +111,7 @@ for (const handler of ['shown', 'await']) {
         await expectKeyboardIn(page, '.mud-dialog', 'the keyboard is inside the modal inspector');
         await dialog.locator('.demo-inspector-close').click();
         await expect(dialog).toHaveCount(0);
-        await expect(grid(page)).not.toBeFocused();
+        await expect.poll(() => keyboardIsOn(grid(page)), 'the keyboard is not the grid\'s').not.toBe(true);
     });
 
     test(`RI-5: modal, by Space, handler ${style}: the keyboard is in the inspector (ADR-0020/0037)`, async ({ page }) => {

@@ -1,5 +1,6 @@
 import { test, expect, alterPage, circuitQuiet, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
 // What a Blazor Server circuit can fail and a WebAssembly tab cannot (Definition of Done
 // §24): keys typed faster than a round trip (ED-22), a paste past the hub's message
@@ -21,8 +22,9 @@ async function openFeatures(page) {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     // Interactive, not merely painted: on Server the prerendered grid is on screen
-    // before its circuit connects, and takes no tab stop until it has (A11Y-20).
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    // before its circuit connects, and takes no tab stop until it has (A11Y-20) — its
+    // Keyboard Field's, since this grid edits (ADR-0080).
+    await expectTabStopTaken(grid(page));
 }
 
 test.describe('keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5)', () => {
@@ -56,7 +58,7 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
         await page.keyboard.type('x');
         await page.keyboard.press('ArrowDown');
 
-        await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
+        await expect.poll(() => activeDescendant(grid(page))).toMatch(/r1c0$/);
         await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     });
 });
@@ -84,7 +86,7 @@ test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052)
     // The circuit is still there: the grid still answers a key. The arrow moves from the
     // Focus, which Shift+↓ left on row 0 (ADR-0052).
     await page.keyboard.press('ArrowDown');
-    await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(/r1c1$/);
+    await expect.poll(() => activeDescendant(grid(page))).toMatch(/r1c1$/);
 });
 
 test('a clipboard write the browser rejects is refused by name (CP-23)', async ({ page }) => {
@@ -133,7 +135,7 @@ test('keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5
 test('keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039)', async ({ page }) => {
     await openFeatures(page);
     await clickCell(page, 1, 0);
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c0$/);
+    await expectActiveDescendant(grid(page), /r1c0$/);
     await setRoundTrip(150);
 
     // Alt+↓ opens Book's menu a round trip later; ↓ and Enter typed with it are the
@@ -150,7 +152,7 @@ test('keys typed straight after a key that opens a menu reach the menu (KB-33, A
 for (const chrome of ['builtin', 'mud']) {
     test(`a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, ${chrome})`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
-        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(grid(page));
         const all = await grid(page).getAttribute('aria-rowcount');
         await clickCell(page, 1, 0);
         await page.keyboard.press('Alt+ArrowDown');
@@ -178,7 +180,7 @@ for (const chrome of ['builtin', 'mud']) {
 for (const chrome of ['builtin', 'mud']) {
     test(`a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, ${chrome})`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
-        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(grid(page));
         const all = await grid(page).getAttribute('aria-rowcount');
         await clickCell(page, 1, 0);
         await page.keyboard.press('Alt+ArrowDown');
@@ -206,7 +208,7 @@ for (const chrome of ['builtin', 'mud']) {
 
 test('a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5)', async ({ page }) => {
     await page.goto('/features');
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(grid(page));
     await clickCell(page, 1, 0);
     await page.keyboard.press('Alt+ArrowDown');
     await expect.poll(() => page.evaluate(() => document.activeElement?.textContent?.trim())).toBe('Sort ascending');
@@ -225,7 +227,7 @@ test('a key typed straight after a letter that runs a command waits for the popo
 
 test('a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5)', async ({ page }) => {
     await page.goto('/features');
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(grid(page));
     const all = await grid(page).getAttribute('aria-rowcount');
     await clickCell(page, 1, 0);
     await page.keyboard.press('Alt+ArrowDown');
@@ -257,7 +259,7 @@ for (const [what, column, open, closes] of [
 ]) {
     test(`an Escape pressed straight after ${what} opens is not the grid's (KB-35, ADR-0039)`, async ({ page }) => {
         await page.goto('/features?chrome=mud');
-        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(grid(page));
         await clickCell(page, 1, column);
         await page.keyboard.press('Alt+ArrowDown');
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
@@ -293,7 +295,7 @@ for (const [what, column, open, closes] of [
 // moved into the operator by Tab from the commands above it (ADR-0044).
 async function openMudNotionalPanel(page) {
     await page.goto('/features?chrome=mud');
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(grid(page));
     await clickCell(page, 1, 2);
     await page.keyboard.press('Alt+ArrowDown');
     const panel = grid(page).locator('.mud-ex-grid-filter');
@@ -343,7 +345,7 @@ test('Escape, Escape straight after an Inner Popup closes it and then the panel 
 test('a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5)', async ({ page }) => {
     await page.goto('/features?chrome=mud');
     const short = page.locator('.ex-grid').nth(1);
-    await expect(short).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(short);
     await setRoundTrip(150);
 
     // The second grid is 140px tall, so its column menu scrolls (UX-11). Opened by pointer,
@@ -364,7 +366,7 @@ test.describe(() => {
     // skips: this test loads its page for real (ADR-0056).
     test.use({ freshDocument: true });
 
-    test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
+    test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20, ADR-0080)', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
         // The document as the server sends it, before any script has run.
         const html = await (await page.request.get('/features')).text();
@@ -373,6 +375,9 @@ test.describe(() => {
         expect(root).toContain('ex-loading');
         expect(root).toContain('aria-busy="true"');
         expect(root).not.toContain('tabindex');
+        // Nor its Keyboard Field, the tab stop of a grid that edits: it stands only once the key
+        // listener is attached (ADR-0080).
+        expect(html).not.toMatch(/class="[^"]*\bex-key-field\b/);
 
         await openFeatures(page);
         await expect(grid(page)).not.toHaveAttribute('aria-busy', /.*/);
@@ -393,7 +398,7 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
             await page.goto('/shared');
             await second.goto('/shared');
             for (const p of [page, second]) {
-                await expect(grid(p)).toHaveAttribute('tabindex', '0');
+                await expectTabStopTaken(grid(p));
             }
             const notional = (p) => grid(p).locator("[id$='r0c2']");
             const before = await notional(page).textContent();
@@ -443,7 +448,7 @@ test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () 
     async function openSheet(page) {
         await page.goto('/sheet');
         await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
-        await expect(sheetGrid(page)).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(sheetGrid(page));
     }
 
     /** typing-probe-2.mjs's steps: each value typed into the cell clicked for it, then Enter. */
@@ -534,7 +539,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
         test(`the Cell Editor, at 10 keys a second (${chrome})`, async ({ page }) => {
             await page.goto(`/features?chrome=${chrome}`);
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-            await expect(grid(page)).toHaveAttribute('tabindex', '0');
+            await expectTabStopTaken(grid(page));
             await clickCell(page, 0, 1);              // Trader, editable
             await page.keyboard.type('X');
             const editor = grid(page).locator(field);
@@ -560,7 +565,7 @@ test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-
         await page.goto('/sheet');
         const sheet = grid(page);
         await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
-        await expect(sheet).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(sheet);
         const nameBox = sheet.locator('input.ex-name-box');
         await nameBox.click();
         await nameBox.fill('');
@@ -586,7 +591,7 @@ test('a ← typed as the completion list is painted is left to the editor (ADR-0
     await page.goto('/sheet');
     const sheet = grid(page);
     await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
-    await expect(sheet).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(sheet);
     await sheet.locator("[id$='-r4c5']").click({ force: true });
     await page.keyboard.type('=');
     const editor = sheet.locator('input.ex-editor:not(.ex-formula-bar-text)');
@@ -626,7 +631,7 @@ for (const chrome of ['builtin', 'mud']) {
         test.beforeEach(async ({ page }) => {
             await page.goto(`/features?chrome=${chrome}`);
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-            await expect(grid(page)).toHaveAttribute('tabindex', '0');
+            await expectTabStopTaken(grid(page));
             await setRoundTrip(50);
         });
 
@@ -735,7 +740,7 @@ test('a far reveal paints rows in every frame, and never calls the Focus it scro
     await page.goto('/wide');
     const root = grid(page);
     await expect(root.locator("[id$='-r0c0']")).toHaveText('K-000000', { timeout: 15_000 });
-    await expect(root).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(root);
     // What is under test is a reveal through the geometry the grid knows. Before its Layout
     // Ceiling is told the grid computes as if at scale 1, and at 150% a reveal through that
     // aims past what the browser lays out — the untold window ADR-0053 accepts, not this test's
