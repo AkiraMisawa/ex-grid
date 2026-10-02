@@ -210,6 +210,11 @@ after it are held until it is answered, as after any mode change. It holds for E
 alike, since the reason above holds for both. The options set aside: ExSheet ignoring that Escape, as
 Excel does, which brings the trap back and would need another way out (Excel's F6); and keeping the
 blur, which loses the keyboard silently.
+*(Added 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md).)* **The release also ends when DOM focus leaves the grid.** The
+root's `focusout` tells it, on every grid. So Escape, a press elsewhere on the page and Tab back into
+the grid leave no release standing, and the next Tab cycles; ticket 77 had recorded that case as
+open. On a grid that edits, the keyboard is held by its Keyboard Field, which is the grid's one tab
+stop; the released Tab and Shift+Tab leave from there.
 
 An open popover — a column menu or a filter panel — sits **inside** that layering *(recorded
 when dismissal was wired, after the first manual session left a filter panel with no way to

@@ -264,7 +264,9 @@ file.
   composing, and none follows its `compositionend`. Without a listener for that event, the colours
   would stay off after each committed composition until the next key, which is every Japanese word
   typed into a string. The editor listener therefore also hears `compositionend` on the root while an
-  edit is open (ADR-0021's note).
+  edit is open (ADR-0021's note). *(2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md): the Keyboard Field's own
+  `compositionstart` and `compositionend` are heard on the root always, for a composition with no
+  edit open. That one is drawn in the field, not by this layer, and this listener is unchanged.)*
 - **The layer drifts by a fraction of a pixel over many References, and that is accepted.** The layer
   draws each span as its own run of text, and the browser rounds each run's width to its layout
   unit. The field's text is one run. At the far end of a Formula the layer is about 0.1 px out with

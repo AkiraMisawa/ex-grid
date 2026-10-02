@@ -27,13 +27,14 @@ public partial class ExGrid<TRow>
     [Parameter] public EventCallback OnLeave { get; set; }
 
     /// <summary>
-    /// Gives the grid's root the keyboard back (ADR-0070): what the grid does when one of its own
+    /// Gives the grid the keyboard back (ADR-0070): what the grid does when one of its own
     /// popovers closes, offered to the Consumer. Call it when something of the Consumer's own that
     /// held the keyboard over the grid goes away — a dialog, a panel, a tab — so that the user's
     /// next key reaches the grid rather than the page.
     ///
-    /// <para>The root takes DOM focus only when DOM focus is on nothing (the page's <c>body</c>) or
-    /// already inside this grid. A field of the grid's own beside the rows, the Formula Bar or the
+    /// <para>The grid takes DOM focus — on its Keyboard Field where it has one, on its root otherwise
+    /// (ADR-0080) — only when DOM focus is on nothing (the page's <c>body</c>) or already inside
+    /// this grid. A field of the grid's own beside the rows, the Formula Bar or the
     /// Name Box, keeps the keyboard: the user is typing there. Nothing is taken from anywhere else —
     /// not from another control the user chose meanwhile, and not from another grid (ADR-0018). On
     /// Blazor Server the request lands a round trip after the call, and a click made in that time

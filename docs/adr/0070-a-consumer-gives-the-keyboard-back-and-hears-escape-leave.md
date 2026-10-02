@@ -126,6 +126,13 @@ decisions are read together as they are written:
   with nothing. Merged as they were, the press released Tab and its first repeat ended the release.
   KB-44 now says so, and layer 3 holds Escape on `/features` and then presses Tab.
 
+*(2026-10-02, when this branch met ADR-0080 the same day.)* A grid with an editable column now holds
+the keyboard on its Keyboard Field rather than its root, and the grid's hand-back puts it there
+(ADR-0080). `ReturnKeyboardAsync()` is that hand-back, so on such a grid "the root", above, reads as
+the Keyboard Field; a display-only grid, as ExPivot's report and details grids are, keeps it on its
+root. DC-57 says so. Nothing else here changes: the field counts as the root for the keys (ADR-0080),
+so the Escape that raises `OnLeave` is the same press.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the

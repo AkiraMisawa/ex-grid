@@ -1,5 +1,6 @@
 import { test, expect, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import { expectKeyboardOn } from './keyboard.mjs';
 import {
     sheet, positions, openSheet, cell, clickCell, editor, bar, nameBox, pressCell, boxOf, expectCovers, expectCaretShown,
 } from './sheet-helpers.mjs';
@@ -264,7 +265,7 @@ test.describe('/sheet', () => {
         await expectPointedAt(table, false);
         // A press on the positions grid is its own now.
         await clickCell(table, 'B2');
-        await expect(table).toBeFocused();
+        await expectKeyboardOn(table);
         await expect(table).toHaveAttribute('aria-activedescendant', /-r1c1$/);
         await expect(editor(grid)).toHaveValue('=');
 
@@ -380,7 +381,7 @@ test.describe('/sheet', () => {
                 await expect(editor(grid)).toBeFocused();
                 await page.keyboard.press('Escape');
                 await expect(editor(grid)).toHaveCount(0);
-                await expect(grid).toBeFocused();
+                await expectKeyboardOn(grid);
                 await expectPointedAt(table, false);
             }
             await expect(table.locator('.ex-focus, .ex-range')).toHaveCount(0);
@@ -434,7 +435,7 @@ test.describe('/sheet', () => {
         await page.keyboard.type('+');
         await page.mouse.click(target.x + target.width / 2, target.y + target.height / 2);
 
-        await expect(table).toBeFocused();
+        await expectKeyboardOn(table);
         await expect(table).toHaveAttribute('aria-activedescendant', /-r2c2$/);
         await expect(editor(grid)).toHaveValue('=1+');
         await expectPointedAt(table, false);
@@ -596,14 +597,14 @@ test.describe('/sheet', () => {
         const grid = sheet(page);
         const table = positions(page);
         await pressCell(grid, 'F3');
-        await expect(grid).toBeFocused();
+        await expectKeyboardOn(grid);
         await setRoundTrip(150);
 
         // No wait between the two.
         await page.keyboard.type('=');
         await clickCell(table, 'C3');
 
-        await expect(table).toBeFocused();
+        await expectKeyboardOn(table);
         await expect(table).toHaveAttribute('aria-activedescendant', /-r2c2$/);
         await expect(editor(grid)).toHaveValue('=');
         // The keyboard is the positions grid's, so the Sheet does not point.
@@ -642,7 +643,7 @@ test.describe('/sheets', () => {
 
         await clickCell(rightPositions, 'C2');
 
-        await expect(rightPositions).toBeFocused();
+        await expectKeyboardOn(rightPositions);
         await expect(rightPositions).toHaveAttribute('aria-activedescendant', /-r1c2$/);
         await expect(editor(left)).toHaveValue(LOOKUP_4471);
         await expect(editor(right)).toHaveCount(0);

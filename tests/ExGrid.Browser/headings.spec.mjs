@@ -1,4 +1,5 @@
 import { test, expect, alterPage } from './fixtures.mjs';
+import { expectActiveDescendant } from './keyboard.mjs';
 import { sheet, cell, expectFocusAt, boxOf, spanOf, nameBox, pressCell, expectSelectionIsCell } from './sheet-helpers.mjs';
 
 // The Headings as Excel's (ADR-0050 item 1, ADR-0052 and ADR-0012, all as settled on 2026-09-29),
@@ -80,8 +81,9 @@ test('SR-2c: Shift+↑ from a whole column leaves it one row short, and scrolls 
     expect(box.y).toBeGreaterThanOrEqual(readable.top - 1);
     expect(box.y + box.height).toBeLessThanOrEqual(readable.bottom + 1);
     await expect(rowHeading(grid, 1048575)).toBeVisible();
-    // The Focus stayed on C1, now off screen, so the Name Box is where it is read: the root's
-    // aria-activedescendant is cleared while the Focus is not painted (ADR-0033).
+    // The Focus stayed on C1, now off screen, so the Name Box is where it is read:
+    // aria-activedescendant, on the Sheet's Keyboard Field (ADR-0080), is cleared while the Focus
+    // is not painted (ADR-0033).
     await expect(nameBox(grid)).toHaveValue('C1');
 });
 
@@ -146,7 +148,7 @@ test('DC-42: a drag across Column Headings selects whole columns, over the Headi
     await page.mouse.move(b.x, b.y);
     await page.mouse.down();
     // The press selects at once: column B, the Focus on its first row.
-    await expect(grid).toHaveAttribute('aria-activedescendant', /-r0c1$/);
+    await expectActiveDescendant(grid, /-r0c1$/);
     await expectWholeColumns(grid, 'B', 'B');
 
     const d = centreOf(await boxOf(heading(grid, 'D')));
@@ -157,7 +159,7 @@ test('DC-42: a drag across Column Headings selects whole columns, over the Headi
     const e3 = centreOf(await boxOf(cell(grid, 'E3')));
     await page.mouse.move(e3.x, e3.y, { steps: 8 });
     await expectWholeColumns(grid, 'B', 'E');
-    await expect(grid).toHaveAttribute('aria-activedescendant', /-r0c1$/);
+    await expectActiveDescendant(grid, /-r0c1$/);
 
     await page.mouse.up();
     await expectFocusAt(grid, 'B1');
@@ -191,7 +193,7 @@ test('DC-42: a drag across Row Headings selects whole rows, over the Headings an
     const three = centreOf(await boxOf(rowHeading(grid, 3)));
     await page.mouse.move(three.x, three.y);
     await page.mouse.down();
-    await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c0$/);
+    await expectActiveDescendant(grid, /-r2c0$/);
 
     const six = centreOf(await boxOf(rowHeading(grid, 6)));
     await page.mouse.move(six.x, six.y, { steps: 8 });
@@ -211,7 +213,7 @@ test('DC-43: a Column Heading drag at the right edge scrolls sideways, and never
     const b = centreOf(await boxOf(heading(grid, 'B')));
     await page.mouse.move(b.x, b.y);
     await page.mouse.down();
-    await expect(grid).toHaveAttribute('aria-activedescendant', /-r0c1$/);
+    await expectActiveDescendant(grid, /-r0c1$/);
     const readable = await readableOf(grid);
 
     // Into the right-hand edge band, along the header.
@@ -233,7 +235,7 @@ test('DC-43: a Row Heading drag at the bottom edge scrolls down, and never sidew
     const three = centreOf(await boxOf(rowHeading(grid, 3)));
     await page.mouse.move(three.x, three.y);
     await page.mouse.down();
-    await expect(grid).toHaveAttribute('aria-activedescendant', /-r2c0$/);
+    await expectActiveDescendant(grid, /-r2c0$/);
     const readable = await readableOf(grid);
 
     // Into the bottom-right corner: both edge bands at once.

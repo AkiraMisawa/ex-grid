@@ -1,4 +1,5 @@
 import { test, expect, alterPage } from './fixtures.mjs';
+import { expectActiveDescendant } from './keyboard.mjs';
 
 // The presentation contract, measured (ADR-0027/0028/0029/0031): tokens win where the
 // contract says they win, the painted geometry equals the declared geometry, nothing
@@ -154,7 +155,7 @@ test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async 
     // The overlay still lands on its cell to within a pixel.
     await grid(page).locator("[id$='r1c1']").click({ force: true });
     // On a Server circuit the Focus is painted a round trip after the click.
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
+    await expectActiveDescendant(grid(page), /r1c1$/);
     const alignment = await page.evaluate(() => {
         const g = document.querySelector('.ex-grid');
         const cell = g.querySelector("[id$='r1c1']");

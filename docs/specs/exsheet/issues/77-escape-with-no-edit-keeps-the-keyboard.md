@@ -60,7 +60,8 @@ there is that prototype's to report.
   are tab stops of their own (KB-12), and Tab goes on through them to the page. The old `blur()`
   went to the same place. On `/sheet` it goes to the element after the Sheet.
 - **Not covered here.** After Escape, a press elsewhere on the page and a Tab back into the grid, the
-  next Tab still leaves, because the press was not heard. Ticket 79's prototype moves the keyboard
+  next Tab still leaves, because the press was not heard. *(Closed 2026-10-02 by ADR-0080: the root's
+  `focusout` ends the release when DOM focus leaves the grid; built as ticket 80.)* Ticket 79's prototype moves the keyboard
   off the root, and what Escape releases there is that prototype's to report.
 - **Tests.** Layer 2:
   - `GridJSInterop` stubs `releaseTab` (`TabReleases`) and no longer stubs `blur`, so a blur fails

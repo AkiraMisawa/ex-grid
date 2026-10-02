@@ -28,7 +28,10 @@
     cell it started in changes nothing, and arrives once a frame while a drag lasts.
 *@
 @* tabindex, so the browser's focus answers which grid a key belongs to (ADR-0018).
-   The capture-phase listener is attached to this element and to nothing wider.
+   The capture-phase listener is attached to this element and to nothing wider. On a grid
+   that edits, its Keyboard Field inside it is the tab stop instead, and the root is -1:
+   still focusable by a press and by script, and passing that focus on to the field
+   (ADR-0080).
    dir="ltr", so a grid embedded in an RTL page is an LTR island rather than a
    half-mirrored one — every offset the arithmetic computes is physical (ADR-0031). *@
 @* onmouseleave stops the edge-band auto-scroll (ADR-0008): outside the element no
@@ -38,19 +41,25 @@
 @* The accessibility surface is the root's (ADR-0033): the totals, the multi-select
    claim, and aria-activedescendant pointing at the Focus cell — cleared while the
    Focus is not painted, so it never names a missing id. No element anywhere carries
-   aria-selected; the live region below announces the extent instead. *@
+   aria-selected; the live region below announces the extent instead. The attribute is
+   carried by the element that holds the keyboard: the root, or on a grid that edits its
+   Keyboard Field, never both (ADR-0080). *@
 @* A Prerendered grid is painted before anything can reach it, so it takes no tab stop
    and says it is busy; the first interactive render lifts both (ADR-0033). *@
 @* A reveal moves the scroller in the render that paints where it is going (ADR-0012,
    2026-09-29): the slice below is computed at the offset the write asks for. *@
 @{ StageReveal(); }
+@{
+    var keyFieldShown = KeyFieldShown;
+    var activeDescendant = ActiveDescendant();
+}
 @* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
-<div class="@RootClass" style="@RootStyle()" tabindex="@(Prerendered ? null : "0")" dir="ltr" @ref="_root"
+<div class="@RootClass" style="@RootStyle()" tabindex="@RootTabIndex" dir="ltr" @ref="_root"
      id="@RootId" role="grid" aria-multiselectable="true" aria-busy="@(Prerendered ? "true" : null)"
      data-ex-reveal="@_revealToken" data-ex-pointed-from="@PointedFrom"
      aria-rowcount="@(_total ?? _window.Count)" aria-colcount="@Columns.Count"
-     aria-activedescendant="@ActiveDescendant()"
+     aria-activedescendant="@(keyFieldShown ? null : activeDescendant)"
      @attributes="_rootGestureHandler" @onmouseleave="OnRootMouseLeave">
     @* One scroll container for both axes, with the header and the Pinned Columns held in
        place by `position: sticky` inside it. Two containers cannot do this: giving the
@@ -62,7 +71,8 @@
        no tabbable content a tab stop of its own once it overflows, which put a second stop
        inside the grid (A11Y-4). A scroller that can hold focus would also take it from a
        click, so focus arriving there is handed straight to the root, where the keys and
-       aria-activedescendant are (ADR-0033). *@
+       aria-activedescendant are (ADR-0033) — to its Keyboard Field on a grid that edits
+       (ADR-0080). *@
     <div class="ex-scroller" style="@ScrollerStyle()" tabindex="-1"
          role="presentation" @ref="_scroller" @onscroll="OnScrollAsync" @onfocus="ReclaimFocusAsync">
         <div class="ex-spacer" style="width: @Px(_columnStyles.Geometry.TotalWidthPx); height: @Px(BandHeightPx + _geometry.ScrollHeightPx)"
@@ -114,9 +124,14 @@
                        diff a new handler per render — re-registered and sent to the browser
                        for every header button on every render of the root, which is every
                        vertical scroll frame (PF-3). *@
+                    @* The ▾ is pressed, never reached by Tab (ADR-0080, decided with the user
+                       2026-10-02), as the action buttons are (ADR-0037): the Keyboard Field stands
+                       after the header in the markup, and a Tab into the grid went through every
+                       column's ▾ before the first cell. Alt+↓ opens the column's popover by key
+                       (ADR-0044). On every grid, and under every Chrome: the button is the core's. *@
                     <div class="@HeaderClass(i, pinned: true)" style="@HeaderCellStyle(i, pinned: true)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                         {@HeaderMark}@if (ShowMenuButtons)
-                        {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                        {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                         {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                 }
                 @if (_scrollable is { } headerColumns)
@@ -129,7 +144,7 @@
                     {
                         <div class="@HeaderClass(i, pinned: false)" style="@HeaderCellStyle(i, pinned: false)" role="columnheader" aria-colindex="@CellIds.ColumnIndex(i)" aria-sort="@AriaSort(i)">@Columns[i].Header@if (Columns[i].IsMarkColumn)
                             {@HeaderMark}@if (ShowMenuButtons)
-                            {<button type="button" class="ex-menu-button" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
+                            {<button type="button" class="ex-menu-button" tabindex="-1" aria-label="Column menu" @onclick="MenuOpener(i)" @onclick:stopPropagation @onmousedown:stopPropagation></button>}@if (OnColumnWidthChanged.HasDelegate)
                             {<div class="ex-resize-grip" @onmousedown="GripDown(i)" @onmousedown:stopPropagation @onclick:stopPropagation @ondblclick="GripFitter(i)"></div>}</div>
                     }
                 }
@@ -171,6 +186,29 @@
                  role="presentation" @attributes="_dragHandler" @onmousedown="RowsPressHandler" @onmousedown:preventDefault="RowsPressKeepsFocus" @onmouseup="OnMouseUp"
                  @ondblclick="OnViewportDoubleClickAsync"
                  @oncontextmenu="OnContextMenu" @oncontextmenu:preventDefault="true">
+                @* The Keyboard Field (ADR-0080). While the grid has an editable column, the keyboard
+                   with no edit open is held here instead of on the root itself, so that an IME has a
+                   text field to start in: on the root, Chrome and Edge give it no input context, and
+                   Japanese typed onto a selected cell came out as Latin text (the fifteenth Windows
+                   run). It is inside the root, so the capture-phase listener still hears every key
+                   first, and it is never seen until an IME composes in it. It stands over the Focus
+                   cell, in the Cell Editor's box from the same arithmetic, so a composition is drawn
+                   there and the IME's candidates open beside it; when the Focus is not painted it waits
+                   at the painted rows' top-left, held there as the pinned editor is. It stands from the
+                   render after the listener attaches, first among the Viewport's children and keyed,
+                   so no render ever replaces the element that holds DOM focus. Its value is the
+                   script's: nothing here binds it. Read-only over a cell that typing would not open, so
+                   an IME stays off there, as it did on the root. It is the grid's one tab stop, and it
+                   carries aria-activedescendant, as the element holding the keyboard (ADR-0033). *@
+                @if (keyFieldShown)
+                {
+                    var keyField = KeyFieldBox();
+                    <div class="@keyField.Layer" @key="KeyFieldLayerKey">
+                        <input class="ex-key-field" style="@keyField.Style" readonly="@KeyFieldReadOnly()" tabindex="0"
+                               aria-activedescendant="@activeDescendant"
+                               autocomplete="off" autocapitalize="off" spellcheck="false" />
+                    </div>
+                }
                 @if (_visible is { } visible)
                 {
                     var pointDashes = PointDashesRange(visible);
@@ -7573,20 +7611,22 @@
     private Task ReclaimFocusAsync() => ReclaimFocusAsync(fromField: false);
 
     /// <summary>
-    /// Hands the keyboard back to the root when something of the grid's own that held it
-    /// goes — a popover, the editor, a status-line command — and when Escape leaves a
-    /// control inside a cell (ADR-0020/0039). Never after an action fires: the keyboard is
-    /// then where the user or the handler put it (ADR-0037, amended 2026-09-26).
+    /// Hands the keyboard back to the root — to its Keyboard Field on a grid that edits
+    /// (ADR-0080) — when something of the grid's own that held it goes — a popover, the editor,
+    /// a status-line command — and when Escape leaves a control inside a cell (ADR-0020/0039).
+    /// Never after an action fires: the keyboard is then where the user or the handler put it
+    /// (ADR-0037, amended 2026-09-26).
     ///
     /// <para>Only while DOM focus is still inside this root, or on nothing (<c>body</c>): on a
     /// circuit this lands a round trip after the gesture that asked for it, and a second grid
     /// the user has pressed in the meantime keeps its keyboard (ADR-0018). The condition is
-    /// the handle's to read, since only the browser knows where focus is now — one of the three
+    /// the handle's to read, since only the browser knows where focus is now — one of the five
     /// decisions about focus made in JavaScript (ADR-0021); the others are the press on the rows
     /// or the headings that brings the keyboard back to an edit left standing (ADR-0018,
-    /// section 6), and the open edit's own focus (<see cref="FocusSurfaceAsync"/>). Before the
-    /// handle is attached there is no listener on the root to hand keys to, and nothing is
-    /// asked.</para>
+    /// section 6), the open edit's own focus (<see cref="FocusSurfaceAsync"/>), the root's own
+    /// focus passed on to its Keyboard Field, and the field given up by a press during a
+    /// composition (ADR-0080). Before the handle is attached there is no listener on the root to
+    /// hand keys to, and nothing is asked.</para>
     ///
     /// <para>Nor, unless <paramref name="fromField"/> says so, while it is on a field beside the
     /// rows with focus of its own — the Formula Bar or the Name Box, built in or a Chrome's,
@@ -7904,16 +7944,18 @@
     /// <summary>
     /// The Focus cell's id for <c>aria-activedescendant</c>, or null while the Focus is
     /// not painted (ADR-0033): a wheel scroll can carry the Focus cell out of the DOM,
-    /// and the attribute must never name a missing id — nor force a scroll back.
+    /// and the attribute must never name a missing id — nor force a scroll back. Written on
+    /// the element that holds the keyboard: the root, or its Keyboard Field (ADR-0080).
     /// </summary>
     private string? ActiveDescendant()
     {
         if (!FocusCellIsPainted())
             return null;
         var focus = _selection.Selection.Focus;
-        // Interactive over several actions (ADR-0037): the keyboard stays on this root and
-        // the attribute names the chosen button, which an assistive technology then reads
-        // as it would under real focus — by the label every action is required to carry.
+        // Interactive over several actions (ADR-0037): the keyboard stays on this root, or its
+        // Keyboard Field (ADR-0080), and the attribute names the chosen button, which an
+        // assistive technology then reads as it would under real focus — by the label every
+        // action is required to carry.
         if (InteractiveChoice() is { } choice)
             return CellIds.Action(_idPrefix, focus.Row, focus.Column, choice.Action);
         return CellIds.Cell(_idPrefix, focus.Row, focus.Column);

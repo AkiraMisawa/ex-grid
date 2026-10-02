@@ -86,8 +86,10 @@ public class InteractiveTests : GridTestContext
     private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, int row, int column)
         => ClickAsync(cut, column switch { 0 => 50, 1 => 150, 2 => 350, _ => 450 }, (row * RowHeightPx) + 10);
 
+    // Read from the element that holds the keyboard: Review edits, so this grid's Keyboard Field
+    // carries the attribute, and its root does not (ADR-0080).
     private static string? ActiveDescendant(IRenderedComponent<ExGrid<TestRow>> cut)
-        => cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        => KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
 
     private static IReadOnlyList<string> Chosen(IRenderedComponent<ExGrid<TestRow>> cut)
         => [.. cut.FindAll("button.ex-action-chosen").Select(button => button.TextContent)];
