@@ -228,24 +228,45 @@ test('Ctrl+A over 10⁶ × 100 is one rectangle, counted as 10⁸, and the next 
  * Counts every crossing between the grid's module and .NET, in both directions, by a
  * conditional breakpoint that never pauses: on the first statement of each method of
  * the per-instance handle (.NET calling JavaScript), and on each call into .NET the
- * module makes. Located in the source the page was served, so a moved line cannot
- * silently stop being counted — a site that cannot be placed fails the test.
+ * module makes. Located in the source the module was written as, so a moved line cannot
+ * silently stop being counted — a site that cannot be placed fails the test. The module is
+ * shipped minified (ADR-0123), possibly under a fingerprinted name: the sites are found in the
+ * source its source map carries, and each is placed where the map says it was served.
  */
 async function countGridInterop(page) {
     const client = await page.context().newCDPSession(page);
     let module;
     client.on('Debugger.scriptParsed', (e) => {
-        if (/\/_content\/ExGrid\/ex-grid(\.\w+)?\.js$/.test(e.url)) {
+        if (/\/_content\/ExGrid\/ex-grid(\.[\w-]+)*\.js$/.test(e.url)) {
             module = e;
         }
     });
     await client.send('Debugger.enable');
     await expect.poll(() => module, { message: 'ex-grid.js is loaded' }).toBeTruthy();
 
-    const { scriptSource } = await client.send('Debugger.getScriptSource', { scriptId: module.scriptId });
+    const { scriptSource: served } = await client.send('Debugger.getScriptSource', { scriptId: module.scriptId });
+    let scriptSource = served;
+    let toServed = (line, column) => ({ lineNumber: line, columnNumber: column });
+    if (module.sourceMapURL) {
+        const response = await page.request.get(new URL(module.sourceMapURL, module.url).href);
+        expect(response.ok(), 'the source map is served').toBe(true);
+        const map = await response.json();
+        scriptSource = map.sourcesContent[0];
+        const segments = decodeMappings(map.mappings);
+        toServed = (line, column) => {
+            // The first mapped place at or after the written one, on its line or a later one.
+            let best;
+            for (const m of segments) {
+                if (m.sourceLine < line || (m.sourceLine === line && m.sourceColumn < column)) continue;
+                if (!best || m.sourceLine < best.sourceLine || (m.sourceLine === best.sourceLine && m.sourceColumn < best.sourceColumn)) best = m;
+            }
+            expect(best, `a served place for ${line}:${column}`).toBeTruthy();
+            return { lineNumber: best.line, columnNumber: best.column };
+        };
+    }
     const at = (index) => {
         const before = scriptSource.slice(0, index).split('\n');
-        return { scriptId: module.scriptId, lineNumber: before.length - 1, columnNumber: before.at(-1).length };
+        return { scriptId: module.scriptId, ...toServed(before.length - 1, before.at(-1).length) };
     };
     const sites = [];
     // The handle is the object `attach` returns. Since ADR-0080 it is named first
@@ -281,6 +302,44 @@ async function countGridInterop(page) {
         });
     }
     await page.evaluate(() => { globalThis.__exInterop = {}; });
+}
+
+/**
+ * A source map's `mappings`, decoded: each segment's place in the served script (`line`,
+ * `column`) and in the source it was written as (`sourceLine`, `sourceColumn`), all from 0.
+ */
+function decodeMappings(mappings) {
+    const digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    const segments = [];
+    let sourceLine = 0, sourceColumn = 0, source = 0, name = 0;
+    mappings.split(';').forEach((text, line) => {
+        let column = 0;
+        for (const segment of text.split(',')) {
+            if (!segment) continue;
+            const values = [];
+            let value = 0, shift = 0;
+            for (const c of segment) {
+                const digit = digits.indexOf(c);
+                value += (digit & 31) << shift;
+                if (digit & 32) {
+                    shift += 5;
+                } else {
+                    values.push(value & 1 ? -(value >>> 1) : value >>> 1);
+                    value = 0;
+                    shift = 0;
+                }
+            }
+            column += values[0];
+            if (values.length >= 4) {
+                source += values[1];
+                sourceLine += values[2];
+                sourceColumn += values[3];
+                if (values.length >= 5) name += values[4];
+                segments.push({ line, column, sourceLine, sourceColumn });
+            }
+        }
+    });
+    return segments;
 }
 
 /** Scrolls by `step` px per frame for `frames` frames on one axis, then lets it settle. */

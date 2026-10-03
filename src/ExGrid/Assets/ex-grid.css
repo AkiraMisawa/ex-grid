@@ -490,9 +490,6 @@
     box-shadow: inset calc(0px - var(--ex-rule-width, 1px)) 0 var(--ex-header-rule-color, rgba(128, 128, 128, 0.45));
 }
 .ex-formula-bar-text { flex: 1 1 auto; min-width: 0; }
-/* Text that is not the Focus cell's own, such as the Anchor's Formula over a spilled cell
-   (ADR-0125): dimmed, as Excel's is. */
-.ex-formula-bar-text.ex-formula-bar-borrowed { color: var(--ex-formula-bar-borrowed-color, GrayText); }
 /* The text field's padding is the coloured text's beside it too (ADR-0057): one rule, so the
    two cannot drift. */
 .ex-name-box, .ex-formula-bar-text, .ex-reference-text.ex-reference-text-bar { padding: 0 var(--ex-cell-padding-x, 8px); }
@@ -507,6 +504,9 @@
     background: transparent;
     color: inherit;
 }
+/* Text that is not the Focus cell's own, such as the Anchor's Formula over a spilled cell
+   (ADR-0125): dimmed, as Excel's is. After the rule above, and narrower, so its colour wins. */
+.ex-formula-bar > .ex-formula-bar-text.ex-formula-bar-borrowed { color: var(--ex-formula-bar-borrowed-color, GrayText); }
 .ex-formula-bar > .ex-editor:focus,
 .ex-formula-bar > .ex-editor:focus-within { outline: var(--ex-editor-outline, 2px solid Highlight); outline-offset: -2px; }
 .ex-name-box-form { display: contents; }
