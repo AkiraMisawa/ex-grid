@@ -1,0 +1,48 @@
+{
+  "area": "textjoin",
+  "about": "TEXTJOIN (ticket 04).",
+  "cases": [
+    {
+      "id": "TEXTJOIN-001",
+      "source": "documented",
+      "description": "Microsoft's example: a delimiter between each, blanks ignored",
+      "cells": {"A1": "a", "A3": "c", "ZZ1000": "=TEXTJOIN(\", \",TRUE,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a, c"}
+    },
+    {
+      "id": "TEXTJOIN-002",
+      "source": "documented",
+      "description": "Blanks kept as empty items when ignore_empty is FALSE",
+      "cells": {"A1": "a", "A3": "c", "ZZ1000": "=TEXTJOIN(\",\",FALSE,A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a,,c"}
+    },
+    {
+      "id": "TEXTJOIN-003",
+      "source": "documented",
+      "description": "Texts and ranges together",
+      "cells": {"A1": "a", "A3": "c", "ZZ1000": "=TEXTJOIN(\"-\",TRUE,\"x\",A1:A3,\"y\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "x-a-c-y"}
+    },
+    {
+      "id": "TEXTJOIN-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXTJOIN(\",\",TRUE,C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "TEXTJOIN-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula's empty text is ignored too",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXTJOIN(\",\",TRUE,C1,D1,C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "10,5"}
+    }
+  ]
+}

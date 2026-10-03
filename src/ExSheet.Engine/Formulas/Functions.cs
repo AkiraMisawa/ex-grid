@@ -52,6 +52,35 @@ internal static partial class FunctionLibrary
         new("TEXT", 2, 2, "value, format_text", "Formats a number and converts it to text.", FormatAsText),
         new("CONCAT", 1, 253, "text1, [text2], ...", "Combines the text from multiple ranges and strings.", Concat),
         new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index),
+        new("PRODUCT", 1, Open, "number1, [number2], ...", "Multiplies its arguments.", Product),
+        new("MEDIAN", 1, Open, "number1, [number2], ...", "Returns the median of the given numbers.", Median),
+        new("LARGE", 2, 2, "array, k", "Returns the k-th largest value in a data set.", Large),
+        new("SMALL", 2, 2, "array, k", "Returns the k-th smallest value in a data set.", Small),
+        new("ISTEXT", 1, 1, "value", "Returns TRUE if value is text.", IsText),
+        new("ISNA", 1, 1, "value", "Returns TRUE if value is the #N/A error value.", IsNa),
+        new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true },
+        new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch),
+        new("NA", 0, 0, "", "Returns the error value #N/A.", Na),
+        new("XMATCH", 2, 4, "lookup_value, lookup_array, [match_mode], [search_mode]", "Returns the relative position of an item in an array or range of cells.", XMatch),
+        new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose),
+        new("ROW", 0, 1, "[reference]", "Returns the row number of a reference.", Row),
+        new("COLUMN", 0, 1, "[reference]", "Returns the column number of a reference.", Column),
+        new("TRUNC", 1, 2, "number, [num_digits]", "Truncates a number to an integer, or to num_digits.", Trunc),
+        new("POWER", 2, 2, "number, power", "Returns the result of a number raised to a power.", Power),
+        new("SQRT", 1, 1, "number", "Returns a positive square root.", Sqrt),
+        new("WEEKDAY", 1, 2, "serial_number, [return_type]", "Converts a serial number to a day of the week.", Weekday),
+        new("DAYS", 2, 2, "end_date, start_date", "Returns the number of days between two dates.", Days),
+        new("NETWORKDAYS", 2, 3, "start_date, end_date, [holidays]", "Returns the number of whole workdays between two dates.", NetworkDays),
+        new("WORKDAY", 2, 3, "start_date, days, [holidays]", "Returns the serial number of the date before or after a specified number of workdays.", Workday),
+        new("TEXTJOIN", 3, 252, "delimiter, ignore_empty, text1, [text2], ...", "Combines the text from multiple ranges and strings, with a delimiter between each value.", TextJoin),
+        new("CONCATENATE", 1, Open, "text1, [text2], ...", "Joins several text items into one text item.", Concatenate),
+        new("SUBSTITUTE", 3, 4, "text, old_text, new_text, [instance_num]", "Substitutes new text for old text in a text string.", Substitute),
+        new("REPLACE", 4, 4, "old_text, start_num, num_chars, new_text", "Replaces characters within text.", Replace),
+        new("FIND", 2, 3, "find_text, within_text, [start_num]", "Finds one text value within another, case-sensitive.", Find),
+        new("PMT", 3, 5, "rate, nper, pv, [fv], [type]", "Returns the periodic payment for an annuity.", Pmt),
+        new("PV", 3, 5, "rate, nper, pmt, [fv], [type]", "Returns the present value of an investment.", Pv),
+        new("FV", 3, 5, "rate, nper, pmt, [pv], [type]", "Returns the future value of an investment.", Fv),
+        new("NPV", 2, Open, "rate, value1, [value2], ...", "Returns the net present value of an investment based on a series of periodic cash flows and a discount rate.", Npv),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
             // Excel's lists, character for character: match_mode's as the Windows runs of
@@ -86,10 +115,10 @@ internal static partial class FunctionLibrary
     /// arguments, booleans and text that reads as a number count too, and other text is
     /// <c>#VALUE!</c>. An Error Value anywhere is the result, the first one found left to right.
     /// </summary>
-    private static ErrorValue? CollectNumbers(FunctionCall call, List<double> numbers)
+    private static ErrorValue? CollectNumbers(FunctionCall call, List<double> numbers, int from = 0)
     {
         var evaluator = call.Evaluator;
-        for (var i = 0; i < call.Count; i++)
+        for (var i = from; i < call.Count; i++)
         {
             var operand = call.Operand(i);
             switch (operand.Kind)
@@ -361,35 +390,15 @@ internal static partial class FunctionLibrary
 
     private static Operand XLookup(FunctionCall call)
     {
-        var evaluator = call.Evaluator;
-
+        // The lookup value's own refusal and Error Value come first, before the arrays are looked at.
         var lookupOperand = call.Operand(0);
         if (IsArray(lookupOperand)) return Operand.Of(ErrorValue.Value);
-        var lookup = evaluator.ScalarOf(lookupOperand);
-        if (lookup is { IsError: true } lookupError) return Operand.Of(lookupError);
+        if (call.Evaluator.ScalarOf(lookupOperand) is { IsError: true } lookupError) return Operand.Of(lookupError);
 
         var lookupArray = call.Operand(1);
         var returnArray = call.Operand(2);
         if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
         if (!returnArray.IsRange) return returnArray.IsError ? returnArray : Operand.Of(ErrorValue.Value);
-
-        var matchMode = 0;
-        if (call.Has(4))
-        {
-            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(4)), out var modeError);
-            if (modeError is { } me) return Operand.Of(me);
-            matchMode = (int)Math.Truncate(mode);
-            if (matchMode is not (0 or -1 or 1 or 2 or 3)) return Operand.Of(ErrorValue.Value);
-        }
-        var searchMode = 1;
-        if (call.Has(5))
-        {
-            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(5)), out var modeError);
-            if (modeError is { } me) return Operand.Of(me);
-            searchMode = (int)Math.Truncate(mode);
-            if (searchMode is not (1 or -1 or 2 or -2)) return Operand.Of(ErrorValue.Value);
-        }
-
         // A range of one row or one column; a Linked Table's column runs down.
         if (Vector.Of(lookupArray) is not { } vector) return Operand.Of(ErrorValue.Value);
         // The return array lies along the lookup array; more than one cell across it would spill.
@@ -397,11 +406,50 @@ internal static partial class FunctionLibrary
         {
             return Operand.Of(ErrorValue.Value);
         }
+        if (Search(call, vector, modesAt: 4) is not { } outcome) return Operand.Of(ErrorValue.Value);
+        if (outcome.Failure is { } failure) return failure;
+        if (outcome.Found is not { } index) return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
+        return result.ItemAt(index);
+    }
+
+    /// <summary>What a search answered: the position found, or none; or the Error Value an argument was.</summary>
+    private readonly record struct SearchOutcome(int? Found, Operand? Failure);
+
+    /// <summary>
+    /// XLOOKUP's and XMATCH's search of <paramref name="vector"/> for argument 0, with
+    /// <c>match_mode</c> and <c>search_mode</c> at <paramref name="modesAt"/> and the one after.
+    /// <see langword="null"/> is a refusal (<c>#VALUE!</c>): a mode outside Excel's list, or a binary
+    /// search over data that is not sorted as the mode says (<see cref="TryBinarySearch"/>).
+    /// </summary>
+    private static SearchOutcome? Search(FunctionCall call, Vector vector, int modesAt)
+    {
+        var evaluator = call.Evaluator;
+        var lookupOperand = call.Operand(0);
+        if (IsArray(lookupOperand)) return null;
+        var lookup = evaluator.ScalarOf(lookupOperand);
+        if (lookup is { IsError: true } lookupError) return new SearchOutcome(null, Operand.Of(lookupError));
+
+        var matchMode = 0;
+        if (call.Has(modesAt))
+        {
+            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(modesAt)), out var modeError);
+            if (modeError is { } me) return new SearchOutcome(null, Operand.Of(me));
+            matchMode = (int)Math.Truncate(mode);
+            if (matchMode is not (0 or -1 or 1 or 2 or 3)) return null;
+        }
+        var searchMode = 1;
+        if (call.Has(modesAt + 1))
+        {
+            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(modesAt + 1)), out var modeError);
+            if (modeError is { } me) return new SearchOutcome(null, Operand.Of(me));
+            searchMode = (int)Math.Truncate(mode);
+            if (searchMode is not (1 or -1 or 2 or -2)) return null;
+        }
 
         int? found = null;
         if (searchMode is 2 or -2)
         {
-            if (!TryBinarySearch(vector, evaluator, lookup, matchMode, ascending: searchMode == 2, out found)) return Operand.Of(ErrorValue.Value);
+            if (!TryBinarySearch(vector, evaluator, lookup, matchMode, ascending: searchMode == 2, out found)) return null;
         }
         else if (lookup is { } wanted)
         {
@@ -411,7 +459,7 @@ internal static partial class FunctionLibrary
             {
                 // Numbers and booleans are matched by their text; Error Values match nothing.
                 var texts = candidates.Where(c => !c.Value.IsError).Select(c => (c.Index, evaluator.ToText(c.Value)));
-                if (!PortableRegex.TryFirstMatch(evaluator.ToText(wanted), texts, out found)) return Operand.Of(ErrorValue.Value);
+                if (!PortableRegex.TryFirstMatch(evaluator.ToText(wanted), texts, out found)) return null;
             }
             else
             {
@@ -428,12 +476,7 @@ internal static partial class FunctionLibrary
             // A blank lookup value matches a blank cell, as Excel was observed to (XLOOKUP-067).
             found = vector.FirstBlank(evaluator, fromEnd: searchMode == -1);
         }
-
-        if (found is not { } index)
-        {
-            return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
-        }
-        return result.ItemAt(index);
+        return new SearchOutcome(found, null);
     }
 
     /// <summary>

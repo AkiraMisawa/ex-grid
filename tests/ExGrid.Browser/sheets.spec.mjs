@@ -75,7 +75,7 @@ test('ADR-0018: a completion list, a pointing outline and the Formula Bar belong
     const right = sheet(page, 1);
     await clickCell(left, 'D1');
     await page.keyboard.type('=SU');
-    await expect(candidates(left).first()).toHaveText('SUM');
+    await expect(candidates(left).first()).toHaveText('SUBSTITUTE');
     await expect(right.locator('.ex-completion')).toHaveCount(0);
     // The editor's text shows in its own bar only.
     await expect(bar(left)).toHaveValue('=SU');

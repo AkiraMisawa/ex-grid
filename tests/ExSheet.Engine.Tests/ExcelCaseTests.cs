@@ -147,6 +147,93 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "text")] // ADR-0120: TEXT reads its code in the invariant spelling, as a cell format shows it
     public void Text(string id) => Run("text", id);
 
+    [Theory, MemberData(nameof(Ids), "product")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Product(string id) => Run("product", id);
+
+    [Theory, MemberData(nameof(Ids), "median")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Median(string id) => Run("median", id);
+
+    [Theory, MemberData(nameof(Ids), "large")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Large(string id) => Run("large", id);
+
+    [Theory, MemberData(nameof(Ids), "small")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Small(string id) => Run("small", id);
+
+    [Theory, MemberData(nameof(Ids), "istext")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void IsText(string id) => Run("istext", id);
+
+    [Theory, MemberData(nameof(Ids), "isna")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void IsNa(string id) => Run("isna", id);
+
+    [Theory, MemberData(nameof(Ids), "na")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Na(string id) => Run("na", id);
+
+    [Theory, MemberData(nameof(Ids), "ifs")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Ifs(string id) => Run("ifs", id);
+
+    [Theory, MemberData(nameof(Ids), "switch")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Switch(string id) => Run("switch", id);
+
+    [Theory, MemberData(nameof(Ids), "xmatch")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void XMatch(string id) => Run("xmatch", id);
+
+    [Theory, MemberData(nameof(Ids), "choose")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Choose(string id) => Run("choose", id);
+
+    [Theory, MemberData(nameof(Ids), "row")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Row(string id) => Run("row", id);
+
+    [Theory, MemberData(nameof(Ids), "column")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Column(string id) => Run("column", id);
+
+    [Theory, MemberData(nameof(Ids), "trunc")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Trunc(string id) => Run("trunc", id);
+
+    [Theory, MemberData(nameof(Ids), "power")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Power(string id) => Run("power", id);
+
+    [Theory, MemberData(nameof(Ids), "sqrt")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Sqrt(string id) => Run("sqrt", id);
+
+    [Theory, MemberData(nameof(Ids), "weekday")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Weekday(string id) => Run("weekday", id);
+
+    [Theory, MemberData(nameof(Ids), "days")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Days(string id) => Run("days", id);
+
+    [Theory, MemberData(nameof(Ids), "networkdays")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void NetworkDays(string id) => Run("networkdays", id);
+
+    [Theory, MemberData(nameof(Ids), "workday")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Workday(string id) => Run("workday", id);
+
+    [Theory, MemberData(nameof(Ids), "textjoin")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void TextJoin(string id) => Run("textjoin", id);
+
+    [Theory, MemberData(nameof(Ids), "concatenate")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Concatenate(string id) => Run("concatenate", id);
+
+    [Theory, MemberData(nameof(Ids), "substitute")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Substitute(string id) => Run("substitute", id);
+
+    [Theory, MemberData(nameof(Ids), "replace")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Replace(string id) => Run("replace", id);
+
+    [Theory, MemberData(nameof(Ids), "find")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Find(string id) => Run("find", id);
+
+    [Theory, MemberData(nameof(Ids), "pmt")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Pmt(string id) => Run("pmt", id);
+
+    [Theory, MemberData(nameof(Ids), "pv")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Pv(string id) => Run("pv", id);
+
+    [Theory, MemberData(nameof(Ids), "fv")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Fv(string id) => Run("fv", id);
+
+    [Theory, MemberData(nameof(Ids), "npv")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Npv(string id) => Run("npv", id);
+
     [Theory, MemberData(nameof(Ids), "typed-constants")] // ADR-0048: constants read under the Sheet's culture
     public void TypedConstants(string id) => Run("typed-constants", id);
 
@@ -182,7 +269,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "abs", "and", "arithmetic", "average", "column-widths", "concat", "copy", "count", "counta", "date", "dates", "day", "edate", "eomonth", "errors", "fill", "format-levels", "formula-formats", "formula-text", "general-width", "if", "iferror", "ifna", "index", "int", "isblank", "iserror", "isnumber", "left", "len", "linked-tables", "max", "mid", "min", "mod", "month", "not", "number-formats", "or", "references", "right", "round", "rounddown", "roundup", "sheet-names", "structure", "sum", "text", "trim", "typed-constants", "xlookup", "year",
+        "abs", "and", "arithmetic", "average", "choose", "column", "column-widths", "concat", "concatenate", "copy", "count", "counta", "date", "dates", "day", "days", "edate", "eomonth", "errors", "fill", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "max", "median", "mid", "min", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "or", "pmt", "power", "product", "pv", "references", "replace", "right", "round", "rounddown", "roundup", "row", "sheet-names", "small", "sqrt", "structure", "substitute", "sum", "switch", "text", "textjoin", "trim", "trunc", "typed-constants", "weekday", "workday", "xlookup", "xmatch", "year",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

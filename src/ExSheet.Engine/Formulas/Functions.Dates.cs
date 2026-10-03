@@ -1,8 +1,8 @@
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// DATE, TODAY, YEAR, MONTH, DAY, EOMONTH and EDATE over Excel's 1900 serials, 29 February 1900
-/// included (ADR-0047, <see cref="DateSerial"/>).
+/// DATE, TODAY, YEAR, MONTH, DAY, EOMONTH, EDATE, WEEKDAY, DAYS, NETWORKDAYS and WORKDAY over
+/// Excel's 1900 serials, 29 February 1900 included (ADR-0047, <see cref="DateSerial"/>).
 /// </summary>
 internal static partial class FunctionLibrary
 {
@@ -115,6 +115,167 @@ internal static partial class FunctionLibrary
         var length = DateTime.DaysInMonth((int)toYear, toMonth);
         var serial = DateSerial.FromDate((int)toYear, toMonth, endOfMonth ? length : Math.Min(day, length))!.Value;
         if (serial < FirstMarch1900) return Operand.Of(ErrorValue.Value);
+        return Operand.Of(Value.FromNumber(serial));
+    }
+
+    // ---- WEEKDAY, DAYS, NETWORKDAYS, WORKDAY ----------------------------------------------------
+
+    /// <summary>
+    /// WEEKDAY: the day of the week of the serial, on Excel's calendar (serial 1 is a Sunday), as
+    /// <c>return_type</c> numbers it — 1 or 17 from Sunday, 2 or 11 from Monday, 3 from Monday at 0,
+    /// and 12 to 16 from Tuesday to Saturday. Another type, or a serial outside 0 to 31 December
+    /// 9999, is <c>#NUM!</c>.
+    /// </summary>
+    private static Operand Weekday(FunctionCall call)
+    {
+        if (!TryNumber(call, 0, out var serial, out var failure)) return failure;
+        serial = Math.Floor(serial);
+        if (serial < 0 || serial > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
+        var type = 1.0;
+        if (call.Has(1) && !TryNumber(call, 1, out type, out failure)) return failure;
+        var day = DateSerial.DayOfWeek((int)serial);
+        int? number = Math.Truncate(type) switch
+        {
+            1 or 17 => day + 1,
+            2 or 11 => ((day + 6) % 7) + 1,
+            3 => (day + 6) % 7,
+            12 => ((day + 5) % 7) + 1,
+            13 => ((day + 4) % 7) + 1,
+            14 => ((day + 3) % 7) + 1,
+            15 => ((day + 2) % 7) + 1,
+            16 => ((day + 1) % 7) + 1,
+            _ => null,
+        };
+        return number is { } n ? Operand.Of(Value.FromNumber(n)) : Operand.Of(ErrorValue.Num);
+    }
+
+    /// <summary>DAYS: <c>end_date - start_date</c>, each truncated to its day; a serial outside 0 to 31 December 9999 is <c>#NUM!</c>.</summary>
+    private static Operand Days(FunctionCall call)
+    {
+        if (!TryNumber(call, 0, out var end, out var failure)) return failure;
+        if (!TryNumber(call, 1, out var start, out failure)) return failure;
+        end = Math.Floor(end);
+        start = Math.Floor(start);
+        if (end < 0 || start < 0 || end > DateSerial.Maximum || start > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
+        return Operand.Of(Value.FromNumber(end - start));
+    }
+
+    /// <summary>
+    /// A date argument of NETWORKDAYS and WORKDAY, truncated to its day, as EOMONTH reads one: a
+    /// boolean typed is refused with <c>#VALUE!</c> until Excel is asked; below 0 or past
+    /// 31 December 9999 is <c>#NUM!</c>; before 1 March 1900 is refused with <c>#VALUE!</c>.
+    /// </summary>
+    private static bool TryWorkdayDate(FunctionCall call, int index, out int serial, out Operand failure)
+    {
+        serial = 0;
+        if (!TryScalar(call, index, out var value, out failure)) return false;
+        if (value is { Kind: ValueKind.Boolean })
+        {
+            failure = Operand.Of(ErrorValue.Value);
+            return false;
+        }
+        if (!TryNumber(call, index, out var number, out failure)) return false;
+        number = Math.Floor(number);
+        if (number < 0 || number > DateSerial.Maximum)
+        {
+            failure = Operand.Of(ErrorValue.Num);
+            return false;
+        }
+        if (number < FirstMarch1900)
+        {
+            failure = Operand.Of(ErrorValue.Value);
+            return false;
+        }
+        serial = (int)number;
+        return true;
+    }
+
+    /// <summary>
+    /// The holidays argument: a range's numbers and a typed number, each truncated to its day. Text
+    /// or a boolean among them is refused with <c>#VALUE!</c> until Excel is asked; an Error Value
+    /// is the result.
+    /// </summary>
+    private static bool TryHolidays(FunctionCall call, int index, out HashSet<int> holidays, out Operand failure)
+    {
+        holidays = [];
+        failure = default;
+        if (!call.Has(index)) return true;
+        var operand = call.Operand(index);
+        IEnumerable<Value> values;
+        if (operand.IsRange)
+        {
+            values = call.Evaluator.RangeValues(operand);
+        }
+        else if (operand.Scalar is { } scalar)
+        {
+            values = [scalar];
+        }
+        else
+        {
+            return true;
+        }
+        foreach (var value in values)
+        {
+            if (value.IsError)
+            {
+                failure = Operand.Of(value);
+                return false;
+            }
+            if (value.Kind != ValueKind.Number)
+            {
+                failure = Operand.Of(ErrorValue.Value);
+                return false;
+            }
+            holidays.Add((int)Math.Floor(value.Number));
+        }
+        return true;
+    }
+
+    private static bool IsWorkday(int serial, HashSet<int> holidays) =>
+        DateSerial.DayOfWeek(serial) is not (0 or 6) && !holidays.Contains(serial);
+
+    /// <summary>
+    /// NETWORKDAYS: the days from <c>start_date</c> to <c>end_date</c>, both counted, that fall from
+    /// Monday to Friday and are not holidays; negative when the start is after the end.
+    /// </summary>
+    private static Operand NetworkDays(FunctionCall call)
+    {
+        if (!TryWorkdayDate(call, 0, out var start, out var failure)) return failure;
+        if (!TryWorkdayDate(call, 1, out var end, out failure)) return failure;
+        if (!TryHolidays(call, 2, out var holidays, out failure)) return failure;
+        var (from, to, sign) = start <= end ? (start, end, 1) : (end, start, -1);
+        var span = to - from + 1;
+        var count = (span / 7) * 5;
+        for (var serial = from + ((span / 7) * 7); serial <= to; serial++)
+        {
+            if (DateSerial.DayOfWeek(serial) is not (0 or 6)) count++;
+        }
+        count -= holidays.Count(h => h >= from && h <= to && DateSerial.DayOfWeek(h) is not (0 or 6));
+        return Operand.Of(Value.FromNumber(sign * count));
+    }
+
+    /// <summary>
+    /// WORKDAY: the day <c>days</c> working days after <c>start_date</c> (before it when negative),
+    /// passing over weekends and holidays; <c>days</c> truncated, and 0 gives the start itself. A
+    /// result past 31 December 9999 is <c>#NUM!</c>, and one before 1 March 1900 is refused with
+    /// <c>#VALUE!</c>.
+    /// </summary>
+    private static Operand Workday(FunctionCall call)
+    {
+        if (!TryWorkdayDate(call, 0, out var start, out var failure)) return failure;
+        if (!TryNumber(call, 1, out var days, out failure)) return failure;
+        if (!TryHolidays(call, 2, out var holidays, out failure)) return failure;
+        days = Math.Truncate(days);
+        var step = days < 0 ? -1 : 1;
+        var remaining = Math.Abs(days);
+        var serial = start;
+        while (remaining > 0)
+        {
+            serial += step;
+            if (serial > DateSerial.Maximum) return Operand.Of(ErrorValue.Num);
+            if (serial < FirstMarch1900) return Operand.Of(ErrorValue.Value);
+            if (IsWorkday(serial, holidays)) remaining--;
+        }
         return Operand.Of(Value.FromNumber(serial));
     }
 }

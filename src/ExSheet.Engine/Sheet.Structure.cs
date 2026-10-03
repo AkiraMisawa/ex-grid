@@ -128,6 +128,8 @@ public sealed partial class Sheet
                 continue;
             }
             var entry = cell.Entry;
+            // ROW() and COLUMN() read their own cell's place, which a move changes without a word of the Formula's.
+            if (entry?.Parsed is { } own && to != cell.Address && ReadsOwnPlace(own)) dirty.Add(to);
             if (entry?.Parsed is { } parsed)
             {
                 var mapped = ReferenceRewriter.Rewrite(entry, r => edit.Map(r, this));
@@ -160,4 +162,8 @@ public sealed partial class Sheet
             .ReformattingUnnamedRows();
         return new StructuralOutcome(change, dropped, rewritten, rowsBefore, columnsBefore, widthsBefore);
     }
+
+    /// <summary>Whether a Formula calls <c>ROW()</c> or <c>COLUMN()</c> with no argument: its Value is its own cell's place.</summary>
+    private static bool ReadsOwnPlace(Formulas.Node formula) =>
+        formula.Calls.Any(call => call.Function is not null && call.Name is "ROW" or "COLUMN" && call.Arguments.Count == 0);
 }

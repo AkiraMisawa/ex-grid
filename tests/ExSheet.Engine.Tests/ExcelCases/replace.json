@@ -1,0 +1,48 @@
+{
+  "area": "replace",
+  "about": "REPLACE (ticket 04).",
+  "cases": [
+    {
+      "id": "REPLACE-001",
+      "source": "documented",
+      "description": "Microsoft's example: five characters from the sixth",
+      "cells": {"A1": "abcdefghijk", "ZZ1000": "=REPLACE(A1,6,5,\"*\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "abcde*k"}
+    },
+    {
+      "id": "REPLACE-002",
+      "source": "documented",
+      "description": "Microsoft's example: the last two digits of 2009",
+      "cells": {"A1": "2009", "ZZ1000": "=REPLACE(A1,3,2,\"10\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "2010", "kind": "text"}
+    },
+    {
+      "id": "REPLACE-003",
+      "source": "documented",
+      "description": "Microsoft's example: the first three characters",
+      "cells": {"A1": "123456", "ZZ1000": "=REPLACE(A1,1,3,\"@\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "@456"}
+    },
+    {
+      "id": "REPLACE-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start past the end appends",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=REPLACE(\"abc\",10,1,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "abcx"}
+    },
+    {
+      "id": "REPLACE-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start below 1 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=REPLACE(\"abc\",0,1,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

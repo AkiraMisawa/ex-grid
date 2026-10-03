@@ -1,0 +1,44 @@
+{
+  "area": "column",
+  "about": "COLUMN (ticket 04).",
+  "cases": [
+    {
+      "id": "COLUMN-001",
+      "source": "documented",
+      "description": "Microsoft's example: the column of the Formula's own cell",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COLUMN()"},
+      "check": "ZZ1000",
+      "expect": {"value2": 702}
+    },
+    {
+      "id": "COLUMN-002",
+      "source": "documented",
+      "description": "Microsoft's example: the column of a Reference",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COLUMN(D10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "COLUMN-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a whole column",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COLUMN(C:C)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "COLUMN-004",
+      "source": "uncertain",
+      "description": "Several columns would spill",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COLUMN(A1:C1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": 1}
+    }
+  ]
+}

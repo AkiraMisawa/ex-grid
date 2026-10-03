@@ -17,13 +17,13 @@ public class FormulaEntryTests
     }
 
     [Theory] // ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case
-    [InlineData("=SU|", new[] { "SUM" })]
-    [InlineData("=su|", new[] { "SUM" })]
-    [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNUMBER" })]
+    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUM" })]
+    [InlineData("=su|", new[] { "SUBSTITUTE", "SUM" })]
+    [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
-    [InlineData("=1+co|", new[] { "CONCAT", "COUNT", "COUNTA" })]
-    [InlineData("=SUM(A1,m|", new[] { "MAX", "MID", "MIN", "MOD", "MONTH" })]
-    [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP" })]
+    [InlineData("=1+co|", new[] { "COLUMN", "CONCAT", "CONCATENATE", "COUNT", "COUNTA" })]
+    [InlineData("=SUM(A1,m|", new[] { "MAX", "MEDIAN", "MID", "MIN", "MOD", "MONTH" })]
+    [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP", "XMATCH" })]
     public void Completion_offers_declared_functions(string marked, string[] expected)
     {
         Assert.Equal(expected, Names(marked));
@@ -48,13 +48,13 @@ public class FormulaEntryTests
     public void Completion_offers_linked_tables()
     {
         Assert.Equal(["ABS", "Accounts", "AND", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
-        Assert.Equal(["Positions"], Names("=SUM(po|", "Positions", "Accounts")!);
+        Assert.Equal(["Positions"], Names("=SUM(pos|", "Positions", "Accounts")!);
     }
 
     [Fact] // ADR-0051: accepting a candidate replaces the whole name at the caret with the candidate's text
     public void A_completion_names_what_it_replaces()
     {
-        var (text, caret) = AtCaret("=1+SU|M(A1)");
+        var (text, caret) = AtCaret("=1+SUM|(A1)");
         var completion = FormulaEntry.Complete(text, caret, [])!;
 
         Assert.Equal(3, completion.Start);

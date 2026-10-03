@@ -106,28 +106,48 @@ them:
 
 | Function | Arguments |
 |---|---|
-| `SUM`, `AVERAGE`, `MIN`, `MAX` | `number1, [number2], ...` |
+| `SUM`, `AVERAGE`, `MIN`, `MAX`, `PRODUCT`, `MEDIAN` | `number1, [number2], ...` |
 | `COUNT`, `COUNTA` | `value1, [value2], ...` |
+| `LARGE`, `SMALL` | `array, k` |
 | `IF` | `logical_test, value_if_true, [value_if_false]` |
+| `IFS` | `logical_test1, value_if_true1, ...` |
+| `SWITCH` | `expression, value1, result1, [default_or_value2], [result2], ...` |
 | `AND`, `OR` | `logical1, [logical2], ...` |
 | `NOT` | `logical` |
 | `IFERROR` | `value, value_if_error` |
 | `IFNA` | `value, value_if_na` |
-| `ISERROR`, `ISBLANK`, `ISNUMBER` | `value` |
+| `ISERROR`, `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISNA` | `value` |
+| `NA` | (none) |
 | `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
-| `ABS`, `INT` | `number` |
+| `TRUNC` | `number, [num_digits]` |
+| `ABS`, `INT`, `SQRT` | `number` |
 | `MOD` | `number, divisor` |
+| `POWER` | `number, power` |
 | `DATE` | `year, month, day` |
 | `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
 | `YEAR`, `MONTH`, `DAY` | `serial_number` |
+| `WEEKDAY` | `serial_number, [return_type]` |
+| `DAYS` | `end_date, start_date` |
 | `EOMONTH`, `EDATE` | `start_date, months` |
+| `NETWORKDAYS` | `start_date, end_date, [holidays]` |
+| `WORKDAY` | `start_date, days, [holidays]` |
 | `LEFT`, `RIGHT` | `text, [num_chars]` |
 | `MID` | `text, start_num, num_chars` |
 | `LEN`, `TRIM` | `text` |
-| `CONCAT` | `text1, [text2], ...` |
+| `CONCAT`, `CONCATENATE` | `text1, [text2], ...` |
+| `TEXTJOIN` | `delimiter, ignore_empty, text1, [text2], ...` |
+| `SUBSTITUTE` | `text, old_text, new_text, [instance_num]` |
+| `REPLACE` | `old_text, start_num, num_chars, new_text` |
+| `FIND` | `find_text, within_text, [start_num]` |
 | `TEXT` | `value, format_text` |
 | `INDEX` | `array, row_num, [column_num]` |
+| `CHOOSE` | `index_num, value1, [value2], ...` |
+| `ROW`, `COLUMN` | `[reference]` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
+| `XMATCH` | `lookup_value, lookup_array, [match_mode], [search_mode]` |
+| `PMT` | `rate, nper, pv, [fv], [type]` |
+| `PV`, `FV` | `rate, nper, pmt, [fv or pv], [type]` |
+| `NPV` | `rate, value1, [value2], ...` |
 
 Which functions come next, each with its status and priority, is catalogued in
 [`docs/specs/exsheet-functions/spec.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/specs/exsheet-functions/spec.md).
@@ -159,7 +179,12 @@ answer:
 - **Asked of Excel before they are answered**, each refused until the next Windows run says what
   Excel gives: `MOD` whose quotient is 2^27 or more (`#NUM!`, as older versions of Excel gave);
   `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where Excel's calendar holds the day
-  that never existed, and with a boolean typed as an argument (`#VALUE!`).
+  that never existed, and with a boolean typed as an argument (`#VALUE!`); `NETWORKDAYS` and
+  `WORKDAY` the same way, and with text among the holidays; `LARGE` and `SMALL` with a `k` that is
+  not a whole number; `PMT`, `PV` and `FV` with a `type` other than 0 or 1 (`#VALUE!`).
+- **More of the spill refusal.** `ROW` over several rows, `COLUMN` over several columns,
+  `CONCATENATE` over a range of several cells, and a `TEXTJOIN` delimiter of several cells are
+  `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 
 ## Operations, and undoing them
 

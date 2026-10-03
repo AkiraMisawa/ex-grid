@@ -92,4 +92,18 @@ public class FunctionAdditionTests
     {
         Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula(formula));
     }
+
+    [Fact] // ticket 04: ROW() and COLUMN() read their own cell's place, so a move recalculates them though their text is unchanged
+    public void Row_and_column_follow_their_cell_when_it_moves()
+    {
+        var sheet = NewSheet();
+        sheet.Enter("B2", "=ROW()*100+COLUMN()");
+        Assert.Equal(202, sheet.Number("B2"));
+
+        sheet.InsertRows(0);
+        Assert.Equal(302, sheet.Number("B3"));
+
+        sheet.InsertColumns(0, 2);
+        Assert.Equal(304, sheet.Number("D3"));
+    }
 }

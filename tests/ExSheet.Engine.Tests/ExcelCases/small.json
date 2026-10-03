@@ -1,0 +1,30 @@
+{
+  "area": "small",
+  "about": "SMALL (ticket 04).",
+  "cases": [
+    {
+      "id": "SMALL-001",
+      "source": "documented",
+      "description": "Microsoft's example: the fourth smallest",
+      "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "B1": "1", "B2": "4", "B3": "8", "B4": "3", "B5": "7", "B6": "12", "B7": "54", "B8": "8", "B9": "23", "ZZ1000": "=SMALL(A1:A9,4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "SMALL-002",
+      "source": "documented",
+      "description": "Microsoft's example: the second smallest",
+      "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "B1": "1", "B2": "4", "B3": "8", "B4": "3", "B5": "7", "B6": "12", "B7": "54", "B8": "8", "B9": "23", "ZZ1000": "=SMALL(B1:B9,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "SMALL-003",
+      "source": "documented",
+      "description": "k past the count is #NUM!",
+      "cells": {"A1": "3", "A2": "4", "A3": "5", "A4": "2", "A5": "3", "A6": "4", "A7": "6", "A8": "4", "A9": "7", "B1": "1", "B2": "4", "B3": "8", "B4": "3", "B5": "7", "B6": "12", "B7": "54", "B8": "8", "B9": "23", "ZZ1000": "=SMALL(A1:A9,10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

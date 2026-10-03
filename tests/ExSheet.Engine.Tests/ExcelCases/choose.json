@@ -1,0 +1,58 @@
+{
+  "area": "choose",
+  "about": "CHOOSE (ticket 04).",
+  "cases": [
+    {
+      "id": "CHOOSE-001",
+      "source": "documented",
+      "description": "Microsoft's example: the second value",
+      "cells": {"A1": "1st", "A2": "2nd", "A3": "3rd", "A4": "Finished", "ZZ1000": "=CHOOSE(2,A1,A2,A3,A4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "2nd"}
+    },
+    {
+      "id": "CHOOSE-002",
+      "source": "documented",
+      "description": "Microsoft's example: the fourth value",
+      "cells": {"A1": "1st", "A2": "2nd", "A3": "3rd", "A4": "Finished", "ZZ1000": "=CHOOSE(4,A1,A2,A3,A4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Finished"}
+    },
+    {
+      "id": "CHOOSE-003",
+      "source": "documented",
+      "description": "An index that is not a whole number is truncated",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CHOOSE(2.9,\"a\",\"b\",\"c\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "b"}
+    },
+    {
+      "id": "CHOOSE-004",
+      "source": "documented",
+      "description": "An index past the values is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CHOOSE(4,\"a\",\"b\",\"c\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "CHOOSE-005",
+      "source": "documented",
+      "description": "An index below 1 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CHOOSE(0,\"a\",\"b\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "CHOOSE-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the chosen value may be a range for SUM",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(CHOOSE(2,A1:A2,C1:C1))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 10}
+    }
+  ]
+}

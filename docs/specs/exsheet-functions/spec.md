@@ -65,10 +65,10 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `MINIFS` | Observe | P2 | As `SUMIF` |
 | `COUNTBLANK` | Observe | P2 | Whether `""` returned by a Formula counts as blank is to be observed |
 | `SUMPRODUCT` | Decide | P2 | Arguments given as ranges, `SUMPRODUCT(A1:A3, B1:B3)`, could be Ready. Its common form `SUMPRODUCT((A1:A3="x")*B1:B3)` applies an operator to a range, which ADR-0047 refuses until arrays get their ADR |
-| `PRODUCT` | Ready | P2 | |
-| `MEDIAN` | Ready | P2 | |
-| `LARGE` | Ready | P2 | |
-| `SMALL` | Ready | P2 | |
+| `PRODUCT` | Supported | — | |
+| `MEDIAN` | Supported | — | |
+| `LARGE` | Supported | — | |
+| `SMALL` | Supported | — | |
 | `RANK.EQ` | Ready | P3 | |
 | `STDEV.S` | Ready | P3 | |
 | `STDEV.P` | Ready | P3 | |
@@ -90,12 +90,12 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `IFNA` | Supported | — | The partner of `XLOOKUP` and `MATCH`. Like `IFERROR`, it catches neither `#CIRC!` nor `#GETTING_DATA` (ADR-0047, ADR-0049) |
 | `ISBLANK` | Supported | — | |
 | `ISNUMBER` | Supported | — | |
-| `ISTEXT` | Ready | P2 | |
-| `ISNA` | Ready | P2 | `#CIRC!` and `#GETTING_DATA` as `ISERROR` treats them |
-| `IFS` | Ready | P2 | |
-| `SWITCH` | Ready | P2 | |
+| `ISTEXT` | Supported | — | |
+| `ISNA` | Supported | — | `#CIRC!` and `#GETTING_DATA` as `ISERROR` treats them |
+| `IFS` | Supported | — | |
+| `SWITCH` | Supported | — | |
 | `XOR` | Ready | P3 | |
-| `NA` | Ready | P2 | |
+| `NA` | Supported | — | |
 | `ERROR.TYPE` | Decide | P3 | `#CIRC!` and `#GETTING_DATA` have no number in Excel's table |
 
 ### Lookup and reference
@@ -107,10 +107,10 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `HLOOKUP` | Observe | P2 | As `VLOOKUP` |
 | `INDEX` | Supported | — | One value only. A row or column of 0, which returns a whole range, is `#VALUE!` until arrays get their ADR |
 | `MATCH` | Observe | P1 | `match_type` 1 and −1 are binary searches, as `VLOOKUP` |
-| `XMATCH` | Ready | P2 | The modes as `XLOOKUP`'s |
-| `CHOOSE` | Ready | P2 | |
-| `ROW` | Ready | P2 | |
-| `COLUMN` | Ready | P2 | |
+| `XMATCH` | Supported | — | The modes as `XLOOKUP`'s |
+| `CHOOSE` | Supported | — | |
+| `ROW` | Supported | — | |
+| `COLUMN` | Supported | — | |
 | `ROWS` | Ready | P3 | |
 | `COLUMNS` | Ready | P3 | |
 | `OFFSET` | Decide | P2 | A Reference computed at recalculation: the dependency graph reads References from the Formula's text (ADR-0047), and Excel makes `OFFSET` volatile |
@@ -129,9 +129,9 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `MROUND` | Observe | P2 | Halfway cases in binary doubles are to be observed |
 | `CEILING.MATH` | Observe | P2 | As `MROUND` |
 | `FLOOR.MATH` | Observe | P2 | As `MROUND` |
-| `TRUNC` | Ready | P2 | |
-| `POWER` | Ready | P2 | |
-| `SQRT` | Ready | P2 | |
+| `TRUNC` | Supported | — | |
+| `POWER` | Supported | — | |
+| `SQRT` | Supported | — | |
 | `SIGN` | Ready | P3 | |
 | `EXP` | Ready | P3 | |
 | `LN` | Ready | P3 | |
@@ -150,10 +150,10 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `DAY` | Supported | — | |
 | `EOMONTH` | Supported | — | |
 | `EDATE` | Supported | — | |
-| `WEEKDAY` | Ready | P2 | |
-| `NETWORKDAYS` | Ready | P2 | |
-| `WORKDAY` | Ready | P2 | |
-| `DAYS` | Ready | P2 | |
+| `WEEKDAY` | Supported | — | |
+| `NETWORKDAYS` | Supported | — | |
+| `WORKDAY` | Supported | — | |
+| `DAYS` | Supported | — | |
 | `YEARFRAC` | Observe | P3 | The documentation does not give each `basis`'s day count at month ends and leap years |
 | `DATEDIF` | Observe | P3 | Microsoft documents `"MD"` as giving wrong results, so `"MD"` is refused |
 | `TIME` | Ready | P3 | |
@@ -173,11 +173,11 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `LEN` | Supported | — | As `LEFT` |
 | `TRIM` | Supported | — | Only the space character, U+0020, as Excel trims |
 | `CONCAT` | Supported | — | |
-| `TEXTJOIN` | Ready | P2 | |
-| `CONCATENATE` | Ready | P2 | |
-| `SUBSTITUTE` | Ready | P2 | |
-| `REPLACE` | Ready | P2 | |
-| `FIND` | Ready | P2 | |
+| `TEXTJOIN` | Supported | — | |
+| `CONCATENATE` | Supported | — | |
+| `SUBSTITUTE` | Supported | — | |
+| `REPLACE` | Supported | — | |
+| `FIND` | Supported | — | |
 | `SEARCH` | Observe | P2 | Wildcards as `XLOOKUP`'s; case folding beyond ASCII is to be observed |
 | `UPPER` | Observe | P2 | Case mapping beyond ASCII is to be observed |
 | `LOWER` | Observe | P2 | As `UPPER` |
@@ -192,10 +192,10 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `PMT` | Ready | P2 | |
-| `PV` | Ready | P2 | |
-| `FV` | Ready | P2 | |
-| `NPV` | Ready | P2 | |
+| `PMT` | Supported | — | Excel is reported to give a General cell a currency format on entry; ExSheet gives none until that is observed |
+| `PV` | Supported | — | |
+| `FV` | Supported | — | |
+| `NPV` | Supported | — | |
 | `XNPV` | Ready | P3 | |
 | `IRR` | Observe | P3 | Iterative. Admitted only if Excel's answer, to 15 significant digits, and its `#NUM!` cases are observed and reproduced; Microsoft does not document the iteration |
 | `XIRR` | Observe | P3 | As `IRR` |
@@ -230,4 +230,5 @@ own. Every function here waits for that ADR.
    the approximate match of `VLOOKUP` and `MATCH`.
 3. **The P1 Decide functions, to the user.** Done: `TEXT`, ticket 02 (ADR-0120), and `TODAY`,
    ticket 03 (ADR-0121, ADR-0122).
-4. P2, then P3, in the same way.
+4. **The P2 Ready functions** — done, ticket 04.
+5. The P2 Observe and Decide functions, then P3, in the same way.

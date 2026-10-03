@@ -400,3 +400,10 @@ spelling, under every culture.
 
 `TODAY` is admitted under [ADR-0121](./0121-today-is-the-sheet-day-and-exsheet-keeps-it.md): it
 answers the Sheet Day, which the engine is given as data and never reads from a clock.
+
+Admitted as the catalogue's ticket 04, the P2 functions that were Ready: `PRODUCT`, `MEDIAN`,
+`LARGE`, `SMALL`, `ISTEXT`, `ISNA`, `IFS`, `SWITCH`, `NA`, `XMATCH`, `CHOOSE`, `ROW`, `COLUMN`, `TRUNC`,
+`POWER`, `SQRT`, `WEEKDAY`, `DAYS`, `NETWORKDAYS`, `WORKDAY`, `TEXTJOIN`, `CONCATENATE`, `SUBSTITUTE`,
+`REPLACE`, `FIND`, `PMT`, `PV`, `FV` and `NPV`. The refusals they add are listed in the engine's
+README. `ROW()` and `COLUMN()` read their own cell's place, so an insertion or a deletion that moves
+the cell recalculates them though their text is unchanged.

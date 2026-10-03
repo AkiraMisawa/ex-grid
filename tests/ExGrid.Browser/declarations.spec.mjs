@@ -52,7 +52,9 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
-            await expect(items(grid).first()).toHaveText('SUM');
+            // SUBSTITUTE, then SUM: the declared functions that begin with SU, in order.
+            await expect(items(grid).first()).toHaveText('SUBSTITUTE');
+            await expect(items(grid).nth(1)).toHaveText('SUM');
             // Inside the grid's box (ADR-0040), and beneath the cell being edited.
             const list = await boxOf(completion(grid));
             const root = await boxOf(grid);
@@ -73,7 +75,10 @@ for (const chrome of ['builtin', 'mud']) {
             }
             await expect(nameBox(grid)).toHaveValue('F2');
 
-            // Tab accepts: the function and its bracket, the caret after them, the hint beneath.
+            // Tab accepts the candidate chosen: the function and its bracket, the caret after
+            // them, the hint beneath.
+            await page.keyboard.press('ArrowDown');
+            await expect(items(grid).nth(1)).toHaveAttribute('aria-selected', 'true');
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await expect(bar(grid)).toHaveValue('=SUM(');
@@ -101,7 +106,7 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
-            await expect(items(grid).first()).toHaveText('SUM');
+            await expect(items(grid).first()).toHaveText('SUBSTITUTE');
             await page.waitForTimeout(150); // the gate is told a message after the list is painted
             // ← is not claimed while the list is open: it moves the caret, the edit stays open, and the
             // list answers the text before the caret.
@@ -114,8 +119,10 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.press('ArrowRight');
             await expect.poll(() => caret(editor(grid))).toBe(3);
             await expect(editor(grid)).toHaveValue('=SU');
-            await expect(items(grid).first()).toHaveText('SUM');
+            await expect(items(grid).first()).toHaveText('SUBSTITUTE');
             // ↓ is still the list's, and Tab still accepts.
+            await page.keyboard.press('ArrowDown');
+            await expect(items(grid).nth(1)).toHaveAttribute('aria-selected', 'true');
             await page.keyboard.press('Tab');
             await expect(editor(grid)).toHaveValue('=SUM(');
             await page.keyboard.press('Escape');
@@ -139,18 +146,19 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('S');
             await expect(editor(grid)).toHaveValue('=SS');
             await expect.poll(() => caret(editor(grid))).toBe(2);
-            await expect(items(grid).first()).toHaveText('SUM');
-            // The list offers SUM: it answered the prefix before the caret, "S". Had the caret been
-            // inferred as 3, the prefix would be "SS", which names nothing, and no list would show.
-            // Tab replaces the name the caret stands in — ExSheet's span is the whole name token
-            // (FormulaEntry.Complete) — and puts the caret after the inserted text.
+            await expect(items(grid).first()).toHaveText('SMALL');
+            // The list offers SMALL, the first declared function that begins with S: it answered the
+            // prefix before the caret, "S". Had the caret been inferred as 3, the prefix would be
+            // "SS", which names nothing, and no list would show. Tab replaces the name the caret
+            // stands in — ExSheet's span is the whole name token (FormulaEntry.Complete) — and puts
+            // the caret after the inserted text.
             await page.keyboard.press('Tab');
-            await expect(editor(grid)).toHaveValue('=SUM(');
-            await expect(bar(grid)).toHaveValue('=SUM(');
-            await expect.poll(() => caret(editor(grid))).toBe(5);
+            await expect(editor(grid)).toHaveValue('=SMALL(');
+            await expect(bar(grid)).toHaveValue('=SMALL(');
+            await expect.poll(() => caret(editor(grid))).toBe(7);
             // And typing goes on at that caret.
             await typeSteadily(page, editor(grid), '1,');
-            await expect(editor(grid)).toHaveValue('=SUM(1,');
+            await expect(editor(grid)).toHaveValue('=SMALL(1,');
             await page.keyboard.press('Escape');
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);

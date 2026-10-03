@@ -1,0 +1,78 @@
+{
+  "area": "pmt",
+  "about": "PMT (ticket 04).",
+  "cases": [
+    {
+      "id": "PMT-001",
+      "source": "documented",
+      "description": "Microsoft's example: a loan's monthly payment",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(8%/12,10,10000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1037.0320893591636, "digits": 12}
+    },
+    {
+      "id": "PMT-002",
+      "source": "documented",
+      "description": "Microsoft's example: payments at the start of each period",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(8%/12,10,10000,0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1030.1643271779772, "digits": 12}
+    },
+    {
+      "id": "PMT-003",
+      "source": "documented",
+      "description": "Microsoft's example: saving to a future value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(6%/12,18*12,0,50000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -129.0811608679954, "digits": 12}
+    },
+    {
+      "id": "PMT-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate of 0 divides evenly",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0,10,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -100}
+    },
+    {
+      "id": "PMT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: no periods is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.1,0,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "PMT-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(C2,10,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "PMT-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that is not a number is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(A6,10,1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "PMT-008",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a type other than 0 or 1",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PMT(0.1,10,1000,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

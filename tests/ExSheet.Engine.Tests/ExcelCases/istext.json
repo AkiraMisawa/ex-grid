@@ -1,0 +1,62 @@
+{
+  "area": "istext",
+  "about": "ISTEXT (ticket 04).",
+  "cases": [
+    {
+      "id": "ISTEXT-001",
+      "source": "documented",
+      "description": "Text is text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISTEXT(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISTEXT-002",
+      "source": "documented",
+      "description": "A number is not text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISTEXT(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISTEXT-003",
+      "source": "documented",
+      "description": "A number stored as text is text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISTEXT(A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISTEXT-004",
+      "source": "documented",
+      "description": "A blank cell is not text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISTEXT(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISTEXT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula's empty text is text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISTEXT(D1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISTEXT-006",
+      "source": "uncertain",
+      "description": "ISTEXT over a range where one Value is wanted is refused",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISTEXT(A5:A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": false}
+    }
+  ]
+}

@@ -36,31 +36,31 @@ public class FormulaEntryWiringTests : SheetTestContext
         if (typed.Length > 1) await TypeAsync(cut, typed);
     }
 
-    [Fact] // ADR-0051: =SU offers every declared function starting with SU, which is SUM alone (ADR-0047)
-    public async Task Su_offers_sum()
+    [Fact] // ADR-0051: =SU offers every declared function starting with SU, in order (ADR-0047's set and its additions)
+    public async Task Su_offers_substitute_and_sum()
     {
         var cut = RenderSheet();
 
         await StartTypingAsync(cut, "A1", "=SU");
 
-        Assert.Equal(["SUM"], Candidates(cut));
+        Assert.Equal(["SUBSTITUTE", "SUM"], Candidates(cut));
     }
 
-    [Fact] // ADR-0051: =X offers XLOOKUP, without regard to case
-    public async Task X_offers_xlookup()
+    [Fact] // ADR-0051: =X offers XLOOKUP and XMATCH, without regard to case
+    public async Task X_offers_xlookup_and_xmatch()
     {
         var cut = RenderSheet();
 
         await StartTypingAsync(cut, "A1", "=x");
 
-        Assert.Equal(["XLOOKUP"], Candidates(cut));
+        Assert.Equal(["XLOOKUP", "XMATCH"], Candidates(cut));
     }
 
     [Fact] // ADR-0051: Tab accepts the engine's replacement over the engine's span, and the hint follows
     public async Task Tab_accepts_and_the_hint_follows()
     {
         var cut = RenderSheet();
-        await StartTypingAsync(cut, "A1", "=1+su");
+        await StartTypingAsync(cut, "A1", "=1+sum");
 
         await PressAsync(cut, "Tab");
 

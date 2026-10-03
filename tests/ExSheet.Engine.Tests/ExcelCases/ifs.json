@@ -1,0 +1,67 @@
+{
+  "area": "ifs",
+  "about": "IFS (ticket 04).",
+  "cases": [
+    {
+      "id": "IFS-001",
+      "source": "documented",
+      "description": "Microsoft's example: the first TRUE test's value",
+      "cells": {"A1": "93", "ZZ1000": "=IFS(A1>89,\"A\",A1>79,\"B\",A1>69,\"C\",A1>59,\"D\",TRUE,\"F\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "A"}
+    },
+    {
+      "id": "IFS-002",
+      "source": "documented",
+      "description": "Microsoft's example: a later test",
+      "cells": {"A1": "71", "ZZ1000": "=IFS(A1>89,\"A\",A1>79,\"B\",A1>69,\"C\",A1>59,\"D\",TRUE,\"F\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "C"}
+    },
+    {
+      "id": "IFS-003",
+      "source": "documented",
+      "description": "No test TRUE is #N/A",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFS(1>2,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "IFS-004",
+      "source": "documented",
+      "description": "Arguments not in pairs are refused on entry",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFS(TRUE,1,FALSE)"},
+      "check": "ZZ1000",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "IFS-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a test that is text spelling no logical value is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFS(\"abc\",1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "IFS-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a test's Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFS(1/0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "IFS-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number is a test, 0 FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFS(0,1,5,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    }
+  ]
+}

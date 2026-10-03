@@ -120,7 +120,7 @@ public class LinkedTableWiringTests : SheetTestContext
         await GoToAsync(cut, "B1");
         await PressAsync(cut, "=");
 
-        await TypeAsync(cut, "=SUM(Po");
+        await TypeAsync(cut, "=SUM(Pos");
 
         Assert.Equal(["Positions"], cut.FindAll(".ex-completion .ex-completion-item").Select(i => i.TextContent));
         await PressAsync(cut, "Tab");

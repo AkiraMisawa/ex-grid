@@ -46,7 +46,7 @@ public class FunctionTests
     {
         Assert.Equal(
             [
-                "ABS", "AND", "AVERAGE", "CONCAT", "COUNT", "COUNTA", "DATE", "DAY", "EDATE", "EOMONTH", "IF", "IFERROR", "IFNA", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNUMBER", "LEFT", "LEN", "MAX", "MID", "MIN", "MOD", "MONTH", "NOT", "OR", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "SUM", "TEXT", "TODAY", "TRIM", "XLOOKUP", "YEAR",
+                "ABS", "AND", "AVERAGE", "CHOOSE", "COLUMN", "CONCAT", "CONCATENATE", "COUNT", "COUNTA", "DATE", "DAY", "DAYS", "EDATE", "EOMONTH", "FIND", "FV", "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT", "LARGE", "LEFT", "LEN", "MAX", "MEDIAN", "MID", "MIN", "MOD", "MONTH", "NA", "NETWORKDAYS", "NOT", "NPV", "OR", "PMT", "POWER", "PRODUCT", "PV", "REPLACE", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "SMALL", "SQRT", "SUBSTITUTE", "SUM", "SWITCH", "TEXT", "TEXTJOIN", "TODAY", "TRIM", "TRUNC", "WEEKDAY", "WORKDAY", "XLOOKUP", "XMATCH", "YEAR",
             ],
             DeclaredFunction.All.Select(f => f.Name));
         Assert.Equal("SUM(number1, [number2], ...)", DeclaredFunction.Find("sum")!.Signature);

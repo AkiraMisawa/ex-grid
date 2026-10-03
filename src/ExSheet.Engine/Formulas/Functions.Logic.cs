@@ -1,6 +1,6 @@
 namespace ExSheet.Engine.Formulas;
 
-/// <summary>AND, OR, NOT, IFNA, ISBLANK and ISNUMBER, each to Microsoft's documentation of it.</summary>
+/// <summary>AND, OR, NOT, IFNA, ISBLANK, ISNUMBER, ISTEXT, ISNA, NA, IFS and SWITCH, each to Microsoft's documentation of it.</summary>
 internal static partial class FunctionLibrary
 {
     private static Operand And(FunctionCall call) => Logical(call, all: true);
@@ -91,5 +91,54 @@ internal static partial class FunctionLibrary
         var value = call.Evaluator.ScalarOf(operand);
         if (value is { IsError: true, Error: ErrorValue.GettingData or ErrorValue.Circ } waiting) return Operand.Of(waiting);
         return Operand.Of(Value.FromBoolean(test(value)));
+    }
+
+    /// <summary>ISTEXT: TRUE for text only, empty text included; a number is not text.</summary>
+    private static Operand IsText(FunctionCall call) => Inspect(call, value => value is { Kind: ValueKind.Text });
+
+    /// <summary>ISNA: TRUE for <c>#N/A</c> only.</summary>
+    private static Operand IsNa(FunctionCall call) => Inspect(call, value => value is { IsError: true, Error: ErrorValue.NA });
+
+    /// <summary>NA: the Error Value <c>#N/A</c>.</summary>
+    private static Operand Na(FunctionCall call) => Operand.Of(ErrorValue.NA);
+
+    /// <summary>
+    /// IFS: the value beside the first test that is TRUE, each test read as <c>IF</c> reads its own;
+    /// a test's Error Value is the result; with none TRUE, <c>#N/A</c>. Only the tests up to the
+    /// first TRUE, and its value, are evaluated.
+    /// </summary>
+    private static Operand Ifs(FunctionCall call)
+    {
+        for (var i = 0; i + 1 < call.Count; i += 2)
+        {
+            var test = call.Operand(i);
+            if (IsArray(test)) return Operand.Of(ErrorValue.Value);
+            var truth = false;
+            if (call.Evaluator.ScalarOf(test) is { } value && !TryTruth(value, out truth)) return Operand.Of(value.IsError ? value.Error : ErrorValue.Value);
+            if (truth) return call.Has(i + 1) ? call.Operand(i + 1) : Operand.Of(Value.FromNumber(0));
+        }
+        return Operand.Of(ErrorValue.NA);
+    }
+
+    /// <summary>
+    /// SWITCH: the result beside the first value equal to the expression, compared as <c>=</c>
+    /// compares; with none, the default when one is given, else <c>#N/A</c>. An Error Value in the
+    /// expression, or in a value reached before a match, is the result.
+    /// </summary>
+    private static Operand Switch(FunctionCall call)
+    {
+        if (!TryScalar(call, 0, out var expression, out var failure)) return failure;
+        var pairs = (call.Count - 1) / 2;
+        for (var p = 0; p < pairs; p++)
+        {
+            var at = 1 + (2 * p);
+            if (!TryScalar(call, at, out var candidate, out failure)) return failure;
+            if (Evaluator.Compare(expression, candidate, Arithmetic.ApproximatelyEqual) == 0)
+            {
+                return call.Has(at + 1) ? call.Operand(at + 1) : Operand.Of(Value.FromNumber(0));
+            }
+        }
+        var hasDefault = (call.Count - 1) % 2 == 1;
+        return hasDefault ? call.Operand(call.Count - 1) : Operand.Of(ErrorValue.NA);
     }
 }

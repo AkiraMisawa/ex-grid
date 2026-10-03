@@ -1,0 +1,65 @@
+{
+  "area": "weekday",
+  "about": "WEEKDAY (ticket 04).",
+  "cases": [
+    {
+      "id": "WEEKDAY-001",
+      "source": "documented",
+      "description": "Microsoft's example: 14 February 2008 is a Thursday, 5 from Sunday",
+      "cells": {"A1": "2/14/2008", "ZZ1000": "=WEEKDAY(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "WEEKDAY-002",
+      "source": "documented",
+      "description": "Microsoft's example: 4 from Monday",
+      "cells": {"A1": "2/14/2008", "ZZ1000": "=WEEKDAY(A1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "WEEKDAY-003",
+      "source": "documented",
+      "description": "Microsoft's example: 3 from Monday at 0",
+      "cells": {"A1": "2/14/2008", "ZZ1000": "=WEEKDAY(A1,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "WEEKDAY-004",
+      "source": "documented",
+      "description": "A return_type outside the list is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WEEKDAY(45000,4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "WEEKDAY-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 1 is a Sunday",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WEEKDAY(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "WEEKDAY-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 0 is a Saturday",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=WEEKDAY(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "WEEKDAY-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: return_type 16, from Saturday",
+      "cells": {"A1": "2/14/2008", "ZZ1000": "=WEEKDAY(A1,16)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    }
+  ]
+}

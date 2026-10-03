@@ -1,0 +1,78 @@
+{
+  "area": "xmatch",
+  "about": "XMATCH (ticket 04).",
+  "cases": [
+    {
+      "id": "XMATCH-001",
+      "source": "documented",
+      "description": "The position of an exact match",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(\"Cherry\",G1:G5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "XMATCH-002",
+      "source": "documented",
+      "description": "Searching last to first finds the later of two",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(\"Banana\",G1:G5,0,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "XMATCH-003",
+      "source": "documented",
+      "description": "No match is #N/A",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(\"Fig\",G1:G5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "XMATCH-004",
+      "source": "documented",
+      "description": "Exact or next larger",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(26,J1:J5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "XMATCH-005",
+      "source": "documented",
+      "description": "Exact or next smaller",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(26,J1:J5,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "XMATCH-006",
+      "source": "documented",
+      "description": "A wildcard match",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(\"Ch*\",G1:G5,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "XMATCH-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: along a row",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(\"y\",M1:O1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "XMATCH-008",
+      "source": "uncertain",
+      "description": "Refused, as XLOOKUP's is: a binary search over data not sorted as the mode says",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=XMATCH(\"Banana\",G1:G5,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

@@ -34,6 +34,9 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
 
     public ICellReader Cells { get; } = cells;
 
+    /// <summary>The cell whose Formula is being evaluated, which <c>ROW()</c> and <c>COLUMN()</c> read; null for a Formula evaluated in no cell.</summary>
+    public CellAddress? Self { get; set; }
+
     /// <summary>
     /// A Formula's result. It is never blank: a Formula that reads an empty cell shows 0. When the
     /// Formula's last operation is an addition or a subtraction whose result nearly cancels, the

@@ -424,6 +424,7 @@ public sealed partial class Sheet
         {
             var address = ready.Dequeue();
             var node = _cells[address].Entry!.Parsed!;
+            evaluator.Self = address;
             staged[address] = Taint(node, reader) ?? evaluator.Evaluate(node);
             recalculated.Add(address);
             foreach (var dependent in edges[address])

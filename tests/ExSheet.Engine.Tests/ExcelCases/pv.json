@@ -1,0 +1,33 @@
+{
+  "area": "pv",
+  "about": "PV (ticket 04).",
+  "cases": [
+    {
+      "id": "PV-001",
+      "source": "documented",
+      "description": "Microsoft's example: an annuity's present value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.08/12,12*20,500,,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -59777.14585118777, "digits": 12}
+    },
+    {
+      "id": "PV-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate of 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0,10,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1000}
+    },
+    {
+      "id": "PV-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: with a future value, at the start of each period",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PV(0.05,10,-100,1000,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 196.86891402364662, "digits": 12}
+    }
+  ]
+}

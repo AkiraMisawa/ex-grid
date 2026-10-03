@@ -1,0 +1,41 @@
+{
+  "area": "npv",
+  "about": "NPV (ticket 04).",
+  "cases": [
+    {
+      "id": "NPV-001",
+      "source": "documented",
+      "description": "Microsoft's example: an investment and three years' returns",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NPV(10%,-10000,3000,4200,6800)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1188.4434123352216, "digits": 12}
+    },
+    {
+      "id": "NPV-002",
+      "source": "documented",
+      "description": "Microsoft's example: values in a range",
+      "cells": {"A1": "0.08", "A2": "-40000", "A3": "8000", "A4": "9200", "A5": "10000", "A6": "12000", "A7": "14500", "ZZ1000": "=NPV(A1,A3:A7)+A2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1922.061554932363, "digits": 12}
+    },
+    {
+      "id": "NPV-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text and blanks in a range are passed over",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NPV(0.1,A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.56724267468069, "digits": 12}
+    },
+    {
+      "id": "NPV-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate of -1 is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NPV(-1,1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}
