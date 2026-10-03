@@ -1,196 +1,159 @@
 # ExGrid
 
 [![CI](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/ExGrid)](https://www.nuget.org/packages/ExGrid)
 [![Line coverage](https://github.com/AkiraMisawa/ex-grid/raw/badges/coverage-line.svg)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![Branch coverage](https://github.com/AkiraMisawa/ex-grid/raw/badges/coverage-branch.svg)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 
-An Excel-like grid component for Blazor.
+**Excel-like grids for Blazor, built for reading money and risk numbers.**
 
-Three products share this repository and ship as separate packages
-([ADR-0019](docs/adr/0019-one-repository-many-packages.md)):
+A spreadsheet user's selection, keyboard and clipboard, virtualised on both axes so a million rows
+keep the same DOM, and a grid that refuses rather than guesses: a number that does not fit shows
+`####`, never a shorter number, and a copy is never truncated.
 
-- **ExGrid** — display-oriented. Fully specified; this is what gets built first.
-- **ExSheet** — edit-oriented: a general-purpose sheet drawn by ExGrid as its Consumer, with a
-  MudBlazor Wrapper (`ExSheet.MudBlazor`). Being specified: decided from
-  [ADR-0046](docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)
-  on, specified in `docs/specs/exsheet/`.
-- **ExPivot** — Excel's PivotTable, drawn by ExGrid, with a MudBlazor Wrapper
-  (`ExPivot.MudBlazor`). Decided in ADR-0059 to ADR-0070, specified in `docs/specs/expivot/`.
-  See it on the demo host's pages, one per use case, each showing the code it runs: `/pivot`
-  (add `?chrome=mud` for MudBlazor), `/pivot-csv`, `/pivot-db`, `/pivot-live` and `/pivot-risk`;
-  and ExGrid alone over live data on `/grid-live`.
+One repository, three products, each a separate package:
 
-The family's immutable data, the **Snapshot**, is a package of its own, `ExGrid.Data`, with
-`ExGrid.Data.Arrow` beside it to carry a Snapshot as Apache Arrow
-([ADR-0064](docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
-[ADR-0065](docs/adr/0065-a-snapshot-travels-as-apache-arrow.md)); specified in
-`docs/specs/exgrid-data/`.
+| | |
+|---|---|
+| **ExGrid** | The grid. Display-oriented: your application holds the rows, ExGrid shows them and tells you what the user asked for |
+| **ExSheet** | A general-purpose sheet — cells addressed `A1`, Formulas computed as Excel computes them — drawn by ExGrid |
+| **ExPivot** | Excel's PivotTable — Filters, Columns, Rows and Values in a Fields pane — drawn by ExGrid |
 
-ExSheet, ExPivot and the data packages are built alongside ExGrid and are not part of its
-release.
+Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.MudBlazor`).
 
-**Current status: the specification is settled; implementation is underway** — the
-pure-logic core and the component layer exist, virtualised on both axes, with pinned
-columns, selection, the keyboard (including entering a cell), the Cell Editor and the
-clipboard. What is left is recorded in
-[`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) and the domain glossary in
-[`CONTEXT.md`](CONTEXT.md).
+## Features
 
-## Using the packages
+### ExGrid
 
-Prereleases of **ExGrid** and **ExGrid.MudBlazor** are published to NuGet from tags, at one
-shared `0.1.0-beta.N` version
-([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)):
+- **Virtualised on both axes** — a million rows and a hundred columns render the same DOM
+- **Pinned columns**, **Header Groups**, column resize and reorder
+- **Rectangular selection** and the keyboard as Excel has them: arrows, Ctrl+arrows, Shift to
+  extend, Enter and Tab cycling, typing to enter a cell
+- **Copy and paste** as a spreadsheet user expects, with the shape rules written down; Delete,
+  Ctrl+D / Ctrl+R and Ctrl+Z, with your application keeping the history
+- **Sorting and filtering**, with filter panels and a column menu; the bundled
+  `GridSource.From` sorts and filters a list in memory, or your server does it
+- **Find (Ctrl+F)** over every row, not only the painted ones
+- **Cell editing** and validation, a **Context Menu**, Row Stripes, live updates
+- **Replaceable Chrome** — menus, filter panel, Cell Editor and loading indicator are seams a
+  design system fills; swapping them does not change behaviour
+
+### ExSheet
+
+- Excel's extent, 1,048,576 rows by 16,384 columns, held sparsely
+- Formulas in Excel's syntax with a declared set of functions, each giving Excel's result — a
+  function outside the set is `#NAME?`, never an approximation
+- Recalculation of only what a change reaches; circular references reported as `#CIRC!`
+- Formula Bar, Name Box, Headings, completion of function and table names, pointing at cells
+  with the arrows or the mouse while a Formula is typed
+- Insert and delete rows and columns, the fill handle, Format Cells (number format, alignment,
+  font, fill, borders), an opt-in toolbar
+- The **Sheet Document** is yours to keep: Entries, never Values, so a saved Sheet recomputes the
+  same on a server as in the browser
+
+### ExPivot
+
+- Excel's PivotTable semantics: Sum to Varp, subtotals and grand totals, the Compact, Outline
+  and Tabular forms, expand and collapse, Hidden Items, sorting by label or value, Show Values As,
+  Show Details
+- The **PivotTable Fields** pane with drag and drop, Field Settings and Value Field Settings
+- Money summed exactly — never through a `double`
+- In-process data, CSV, a database, or a server answering with leaf aggregates; live data folded
+  in as Change Batches
+
+## Quick start
 
 ```sh
 dotnet add package ExGrid --prerelease
-dotnet add package ExGrid.MudBlazor --prerelease   # for a MudBlazor application
 ```
 
-Setup and a first grid are in each package's readme:
-[`src/ExGrid/README.md`](src/ExGrid/README.md) and
-[`src/ExGrid.MudBlazor/README.md`](src/ExGrid.MudBlazor/README.md). A beta has passed every
-test layer in CI. The Definition of Done's sign-off is what a stable version waits for.
+Link the stylesheet in your host page (`wwwroot/index.html`, or `App.razor` in a Blazor Web App):
 
-## Building the repository
-
-The toolchain is the **.NET 10 SDK** (version pinned via [`global.json`](global.json)).
-You can get it through Nix or install it yourself — both are supported.
-
-The **shipped packages target `net10.0`**, so consuming applications need .NET 10 or newer
-([ADR-0022](docs/adr/0022-packages-target-net10-and-run-on-everything-newer.md)); the SDK and
-the target are the same .NET 10 today.
-
-### Option A — Nix (reproducible toolchain)
-
-The flake provides the exact SDK version. With [direnv](https://direnv.net/) the dev
-shell loads automatically when you `cd` into the repository:
-
-```sh
-direnv allow   # once, after cloning
-dotnet --version
+```html
+<link rel="stylesheet" href="_content/ExGrid/ex-grid.css" />
 ```
 
-Without direnv, prefix commands instead:
+```razor
+@using ExGrid
+@using ExGrid.Components
 
-```sh
-nix develop -c dotnet build
-nix develop -c dotnet test
+<ExGrid TRow="Trade" Source="_source" Columns="_columns" />
+
+@code {
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Notional", ColumnType.Number, t => t.Notional),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate),
+    ];
+}
 ```
 
-A second shell provides a headless Chromium and Node.js for the render spike:
+For a MudBlazor application, add `ExGrid.MudBlazor` as well. Each package's own readme takes it
+from there:
 
-```sh
-nix develop .#browser -c node ...
-```
-
-To see the component running, start the demo host and open <http://localhost:5299>:
-
-```sh
-nix develop -c dotnet run --project samples/ExGrid.DemoHost
-```
-
-Stop it with `kill $(lsof -ti tcp:5299)` — not `pkill -f`, which matches the calling
-shell's own command line and kills it.
-
-The same pages run under Blazor Server from the second host, on <http://localhost:5298>:
-
-```sh
-nix develop -c dotnet run --project samples/ExGrid.DemoHost.Server
-```
-
-The pages that read a database call the demo API server, which each page finds at its own
-port plus 3000: <http://localhost:8299> beside the WebAssembly host, 8298 beside the Server
-host ([ADR-0069](docs/adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
-Its first start generates a million trades into a SQLite file outside the repository;
-`EXGRID_DEMO_TRADES` asks for another count:
-
-```sh
-nix develop -c dotnet run --project samples/ExGrid.DemoApi --urls http://localhost:8299
-```
-
-> **Nix gotcha:** flakes only see git-tracked files. `git add` any new file before
-> building (committing is not required), or the build will not see it.
-
-### Option B — without Nix
-
-Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) yourself;
-`global.json` accepts any 10.0.x SDK at feature band 100 or later. Then the usual:
-
-```sh
-dotnet build
-dotnet test
-```
-
-For the browser test layer and the render spike you additionally need **Node.js** and a
-**Chromium-based browser** (Chromium browsers are the only target — 
-[ADR-0017](docs/adr/0017-target-chromium-browsers-only.md)).
-
-The `.envrc` is harmless without Nix: it detects the missing `nix` command and leaves
-your environment alone.
-
-## Repository layout
-
-| Path | Contents |
-|---|---|
-| [`CONTEXT.md`](CONTEXT.md) | Domain glossary. The vocabulary used everywhere; read it first |
-| [`docs/adr/`](docs/adr/) | Architecture decision records — the specification and the reasons behind it |
-| [`src/ExGrid/`](src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
-| [`src/ExGrid.MudBlazor/`](src/ExGrid.MudBlazor/) | The ExGrid.MudBlazor package: the Wrapper for MudBlazor applications |
-| [`src/ExSheet.Engine/`](src/ExSheet.Engine/), [`src/ExSheet/`](src/ExSheet/), [`src/ExSheet.MudBlazor/`](src/ExSheet.MudBlazor/) | ExSheet: its Formula engine, the Sheet ExGrid draws, and its MudBlazor Wrapper |
-| [`src/ExGrid.Data/`](src/ExGrid.Data/), [`src/ExGrid.Data.Arrow/`](src/ExGrid.Data.Arrow/) | The Snapshot, its loaders and Change Batches; and its Apache Arrow reader and writer |
-| [`src/ExPivot.Engine/`](src/ExPivot.Engine/), [`src/ExPivot/`](src/ExPivot/), [`src/ExPivot.MudBlazor/`](src/ExPivot.MudBlazor/) | ExPivot: the pivot engine and the Pivot Source, the component, and its MudBlazor Wrapper |
-| [`tests/`](tests/) | The gating test layers — xUnit for each package's logic (`ExGrid.Tests`, `ExSheet.Engine.Tests`, `ExPivot.Engine.Tests`, `ExGrid.Data.Tests`, `ExGrid.Data.Arrow.Tests`, and `ExGrid.DemoApi.Tests` for the demo server), bUnit for the components (`ExGrid.Components`, `ExGrid.MudBlazor.Tests`, `ExSheet.Components`, `ExSheet.MudBlazor.Tests`, `ExPivot.Components`, `ExPivot.MudBlazor.Tests`), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
-| [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`) and the prerelease publish (`release.yml`) |
-| [`samples/ExGrid.DemoPages/`](samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
-| [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
-| [`samples/ExGrid.DemoHost.Server/`](samples/ExGrid.DemoHost.Server/) | The Blazor Server host for the same pages (`InteractiveServer`, prerendered). Not shipped |
-| [`samples/ExGrid.DemoApi/`](samples/ExGrid.DemoApi/) | The demo API server both hosts' pages call: SQLite, Arrow, a Pivot Source answered in SQL, and live changes over SignalR. A Consumer's server, not shipped |
-| [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
-| [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
-
-## Ground rules
-
-The two rules that override convenience (details in [`AGENTS.md`](AGENTS.md)):
-
-1. **Everything committed to this repository is written in English** — documents, code,
-   comments, commit messages, test names, UI strings.
-2. **JavaScript is allowlisted, not "minimised"** — used only where Blazor genuinely cannot
-   do the job, or where a recorded measurement shows the Blazor-side approach is too slow;
-   the permitted uses are listed in [`AGENTS.md`](AGENTS.md), and anything else needs a new
-   ADR ([ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md)).
-
-Before changing behaviour, read the relevant ADR — the reasons are written down, and
-changing something without knowing the reason usually walks back into an option that was
-already rejected. When a decision does change, rewrite the ADR rather than letting the
-implementation drift away from it.
-
-## Tests
-
-Three layers, all gating; performance never gates (it swings with the environment —
-watch the trend in `spikes/render-bench/results/` instead):
-
-| Layer | Tool | Covers |
+| Package | Readme | NuGet |
 |---|---|---|
-| 1. Pure logic | xUnit | Selection arithmetic, navigation, paste/copy rules, overflow, widths |
-| 2. Component | bUnit (no browser) | Which rows render; whether row memoisation actually skips |
-| 3. Browser | Playwright, on the installed Chrome and Edge | Capture-phase keys, clipboard, popovers, scrollbars, multi-instance independence |
+| ExGrid | [`src/ExGrid`](src/ExGrid/README.md) | prerelease |
+| ExGrid.MudBlazor | [`src/ExGrid.MudBlazor`](src/ExGrid.MudBlazor/README.md) | prerelease |
+| ExSheet, ExSheet.Engine, ExSheet.MudBlazor | [`src/ExSheet`](src/ExSheet/README.md), [`src/ExSheet.Engine`](src/ExSheet.Engine/README.md), [`src/ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md) | not yet published |
+| ExPivot, ExPivot.Engine, ExPivot.MudBlazor | [`src/ExPivot`](src/ExPivot/README.md), [`src/ExPivot.Engine`](src/ExPivot.Engine/README.md), [`src/ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md) | not yet published |
+| ExGrid.Data, ExGrid.Data.Arrow | [`src/ExGrid.Data`](src/ExGrid.Data/README.md), [`src/ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md) | not yet published |
 
-**CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml),
-[ADR-0041](docs/adr/0041-ci-runs-every-layer-and-layer-three-gates-on-linux.md)) runs all
-three on every push to `main` and on every pull request. Layer 3 runs
-on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak and ST-1 at
-10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
-assemblies only and is reported, never gated: each run's summary carries the table, and the
-badges above follow `main` (history in `history.csv` on the `badges` branch). Windows (VZ-14)
-and a real IME remain runs by hand. A fourth job packs the packages — ExGrid's two
-into the release feed, and ExSheet's, ExPivot's and the data packages into feeds of their own —
-and publishes an application that takes them from the packed files alone
-([`tests/ExGrid.PackageSmoke`](tests/ExGrid.PackageSmoke/check.sh)).
+**Requirements:** .NET 10 or newer, Chrome or Edge, and an interactive render mode. ExGrid is
+verified under WebAssembly; every browser test also runs under Blazor Server.
 
-Test names carry the ADR number they enforce, so a failure says which decision was
-violated.
+## See it running
+
+Clone the repository and start the demo host (the .NET 10 SDK is all it needs; see
+[CONTRIBUTING](CONTRIBUTING.md) for Nix):
+
+```sh
+dotnet run --project samples/ExGrid.DemoHost
+```
+
+Then open <http://localhost:5299>. The index links every page; a few to start with:
+
+| Page | Shows |
+|---|---|
+| `/features` | ExGrid's selection, keyboard, clipboard and menus |
+| `/grid-live` | ExGrid over live data |
+| `/sheet` | ExSheet |
+| `/pivot` | ExPivot (add `?chrome=mud` for MudBlazor) |
+| `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` | ExPivot over a CSV, a database, live data and a risk report |
+
+`/grid-live`, `/pivot-db` and `/pivot-live` also need the demo API server; [CONTRIBUTING](CONTRIBUTING.md)
+says how to start it.
+
+## Design
+
+- **Rather than be quietly wrong, say it cannot be done.** Copy is never truncated, paste never
+  spills outside the selection, the selection is dropped when the order changes, and a number
+  that does not fit becomes `####`.
+- **The grid neither holds nor executes.** The data, sorting, filtering and edits belong to your
+  application. The grid displays what it is given and tells you what the user asked for — or
+  you hand it `GridSource.From` and let the bundled source do it.
+- **Chrome renders; the core decides.** A design system replaces how the menus and editors look,
+  never what they mean.
+- **JavaScript only where Blazor cannot do the job**, on an allowlist.
+
+Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the vocabulary in
+[`CONTEXT.md`](CONTEXT.md).
+
+## Status
+
+**Beta.** The specification is settled and every test layer passes in CI, but the API may change
+between betas. ExGrid and ExGrid.MudBlazor ship as `0.1.0-beta.N`; a stable version waits for the
+[Definition of Done](docs/definition-of-done.md) to be signed off. ExSheet, ExPivot and the data
+packages are built alongside and are not part of ExGrid's release. What remains is in
+[`docs/implementation-status.md`](docs/implementation-status.md).
+
+## Contributing
+
+Building the repository, its layout, the ground rules and the test layers are in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
