@@ -29,8 +29,8 @@ This brings in ExGrid and MudBlazor (9.0 or newer). Set MudBlazor up as usual:
 Then add both grid stylesheets:
 
 ```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.css" />
+<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
+<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
 ```
 
 ## A grid on a paper

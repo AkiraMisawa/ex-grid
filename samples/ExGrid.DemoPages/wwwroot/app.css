@@ -1,5 +1,5 @@
 /* Host-side styling only. The grid's own classes are ex- prefixed and come from
-   _content/ExGrid/ex-grid.css; nothing here may touch them (ADR-0018). */
+   _content/ExGrid/ex-grid.min.css; nothing here may touch them (ADR-0018). */
 body {
     margin: 0;
     padding: 1rem 2rem 3rem;

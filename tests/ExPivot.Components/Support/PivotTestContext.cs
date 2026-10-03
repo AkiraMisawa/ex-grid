@@ -24,7 +24,7 @@ public sealed record Sale(string? Region, string Product, decimal Amount, int Qu
 /// </summary>
 public abstract class PivotTestContext : BunitContext
 {
-    private const string ModulePath = "./_content/ExGrid/ex-grid.js";
+    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
     private readonly BunitJSModuleInterop _module;
     private bool _rendererInfoSet;
 

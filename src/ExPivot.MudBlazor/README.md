@@ -45,10 +45,10 @@ usual:
 Then add the four stylesheets:
 
 ```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.css" />
-<link rel="stylesheet" href="_content/ExPivot/ex-pivot.css" />
-<link rel="stylesheet" href="_content/ExPivot.MudBlazor/mud-ex-pivot.css" />
+<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
+<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
+<link rel="stylesheet" href="_content/ExPivot/ex-pivot.min.css" />
+<link rel="stylesheet" href="_content/ExPivot.MudBlazor/mud-ex-pivot.min.css" />
 ```
 
 ## A pivot on a paper

@@ -13,7 +13,7 @@ computes, ExGrid paints, selects, navigates and reports.
 
 - **.NET 10 or newer.** The package targets `net10.0`.
 - ExGrid's stylesheet and script, as for any ExGrid, and ExSheet's own stylesheet,
-  `_content/ExSheet/ex-sheet.css`, which paints the Paper and the Ink and draws the built-in Format
+  `_content/ExSheet/ex-sheet.min.css`, which paints the Paper and the Ink and draws the built-in Format
   Cells.
 
 ## Showing a Sheet

@@ -250,7 +250,7 @@ public class MudGridChromeTests : MudTestContext
     [Fact] // ADR-0021 (note of 2026-09-30) / ADR-0010, ED-28: under this Chrome an opening edit's control is focused by the grid's module, which grants it only while the keyboard is this grid's
     public async Task Under_this_chrome_an_opening_edit_asks_the_grids_module_for_its_control()
     {
-        var handle = JSInterop.SetupModule("./_content/ExGrid/ex-grid.js").SetupModule("attach", _ => true);
+        var handle = JSInterop.SetupModule("./_content/ExGrid/ex-grid.min.js").SetupModule("attach", _ => true);
         var cut = RenderGrid(MudGridChrome.Default);
         await ClickCellAsync(cut, 50, 30);
 

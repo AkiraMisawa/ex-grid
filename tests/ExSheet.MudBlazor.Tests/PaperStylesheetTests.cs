@@ -28,16 +28,16 @@ public class PaperStylesheetTests
 
     [Fact] // SH-39 / ADR-0071 / ADR-0030: ExGrid.MudBlazor's stylesheet neither sets nor reads the Paper tokens
     public void The_wrappers_stylesheet_leaves_the_paper_alone() =>
-        Assert.DoesNotMatch(PaperToken, Stylesheet("src", "ExGrid.MudBlazor", "wwwroot", "mud-ex-grid.css"));
+        Assert.DoesNotMatch(PaperToken, Stylesheet("src", "ExGrid.MudBlazor", "Assets", "mud-ex-grid.css"));
 
     [Fact] // SH-39 / ADR-0071: ExSheet.MudBlazor's stylesheet neither sets nor reads the Paper tokens
     public void The_sheet_chromes_stylesheet_leaves_the_paper_alone() =>
-        Assert.DoesNotMatch(PaperToken, Stylesheet("src", "ExSheet.MudBlazor", "wwwroot", "mud-ex-sheet.css"));
+        Assert.DoesNotMatch(PaperToken, Stylesheet("src", "ExSheet.MudBlazor", "Assets", "mud-ex-sheet.css"));
 
     [Fact] // ADR-0071 / ADR-0050 item 15 (ticket 90): a Pinned Column's cell names its row gridline in --ex-row-rule and paints it from there, so a cell that draws lines (.ex-lined) keeps it beneath them
     public void A_pinned_cells_gridline_is_named_for_the_line_layer()
     {
-        var css = Regex.Replace(Stylesheet("src", "ExSheet", "wwwroot", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
+        var css = Regex.Replace(Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css"), @"/\*.*?\*/", "", RegexOptions.Singleline);
         var rule = Assert.Single(Regex.Matches(css, @"(?<selector>[^{}]*\.ex-pinned\b[^{}]*)\{(?<body>[^{}]*)\}"));
         var body = rule.Groups["body"].Value;
 
@@ -51,7 +51,7 @@ public class PaperStylesheetTests
     [Fact] // SH-39 / ADR-0071: ExSheet's stylesheet defaults the Paper to Excel's white and the Ink to Excel's black, the same in every scheme
     public void The_paper_and_the_ink_default_to_white_and_black_in_every_scheme()
     {
-        var css = Stylesheet("src", "ExSheet", "wwwroot", "ex-sheet.css");
+        var css = Stylesheet("src", "ExSheet", "Assets", "ex-sheet.css");
         var uses = Regex.Matches(css, @"var\(--ex-sheet-(paper|ink),\s*([^)]+)\)");
 
         Assert.NotEmpty(uses);

@@ -103,7 +103,7 @@ public class WrapperScriptTests
 
         // The stylesheet is the one asset the Wrapper is known to ship; not finding it
         // means this read the wrong thing, not that the package is clean.
-        Assert.Contains("mud-ex-grid.css", own);
+        Assert.Contains("mud-ex-grid.min.css", own);
         Assert.DoesNotContain(own, path => ScriptExtensions.Any(extension => path.EndsWith(extension, StringComparison.OrdinalIgnoreCase)));
     }
 

@@ -40,10 +40,28 @@ Add the stylesheet to the page that hosts your application (`wwwroot/index.html`
 `App.razor` in a Blazor Web App):
 
 ```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.css" />
+<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
 ```
 
 The grid loads its own script module; there is nothing else to include.
+
+The script and the stylesheet are minified, with source maps. Whether a browser gets the new ones
+after an update is decided by how your application serves static files (ADR-0123). .NET's static
+assets fingerprint them, so a new version is a new URL. To get that, reference the stylesheet
+through the fingerprint, and keep the import map, through which the grid's script is resolved:
+
+```razor
+@* App.razor in a Blazor Web App, with app.MapStaticAssets() *@
+<link rel="stylesheet" href="@Assets["_content/ExGrid/ex-grid.min.css"]" />
+<ImportMap />
+```
+
+```html
+<!-- wwwroot/index.html in a standalone WebAssembly app, with
+     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders> in the project -->
+<link rel="stylesheet" href="_content/ExGrid/ex-grid.min#[.{fingerprint}].css" />
+<script type="importmap"></script>
+```
 
 ## A first grid
 

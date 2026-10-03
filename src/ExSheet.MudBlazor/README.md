@@ -33,10 +33,10 @@ This brings in ExSheet, ExGrid.MudBlazor and MudBlazor (9.0 or newer). Set MudBl
 Then add the stylesheets, ExGrid's and ExSheet's as for any Sheet, and the two MudBlazor ones:
 
 ```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.css" />
-<link rel="stylesheet" href="_content/ExSheet/ex-sheet.css" />
-<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.css" />
-<link rel="stylesheet" href="_content/ExSheet.MudBlazor/mud-ex-sheet.css" />
+<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
+<link rel="stylesheet" href="_content/ExSheet/ex-sheet.min.css" />
+<link rel="stylesheet" href="_content/ExGrid.MudBlazor/mud-ex-grid.min.css" />
+<link rel="stylesheet" href="_content/ExSheet.MudBlazor/mud-ex-sheet.min.css" />
 ```
 
 ## A Sheet on a paper

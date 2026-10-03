@@ -12,7 +12,7 @@ namespace ExGrid.Components.Tests.Support;
 internal sealed class GridJSInterop
 {
     /// <summary>Must match the path ExGrid imports.</summary>
-    internal const string ModulePath = "./_content/ExGrid/ex-grid.js";
+    internal const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
 
     private readonly JSRuntimeInvocationHandler<ScrollOffset> _offset;
     private readonly JSRuntimeInvocationHandler _releaseTab;

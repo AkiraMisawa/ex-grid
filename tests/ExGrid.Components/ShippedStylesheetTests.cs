@@ -1,3 +1,4 @@
+using ExGrid.Components.Tests.Support;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -18,19 +19,12 @@ namespace ExGrid.Components.Tests;
 /// </summary>
 public class ShippedStylesheetTests
 {
+    // The sources of what ships (ADR-0123): the package serves their minified form, and
+    // ShippedAssetTests holds the two together, so a rule about how the code is written is read
+    // where it is written.
     private static IReadOnlyList<(string Path, string Text)> ShippedAssets()
     {
-        var manifest = Path.Combine(AppContext.BaseDirectory, "ExGrid.staticwebassets.runtime.json");
-        Assert.True(File.Exists(manifest), $"the package ships no static assets at all ({manifest})");
-
-        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        var roots = document.RootElement.GetProperty("ContentRoots")
-            .EnumerateArray().Select(root => root.GetString()!).ToList();
-        Assert.NotEmpty(roots);
-
-        var files = roots
-            .Where(Directory.Exists)
-            .SelectMany(root => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        var files = Directory.EnumerateFiles(AssetSources.Folder("ExGrid"))
             .Where(file => file.EndsWith(".css", StringComparison.Ordinal)
                         || file.EndsWith(".js", StringComparison.Ordinal))
             .Select(file => (Path: file, Text: File.ReadAllText(file)))

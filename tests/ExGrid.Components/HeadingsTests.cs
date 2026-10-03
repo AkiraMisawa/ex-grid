@@ -291,15 +291,6 @@ public class HeadingsTests : GridTestContext
         Assert.Equal(before, cut.FindComponents<ExGridRow<TestRow>>().Select(r => r.RenderCount).ToList());
     }
 
-    private static string ShippedStylesheet()
-    {
-        var manifest = Path.Combine(AppContext.BaseDirectory, "ExGrid.staticwebassets.runtime.json");
-        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        return document.RootElement.GetProperty("ContentRoots").EnumerateArray()
-            .Select(root => root.GetString()!)
-            .Where(Directory.Exists)
-            .SelectMany(root => Directory.EnumerateFiles(root, "ex-grid.css", SearchOption.AllDirectories))
-            .Select(File.ReadAllText)
-            .First();
-    }
+    // The stylesheet's source (ADR-0123): what ships is its minified form.
+    private static string ShippedStylesheet() => AssetSources.Read("ExGrid", "ex-grid.css");
 }

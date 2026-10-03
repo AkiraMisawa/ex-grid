@@ -30,8 +30,8 @@ dotnet add package ExPivot --prerelease
 Link both stylesheets in your host page:
 
 ```html
-<link href="_content/ExGrid/ex-grid.css" rel="stylesheet" />
-<link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
+<link href="_content/ExGrid/ex-grid.min.css" rel="stylesheet" />
+<link href="_content/ExPivot/ex-pivot.min.css" rel="stylesheet" />
 ```
 
 ## A first pivot

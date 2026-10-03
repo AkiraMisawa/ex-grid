@@ -1,0 +1,13 @@
+{
+  "name": "exgrid-assets",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Minifies the packages' shipped JavaScript and CSS (ADR-0123).",
+  "type": "module",
+  "scripts": {
+    "minify": "node minify.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.10"
+  }
+}

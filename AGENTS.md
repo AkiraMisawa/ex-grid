@@ -92,6 +92,10 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
+- **A shipped script or stylesheet is edited in `src/<Package>/Assets/`, never in `wwwroot`.**
+  `wwwroot` holds its minified build (ADR-0123): after an edit run
+  `nix develop .#browser -c bash -c 'cd tools/assets && npm ci && npm run minify'` and commit what
+  it writes. A minified file older than its source fails `ShippedAssetTests`
 - **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
   a `v*` tag runs `release.yml`, which publishes a prerelease and refuses a version without a
   suffix until the Definition of Done is signed off (ADR-0042). Every public member of a shipped
