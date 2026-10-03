@@ -55,15 +55,15 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `MAX` | Supported | — | |
 | `COUNT` | Supported | — | |
 | `COUNTA` | Supported | — | |
-| `SUMIF` | Observe | P1 | Criteria are text that Excel parses. To be observed: `"="` and `"<>"` against blanks, a number typed as text, wildcards and `~`. A criteria number whose reading depends on the culture (`">1,5"`) may be refused with `#VALUE!` (ADR-0047, admitted with some argument values refused). One criteria parser serves the whole family |
-| `SUMIFS` | Observe | P1 | As `SUMIF`; ranges of different shapes are `#VALUE!` |
-| `COUNTIF` | Observe | P1 | As `SUMIF` |
-| `COUNTIFS` | Observe | P1 | As `SUMIF` |
-| `AVERAGEIF` | Observe | P2 | As `SUMIF` |
-| `AVERAGEIFS` | Observe | P2 | As `SUMIF` |
-| `MAXIFS` | Observe | P2 | As `SUMIF` |
-| `MINIFS` | Observe | P2 | As `SUMIF` |
-| `COUNTBLANK` | Observe | P2 | Whether `""` returned by a Formula counts as blank is to be observed |
+| `SUMIF` | Supported | — | Observed Windows cases; ASCII criteria and numeric comparisons. Culture-sensitive numeric text, text ordering, criteria longer than 255 characters, and resizing computed References are refused; ticket 08 |
+| `SUMIFS` | Supported | — | As SUMIF; every criteria range must have the result range's shape |
+| `COUNTIF` | Supported | — | As SUMIF; absent cells and formula-empty text remain distinct |
+| `COUNTIFS` | Supported | — | As COUNTIF; every criteria range must have the same shape |
+| `AVERAGEIF` | Supported | — | As SUMIF, including the implicit result footprint; no matching numbers is #DIV/0! |
+| `AVERAGEIFS` | Supported | — | As SUMIFS; no matching numbers is #DIV/0! |
+| `MAXIFS` | Supported | — | As SUMIFS; no matching numbers is 0 |
+| `MINIFS` | Supported | — | As SUMIFS; no matching numbers is 0 |
+| `COUNTBLANK` | Supported | — | Counts absent cells and formula-empty text, including whole-column ranges |
 | `SUMPRODUCT` | Supported | — | Its arrays, operators on ranges included, reduced to one Value (ADR-0125) |
 | `PRODUCT` | Supported | — | |
 | `MEDIAN` | Supported | — | |
@@ -103,10 +103,10 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `XLOOKUP` | Supported | — | Binary search only over data sorted as the mode says (ADR-0047) |
-| `VLOOKUP` | Observe | P1 | The default is the approximate match, a binary search: answered only over sorted data, as `XLOOKUP`'s binary search is, and `#VALUE!` otherwise. Which of equal keys it returns is to be observed |
-| `HLOOKUP` | Observe | P2 | As `VLOOKUP` |
+| `VLOOKUP` | Supported | — | Observed exact/approximate duplicates. Approximate searches require homogeneous, nonblank, error-free, sorted keys; exact text is ASCII; unobserved error-key outcomes are refused. Ticket 09 |
+| `HLOOKUP` | Supported | — | As VLOOKUP, with the keys across the first row |
 | `INDEX` | Supported | — | One value only. A row or column of 0, which returns a whole range, is `#VALUE!` until arrays get their ADR |
-| `MATCH` | Observe | P1 | `match_type` 1 and −1 are binary searches, as `VLOOKUP` |
+| `MATCH` | Supported | — | As VLOOKUP; descending equality takes the first duplicate. Descending nearest non-equal duplicate choice is refused pending observation |
 | `XMATCH` | Supported | — | The modes as `XLOOKUP`'s |
 | `CHOOSE` | Supported | — | |
 | `ROW` | Supported | — | |
@@ -126,9 +126,9 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ABS` | Supported | — | |
 | `INT` | Supported | — | |
 | `MOD` | Supported | — | Excel's sign follows the divisor |
-| `MROUND` | Observe | P2 | Halfway cases in binary doubles are to be observed |
-| `CEILING.MATH` | Observe | P2 | As `MROUND` |
-| `FLOOR.MATH` | Observe | P2 | As `MROUND` |
+| `MROUND` | Supported | — | Whole-number multiples; fractional multiples with nonzero same-sign operands are #VALUE! until Excel's binary midpoint algorithm is reproduced. Ticket 10 |
+| `CEILING.MATH` | Supported | — | Observed sign, significance, mode and coercion; almost-integral division boundaries are #VALUE!, quotient underflow is #NUM!; ticket 10 |
+| `FLOOR.MATH` | Supported | — | As CEILING.MATH; ticket 10 |
 | `TRUNC` | Supported | — | |
 | `POWER` | Supported | — | |
 | `SQRT` | Supported | — | |
@@ -187,8 +187,8 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `NETWORKDAYS` | Supported | — | |
 | `WORKDAY` | Supported | — | |
 | `DAYS` | Supported | — | |
-| `YEARFRAC` | Observe | P3 | The documentation does not give each `basis`'s day count at month ends and leap years |
-| `DATEDIF` | Observe | P3 | Microsoft documents `"MD"` as giving wrong results, so `"MD"` is refused |
+| `YEARFRAC` | Supported | — | All five bases, month ends, leap days and the 1900 date system; ticket 11 |
+| `DATEDIF` | Supported | — | Y, M, D, YM; YD only before a completed anniversary. MD and longer YD intervals are #VALUE!; ticket 11 |
 | `TIME` | Supported | — | |
 | `HOUR` | Supported | — | |
 | `MINUTE` | Supported | — | |
@@ -211,10 +211,10 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `SUBSTITUTE` | Supported | — | |
 | `REPLACE` | Supported | — | |
 | `FIND` | Supported | — | |
-| `SEARCH` | Observe | P2 | Wildcards as `XLOOKUP`'s; case folding beyond ASCII is to be observed |
-| `UPPER` | Observe | P2 | Case mapping beyond ASCII is to be observed |
-| `LOWER` | Observe | P2 | As `UPPER` |
-| `PROPER` | Observe | P3 | As `UPPER` |
+| `SEARCH` | Supported | — | ASCII and the recorded BMP alphabet; supplementary and other characters are #VALUE!; ticket 12 |
+| `UPPER` | Supported | — | ASCII and the recorded BMP casing alphabet; other characters are #VALUE!; ticket 12 |
+| `LOWER` | Supported | — | As UPPER, plus the recorded uppercase Greek sigma contexts; other contexts are #VALUE! |
+| `PROPER` | Supported | — | As UPPER, with only isolated sigma letters; other sigma contexts are #VALUE! |
 | `REPT` | Supported | — | |
 | `EXACT` | Supported | — | |
 | `TEXT` | Supported | — | Its code in the invariant spelling, under every culture, shown as a cell format shows it (ADR-0120) |
@@ -230,9 +230,9 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `FV` | Supported | — | |
 | `NPV` | Supported | — | |
 | `XNPV` | Supported | — | |
-| `IRR` | Observe | P3 | Iterative. Admitted only if Excel's answer, to 15 significant digits, and its `#NUM!` cases are observed and reproduced; Microsoft does not document the iteration |
-| `XIRR` | Observe | P3 | As `IRR` |
-| `RATE` | Observe | P3 | As `IRR` |
+| `IRR` | Observe | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Ticket 13 |
+| `XIRR` | Observe | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Ticket 13 |
+| `RATE` | Observe | P3 | Observation complete; candidate solvers do not reproduce Excel's root, stopping result and failures to 15 significant digits. Ticket 13 |
 
 ### Dynamic arrays
 
@@ -246,25 +246,36 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 | `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked |
 | `SEQUENCE` | Supported | — | Spills (ADR-0125) |
 | `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
-| `LET` | Decide | P3 | Not an array function, but names inside a Formula are new grammar (ADR-0047) |
+| `LET` | Decide | P3 | Observed through COM and real keys; Formula-local names, binding and entry grammar still need an ADR. Ticket 14 |
 
 ### Random
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `RAND` | Decide | P3 | An answer that changes on every recalculation, against "an outcome never depends on timing" |
+| `RAND` | Decide | P3 | Observed; reproducible random input, recalculation identity and persistence still need an ADR. Ticket 15 |
 | `RANDBETWEEN` | Decide | P3 | As `RAND` |
 
 ## Order of work
 
 1. **The P1 Ready functions** — done, ticket 01. Their `uncertain` cases go to the next Windows run.
-2. **The P1 Observe functions, through one Windows run.** The criteria of the `SUMIF` family, and
-   the approximate match of `VLOOKUP` and `MATCH`.
+2. **The P1 Observe functions** — observed on October 3 and admitted in tickets 08–09 within
+   explicit domains: the criteria of the `SUMIF` family and legacy lookups.
 3. **The P1 Decide functions, to the user.** Done: `TEXT`, ticket 02 (ADR-0120), and `TODAY`,
    ticket 03 (ADR-0121, ADR-0122).
 4. **The P2 Ready functions** — done, ticket 04.
 5. **The P3 Ready functions** — done, ticket 05. No function is Ready any more.
 6. **`LOG` and the trigonometric functions** — done, ticket 07. Their `uncertain` cases go to the
    next Windows run.
-7. **The Observe functions, through one Windows run**, P1 first, and the `uncertain` cases of
-   tickets 01 to 05 in the same run. Then the Decide functions, P2 first, each to the user.
+7. **The October 3 Windows observation run is complete:** all 24 Observe functions and `LET`,
+   `RAND`, `RANDBETWEEN`. Tickets 08–12 admit 21 functions within explicitly documented argument
+   domains. Observation alone does not mark a function Supported.
+8. **Financial iteration remains open**, ticket 13: the measured Excel results are available,
+   but the tested candidate solvers do not meet the admission rule.
+9. **LET and random functions need decisions**, tickets 14–15. Their observation is complete.
+10. **Existing Supported functions' `uncertain` cases remain a separate Oracle backlog.** The
+    October 3 run did not ask them, including LOG and trigonometry's remaining cases.
+
+The retained evidence is `verification/2026-10-03-windows-functions/`. New corpus cases preserve
+its IDs, typed fixtures and exact numeric expectations. A deliberate refusal keeps Excel's
+observed result in `excelExpect` and names ADR-0047 in `engineDiffersByDecision`. The engine's
+README lists the admitted domains; broadening one requires evidence, not a relaxed assertion.

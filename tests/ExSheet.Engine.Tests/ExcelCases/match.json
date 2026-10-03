@@ -1,0 +1,2633 @@
+{
+  "area": "match",
+  "about": "MATCH: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "MATCH-001",
+      "source": "observed",
+      "description": "sorted duplicate; key 2, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-001",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,0)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "MATCH-002",
+      "source": "observed",
+      "description": "sorted duplicate; key 2, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-002",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "MATCH-003",
+      "source": "observed",
+      "description": "sorted duplicate; key 2, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-003",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-004",
+      "source": "observed",
+      "description": "sorted duplicate; key 2.5, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-004",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-005",
+      "source": "observed",
+      "description": "sorted duplicate; key 2.5, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-005",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "MATCH-006",
+      "source": "observed",
+      "description": "sorted duplicate; key 2.5, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-006",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-007",
+      "source": "observed",
+      "description": "sorted duplicate; key 0, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-007",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-008",
+      "source": "observed",
+      "description": "sorted duplicate; key 0, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-008",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-009",
+      "source": "observed",
+      "description": "sorted duplicate; key 0, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-009",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 4.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-010",
+      "source": "observed",
+      "description": "sorted duplicate; key \"a\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-010",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-011",
+      "source": "observed",
+      "description": "sorted duplicate; key \"a\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-011",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-012",
+      "source": "observed",
+      "description": "sorted duplicate; key \"a\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-012",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-013",
+      "source": "observed",
+      "description": "sorted duplicate; key \"*\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-013",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-014",
+      "source": "observed",
+      "description": "sorted duplicate; key \"*\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-014",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-015",
+      "source": "observed",
+      "description": "sorted duplicate; key \"*\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-015",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-016",
+      "source": "observed",
+      "description": "descending; key 2, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-016",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,0)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "MATCH-017",
+      "source": "observed",
+      "description": "descending; key 2, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-017",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 3.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-018",
+      "source": "observed",
+      "description": "descending; key 2, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-018",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "MATCH-019",
+      "source": "observed",
+      "description": "descending; key 2.5, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-019",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-020",
+      "source": "observed",
+      "description": "descending; key 2.5, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-020",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 4.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-021",
+      "source": "observed",
+      "description": "descending; key 2.5, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-021",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MATCH-022",
+      "source": "observed",
+      "description": "descending; key 0, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-022",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-023",
+      "source": "observed",
+      "description": "descending; key 0, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-023",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-024",
+      "source": "observed",
+      "description": "descending; key 0, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-024",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": 4.0
+      }
+    },
+    {
+      "id": "MATCH-025",
+      "source": "observed",
+      "description": "descending; key \"a\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-025",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-026",
+      "source": "observed",
+      "description": "descending; key \"a\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-026",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-027",
+      "source": "observed",
+      "description": "descending; key \"a\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-027",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-028",
+      "source": "observed",
+      "description": "descending; key \"*\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-028",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-029",
+      "source": "observed",
+      "description": "descending; key \"*\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-029",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-030",
+      "source": "observed",
+      "description": "descending; key \"*\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-030",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-031",
+      "source": "observed",
+      "description": "unsorted; key 2, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-031",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MATCH-032",
+      "source": "observed",
+      "description": "unsorted; key 2, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-032",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-033",
+      "source": "observed",
+      "description": "unsorted; key 2, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-033",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-034",
+      "source": "observed",
+      "description": "unsorted; key 2.5, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-034",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-035",
+      "source": "observed",
+      "description": "unsorted; key 2.5, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-035",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-036",
+      "source": "observed",
+      "description": "unsorted; key 2.5, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-036",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-037",
+      "source": "observed",
+      "description": "unsorted; key 0, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-037",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-038",
+      "source": "observed",
+      "description": "unsorted; key 0, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-038",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-039",
+      "source": "observed",
+      "description": "unsorted; key 0, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-039",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 4.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-040",
+      "source": "observed",
+      "description": "unsorted; key \"a\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-040",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-041",
+      "source": "observed",
+      "description": "unsorted; key \"a\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-041",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-042",
+      "source": "observed",
+      "description": "unsorted; key \"a\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-042",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-043",
+      "source": "observed",
+      "description": "unsorted; key \"*\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-043",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-044",
+      "source": "observed",
+      "description": "unsorted; key \"*\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-044",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-045",
+      "source": "observed",
+      "description": "unsorted; key \"*\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-045",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-046",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-046",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-047",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-047",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 4.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-048",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-048",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-049",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2.5, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-049",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-050",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2.5, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-050",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 4.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-051",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2.5, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-051",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-052",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 0, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-052",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,0)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "MATCH-053",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 0, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-053",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-054",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 0, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-054",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-055",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"a\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-055",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-056",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"a\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-056",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 3.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-057",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"a\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-057",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-058",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"*\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-058",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "MATCH-059",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"*\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-059",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-060",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"*\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-060",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 3.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-061",
+      "source": "observed",
+      "description": "text case and literal star; key 2, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-061",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-062",
+      "source": "observed",
+      "description": "text case and literal star; key 2, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-062",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-063",
+      "source": "observed",
+      "description": "text case and literal star; key 2, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-063",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-064",
+      "source": "observed",
+      "description": "text case and literal star; key 2.5, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-064",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-065",
+      "source": "observed",
+      "description": "text case and literal star; key 2.5, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-065",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-066",
+      "source": "observed",
+      "description": "text case and literal star; key 2.5, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-066",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(2.5,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-067",
+      "source": "observed",
+      "description": "text case and literal star; key 0, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-067",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-068",
+      "source": "observed",
+      "description": "text case and literal star; key 0, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-068",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-069",
+      "source": "observed",
+      "description": "text case and literal star; key 0, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-069",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(0,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-070",
+      "source": "observed",
+      "description": "text case and literal star; key \"a\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-070",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MATCH-071",
+      "source": "observed",
+      "description": "text case and literal star; key \"a\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-071",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-072",
+      "source": "observed",
+      "description": "text case and literal star; key \"a\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-072",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"a\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-073",
+      "source": "observed",
+      "description": "text case and literal star; key \"*\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-073",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MATCH-074",
+      "source": "observed",
+      "description": "text case and literal star; key \"*\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-074",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-075",
+      "source": "observed",
+      "description": "text case and literal star; key \"*\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-075",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=MATCH(\"*\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 4.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-076",
+      "source": "observed",
+      "description": "error key; key 2, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-076",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(2,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-077",
+      "source": "observed",
+      "description": "error key; key 2, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-077",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(2,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-078",
+      "source": "observed",
+      "description": "error key; key 2, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-078",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(2,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-079",
+      "source": "observed",
+      "description": "error key; key 2.5, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-079",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(2.5,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-080",
+      "source": "observed",
+      "description": "error key; key 2.5, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-080",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(2.5,A1:A4,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-081",
+      "source": "observed",
+      "description": "error key; key 2.5, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-081",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(2.5,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-082",
+      "source": "observed",
+      "description": "error key; key 0, mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-082",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(0,A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-083",
+      "source": "observed",
+      "description": "error key; key 0, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-083",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(0,A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-084",
+      "source": "observed",
+      "description": "error key; key 0, mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-084",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(0,A1:A4,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 4.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-085",
+      "source": "observed",
+      "description": "error key; key \"a\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-085",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(\"a\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-086",
+      "source": "observed",
+      "description": "error key; key \"a\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-086",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(\"a\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-087",
+      "source": "observed",
+      "description": "error key; key \"a\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-087",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(\"a\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-088",
+      "source": "observed",
+      "description": "error key; key \"*\", mode 0",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-088",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(\"*\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-089",
+      "source": "observed",
+      "description": "error key; key \"*\", mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-089",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(\"*\",A1:A4,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-090",
+      "source": "observed",
+      "description": "error key; key \"*\", mode -1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-090",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=MATCH(\"*\",A1:A4,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "MATCH-091",
+      "source": "observed",
+      "description": "Mode coercion",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-091",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=MATCH(1,A1:A2,2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MATCH-092",
+      "source": "observed",
+      "description": "Mode coercion",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-092",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=MATCH(1,A1:A2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MATCH-093",
+      "source": "observed",
+      "description": "Mode coercion",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-093",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=MATCH(1,A1:A2,\"0\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-001",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-FOLLOWUP-001",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=MATCH(2,A1:A4)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-002",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-FOLLOWUP-002",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=MATCH(3,A1:A4)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": 4.0
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-003",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-FOLLOWUP-003",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=MATCH(4,A1:A4)"
+      },
+      "check": "Z1",
+      "excelBits": "4010000000000000",
+      "expect": {
+        "value2": 4.0
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-004",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-FOLLOWUP-004",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=MATCH(NA(),A1:A4)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-005",
+      "source": "observed",
+      "description": "Numeric text lookup is distinct from number",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MATCH-FOLLOWUP-005",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=MATCH(\"2\",A1:A4,0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    }
+  ]
+}

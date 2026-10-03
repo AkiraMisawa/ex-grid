@@ -1,0 +1,2641 @@
+{
+  "area": "sumif",
+  "about": "SUMIF: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "SUMIF-001",
+      "source": "observed",
+      "description": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-001",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"=\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-002",
+      "source": "observed",
+      "description": "Criteria \"<>\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-002",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"<>\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4095180000000000",
+      "expect": {
+        "value2": 1350.0
+      }
+    },
+    {
+      "id": "SUMIF-003",
+      "source": "observed",
+      "description": "Criteria \"\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-003",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "SUMIF-004",
+      "source": "observed",
+      "description": "Criteria 0; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-004",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,0,B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "SUMIF-005",
+      "source": "observed",
+      "description": "Criteria 1; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-005",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,1,B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4056800000000000",
+      "expect": {
+        "value2": 90.0
+      }
+    },
+    {
+      "id": "SUMIF-006",
+      "source": "observed",
+      "description": "Criteria \"1\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-006",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"1\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4056800000000000",
+      "expect": {
+        "value2": 90.0
+      }
+    },
+    {
+      "id": "SUMIF-007",
+      "source": "observed",
+      "description": "Criteria \"=1\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-007",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"=1\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4056800000000000",
+      "expect": {
+        "value2": 90.0
+      }
+    },
+    {
+      "id": "SUMIF-008",
+      "source": "observed",
+      "description": "Criteria \">0\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-008",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\">0\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4069000000000000",
+      "expect": {
+        "value2": 200.0
+      }
+    },
+    {
+      "id": "SUMIF-009",
+      "source": "observed",
+      "description": "Criteria \"<>1\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-009",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"<>1\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4094A00000000000",
+      "expect": {
+        "value2": 1320.0
+      }
+    },
+    {
+      "id": "SUMIF-010",
+      "source": "observed",
+      "description": "Criteria \"alpha\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-010",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"alpha\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4060400000000000",
+      "expect": {
+        "value2": 130.0
+      }
+    },
+    {
+      "id": "SUMIF-011",
+      "source": "observed",
+      "description": "Criteria \"*\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-011",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"*\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4087C00000000000",
+      "expect": {
+        "value2": 760.0
+      }
+    },
+    {
+      "id": "SUMIF-012",
+      "source": "observed",
+      "description": "Criteria \"?\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-012",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"?\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4067C00000000000",
+      "expect": {
+        "value2": 190.0
+      }
+    },
+    {
+      "id": "SUMIF-013",
+      "source": "observed",
+      "description": "Criteria \"a~*b\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-013",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"a~*b\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4054000000000000",
+      "expect": {
+        "value2": 80.0
+      }
+    },
+    {
+      "id": "SUMIF-014",
+      "source": "observed",
+      "description": "Criteria \"a~?b\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-014",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"a~?b\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4056800000000000",
+      "expect": {
+        "value2": 90.0
+      }
+    },
+    {
+      "id": "SUMIF-015",
+      "source": "observed",
+      "description": "Criteria \"a~~b\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-015",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"a~~b\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-016",
+      "source": "observed",
+      "description": "Criteria TRUE; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-016",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,TRUE,B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "405B800000000000",
+      "expect": {
+        "value2": 110.0
+      }
+    },
+    {
+      "id": "SUMIF-017",
+      "source": "observed",
+      "description": "Criteria FALSE; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-017",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,FALSE,B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "405E000000000000",
+      "expect": {
+        "value2": 120.0
+      }
+    },
+    {
+      "id": "SUMIF-018",
+      "source": "observed",
+      "description": "Criteria \"TRUE\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-018",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"TRUE\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "405B800000000000",
+      "expect": {
+        "value2": 110.0
+      }
+    },
+    {
+      "id": "SUMIF-019",
+      "source": "observed",
+      "description": "Criteria \"#N/A\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-019",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\"#N/A\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-020",
+      "source": "observed",
+      "description": "Criteria \">1.5\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-020",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\">1.5\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-021",
+      "source": "observed",
+      "description": "Criteria \">1,5\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-021",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\">1,5\",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4081300000000000",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 550.0
+      },
+      "engineDiffersByDecision": "ADR-0047: culture-sensitive criteria containing a numeric comma are refused until their reading is pinned across Sheet cultures."
+    },
+    {
+      "id": "SUMIF-022",
+      "source": "observed",
+      "description": "Criteria \" \"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-022",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A16,\" \",B1:B16)"
+      },
+      "check": "Z1",
+      "excelBits": "4061800000000000",
+      "expect": {
+        "value2": 140.0
+      }
+    },
+    {
+      "id": "SUMIF-023",
+      "source": "observed",
+      "description": "Isolated criteria input A1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-023",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1,\"=\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-024",
+      "source": "observed",
+      "description": "Isolated criteria input A2",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-024",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A2,\"=\",B2)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-025",
+      "source": "observed",
+      "description": "Isolated criteria input A3",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-025",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A3,1,B3)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-026",
+      "source": "observed",
+      "description": "Isolated criteria input A5",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-026",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A5,1,B5)"
+      },
+      "check": "Z1",
+      "excelBits": "4049000000000000",
+      "expect": {
+        "value2": 50.0
+      }
+    },
+    {
+      "id": "SUMIF-027",
+      "source": "observed",
+      "description": "Isolated criteria input A6",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-027",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A6,1,B6)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-028",
+      "source": "observed",
+      "description": "Isolated criteria input A11",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-028",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A11,1,B11)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-029",
+      "source": "observed",
+      "description": "Isolated criteria input A12",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-029",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A12,1,B12)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-030",
+      "source": "observed",
+      "description": "Isolated criteria input A15",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-030",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A15,1,B15)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-031",
+      "source": "observed",
+      "description": "Isolated criteria input A16",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-031",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A16,1,B16)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-032",
+      "source": "observed",
+      "description": "Isolated criteria input A17",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-032",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A17,1,B17)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-033",
+      "source": "observed",
+      "description": "Isolated criteria input A18",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-033",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A18,1,B18)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-034",
+      "source": "observed",
+      "description": "Errors in criteria range",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-034",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A18,\"*\",B1:B18)"
+      },
+      "check": "Z1",
+      "excelBits": "4087C00000000000",
+      "expect": {
+        "value2": 760.0
+      }
+    },
+    {
+      "id": "SUMIF-035",
+      "source": "observed",
+      "description": "Short sum/average range; COUNTIF normal baseline",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-035",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=SUMIF(A1:A4,\">0\",B1:B2)"
+      },
+      "check": "Z1",
+      "excelBits": "4044000000000000",
+      "expect": {
+        "value2": 40.0
+      }
+    },
+    {
+      "id": "SUMIF-036",
+      "source": "observed",
+      "description": "Matched result range coercion / error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-036",
+      "values": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": null,
+        "B2": 3,
+        "B3": 999
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A3,1,B1:B3)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "SUMIF-037",
+      "source": "observed",
+      "description": "Matched result range coercion / error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-037",
+      "values": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B2": 3,
+        "B3": 999
+      },
+      "cells": {
+        "B1": "=\"\"",
+        "Z1": "=SUMIF(A1:A3,1,B1:B3)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "SUMIF-038",
+      "source": "observed",
+      "description": "Matched result range coercion / error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-038",
+      "values": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": "2",
+        "B2": 3,
+        "B3": 999
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A3,1,B1:B3)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "SUMIF-039",
+      "source": "observed",
+      "description": "Matched result range coercion / error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-039",
+      "values": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": true,
+        "B2": 3,
+        "B3": 999
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A3,1,B1:B3)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "SUMIF-040",
+      "source": "observed",
+      "description": "Matched result range coercion / error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-040",
+      "values": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B2": 3,
+        "B3": 999
+      },
+      "cells": {
+        "B1": "=NA()",
+        "Z1": "=SUMIF(A1:A3,1,B1:B3)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-001",
+      "source": "observed",
+      "description": "blank criterion cell",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-001",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=SUMIF(A1:A4,D1,B1:B4)"
+      },
+      "check": "Z1",
+      "excelBits": "4051800000000000",
+      "expect": {
+        "value2": 70.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-002",
+      "source": "observed",
+      "description": "formula-empty criterion cell",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-002",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=SUMIF(A1:A4,D2,B1:B4)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-003",
+      "source": "observed",
+      "description": "error criterion",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-003",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=SUMIF(A1:A4,NA(),B1:B4)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-004",
+      "source": "observed",
+      "description": "no match",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-004",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=SUMIF(A1:A4,\"nomatch\",B1:B4)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-005",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-005",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A5,\"a~b\",B1:B5)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-006",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-006",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A5,\"a~~b\",B1:B5)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-007",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-007",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A5,\"a~~~b\",B1:B5)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-008",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-008",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A5,\"a~\",B1:B5)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-009",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-009",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A5,\"a~*b\",B1:B5)"
+      },
+      "check": "Z1",
+      "excelBits": "4044000000000000",
+      "expect": {
+        "value2": 40.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-010",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-010",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A5,\"a~?b\",B1:B5)"
+      },
+      "check": "Z1",
+      "excelBits": "4049000000000000",
+      "expect": {
+        "value2": 50.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-011",
+      "source": "observed",
+      "description": "Omitted result range",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-011",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": "3",
+        "A4": true
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1:A4,\">0\")"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-012",
+      "source": "observed",
+      "description": "Unmatched result error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-FOLLOWUP-012",
+      "values": {
+        "A1": 1,
+        "A2": 0,
+        "B1": 2
+      },
+      "cells": {
+        "B2": "=NA()",
+        "Z1": "=SUMIF(A1:A2,1,B1:B2)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-001",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-001",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"=1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-002",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-002",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"<>1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-003",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-003",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"=0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-004",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-004",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"<>0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-005",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-005",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"=1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-006",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-006",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"<>1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-007",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-007",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"=0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-008",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-008",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"<>0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-009",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-009",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"=1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-010",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-010",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"<>1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-011",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-011",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"=0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-012",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-012",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=SUMIF(A1,\"<>0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-013",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-013",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=SUMIF(A1,\"=1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-014",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-014",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=SUMIF(A1,\"<>1\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-015",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-015",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=SUMIF(A1,\"=0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-016",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-016",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=SUMIF(A1,\"<>0\",B1)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-017",
+      "source": "observed",
+      "description": "Error-valued criterion and literal error text against error and text cells",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-017",
+      "values": {
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      },
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "Z1": "=SUMIF(A1:A3,NA(),B1:B3)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-018",
+      "source": "observed",
+      "description": "Error-valued criterion and literal error text against error and text cells",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SUMIF-ADDITIONAL-018",
+      "values": {
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      },
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "Z1": "=SUMIF(A1:A3,\"#N/A\",B1:B3)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    }
+  ]
+}

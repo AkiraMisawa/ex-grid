@@ -22,8 +22,11 @@ internal sealed class FunctionDefinition(string name, int minimum, int maximum, 
     /// </summary>
     public IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> Values { get; init; } = NoValues;
 
-    /// <summary>Whether the arguments come in pairs, as <c>IFS</c>'s do: an odd count is refused on entry, as Excel refuses it.</summary>
+    /// <summary>Whether arguments after <see cref="PairOffset"/> come in pairs: an incomplete pair is refused on entry.</summary>
     public bool InPairs { get; init; }
+
+    /// <summary>Arguments before the repeating pairs: one for the result range of SUMIFS and its partners.</summary>
+    public int PairOffset { get; init; }
 
     private static readonly IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> NoValues = new Dictionary<int, IReadOnlyList<ArgumentValue>>();
 
@@ -38,6 +41,9 @@ internal sealed class FunctionCall(Evaluator evaluator, IReadOnlyList<Node> argu
     public int Count => arguments.Count;
 
     public Operand Operand(int index) => Evaluator.Operand(arguments[index]);
+
+    /// <summary>The argument's syntax, when a function must distinguish a literal Reference from a computed one.</summary>
+    public Node Argument(int index) => arguments[index];
 
     /// <summary>Whether argument <paramref name="index"/> was given and not left empty.</summary>
     public bool Has(int index) => index < arguments.Count && arguments[index] is not MissingNode;

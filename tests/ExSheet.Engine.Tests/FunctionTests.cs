@@ -46,14 +46,14 @@ public class FunctionTests
     {
         Assert.Equal(
             [
-                "ABS", "ACOS", "ACOSH", "ACOT", "ACOTH", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE", "CHOOSE", "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COS", "COSH", "COT", "COTH", "COUNT", "COUNTA", "CSC", "CSCH", "DATE", "DAY", "DAYS", "DEGREES", "EDATE", "EOMONTH", "EXACT", "EXP", "FILTER", "FIND", "FV", "HOUR", "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT", "LARGE", "LEFT", "LEN", "LN", "LOG", "LOG10", "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH", "NA", "NETWORKDAYS", "NOT", "NOW", "NPV", "NUMBERVALUE", "OFFSET", "OR", "PI", "PMT", "POWER", "PRODUCT", "PV", "RADIANS", "RANK.EQ", "REPLACE", "REPT", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "ROWS", "SEC", "SECH", "SECOND", "SEQUENCE", "SIGN", "SIN", "SINH", "SMALL", "SORT", "SORTBY", "SQRT", "STDEV.P", "STDEV.S", "SUBSTITUTE", "SUM", "SUMPRODUCT", "SWITCH", "TAN", "TANH", "TEXT", "TEXTJOIN", "TIME", "TODAY", "TRANSPOSE", "TRIM", "TRUNC", "UNIQUE", "VALUE", "VAR.P", "VAR.S", "WEEKDAY", "WORKDAY", "XLOOKUP", "XMATCH", "XNPV", "XOR", "YEAR",
+                "ABS", "ACOS", "ACOSH", "ACOT", "ACOTH", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE", "AVERAGEIF", "AVERAGEIFS", "CEILING.MATH", "CHOOSE", "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COS", "COSH", "COT", "COTH", "COUNT", "COUNTA", "COUNTBLANK", "COUNTIF", "COUNTIFS", "CSC", "CSCH", "DATE", "DATEDIF", "DAY", "DAYS", "DEGREES", "EDATE", "EOMONTH", "EXACT", "EXP", "FILTER", "FIND", "FLOOR.MATH", "FV", "HLOOKUP", "HOUR", "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT", "LARGE", "LEFT", "LEN", "LN", "LOG", "LOG10", "LOWER", "MATCH", "MAX", "MAXIFS", "MEDIAN", "MID", "MIN", "MINIFS", "MINUTE", "MOD", "MONTH", "MROUND", "NA", "NETWORKDAYS", "NOT", "NOW", "NPV", "NUMBERVALUE", "OFFSET", "OR", "PI", "PMT", "POWER", "PRODUCT", "PROPER", "PV", "RADIANS", "RANK.EQ", "REPLACE", "REPT", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "ROWS", "SEARCH", "SEC", "SECH", "SECOND", "SEQUENCE", "SIGN", "SIN", "SINH", "SMALL", "SORT", "SORTBY", "SQRT", "STDEV.P", "STDEV.S", "SUBSTITUTE", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT", "SWITCH", "TAN", "TANH", "TEXT", "TEXTJOIN", "TIME", "TODAY", "TRANSPOSE", "TRIM", "TRUNC", "UNIQUE", "UPPER", "VALUE", "VAR.P", "VAR.S", "VLOOKUP", "WEEKDAY", "WORKDAY", "XLOOKUP", "XMATCH", "XNPV", "XOR", "YEAR", "YEARFRAC",
             ],
             DeclaredFunction.All.Select(f => f.Name));
         Assert.Equal("SUM(number1, [number2], ...)", DeclaredFunction.Find("sum")!.Signature);
         Assert.Equal(
             "XLOOKUP(lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode])",
             DeclaredFunction.Find("XLOOKUP")!.Signature);
-        Assert.Null(DeclaredFunction.Find("VLOOKUP"));
+        Assert.Null(DeclaredFunction.Find("IRR"));
         Assert.All(DeclaredFunction.All, f => Assert.False(string.IsNullOrWhiteSpace(f.Description)));
     }
 

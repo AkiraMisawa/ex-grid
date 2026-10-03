@@ -108,6 +108,17 @@ them:
 |---|---|
 | `SUM`, `AVERAGE`, `MIN`, `MAX`, `PRODUCT`, `MEDIAN` | `number1, [number2], ...` |
 | `COUNT`, `COUNTA` | `value1, [value2], ...` |
+| `SUMIF` / `AVERAGEIF` | `range, criteria, [sum_range]` / `range, criteria, [average_range]` |
+| `SUMIFS` / `AVERAGEIFS` / `MAXIFS` / `MINIFS` | result range, then `criteria_range1, criteria1, ...` |
+| `COUNTIF` / `COUNTIFS` | `range, criteria` / `criteria_range1, criteria1, ...` |
+| `COUNTBLANK` | `range` |
+| `VLOOKUP` / `HLOOKUP` | `lookup_value, table_array, col_index_num, [range_lookup]` / `lookup_value, table_array, row_index_num, [range_lookup]` |
+| `MATCH` | `lookup_value, lookup_array, [match_type]` |
+| `MROUND` | `number, multiple` (whole-number multiples) |
+| `CEILING.MATH`, `FLOOR.MATH` | `number, [significance], [mode]` |
+| `YEARFRAC` / `DATEDIF` | `start_date, end_date, [basis]` / `start_date, end_date, unit` |
+| `UPPER`, `LOWER`, `PROPER` | `text` |
+| `SEARCH` | `find_text, within_text, [start_num]` |
 | `LARGE`, `SMALL` | `array, k` |
 | `RANK.EQ` | `number, ref, [order]` |
 | `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P` | `number1, [number2], ...` |
@@ -186,6 +197,9 @@ Which functions come next, each with its status and priority, is catalogued in
 `DeclaredFunction.ValuesOf(index)` gives the values an argument takes from a fixed list, in Excel's
 order and with Excel's texts, which completion lists there: `XLOOKUP`'s `match_mode` (`0 - Exact
 match`, `-1 - Exact match or next smaller item`, …) and `search_mode` (`1 - Search first-to-last`, …).
+The newly admitted functions also offer `VLOOKUP`/`HLOOKUP`'s `range_lookup`, `MATCH`'s
+`match_type`, and `YEARFRAC`'s `basis`. Their values and meanings follow Microsoft's documentation;
+tickets 09 and 11 retain Windows popup confirmation as a follow-up.
 
 Where the engine cannot give Excel's answer, it gives an Error Value and never a different
 answer:
@@ -220,6 +234,53 @@ answer:
   too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`).
 - **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
   `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
+
+### Domains admitted from the October 3 Excel observations
+
+The 21 additions above follow ADR-0047's permission to answer part of a function's domain.
+An argument outside these domains gives `#VALUE!` unless another Error Value is stated:
+
+- `SUMIF`, `SUMIFS`, `COUNTIF`, `COUNTIFS`, `AVERAGEIF`, `AVERAGEIFS`, `MAXIFS`, `MINIFS` and
+  `COUNTBLANK` take References or Linked Columns as their ranges. Computed arrays are refused.
+  IFS ranges must have the same rows and columns. With literal criteria and result References,
+  `SUMIF` and `AVERAGEIF` resize the result to the criteria range's shape; the footprint participates in
+  recalculation and cycle detection. Resizing a computed Reference is refused. Whole-column
+  counts include absent cells without materialising the column.
+- Criteria distinguish an absent cell, formula-empty text, numbers, numeric text, booleans and
+  Error Values. Equality and inequality of ASCII text support `*`, `?` and `~` escapes; numeric
+  comparisons retain the observed distinctions between Values. Text relational ordering and
+  non-ASCII matching are refused. Criteria over 255 characters, numeric text over 15 mantissa
+  digits, and culture-sensitive spellings with commas, currency, percentage or date/time syntax
+  are refused. Decimal-point numeric text is admitted only for cultures with a decimal point.
+  An Error Value's spelling, such as `#N/A`, remains a valid equality criterion. `#CIRC!` and
+  `#GETTING_DATA` retain their strict propagation through all References.
+- `VLOOKUP`, `HLOOKUP` and `MATCH` admit exact matching of ASCII text, including wildcards, and
+  numbers or booleans. Approximate lookup requires a sorted vector of one kind, without blanks
+  or Error Values; ordered text contains only ASCII letters, digits and spaces. Lookup text
+  over 255 characters, a match after an Error Value, and an unmatched search containing errors
+  other than `#N/A` are refused. Descending MATCH with a repeated nearest larger key is refused
+  when the key is not equal. Their duplicate choices do not change XLOOKUP's distinct rules.
+- `MROUND` admits integer multiples. A nonzero fractional multiple of the same sign as a
+  nonzero number is refused; opposite signs give `#NUM!` and zero gives zero. This preserves
+  the unresolved decimal-midpoint cases rather than guessing a tolerance. `CEILING.MATH` and
+  `FLOOR.MATH` admit the observed significance and negative-number modes. A quotient that is
+  nonintegral in binary64 but integral at 15 significant digits is refused with `#VALUE!` until
+  that boundary is observed; division underflow of a nonzero number is `#NUM!`.
+- `YEARFRAC` admits bases 0–4, including the observed February and 1900 boundaries. `DATEDIF`
+  admits `Y`, `M`, `D` and `YM`; `YD` only before the first completed anniversary. `MD` and longer
+  `YD` intervals are refused. Both discard the time portion of their dates.
+- `UPPER`, `LOWER` and `PROPER` admit ASCII plus `éÉßẞıİǱǲǳﬃ`, nonbreaking space and `σςΣ`.
+  `LOWER` also admits `ΑΟ`; a word containing `Σ` must contain only `ΑΟΣ`, with words separated
+  by ASCII spaces. `PROPER` admits sigma only as a single-letter word separated by ASCII spaces.
+  `SEARCH` admits ASCII plus `éÉßıİσςΣ`, with its own observed case matching and wildcard rules.
+  Other characters, supplementary-plane text and other sigma contexts are refused. These
+  explicit mappings do not depend on the operating system's Unicode casing tables.
+
+`IRR`, `XIRR` and `RATE` remain undeclared (`#NAME?`). The solver experiment in
+`spikes/exsheet-financial-solvers/` does not yet reproduce Excel's chosen roots, stopping results
+and failures. `LET`, `RAND` and `RANDBETWEEN` still need the decisions recorded in catalogue
+tickets 14 and 15. The October 3 observation run did not resolve existing Supported functions'
+other `uncertain` corpus cases.
 
 ## Operations, and undoing them
 

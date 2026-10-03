@@ -1,0 +1,500 @@
+{
+  "area": "lower",
+  "about": "LOWER: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "LOWER-001",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-001",
+      "values": {
+        "A1": "abc XYZ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "abc xyz",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-002",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-002",
+      "values": {
+        "A1": "straße"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "straße",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-003",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-003",
+      "values": {
+        "A1": "STRASSE"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "strasse",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-004",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-004",
+      "values": {
+        "A1": "ß"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ß",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-005",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-005",
+      "values": {
+        "A1": "ẞ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ẞ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-006",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-006",
+      "values": {
+        "A1": "i I ı İ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "i i ı i",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-007",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-007",
+      "values": {
+        "A1": "σ ς Σ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "σ ς ς",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-008",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-008",
+      "values": {
+        "A1": "é É"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "é é",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-009",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-009",
+      "values": {
+        "A1": "ǳ ǲ Ǳ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ǳ ǳ ǳ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-010",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-010",
+      "values": {
+        "A1": "ﬃ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ﬃ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-011",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-011",
+      "values": {
+        "A1": "𐐨𐐀"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "𐐨𐐀",
+        "kind": "text"
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    },
+    {
+      "id": "LOWER-012",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-012",
+      "values": {
+        "A1": "hello-world 42foo o'NEILL"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "hello-world 42foo o'neill",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-013",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-013",
+      "values": {
+        "A1": "a b"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "a b",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-014",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-014",
+      "values": {
+        "A1": null
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-015",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-015",
+      "values": {
+        "A1": 123
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "123",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-016",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-016",
+      "values": {
+        "A1": true
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "true",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-017",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-017",
+      "values": {},
+      "cells": {
+        "A1": "=NA()",
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-001",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-001",
+      "values": {
+        "A1": "Σ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ς",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-002",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-002",
+      "values": {
+        "A1": "ΣΣ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "σς",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-003",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-003",
+      "values": {
+        "A1": "ΑΣ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ας",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-004",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-004",
+      "values": {
+        "A1": "ΣΑ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "σα",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-005",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-005",
+      "values": {
+        "A1": "Σ Σ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ς ς",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-006",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-006",
+      "values": {
+        "A1": "σ ς Σ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "σ ς ς",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-007",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-007",
+      "values": {
+        "A1": "ΟΣ ΟΣΑ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ος οσα",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-008",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-008",
+      "values": {
+        "A1": "İ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "i",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-009",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-009",
+      "values": {
+        "A1": "ẞ"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ẞ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-010",
+      "source": "observed",
+      "description": "Isolated/contextual Unicode lowercase mapping",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/LOWER-ADDITIONAL-010",
+      "values": {
+        "A1": "𐐀"
+      },
+      "cells": {
+        "Z1": "=LOWER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "𐐀",
+        "kind": "text"
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    }
+  ]
+}

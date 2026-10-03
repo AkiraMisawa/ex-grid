@@ -22,6 +22,11 @@
     agree / disagree / blocked / recorded.
 
     How the inputs go in:
+      - Optional "values" are typed fixtures applied before "cells": JSON numbers go directly
+        through Value2 as doubles, strings as literal text (NumberFormat '@'), booleans as
+        booleans, and null clears a cell. They are not reparsed as typed entries. This preserves
+        the October 3 observations' numeric text and exact binary64 inputs. Formula strings
+        belong in "cells". These fixtures go through COM even in -Keys mode.
       - A cell whose text begins with "=" is a Formula. It goes in through Range.Formula2 where
         Excel has it (Microsoft 365), otherwise Range.Formula. Both take the invariant (en-US)
         syntax the corpus is written in. Formula2 is preferred because Range.Formula applies
@@ -587,6 +592,21 @@ function Get-ComProperty($Object, [string]$Name) {
     return $Object.GetType().InvokeMember($Name, [Reflection.BindingFlags]::GetProperty, $null, $Object, @(), $null, $EnUs, $null)
 }
 
+function Set-Values($Sheet, $Values) {
+    if ($null -eq $Values) { return }
+    foreach ($p in $Values.PSObject.Properties) {
+        $cell = $Sheet.Range($p.Name)
+        $value = $p.Value
+        if ($null -eq $value) { [void]$cell.ClearContents() }
+        elseif ($value -is [string]) {
+            Set-ComProperty $cell 'NumberFormat' '@'
+            Set-ComProperty $cell 'Value2' $value
+        }
+        elseif ($value -is [bool]) { Set-ComProperty $cell 'Value2' $value }
+        else { Set-ComProperty $cell 'Value2' (To-Double $value) }
+    }
+}
+
 function Add-Tables($Sheet, $Tables, [bool]$NeedsValues) {
     if ($null -eq $Tables) { return }
     $column = 15000
@@ -857,6 +877,7 @@ try {
                     $checksValues = (Has-Prop $case.expect 'value2') -or (Has-Prop $case.expect 'text')
                     Add-Tables $sheet (Get-Prop $case 'tables') $checksValues
                     if (Has-Prop $case 'fixture') { Set-Cells $sheet (Get-Prop $fixtures ([string]$case.fixture)).cells $useFormula2 }
+                    Set-Values $sheet (Get-Prop $case 'values')
                     if ($Keys) { Assert-ExcelInFront; [void]$sheet.Activate() }
                     Set-Cells $sheet $case.cells $useFormula2 ([bool]$Keys)
                     Set-Step "$($case.id): formats and actions" $StepBudget.actions

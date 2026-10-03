@@ -1,0 +1,315 @@
+{
+  "area": "upper",
+  "about": "UPPER: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "UPPER-001",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-001",
+      "values": {
+        "A1": "abc XYZ"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ABC XYZ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-002",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-002",
+      "values": {
+        "A1": "straße"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "STRAßE",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-003",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-003",
+      "values": {
+        "A1": "STRASSE"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "STRASSE",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-004",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-004",
+      "values": {
+        "A1": "ß"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ß",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-005",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-005",
+      "values": {
+        "A1": "ẞ"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ẞ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-006",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-006",
+      "values": {
+        "A1": "i I ı İ"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "I I I İ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-007",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-007",
+      "values": {
+        "A1": "σ ς Σ"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "Σ Σ Σ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-008",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-008",
+      "values": {
+        "A1": "é É"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "É É",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-009",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-009",
+      "values": {
+        "A1": "ǳ ǲ Ǳ"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "Ǳ Ǳ Ǳ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-010",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-010",
+      "values": {
+        "A1": "ﬃ"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "ﬃ",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-011",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-011",
+      "values": {
+        "A1": "𐐨𐐀"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "𐐨𐐀",
+        "kind": "text"
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    },
+    {
+      "id": "UPPER-012",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-012",
+      "values": {
+        "A1": "hello-world 42foo o'NEILL"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "HELLO-WORLD 42FOO O'NEILL",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-013",
+      "source": "observed",
+      "description": "Unicode and word boundaries",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-013",
+      "values": {
+        "A1": "a b"
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "A B",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-014",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-014",
+      "values": {
+        "A1": null
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-015",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-015",
+      "values": {
+        "A1": 123
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "123",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-016",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-016",
+      "values": {
+        "A1": true
+      },
+      "cells": {
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "TRUE",
+        "kind": "text"
+      }
+    },
+    {
+      "id": "UPPER-017",
+      "source": "observed",
+      "description": "Input coercion/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/UPPER-017",
+      "values": {},
+      "cells": {
+        "A1": "=NA()",
+        "Z1": "=UPPER(A1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    }
+  ]
+}

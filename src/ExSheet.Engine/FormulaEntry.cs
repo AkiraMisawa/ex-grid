@@ -296,8 +296,8 @@ public static partial class FormulaEntry
     /// The values of an argument that takes one of a fixed list (ADR-0058), while nothing of it
     /// stands after the caret: the caret is at the argument's end, before the <c>,</c> or <c>)</c>
     /// that ends it. Before a value, inside one or before white space Excel lists nothing (Part B
-    /// of the ninth Windows run, Q49; the thirteenth, Q55). A number lists the value it is alone,
-    /// and nothing when it is no value; any other text — nothing yet, the beginning of a value,
+    /// of the ninth Windows run, Q49; the thirteenth, Q55). A number or boolean lists the value it
+    /// is alone, a number no value takes lists nothing; any other text — the beginning of a value,
     /// letters, a Reference, text in quotes — lists every value, the first to be chosen (the tenth
     /// and thirteenth Windows runs, Q54). Accepting one writes it over everything typed in the
     /// argument.
@@ -309,9 +309,12 @@ public static partial class FormulaEntry
 
         var start = argumentStart;
         while (start < caret && char.IsWhiteSpace(text[start])) start++;
-        IReadOnlyList<ArgumentValue> listed = NumberOf(text[start..caret]) is { } number
+        var typed = text[start..caret];
+        IReadOnlyList<ArgumentValue> listed = NumberOf(typed) is { } number
             ? [.. values.Where(v => NumberOf(v.Value) == number)]
-            : values;
+            : values.FirstOrDefault(v => string.Equals(v.Value, typed.Trim(), StringComparison.OrdinalIgnoreCase)) is { } literal
+                ? [literal]
+                : values;
         if (listed.Count == 0) return null;
         var candidates = listed
             .Select(v => new CompletionCandidate(v.Text, CompletionKind.ArgumentValue, v.Value, null))
@@ -391,6 +394,8 @@ public static partial class FormulaEntry
     {
         var names = function.Arguments.Split(", ");
         if (index < names.Length && names[index] != "...") return names[index];
+        if (names[^1] == "..." && Formulas.FunctionLibrary.Find(function.Name) is { InPairs: true } definition)
+            return names[definition.PairOffset + (index - definition.PairOffset) % 2];
         return names[^1] == "..." ? names[^2] : null;
     }
 

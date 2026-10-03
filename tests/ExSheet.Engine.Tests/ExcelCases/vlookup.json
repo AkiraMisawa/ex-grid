@@ -1,0 +1,1837 @@
+{
+  "area": "vlookup",
+  "about": "VLOOKUP: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "VLOOKUP-001",
+      "source": "observed",
+      "description": "sorted duplicate; key 2, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-001",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "4034000000000000",
+      "expect": {
+        "value2": 20.0
+      }
+    },
+    {
+      "id": "VLOOKUP-002",
+      "source": "observed",
+      "description": "sorted duplicate; key 2, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-002",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "VLOOKUP-003",
+      "source": "observed",
+      "description": "sorted duplicate; key 2.5, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-003",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-004",
+      "source": "observed",
+      "description": "sorted duplicate; key 2.5, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-004",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "VLOOKUP-005",
+      "source": "observed",
+      "description": "sorted duplicate; key 0, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-005",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-006",
+      "source": "observed",
+      "description": "sorted duplicate; key 0, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-006",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-007",
+      "source": "observed",
+      "description": "sorted duplicate; key \"a\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-007",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-008",
+      "source": "observed",
+      "description": "sorted duplicate; key \"a\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-008",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-009",
+      "source": "observed",
+      "description": "sorted duplicate; key \"*\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-009",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-010",
+      "source": "observed",
+      "description": "sorted duplicate; key \"*\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-010",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-011",
+      "source": "observed",
+      "description": "descending; key 2, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-011",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "4034000000000000",
+      "expect": {
+        "value2": 20.0
+      }
+    },
+    {
+      "id": "VLOOKUP-012",
+      "source": "observed",
+      "description": "descending; key 2, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-012",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 30.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-013",
+      "source": "observed",
+      "description": "descending; key 2.5, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-013",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-014",
+      "source": "observed",
+      "description": "descending; key 2.5, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-014",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4044000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 40.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-015",
+      "source": "observed",
+      "description": "descending; key 0, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-015",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-016",
+      "source": "observed",
+      "description": "descending; key 0, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-016",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-017",
+      "source": "observed",
+      "description": "descending; key \"a\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-017",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-018",
+      "source": "observed",
+      "description": "descending; key \"a\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-018",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-019",
+      "source": "observed",
+      "description": "descending; key \"*\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-019",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-020",
+      "source": "observed",
+      "description": "descending; key \"*\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-020",
+      "values": {
+        "A1": 3,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-021",
+      "source": "observed",
+      "description": "unsorted; key 2, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-021",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "VLOOKUP-022",
+      "source": "observed",
+      "description": "unsorted; key 2, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-022",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4034000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 20.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-023",
+      "source": "observed",
+      "description": "unsorted; key 2.5, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-023",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-024",
+      "source": "observed",
+      "description": "unsorted; key 2.5, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-024",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4034000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 20.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-025",
+      "source": "observed",
+      "description": "unsorted; key 0, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-025",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-026",
+      "source": "observed",
+      "description": "unsorted; key 0, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-026",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-027",
+      "source": "observed",
+      "description": "unsorted; key \"a\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-027",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-028",
+      "source": "observed",
+      "description": "unsorted; key \"a\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-028",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-029",
+      "source": "observed",
+      "description": "unsorted; key \"*\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-029",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-030",
+      "source": "observed",
+      "description": "unsorted; key \"*\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-030",
+      "values": {
+        "A1": 2,
+        "B1": 10,
+        "A2": 1,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 2,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-031",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-031",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-032",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-032",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4044000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 40.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-033",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2.5, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-033",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-034",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 2.5, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-034",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4044000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 40.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-035",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 0, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-035",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "4034000000000000",
+      "expect": {
+        "value2": 20.0
+      }
+    },
+    {
+      "id": "VLOOKUP-036",
+      "source": "observed",
+      "description": "blank numeric and text zero; key 0, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-036",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4034000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 20.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-037",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"a\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-037",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-038",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"a\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-038",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 30.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-039",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"*\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-039",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "VLOOKUP-040",
+      "source": "observed",
+      "description": "blank numeric and text zero; key \"*\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-040",
+      "values": {
+        "A1": null,
+        "B1": 10,
+        "A2": 0,
+        "B2": 20,
+        "A3": "0",
+        "B3": 30,
+        "A4": 1,
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-041",
+      "source": "observed",
+      "description": "text case and literal star; key 2, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-041",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-042",
+      "source": "observed",
+      "description": "text case and literal star; key 2, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-042",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-043",
+      "source": "observed",
+      "description": "text case and literal star; key 2.5, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-043",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-044",
+      "source": "observed",
+      "description": "text case and literal star; key 2.5, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-044",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-045",
+      "source": "observed",
+      "description": "text case and literal star; key 0, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-045",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-046",
+      "source": "observed",
+      "description": "text case and literal star; key 0, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-046",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(0,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-047",
+      "source": "observed",
+      "description": "text case and literal star; key \"a\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-047",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "VLOOKUP-048",
+      "source": "observed",
+      "description": "text case and literal star; key \"a\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-048",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4034000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 20.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-049",
+      "source": "observed",
+      "description": "text case and literal star; key \"*\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-049",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "VLOOKUP-050",
+      "source": "observed",
+      "description": "text case and literal star; key \"*\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-050",
+      "values": {
+        "A1": "a",
+        "B1": 10,
+        "A2": "A",
+        "B2": 20,
+        "A3": "b",
+        "B3": 30,
+        "A4": "*",
+        "B4": 40
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-051",
+      "source": "observed",
+      "description": "error key; key 2, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-051",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(2,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-052",
+      "source": "observed",
+      "description": "error key; key 2, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-052",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(2,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 10.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-053",
+      "source": "observed",
+      "description": "error key; key 2.5, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-053",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-054",
+      "source": "observed",
+      "description": "error key; key 2.5, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-054",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(2.5,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 10.0
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-055",
+      "source": "observed",
+      "description": "error key; key 0, mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-055",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(0,A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-056",
+      "source": "observed",
+      "description": "error key; key 0, mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-056",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(0,A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-057",
+      "source": "observed",
+      "description": "error key; key \"a\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-057",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-058",
+      "source": "observed",
+      "description": "error key; key \"a\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-058",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(\"a\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-059",
+      "source": "observed",
+      "description": "error key; key \"*\", mode FALSE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-059",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-060",
+      "source": "observed",
+      "description": "error key; key \"*\", mode TRUE",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-060",
+      "values": {
+        "A1": 1,
+        "B1": 10,
+        "B2": 20,
+        "A3": 3,
+        "B3": 30,
+        "A4": 4,
+        "B4": 40
+      },
+      "cells": {
+        "A2": "=NA()",
+        "Z1": "=VLOOKUP(\"*\",A1:B4,2,TRUE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#N/A"
+      },
+      "engineDiffersByDecision": "ADR-0047: approximate lookup requires a sorted homogeneous vector with no blanks or errors; text ordering is admitted only for ASCII letters, digits and spaces."
+    },
+    {
+      "id": "VLOOKUP-061",
+      "source": "observed",
+      "description": "Index coercion / out of bounds",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-061",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(1,A1:B2,0,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "VLOOKUP-062",
+      "source": "observed",
+      "description": "Index coercion / out of bounds",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-062",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(1,A1:B2,-1,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "VLOOKUP-063",
+      "source": "observed",
+      "description": "Index coercion / out of bounds",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-063",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(1,A1:B2,1.9,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "VLOOKUP-064",
+      "source": "observed",
+      "description": "Index coercion / out of bounds",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-064",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(1,A1:B2,3,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#REF!"
+      }
+    },
+    {
+      "id": "VLOOKUP-065",
+      "source": "observed",
+      "description": "Index coercion / out of bounds",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-065",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(1,A1:B2,TRUE,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "VLOOKUP-066",
+      "source": "observed",
+      "description": "Index coercion / out of bounds",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-066",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(1,A1:B2,\"2\",FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "4024000000000000",
+      "expect": {
+        "value2": 10.0
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-001",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-FOLLOWUP-001",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(2,A1:B4,2)"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "value2": 30.0
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-002",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-FOLLOWUP-002",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(3,A1:B4,2)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-003",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-FOLLOWUP-003",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(4,A1:B4,2)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-004",
+      "source": "observed",
+      "description": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-FOLLOWUP-004",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(NA(),A1:B4,2)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-005",
+      "source": "observed",
+      "description": "Numeric text lookup is distinct from number",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/VLOOKUP-FOLLOWUP-005",
+      "values": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      },
+      "cells": {
+        "Z1": "=VLOOKUP(\"2\",A1:B4,2,FALSE)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+{
+  "area": "countblank",
+  "about": "COUNTBLANK: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "COUNTBLANK-001",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-001",
+      "values": {
+        "A1": null
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-002",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-002",
+      "values": {},
+      "cells": {
+        "A2": "=\"\"",
+        "Z1": "=COUNTBLANK(A2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-003",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-003",
+      "values": {
+        "A3": 0
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A3)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-004",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-004",
+      "values": {
+        "A4": 1
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A4)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-005",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-005",
+      "values": {
+        "A5": "1"
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A5)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-006",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-006",
+      "values": {
+        "A6": "alpha"
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A6)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-007",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-007",
+      "values": {
+        "A7": "ALPHA"
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A7)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-008",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-008",
+      "values": {
+        "A8": "a*b"
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A8)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-009",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-009",
+      "values": {
+        "A9": "a?b"
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A9)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-010",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-010",
+      "values": {
+        "A10": "a~b"
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A10)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-011",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-011",
+      "values": {
+        "A11": true
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A11)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-012",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-012",
+      "values": {
+        "A12": false
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A12)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-013",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-013",
+      "values": {
+        "A13": -1
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A13)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-014",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-014",
+      "values": {
+        "A14": " "
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A14)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-015",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-015",
+      "values": {
+        "A15": "1.5"
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A15)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-016",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-016",
+      "values": {
+        "A16": 1.5
+      },
+      "cells": {
+        "Z1": "=COUNTBLANK(A16)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-017",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-017",
+      "values": {},
+      "cells": {
+        "A17": "=NA()",
+        "Z1": "=COUNTBLANK(A17)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-018",
+      "source": "observed",
+      "description": "Isolated blank/empty/text/number/boolean/error",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-018",
+      "values": {},
+      "cells": {
+        "A18": "=1/0",
+        "Z1": "=COUNTBLANK(A18)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTBLANK-019",
+      "source": "observed",
+      "description": "Mixed range",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTBLANK-019",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTBLANK(A1:A18)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,2485 @@
+{
+  "area": "countif",
+  "about": "COUNTIF: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "COUNTIF-001",
+      "source": "observed",
+      "description": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-001",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"=\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-002",
+      "source": "observed",
+      "description": "Criteria \"<>\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-002",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"<>\")"
+      },
+      "check": "Z1",
+      "excelBits": "402E000000000000",
+      "expect": {
+        "value2": 15.0
+      }
+    },
+    {
+      "id": "COUNTIF-003",
+      "source": "observed",
+      "description": "Criteria \"\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-003",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-004",
+      "source": "observed",
+      "description": "Criteria 0; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-004",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-005",
+      "source": "observed",
+      "description": "Criteria 1; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-005",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-006",
+      "source": "observed",
+      "description": "Criteria \"1\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-006",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"1\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-007",
+      "source": "observed",
+      "description": "Criteria \"=1\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-007",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"=1\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-008",
+      "source": "observed",
+      "description": "Criteria \">0\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-008",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\">0\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-009",
+      "source": "observed",
+      "description": "Criteria \"<>1\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-009",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"<>1\")"
+      },
+      "check": "Z1",
+      "excelBits": "402E000000000000",
+      "expect": {
+        "value2": 15.0
+      }
+    },
+    {
+      "id": "COUNTIF-010",
+      "source": "observed",
+      "description": "Criteria \"alpha\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-010",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"alpha\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-011",
+      "source": "observed",
+      "description": "Criteria \"*\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-011",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"*\")"
+      },
+      "check": "Z1",
+      "excelBits": "4022000000000000",
+      "expect": {
+        "value2": 9.0
+      }
+    },
+    {
+      "id": "COUNTIF-012",
+      "source": "observed",
+      "description": "Criteria \"?\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-012",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"?\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-013",
+      "source": "observed",
+      "description": "Criteria \"a~*b\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-013",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"a~*b\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-014",
+      "source": "observed",
+      "description": "Criteria \"a~?b\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-014",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"a~?b\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-015",
+      "source": "observed",
+      "description": "Criteria \"a~~b\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-015",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"a~~b\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-016",
+      "source": "observed",
+      "description": "Criteria TRUE; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-016",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,TRUE)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-017",
+      "source": "observed",
+      "description": "Criteria FALSE; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-017",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,FALSE)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-018",
+      "source": "observed",
+      "description": "Criteria \"TRUE\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-018",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"TRUE\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-019",
+      "source": "observed",
+      "description": "Criteria \"#N/A\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-019",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\"#N/A\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-020",
+      "source": "observed",
+      "description": "Criteria \">1.5\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-020",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\">1.5\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-021",
+      "source": "observed",
+      "description": "Criteria \">1,5\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-021",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\">1,5\")"
+      },
+      "check": "Z1",
+      "excelBits": "4018000000000000",
+      "expect": {
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 6.0
+      },
+      "engineDiffersByDecision": "ADR-0047: culture-sensitive criteria containing a numeric comma are refused until their reading is pinned across Sheet cultures."
+    },
+    {
+      "id": "COUNTIF-022",
+      "source": "observed",
+      "description": "Criteria \" \"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-022",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A16,\" \")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-023",
+      "source": "observed",
+      "description": "Isolated criteria input A1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-023",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1,\"=\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-024",
+      "source": "observed",
+      "description": "Isolated criteria input A2",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-024",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A2,\"=\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-025",
+      "source": "observed",
+      "description": "Isolated criteria input A3",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-025",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A3,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-026",
+      "source": "observed",
+      "description": "Isolated criteria input A5",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-026",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A5,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-027",
+      "source": "observed",
+      "description": "Isolated criteria input A6",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-027",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A6,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-028",
+      "source": "observed",
+      "description": "Isolated criteria input A11",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-028",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A11,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-029",
+      "source": "observed",
+      "description": "Isolated criteria input A12",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-029",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A12,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-030",
+      "source": "observed",
+      "description": "Isolated criteria input A15",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-030",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A15,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-031",
+      "source": "observed",
+      "description": "Isolated criteria input A16",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-031",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A16,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-032",
+      "source": "observed",
+      "description": "Isolated criteria input A17",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-032",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A17,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-033",
+      "source": "observed",
+      "description": "Isolated criteria input A18",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-033",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A18,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-034",
+      "source": "observed",
+      "description": "Errors in criteria range",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-034",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A18,\"*\")"
+      },
+      "check": "Z1",
+      "excelBits": "4022000000000000",
+      "expect": {
+        "value2": 9.0
+      }
+    },
+    {
+      "id": "COUNTIF-035",
+      "source": "observed",
+      "description": "Short sum/average range; COUNTIF normal baseline",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-035",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "Z1": "=COUNTIF(A1:A4,\">0\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-001",
+      "source": "observed",
+      "description": "blank criterion cell",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-001",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=COUNTIF(A1:A4,D1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-002",
+      "source": "observed",
+      "description": "formula-empty criterion cell",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-002",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=COUNTIF(A1:A4,D2)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-003",
+      "source": "observed",
+      "description": "error criterion",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-003",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=COUNTIF(A1:A4,NA())"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-004",
+      "source": "observed",
+      "description": "no match",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-004",
+      "values": {
+        "A1": null,
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null
+      },
+      "cells": {
+        "A2": "=\"\"",
+        "D2": "=\"\"",
+        "Z1": "=COUNTIF(A1:A4,\"nomatch\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-005",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-005",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1:A5,\"a~b\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-006",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-006",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1:A5,\"a~~b\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-007",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-007",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1:A5,\"a~~~b\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-008",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-008",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1:A5,\"a~\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-009",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-009",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1:A5,\"a~*b\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-010",
+      "source": "observed",
+      "description": "Followup: literal/escaped/trailing tilde",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-FOLLOWUP-010",
+      "values": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1:A5,\"a~?b\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-001",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-001",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"=1\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-002",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-002",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"<>1\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-003",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-003",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"=0\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-004",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-004",
+      "values": {
+        "A1": 1,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"<>0\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-005",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-005",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"=1\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-006",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-006",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"<>1\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-007",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-007",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"=0\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-008",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-008",
+      "values": {
+        "A1": "1",
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"<>0\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-009",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-009",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"=1\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-010",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-010",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"<>1\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-011",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-011",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"=0\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-012",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-012",
+      "values": {
+        "A1": null,
+        "B1": 10
+      },
+      "cells": {
+        "Z1": "=COUNTIF(A1,\"<>0\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-013",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-013",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=COUNTIF(A1,\"=1\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-014",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-014",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=COUNTIF(A1,\"<>1\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-015",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-015",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=COUNTIF(A1,\"=0\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-016",
+      "source": "observed",
+      "description": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-016",
+      "values": {
+        "B1": 10
+      },
+      "cells": {
+        "A1": "=\"\"",
+        "Z1": "=COUNTIF(A1,\"<>0\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-017",
+      "source": "observed",
+      "description": "Error-valued criterion and literal error text against error and text cells",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-017",
+      "values": {
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      },
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "Z1": "=COUNTIF(A1:A3,NA())"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-018",
+      "source": "observed",
+      "description": "Error-valued criterion and literal error text against error and text cells",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/COUNTIF-ADDITIONAL-018",
+      "values": {
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      },
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "Z1": "=COUNTIF(A1:A3,\"#N/A\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    }
+  ]
+}

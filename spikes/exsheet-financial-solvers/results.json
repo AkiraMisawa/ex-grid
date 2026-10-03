@@ -1,0 +1,1214 @@
+{
+  "runtime": {
+    "python": "3.13.12",
+    "system": "Darwin",
+    "machine": "arm64"
+  },
+  "criterion": "15 significant digits of exact binary64, half away from zero; exact Error Value",
+  "evidence": "verification/2026-10-03-windows-functions/results.json",
+  "candidates": {
+    "newton": {
+      "summary": {
+        "IRR": {
+          "cases": 60,
+          "matched": 36,
+          "mismatched": 24
+        },
+        "XIRR": {
+          "cases": 67,
+          "matched": 35,
+          "mismatched": 32
+        },
+        "RATE": {
+          "cases": 16,
+          "matched": 8,
+          "mismatched": 8
+        }
+      },
+      "mismatches": [
+        {
+          "id": "IRR-001",
+          "formula": "=IRR(A1:A2)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-002",
+          "formula": "=IRR(A1:A2,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-004",
+          "formula": "=IRR(A1:A2,0.5)",
+          "expected": "0.099999999999999867",
+          "actual": "0.10000000000000005"
+        },
+        {
+          "id": "IRR-006",
+          "formula": "=IRR(A1:A2,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-007",
+          "formula": "=IRR(A1:A3)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999922"
+        },
+        {
+          "id": "IRR-008",
+          "formula": "=IRR(A1:A3,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999922"
+        },
+        {
+          "id": "IRR-010",
+          "formula": "=IRR(A1:A3,0.5)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999881"
+        },
+        {
+          "id": "IRR-012",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.10000000000000009",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-013",
+          "formula": "=IRR(A1:A3)",
+          "expected": "0.10000000000000009",
+          "actual": "0.10000000000000173"
+        },
+        {
+          "id": "IRR-014",
+          "formula": "=IRR(A1:A3,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.10000000000000173"
+        },
+        {
+          "id": "IRR-015",
+          "formula": "=IRR(A1:A3,-0.9)",
+          "expected": "0.10000000000000098",
+          "actual": "0.10000000000000184"
+        },
+        {
+          "id": "IRR-018",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.20000000000000306",
+          "actual": "0.10000000000000138"
+        },
+        {
+          "id": "IRR-019",
+          "formula": "=IRR(A1:A2)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-020",
+          "formula": "=IRR(A1:A2,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-021",
+          "formula": "=IRR(A1:A2,-0.9)",
+          "expected": "0.099999999999999867",
+          "actual": "0.10000000000000002"
+        },
+        {
+          "id": "IRR-024",
+          "formula": "=IRR(A1:A2,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-043",
+          "formula": "=IRR(A1:A3)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-044",
+          "formula": "=IRR(A1:A3,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-046",
+          "formula": "=IRR(A1:A3,0.5)",
+          "expected": "0.099999999999999867",
+          "actual": "0.10000000000000005"
+        },
+        {
+          "id": "IRR-048",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-055",
+          "formula": "=IRR(A1:A4)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-056",
+          "formula": "=IRR(A1:A4,0.1)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-058",
+          "formula": "=IRR(A1:A4,0.5)",
+          "expected": "-0.76550207031154993",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-060",
+          "formula": "=IRR(A1:A4,2)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-001",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-002",
+          "formula": "=XIRR(A1:A2,B1:B2,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-003",
+          "formula": "=XIRR(A1:A2,B1:B2,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934141244"
+        },
+        {
+          "id": "XIRR-004",
+          "formula": "=XIRR(A1:A2,B1:B2,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934141313"
+        },
+        {
+          "id": "XIRR-006",
+          "formula": "=XIRR(A1:A2,B1:B2,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-007",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "0.099856585264205933",
+          "actual": "0.099856587738287164"
+        },
+        {
+          "id": "XIRR-008",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "0.099856585264205933",
+          "actual": "0.099856587738287164"
+        },
+        {
+          "id": "XIRR-009",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099856587738287206"
+        },
+        {
+          "id": "XIRR-010",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "0.099856588989496231",
+          "actual": "0.099856587738287261"
+        },
+        {
+          "id": "XIRR-012",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "0.099856588989496231",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-013",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065954"
+        },
+        {
+          "id": "XIRR-014",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065954"
+        },
+        {
+          "id": "XIRR-015",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065857"
+        },
+        {
+          "id": "XIRR-016",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "#NUM!",
+          "actual": "0.19258578626372347"
+        },
+        {
+          "id": "XIRR-018",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "#NUM!",
+          "actual": "0.1033979277006592"
+        },
+        {
+          "id": "XIRR-019",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-020",
+          "formula": "=XIRR(A1:A2,B1:B2,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-021",
+          "formula": "=XIRR(A1:A2,B1:B2,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934141244"
+        },
+        {
+          "id": "XIRR-022",
+          "formula": "=XIRR(A1:A2,B1:B2,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934141313"
+        },
+        {
+          "id": "XIRR-024",
+          "formula": "=XIRR(A1:A2,B1:B2,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-037",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-038",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-039",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934141244"
+        },
+        {
+          "id": "XIRR-040",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934141313"
+        },
+        {
+          "id": "XIRR-042",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-055",
+          "formula": "=XIRR(A1:A4,B1:B4)",
+          "expected": "-0.76516119129955773",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-056",
+          "formula": "=XIRR(A1:A4,B1:B4,0.1)",
+          "expected": "-0.76516119129955773",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-057",
+          "formula": "=XIRR(A1:A4,B1:B4,-0.9)",
+          "expected": "-0.76516118869185457",
+          "actual": "-0.76516118974604963"
+        },
+        {
+          "id": "XIRR-058",
+          "formula": "=XIRR(A1:A4,B1:B4,0.5)",
+          "expected": "-0.7651611901819706",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-063",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.099999994039535522",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "XIRR-064",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.00078742802143096937",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-065",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "RATE-001",
+          "formula": "=RATE(12,-100,1000)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769158224"
+        },
+        {
+          "id": "RATE-002",
+          "formula": "=RATE(12,-100,1000,0,0)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769158224"
+        },
+        {
+          "id": "RATE-003",
+          "formula": "=RATE(12,-100,1000,0,1)",
+          "expected": "0.03503153036227754",
+          "actual": "0.035031530362283174"
+        },
+        {
+          "id": "RATE-004",
+          "formula": "=RATE(12,-100,1000,0,2)",
+          "expected": "0.03503153036227754",
+          "actual": "0.035031530362283174"
+        },
+        {
+          "id": "RATE-006",
+          "formula": "=RATE(12,-100,1000,0,0,2)",
+          "expected": "0.02922854076913305",
+          "actual": "0.029228540769133893"
+        },
+        {
+          "id": "RATE-009",
+          "formula": "=RATE(12,0,1000,-1000)",
+          "expected": "8.4459342326353958E-14",
+          "actual": "-9.8193843999238653e-17"
+        },
+        {
+          "id": "RATE-013",
+          "formula": "=RATE(12.5,-100,1000)",
+          "expected": "0.034766629918673013",
+          "actual": "0.034766629918681478"
+        },
+        {
+          "id": "RATE-015",
+          "formula": "=RATE(\"12\",-100,1000)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769158224"
+        }
+      ]
+    },
+    "secant": {
+      "summary": {
+        "IRR": {
+          "cases": 60,
+          "matched": 38,
+          "mismatched": 22
+        },
+        "XIRR": {
+          "cases": 67,
+          "matched": 36,
+          "mismatched": 31
+        },
+        "RATE": {
+          "cases": 16,
+          "matched": 8,
+          "mismatched": 8
+        }
+      },
+      "mismatches": [
+        {
+          "id": "IRR-003",
+          "formula": "=IRR(A1:A2,-0.9)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999742"
+        },
+        {
+          "id": "IRR-004",
+          "formula": "=IRR(A1:A2,0.5)",
+          "expected": "0.099999999999999867",
+          "actual": "0.099999999999998881"
+        },
+        {
+          "id": "IRR-006",
+          "formula": "=IRR(A1:A2,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-009",
+          "formula": "=IRR(A1:A3,-0.9)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999984032"
+        },
+        {
+          "id": "IRR-010",
+          "formula": "=IRR(A1:A3,0.5)",
+          "expected": "0.10000000000000009",
+          "actual": "0.10000000000002419"
+        },
+        {
+          "id": "IRR-012",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.10000000000000009",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-013",
+          "formula": "=IRR(A1:A3)",
+          "expected": "0.10000000000000009",
+          "actual": "0.10000000000000173"
+        },
+        {
+          "id": "IRR-014",
+          "formula": "=IRR(A1:A3,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.10000000000000173"
+        },
+        {
+          "id": "IRR-015",
+          "formula": "=IRR(A1:A3,-0.9)",
+          "expected": "0.10000000000000098",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-016",
+          "formula": "=IRR(A1:A3,0.5)",
+          "expected": "0.19999999999999951",
+          "actual": "0.20000000000009288"
+        },
+        {
+          "id": "IRR-018",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.20000000000000306",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-021",
+          "formula": "=IRR(A1:A2,-0.9)",
+          "expected": "0.099999999999999867",
+          "actual": "0.099999999999999742"
+        },
+        {
+          "id": "IRR-022",
+          "formula": "=IRR(A1:A2,0.5)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999998881"
+        },
+        {
+          "id": "IRR-024",
+          "formula": "=IRR(A1:A2,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-045",
+          "formula": "=IRR(A1:A3,-0.9)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999742"
+        },
+        {
+          "id": "IRR-046",
+          "formula": "=IRR(A1:A3,0.5)",
+          "expected": "0.099999999999999867",
+          "actual": "0.099999999999998881"
+        },
+        {
+          "id": "IRR-048",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-055",
+          "formula": "=IRR(A1:A4)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-056",
+          "formula": "=IRR(A1:A4,0.1)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-057",
+          "formula": "=IRR(A1:A4,-0.9)",
+          "expected": "-0.76550207031154993",
+          "actual": "-0.76550207031218997"
+        },
+        {
+          "id": "IRR-058",
+          "formula": "=IRR(A1:A4,0.5)",
+          "expected": "-0.76550207031154993",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-060",
+          "formula": "=IRR(A1:A4,2)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-001",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141369"
+        },
+        {
+          "id": "XIRR-002",
+          "formula": "=XIRR(A1:A2,B1:B2,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141369"
+        },
+        {
+          "id": "XIRR-003",
+          "formula": "=XIRR(A1:A2,B1:B2,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934140925"
+        },
+        {
+          "id": "XIRR-004",
+          "formula": "=XIRR(A1:A2,B1:B2,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934139842"
+        },
+        {
+          "id": "XIRR-006",
+          "formula": "=XIRR(A1:A2,B1:B2,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-007",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "0.099856585264205933",
+          "actual": "0.099856587738287345"
+        },
+        {
+          "id": "XIRR-008",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "0.099856585264205933",
+          "actual": "0.099856587738287345"
+        },
+        {
+          "id": "XIRR-009",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099856587738269248"
+        },
+        {
+          "id": "XIRR-010",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "0.099856588989496231",
+          "actual": "0.099856587738313421"
+        },
+        {
+          "id": "XIRR-012",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "0.099856588989496231",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-013",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "#NUM!",
+          "actual": "0.10339792769993102"
+        },
+        {
+          "id": "XIRR-014",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "#NUM!",
+          "actual": "0.10339792769993102"
+        },
+        {
+          "id": "XIRR-015",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065588"
+        },
+        {
+          "id": "XIRR-016",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "#NUM!",
+          "actual": "0.19258578626372308"
+        },
+        {
+          "id": "XIRR-019",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141369"
+        },
+        {
+          "id": "XIRR-020",
+          "formula": "=XIRR(A1:A2,B1:B2,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141369"
+        },
+        {
+          "id": "XIRR-021",
+          "formula": "=XIRR(A1:A2,B1:B2,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934140925"
+        },
+        {
+          "id": "XIRR-022",
+          "formula": "=XIRR(A1:A2,B1:B2,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934139842"
+        },
+        {
+          "id": "XIRR-024",
+          "formula": "=XIRR(A1:A2,B1:B2,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-037",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141369"
+        },
+        {
+          "id": "XIRR-038",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141369"
+        },
+        {
+          "id": "XIRR-039",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934140925"
+        },
+        {
+          "id": "XIRR-040",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934139842"
+        },
+        {
+          "id": "XIRR-042",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-055",
+          "formula": "=XIRR(A1:A4,B1:B4)",
+          "expected": "-0.76516119129955773",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-056",
+          "formula": "=XIRR(A1:A4,B1:B4,0.1)",
+          "expected": "-0.76516119129955773",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-057",
+          "formula": "=XIRR(A1:A4,B1:B4,-0.9)",
+          "expected": "-0.76516118869185457",
+          "actual": "-0.76516118974604963"
+        },
+        {
+          "id": "XIRR-058",
+          "formula": "=XIRR(A1:A4,B1:B4,0.5)",
+          "expected": "-0.7651611901819706",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-063",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.099999994039535522",
+          "actual": "0.10000000000000001"
+        },
+        {
+          "id": "XIRR-064",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.00078742802143096937",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-065",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141369"
+        },
+        {
+          "id": "RATE-001",
+          "formula": "=RATE(12,-100,1000)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769137328"
+        },
+        {
+          "id": "RATE-002",
+          "formula": "=RATE(12,-100,1000,0,0)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769137328"
+        },
+        {
+          "id": "RATE-003",
+          "formula": "=RATE(12,-100,1000,0,1)",
+          "expected": "0.03503153036227754",
+          "actual": "0.035031530362278088"
+        },
+        {
+          "id": "RATE-004",
+          "formula": "=RATE(12,-100,1000,0,2)",
+          "expected": "0.03503153036227754",
+          "actual": "0.035031530362278088"
+        },
+        {
+          "id": "RATE-006",
+          "formula": "=RATE(12,-100,1000,0,0,2)",
+          "expected": "0.02922854076913305",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "RATE-009",
+          "formula": "=RATE(12,0,1000,-1000)",
+          "expected": "8.4459342326353958E-14",
+          "actual": "1.0083377992940741e-13"
+        },
+        {
+          "id": "RATE-013",
+          "formula": "=RATE(12.5,-100,1000)",
+          "expected": "0.034766629918673013",
+          "actual": "0.034766629918673381"
+        },
+        {
+          "id": "RATE-015",
+          "formula": "=RATE(\"12\",-100,1000)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769137328"
+        }
+      ]
+    },
+    "newton-tight": {
+      "summary": {
+        "IRR": {
+          "cases": 60,
+          "matched": 35,
+          "mismatched": 25
+        },
+        "XIRR": {
+          "cases": 67,
+          "matched": 35,
+          "mismatched": 32
+        },
+        "RATE": {
+          "cases": 16,
+          "matched": 8,
+          "mismatched": 8
+        }
+      },
+      "mismatches": [
+        {
+          "id": "IRR-001",
+          "formula": "=IRR(A1:A2)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-002",
+          "formula": "=IRR(A1:A2,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-003",
+          "formula": "=IRR(A1:A2,-0.9)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999867"
+        },
+        {
+          "id": "IRR-004",
+          "formula": "=IRR(A1:A2,0.5)",
+          "expected": "0.099999999999999867",
+          "actual": "0.10000000000000005"
+        },
+        {
+          "id": "IRR-006",
+          "formula": "=IRR(A1:A2,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-007",
+          "formula": "=IRR(A1:A3)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999922"
+        },
+        {
+          "id": "IRR-008",
+          "formula": "=IRR(A1:A3,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999922"
+        },
+        {
+          "id": "IRR-009",
+          "formula": "=IRR(A1:A3,-0.9)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999908"
+        },
+        {
+          "id": "IRR-012",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.10000000000000009",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-013",
+          "formula": "=IRR(A1:A3)",
+          "expected": "0.10000000000000009",
+          "actual": "0.10000000000000173"
+        },
+        {
+          "id": "IRR-014",
+          "formula": "=IRR(A1:A3,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.10000000000000173"
+        },
+        {
+          "id": "IRR-015",
+          "formula": "=IRR(A1:A3,-0.9)",
+          "expected": "0.10000000000000098",
+          "actual": "0.10000000000000012"
+        },
+        {
+          "id": "IRR-018",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.20000000000000306",
+          "actual": "0.10000000000000138"
+        },
+        {
+          "id": "IRR-019",
+          "formula": "=IRR(A1:A2)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-020",
+          "formula": "=IRR(A1:A2,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-024",
+          "formula": "=IRR(A1:A2,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-043",
+          "formula": "=IRR(A1:A3)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-044",
+          "formula": "=IRR(A1:A3,0.1)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "IRR-045",
+          "formula": "=IRR(A1:A3,-0.9)",
+          "expected": "0.10000000000000009",
+          "actual": "0.099999999999999867"
+        },
+        {
+          "id": "IRR-046",
+          "formula": "=IRR(A1:A3,0.5)",
+          "expected": "0.099999999999999867",
+          "actual": "0.10000000000000005"
+        },
+        {
+          "id": "IRR-048",
+          "formula": "=IRR(A1:A3,2)",
+          "expected": "0.099999999999999867",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-055",
+          "formula": "=IRR(A1:A4)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-056",
+          "formula": "=IRR(A1:A4,0.1)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-058",
+          "formula": "=IRR(A1:A4,0.5)",
+          "expected": "-0.76550207031154993",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "IRR-060",
+          "formula": "=IRR(A1:A4,2)",
+          "expected": "-0.76550207031155",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-001",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-002",
+          "formula": "=XIRR(A1:A2,B1:B2,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-003",
+          "formula": "=XIRR(A1:A2,B1:B2,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934141397"
+        },
+        {
+          "id": "XIRR-004",
+          "formula": "=XIRR(A1:A2,B1:B2,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934141161"
+        },
+        {
+          "id": "XIRR-006",
+          "formula": "=XIRR(A1:A2,B1:B2,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-007",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "0.099856585264205933",
+          "actual": "0.099856587738287164"
+        },
+        {
+          "id": "XIRR-008",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "0.099856585264205933",
+          "actual": "0.099856587738287164"
+        },
+        {
+          "id": "XIRR-009",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099856587738287123"
+        },
+        {
+          "id": "XIRR-010",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "0.099856588989496231",
+          "actual": "0.099856587738287178"
+        },
+        {
+          "id": "XIRR-012",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "0.099856588989496231",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-013",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065569"
+        },
+        {
+          "id": "XIRR-014",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065569"
+        },
+        {
+          "id": "XIRR-015",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065857"
+        },
+        {
+          "id": "XIRR-016",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "#NUM!",
+          "actual": "0.19258578626372572"
+        },
+        {
+          "id": "XIRR-018",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "#NUM!",
+          "actual": "0.10339792770065727"
+        },
+        {
+          "id": "XIRR-019",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-020",
+          "formula": "=XIRR(A1:A2,B1:B2,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-021",
+          "formula": "=XIRR(A1:A2,B1:B2,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934141397"
+        },
+        {
+          "id": "XIRR-022",
+          "formula": "=XIRR(A1:A2,B1:B2,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934141161"
+        },
+        {
+          "id": "XIRR-024",
+          "formula": "=XIRR(A1:A2,B1:B2,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-037",
+          "formula": "=XIRR(A1:A3,B1:B3)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-038",
+          "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "XIRR-039",
+          "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+          "expected": "#NUM!",
+          "actual": "0.099713585934141397"
+        },
+        {
+          "id": "XIRR-040",
+          "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+          "expected": "0.099713582545518875",
+          "actual": "0.099713585934141161"
+        },
+        {
+          "id": "XIRR-042",
+          "formula": "=XIRR(A1:A3,B1:B3,2)",
+          "expected": "0.099713582545518875",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-055",
+          "formula": "=XIRR(A1:A4,B1:B4)",
+          "expected": "-0.76516119129955773",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-056",
+          "formula": "=XIRR(A1:A4,B1:B4,0.1)",
+          "expected": "-0.76516119129955773",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-057",
+          "formula": "=XIRR(A1:A4,B1:B4,-0.9)",
+          "expected": "-0.76516118869185457",
+          "actual": "-0.76516118974604963"
+        },
+        {
+          "id": "XIRR-058",
+          "formula": "=XIRR(A1:A4,B1:B4,0.5)",
+          "expected": "-0.7651611901819706",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-063",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.099999994039535522",
+          "actual": "0.099999999999999853"
+        },
+        {
+          "id": "XIRR-064",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.00078742802143096937",
+          "actual": "#NUM!"
+        },
+        {
+          "id": "XIRR-065",
+          "formula": "=XIRR(A1:A2,B1:B2)",
+          "expected": "0.0997135818004608",
+          "actual": "0.099713585934141216"
+        },
+        {
+          "id": "RATE-001",
+          "formula": "=RATE(12,-100,1000)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769133289"
+        },
+        {
+          "id": "RATE-002",
+          "formula": "=RATE(12,-100,1000,0,0)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769133289"
+        },
+        {
+          "id": "RATE-003",
+          "formula": "=RATE(12,-100,1000,0,1)",
+          "expected": "0.03503153036227754",
+          "actual": "0.035031530362277213"
+        },
+        {
+          "id": "RATE-004",
+          "formula": "=RATE(12,-100,1000,0,2)",
+          "expected": "0.03503153036227754",
+          "actual": "0.035031530362277213"
+        },
+        {
+          "id": "RATE-006",
+          "formula": "=RATE(12,-100,1000,0,0,2)",
+          "expected": "0.02922854076913305",
+          "actual": "0.029228540769133948"
+        },
+        {
+          "id": "RATE-009",
+          "formula": "=RATE(12,0,1000,-1000)",
+          "expected": "8.4459342326353958E-14",
+          "actual": "1.5492993722377503e-17"
+        },
+        {
+          "id": "RATE-013",
+          "formula": "=RATE(12.5,-100,1000)",
+          "expected": "0.034766629918673013",
+          "actual": "0.034766629918672159"
+        },
+        {
+          "id": "RATE-015",
+          "formula": "=RATE(\"12\",-100,1000)",
+          "expected": "0.02922854076913774",
+          "actual": "0.029228540769133289"
+        }
+      ]
+    }
+  }
+}
