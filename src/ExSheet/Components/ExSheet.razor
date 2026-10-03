@@ -879,17 +879,35 @@
     /// The key column, one of <paramref name="columns"/>, or <see langword="null"/> for none
     /// (ADR-0049, 2026-09-30). A row is read by its key, and every snapshot of a keyed table is
     /// checked: one in which a key repeats is refused (<see cref="PushLinkedTableAsync"/>). A table
-    /// whose rows are told apart by several columns is given a column that joins them, and that
-    /// column is its key.
+    /// whose rows are told apart by several columns is declared with all of them as its key (the
+    /// overload that takes a list).
     /// </param>
     /// <exception cref="ArgumentException">
     /// The name or the columns are not ones a structured reference can name, or the key is not one
     /// of the columns.
     /// </exception>
-    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, string? key = null)
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, string? key = null) =>
+        DeclareLinkedTableAsync(name, columns, key is null ? (IReadOnlyList<string>)[] : [key]);
+
+    /// <summary>
+    /// Declares a Linked Table whose rows are told apart by the Values of several columns together
+    /// (ADR-0058, amended 2026-10-03). A Pointing Scope writes a press on one of its cells as
+    /// <c>XLOOKUP(1, (T[K1]=v1)*(T[K2]=v2), T[C])</c>, and a snapshot in which two rows hold the same
+    /// Values in every key column is refused. Otherwise as the overload that takes one key column; an
+    /// empty list declares no key.
+    /// </summary>
+    /// <param name="name">The name Formulas read it by, as for the overload that takes one key column.</param>
+    /// <param name="columns">The column names, as for the overload that takes one key column.</param>
+    /// <param name="key">The key's columns, each one of <paramref name="columns"/> named without regard to case, none twice.</param>
+    /// <exception cref="ArgumentException">
+    /// The name or the columns are not ones a structured reference can name, or a key column is not
+    /// one of the columns, or is named twice.
+    /// </exception>
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(columns);
+        ArgumentNullException.ThrowIfNull(key);
         return InvokeAsync(async () =>
         {
             var sheet = CurrentSheet;
@@ -960,7 +978,7 @@
 
     // What the Sheet Document records of the tables: names, columns and keys, in order (ADR-0049).
     private static bool SameDeclarations(IReadOnlyList<LinkedTable> a, IReadOnlyList<LinkedTable> b) =>
-        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns) && p.First.Key == p.Second.Key);
+        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns) && p.First.KeyColumns.SequenceEqual(p.Second.KeyColumns));
 
     /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
     public SheetDocument ToDocument() => CurrentSheet.ToDocument();

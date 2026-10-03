@@ -52,7 +52,7 @@ for (const chrome of ['builtin', 'mud']) {
             const grid = sheet(page);
             await clickCell(grid, 'F2');
             await page.keyboard.type('=SU');
-            // SUBSTITUTE, then SUM: the declared functions that begin with SU, in order.
+            // SUBSTITUTE, then SUM (then SUMPRODUCT): the declared functions that begin with SU, in order.
             await expect(items(grid).first()).toHaveText('SUBSTITUTE');
             await expect(items(grid).nth(1)).toHaveText('SUM');
             // Inside the grid's box (ADR-0040), and beneath the cell being edited.

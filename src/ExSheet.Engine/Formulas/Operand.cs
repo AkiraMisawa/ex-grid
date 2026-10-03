@@ -65,5 +65,11 @@ internal readonly struct Operand
     /// <summary>A computed array; one of a single Value is that Value.</summary>
     public static Operand Of(ValueArray array) => array.IsSingle ? new(OperandKind.Scalar, array[0, 0], default) : new(OperandKind.Array, null, default, null, array);
 
+    /// <summary>
+    /// One Value as an array of one, for a function that takes an array and is given what a
+    /// computation reduced to one Value: <c>(T[K]="a")</c> over a table of one row (ADR-0125).
+    /// </summary>
+    public static Operand AsArray(Value? value) => new(OperandKind.Array, null, default, null, ValueArray.Single(value));
+
     public bool IsError => Kind == OperandKind.Scalar && Scalar is { IsError: true };
 }

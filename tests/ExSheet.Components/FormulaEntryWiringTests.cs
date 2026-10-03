@@ -37,13 +37,13 @@ public class FormulaEntryWiringTests : SheetTestContext
     }
 
     [Fact] // ADR-0051: =SU offers every declared function starting with SU, in order (ADR-0047's set and its additions)
-    public async Task Su_offers_substitute_and_sum()
+    public async Task Su_offers_substitute_sum_and_sumproduct()
     {
         var cut = RenderSheet();
 
         await StartTypingAsync(cut, "A1", "=SU");
 
-        Assert.Equal(["SUBSTITUTE", "SUM"], Candidates(cut));
+        Assert.Equal(["SUBSTITUTE", "SUM", "SUMPRODUCT"], Candidates(cut));
     }
 
     [Fact] // ADR-0051: =X offers every declared function starting with X, without regard to case

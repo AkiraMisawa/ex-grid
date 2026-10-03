@@ -281,22 +281,56 @@ ninth run's Part B asks Excel; a reading it contradicts is corrected here.
 
 ## Not in the first version, and what watches for it
 
-- **A key of several columns.** The Consumer adds a column that joins them (`ACME|5Y`), and declares
-  it as the key. Writing the pair itself, `XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"),
-  Cds[Spread])`, needs array operations that the engine does not have. A table column compared with a
-  value is `#VALUE!` over more than one row (ADR-0049). `SUMIFS` reads the pair without them, but it
-  answers 0 for a row that is not there, which is a plausible wrong number.
+- *(Replaced 2026-10-03, decided with the user: see "A key of several columns" below. The text
+  stands as it was decided.)* **A key of several columns.** The Consumer adds a column that joins
+  them (`ACME|5Y`), and declares it as the key. Writing the pair itself, `XLOOKUP(1,
+  (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])`, needs array operations that the engine does
+  not have. A table column compared with a value is `#VALUE!` over more than one row (ADR-0049).
+  `SUMIFS` reads the pair without them, but it answers 0 for a row that is not there, which is a
+  plausible wrong number.
 - **A range of columns**, such as `Xva[[CVA Before]:[CVA Diff]]` for a Header Group or for several
   columns pointed at together. The grammar refuses it. It would also need the group's members to lie
   next to each other in the table's order. The grid does not show that order, because the user
   reorders columns ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
   ADR-0032 declares a group's members by name for the same reason.
 - **Two layer 1 tests pin today's refusals**, so that the day either one goes cannot pass unnoticed.
+  *(2026-10-03: the first of them failed as it was meant to, when spilled arrays arrived
+  ([ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md)); the decision
+  it asked for is below, and the test now pins what a Scope writes. The second still watches.)*
   One pins that `(Cds[Entity]="ACME")` over two rows is `#VALUE!`. The other pins that the grammar
   refuses `Xva[[A]:[B]]`. Each fails when its refusal goes. Its message says what to do next: open
   this section, decide with the user how a key of several columns (or a range of columns) is pointed
   at, and **do not make the test pass by changing its expectation**. A test skipped until a decision
   is made would stay silent. These do not.
+
+## A key of several columns *(2026-10-03, decided with the user)*
+
+When [ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md) gave the
+engine array operations, the watch above failed, and the user decided: **a Linked Table's key may be
+several columns, and a press on a cell of such a table writes the lookup by every part of it.**
+
+- **Declared as a list.** `DeclareLinkedTable(name, columns, ["Entity", "Tenor"])` (and
+  `DeclareLinkedTableAsync`). One column is still declared by its name. `LinkedTable.KeyColumns`
+  names the key's columns; `Key` names the one column of a key of one.
+- **What a press writes.** `XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])`: each
+  part compared with `=`, the comparisons multiplied, and the row whose product is 1 read. The parts
+  are written in the declared order, each as Excel writes a constant of its kind. A row that is not
+  there is `#N/A`, never another row's Value. A key of one column is still written
+  `XLOOKUP(<key>, T[<key column>], T[<column>])`.
+- **Repeated keys are refused, as `=` tells them apart.** A snapshot in which two rows hold the same
+  Value in every key column is refused, as a repeated key of one column is (ADR-0049). The parts are
+  compared as the `=` operator compares, which is what the written lookup uses: text without regard to
+  case, a number and its text apart, and numbers equal at Excel's fifteen significant digits as one.
+  A row with a blank part, or an Error Value as a part, has no key: it is not compared, and a press on
+  it writes nothing and says why, as a blank key does.
+- **The dashes find the row as the lookup does**, part by part with the same comparison
+  (`FormulaEntry.LookupFinds`), wherever the grid has sorted it.
+- **The Sheet Document records the list** at version 9; a key of one column is still recorded as its
+  name.
+
+Considered: **keep the joined column.** It needs no array operations, but the Consumer must build and
+push a column only for ExSheet, and the Formula reads a value that is not the user's data. Rejected
+with the user now that the pair can be read.
 
 ## Considered options
 

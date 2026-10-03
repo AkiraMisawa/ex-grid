@@ -121,7 +121,8 @@ word. That is a plausible wrong value.
   declaration with another shape, and it replaces the held one as other columns do (above).
 - **One column.** A table whose rows are told apart by several columns gets a column that joins them
   (`ACME|5Y`) from its Consumer, and that column is the key. ADR-0058 records why several columns wait,
-  and the test that fails when they no longer need to.
+  and the test that fails when they no longer need to. *(2026-10-03: they no longer wait. A key may be
+  several columns, decided with the user in ADR-0058's "A key of several columns".)*
 - **Every snapshot of a keyed table is checked.** No value may appear twice in the key column. Values
   are compared as `XLOOKUP`'s exact match compares them, so `r-4471` and `R-4471` are the same key. A
   blank key is not a key: any number of rows may have none, and a press on such a row's cell writes

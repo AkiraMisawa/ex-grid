@@ -428,8 +428,8 @@ internal static partial class FunctionLibrary
         if (IsArray(lookupOperand)) return Operand.Of(ErrorValue.Value);
         if (call.Evaluator.ScalarOf(lookupOperand) is { IsError: true } lookupError) return Operand.Of(lookupError);
 
-        var lookupArray = call.Operand(1);
-        var returnArray = call.Operand(2);
+        var lookupArray = ArrayOrValue(call.Operand(1));
+        var returnArray = ArrayOrValue(call.Operand(2));
         if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
         if (!returnArray.IsRange) return returnArray.IsError ? returnArray : Operand.Of(ErrorValue.Value);
         // A range of one row or one column; a Linked Table's column runs down.
@@ -457,6 +457,14 @@ internal static partial class FunctionLibrary
         var array = returnArray.Array!;
         return Operand.Of(vector.Vertical ? Slice(array, index, index, 0, array.Columns - 1) : Slice(array, 0, array.Rows - 1, index, index));
     }
+
+    /// <summary>
+    /// An argument that takes an array, where a computation gave one Value that is not an Error
+    /// Value: that Value as an array of one, as Excel's array of one row. A blank argument, a
+    /// Reference or a column stays as it is.
+    /// </summary>
+    private static Operand ArrayOrValue(Operand operand) =>
+        operand.Kind == OperandKind.Scalar && operand.Scalar is { IsError: false } value ? Operand.AsArray(value) : operand;
 
     /// <summary>What a search answered: the position found, or none; or the Error Value an argument was.</summary>
     private readonly record struct SearchOutcome(int? Found, Operand? Failure);

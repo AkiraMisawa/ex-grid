@@ -40,7 +40,7 @@ internal static class Arithmetic
 
     /// <summary>A number rounded to 15 significant digits. .NET formats the exact decimal value
     /// of the double and rounds a midpoint away from zero.</summary>
-    private static double AtFifteenDigits(double x) =>
+    internal static double AtFifteenDigits(double x) =>
         double.IsFinite(x) ? double.Parse(x.ToString("E14", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture) : x;
 
     private static bool Near(double a, double b, double tolerance)

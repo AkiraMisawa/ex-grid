@@ -88,7 +88,7 @@ internal static partial class FunctionLibrary
         var lookupOperand = call.Operand(0);
         if (IsArray(lookupOperand)) return Operand.Of(ErrorValue.Value);
         if (call.Evaluator.ScalarOf(lookupOperand) is { IsError: true } lookupError) return Operand.Of(lookupError);
-        var lookupArray = call.Operand(1);
+        var lookupArray = ArrayOrValue(call.Operand(1));
         if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
         if (Vector.Of(lookupArray) is not { } vector) return Operand.Of(ErrorValue.Value);
         if (Search(call, vector, modesAt: 2) is not { } outcome) return Operand.Of(ErrorValue.Value);

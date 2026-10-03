@@ -711,8 +711,8 @@ structured references — `SUM(Positions[PV])`. Its rows are reached by key thro
 Reference into it would change value without anyone editing it. ExSheet never reads another
 component instance; what a Linked Table holds comes from the Consumer, pushed as one whole
 snapshot. Until it has arrived, a Formula that reads it shows `#GETTING_DATA` — never 0, never an
-older value — and `IFERROR` does not catch the wait. The Consumer may declare one of its columns as
-its key; a snapshot in which a key repeats is refused, and the table waits again ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md)).
+older value — and `IFERROR` does not catch the wait. The Consumer may declare one of its columns, or
+several together, as its key; a snapshot in which a key repeats is refused, and the table waits again ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md), [ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).
 _Avoid_: external reference (Excel's name for a reference into another workbook), data
 connection, link
 
@@ -721,7 +721,8 @@ The Sheets and grids a Consumer groups so that a Formula can **Point** across in
 grid in it, the Consumer says which **Linked Table** the grid shows and which of the grid's columns
 are which of the table's; the key column is the table's own, declared with it. While a Sheet in the
 scope is pointing, a press on one of its grids moves neither DOM focus nor that grid's Selection. It
-writes what reads the pressed cell by key (`XLOOKUP("R-4471", Positions[Id], Positions[PV])`) or the pressed
+writes what reads the pressed cell by key (`XLOOKUP("R-4471", Positions[Id], Positions[PV])`, or
+`XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])` for a key of several columns) or the pressed
 column's name (`Positions[PV]`). Only the Sheet that holds the keyboard points. Nothing on a page
 is joined unless the Consumer put it in the same scope, and a grid in no scope behaves as it
 always does ([ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).

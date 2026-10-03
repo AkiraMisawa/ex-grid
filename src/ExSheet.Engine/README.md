@@ -12,8 +12,8 @@ cell from its **Entry**:
   recalculation; a circular reference is `#CIRC!` in every cell of the cycle and every cell that
   depends on it
 
-The **Sheet Document** is the Sheet's serialisable form (version 8, which also reads versions 1
-to 7), with the Cell Formats recorded on its columns, rows and cells — Number Format, Alignment,
+The **Sheet Document** is the Sheet's serialisable form (version 9, which also reads versions 1
+to 8), with the Cell Formats recorded on its columns, rows and cells — Number Format, Alignment,
 Font, Fill and Borders — and the widths recorded on its columns. It holds Entries and never Values, so
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
@@ -339,7 +339,8 @@ text for a range, what F4 makes of the Reference at the caret, and every Referen
 with the cells it names or the Linked Table column it reads, for Reference Outlines
 (`Sheet.References` reads a Sheet qualifier against the Sheet's own name). For a Pointing Scope
 (ADR-0058) it writes what reads a Linked Table's cell by key, `LookupText` —
-`XLOOKUP("R-4471", Positions[Id], Positions[PV])` — a column's structured reference,
+`XLOOKUP("R-4471", Positions[Id], Positions[PV])`, or for a key of several columns
+`XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])` — a column's structured reference,
 `StructuredReferenceText`, and a Value as Excel writes a constant of its kind, `ConstantText`.
 
 ## More
