@@ -114,6 +114,9 @@ them:
 | `ISERROR` | `value` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
 
+Which functions come next, each with its status and priority, is catalogued in
+[`docs/specs/exsheet-functions/spec.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/specs/exsheet-functions/spec.md).
+
 `DeclaredFunction.ValuesOf(index)` gives the values an argument takes from a fixed list, in Excel's
 order and with Excel's texts, which completion lists there: `XLOOKUP`'s `match_mode` (`0 - Exact
 match`, `-1 - Exact match or next smaller item`, …) and `search_mode` (`1 - Search first-to-last`, …).
