@@ -21,6 +21,7 @@ internal static partial class FunctionLibrary
         {
             OperandKind.Area => (source.Area.Rows, source.Area.Columns),
             OperandKind.Column => (source.Column!.Count, 1),
+            OperandKind.Array => (source.Array!.Rows, source.Array.Columns),
             _ => (1, 1),
         };
 
@@ -47,6 +48,7 @@ internal static partial class FunctionLibrary
         {
             OperandKind.Area => Operand.Of(new Area(source.Area.Row1 + r, source.Area.Column1 + c, source.Area.Row1 + r, source.Area.Column1 + c)),
             OperandKind.Column => source.Column![r] is { } value ? Operand.Of(value) : Operand.Blank,
+            OperandKind.Array => source.Array![r, c] is { } item ? Operand.Of(item) : Operand.Blank,
             _ => source,
         };
     }
@@ -118,6 +120,7 @@ internal static partial class FunctionLibrary
         {
             OperandKind.Area => rows ? operand.Area.Rows : operand.Area.Columns,
             OperandKind.Column => rows ? operand.Column!.Count : 1,
+            OperandKind.Array => rows ? operand.Array!.Rows : operand.Array!.Columns,
             _ => 1,
         };
         return Operand.Of(Value.FromNumber(count));

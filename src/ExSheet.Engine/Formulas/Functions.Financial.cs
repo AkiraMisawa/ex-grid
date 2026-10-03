@@ -117,6 +117,7 @@ internal static partial class FunctionLibrary
         IEnumerable<Value?> cells = operand.Kind switch
         {
             OperandKind.Column => operand.Column!,
+            OperandKind.Array => operand.Array!.All(),
             OperandKind.Area => Cells(operand.Area),
             _ => [null],
         };

@@ -147,7 +147,7 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     foreach (var value in evaluator.RangeValues(operand))
                     {
                         if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
@@ -222,7 +222,7 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     count += evaluator.RangeValues(operand).Count(v => v.Kind == ValueKind.Number);
                     break;
                 case OperandKind.Missing:
@@ -248,7 +248,7 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     count += evaluator.RangeValues(operand).Count();
                     break;
                 case OperandKind.Missing:
@@ -270,7 +270,9 @@ internal static partial class FunctionLibrary
     /// error — they refuse too, rather than turn "cannot" into a fallback value.
     /// </summary>
     private static bool IsArray(Operand operand) =>
-        (operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell) || (operand.Kind == OperandKind.Column && operand.Column!.Count != 1);
+        (operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell)
+        || (operand.Kind == OperandKind.Column && operand.Column!.Count != 1)
+        || operand.Kind == OperandKind.Array;
 
     private static Operand If(FunctionCall call)
     {
@@ -584,6 +586,13 @@ internal static partial class FunctionLibrary
         public static Vector? Of(Operand range)
         {
             if (range.Kind == OperandKind.Column) return new Vector(range, true, range.Column!.Count);
+            if (range.Kind == OperandKind.Array)
+            {
+                var array = range.Array!;
+                if (array.Columns == 1) return new Vector(range, true, array.Rows);
+                if (array.Rows == 1) return new Vector(range, false, array.Columns);
+                return null;
+            }
             var area = range.Area;
             if (area.Columns == 1) return new Vector(range, true, area.Rows);
             if (area.Rows == 1) return new Vector(range, false, area.Columns);
@@ -597,6 +606,15 @@ internal static partial class FunctionLibrary
             {
                 var column = Source.Column!;
                 return Enumerable.Range(0, column.Count).Where(i => column[i] is not null).Select(i => (i, column[i]!.Value));
+            }
+            if (Source.Kind == OperandKind.Array)
+            {
+                var array = Source.Array!;
+                var down = Vertical;
+                return Enumerable.Range(0, Length)
+                    .Select(i => (Index: i, Value: down ? array[i, 0] : array[0, i]))
+                    .Where(c => c.Value is not null)
+                    .Select(c => (c.Index, c.Value!.Value));
             }
             var area = Source.Area;
             var vertical = Vertical;
@@ -620,11 +638,14 @@ internal static partial class FunctionLibrary
         public Operand ItemAt(int index)
         {
             if (Source.Kind == OperandKind.Column) return Source.Column![index] is { } value ? Operand.Of(value) : Operand.Blank;
+            if (Source.Kind == OperandKind.Array) return At(Source.Array!, index) is { } item ? Operand.Of(item) : Operand.Blank;
             var area = Source.Area;
             var row = Vertical ? area.Row1 + index : area.Row1;
             var column = Vertical ? area.Column1 : area.Column1 + index;
             return Operand.Of(new Area(row, column, row, column));
         }
+
+        private Value? At(ValueArray array, int index) => Vertical ? array[index, 0] : array[0, index];
     }
 
     private static bool SameKindEqual(Value candidate, Value wanted) =>

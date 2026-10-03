@@ -94,7 +94,7 @@ public sealed partial class Sheet
     /// </summary>
     public SheetDocument ToDocument() =>
         new(Culture.Name, Name, TableDeclarations, [.. _cells.Values
-            .Where(c => !c.IsEmpty)
+            .Where(c => c.Entry is not null || c.IsFormatted)
             .OrderBy(c => c.Address)
             .Select(c => new SheetDocumentCell(c.Address, c.Entry, c.NumberFormat, c.Alignment, c.Font, c.Fill, c.Borders))])
         {
@@ -380,12 +380,11 @@ public sealed partial class Sheet
     /// into a staging set; a cycle, and everything downstream of one, is <c>#CIRC!</c>
     /// (ADR-0047). Only when every Value is computed are they published.
     /// </summary>
-    private SheetChange Recalculate(HashSet<CellAddress> changed, SortedSet<int> rows)
+    private SheetChange RecalculatePass(HashSet<CellAddress> changed, SortedSet<int> rows, bool withVolatile)
     {
         // 1. Everything the change can reach, and every volatile Formula, whatever the change (ADR-0124).
-        _moment = NowSource?.Invoke();
         var dirty = new HashSet<CellAddress>(changed);
-        dirty.UnionWith(_volatileFormulas);
+        if (withVolatile) dirty.UnionWith(_volatileFormulas);
         var queue = new Queue<CellAddress>(dirty);
         while (queue.Count > 0)
         {
@@ -399,9 +398,12 @@ public sealed partial class Sheet
         var formulas = new HashSet<CellAddress>();
         foreach (var address in dirty)
         {
-            var entry = _cells.GetValueOrDefault(address)?.Entry;
+            var cell = _cells.GetValueOrDefault(address);
+            var entry = cell?.Entry;
             if (entry?.Parsed is not null) formulas.Add(address);
-            else staged[address] = entry?.Constant;
+            // A spilled cell with no Entry keeps its Value: the spill's layout gives it, after the
+            // pass. One typed into takes its Entry's, and the layout then finds it in the way (ADR-0125).
+            else if (entry is not null || cell?.SpilledFrom is null) staged[address] = entry?.Constant;
         }
 
         // 2. Dependency order among the Formulas to recompute (Kahn). What never becomes ready
@@ -424,6 +426,7 @@ public sealed partial class Sheet
         // a cell this recalculation has still to compute is computed first, on demand, and a
         // Formula that reaches itself that way is #CIRC! (ADR-0124).
         var inProgress = new HashSet<CellAddress>();
+        var arrays = new Dictionary<CellAddress, ValueArray?>();
         var recalculated = new List<CellAddress>();
         StagedReader reader = null!;
         Evaluator evaluator = null!;
@@ -449,6 +452,10 @@ public sealed partial class Sheet
         }
 
         // 3. Publish, all at once.
+        foreach (var (address, array) in arrays)
+        {
+            if (_cells.GetValueOrDefault(address) is { } anchor) anchor.Array = array;
+        }
         var valueChanges = new List<CellAddress>();
         foreach (var (address, value) in staged)
         {
@@ -478,7 +485,21 @@ public sealed partial class Sheet
             var node = _cells[address].Entry!.Parsed!;
             var outer = evaluator.Self;
             evaluator.Self = address;
-            var value = Taint(node, reader) ?? evaluator.Evaluate(node);
+            Value value;
+            if (Taint(node, reader) is { } tainted)
+            {
+                value = tainted;
+                arrays[address] = null;
+            }
+            else
+            {
+                // A result of more than one Value spills (ADR-0125): the anchor holds the array, and
+                // shows its first Value until the layout after the pass says whether it spills.
+                var result = evaluator.EvaluateResult(node);
+                var array = Evaluator.IsMulti(result) ? evaluator.ToArray(result) : null;
+                arrays[address] = array;
+                value = array is not null ? array[0, 0] ?? Value.FromNumber(0) : evaluator.ScalarOf(result) ?? Value.FromNumber(0);
+            }
             evaluator.Self = outer;
             inProgress.Remove(address);
             staged[address] = value;
@@ -581,7 +602,13 @@ public sealed partial class Sheet
         /// <summary>Whether the cell records any part of a Cell Format of its own.</summary>
         public bool IsFormatted => NumberFormat is not null || Alignment is not null || Font is not null || Fill is not null || Borders is not null;
 
-        public bool IsEmpty => Entry is null && !IsFormatted;
+        public bool IsEmpty => Entry is null && !IsFormatted && SpilledFrom is null;
+
+        /// <summary>For an Anchor, the array its Formula computed (ADR-0125); <see langword="null"/> for a result of one Value.</summary>
+        public ValueArray? Array { get; set; }
+
+        /// <summary>For a cell of a Spill Range, the Anchor whose array gives its Value; it holds no Entry of its own.</summary>
+        public CellAddress? SpilledFrom { get; set; }
 
         /// <summary>What the cell shows over <paramref name="inherited"/>: each part its own, else the level's.</summary>
         public CellFormat Over(CellFormat inherited) => new(

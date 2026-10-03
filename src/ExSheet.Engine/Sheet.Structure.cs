@@ -122,6 +122,8 @@ public sealed partial class Sheet
         var dirty = new HashSet<CellAddress>();
         foreach (var cell in _cells.Values)
         {
+            // A spilled Value is its Anchor's to lay out again from wherever the Anchor moves (ADR-0125).
+            if (cell.Entry is null && cell.SpilledFrom is not null && !cell.IsFormatted) continue;
             if (edit.Move(cell.Address) is not { } to)
             {
                 dropped.Add((cell.Address, before[cell.Address]));
@@ -145,7 +147,8 @@ public sealed partial class Sheet
                 }
                 entry = mapped;
             }
-            var movedCell = new Cell(to) { Entry = entry, Value = cell.Value };
+            var movedCell = new Cell(to) { Entry = entry, Value = entry is null ? null : cell.Value };
+            if (cell.Array is not null) dirty.Add(to);
             movedCell.TakeFormatOf(cell);
             moved.Add(movedCell);
         }

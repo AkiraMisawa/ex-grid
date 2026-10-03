@@ -73,7 +73,7 @@
       "cells": {"ZZ1000": "=NOT(A1:A2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; an array where the function wants one Value is #VALUE!, where Excel 365 lifts it and spills",
       "excelExpect": {"value2": false}
     }
   ]

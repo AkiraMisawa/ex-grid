@@ -218,7 +218,7 @@ public class LinkedTableTests
         Assert.Equal(["Rates", "Trades"], Sheet.Open(document).LinkedTables.Select(t => t.Name));
     }
 
-    [Fact] // ADR-0049: after opening, an unknown column is still #REF!, and a one-row column still reads as its Value
+    [Fact] // ADR-0049 / ADR-0125: after opening, an unknown column is still #REF!, a one-row column still reads as its Value, and a longer one spills
     public void Opened_declarations_read_as_declared()
     {
         var sheet = NewSheet();
@@ -232,7 +232,9 @@ public class LinkedTableTests
         Assert.Equal(42, reopened.Number("A2"));
 
         reopened.PushLinkedTable("One", [[N(21)], [N(1)]]);
-        Assert.Equal(ErrorValue.Value, reopened.Error("A2"));
+        Assert.Equal(42, reopened.Number("A2"));
+        Assert.Equal(2, reopened.Number("A3"));
+        Assert.Equal(CellAddress.Parse("A2"), reopened.SpilledFrom(CellAddress.Parse("A3")));
 
         reopened.PushLinkedTable("One", []);
         Assert.Equal(ErrorValue.Value, reopened.Error("A2"));

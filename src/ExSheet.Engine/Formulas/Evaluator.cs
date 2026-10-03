@@ -47,10 +47,85 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     /// it no longer the last: Excel was observed to leave <c>=(0.1+0.2-0.3)</c> at 5.55E-17
     /// (ADR-0047, second run).
     /// </summary>
-    public Value Evaluate(Node node)
+    public Value Evaluate(Node node) => ScalarOf(EvaluateResult(node)) ?? Value.FromNumber(0);
+
+    /// <summary>
+    /// A Formula's result as it spills (ADR-0125): a range or an array of more than one Value is
+    /// returned as it is, for the Sheet to spill; anything else is one Value, never blank, with the
+    /// final addition's rule applied as in <see cref="Evaluate"/>.
+    /// </summary>
+    public Operand EvaluateResult(Node node)
     {
-        if (node is BinaryNode { Operator: "+" or "-" } final) return Binary(final, finalOperation: true);
-        return ScalarOf(Operand(node)) ?? Value.FromNumber(0);
+        if (node is BinaryNode { Operator: "+" or "-" } final)
+        {
+            var left = Operand(final.Left);
+            var right = Operand(final.Right);
+            if (IsMulti(left) || IsMulti(right)) return Elementwise(final.Operator, left, right);
+            return Formulas.Operand.Of(BinaryValues(final.Operator, ScalarOf(left), ScalarOf(right), finalOperation: true));
+        }
+        var result = Operand(node);
+        if (IsMulti(result)) return result;
+        return Formulas.Operand.Of(ScalarOf(result) ?? Value.FromNumber(0));
+    }
+
+    /// <summary>Whether an operand holds more than one Value: a range of several cells, a Linked Table's column of several, or an array.</summary>
+    internal static bool IsMulti(Operand operand) => operand.Kind switch
+    {
+        OperandKind.Area => !operand.Area.IsSingleCell,
+        OperandKind.Column => operand.Column!.Count != 1,
+        OperandKind.Array => true,
+        _ => false,
+    };
+
+    /// <summary>An operand read whole, as an array: a range's cells, a Linked Table's column, or one Value.</summary>
+    public ValueArray ToArray(Operand operand)
+    {
+        switch (operand.Kind)
+        {
+            case OperandKind.Array:
+                return operand.Array!;
+            case OperandKind.Area:
+                var area = operand.Area;
+                var array = new ValueArray(area.Rows, area.Columns);
+                foreach (var address in Cells.NonBlankIn(area)) array[address.Row - area.Row1, address.Column - area.Column1] = Cells.Read(address);
+                return array;
+            case OperandKind.Column:
+                var column = operand.Column!;
+                if (column.Count == 0) return ValueArray.Single(Value.FromError(ErrorValue.Value));
+                var values = new ValueArray(column.Count, 1);
+                for (var i = 0; i < column.Count; i++) values[i, 0] = column[i];
+                return values;
+            default:
+                return ValueArray.Single(ScalarOf(operand));
+        }
+    }
+
+    /// <summary>An operator applied element by element, the two arrays broadcast as Excel broadcasts them (ADR-0125).</summary>
+    private Operand Elementwise(string op, Operand leftOperand, Operand rightOperand)
+    {
+        var left = ToArray(leftOperand);
+        var right = ToArray(rightOperand);
+        var rows = left.Rows == 1 ? right.Rows : right.Rows == 1 ? left.Rows : Math.Max(left.Rows, right.Rows);
+        var columns = left.Columns == 1 ? right.Columns : right.Columns == 1 ? left.Columns : Math.Max(left.Columns, right.Columns);
+        var result = new ValueArray(rows, columns);
+        for (var r = 0; r < rows; r++)
+        {
+            for (var c = 0; c < columns; c++) result[r, c] = BinaryValues(op, left.Broadcast(r, c), right.Broadcast(r, c), finalOperation: false);
+        }
+        return Formulas.Operand.Of(result);
+    }
+
+    /// <summary>A function of one Value applied to each Value of an operand that holds several.</summary>
+    private Operand Map(Operand operand, Func<Value?, Value> each)
+    {
+        if (!IsMulti(operand)) return Formulas.Operand.Of(each(ScalarOf(operand)));
+        var source = ToArray(operand);
+        var result = new ValueArray(source.Rows, source.Columns);
+        for (var r = 0; r < source.Rows; r++)
+        {
+            for (var c = 0; c < source.Columns; c++) result[r, c] = each(source[r, c]);
+        }
+        return Formulas.Operand.Of(result);
     }
 
     public Operand Operand(Node node) => node switch
@@ -65,9 +140,9 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
         NameNode or IntersectionNode => Formulas.Operand.Of(ErrorValue.Name),
         ParenthesesNode p => Operand(p.Inner),
-        UnaryNode u => Formulas.Operand.Of(Negate(u)),
-        PercentNode p => Formulas.Operand.Of(Percent(p)),
-        BinaryNode b => Formulas.Operand.Of(Binary(b)),
+        UnaryNode u => Map(Operand(u.Operand), value => Negate(u.Operator, value)),
+        PercentNode p => Map(Operand(p.Operand), Percent),
+        BinaryNode b => Binary(b),
         FunctionNode f => f.Function is null ? Formulas.Operand.Of(ErrorValue.Name) : f.Function.Invoke(new FunctionCall(this, f.Arguments)),
         _ => throw new InvalidOperationException($"No evaluation for {node.GetType().Name}."),
     };
@@ -84,6 +159,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         OperandKind.Area => Value.FromError(ErrorValue.Value),
         OperandKind.Column when operand.Column!.Count == 1 => operand.Column[0],
         OperandKind.Column => Value.FromError(ErrorValue.Value),
+        OperandKind.Array => operand.Array!.IsSingle ? operand.Array[0, 0] : Value.FromError(ErrorValue.Value),
         _ => null,
     };
 
@@ -92,29 +168,37 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
     {
         OperandKind.Area => Cells.NonBlankIn(range.Area).Select(a => Cells.Read(a)!.Value),
         OperandKind.Column => range.Column!.Where(v => v is not null).Select(v => v!.Value),
+        OperandKind.Array => range.Array!.NonBlank(),
         _ => throw new ArgumentException("Not a range.", nameof(range)),
     };
 
     public Value? Scalar(Node node) => ScalarOf(Operand(node));
 
-    private Value Negate(UnaryNode node)
+    private Value Negate(char op, Value? value)
     {
-        var operand = ToNumber(Scalar(node.Operand), out var error);
+        var operand = ToNumber(value, out var error);
         if (error is { } e) return Value.FromError(e);
-        return Value.FromNumber(node.Operator == '-' ? -operand : operand);
+        return Value.FromNumber(op == '-' ? -operand : operand);
     }
 
-    private Value Percent(PercentNode node)
+    private Value Percent(Value? value)
     {
-        var operand = ToNumber(Scalar(node.Operand), out var error);
+        var operand = ToNumber(value, out var error);
         return error is { } e ? Value.FromError(e) : Number(operand / 100);
     }
 
-    private Value Binary(BinaryNode node, bool finalOperation = false)
+    /// <summary>A binary operator over its operands: one Value from two, or element by element when either holds several (ADR-0125).</summary>
+    private Operand Binary(BinaryNode node)
     {
-        var left = Scalar(node.Left);
-        var right = Scalar(node.Right);
-        switch (node.Operator)
+        var left = Operand(node.Left);
+        var right = Operand(node.Right);
+        if (IsMulti(left) || IsMulti(right)) return Elementwise(node.Operator, left, right);
+        return Formulas.Operand.Of(BinaryValues(node.Operator, ScalarOf(left), ScalarOf(right), finalOperation: false));
+    }
+
+    private Value BinaryValues(string op, Value? left, Value? right, bool finalOperation)
+    {
+        switch (op)
         {
             case "&":
                 if (left is { IsError: true } le) return le;
@@ -124,7 +208,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
                 if (left is { IsError: true } cle) return cle;
                 if (right is { IsError: true } cre) return cre;
                 var order = Compare(left, right, Arithmetic.ApproximatelyEqual);
-                return Value.FromBoolean(node.Operator switch
+                return Value.FromBoolean(op switch
                 {
                     "=" => order == 0,
                     "<>" => order != 0,
@@ -139,7 +223,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         if (leftError is { } ae) return Value.FromError(ae);
         var b = ToNumber(right, out var rightError);
         if (rightError is { } be) return Value.FromError(be);
-        switch (node.Operator)
+        switch (op)
         {
             case "+": return Number(finalOperation ? Arithmetic.FinalAdd(a, b) : a + b);
             case "-": return Number(finalOperation ? Arithmetic.FinalAdd(a, -b) : a - b);
@@ -149,7 +233,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
                 if (a == 0 && b == 0) return Value.FromError(ErrorValue.Num);
                 if (a == 0 && b < 0) return Value.FromError(ErrorValue.Div0);
                 return Arithmetic.Power(a, b) is { } power ? Number(power) : Value.FromError(ErrorValue.Num);
-            default: throw new InvalidOperationException($"No operator {node.Operator}.");
+            default: throw new InvalidOperationException($"No operator {op}.");
         }
     }
 
