@@ -17,6 +17,9 @@ internal interface ICellReader
     /// </summary>
     Operand TableColumn(string table, string column);
 
+    /// <summary>The Sheet Day <c>TODAY</c> answers (ADR-0121), or <see langword="null"/> while it is not known.</summary>
+    DateOnly? Today { get; }
+
     /// <summary>Whether a Reference names the Sheet's own cells: unqualified, or qualified with the Sheet's name (ADR-0046).</summary>
     bool IsLocal(Reference reference);
 }

@@ -193,11 +193,12 @@ public partial class ExSheet : IPointingSheet, IDisposable
     Task IPointingSheet.TellPointingRefusedAsync(PointingRefusal refusal)
         => OnPointingRefused.InvokeAsync(refusal);
 
-    /// <summary>Leaves the Pointing Scope: a disposed Sheet points at nothing.</summary>
+    /// <summary>Leaves the Pointing Scope, and stops keeping the Sheet Day: a disposed Sheet points at nothing and reads no clock.</summary>
     public void Dispose()
     {
         _joinedScope?.Leave(this);
         _joinedScope = null;
+        StopTheDay();
         GC.SuppressFinalize(this);
     }
 

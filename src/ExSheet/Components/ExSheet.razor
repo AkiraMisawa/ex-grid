@@ -49,7 +49,7 @@
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
-        DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" />
+        DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" OnBrowserTimeZone="_browserTimeZone" />
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
@@ -106,6 +106,7 @@
     private readonly Func<global::ExGrid.Finding.GridFindRequest, CancellationToken, Task<global::ExGrid.Finding.GridFindResult>> _find;
     private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _rowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
+    private readonly EventCallback<string> _browserTimeZone;
     private readonly EventCallback _undo;
     private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
     private readonly EventCallback _redo;
@@ -232,6 +233,7 @@
         // A resize is the user's, and the width is the document's (ADR-0046): it is recorded in
         // the Sheet as one step on the undo stack, and the column list follows the Sheet.
         _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change => OnColumnWidthChangedAsync(change)));
+        _browserTimeZone = new EventCallback<string>(null, (Func<string, Task>)(zone => OnBrowserTimeZoneAsync(zone)));
         // The grid says when an edit opens and ends, at the change and before the browser hears
         // of it (ADR-0050 section 6), so a command given in between is refused (ADR-0048). No
         // receiver: nothing this component paints depends on it.
@@ -442,6 +444,7 @@
             _documentParameter = Document;
             _cultureParameter = Culture;
             Open(Document);
+            FollowTheDayParameters();
             RefreshToolbar();
             return;
         }
@@ -462,6 +465,7 @@
         }
         // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
         if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
+        FollowTheDayParameters();
         RefreshToolbar();
     }
 
@@ -473,6 +477,7 @@
     /// </summary>
     protected override async Task OnParametersSetAsync()
     {
+        await PaintTheDayAsync();
         if (!_documentReplaced) return;
         _documentReplaced = false;
         if (_grid is not { } grid) return;
@@ -985,6 +990,8 @@
     private void Open(SheetDocument? document)
     {
         _sheet = document is null ? new Sheet(Culture ?? CultureInfo.CurrentCulture) : Sheet.Open(document);
+        // A Sheet opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
+        GiveTheDay(_sheet);
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
         _resizing = null;

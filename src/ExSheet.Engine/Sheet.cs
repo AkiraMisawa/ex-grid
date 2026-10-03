@@ -334,6 +334,7 @@ public sealed partial class Sheet
         }
         if (areas.Count > 0) _areaPrecedents[formulaCell] = [.. areas];
         RegisterTableReaders(formulaCell, formula);
+        RegisterTodayReader(formulaCell, formula);
     }
 
     private void Unregister(CellAddress formulaCell, Node formula)
@@ -349,6 +350,7 @@ public sealed partial class Sheet
         }
         _areaPrecedents.Remove(formulaCell);
         UnregisterTableReaders(formulaCell, formula);
+        _todayReaders.Remove(formulaCell);
     }
 
     /// <summary>The Formula cells that read <paramref name="address"/> directly.</summary>
@@ -462,11 +464,12 @@ public sealed partial class Sheet
 
     /// <summary>
     /// A Formula that reads a cell in a cycle is <c>#CIRC!</c> whatever it computes; one that reads
-    /// a waiting cell waits (ADR-0047, ADR-0049). Neither can be caught by <c>IFERROR</c>.
+    /// a waiting cell, or calls <c>TODAY</c> before the Sheet Day is known, waits (ADR-0047, ADR-0049,
+    /// ADR-0121). Neither can be caught by <c>IFERROR</c>.
     /// </summary>
     private Value? Taint(Node node, StagedReader reader)
     {
-        var gettingData = ReadsWaitingTable(node);
+        var gettingData = ReadsWaitingTable(node) || WaitsForToday(node);
         foreach (var reference in node.References)
         {
             if (!IsLocal(reference)) continue;
@@ -516,6 +519,8 @@ public sealed partial class Sheet
         public Operand TableColumn(string table, string column) => sheet.TableColumn(table, column);
 
         public bool IsLocal(Reference reference) => sheet.IsLocal(reference);
+
+        public DateOnly? Today => sheet.Today;
     }
 
     private sealed class Cell(CellAddress address)

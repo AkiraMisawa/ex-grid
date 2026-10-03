@@ -26,6 +26,9 @@ namespace ExGrid.DemoPages;
 /// side by side on row 2, and a double line between Fills in each arrangement — E2's bottom over
 /// E3's Fill, B5's right between two, E5's right beside F5's Fill, and B8's bottom between
 /// two.</item>
+/// <item><c>today</c> reads the Sheet Day (ADR-0121): A1 is <c>TODAY()</c> as <c>yyyy-mm-dd</c>, and
+/// A2 is <c>TODAY()</c> itself; <c>/sheet</c>'s <c>?zone=</c> and <c>?today=</c> set the Sheet's
+/// <c>TimeZone</c> and <c>Today</c>.</item>
 /// </list>
 /// </summary>
 public static class SheetCases
@@ -49,7 +52,7 @@ public static class SheetCases
     /// <summary>The names <see cref="Document"/> knows, in the order the run numbers them.</summary>
     public static IReadOnlyList<string> Names { get; } =
         ["1", "2", "3b", "3c", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "16", "17", "18", "paper", "lines", "12-1", "12-14",
-            "14-16", "14-17", "14-18", "fills"];
+            "14-16", "14-17", "14-18", "fills", "today"];
 
     /// <summary>
     /// Case <paramref name="name"/>'s Sheet, in <paramref name="culture"/>; null when no case is
@@ -64,6 +67,10 @@ public static class SheetCases
         var sheet = new Sheet(culture);
         switch (name)
         {
+            case "today":
+                Enter(sheet, "A1", "=TEXT(TODAY(),\"yyyy-mm-dd\")");
+                Enter(sheet, "A2", "=TODAY()");
+                break;
             case "1":
                 // Rows 1–8: -5 and 5 in each of the eight named colours; [White]'s row filled black.
                 string[] names = ["Black", "Blue", "Cyan", "Green", "Magenta", "Red", "White", "Yellow"];

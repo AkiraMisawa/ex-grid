@@ -358,6 +358,15 @@
       "action": {"do": "enter", "cells": {"B1": "=DATE(2026,9,26)+1"}},
       "check": "B1",
       "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-038",
+      "source": "documented",
+      "description": "TODAY in a General cell gives the short date format, as Microsoft documents (its Value is the day the oracle runs, so only the format is compared)",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=TODAY()"}},
+      "check": "B1",
+      "expect": {"numberFormat": "m/d/yyyy"}
     }
   ]
 }

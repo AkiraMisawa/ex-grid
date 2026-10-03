@@ -397,3 +397,6 @@ do, and `INDEX` with a row or column of 0 over more than one cell is the spill r
 `TEXT` is admitted under [ADR-0120](./0120-text-reads-its-format-code-in-the-invariant-spelling-as-a-cell-format-shows-it.md),
 which settles the one thing this ADR left open for it: its format code is read in the invariant
 spelling, under every culture.
+
+`TODAY` is admitted under [ADR-0121](./0121-today-is-the-sheet-day-and-exsheet-keeps-it.md): it
+answers the Sheet Day, which the engine is given as data and never reads from a clock.

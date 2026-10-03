@@ -147,6 +147,18 @@
     [SupplyParameterFromQuery(Name = "case")]
     public string? Case { get; set; }
 
+    /// <summary>The Sheet's <c>TimeZone</c> (ADR-0121), an IANA name; without it the browser's zone is the Sheet Day's.</summary>
+    [SupplyParameterFromQuery(Name = "zone")]
+    public string? Zone { get; set; }
+
+    /// <summary>The Sheet's fixed <c>Today</c> (ADR-0121), as yyyy-MM-dd.</summary>
+    [SupplyParameterFromQuery(Name = "today")]
+    public string? FixedDay { get; set; }
+
+    private TimeZoneInfo? DayZone => Zone is null ? null : TimeZoneInfo.FindSystemTimeZoneById(Zone);
+
+    private DateOnly? DayGiven => FixedDay is null ? null : DateOnly.ParseExact(FixedDay, "yyyy-MM-dd", CultureInfo.InvariantCulture);
+
     /// <summary>How many leading columns to pin, in place of the page's own choice.</summary>
     [SupplyParameterFromQuery(Name = "pin")]
     public int? Pin { get; set; }
@@ -161,7 +173,7 @@
     private IGridChrome? _chrome;
 
     // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
-    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome"
+    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome" TimeZone="DayZone" Today="DayGiven"
                                               EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : SheetHeight)" ViewportWidth="720"
                                               SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
                                               PointingScope="_scope" OnPointingRefused="ShowPointingRefusal"

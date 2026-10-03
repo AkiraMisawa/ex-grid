@@ -1105,6 +1105,15 @@
     [Parameter] public EventCallback<ColumnWidthChange> OnColumnWidthChanged { get; set; }
 
     /// <summary>
+    /// The browser's time zone, an IANA name such as <c>Asia/Tokyo</c>, told once when the grid
+    /// attaches and only when this has a delegate (ADR-0122, ADR-0021's ninth entry). The grid
+    /// does nothing with it; it is for a Consumer that needs the user's day where .NET runs
+    /// elsewhere — ExSheet's <c>TODAY()</c> on Blazor Server (ADR-0121). Browsers raise no event
+    /// when the zone changes, so it is not told again.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnBrowserTimeZone { get; set; }
+
+    /// <summary>
     /// Raised when a header drag drops (ADR-0011/0032): the whole new column order,
     /// by name. What was grabbed is the unit that moved — a leaf within its group, a
     /// group among its peers — and the drop indicator clamped at every edge that
@@ -3193,7 +3202,7 @@
             _jsDeclared = _declared;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
                 "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate());
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -8745,6 +8754,32 @@
             ResolveRowHeadingWidth();
             PrepareRender();
             StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Not a UI event, so nothing else would surface this.
+            await DispatchExceptionAsync(ex);
+        }
+    }
+
+    /// <summary>
+    /// The browser told the grid its time zone (ADR-0122, ADR-0021's ninth entry), once, at attach,
+    /// because <see cref="OnBrowserTimeZone"/> has a delegate. It is passed on as it came, after
+    /// the checks that anything crossing the JavaScript boundary gets.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="zone">The IANA name the browser reports.</param>
+    /// <returns>A task that completes when the Consumer has been told.</returns>
+    [JSInvokable]
+    public async Task OnTimeZoneAsync(string zone)
+    {
+        // It crosses the JS boundary, so nothing here is trusted.
+        if (_disposed || string.IsNullOrWhiteSpace(zone) || zone.Length > 100) return;
+        try
+        {
+            await OnBrowserTimeZone.InvokeAsync(zone);
         }
         catch (Exception ex)
         {

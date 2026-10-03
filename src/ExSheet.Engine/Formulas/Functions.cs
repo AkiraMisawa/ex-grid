@@ -38,6 +38,7 @@ internal static partial class FunctionLibrary
         new("INT", 1, 1, "number", "Rounds a number down to the nearest integer.", Int),
         new("MOD", 2, 2, "number, divisor", "Returns the remainder from division, with the sign of the divisor.", Mod),
         new("DATE", 3, 3, "year, month, day", "Returns the serial number of a particular date.", Date),
+        new("TODAY", 0, 0, "", "Returns the serial number of today's date: the Sheet Day.", Today),
         new("YEAR", 1, 1, "serial_number", "Converts a serial number to a year.", Year),
         new("MONTH", 1, 1, "serial_number", "Converts a serial number to a month.", Month),
         new("DAY", 1, 1, "serial_number", "Converts a serial number to a day of the month.", Day),

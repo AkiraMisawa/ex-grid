@@ -118,6 +118,7 @@ them:
 | `ABS`, `INT` | `number` |
 | `MOD` | `number, divisor` |
 | `DATE` | `year, month, day` |
+| `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
 | `YEAR`, `MONTH`, `DAY` | `serial_number` |
 | `EOMONTH`, `EDATE` | `start_date, months` |
 | `LEFT`, `RIGHT` | `text, [num_chars]` |

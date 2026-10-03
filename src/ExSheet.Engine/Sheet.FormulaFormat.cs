@@ -33,8 +33,8 @@ public sealed partial class Sheet
     /// formatted — so the latest of two dates shows as a date (FF-012), and so does their sum
     /// (FF-020) and <c>=SUM(A1,5)</c> (FF-026). They count as a Reference in the arithmetic
     /// above.</item>
-    /// <item><c>DATE</c> gives the short date format, as Microsoft documents it gives a General cell
-    /// (FF-036), whatever its arguments. It counts as a Reference to a date in the arithmetic above
+    /// <item><c>DATE</c> and <c>TODAY</c> give the short date format, as Microsoft documents they give
+    /// a General cell (FF-036, FF-038), whatever their arguments. It counts as a Reference to a date in the arithmetic above
     /// (FF-037, uncertain).</item>
     /// </list>
     /// Anything else — <c>&amp;</c>, comparisons, <c>^</c>, other functions, <c>%</c> on anything
@@ -52,7 +52,7 @@ public sealed partial class Sheet
             UnaryNode u => u.Operator is '-' or '+' && Simple(u.Operand),
             PercentNode { Operand: NumberNode } => true,
             BinaryNode b => b.Operator is "+" or "-" or "*" or "/" && Simple(b.Left) && Simple(b.Right),
-            FunctionNode { Name: "DATE", Function: not null } => true,
+            FunctionNode { Name: "DATE" or "TODAY", Function: not null } => true,
             FunctionNode f => f.Name is "MIN" or "MAX" or "SUM" && f.Function is not null && f.Arguments.All(a => a is ReferenceNode or NumberNode),
             _ => false,
         };
@@ -89,7 +89,7 @@ public sealed partial class Sheet
                     return left ?? right;
                 case BinaryNode b:
                     return (Operand(b.Left) ?? Operand(b.Right)) is { IsPercent: false } product ? product : null;
-                case FunctionNode { Name: "DATE" }:
+                case FunctionNode { Name: "DATE" or "TODAY" }:
                     return NumberFormat.ShortDate;
                 case FunctionNode f:
                     foreach (var argument in f.Arguments)

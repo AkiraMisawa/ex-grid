@@ -654,6 +654,13 @@ in Excel. It is never recorded — it is computed again wherever a Sheet Documen
 ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: result, cached value, computed value
 
+**Sheet Day**:
+The calendar day `TODAY()` answers in a Sheet. It is a fixed day the Consumer gives, or else the day
+it is now in a time zone: the Consumer's, or else the browser's. Until one is known, `TODAY()` is
+`#GETTING_DATA`. The engine never reads a clock. ExSheet keeps the day and moves it at midnight
+([ADR-0121](./docs/adr/0121-today-is-the-sheet-day-and-exsheet-keeps-it.md)).
+_Avoid_: system date, server date, current date
+
 **Formula**:
 An Entry beginning with `=`, written in Excel's syntax, that computes a Value from other cells'
 Values. A function ExSheet does not know yields `#NAME?`; it is never guessed at

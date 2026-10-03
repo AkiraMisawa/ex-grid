@@ -1,8 +1,8 @@
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// DATE, YEAR, MONTH, DAY, EOMONTH and EDATE over Excel's 1900 serials, 29 February 1900 included
-/// (ADR-0047, <see cref="DateSerial"/>).
+/// DATE, TODAY, YEAR, MONTH, DAY, EOMONTH and EDATE over Excel's 1900 serials, 29 February 1900
+/// included (ADR-0047, <see cref="DateSerial"/>).
 /// </summary>
 internal static partial class FunctionLibrary
 {
@@ -49,6 +49,16 @@ internal static partial class FunctionLibrary
         var days = new DateOnly(year, month, 1).DayNumber - new DateOnly(1899, 12, 31).DayNumber;
         return days >= 60 ? days + 1 : days;
     }
+
+    /// <summary>
+    /// TODAY: the Sheet Day's serial (ADR-0121). While the day is not known it is
+    /// <c>#GETTING_DATA</c>; the Formula waits as a whole (<c>Sheet.Taint</c>), so this is only
+    /// what the call itself answers.
+    /// </summary>
+    private static Operand Today(FunctionCall call) =>
+        call.Evaluator.Cells.Today is { } day && DateSerial.FromDate(day.Year, day.Month, day.Day) is { } serial
+            ? Operand.Of(Value.FromNumber(serial))
+            : Operand.Of(ErrorValue.GettingData);
 
     private static Operand Year(FunctionCall call) => DatePart(call, date => date.Year);
 

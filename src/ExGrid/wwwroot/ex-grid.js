@@ -18,7 +18,9 @@
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
 // place among the held keys; the root's `focus`, passing focus that lands on the root itself on to
 // its field; and the root's `focusout`, emptying the field as it is left and ending the release of
-// Tab when DOM focus leaves the grid (ADR-0012). Anything
+// Tab when DOM focus leaves the grid (ADR-0012). The eighth entry (ADR-0090): a media query
+// telling the Device Pixel. And the ninth (ADR-0122): the browser's time zone, read once at
+// attach and only when the Consumer asked for it, so TODAY() is the user's day. Anything
 // else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
 // ADR.
 //
@@ -45,9 +47,11 @@
  *   and the keys after it wait for the panel; otherwise it is refused (ADR-0055)
  * @param {string[]} declaredKeys canonical forms of the keys the Consumer declared (ADR-0050,
  *   item 14), already among takenKeys: the editing branch claims them too
+ * @param {boolean} reportTimeZone whether the Consumer asked for the browser's time zone
+ *   (ADR-0122): only then is it read, once, and reported
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {
     let taken = new Set(takenKeys);
     // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
     // edit open they are in `taken`; while one is open they are claimed beside the editor's keys,
@@ -2468,6 +2472,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             });
     };
     armResolution();
+
+    // The browser's time zone (ADR-0122, the ninth allowlist entry), read once and only when
+    // the Consumer asked: TODAY() is the day on the user's device (ADR-0121), and on Blazor
+    // Server .NET runs where the server's zone is. Browsers raise no event when the zone
+    // changes, so nothing listens for one. No layout is read and nothing is written.
+    if (reportTimeZone === true) {
+        let zone = null;
+        try {
+            zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch {
+            zone = null;
+        }
+        if (typeof zone === 'string' && zone.length > 0) {
+            core.invokeMethodAsync('OnTimeZoneAsync', zone)
+                .catch((error) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to take the time zone', error);
+                    }
+                });
+        }
+    }
 
     const handle = {
         // The two pointer reports' switches (ADR-0021's fifth entry): rows for the

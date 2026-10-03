@@ -160,8 +160,8 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `HOUR` | Ready | P3 | |
 | `MINUTE` | Ready | P3 | |
 | `SECOND` | Ready | P3 | |
-| `TODAY` | Decide | P1 | Its value depends on when the Sheet is recalculated. A Sheet Document holds Entries and every Value is recomputed (ADR-0048), so a saved sheet changes its answer from day to day. It also needs a volatile recalculation that ADR-0047 does not have, and a time zone |
-| `NOW` | Decide | P2 | As `TODAY` |
+| `TODAY` | Supported | — | The Sheet Day: a fixed day, or the day in the Consumer's time zone, or else the browser's; `#GETTING_DATA` until one is known (ADR-0121, ADR-0122) |
+| `NOW` | Decide | P2 | The Sheet Day of ADR-0121 holds no time of day; `NOW` needs one, and when it moves on |
 
 ### Text
 
@@ -228,6 +228,6 @@ own. Every function here waits for that ADR.
 1. **The P1 Ready functions** — done, ticket 01. Their `uncertain` cases go to the next Windows run.
 2. **The P1 Observe functions, through one Windows run.** The criteria of the `SUMIF` family, and
    the approximate match of `VLOOKUP` and `MATCH`.
-3. **The P1 Decide functions, to the user.** `TEXT` — done, ticket 02 (ADR-0120). `TODAY` waits
-   for its ADR: where the day comes from, and what a saved document means.
+3. **The P1 Decide functions, to the user.** Done: `TEXT`, ticket 02 (ADR-0120), and `TODAY`,
+   ticket 03 (ADR-0121, ADR-0122).
 4. P2, then P3, in the same way.
