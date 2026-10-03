@@ -636,14 +636,18 @@ nobody had asked for. What that means when writing a test:
   closes — that Escape, Escape on Close, Close, the backdrop — the report's grid holding the
   keyboard again, its arrows moving its Focus; Escape in a details tab's grid closing nothing and
   releasing Tab (KB-8); the selected tab closed handing the keyboard to the tab selected next, and
-  the last one back to the report, on the cell it left. Under MudBlazor alone, a MudSelect's list in
-  Value Field Settings… taking Escape before its panel (PV-11), and the palette reaching the pane,
-  the entries and the `−` button in both schemes (PV-18). Under ExPivot's own markup alone, ExGrid's
-  `ReturnKeyboardAsync` keeping to its conditions (DC-61): a control of the page focused while the
-  report's request is on its way keeps the keyboard, and so does a second grid pressed meanwhile —
-  the other pivot's report on `/pivot-db`. On the Server host the request lands two round trips
-  after the Escape or the close, with 150 ms injected; on WebAssembly the same tests are the case
-  without a round trip.
+  the last one back to the report, on the cell it left. The keyboard put in the records before the
+  dialog's Close or a new tab takes it (PV-41, A11Y-20, ADR-0070/0033): DOM focus put on the
+  records' scroller in the task that draws them, where a press there puts it, before the control's
+  request can land on the Server host, staying in the records and reaching their grid's root once
+  that is a tab stop; on the Server host the control never takes it. Under MudBlazor alone, a
+  MudSelect's list in Value Field Settings… taking Escape before its panel (PV-11), and the palette
+  reaching the pane, the entries and the `−` button in both schemes (PV-18). Under ExPivot's own
+  markup alone, ExGrid's `ReturnKeyboardAsync` keeping to its conditions (DC-61): a control of the
+  page focused while the report's request is on its way keeps the keyboard, and so does a second
+  grid pressed meanwhile — the other pivot's report on `/pivot-db`. On the Server host the request
+  lands two round trips after the Escape or the close, with 150 ms injected; on WebAssembly the same
+  tests are the case without a round trip.
 - `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0064, PV-20), **run once per
   Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
   the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through

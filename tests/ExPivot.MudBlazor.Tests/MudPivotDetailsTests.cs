@@ -90,17 +90,18 @@ public class MudPivotDetailsTests : MudPivotTestContext
         Assert.IsType<MudGridChrome>(details.Instance.Chrome);
     }
 
-    [Fact] // ADR-0059 (PV-14): a tab Show Details opens takes the keyboard — the report it covers keeps it no longer
+    [Fact] // ADR-0059/0070 (PV-14, PV-41): a tab Show Details opens takes the keyboard — the report it covers keeps it no longer — handed on by the report's grid
     public async Task A_new_tab_takes_the_keyboard()
     {
         var cut = RenderPivot(RegionProduct);
 
         await DoubleClickAsync(cut, 1);
-        Assert.Equal((TabElementId(cut, "Details: East / Apples"), false), LastFocus());
+        Assert.Equal(TabElementId(cut, "Details: East / Apples"), LastHandOff());
 
         await DoubleClickAsync(cut, 2);
         Assert.Equal("Details: East / Pears", SelectedTitle(cut));
-        Assert.Equal((TabElementId(cut, "Details: East / Pears"), false), LastFocus());
+        Assert.Equal(TabElementId(cut, "Details: East / Pears"), LastHandOff());
+        Assert.Null(LastFocus());
     }
 
     [Fact] // ADR-0059/0061 (PV-9, PV-14): which tab is selected is ExPivot's — a tab activated by the pointer or the keyboard is selected through ExPivot, which shows its records or brings the report back
@@ -123,7 +124,7 @@ public class MudPivotDetailsTests : MudPivotTestContext
         Assert.Equal(1, Tabs(cut).GetState(x => x.ActivePanelIndex));
     }
 
-    [Fact] // ADR-0059 (PV-14): closing a tab before the selected one leaves the selection where ExPivot keeps it, though every index after the closed one moves — MudTabs holds no index of its own — and the selected tab takes the keyboard
+    [Fact] // ADR-0059 (PV-14, PV-41): closing a tab before the selected one leaves the selection where ExPivot keeps it, though every index after the closed one moves — MudTabs holds no index of its own — and the selected tab takes the keyboard
     public async Task Closing_a_tab_before_the_selected_one_keeps_the_selection()
     {
         var cut = RenderPivot(RegionProduct);
@@ -138,10 +139,10 @@ public class MudPivotDetailsTests : MudPivotTestContext
         Assert.Equal("Details: North / Pears", SelectedTitle(cut));
         Assert.Equal(2, Tabs(cut).GetState(x => x.ActivePanelIndex));
         Assert.Equal("Details: North / Pears", ShownRecords(cut));
-        Assert.Equal((TabElementId(cut, "Details: North / Pears"), false), LastFocus());
+        Assert.Equal(TabElementId(cut, "Details: North / Pears"), LastHandOff());
     }
 
-    [Fact] // ADR-0059 (PV-14): closing the selected tab selects Excel's next sheet — the one after it, else the one before, else the report — which takes the keyboard; the last one closed takes the tabs away
+    [Fact] // ADR-0059 (PV-14, PV-41): closing the selected tab selects Excel's next sheet — the one after it, else the one before, else the report — which takes the keyboard; the last one closed takes the tabs away
     public async Task Closing_the_selected_tab_selects_the_next()
     {
         var cut = RenderPivot(RegionProduct);
@@ -154,7 +155,7 @@ public class MudPivotDetailsTests : MudPivotTestContext
         Assert.Equal(["PivotTable", "Details: East / Pears"], TabTitles(cut));
         Assert.Equal("Details: East / Pears", SelectedTitle(cut));
         Assert.Equal("Details: East / Pears", ShownRecords(cut));
-        Assert.Equal((TabElementId(cut, "Details: East / Pears"), false), LastFocus());
+        Assert.Equal(TabElementId(cut, "Details: East / Pears"), LastHandOff());
 
         await CloseAsync(cut, "Details: East / Pears");
 
@@ -217,7 +218,7 @@ public class MudPivotDetailsTests : MudPivotTestContext
 
     // ---- The dialog ---------------------------------------------------------------------------
 
-    [Fact] // ADR-0059/0062 (PV-14): the dialog is ExPivot's frame — modal, named by the cell — with MudBlazor's controls inside: the title a heading, the records dressed by the grid Wrapper, and Close a MudButton that takes the keyboard; never a MudDialog
+    [Fact] // ADR-0059/0062 (PV-14, PV-41): the dialog is ExPivot's frame — modal, named by the cell — with MudBlazor's controls inside: the title a heading, the records dressed by the grid Wrapper, and Close a MudButton that takes the keyboard; never a MudDialog
     public async Task The_dialog_is_expivots_frame_with_mudblazor_controls_inside()
     {
         var cut = RenderPivot(RegionProduct, detailsView: PivotDetailsView.Dialog);
@@ -237,7 +238,7 @@ public class MudPivotDetailsTests : MudPivotTestContext
         Assert.IsType<MudGridChrome>(cut.FindComponent<ExGrid<PivotDetailRecord>>().Instance.Chrome);
         var close = cut.FindComponents<MudPivotButton>().Single(b => b.Instance.Class == "mud-ex-pivot-dialog-close");
         Assert.Equal("Close", close.Find("button").TextContent.Trim());
-        Assert.Equal((ElementIdOf(close.Instance), false), LastFocus());
+        Assert.Equal(ElementIdOf(close.Instance), LastHandOff());
         Assert.True(cut.Find(".ex-pivot-report").HasAttribute("inert"));
         Assert.Empty(cut.FindAll(".mud-ex-pivot-tabs"));
     }

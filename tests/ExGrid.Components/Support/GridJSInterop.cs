@@ -73,6 +73,12 @@ internal sealed class GridJSInterop
     internal void RefuseAnchors()
         => _handle!.Setup<bool>("anchorScrollTop", _ => true).SetResult(false);
 
+    /// <summary>The browser has not answered <c>metaIsPrimary</c> yet, which the attach asks before
+    /// the grid listens: until the test answers it, the listener is attached and the root is still
+    /// no tab stop (ADR-0033, A11Y-20). Set before the grid is rendered.</summary>
+    internal JSRuntimeInvocationHandler<bool> UnansweredMetaIsPrimary()
+        => _handle!.Setup<bool>("metaIsPrimary", _ => true);
+
     /// <summary>The browser answers that Meta is this platform's primary modifier — an Apple
     /// platform, where Cmd+click adds a range (ADR-0012). Asked once at attach, so this is set
     /// before the grid is rendered; the keys are told per key instead.</summary>
@@ -155,6 +161,17 @@ internal sealed class GridJSInterop
             return true;
         });
         focusEditor.SetVoidResult();
+        // The keyboard handed on to a control of the Consumer's outside the grid, asked of the
+        // handle, which grants it only while DOM focus is still inside the root or on nothing
+        // (ADR-0070's note of 2026-10-02): logged with the other focus requests, as the control.
+        var handKeyboardTo = handle.SetupVoid(invocation =>
+        {
+            if (invocation.Identifier != "handKeyboardTo")
+                return false;
+            focusLog.Add(((Microsoft.AspNetCore.Components.ElementReference)invocation.Arguments[0]!).Id);
+            return true;
+        });
+        handKeyboardTo.SetVoidResult();
         // Where the keyboard is going, told to the key gate (ADR-0039 and ADR-0050 item 16,
         // 2026-10-01): to a Consumer's popover, or to a frame of the Consumer's own.
         var handOff = handle.SetupVoid("handOff", _ => true);
@@ -174,6 +191,7 @@ internal sealed class GridJSInterop
             CaretPlaced = setCaret,
             FocusReclaimed = reclaimFocus,
             EditorFocusAsked = focusEditor,
+            KeyboardHandedOn = handKeyboardTo,
             _focusLog = focusLog,
         };
     }
@@ -191,6 +209,11 @@ internal sealed class GridJSInterop
     /// argument says whether the surface is the Formula Bar's text.</summary>
     internal JSRuntimeInvocationHandler EditorFocusAsked { get; private init; } = default!;
 
+    /// <summary>Every time the core asked for the keyboard to be handed on to a control of the
+    /// Consumer's, through the handle's conditional <c>handKeyboardTo</c> (ADR-0070's note of
+    /// 2026-10-02): its argument is the control.</summary>
+    internal JSRuntimeInvocationHandler KeyboardHandedOn { get; private init; } = default!;
+
     /// <summary>The Cell Editor's surface, as <see cref="Focused"/> names a request for it.</summary>
     internal const string CellSurface = "surface:cell";
 
@@ -205,10 +228,11 @@ internal sealed class GridJSInterop
     /// <summary>Every element the core has asked the browser to focus, in the order asked: the
     /// root, by the handle's conditional reclaim; an open edit's surface, by the handle's
     /// conditional <c>focusEditor</c>, as <see cref="CellSurface"/> or <see cref="BarSurface"/>;
-    /// and any other element by Blazor's.</summary>
+    /// a control of the Consumer's, by the handle's conditional <c>handKeyboardTo</c>; and any
+    /// other element by Blazor's.</summary>
     internal IReadOnlyList<string> Focused => [.. _focusLog.Select(id => id ?? RootReferenceId)];
 
-    /// <summary>How many times the core has asked for DOM focus anywhere, by either route.</summary>
+    /// <summary>How many times the core has asked for DOM focus anywhere, by any route.</summary>
     internal int FocusCalls => _focusLog.Count;
 
     /// <summary>Runs <paramref name="heard"/> at each reclaim as the core makes it, so a test

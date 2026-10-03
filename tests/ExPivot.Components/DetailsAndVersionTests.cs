@@ -122,32 +122,35 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Same(grid, Grid(cut).Instance);
     }
 
-    [Fact] // ADR-0059 (PV-14): a tab Show Details opens takes the keyboard, which the report it covers keeps no longer; closing a tab gives it to the tab selected next
+    [Fact] // ADR-0059/0070 (PV-14, PV-41): a tab Show Details opens takes the keyboard, which the report it covers keeps no longer; closing a tab gives it to the tab selected next — each handed on by the report's grid
     public async Task The_keyboard_follows_the_tabs()
     {
+        var report = ReportGridHandle();
         var cut = RenderPivot(ByRegionAndProduct);
-        int FocusCalls() => JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
         IRenderedComponent<PivotFocusButton> TabButton(string title)
             => cut.FindComponents<PivotFocusButton>().Single(b => b.Instance.Class == "ex-pivot-tab-button" && b.Find("button").TextContent == title);
 
-        var before = FocusCalls();
         await DoubleClickAsync(cut, 0, 1);
 
         Assert.NotEqual(0, TabButton("Details: East / Apples").Instance.FocusRequest);
         Assert.Equal(0, TabButton("PivotTable").Instance.FocusRequest);
-        Assert.True(FocusCalls() > before);
+        Assert.Equal([ElementIdOf(TabButton("Details: East / Apples").Instance)], KeyboardHandOffs(report));
 
         await DoubleClickAsync(cut, 1, 4);
         var opened = TabButton("Details: North").Instance.FocusRequest;
         Assert.NotEqual(0, opened);
         Assert.Equal(0, TabButton("Details: East / Apples").Instance.FocusRequest);
+        Assert.Equal(ElementIdOf(TabButton("Details: North").Instance), KeyboardHandOffs(report)[^1]);
 
-        before = FocusCalls();
         await cut.FindAll(".ex-pivot-tab-close")[1].ClickAsync(new MouseEventArgs());
 
         Assert.Equal("true", TabButton("Details: East / Apples").Find("button").GetAttribute("aria-selected"));
         Assert.True(TabButton("Details: East / Apples").Instance.FocusRequest > opened);
-        Assert.True(FocusCalls() > before);
+        Assert.Equal(3, KeyboardHandOffs(report).Length);
+        Assert.Equal(ElementIdOf(TabButton("Details: East / Apples").Instance), KeyboardHandOffs(report)[^1]);
+        // The report's grid hands the keyboard on; no button takes it by its own focus, which would
+        // take it from wherever the user had put it meanwhile.
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
 
         await cut.Find(".ex-pivot-tab-close").ClickAsync(new MouseEventArgs());
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
@@ -202,11 +205,11 @@ public class DetailsAndVersionTests : PivotTestContext
 
     // ---- PV-14: a dialog, when the Consumer asks for one -------------------------------------------
 
-    [Fact] // ADR-0059 (PV-14): with DetailsView Dialog, Show Details opens ExPivot's dialog, named by the cell, with the same grid inside, and takes the keyboard
+    [Fact] // ADR-0059/0070 (PV-14, PV-41): with DetailsView Dialog, Show Details opens ExPivot's dialog, named by the cell, with the same grid inside, and its Close takes the keyboard, handed on by the report's grid
     public async Task Show_details_opens_a_dialog_when_asked()
     {
+        var report = ReportGridHandle();
         var cut = RenderPivot(ByRegionAndProduct, ps => ps.Add(p => p.DetailsView, PivotDetailsView.Dialog));
-        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
 
         await DoubleClickAsync(cut, 0, 1);
 
@@ -218,7 +221,9 @@ public class DetailsAndVersionTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-dialog-backdrop"));
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
         cut.WaitForAssertion(() => Assert.Equal(2, DetailRows(cut, ".ex-pivot-dialog-records").Length));
-        Assert.True(JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus") > focusCalls);
+        var close = cut.FindComponents<PivotFocusButton>().Single(b => b.Instance.Class == "ex-pivot-close");
+        Assert.Equal([ElementIdOf(close.Instance)], KeyboardHandOffs(report));
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
     }
 
     [Fact] // ADR-0059 (PV-14): the dialog is modal — what it covers, the report and the Field List, takes neither the keyboard nor the pointer while it stands

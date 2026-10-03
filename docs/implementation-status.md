@@ -793,6 +793,16 @@ DA-17). Over a million trades in a published WebAssembly build:
   keyboard back however it closes. Building it found that a held Escape peeled a layer per
   repeat, cancelling a half-typed formula under its closing list. A held Escape is now one
   press in every grid (ADR-0012, KB-44).
+- **A press into a details view's records keeps the keyboard there** (2026-10-02 and 2026-10-03:
+  ADR-0070, "Handed on, not taken"; ADR-0021's sixth decision about focus made in script; ADR-0033's
+  note of 2026-10-03; DC-61, A11Y-20, PV-41, ticket 21). Two races on the Server host, told apart by
+  a probe with no latency injected. A press made as soon as the dialog showed lost the keyboard to
+  Close's late focus in 2 runs of 6. A press made before the records' root was a tab stop left the
+  keyboard on their scroller for good; that was the test failure seen, in 1 run of 3. ExGrid's
+  `HandKeyboardToAsync` now hands the keyboard on only while DOM focus is still inside the grid or
+  on nothing, and ExPivot's dialog Close and details tabs take it that way under both Chromes. The
+  scroller's hand-off to the root is owed until a render has made the root a tab stop, in every
+  grid.
 - **The CSV read is faster** (ExGrid.Data's ticket 07, `verification/2026-10-01-linux-measure-csv`;
   ADR-0064, refined). A million rows read in 4.0 s in a published WebAssembly build, from 12.9 s,
   and in 491 ms on CoreCLR, from 692, both on the same machine. Every rule of the read and every

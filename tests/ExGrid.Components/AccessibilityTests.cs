@@ -349,4 +349,34 @@ public class AccessibilityTests : GridTestContext
         Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == GridJSInterop.BlazorFocus
             && ((ElementReference)i.Arguments[0]!).Id == root);
     }
+
+    [Fact] // ADR-0033 (note of 2026-10-03) / A11Y-20: focus reaching the scroller before the root is a tab stop — a press on rows painted before the attach's render — goes to the root once a render has made it one, and is asked for once
+    public async Task Focus_reaching_the_scroller_before_the_root_is_a_tab_stop_goes_to_it_once_it_is()
+    {
+        var listening = Js.UnansweredMetaIsPrimary();
+        var tabIndexAtReclaim = new List<string?>();
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        Js.OnFocusReclaimed(() => tabIndexAtReclaim.Add(cut!.Find(".ex-grid").GetAttribute("tabindex")));
+        cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns()));
+        Assert.Null(cut.Find(".ex-grid").GetAttribute("tabindex"));
+
+        await cut.Find(".ex-scroller").FocusAsync(new FocusEventArgs());
+
+        // The root could not take it yet: its own focus would do nothing, so nothing is asked...
+        Assert.Empty(Js.FocusReclaimed.Invocations);
+
+        // ...until the attach has finished and its render has made the root a tab stop.
+        await cut.InvokeAsync(() => listening.SetResult(false));
+        cut.WaitForAssertion(() => Assert.Single(Js.FocusReclaimed.Invocations));
+        Assert.Equal(["0"], tabIndexAtReclaim);
+        Assert.Equal(Js.RootReferenceId, Js.Focused[^1]);
+        // Asked through the hand-back's condition, never by the root's own focus (ADR-0018).
+        Assert.False((bool)Js.FocusReclaimed.Invocations.First().Arguments[0]!);
+
+        // Owed once: the renders after it ask nothing more.
+        cut.Render();
+        Assert.Single(Js.FocusReclaimed.Invocations);
+    }
 }

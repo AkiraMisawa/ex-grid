@@ -52,6 +52,9 @@
 @{
     var keyFieldShown = KeyFieldShown;
     var activeDescendant = ActiveDescendant();
+    // Once a render has made the root a tab stop, it is sent ahead of anything asked after it:
+    // the scroller's hand-off waits for one (OnScrollerFocusAsync).
+    _tabStopRendered |= !Prerendered;
 }
 @* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
@@ -72,9 +75,9 @@
        inside the grid (A11Y-4). A scroller that can hold focus would also take it from a
        click, so focus arriving there is handed straight to the root, where the keys and
        aria-activedescendant are (ADR-0033) — to its Keyboard Field on a grid that edits
-       (ADR-0080). *@
+       (ADR-0080) — or, before the root is a tab stop, once it is (OnScrollerFocusAsync). *@
     <div class="ex-scroller" style="@ScrollerStyle()" tabindex="-1"
-         role="presentation" @ref="_scroller" @onscroll="OnScrollAsync" @onfocus="ReclaimFocusAsync">
+         role="presentation" @ref="_scroller" @onscroll="OnScrollAsync" @onfocus="OnScrollerFocusAsync">
         <div class="ex-spacer" style="width: @Px(_columnStyles.Geometry.TotalWidthPx); height: @Px(BandHeightPx + _geometry.ScrollHeightPx)"
              role="presentation">
             @* The header occupies the content's first row height and covers the
@@ -2257,6 +2260,31 @@
     // attach, whose render lifts the Prerendered state.
     private bool _listening;
 
+    // Whether a render has made the root a tab stop (ADR-0033), and whether focus arrived on the
+    // scroller before one had, its hand-off to the root still to be made (OnScrollerFocusAsync).
+    private bool _tabStopRendered;
+    private bool _scrollerFocusOwed;
+
+    /// <summary>
+    /// Focus arriving on the scroller — a press on the rows, which the browser gives the nearest
+    /// element that can hold it — is handed to the root (ADR-0033). Until a render has made the
+    /// root a tab stop, once the listener is attached, the root cannot take it: its focus call does
+    /// nothing, and the keyboard stayed on the scroller for good, beside an
+    /// <c>aria-activedescendant</c> no assistive technology reads. The rows paint up to two round
+    /// trips before that on a circuit, and a press on them in between came out one way or the
+    /// other by timing. So the hand-off is owed, and made after the render that makes the root a
+    /// tab stop, under the hand-back's own condition (ADR-0033's note of 2026-10-03).
+    /// </summary>
+    private Task OnScrollerFocusAsync()
+    {
+        if (!_tabStopRendered)
+        {
+            _scrollerFocusOwed = true;
+            return Task.CompletedTask;
+        }
+        return ReclaimFocusAsync();
+    }
+
     // Interned per combination, as the header cells' classes are (ADR-0027 P5). ex-pointed-at is
     // the grid pointed at from outside (ADR-0058, ADR-0029's note of 2026-09-30).
     private string RootClass => (_loading || Prerendered, _editMode != EditMode.None, PointedAtNow) switch
@@ -3033,6 +3061,14 @@
         // that renders statically and still calls it.
         if (firstRender && RendererInfo.IsInteractive)
             await AttachScrollAsync();
+
+        // The scroller's hand-off owed from before the root was a tab stop (OnScrollerFocusAsync),
+        // asked once a render has made it one: that render is ahead of this request on the wire.
+        if (_scrollerFocusOwed && _tabStopRendered)
+        {
+            _scrollerFocusOwed = false;
+            await ReclaimFocusAsync();
+        }
 
         if (_announcePending is { } pending)
         {

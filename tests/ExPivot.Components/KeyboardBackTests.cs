@@ -184,12 +184,14 @@ public class KeyboardBackTests : PivotTestContext
         cut = RenderPivot(ByRegionAndProduct);
         await DoubleClickAsync(cut, 0, 1);
         var focusCalls = FocusCalls();
+        var handOffs = KeyboardHandOffs(report).Length;
 
         await cut.Find(".ex-pivot-tab-close").ClickAsync(new MouseEventArgs());
 
         Assert.Empty(cut.FindAll(".ex-pivot-tabs"));
         Assert.Equal([true], seen);
         Assert.Equal(focusCalls, FocusCalls());
+        Assert.Equal(handOffs, KeyboardHandOffs(report).Length);
     }
 
     [Fact] // ADR-0070 (PV-39): the last details tab closed while the report's tab is selected leaves the keyboard nowhere else either: the report's grid takes it back
@@ -217,6 +219,7 @@ public class KeyboardBackTests : PivotTestContext
         await cut.FindAll(".ex-pivot-tab-button")[0].ClickAsync(new MouseEventArgs());
         var returns = KeyboardReturns(report);
         var focusCalls = FocusCalls();
+        var handOffs = KeyboardHandOffs(report).Length;
 
         await cut.FindAll(".ex-pivot-tab-close")[0].ClickAsync(new MouseEventArgs());
 
@@ -224,9 +227,10 @@ public class KeyboardBackTests : PivotTestContext
         Assert.Equal("true", TabButton(cut, "PivotTable").Find("button").GetAttribute("aria-selected"));
         Assert.Equal(returns + 1, KeyboardReturns(report));
         Assert.Equal(focusCalls, FocusCalls());
+        Assert.Equal(handOffs, KeyboardHandOffs(report).Length);
     }
 
-    [Fact] // ADR-0070/0059 (PV-39): a details tab closed while selected hands the keyboard to the details tab selected next, on its button; the report's grid, covered, is not asked
+    [Fact] // ADR-0070/0059 (PV-39, PV-41): a details tab closed while selected hands the keyboard to the details tab selected next, on its button, handed on by the report's grid; the report's grid, covered, is not asked to take it back
     public async Task Closing_the_selected_tab_hands_the_keyboard_to_the_details_tab_selected_next()
     {
         var report = ReportGridHandle();
@@ -236,12 +240,17 @@ public class KeyboardBackTests : PivotTestContext
         var opened = TabButton(cut, "Details: North").Instance.FocusRequest;
         var returns = KeyboardReturns(report);
         var focusCalls = FocusCalls();
+        var handOffs = KeyboardHandOffs(report).Length;
 
         await cut.FindAll(".ex-pivot-tab-close")[1].ClickAsync(new MouseEventArgs());
 
         Assert.Equal("true", TabButton(cut, "Details: East / Apples").Find("button").GetAttribute("aria-selected"));
         Assert.True(TabButton(cut, "Details: East / Apples").Instance.FocusRequest > opened);
-        Assert.Equal(focusCalls + 1, FocusCalls());
+        // Given only while the keyboard is still the report's (PV-41): the close button that held
+        // it went with its tab, so it is on nothing, and the grid's script grants it.
+        Assert.Equal(handOffs + 1, KeyboardHandOffs(report).Length);
+        Assert.Equal(ElementIdOf(TabButton(cut, "Details: East / Apples").Instance), KeyboardHandOffs(report)[^1]);
+        Assert.Equal(focusCalls, FocusCalls());
         Assert.Equal(returns, KeyboardReturns(report));
     }
 }

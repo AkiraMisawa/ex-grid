@@ -81,3 +81,43 @@ in the dialog's grid to show the report keeps the keyboard. The ADR-0070 tests p
 2026-10-02, decided with the user: `OnLeave` is raised beside the grid's release of Tab, not in
 place of it (ADR-0070, "Raised beside the release"; DC-62). The dialog's grid releases Tab and
 raises `OnLeave`, and the dialog closes on it as before.
+
+2026-10-03, decided with the user on 2026-10-02: a press into a details view's records keeps the
+keyboard there (PV-41; DC-61 and A11Y-20 extended; ADR-0070, "Handed on, not taken"; ADR-0021's
+note of 2026-10-02; ADR-0033's note of 2026-10-03).
+
+- **What was found.** A test of the dialog that clicked into its records once they were painted
+  failed in 1 run of 3 on the Server host. It was first read as Close's late focus taking the
+  keyboard, and the test was made to wait for Close (752a28e). A probe of the order of events, with
+  no latency injected, then found two races. Pressed as soon as the dialog showed, the records lost
+  the keyboard to Close in 2 runs of 6. Pressed once the rows were painted, the press could land
+  before the records' root was a tab stop, once in 8, 14 ms before it. The keyboard then stayed on
+  the scroller: that was the failure seen.
+- **ExGrid.** `HandKeyboardToAsync(control)` asks the handle's `handKeyboardTo`, the sixth decision
+  about focus made in script. The control takes the keyboard only while DOM focus is inside the grid
+  or on nothing. Before the attach, and once the grid is gone, the control takes it by its own
+  focus. The scroller's hand-off to the root is owed until a render has made the root a tab stop.
+- **ExPivot.** The dialog's and the tabs' contexts carry `TakeKeyboard`. ExPivot's own views and the
+  MudBlazor Wrapper call it in place of the element's `FocusAsync`, and ExPivot hands it the report
+  grid's `HandKeyboardToAsync`.
+
+Tests, layer 2:
+
+- `LeaveAndReturnKeyboardTests`: 4 more, for DC-61.
+- `AccessibilityTests`: 1, for A11Y-20.
+- `ShippedStylesheetTests`: the hand-on's shape, and six focus decisions in script.
+- `DetailsAndVersionTests`, `KeyboardBackTests`, `MudPivotDetailsTests` and
+  `MudPivotKeyboardBackTests` (2 more): each request read off the report grid's handle.
+
+The Mud test context said the grid's module import answers null in loose mode. It does not: every
+grid attaches there, to a handle that answers nothing. The comment now says so.
+
+Layer 3, in `pivot.spec.mjs`, under both Chromes, two PV-41 tests put DOM focus on the records'
+scroller in the task that draws them, where a press there puts it:
+
+- with the hand-on taken out, 8 of 8 failed on the Server host;
+- with the scroller's owed hand-off taken out, 8 of 8 failed too;
+- with both, 20 of 20 passed on each host.
+
+The whole of `pivot.spec.mjs` three times over passed 156 of 156 on each host. `features`,
+`key-field` and `circuit` passed 118 of 118 on the Server host.

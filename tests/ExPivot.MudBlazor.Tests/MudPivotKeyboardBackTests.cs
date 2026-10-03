@@ -153,7 +153,7 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         Assert.Equal(focusCalls, FocusCalls());
     }
 
-    [Fact] // ADR-0070/0062 (PV-39): under MudBlazor, a details tab closed while selected hands the keyboard to the details tab MudTabs shows next; the report's grid, covered, is not asked
+    [Fact] // ADR-0070/0062 (PV-39, PV-41): under MudBlazor, a details tab closed while selected hands the keyboard to the details tab MudTabs shows next, handed on by the report's grid; the report's grid, covered, is not asked to take it back
     public async Task Closing_the_selected_tab_hands_the_keyboard_to_the_details_tab_selected_next()
     {
         var report = ReportGridHandle();
@@ -162,13 +162,45 @@ public class MudPivotKeyboardBackTests : MudPivotTestContext
         await DoubleClickAsync(cut, 2);
         var returns = KeyboardReturns(report);
         var focusCalls = FocusCalls();
+        var handOffs = KeyboardHandOffs(report).Length;
 
         await CloseTabAsync(cut, "Details: East / Pears");
 
         Assert.Equal(["PivotTable", "Details: East / Apples"], TabTitles(cut));
-        Assert.Equal(focusCalls + 1, FocusCalls());
         var tabs = cut.FindComponent<MudTabs>().Instance;
-        Assert.Equal(tabs.Panels[1].PanelRef.Id, LastFocus()?.Id);
+        Assert.Equal(handOffs + 1, KeyboardHandOffs(report).Length);
+        Assert.Equal(tabs.Panels[1].PanelRef.Id, KeyboardHandOffs(report)[^1]);
+        Assert.Equal(focusCalls, FocusCalls());
         Assert.Equal(returns, KeyboardReturns(report));
+    }
+
+    // ---- PV-41: the keyboard handed on as a details view opens --------------------------------
+
+    [Fact] // ADR-0070/0062 (PV-41): under MudBlazor, the dialog's Close takes the keyboard as the dialog opens, handed on by the report's grid — granted only while the keyboard is still the report's — and not by its own focus
+    public async Task The_dialogs_close_takes_the_keyboard_from_the_reports_grid()
+    {
+        var report = ReportGridHandle();
+        var cut = RenderPivot(RegionProduct, detailsView: PivotDetailsView.Dialog);
+        var focusCalls = FocusCalls();
+
+        await DoubleClickAsync(cut, 1);
+
+        var close = cut.FindComponents<MudPivotButton>().Single(b => b.Instance.Class == "mud-ex-pivot-dialog-close");
+        Assert.Equal([ElementIdOf(close.Instance)], KeyboardHandOffs(report));
+        Assert.Equal(focusCalls, FocusCalls());
+    }
+
+    [Fact] // ADR-0070/0062 (PV-41): under MudBlazor, the tab Show Details opens takes the keyboard on MudTabs' tab element, handed on by the report's grid, and not by its own focus
+    public async Task A_new_details_tab_takes_the_keyboard_from_the_reports_grid()
+    {
+        var report = ReportGridHandle();
+        var cut = RenderPivot(RegionProduct);
+        var focusCalls = FocusCalls();
+
+        await DoubleClickAsync(cut, 1);
+
+        var tabs = cut.FindComponent<MudTabs>().Instance;
+        Assert.Equal([tabs.Panels[1].PanelRef.Id], KeyboardHandOffs(report));
+        Assert.Equal(focusCalls, FocusCalls());
     }
 }

@@ -23,10 +23,10 @@ public sealed record Sale(string? Region, string Product, decimal Amount, int Qu
 
 /// <summary>
 /// MudBlazor's services, the popover provider every MudBlazor page has, and a loose JavaScript
-/// seam: the grid's module import answers null in loose mode, which the core treats as "no browser
-/// yet" and paints without — enough for what these tests read, which is markup, layouts and the
-/// focus calls Blazor itself makes. The pivot stands in the grid Wrapper's paper, as ADR-0062 has
-/// a Consumer write it.
+/// seam: every call answers with nothing, the grid's module import a module of the same kind, so
+/// every grid attaches to a handle that answers nothing — enough for what these tests read, which
+/// is markup, layouts, the focus calls Blazor itself makes and the requests the grids make of their
+/// handles. The pivot stands in the grid Wrapper's paper, as ADR-0062 has a Consumer write it.
 /// </summary>
 public abstract class MudPivotTestContext : BunitContext
 {
@@ -204,6 +204,15 @@ public abstract class MudPivotTestContext : BunitContext
         throw new InvalidOperationException("MudButton holds no element reference");
     }
 
+    /// <summary>The element a grid last handed the keyboard on to, by id: the Chrome's control that
+    /// takes it from the report's grid only while it is still the report's (ExGrid's
+    /// <c>HandKeyboardToAsync</c>, PV-41).</summary>
+    internal string? LastHandOff()
+    {
+        var call = JSInterop.Invocations.LastOrDefault(i => i.Identifier == "handKeyboardTo");
+        return call.Identifier is null ? null : ((ElementReference)call.Arguments[0]!).Id;
+    }
+
     /// <summary>The last focus call Blazor made: the element's id and whether it kept the scroll.</summary>
     internal (string Id, bool PreventScroll)? LastFocus()
     {
@@ -212,12 +221,11 @@ public abstract class MudPivotTestContext : BunitContext
     }
 
     /// <summary>
-    /// Lets every grid rendered from here on attach to the browser, as it does on a page — its
-    /// module imported and its listener's handle answered, loosely — and keeps the report grid's
-    /// handle apart from the details grids': what the report's own grid asks of the browser, the
-    /// keyboard back on its root among it (ADR-0070). Without this, the import answers nothing in
-    /// loose mode and no grid attaches, so none could be asked for the keyboard. Called before the
-    /// pivot is rendered.
+    /// Keeps the report grid's handle apart from the details grids': what the report's own grid
+    /// asks of the browser, the keyboard back on its root and the keyboard handed on among it
+    /// (ADR-0070). Every grid attaches in loose mode either way, to a handle that answers nothing;
+    /// this one is the report's alone, so a test can tell which grid asked. Called before the pivot
+    /// is rendered.
     /// </summary>
     internal BunitJSModuleInterop ReportGridHandle()
     {
@@ -231,4 +239,12 @@ public abstract class MudPivotTestContext : BunitContext
     /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070).</summary>
     internal static int KeyboardReturns(BunitJSModuleInterop handle)
         => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
+
+    /// <summary>The elements the report grid behind <paramref name="handle"/> has handed the
+    /// keyboard on to, by id, in the order asked: a control of the Chrome's takes it from the
+    /// report's grid only while it is still the report's (ExGrid's <c>HandKeyboardToAsync</c>,
+    /// ADR-0070's note of 2026-10-02).</summary>
+    internal static string[] KeyboardHandOffs(BunitJSModuleInterop handle)
+        => handle.Invocations.Where(invocation => invocation.Identifier == "handKeyboardTo")
+            .Select(invocation => ((ElementReference)invocation.Arguments[0]!).Id).ToArray();
 }

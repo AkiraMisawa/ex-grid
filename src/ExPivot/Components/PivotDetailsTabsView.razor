@@ -15,7 +15,7 @@
     [Parameter, EditorRequired] public PivotDetailsTabsContext Context { get; set; } = default!;
 
     private RenderFragment Tab(PivotDetailsTab tab) => @<div @key="tab.Id" class="@(tab.IsSelected ? "ex-pivot-tab ex-pivot-tab-selected" : "ex-pivot-tab")">
-        <PivotFocusButton Class="ex-pivot-tab-button" OnClick="tab.Select" FocusRequest="tab.FocusRequest"
+        <PivotFocusButton Class="ex-pivot-tab-button" OnClick="tab.Select" FocusRequest="tab.FocusRequest" TakeKeyboard="Context.TakeKeyboard"
                           role="tab" id="@tab.Id" aria-selected="@(tab.IsSelected ? "true" : "false")"
                           aria-controls="@(tab.Close is null ? null : tab.Id + "-panel")">@tab.Title</PivotFocusButton>
         @if (tab.Close is { } close)

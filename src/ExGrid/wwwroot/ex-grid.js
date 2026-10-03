@@ -1925,7 +1925,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // would open an edit wherever the press had moved the Focus. So the composition ends
         // here first — the field gives up the keyboard, and the IME ends it there — and its text
         // is held ahead of the press, which is then held behind it as behind any key. One of the
-        // five decisions about focus made in script (ADR-0021).
+        // six decisions about focus made in script (ADR-0021).
         if (keyFieldComposing && core && !replaying && event.button === 0) {
             keyFieldOf()?.blur();
         }
@@ -1964,12 +1964,12 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // the keyboard had never left: where the core keeps DOM focus through a press on the rows
         // (ADR-0051) it keeps it in the edit, and the hand-back after a commit finds it inside
         // this root. Handed back from C#, a round trip later, the keys typed in between would
-        // reach the grid the user had just left. This is one of the five decisions about focus
+        // reach the grid the user had just left. This is one of the six decisions about focus
         // made in script (ADR-0021, added 2026-09-29), beside reclaimFocus, focusEditor, the
-        // root's own focus passed on to its Keyboard Field (onFocused) and the field given up by a
-        // press during a composition (above; ADR-0080); it reads document.activeElement and no
-        // layout. Held or not, the press keeps its place among the keys: only where the keyboard
-        // is has changed.
+        // root's own focus passed on to its Keyboard Field (onFocused), the field given up by a
+        // press during a composition (above; ADR-0080) and the keyboard handed on to a control of
+        // the Consumer's (handKeyboardTo); it reads document.activeElement and no layout. Held or
+        // not, the press keeps its place among the keys: only where the keyboard is has changed.
         const focusAtPress = document.activeElement;
         if (core && !replaying && editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))
             && isOwnRowsOrHeadings(event.target)) {
@@ -2649,12 +2649,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // round trip after the gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus
         // is still inside this root, or on nothing. A second grid the user has pressed in the
         // meantime keeps its keyboard. The condition reads document.activeElement and no layout.
-        // It is one of the five decisions about focus made in script, all for the same reason —
+        // It is one of the six decisions about focus made in script, all for the same reason —
         // made from C#, a round trip late, they would take or leave the keyboard in the wrong
-        // grid, or end a composition; the others are the press that brings the keyboard back to
+        // place, or end a composition; the others are the press that brings the keyboard back to
         // an edit left standing (onPress, ADR-0018 section 6), the open edit's own focus
-        // (focusEditor), the root's own focus passed on to its Keyboard Field (onFocused) and the
-        // field given up by a press during a composition (onPress).
+        // (focusEditor), the root's own focus passed on to its Keyboard Field (onFocused), the
+        // field given up by a press during a composition (onPress) and the keyboard handed on to
+        // a control of the Consumer's (handKeyboardTo).
         //
         // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
         // Box, built in or drawn by a Chrome, all inside the band the core renders them into
@@ -2674,6 +2675,29 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 || (root.contains(active) && (fromField === true || !own)))) {
                 staleField = null;
                 (keyFieldOf() ?? root).focus({ preventScroll: true });
+            }
+        },
+        // The keyboard this grid holds, handed on to a control of the Consumer's own outside it —
+        // the first control of a frame or a tab the Consumer opened from the grid, a dialog's Close
+        // (HandKeyboardToAsync; ADR-0070's note of 2026-10-02) — in place of that control's own
+        // focus. It lands a round trip after the render that drew the control, and is granted only
+        // while the keyboard is still this grid's: DOM focus inside this root or on nothing, the
+        // condition reclaimFocus reads. A press the user made meanwhile — on the frame's own
+        // content, another grid, a control of the page's — keeps the keyboard where it put it
+        // (ADR-0018), and so does a field beside the rows with focus of its own, as reclaimFocus
+        // leaves it; a field a press on the rows left standing (staleField) is not one, and gives
+        // the keyboard up as it does to reclaimFocus. The sixth decision about focus made in script
+        // (ADR-0021's note of 2026-10-02); it reads document.activeElement and no layout. The
+        // control scrolls into view, as its own focus would have had it.
+        handKeyboardTo: (element) => {
+            const active = document.activeElement;
+            const own = active instanceof Element && active !== staleField
+                && active.closest('.ex-formula-bar') !== null;
+            if (root && element instanceof HTMLElement && element.isConnected
+                && (!active || active === document.body || active === document.documentElement
+                    || (root.contains(active) && !own))) {
+                staleField = null;
+                element.focus();
             }
         },
         // The core's request that the open edit's surface take the keyboard: on opening, on F2,

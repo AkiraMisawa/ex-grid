@@ -1,6 +1,6 @@
-import { test, expect, circuitQuiet, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, setRoundTrip } from './fixtures.mjs';
 import { codeRegion } from './demo-code.mjs';
-import { API_URL } from './hosting.mjs';
+import { API_URL, SERVER } from './hosting.mjs';
 
 // ExPivot on /pivot (ADR-0059/0061/0062/0063/0066), under ExPivot's own markup and under
 // ExPivot.MudBlazor's Chrome: what only a browser can say. That a field dragged with the browser's
@@ -68,6 +68,48 @@ const reportRows = async (page) => Number(await report(page).getAttribute('aria-
 
 /** Whether two boxes overlap. */
 const overlaps = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/** Puts DOM focus on the element `selector` finds, in the task that draws it — where a press on it
+ *  would put it, before anything the host sends after that render can land — and logs, from here
+ *  on, each element that takes DOM focus: `report`, `records` (a details grid's root),
+ *  `records-inside` (anything else in a details grid, its scroller among them), `tab`, `close` (the
+ *  dialog's Close), or its tag. Through alterPage, which takes the observer and the listener off
+ *  as the test ends (ADR-0056). */
+async function focusOnArrival(page, selector) {
+    await alterPage(page, (selector) => {
+        const log = [];
+        const heard = (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+            const records = target.closest('.ex-pivot-dialog .ex-grid, .ex-pivot-details-panel .ex-grid');
+            log.push(records ? (records === target ? 'records' : 'records-inside')
+                : target.closest('.ex-pivot-sheet > .ex-grid') ? 'report'
+                : target.closest('[role=tab]') ? 'tab'
+                : target.textContent.trim() === 'Close' ? 'close'
+                : target.tagName.toLowerCase());
+        };
+        const observer = new MutationObserver(() => {
+            const arrived = document.querySelector(selector);
+            if (arrived instanceof HTMLElement) {
+                observer.disconnect();
+                arrived.focus({ preventScroll: true });
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        window.__pivotFocusLog = log;
+        document.addEventListener('focusin', heard, true);
+        return () => {
+            observer.disconnect();
+            document.removeEventListener('focusin', heard, true);
+            delete window.__pivotFocusLog;
+        };
+    }, selector);
+}
+
+/** What focusOnArrival has heard take DOM focus, in order. */
+const focusLog = (page) => page.evaluate(() => window.__pivotFocusLog);
 
 for (const chrome of ['builtin', 'mud']) {
     test.describe(`under the ${chrome} Chrome`, () => {
@@ -194,9 +236,8 @@ for (const chrome of ['builtin', 'mud']) {
             const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
             const records = dialog.locator('.ex-grid');
             await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
-            // The dialog gives Close the keyboard as it opens, on the Server host a round trip after
-            // the render that shows it: a press in the records before then loses the keyboard to Close
-            // when it lands (seen on the Server host, 2026-10-02). So Close is waited for first.
+            // Close takes the keyboard as the dialog opens (PV-14), and the press below takes it
+            // from there. A press made before Close has it is PV-41's case, below.
             await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
 
             // Into the records: their grid holds the keyboard, and the arrows are its own.
@@ -232,9 +273,8 @@ for (const chrome of ['builtin', 'mud']) {
             const dialog = page.getByRole('dialog', { name: /^Details: Americas \/ \w+ \/ \w+$/ });
             const records = dialog.locator('.ex-grid');
             await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
-            // The dialog gives Close the keyboard as it opens, on the Server host a round trip after
-            // the render that shows it: a press in the records before then loses the keyboard to Close
-            // when it lands (seen on the Server host, 2026-10-02). So Close is waited for first.
+            // Close takes the keyboard as the dialog opens (PV-14), and the press below takes it
+            // from there. A press made before Close has it is PV-41's case, below.
             await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
             await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
             await expect(records).toBeFocused();
@@ -288,10 +328,9 @@ for (const chrome of ['builtin', 'mud']) {
             const panel = pivot(page).getByRole('tabpanel');
             const records = panel.locator('.ex-grid');
             await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
-            // The new tab takes the keyboard on its tab (ADR-0070), on the Server host a round trip
-            // after the render that opened it. A press in its records made before then loses the
-            // keyboard to the tab when it lands (seen on the Server host, 2026-10-02), so the tab is
-            // waited for first, as the second tab is below.
+            // The new tab takes the keyboard on its tab (ADR-0070), and the press below takes it
+            // from there, as the second tab's is checked below. A press made before the tab has it
+            // is PV-41's case, below.
             await expect(details).toBeFocused();
 
             // A tab is a sheet of its own, and Escape does not close a sheet: its grid keeps the
@@ -335,6 +374,61 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r2c2$/);
             await page.keyboard.press('ArrowDown');
             await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r3c2$/);
+        });
+
+        // ExGrid's HandKeyboardToAsync, as ExPivot asks it (PV-41), and the scroller's hand-off to
+        // its root (ADR-0033, A11Y-20). The control that takes the keyboard as a details view opens
+        // takes it from the report's grid only while it is still the report's. The records'
+        // scroller is focused in the task that draws them, as a press there would focus it. That is
+        // before the control's request can land: on the Server host it comes a round trip after
+        // that render. So the request finds the keyboard in the records, and leaves it there, and
+        // their grid hands it to its root once the root is a tab stop, which comes later still. On
+        // WebAssembly the request can land first, in the same turn; the end is the same either way.
+
+        test(`ADR-0070/0033 (PV-41): the keyboard put in the dialog's records before Close's request lands stays there, on their root (${chrome})`, async ({ page }) => {
+            await open(page, chrome, '&details=dialog');
+            await focusOnArrival(page, '.ex-pivot-dialog .ex-grid .ex-scroller');
+
+            await firstValue(page).dblclick({ force: true });
+            const dialog = page.getByRole('dialog', { name: /^Details: / });
+            const records = dialog.locator('.ex-grid');
+            await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+
+            // Once Close's request and the records' own hand-off have landed (ADR-0056).
+            await circuitQuiet();
+            await expect(records).toBeFocused();
+            await expect(dialog.getByRole('button', { name: 'Close', exact: true })).not.toBeFocused();
+            const log = await focusLog(page);
+            expect(log.at(-1)).toBe('records');
+            if (SERVER) {
+                expect(log).not.toContain('close');
+            }
+            // The keys are the records' own: the first places their Focus on their first cell.
+            await page.keyboard.press('ArrowDown');
+            await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
+            await expect(dialog).toBeVisible();
+        });
+
+        test(`ADR-0070/0033 (PV-41): the keyboard put in a new tab's records before the tab's request lands stays there, on their root (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await focusOnArrival(page, '.ex-pivot-details-panel .ex-grid .ex-scroller');
+
+            await firstValue(page).dblclick({ force: true });
+            const details = pivot(page).getByRole('tablist').getByRole('tab', { name: /^Details: / });
+            const records = pivot(page).getByRole('tabpanel').locator('.ex-grid');
+            await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
+
+            await circuitQuiet();
+            await expect(records).toBeFocused();
+            await expect(details).not.toBeFocused();
+            await expect(details).toHaveAttribute('aria-selected', 'true');
+            const log = await focusLog(page);
+            expect(log.at(-1)).toBe('records');
+            if (SERVER) {
+                expect(log).not.toContain('tab');
+            }
+            await page.keyboard.press('ArrowDown');
+            await expect(records).toHaveAttribute('aria-activedescendant', /-r0c0$/);
         });
 
         test(`ADR-0063: a page that listens to Show Details takes the trades, and neither a tab nor a dialog opens (${chrome})`, async ({ page }) => {
@@ -592,9 +686,8 @@ test('ADR-0070 (DC-61): a control focused while the report\'s keyboard is on its
     const dialog = page.getByRole('dialog', { name: /^Details: / });
     const records = dialog.locator('.ex-grid');
     await expect(records.locator('.ex-viewport .ex-row').first()).toBeVisible();
-    // The dialog gives Close the keyboard as it opens, on the Server host a round trip after the
-    // render that shows it: a press in the records before then loses the keyboard to Close when it
-    // lands (seen on the Server host, 2026-10-02). So Close is waited for first.
+    // Close takes the keyboard as the dialog opens (PV-14), and the press below takes it from
+    // there; a press made before Close has it is PV-41's case.
     await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toBeFocused();
     await records.locator('.ex-viewport .ex-row').first().locator('[role=gridcell]').first().click({ force: true });
     await expect(records).toBeFocused();

@@ -17,10 +17,13 @@ namespace ExGrid.Components.Tests;
 /// offered to it. Whether the browser grants it — DOM focus on nothing or already inside this grid,
 /// never on another control, another grid, or the grid's Formula Bar or Name Box — is the handle's
 /// to decide and layer 3's to show; here, that it is asked for under that condition, that it moves
-/// nothing else, and that nothing is asked before the grid is attached (DC-61). And it hears the
-/// Escape that leaves the grid: only the one pressed on the root with nothing left to dismiss, once
-/// per press, beside the Tab release ADR-0012 gives that Escape (rewritten 2026-10-01) and after it,
-/// and never an inner layer's (DC-62). Beside, not in place of, since 2026-10-02 (ADR-0070).
+/// nothing else, and that nothing is asked before the grid is attached (DC-61). It has the grid
+/// hand the keyboard on to a control of its own that it opened from the grid, under the same
+/// condition, in place of that control's own focus — which is all there is before the grid is
+/// attached and once it is gone (DC-61, 2026-10-02). And it hears the Escape that leaves the grid:
+/// only the one pressed on the root with nothing left to dismiss, once per press, beside the Tab
+/// release ADR-0012 gives that Escape (rewritten 2026-10-01) and after it, and never an inner
+/// layer's (DC-62). Beside, not in place of, since 2026-10-02 (ADR-0070).
 ///
 /// 20px rows in a 120px Viewport whose header takes the first 20: five rows painted. Columns, all
 /// fixed: Book 0–100 (editable), Review 100–300 (three actions), Amount 300–400.
@@ -207,6 +210,87 @@ public class LeaveAndReturnKeyboardTests : GridTestContext
         await grid.ReturnKeyboardAsync();
 
         Assert.Equal(reclaims, Js.FocusReclaimed.Invocations.Count);
+    }
+
+    // ---- DC-61: HandKeyboardToAsync ------------------------------------------------------------
+
+    /// <summary>A control of the Consumer's outside the grid — a dialog's Close — as Blazor hands
+    /// its element over: it takes focus by its own <c>FocusAsync</c>, through
+    /// <paramref name="js"/>.</summary>
+    private static ElementReference ConsumerControl(Microsoft.JSInterop.IJSRuntime js)
+        => new("consumer-close", new WebElementReferenceContext(js));
+
+    [Fact] // ADR-0070/0021 (DC-61, 2026-10-02): the keyboard handed on to a control of the Consumer's is asked of the handle under the hand-back's condition, in place of the control's own focus
+    public async Task Handing_the_keyboard_on_asks_the_handle_for_the_control()
+    {
+        var cut = RenderGrid();
+        var control = ConsumerControl(JSInterop.JSRuntime);
+        var focusCalls = Js.FocusCalls;
+        var reclaims = Js.FocusReclaimed.Invocations.Count;
+
+        await cut.InvokeAsync(() => cut.Instance.HandKeyboardToAsync(control));
+
+        // One request, the control's, through the handle that grants it only while DOM focus is on
+        // nothing or still inside this root: a press the user made before it landed keeps the
+        // keyboard. The control's own focus, which would take it from anywhere, is not asked.
+        var handedOn = Assert.Single(Js.KeyboardHandedOn.Invocations);
+        Assert.Equal("consumer-close", ((ElementReference)handedOn.Arguments[0]!).Id);
+        Assert.Equal(focusCalls + 1, Js.FocusCalls);
+        Assert.Equal("consumer-close", Js.Focused[^1]);
+        Assert.DoesNotContain(JSInterop.Invocations, invocation => invocation.Identifier == GridJSInterop.BlazorFocus);
+        // Handing the keyboard on is all it does: the root is not asked for it, nothing released.
+        Assert.Equal(reclaims, Js.FocusReclaimed.Invocations.Count);
+        Assert.Equal(0, Js.TabReleases);
+    }
+
+    [Fact] // ADR-0070 (DC-61, 2026-10-02): handing the keyboard on moves neither the Focus nor the Selection, scrolls nothing and renders nothing — the cell the keyboard left is where it comes back to
+    public async Task Handing_the_keyboard_on_moves_nothing()
+    {
+        var selections = new List<GridSelection>();
+        var cut = RenderGrid(onSelectionChanged: selections.Add);
+        await ClickCellAsync(cut, 2, Amount);
+        var selected = selections.Count;
+        var focus = ActiveDescendant(cut);
+        var scrolls = Js.ScrolledTo.Count;
+        var renders = cut.RenderCount;
+
+        await cut.InvokeAsync(() => cut.Instance.HandKeyboardToAsync(ConsumerControl(JSInterop.JSRuntime)));
+
+        Assert.Equal(selected, selections.Count);
+        Assert.Equal(new CellPosition(2, Amount), selections[^1].Focus);
+        Assert.Equal(focus, ActiveDescendant(cut));
+        Assert.Equal(scrolls, Js.ScrolledTo.Count);
+        Assert.Equal(renders, cut.RenderCount);
+    }
+
+    [Fact] // ADR-0070 (DC-61, 2026-10-02): before the grid is attached there is no script of its own to read where the keyboard is, and the control takes it by its own focus
+    public void Handing_the_keyboard_on_before_the_grid_is_attached_focuses_the_control_itself()
+    {
+        using var context = new NoListenerYet();
+        var cut = context.Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.Columns, Columns()));
+
+        // Never answered, as nothing is on this runtime: what was asked is what is read.
+        _ = cut.InvokeAsync(() => cut.Instance.HandKeyboardToAsync(ConsumerControl(context.Runtime)));
+
+        Assert.Equal(["import", GridJSInterop.BlazorFocus], context.Runtime.Asked);
+    }
+
+    [Fact] // ADR-0070 (DC-61, 2026-10-02): a grid that is gone holds no keyboard and reads none — the control takes it by its own focus, as a Consumer still holding the grid asks
+    public async Task Handing_the_keyboard_on_from_a_grid_that_is_gone_focuses_the_control_itself()
+    {
+        var cut = RenderGrid();
+        var grid = cut.Instance;
+        await DisposeComponentsAsync();
+        var focusCalls = Js.FocusCalls;
+
+        await grid.HandKeyboardToAsync(ConsumerControl(JSInterop.JSRuntime));
+
+        Assert.Empty(Js.KeyboardHandedOn.Invocations);
+        Assert.Equal(focusCalls + 1, Js.FocusCalls);
+        Assert.Equal("consumer-close", Js.Focused[^1]);
+        Assert.Single(JSInterop.Invocations, invocation => invocation.Identifier == GridJSInterop.BlazorFocus);
     }
 
     // ---- DC-62: OnLeave ------------------------------------------------------------------------

@@ -11,9 +11,10 @@
    another, and holds nothing ExPivot did not hand it.
 
    A tab whose FocusRequest is new takes the keyboard — the one Show Details has just opened, and
-   the one selected when the tab holding the keyboard closed — through Blazor's own FocusAsync on
-   MudTabs' tab element. The panel ExPivot places is labelled by the tab's title, which carries the
-   tab's id (MudTabs gives its tab element an id of its own). *@
+   the one selected when the tab holding the keyboard closed — on MudTabs' tab element, through the
+   context's TakeKeyboard: the report's grid hands it on only while the keyboard is still the
+   report's (ADR-0070's note of 2026-10-02). The panel ExPivot places is labelled by the tab's
+   title, which carries the tab's id (MudTabs gives its tab element an id of its own). *@
 @{ _rendered = _signature; }
 <MudTabs @key="_key" Position="Position.Bottom" HideSlider="true" MinimumTabWidth="72px"
          ActivePanelIndex="SelectedIndex" ActivePanelIndexChanged="_activated"
@@ -90,7 +91,7 @@
         var asking = Tabs.FirstOrDefault(t => t.FocusRequest != 0 && t.FocusRequest != _acted);
         if (asking is null || !_panels.TryGetValue(asking.Id, out var panel) || panel.PanelRef.Id is null)
             return Task.CompletedTask;
-        return MudPivotFocus.TakeAsync(asking.FocusRequest, ref _acted, () => panel.PanelRef.FocusAsync());
+        return MudPivotFocus.TakeAsync(asking.FocusRequest, ref _acted, () => new ValueTask(Context.TakeKeyboard(panel.PanelRef)));
     }
 
     /// <summary>MudTabs activated the tab at <paramref name="index"/>: ExPivot selects it.</summary>

@@ -28,6 +28,10 @@ public partial class ExPivot
     private int _keyboardBack;
     private Func<Task>? _returnKeyboard;
 
+    // How the dialog's and the tabs' controls take the keyboard (TakeKeyboardAsync), held in a
+    // field so the contexts carry the same delegate on every render.
+    private Func<ElementReference, Task>? _takeKeyboard;
+
     /// <summary>
     /// The records behind a value cell (ADR-0059/0063): an empty cell has none. They are asked of the
     /// source the report came from, under its Source Version, so they add up to the cell. The
@@ -122,6 +126,14 @@ public partial class ExPivot
     /// empty report has none, and a grid that has gone does nothing.</summary>
     private Task ReturnKeyboardToReportAsync() => _grid?.ReturnKeyboardAsync() ?? Task.CompletedTask;
 
+    /// <summary>Gives a control of the dialog or the tabs the keyboard the report's grid holds —
+    /// Close as the dialog opens, a tab Show Details has just opened, the tab selected when the one
+    /// holding the keyboard closed — only while it is still the report's: a press the user made
+    /// before the request landed keeps it (ADR-0070's note of 2026-10-02). With no report grid, the
+    /// control's own focus.</summary>
+    private Task TakeKeyboardAsync(ElementReference control)
+        => _grid is { } grid ? grid.HandKeyboardToAsync(control) : control.FocusAsync().AsTask();
+
     /// <summary>What gives the report's grid the keyboard back, after the render that carries the
     /// request (<see cref="PivotKeyboardReturn"/>).</summary>
     private RenderFragment KeyboardReturn() => builder =>
@@ -149,7 +161,7 @@ public partial class ExPivot
         {
             FocusRequest = ReferenceEquals(focused, sheet) ? request : 0,
         }).ToArray();
-        var context = new PivotDetailsTabsContext(Word("sheets"), report, tabs, Word);
+        var context = new PivotDetailsTabsContext(Word("sheets"), report, tabs, Word) { TakeKeyboard = _takeKeyboard ??= TakeKeyboardAsync };
         if (PivotChrome?.DetailsTabs(context) is { } custom)
         {
             builder.AddContent(0, custom);
@@ -185,7 +197,10 @@ public partial class ExPivot
     {
         // The dialog's grid hears the Escape it has nothing left to dismiss, and the dialog closes
         // on it: the grid's capture-phase listener keeps every Escape from the frame (ADR-0070).
-        var context = new PivotDetailsDialogContext(sheet.Details.Title, Records(sheet, _closeDialog), CloseDialog, _dialogFocus, Word);
+        var context = new PivotDetailsDialogContext(sheet.Details.Title, Records(sheet, _closeDialog), CloseDialog, _dialogFocus, Word)
+        {
+            TakeKeyboard = _takeKeyboard ??= TakeKeyboardAsync,
+        };
         if (PivotChrome?.DetailsDialog(context) is { } custom)
         {
             builder.AddContent(0, custom);

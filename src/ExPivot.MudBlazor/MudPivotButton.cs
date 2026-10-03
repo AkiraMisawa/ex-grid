@@ -8,7 +8,10 @@ namespace ExPivot.MudBlazor;
 /// number it has not acted on, as the built-in views' buttons do. The Field List hands the
 /// keyboard back to an entry this way when its menu or panel closes, and a menu's first enabled
 /// command takes it when the menu opens — through Blazor's own <c>FocusAsync</c> on the button's
-/// element, so this package brings no JavaScript of its own (ADR-0021/0062).
+/// element, so this package brings no JavaScript of its own (ADR-0021/0062). Where the keyboard
+/// comes from the report's grid — the details dialog's Close — it is taken through
+/// <see cref="TakeKeyboard"/>, which the grid grants only while the keyboard is still the report's
+/// (ADR-0070's note of 2026-10-02).
 /// </summary>
 public sealed class MudPivotButton : global::MudBlazor.MudButton
 {
@@ -19,6 +22,11 @@ public sealed class MudPivotButton : global::MudBlazor.MudButton
     /// of the pane is shown.</summary>
     [Parameter] public int FocusRequest { get; set; }
 
+    /// <summary>How the button takes DOM focus when asked: called with its element, in place of the
+    /// element's own <c>FocusAsync</c> — the report's grid handing the keyboard on (ADR-0070's note
+    /// of 2026-10-02). Null, the element's own focus.</summary>
+    [Parameter] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -28,7 +36,7 @@ public sealed class MudPivotButton : global::MudBlazor.MudButton
         _acted = FocusRequest;
         try
         {
-            await _elementReference.FocusAsync();
+            await (TakeKeyboard is { } take ? take(_elementReference) : _elementReference.FocusAsync().AsTask());
         }
         catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
         {

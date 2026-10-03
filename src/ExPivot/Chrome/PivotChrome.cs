@@ -469,7 +469,17 @@ public sealed record PivotToolbarMenuView(string Id, string Label, bool IsOpen, 
 /// <param name="Tabs">One tab per Show Details, oldest first.</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotDetailsTabsContext(
-    string Title, PivotDetailsTab Report, IReadOnlyList<PivotDetailsTab> Tabs, Func<string, string> Word);
+    string Title, PivotDetailsTab Report, IReadOnlyList<PivotDetailsTab> Tabs, Func<string, string> Word)
+{
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot hands the
+    /// keyboard on through the report's grid, which grants it only while the keyboard is still the
+    /// report's — DOM focus inside the report's grid or on nothing — so a press the user made
+    /// before the request landed, a round trip later on a circuit, keeps the keyboard (ExGrid's
+    /// <c>HandKeyboardToAsync</c>, ADR-0070's note of 2026-10-02). Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}
 
 /// <summary>One tab at the report's foot.</summary>
 /// <param name="Id">Unique among the tabs of this ExPivot, and stable while the tab stands. The
@@ -502,4 +512,14 @@ public sealed record PivotDetailsTab(string Id, string Title, bool IsSelected, A
 /// <param name="FocusRequest">Changes when the content should take DOM focus: its Close button.</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotDetailsDialogContext(
-    string Title, RenderFragment Records, Action Close, int FocusRequest, Func<string, string> Word);
+    string Title, RenderFragment Records, Action Close, int FocusRequest, Func<string, string> Word)
+{
+    /// <summary>How a control of the Chrome's takes DOM focus when ExPivot asks: called with the
+    /// control's element in place of that element's own <c>FocusAsync</c>. ExPivot hands the
+    /// keyboard on through the report's grid, which grants it only while the keyboard is still the
+    /// report's — DOM focus inside the report's grid or on nothing — so a press the user made
+    /// before the request landed, a round trip later on a circuit, keeps the keyboard (ExGrid's
+    /// <c>HandKeyboardToAsync</c>, ADR-0070's note of 2026-10-02). Unset, the element's own
+    /// focus.</summary>
+    public Func<ElementReference, Task> TakeKeyboard { get; init; } = static control => control.FocusAsync().AsTask();
+}

@@ -86,6 +86,9 @@ two gaps in what a Consumer can do with a grid's keyboard.
   next. When that is the report's tab, ExPivot calls `ReturnKeyboardAsync()` on the report grid.
 - **Escape inside a details tab's grid is unchanged.** A tab is a sheet of its own, as Excel's are,
   and Escape does not close a sheet.
+- *(Since 2026-10-02, the dialog's Close and a details tab take the keyboard from the report's grid
+  through its `HandKeyboardToAsync()`, only while it is still the report's: see "Handed on, not
+  taken", below.)*
 
 ## Refined while building it
 
@@ -163,6 +166,65 @@ dismiss releases Tab, as ADR-0012 has every grid's do (KB-8), and raises `OnLeav
   release goes with it.
 - DC-62 says so, and layer 2 counts the release beside each `OnLeave`.
 
+## Handed on, not taken
+
+*(2026-10-02, decided with the user.)* ExPivot gives the keyboard to a control of its own as a
+details view opens: the dialog's Close, or the tab Show Details opens. It does so again when a
+details tab closes while it holds the keyboard, to the tab selected next. Those controls now take it
+through the report grid's new **`HandKeyboardToAsync(control)`**, not through their own
+`FocusAsync`. The grid focuses the control only while the keyboard is still its own: DOM focus
+inside its root or on nothing, the condition `ReturnKeyboardAsync()` reads.
+
+- **Found on the Server host, chasing a layer-3 failure.** A test that clicked into the dialog's
+  records as soon as they were painted failed in 1 run of 3, with no latency injected: their grid
+  never held the keyboard. It was first read as Close's doing, and the test was made to wait for
+  Close (752a28e). That wait touched neither of the two races a probe of the order of events then
+  found on the same host (2026-10-03):
+  - **Close's request lands after an early press.** Close's `FocusAsync` is sent after the render
+    that draws the dialog, so it lands a round trip later. Pressed as soon as the dialog showed, the
+    records lost the keyboard to Close in 2 runs of 6. A user, or a script driving the page, who
+    presses before the round trip is back loses the keyboard (AGENTS.md, principle 6). A new tab's
+    button, and the tab selected when one closes, race the same way. This section settles it.
+  - **The records' root is not yet a tab stop.** Pressed once the rows were painted, the press could
+    still land before the render that makes the records' root a tab stop, and the keyboard stayed on
+    their scroller. That was the failure seen. It is ExGrid's own, and
+    [ADR-0033](./0033-the-accessibility-surface-is-owned-by-the-root-not-by-cells.md)'s note of
+    2026-10-03 settles it.
+- **Only the browser can decide.** The server cannot know that a click was made before its request
+  lands, and cannot recall a request already sent. The grid already makes this decision for itself
+  in five places ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s notes). This is
+  the sixth (ADR-0021, note of 2026-10-02).
+- **A press made first keeps the keyboard where it put it**: in the records, in another grid, or on
+  a control of the page's. So does a field of the grid's own beside the rows, the Formula Bar or the
+  Name Box, as from every hand-back. ExPivot's report shows neither.
+- **It moves neither the Focus nor the Selection, and renders nothing.** The control scrolls into
+  view, as its own focus would have had it. The grid keeps no reference to it: the Consumer hands it
+  over with the call
+  ([ADR-0039](./0039-a-popover-takes-the-keyboard-and-may-hold-popups-of-its-own.md): the core holds
+  no reference to an element it did not render).
+- **Before the grid is attached, and once it is gone, the control takes the keyboard by its own
+  `FocusAsync`.** No script of the grid's is there to read where the keyboard is, and the control
+  gets what it would get without the grid.
+- **Both Chromes take it the same way.** The tabs' and the dialog's contexts carry `TakeKeyboard`.
+  A Chrome calls it with its control's element in place of that element's `FocusAsync`. ExPivot's
+  own views and the MudBlazor Wrapper both call it, because swapping the Chrome must not change who
+  gets the keyboard
+  ([ADR-0061](./0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)). A
+  Chrome that leaves it unset gets the element's own focus.
+- **Rejected:**
+  - **JavaScript of ExPivot's own that focuses conditionally.** ExPivot has no script. This would
+    add an entry to ADR-0021's list for a decision the grid already makes.
+  - **Cancelling the request from the server when the user presses first.** The press reaches the
+    server after the request has been sent. The race is lost in the browser, before either side has
+    heard of the other.
+  - **Leaving the race in place and recording it.** A deterministic fix was within reach, and
+    principle 6 asks for one.
+- **DC-61 says what the method does, and PV-41 what ExPivot does with it.** Layer 2 checks that each
+  request goes through the report's grid, under both Chromes. Layer 3 puts DOM focus in the records
+  in the task that draws them, where a press there would put it, before the control's request can
+  land. With either fix taken out, every run of those tests failed on the Server host; with both,
+  every run passed on both hosts.
+
 ## Considered options
 
 - **The Consumer focuses the grid through JavaScript of its own** — rejected. It would need the
@@ -182,7 +244,8 @@ dismiss releases Tab, as ADR-0012 has every grid's do (KB-8), and raises `OnLeav
 ## Consequences
 
 - **§26 gains DC-61 and DC-62**, which gate the release as the rest of §26 does. **§29 gains PV-39**
-  for ExPivot's use of them.
+  for ExPivot's use of them, and PV-41 for the keyboard handed on as a details view opens
+  (2026-10-02).
 - **Layer 2 holds both declarations to their rules**: the hand-back's conditions, and the Escapes
   that do and do not raise `OnLeave`. **Layer 3 runs them on `/pivot?details=dialog`**: Escape
   closes the dialog, and the arrow keys then move the report's Focus.

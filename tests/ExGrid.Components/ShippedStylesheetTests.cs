@@ -404,6 +404,32 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*dropReveal\(\);", RegexOptions.Singleline), script.Text);
     }
 
+    [Fact] // ADR-0021/0070 (the sixth decision about focus, 2026-10-02; DC-61): the keyboard is handed on to the Consumer's control only while it is still this grid's — DOM focus inside this root and not in a field of its own beside the rows, or on nothing — and only to a control still on the page, nothing measured
+    public void The_hand_on_gives_the_consumers_control_the_keyboard_only_while_it_is_still_this_grids()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var handOn = Regex.Match(script, @"handKeyboardTo: \(element\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(handOn.Success, "handKeyboardTo(element) is not in the module");
+        var body = handOn.Value;
+
+        // The hand-back's condition: this root's own focus, or none (ADR-0018)...
+        Assert.Contains("root.contains(active)", body, StringComparison.Ordinal);
+        Assert.Contains("active === document.body", body, StringComparison.Ordinal);
+        Assert.Contains("active === document.documentElement", body, StringComparison.Ordinal);
+        // ...and not a field beside the rows with focus of its own, unless a press on the rows left
+        // it standing (ADR-0021, widened 2026-09-28).
+        Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
+        Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("fromField", body, StringComparison.Ordinal);
+        // Only an element still on the page, focused as its own FocusAsync would focus it, scrolled
+        // into view; the field a press left standing is given up with the keyboard.
+        Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"staleField = null;\s*element\.focus\(\);"), body);
+        Assert.Single(Regex.Matches(body, @"\.(focus|blur)\("));
+        // A read of document.activeElement, never of layout, and no listener of its own.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|addEventListener"), body);
+    }
+
     [Fact] // ADR-0021 (widened 2026-09-28) / ADR-0018: the hand-back leaves the fields beside the rows alone, found by the core's band, nothing measured
     public void The_hand_back_leaves_the_formula_bar_and_the_name_box_alone()
     {
@@ -442,11 +468,12 @@ public class ShippedStylesheetTests
         // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
-        // Script moves DOM focus in these five places only (ADR-0021, five since ADR-0080): this,
-        // the hand-back to the root or its Keyboard Field, the open edit's own focus, each only
-        // while the keyboard is this grid's; the root's own focus passed on to its Keyboard Field;
-        // and the field given up by a press during a composition.
-        Assert.Equal(5, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // Script moves DOM focus in these six places only (ADR-0021, five since ADR-0080, six since
+        // 2026-10-02): this, the hand-back to the root or its Keyboard Field, the open edit's own
+        // focus, and the keyboard handed on to a control of the Consumer's, each only while the
+        // keyboard is this grid's; the root's own focus passed on to its Keyboard Field; and the
+        // field given up by a press during a composition.
+        Assert.Equal(6, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -600,9 +627,9 @@ public class ShippedStylesheetTests
 
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
-        // added to: five since ADR-0080, none of them this one's).
+        // added to: six since 2026-10-02, none of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(5, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(6, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -763,7 +790,7 @@ public class ShippedStylesheetTests
         Assert.Contains("releaseEndsHeard++;", ListenerBody(script, "onPress"), StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0080 / ADR-0021 (five decisions about focus): focus on the root itself goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
+    [Fact] // ADR-0080 / ADR-0021 (decisions about focus): focus on the root itself goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
     public void ADR0080_the_keyboard_goes_to_the_field_and_never_moves_while_it_composes()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;

@@ -44,7 +44,7 @@ public abstract class PivotTestContext : BunitContext
         handle.Setup<bool>("metaIsPrimary").SetResult(false);
         handle.Setup<ScrollOffset>("getScrollOffset").SetResult(default);
         handle.Setup<bool>("anchorScrollTop", _ => true).SetResult(true);
-        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "dispose" })
+        foreach (var name in new[] { "setScrollOffset", "releaseTab", "setEditing", "setInnerPopup", "setClaims", "setCaret", "setPointerReporting", "forgetPointer", "writeCopy", "reclaimFocus", "focusEditor", "handKeyboardTo", "dispose" })
             handle.SetupVoid(name, _ => true).SetVoidResult();
     }
 
@@ -63,6 +63,28 @@ public abstract class PivotTestContext : BunitContext
     /// keyboard back on its root, from nothing or from inside it (ADR-0021/0070).</summary>
     internal static int KeyboardReturns(BunitJSModuleInterop handle)
         => handle.Invocations.Count(invocation => invocation.Identifier == "reclaimFocus");
+
+    /// <summary>The elements the report grid behind <paramref name="handle"/> has handed the
+    /// keyboard on to, by id, in the order asked: a control of ExPivot's own takes it from the
+    /// report's grid only while it is still the report's (ExGrid's <c>HandKeyboardToAsync</c>,
+    /// ADR-0070's note of 2026-10-02).</summary>
+    internal static string[] KeyboardHandOffs(BunitJSModuleInterop handle)
+        => handle.Invocations.Where(invocation => invocation.Identifier == "handKeyboardTo")
+            .Select(invocation => ((ElementReference)invocation.Arguments[0]!).Id).ToArray();
+
+    /// <summary>The id Blazor gives the element a component holds a reference to — what a focus
+    /// request names.</summary>
+    internal static string ElementIdOf(IComponent component)
+    {
+        for (var type = component.GetType(); type is not null; type = type.BaseType)
+        {
+            var field = type.GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
+                .FirstOrDefault(f => f.FieldType == typeof(ElementReference));
+            if (field is not null)
+                return ((ElementReference)field.GetValue(component)!).Id;
+        }
+        throw new InvalidOperationException($"{component.GetType().Name} holds no element reference");
+    }
 
     internal FakeTimeProvider Clock { get; } = new();
 
