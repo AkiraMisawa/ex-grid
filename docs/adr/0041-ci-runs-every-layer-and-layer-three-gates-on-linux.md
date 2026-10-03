@@ -61,8 +61,9 @@ nothing `main` did not, and a second integration branch would only fall behind.)
   per product: ExGrid (`ExGrid`, `ExGrid.MudBlazor`), ExSheet (`ExSheet`, `ExSheet.Engine`,
   `ExSheet.MudBlazor`), ExPivot (`ExPivot`, `ExPivot.Engine`, `ExPivot.MudBlazor`) and Data
   (`ExGrid.Data`, `ExGrid.Data.Arrow`), each by the exact assembly names, beside the total of
-  all ten. The README shows five badges, one per product and the total, each giving lines and
-  branches; they are shields.io endpoint files on the `badges` branch, because a generated
+  all ten. The README shows five badges, the total and one per product, each giving line
+  coverage alone (branch coverage is in the table they link to: on a badge it doubled the
+  width, decided with the user the same day); they are shields.io endpoint files on the `badges` branch, because a generated
   badge cannot carry the product's name. The history gained a column pair per product, so
   the total's line steps where the eight were first counted.)*
 

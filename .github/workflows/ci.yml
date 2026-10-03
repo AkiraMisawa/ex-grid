@@ -416,12 +416,10 @@ jobs:
               else if (v >= 50) print "orange"; else print "red" }'
           }
           figure() { grep -oP "$1 coverage: \K[0-9.]+" "$2"; }
-          # One badge: "<label> coverage", lines and branches, coloured by the lower of the two.
+          # One badge: the label and the line coverage, coloured by it. Branch coverage is in the
+          # table the badges link to; on a badge it doubled the width and read as noise.
           endpoint() {
-            local label="$1" line="$2" branch="$3"
-            local low; low=$(awk -v a="$line" -v b="$branch" 'BEGIN { print (a < b ? a : b) }')
-            printf '{"schemaVersion":1,"label":"%s coverage","message":"%s%% · %s%% br","color":"%s"}\n' \
-              "$label" "$line" "$branch" "$(colour "$low")"
+            printf '{"schemaVersion":1,"label":"%s","message":"%s%%","color":"%s"}\n' "$1" "$2" "$(colour "$2")"
           }
           line=$(figure Line coverage/Summary.txt)
           branch=$(figure Branch coverage/Summary.txt)
@@ -429,13 +427,13 @@ jobs:
             || { git init --quiet out && git -C out checkout --quiet --orphan badges; }
           cp "coverage/badge_shieldsio_linecoverage_$(colour "$line").svg" out/coverage-line.svg
           cp "coverage/badge_shieldsio_branchcoverage_$(colour "$branch").svg" out/coverage-branch.svg
-          endpoint Total "$line" "$branch" > out/coverage-total.json
+          endpoint coverage "$line" > out/coverage-total.json
           history="${line},${branch}"
           for name in ExGrid ExSheet ExPivot Data; do
             summary="coverage/products/$name/Summary.txt"
             p_line=$(figure Line "$summary")
             p_branch=$(figure Branch "$summary")
-            endpoint "$name" "$p_line" "$p_branch" > "out/coverage-$(echo "$name" | tr '[:upper:]' '[:lower:]').json"
+            endpoint "$name" "$p_line" > "out/coverage-$(echo "$name" | tr '[:upper:]' '[:lower:]').json"
             history="${history},${p_line},${p_branch}"
           done
           cat coverage/products/Summary.md coverage/SummaryGithub.md > out/coverage.md
