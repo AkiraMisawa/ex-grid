@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.4% | 88% |
-| ExSheet | 95.2% | 88.4% |
+| ExSheet | 95.3% | 88.4% |
 | ExPivot | 93.6% | 85% |
 | Data | 94.5% | 90.3% |
 
@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/03/2026 - 18:18:18 |
+| Generated on: | 10/03/2026 - 21:02:28 |
 | Parser: | MultiReport (12x Cobertura) |
 | Assemblies: | 10 |
-| Classes: | 699 |
-| Files: | 381 |
-| **Line coverage:** | 94.7% (46857 of 49436) |
-| Covered lines: | 46857 |
-| Uncovered lines: | 2579 |
-| Coverable lines: | 49436 |
-| Total lines: | 81001 |
-| **Branch coverage:** | 87.8% (25486 of 29024) |
-| Covered branches: | 25486 |
-| Total branches: | 29024 |
+| Classes: | 701 |
+| Files: | 386 |
+| **Line coverage:** | 94.8% (47528 of 50114) |
+| Covered lines: | 47528 |
+| Uncovered lines: | 2586 |
+| Coverable lines: | 50114 |
+| Total lines: | 81780 |
+| **Branch coverage:** | 87.8% (26484 of 30154) |
+| Covered branches: | 26484 |
+| Total branches: | 30154 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -670,11 +670,11 @@
 |ExSheet.UnderlineItem|75%|100%|
 
 </details>
-<details><summary>ExSheet.Engine - 97.2%</summary>
+<details><summary>ExSheet.Engine - 97.3%</summary>
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.2%**|**89.9%**|
+|**ExSheet.Engine**|**97.3%**|**89.7%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -698,7 +698,7 @@
 |ExSheet.Engine.EntryText|100%|100%|
 |ExSheet.Engine.ErrorValues|100%|90%|
 |ExSheet.Engine.FormulaCompletion|100%||
-|ExSheet.Engine.FormulaEntry|100%|95.6%|
+|ExSheet.Engine.FormulaEntry|100%|95.4%|
 |ExSheet.Engine.FormulaEntry.Frame|100%||
 |ExSheet.Engine.FormulaEntry.Token|100%||
 |ExSheet.Engine.FormulaReference|100%||
@@ -711,9 +711,11 @@
 |ExSheet.Engine.Formulas.FormulaText|100%|97.5%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|94.2%|82.3%|
+|ExSheet.Engine.Formulas.FunctionLibrary|95.4%|84.5%|
+|ExSheet.Engine.Formulas.FunctionLibrary.CriteriaRange|79.1%|43.7%|
+|ExSheet.Engine.Formulas.FunctionLibrary.Criterion|100%|86.3%|
 |ExSheet.Engine.Formulas.FunctionLibrary.SearchOutcome|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary.Vector|90%|75%|
+|ExSheet.Engine.Formulas.FunctionLibrary.Vector|92%|83.3%|
 |ExSheet.Engine.Formulas.FunctionNode|100%|100%|
 |ExSheet.Engine.Formulas.IntersectionNode|100%||
 |ExSheet.Engine.Formulas.Lexer|100%|91.8%|
@@ -783,7 +785,7 @@
 |ExSheet.Engine.SheetRefusal|100%||
 |ExSheet.Engine.SheetRefusedException|100%|50%|
 |ExSheet.Engine.SheetStep|100%|100%|
-|ExSheet.Engine.Value|86.6%|75%|
+|ExSheet.Engine.Value|90%|75%|
 
 </details>
 <details><summary>ExSheet.MudBlazor - 96.2%</summary>
