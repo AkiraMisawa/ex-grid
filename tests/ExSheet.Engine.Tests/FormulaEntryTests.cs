@@ -21,9 +21,9 @@ public class FormulaEntryTests
     [InlineData("=su|", new[] { "SUBSTITUTE", "SUM" })]
     [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
-    [InlineData("=1+co|", new[] { "COLUMN", "CONCAT", "CONCATENATE", "COUNT", "COUNTA" })]
-    [InlineData("=SUM(A1,m|", new[] { "MAX", "MEDIAN", "MID", "MIN", "MOD", "MONTH" })]
-    [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP", "XMATCH" })]
+    [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COUNT", "COUNTA" })]
+    [InlineData("=SUM(A1,m|", new[] { "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH" })]
+    [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP", "XMATCH", "XNPV", "XOR" })]
     public void Completion_offers_declared_functions(string marked, string[] expected)
     {
         Assert.Equal(expected, Names(marked));

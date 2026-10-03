@@ -46,14 +46,14 @@ public class FormulaEntryWiringTests : SheetTestContext
         Assert.Equal(["SUBSTITUTE", "SUM"], Candidates(cut));
     }
 
-    [Fact] // ADR-0051: =X offers XLOOKUP and XMATCH, without regard to case
-    public async Task X_offers_xlookup_and_xmatch()
+    [Fact] // ADR-0051: =X offers every declared function starting with X, without regard to case
+    public async Task X_offers_the_x_functions()
     {
         var cut = RenderSheet();
 
         await StartTypingAsync(cut, "A1", "=x");
 
-        Assert.Equal(["XLOOKUP", "XMATCH"], Candidates(cut));
+        Assert.Equal(["XLOOKUP", "XMATCH", "XNPV", "XOR"], Candidates(cut));
     }
 
     [Fact] // ADR-0051: Tab accepts the engine's replacement over the engine's span, and the hint follows

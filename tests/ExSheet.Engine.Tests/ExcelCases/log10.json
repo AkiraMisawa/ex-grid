@@ -1,0 +1,42 @@
+{
+  "area": "log10",
+  "about": "LOG10 (ticket 05).",
+  "cases": [
+    {
+      "id": "LOG10-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG10(86)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.9344984512435677, "digits": 12}
+    },
+    {
+      "id": "LOG10-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG10(10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "LOG10-003",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG10(1E5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "LOG10-004",
+      "source": "documented",
+      "description": "A number not above 0 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG10(-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

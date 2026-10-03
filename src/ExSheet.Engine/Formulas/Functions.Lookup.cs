@@ -104,4 +104,22 @@ internal static partial class FunctionLibrary
         if (row ? area.Rows > 1 : area.Columns > 1) return Operand.Of(ErrorValue.Value);
         return Operand.Of(Value.FromNumber((row ? area.Row1 : area.Column1) + 1));
     }
+
+    private static Operand Rows(FunctionCall call) => Extent(call, rows: true);
+
+    private static Operand Columns(FunctionCall call) => Extent(call, rows: false);
+
+    /// <summary>ROWS and COLUMNS: how many rows or columns the range spans; a Linked Table's column is one column; a single Value, 1.</summary>
+    private static Operand Extent(FunctionCall call, bool rows)
+    {
+        var operand = call.Operand(0);
+        if (operand.IsError) return operand;
+        var count = operand.Kind switch
+        {
+            OperandKind.Area => rows ? operand.Area.Rows : operand.Area.Columns,
+            OperandKind.Column => rows ? operand.Column!.Count : 1,
+            _ => 1,
+        };
+        return Operand.Of(Value.FromNumber(count));
+    }
 }

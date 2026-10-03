@@ -1,0 +1,24 @@
+{
+  "area": "pi",
+  "about": "PI (ticket 05).",
+  "cases": [
+    {
+      "id": "PI-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PI()"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.141592653589793, "digits": 14}
+    },
+    {
+      "id": "PI-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PI()/2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.5707963267948966, "digits": 14}
+    }
+  ]
+}

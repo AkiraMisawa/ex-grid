@@ -69,11 +69,11 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `MEDIAN` | Supported | — | |
 | `LARGE` | Supported | — | |
 | `SMALL` | Supported | — | |
-| `RANK.EQ` | Ready | P3 | |
-| `STDEV.S` | Ready | P3 | |
-| `STDEV.P` | Ready | P3 | |
-| `VAR.S` | Ready | P3 | |
-| `VAR.P` | Ready | P3 | |
+| `RANK.EQ` | Supported | — | |
+| `STDEV.S` | Supported | — | |
+| `STDEV.P` | Supported | — | |
+| `VAR.S` | Supported | — | |
+| `VAR.P` | Supported | — | |
 | `SUBTOTAL` | Decide | P3 | Its meaning turns on hidden rows, and a Sheet has none yet (ADR-0046) |
 | `AGGREGATE` | Decide | P3 | As `SUBTOTAL` |
 
@@ -94,7 +94,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `ISNA` | Supported | — | `#CIRC!` and `#GETTING_DATA` as `ISERROR` treats them |
 | `IFS` | Supported | — | |
 | `SWITCH` | Supported | — | |
-| `XOR` | Ready | P3 | |
+| `XOR` | Supported | — | |
 | `NA` | Supported | — | |
 | `ERROR.TYPE` | Decide | P3 | `#CIRC!` and `#GETTING_DATA` have no number in Excel's table |
 
@@ -111,8 +111,8 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `CHOOSE` | Supported | — | |
 | `ROW` | Supported | — | |
 | `COLUMN` | Supported | — | |
-| `ROWS` | Ready | P3 | |
-| `COLUMNS` | Ready | P3 | |
+| `ROWS` | Supported | — | |
+| `COLUMNS` | Supported | — | |
 | `OFFSET` | Decide | P2 | A Reference computed at recalculation: the dependency graph reads References from the Formula's text (ADR-0047), and Excel makes `OFFSET` volatile |
 | `INDIRECT` | Decide | P3 | As `OFFSET`, and its text names cells that an insertion does not rewrite |
 
@@ -132,11 +132,11 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `TRUNC` | Supported | — | |
 | `POWER` | Supported | — | |
 | `SQRT` | Supported | — | |
-| `SIGN` | Ready | P3 | |
-| `EXP` | Ready | P3 | |
-| `LN` | Ready | P3 | |
-| `LOG10` | Ready | P3 | |
-| `PI` | Ready | P3 | |
+| `SIGN` | Supported | — | |
+| `EXP` | Supported | — | |
+| `LN` | Supported | — | |
+| `LOG10` | Supported | — | |
+| `PI` | Supported | — | |
 
 ### Date and time
 
@@ -156,10 +156,10 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `DAYS` | Supported | — | |
 | `YEARFRAC` | Observe | P3 | The documentation does not give each `basis`'s day count at month ends and leap years |
 | `DATEDIF` | Observe | P3 | Microsoft documents `"MD"` as giving wrong results, so `"MD"` is refused |
-| `TIME` | Ready | P3 | |
-| `HOUR` | Ready | P3 | |
-| `MINUTE` | Ready | P3 | |
-| `SECOND` | Ready | P3 | |
+| `TIME` | Supported | — | |
+| `HOUR` | Supported | — | |
+| `MINUTE` | Supported | — | |
+| `SECOND` | Supported | — | |
 | `TODAY` | Supported | — | The Sheet Day: a fixed day, or the day in the Consumer's time zone, or else the browser's; `#GETTING_DATA` until one is known (ADR-0121, ADR-0122) |
 | `NOW` | Decide | P2 | The Sheet Day of ADR-0121 holds no time of day; `NOW` needs one, and when it moves on |
 
@@ -182,11 +182,11 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `UPPER` | Observe | P2 | Case mapping beyond ASCII is to be observed |
 | `LOWER` | Observe | P2 | As `UPPER` |
 | `PROPER` | Observe | P3 | As `UPPER` |
-| `REPT` | Ready | P3 | |
-| `EXACT` | Ready | P3 | |
+| `REPT` | Supported | — | |
+| `EXACT` | Supported | — | |
 | `TEXT` | Supported | — | Its code in the invariant spelling, under every culture, shown as a cell format shows it (ADR-0120) |
 | `VALUE` | Decide | P2 | Excel parses the text in the system's locale. ExSheet's culture is the Sheet's (ADR-0048) |
-| `NUMBERVALUE` | Ready | P3 | Its separators are arguments, so it does not depend on a culture |
+| `NUMBERVALUE` | Supported | — | Its separators are arguments, so it does not depend on a culture |
 
 ### Financial
 
@@ -196,7 +196,7 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `PV` | Supported | — | |
 | `FV` | Supported | — | |
 | `NPV` | Supported | — | |
-| `XNPV` | Ready | P3 | |
+| `XNPV` | Supported | — | |
 | `IRR` | Observe | P3 | Iterative. Admitted only if Excel's answer, to 15 significant digits, and its `#NUM!` cases are observed and reproduced; Microsoft does not document the iteration |
 | `XIRR` | Observe | P3 | As `IRR` |
 | `RATE` | Observe | P3 | As `IRR` |
@@ -231,4 +231,6 @@ own. Every function here waits for that ADR.
 3. **The P1 Decide functions, to the user.** Done: `TEXT`, ticket 02 (ADR-0120), and `TODAY`,
    ticket 03 (ADR-0121, ADR-0122).
 4. **The P2 Ready functions** — done, ticket 04.
-5. The P2 Observe and Decide functions, then P3, in the same way.
+5. **The P3 Ready functions** — done, ticket 05. No function is Ready any more.
+6. **The Observe functions, through one Windows run**, P1 first, and the `uncertain` cases of
+   tickets 01 to 05 in the same run. Then the Decide functions, P2 first, each to the user.

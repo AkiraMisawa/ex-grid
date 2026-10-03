@@ -146,19 +146,20 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('S');
             await expect(editor(grid)).toHaveValue('=SS');
             await expect.poll(() => caret(editor(grid))).toBe(2);
-            await expect(items(grid).first()).toHaveText('SMALL');
-            // The list offers SMALL, the first declared function that begins with S: it answered the
-            // prefix before the caret, "S". Had the caret been inferred as 3, the prefix would be
-            // "SS", which names nothing, and no list would show. Tab replaces the name the caret
-            // stands in — ExSheet's span is the whole name token (FormulaEntry.Complete) — and puts
-            // the caret after the inserted text.
+            await expect(items(grid).first()).toHaveText(/^S/);
+            // The list offers the declared functions that begin with S: it answered the prefix before
+            // the caret, "S". Had the caret been inferred as 3, the prefix would be "SS", which names
+            // nothing, and no list would show. Which function is first is the declared set's order,
+            // not this test's subject. Tab replaces the name the caret stands in — ExSheet's span is
+            // the whole name token (FormulaEntry.Complete) — and puts the caret after the inserted text.
+            const first = (await items(grid).first().textContent()).trim();
             await page.keyboard.press('Tab');
-            await expect(editor(grid)).toHaveValue('=SMALL(');
-            await expect(bar(grid)).toHaveValue('=SMALL(');
-            await expect.poll(() => caret(editor(grid))).toBe(7);
+            await expect(editor(grid)).toHaveValue(`=${first}(`);
+            await expect(bar(grid)).toHaveValue(`=${first}(`);
+            await expect.poll(() => caret(editor(grid))).toBe(first.length + 2);
             // And typing goes on at that caret.
             await typeSteadily(page, editor(grid), '1,');
-            await expect(editor(grid)).toHaveValue('=SMALL(1,');
+            await expect(editor(grid)).toHaveValue(`=${first}(1,`);
             await page.keyboard.press('Escape');
             await page.keyboard.press('Escape');
             await expect(editor(grid)).toHaveCount(0);

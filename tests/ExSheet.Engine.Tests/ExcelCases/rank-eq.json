@@ -1,0 +1,47 @@
+{
+  "area": "rank-eq",
+  "about": "RANK.EQ (ticket 05).",
+  "cases": [
+    {
+      "id": "RANKEQ-001",
+      "source": "documented",
+      "description": "Microsoft's example: ascending, the rank of 7",
+      "cells": {"A1": "7", "A2": "3.5", "A3": "3.5", "A4": "1", "A5": "2", "ZZ1000": "=RANK.EQ(A1,A1:A5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "RANKEQ-002",
+      "source": "documented",
+      "description": "Microsoft's example: descending, the rank of 2",
+      "cells": {"A1": "7", "A2": "3.5", "A3": "3.5", "A4": "1", "A5": "2", "ZZ1000": "=RANK.EQ(A5,A1:A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "RANKEQ-003",
+      "source": "documented",
+      "description": "Microsoft's example: equal numbers share the top rank",
+      "cells": {"A1": "7", "A2": "3.5", "A3": "3.5", "A4": "1", "A5": "2", "ZZ1000": "=RANK.EQ(A2,A1:A5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "RANKEQ-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number not in the list is #N/A",
+      "cells": {"A1": "7", "A2": "3.5", "A3": "3.5", "A4": "1", "A5": "2", "ZZ1000": "=RANK.EQ(9,A1:A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "RANKEQ-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a ref that is no range is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=RANK.EQ(1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

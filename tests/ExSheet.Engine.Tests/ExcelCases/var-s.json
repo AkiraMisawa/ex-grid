@@ -1,0 +1,14 @@
+{
+  "area": "var-s",
+  "about": "VAR.S (ticket 05).",
+  "cases": [
+    {
+      "id": "VARS-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "cells": {"A1": "1345", "A2": "1301", "A3": "1368", "A4": "1322", "A5": "1310", "A6": "1370", "A7": "1318", "A8": "1350", "A9": "1303", "A10": "1299", "ZZ1000": "=VAR.S(A1:A10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 754.2666666666667, "digits": 7}
+    }
+  ]
+}

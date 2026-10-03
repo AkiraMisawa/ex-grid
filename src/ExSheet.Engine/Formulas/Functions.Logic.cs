@@ -141,4 +141,42 @@ internal static partial class FunctionLibrary
         var hasDefault = (call.Count - 1) % 2 == 1;
         return hasDefault ? call.Operand(call.Count - 1) : Operand.Of(ErrorValue.NA);
     }
+
+    /// <summary>XOR: TRUE when an odd number of the logical values AND and OR take are TRUE; with none, <c>#VALUE!</c>.</summary>
+    private static Operand Xor(FunctionCall call)
+    {
+        var evaluator = call.Evaluator;
+        var any = false;
+        var odd = false;
+        for (var i = 0; i < call.Count; i++)
+        {
+            var operand = call.Operand(i);
+            switch (operand.Kind)
+            {
+                case OperandKind.Area or OperandKind.Column:
+                    foreach (var value in evaluator.RangeValues(operand))
+                    {
+                        if (value.IsError) return Operand.Of(value);
+                        if (value.Kind == ValueKind.Number) Count(value.Number != 0);
+                        else if (value.Kind == ValueKind.Boolean) Count(value.Boolean);
+                    }
+                    break;
+                case OperandKind.Missing:
+                    Count(false);
+                    break;
+                default:
+                    if (operand.Scalar is not { } scalar) break;
+                    if (!TryTruth(scalar, out var truth)) return Operand.Of(scalar.IsError ? scalar.Error : ErrorValue.Value);
+                    Count(truth);
+                    break;
+            }
+        }
+        return any ? Operand.Of(Value.FromBoolean(odd)) : Operand.Of(ErrorValue.Value);
+
+        void Count(bool truth)
+        {
+            any = true;
+            if (truth) odd = !odd;
+        }
+    }
 }

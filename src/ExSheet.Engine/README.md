@@ -109,23 +109,26 @@ them:
 | `SUM`, `AVERAGE`, `MIN`, `MAX`, `PRODUCT`, `MEDIAN` | `number1, [number2], ...` |
 | `COUNT`, `COUNTA` | `value1, [value2], ...` |
 | `LARGE`, `SMALL` | `array, k` |
+| `RANK.EQ` | `number, ref, [order]` |
+| `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P` | `number1, [number2], ...` |
 | `IF` | `logical_test, value_if_true, [value_if_false]` |
 | `IFS` | `logical_test1, value_if_true1, ...` |
 | `SWITCH` | `expression, value1, result1, [default_or_value2], [result2], ...` |
-| `AND`, `OR` | `logical1, [logical2], ...` |
+| `AND`, `OR`, `XOR` | `logical1, [logical2], ...` |
 | `NOT` | `logical` |
 | `IFERROR` | `value, value_if_error` |
 | `IFNA` | `value, value_if_na` |
 | `ISERROR`, `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISNA` | `value` |
-| `NA` | (none) |
+| `NA`, `PI` | (none) |
 | `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
 | `TRUNC` | `number, [num_digits]` |
-| `ABS`, `INT`, `SQRT` | `number` |
+| `ABS`, `INT`, `SQRT`, `SIGN`, `EXP`, `LN`, `LOG10` | `number` |
 | `MOD` | `number, divisor` |
 | `POWER` | `number, power` |
 | `DATE` | `year, month, day` |
 | `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
-| `YEAR`, `MONTH`, `DAY` | `serial_number` |
+| `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
+| `TIME` | `hour, minute, second` |
 | `WEEKDAY` | `serial_number, [return_type]` |
 | `DAYS` | `end_date, start_date` |
 | `EOMONTH`, `EDATE` | `start_date, months` |
@@ -139,15 +142,20 @@ them:
 | `SUBSTITUTE` | `text, old_text, new_text, [instance_num]` |
 | `REPLACE` | `old_text, start_num, num_chars, new_text` |
 | `FIND` | `find_text, within_text, [start_num]` |
+| `REPT` | `text, number_times` |
+| `EXACT` | `text1, text2` |
+| `NUMBERVALUE` | `text, [decimal_separator], [group_separator]` |
 | `TEXT` | `value, format_text` |
 | `INDEX` | `array, row_num, [column_num]` |
 | `CHOOSE` | `index_num, value1, [value2], ...` |
 | `ROW`, `COLUMN` | `[reference]` |
+| `ROWS`, `COLUMNS` | `array` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
 | `XMATCH` | `lookup_value, lookup_array, [match_mode], [search_mode]` |
 | `PMT` | `rate, nper, pv, [fv], [type]` |
 | `PV`, `FV` | `rate, nper, pmt, [fv or pv], [type]` |
 | `NPV` | `rate, value1, [value2], ...` |
+| `XNPV` | `rate, values, dates` |
 
 Which functions come next, each with its status and priority, is catalogued in
 [`docs/specs/exsheet-functions/spec.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/specs/exsheet-functions/spec.md).

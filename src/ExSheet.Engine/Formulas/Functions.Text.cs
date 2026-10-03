@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace ExSheet.Engine.Formulas;
@@ -275,5 +276,80 @@ internal static partial class FunctionLibrary
         if (wanted.Length == 0) return Operand.Of(Value.FromNumber(start));
         var at = within.IndexOf(wanted, (int)start - 1, StringComparison.Ordinal);
         return at < 0 ? Operand.Of(ErrorValue.Value) : Operand.Of(Value.FromNumber(at + 1));
+    }
+
+    // ---- REPT, EXACT, NUMBERVALUE --------------------------------------------------------------------
+
+    /// <summary>REPT: the text repeated, the count truncated; below 0, or a result longer than a cell holds, <c>#VALUE!</c>.</summary>
+    private static Operand Rept(FunctionCall call)
+    {
+        if (!TryText(call, 0, out var text, out var failure)) return failure;
+        if (!TryNumber(call, 1, out var times, out failure)) return failure;
+        times = Math.Truncate(times);
+        if (times < 0 || text.Length * times > TextLimit) return Operand.Of(ErrorValue.Value);
+        return Operand.Of(Value.FromText(new StringBuilder(text.Length * (int)times).Insert(0, text, (int)times).ToString()));
+    }
+
+    /// <summary>EXACT: whether the two texts are the same, case and all.</summary>
+    private static Operand Exact(FunctionCall call)
+    {
+        if (!TryText(call, 0, out var first, out var failure)) return failure;
+        if (!TryText(call, 1, out var second, out failure)) return failure;
+        return Operand.Of(Value.FromBoolean(string.Equals(first, second, StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// NUMBERVALUE: the text read as a number with the separators given, the first character of each;
+    /// left out, the Sheet's culture's. Spaces are ignored, and so are group separators before the
+    /// decimal one; each <c>%</c> at the end divides by 100; empty text is 0. A second decimal
+    /// separator, a group separator after it, or anything else that is no digit is <c>#VALUE!</c>.
+    /// </summary>
+    private static Operand NumberValue(FunctionCall call)
+    {
+        if (!TryText(call, 0, out var text, out var failure)) return failure;
+        var format = call.Evaluator.Culture.NumberFormat;
+        var decimalSeparator = format.NumberDecimalSeparator[0];
+        var groupSeparator = format.NumberGroupSeparator.Length > 0 ? format.NumberGroupSeparator[0] : '\0';
+        if (call.Has(1))
+        {
+            if (!TryText(call, 1, out var given, out failure)) return failure;
+            if (given.Length == 0) return Operand.Of(ErrorValue.Value);
+            decimalSeparator = given[0];
+        }
+        if (call.Has(2))
+        {
+            if (!TryText(call, 2, out var given, out failure)) return failure;
+            if (given.Length == 0) return Operand.Of(ErrorValue.Value);
+            groupSeparator = given[0];
+        }
+        if (decimalSeparator == groupSeparator) return Operand.Of(ErrorValue.Value);
+
+        var digits = new StringBuilder();
+        var percents = 0;
+        var seenDecimal = false;
+        foreach (var c in text)
+        {
+            if (char.IsWhiteSpace(c)) continue;
+            if (percents > 0 && c != '%') return Operand.Of(ErrorValue.Value);
+            if (c == '%') percents++;
+            else if (c == decimalSeparator)
+            {
+                if (seenDecimal) return Operand.Of(ErrorValue.Value);
+                seenDecimal = true;
+                digits.Append('.');
+            }
+            else if (c == groupSeparator)
+            {
+                if (seenDecimal) return Operand.Of(ErrorValue.Value);
+            }
+            else if (char.IsAsciiDigit(c) || ((c is '-' or '+') && digits.Length == 0)) digits.Append(c);
+            else return Operand.Of(ErrorValue.Value);
+        }
+        if (digits.Length == 0) return percents == 0 ? Operand.Of(Value.FromNumber(0)) : Operand.Of(ErrorValue.Value);
+        if (!double.TryParse(digits.ToString(), NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var number))
+        {
+            return Operand.Of(ErrorValue.Value);
+        }
+        return Operand.Of(Evaluator.Number(number / Math.Pow(100, percents)));
     }
 }

@@ -1,0 +1,60 @@
+{
+  "area": "time",
+  "about": "TIME (ticket 05).",
+  "cases": [
+    {
+      "id": "TIME-001",
+      "source": "documented",
+      "description": "Microsoft's example: noon",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TIME(12,0,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5}
+    },
+    {
+      "id": "TIME-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TIME(16,48,10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.7001157407407408, "digits": 12}
+    },
+    {
+      "id": "TIME-003",
+      "source": "documented",
+      "description": "Past 24 hours wraps: 27 hours is 3 o'clock",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TIME(27,0,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.125}
+    },
+    {
+      "id": "TIME-004",
+      "source": "documented",
+      "description": "Minutes past 59 carry: 750 minutes is 12:30",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TIME(0,750,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5208333333333334, "digits": 12}
+    },
+    {
+      "id": "TIME-005",
+      "source": "documented",
+      "description": "Seconds past 59 carry: 2000 seconds is 0:33:20",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TIME(0,0,2000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.023148148148148147, "digits": 12}
+    },
+    {
+      "id": "TIME-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a time before midnight is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TIME(0,-1,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

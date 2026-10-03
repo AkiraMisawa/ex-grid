@@ -1,0 +1,33 @@
+{
+  "area": "sign",
+  "about": "SIGN (ticket 05).",
+  "cases": [
+    {
+      "id": "SIGN-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIGN(10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "SIGN-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIGN(4-4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SIGN-003",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIGN(-0.00001)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1}
+    }
+  ]
+}

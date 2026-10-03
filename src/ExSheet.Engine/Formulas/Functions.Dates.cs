@@ -278,4 +278,44 @@ internal static partial class FunctionLibrary
         }
         return Operand.Of(Value.FromNumber(serial));
     }
+
+    // ---- TIME, HOUR, MINUTE, SECOND -----------------------------------------------------------------
+
+    private const int SecondsPerDay = 86_400;
+
+    /// <summary>
+    /// TIME: the fraction of a day the hour, minute and second make, each truncated; past 24 hours
+    /// it wraps, as Excel's does. An argument above 32767, or a time before midnight, is <c>#NUM!</c>.
+    /// </summary>
+    private static Operand Time(FunctionCall call)
+    {
+        if (!TryNumber(call, 0, out var hour, out var failure)) return failure;
+        if (!TryNumber(call, 1, out var minute, out failure)) return failure;
+        if (!TryNumber(call, 2, out var second, out failure)) return failure;
+        hour = Math.Truncate(hour);
+        minute = Math.Truncate(minute);
+        second = Math.Truncate(second);
+        if (hour > 32767 || minute > 32767 || second > 32767) return Operand.Of(ErrorValue.Num);
+        var total = (hour * 3600) + (minute * 60) + second;
+        if (total < 0) return Operand.Of(ErrorValue.Num);
+        return Operand.Of(Value.FromNumber(total % SecondsPerDay / SecondsPerDay));
+    }
+
+    private static Operand Hour(FunctionCall call) => TimePart(call, seconds => seconds / 3600);
+
+    private static Operand Minute(FunctionCall call) => TimePart(call, seconds => seconds / 60 % 60);
+
+    private static Operand Second(FunctionCall call) => TimePart(call, seconds => seconds % 60);
+
+    /// <summary>
+    /// HOUR, MINUTE and SECOND: the serial's time of day, rounded to the nearest second, as Excel shows
+    /// a time; a serial below 0 or past 31 December 9999 is <c>#NUM!</c>.
+    /// </summary>
+    private static Operand TimePart(FunctionCall call, Func<long, long> part)
+    {
+        if (!TryNumber(call, 0, out var serial, out var failure)) return failure;
+        if (serial < 0 || serial >= DateSerial.Maximum + 1) return Operand.Of(ErrorValue.Num);
+        var seconds = (long)Math.Round((serial - Math.Floor(serial)) * SecondsPerDay, MidpointRounding.AwayFromZero) % SecondsPerDay;
+        return Operand.Of(Value.FromNumber(part(seconds)));
+    }
 }

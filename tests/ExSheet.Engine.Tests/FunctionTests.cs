@@ -46,7 +46,7 @@ public class FunctionTests
     {
         Assert.Equal(
             [
-                "ABS", "AND", "AVERAGE", "CHOOSE", "COLUMN", "CONCAT", "CONCATENATE", "COUNT", "COUNTA", "DATE", "DAY", "DAYS", "EDATE", "EOMONTH", "FIND", "FV", "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT", "LARGE", "LEFT", "LEN", "MAX", "MEDIAN", "MID", "MIN", "MOD", "MONTH", "NA", "NETWORKDAYS", "NOT", "NPV", "OR", "PMT", "POWER", "PRODUCT", "PV", "REPLACE", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "SMALL", "SQRT", "SUBSTITUTE", "SUM", "SWITCH", "TEXT", "TEXTJOIN", "TODAY", "TRIM", "TRUNC", "WEEKDAY", "WORKDAY", "XLOOKUP", "XMATCH", "YEAR",
+                "ABS", "AND", "AVERAGE", "CHOOSE", "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COUNT", "COUNTA", "DATE", "DAY", "DAYS", "EDATE", "EOMONTH", "EXACT", "EXP", "FIND", "FV", "HOUR", "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT", "LARGE", "LEFT", "LEN", "LN", "LOG10", "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH", "NA", "NETWORKDAYS", "NOT", "NPV", "NUMBERVALUE", "OR", "PI", "PMT", "POWER", "PRODUCT", "PV", "RANK.EQ", "REPLACE", "REPT", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "ROWS", "SECOND", "SIGN", "SMALL", "SQRT", "STDEV.P", "STDEV.S", "SUBSTITUTE", "SUM", "SWITCH", "TEXT", "TEXTJOIN", "TIME", "TODAY", "TRIM", "TRUNC", "VAR.P", "VAR.S", "WEEKDAY", "WORKDAY", "XLOOKUP", "XMATCH", "XNPV", "XOR", "YEAR",
             ],
             DeclaredFunction.All.Select(f => f.Name));
         Assert.Equal("SUM(number1, [number2], ...)", DeclaredFunction.Find("sum")!.Signature);

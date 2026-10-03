@@ -70,4 +70,82 @@ internal static partial class FunctionLibrary
         for (var i = 0; i < values.Count; i++) total += values[i] / Math.Pow(1 + rate, i + 1);
         return Operand.Of(Evaluator.Number(total));
     }
+
+    /// <summary>
+    /// XNPV: each value discounted by the years from the first date, at 365 days a year. The values
+    /// and the dates are ranges of the same count, numbers only; a date before the first is
+    /// <c>#NUM!</c>; anything else among them is refused with <c>#VALUE!</c>.
+    /// </summary>
+    private static Operand XNpv(FunctionCall call)
+    {
+        if (!TryNumber(call, 0, out var rate, out var failure)) return failure;
+        if (!TryNumbersOf(call, 1, out var values, out failure)) return failure;
+        if (!TryNumbersOf(call, 2, out var dates, out failure)) return failure;
+        if (values.Count == 0 || values.Count != dates.Count) return Operand.Of(ErrorValue.Num);
+        var first = Math.Floor(dates[0]);
+        var total = 0.0;
+        for (var i = 0; i < values.Count; i++)
+        {
+            var date = Math.Floor(dates[i]);
+            if (date < first) return Operand.Of(ErrorValue.Num);
+            total += values[i] / Math.Pow(1 + rate, (date - first) / 365);
+        }
+        return Operand.Of(Evaluator.Number(total));
+    }
+
+    /// <summary>Every cell of a range, each a number: a blank or anything else refuses the whole with <c>#VALUE!</c>; an Error Value is the result.</summary>
+    private static bool TryNumbersOf(FunctionCall call, int index, out List<double> numbers, out Operand failure)
+    {
+        numbers = [];
+        failure = default;
+        var operand = call.Operand(index);
+        if (operand.Kind == OperandKind.Scalar)
+        {
+            if (operand.Scalar is { IsError: true } error)
+            {
+                failure = Operand.Of(error);
+                return false;
+            }
+            if (operand.Scalar is { Kind: ValueKind.Number } single)
+            {
+                numbers.Add(single.Number);
+                return true;
+            }
+            failure = Operand.Of(ErrorValue.Value);
+            return false;
+        }
+        IEnumerable<Value?> cells = operand.Kind switch
+        {
+            OperandKind.Column => operand.Column!,
+            OperandKind.Area => Cells(operand.Area),
+            _ => [null],
+        };
+        foreach (var cell in cells)
+        {
+            if (cell is { IsError: true } error)
+            {
+                failure = Operand.Of(error);
+                return false;
+            }
+            if (cell is not { Kind: ValueKind.Number } number)
+            {
+                failure = Operand.Of(ErrorValue.Value);
+                return false;
+            }
+            numbers.Add(number.Number);
+        }
+        return true;
+
+        IEnumerable<Value?> Cells(Area area)
+        {
+            if ((long)area.Rows * area.Columns > 1_000_000) yield return null;
+            else
+            {
+                for (var row = area.Row1; row <= area.Row2; row++)
+                {
+                    for (var column = area.Column1; column <= area.Column2; column++) yield return call.Evaluator.Cells.Read(new CellAddress(row, column));
+                }
+            }
+        }
+    }
 }

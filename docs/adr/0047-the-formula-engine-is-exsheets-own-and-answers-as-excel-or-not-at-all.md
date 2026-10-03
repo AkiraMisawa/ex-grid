@@ -407,3 +407,8 @@ Admitted as the catalogue's ticket 04, the P2 functions that were Ready: `PRODUC
 `REPLACE`, `FIND`, `PMT`, `PV`, `FV` and `NPV`. The refusals they add are listed in the engine's
 README. `ROW()` and `COLUMN()` read their own cell's place, so an insertion or a deletion that moves
 the cell recalculates them though their text is unchanged.
+
+Admitted as ticket 05, the P3 functions that were Ready: `RANK.EQ`, `STDEV.S`, `STDEV.P`, `VAR.S`,
+`VAR.P`, `XOR`, `ROWS`, `COLUMNS`, `SIGN`, `EXP`, `LN`, `LOG10`, `PI`, `TIME`, `HOUR`, `MINUTE`,
+`SECOND`, `REPT`, `EXACT`, `NUMBERVALUE` and `XNPV`. With them, every function the catalogue marked
+Ready is Supported; what remains waits on a Windows run (Observe) or on a decision (Decide).

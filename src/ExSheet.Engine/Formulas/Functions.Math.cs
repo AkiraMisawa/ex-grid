@@ -127,4 +127,80 @@ internal static partial class FunctionLibrary
         if (!TryNumber(call, 0, out var number, out var failure)) return failure;
         return number < 0 ? Operand.Of(ErrorValue.Num) : Operand.Of(Value.FromNumber(Math.Sqrt(number)));
     }
+
+    // ---- RANK.EQ, STDEV.S, STDEV.P, VAR.S, VAR.P ---------------------------------------------------
+
+    /// <summary>
+    /// RANK.EQ: the number's rank among the numbers of <c>ref</c>, from the largest when <c>order</c>
+    /// is 0 or left out and from the smallest otherwise; equal numbers share the top rank. A number
+    /// not among them is <c>#N/A</c>, and a <c>ref</c> that is no range is <c>#VALUE!</c>.
+    /// </summary>
+    private static Operand RankEq(FunctionCall call)
+    {
+        if (!TryNumber(call, 0, out var number, out var failure)) return failure;
+        var reference = call.Operand(1);
+        if (!reference.IsRange) return reference.IsError ? reference : Operand.Of(ErrorValue.Value);
+        var order = 0.0;
+        if (call.Has(2) && !TryNumber(call, 2, out order, out failure)) return failure;
+        var found = false;
+        var ahead = 0;
+        foreach (var value in call.Evaluator.RangeValues(reference))
+        {
+            if (value.IsError) return Operand.Of(value);
+            if (value.Kind != ValueKind.Number) continue;
+            if (value.Number == number) found = true;
+            else if (order == 0 ? value.Number > number : value.Number < number) ahead++;
+        }
+        return found ? Operand.Of(Value.FromNumber(ahead + 1)) : Operand.Of(ErrorValue.NA);
+    }
+
+    private static Operand StdevS(FunctionCall call) => Spread(call, sample: true, root: true);
+
+    private static Operand StdevP(FunctionCall call) => Spread(call, sample: false, root: true);
+
+    private static Operand VarS(FunctionCall call) => Spread(call, sample: true, root: false);
+
+    private static Operand VarP(FunctionCall call) => Spread(call, sample: false, root: false);
+
+    /// <summary>
+    /// VAR.S, VAR.P and their square roots STDEV.S and STDEV.P, over the numbers SUM takes, the
+    /// squared deviations taken from their mean. Fewer than two numbers for a sample, or none for a
+    /// population, is <c>#DIV/0!</c>.
+    /// </summary>
+    private static Operand Spread(FunctionCall call, bool sample, bool root)
+    {
+        var numbers = new List<double>();
+        if (CollectNumbers(call, numbers) is { } error) return Operand.Of(error);
+        var divisor = sample ? numbers.Count - 1 : numbers.Count;
+        if (divisor < 1) return Operand.Of(ErrorValue.Div0);
+        var mean = numbers.Sum() / numbers.Count;
+        var squares = numbers.Sum(n => (n - mean) * (n - mean));
+        var variance = squares / divisor;
+        return Operand.Of(Evaluator.Number(root ? Math.Sqrt(variance) : variance));
+    }
+
+    // ---- SIGN, EXP, LN, LOG10, PI -------------------------------------------------------------------
+
+    private static Operand Sign(FunctionCall call) =>
+        TryNumber(call, 0, out var number, out var failure) ? Operand.Of(Value.FromNumber(Math.Sign(number))) : failure;
+
+    /// <summary>EXP: e to the number; past what a double holds, <c>#NUM!</c>.</summary>
+    private static Operand Exp(FunctionCall call) =>
+        TryNumber(call, 0, out var number, out var failure) ? Operand.Of(Evaluator.Number(Math.Exp(number))) : failure;
+
+    /// <summary>LN: a number not above 0 is <c>#NUM!</c>.</summary>
+    private static Operand Ln(FunctionCall call)
+    {
+        if (!TryNumber(call, 0, out var number, out var failure)) return failure;
+        return number <= 0 ? Operand.Of(ErrorValue.Num) : Operand.Of(Value.FromNumber(Math.Log(number)));
+    }
+
+    /// <summary>LOG10: a number not above 0 is <c>#NUM!</c>.</summary>
+    private static Operand Log10(FunctionCall call)
+    {
+        if (!TryNumber(call, 0, out var number, out var failure)) return failure;
+        return number <= 0 ? Operand.Of(ErrorValue.Num) : Operand.Of(Value.FromNumber(Math.Log10(number)));
+    }
+
+    private static Operand Pi(FunctionCall call) => Operand.Of(Value.FromNumber(Math.PI));
 }

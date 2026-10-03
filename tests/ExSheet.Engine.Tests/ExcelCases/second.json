@@ -1,0 +1,24 @@
+{
+  "area": "second",
+  "about": "SECOND (ticket 05).",
+  "cases": [
+    {
+      "id": "SECOND-001",
+      "source": "documented",
+      "description": "Microsoft's example: 4:48:18 PM",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SECOND(0.7002083333333333)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 18}
+    },
+    {
+      "id": "SECOND-002",
+      "source": "documented",
+      "description": "Microsoft's example: 4:48 PM",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SECOND(0.7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    }
+  ]
+}
