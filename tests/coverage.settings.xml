@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- What CI's coverage counts (ADR-0041): the shipped assemblies only — the core and the
-     MudBlazor Wrapper — never the test projects, the DemoHost or the spikes. Read by the
+<!-- What CI's coverage counts (ADR-0041): the shipped assemblies only — the family's ten
+     packages — never the test projects, the demo hosts, the Docs Site or the spikes. Read by the
      Microsoft.Testing.Extensions.CodeCoverage extension through its settings option. -->
 <Configuration>
   <CodeCoverage>
@@ -8,6 +8,14 @@
       <Include>
         <ModulePath>.*[\\/]ExGrid\.dll$</ModulePath>
         <ModulePath>.*[\\/]ExGrid\.MudBlazor\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExSheet\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExSheet\.Engine\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExSheet\.MudBlazor\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExPivot\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExPivot\.Engine\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExPivot\.MudBlazor\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExGrid\.Data\.dll$</ModulePath>
+        <ModulePath>.*[\\/]ExGrid\.Data\.Arrow\.dll$</ModulePath>
       </Include>
     </ModulePaths>
     <Attributes>
