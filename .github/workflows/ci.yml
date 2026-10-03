@@ -78,8 +78,36 @@ jobs:
           -targetdir:coverage
           -reporttypes:"MarkdownSummaryGithub;Badges;TextSummary"
 
+      # The same reports, once per product: its packages by their exact names, so ExGrid's
+      # figure never takes in ExGrid.Data's. The total above is all ten.
+      - name: Coverage per product
+        run: |
+          set -euo pipefail
+          product() {
+            dotnet reportgenerator \
+              -reports:"tests/*/bin/*/*/TestResults/coverage.cobertura.xml" \
+              -targetdir:"coverage/products/$1" \
+              -assemblyfilters:"$2" \
+              -reporttypes:"TextSummary"
+          }
+          product ExGrid  "+ExGrid;+ExGrid.MudBlazor"
+          product ExSheet "+ExSheet;+ExSheet.Engine;+ExSheet.MudBlazor"
+          product ExPivot "+ExPivot;+ExPivot.Engine;+ExPivot.MudBlazor"
+          product Data    "+ExGrid.Data;+ExGrid.Data.Arrow"
+          {
+            echo '## Coverage per product'
+            echo
+            echo '| Product | Line | Branch |'
+            echo '|---|---|---|'
+            for name in ExGrid ExSheet ExPivot Data; do
+              summary="coverage/products/$name/Summary.txt"
+              echo "| $name | $(grep -oP 'Line coverage: \K[0-9.]+' "$summary")% | $(grep -oP 'Branch coverage: \K[0-9.]+' "$summary")% |"
+            done
+            echo
+          } > coverage/products/Summary.md
+
       - name: Coverage into the run's summary
-        run: cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat coverage/products/Summary.md coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -371,7 +399,9 @@ jobs:
           path: coverage
 
       # The badges branch holds only the badges, the latest table and one line of history
-      # per push to main. It is not a code branch and nothing merges it.
+      # per push to main. It is not a code branch and nothing merges it. Each badge is a
+      # shields.io endpoint file — the label names the product, which a generated SVG cannot —
+      # read by the README; the two SVGs stay for the links that still point at them.
       - name: Update the badges branch
         env:
           REPO: ${{ github.repository }}
@@ -379,21 +409,45 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          line=$(grep -oP 'Line coverage: \K[0-9.]+' coverage/Summary.txt)
-          branch=$(grep -oP 'Branch coverage: \K[0-9.]+' coverage/Summary.txt)
           colour() {
             awk -v v="$1" 'BEGIN {
               if (v >= 90) print "brightgreen"; else if (v >= 80) print "green";
               else if (v >= 70) print "yellowgreen"; else if (v >= 60) print "yellow";
               else if (v >= 50) print "orange"; else print "red" }'
           }
+          figure() { grep -oP "$1 coverage: \K[0-9.]+" "$2"; }
+          # One badge: "<label> coverage", lines and branches, coloured by the lower of the two.
+          endpoint() {
+            local label="$1" line="$2" branch="$3"
+            local low; low=$(awk -v a="$line" -v b="$branch" 'BEGIN { print (a < b ? a : b) }')
+            printf '{"schemaVersion":1,"label":"%s coverage","message":"%s%% · %s%% br","color":"%s"}\n' \
+              "$label" "$line" "$branch" "$(colour "$low")"
+          }
+          line=$(figure Line coverage/Summary.txt)
+          branch=$(figure Branch coverage/Summary.txt)
           git clone --quiet --depth 1 --branch badges "https://x-access-token:${TOKEN}@github.com/${REPO}.git" out \
             || { git init --quiet out && git -C out checkout --quiet --orphan badges; }
           cp "coverage/badge_shieldsio_linecoverage_$(colour "$line").svg" out/coverage-line.svg
           cp "coverage/badge_shieldsio_branchcoverage_$(colour "$branch").svg" out/coverage-branch.svg
-          cp coverage/SummaryGithub.md out/coverage.md
-          [ -f out/history.csv ] || echo 'date,commit,line,branch' > out/history.csv
-          echo "$(date -u +%Y-%m-%dT%H:%MZ),${SHA::7},${line},${branch}" >> out/history.csv
+          endpoint Total "$line" "$branch" > out/coverage-total.json
+          history="${line},${branch}"
+          for name in ExGrid ExSheet ExPivot Data; do
+            summary="coverage/products/$name/Summary.txt"
+            p_line=$(figure Line "$summary")
+            p_branch=$(figure Branch "$summary")
+            endpoint "$name" "$p_line" "$p_branch" > "out/coverage-$(echo "$name" | tr '[:upper:]' '[:lower:]').json"
+            history="${history},${p_line},${p_branch}"
+          done
+          cat coverage/products/Summary.md coverage/SummaryGithub.md > out/coverage.md
+          # The history gained a column pair per product when the ten packages were first counted;
+          # rows before that have the total alone.
+          columns='date,commit,line,branch,exgrid_line,exgrid_branch,exsheet_line,exsheet_branch,expivot_line,expivot_branch,data_line,data_branch'
+          if [ ! -f out/history.csv ]; then
+            echo "$columns" > out/history.csv
+          elif [ "$(head -n 1 out/history.csv)" != "$columns" ]; then
+            sed -i "1s/.*/$columns/" out/history.csv
+          fi
+          echo "$(date -u +%Y-%m-%dT%H:%MZ),${SHA::7},${history}" >> out/history.csv
           cd out
           git add -A
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \

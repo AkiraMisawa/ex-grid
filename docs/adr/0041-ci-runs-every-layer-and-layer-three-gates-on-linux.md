@@ -50,11 +50,21 @@ nothing `main` did not, and a second integration branch would only fall behind.)
   both browsers, and ST-1 at 10⁶ rows (`EXGRID_ST1_MILLION=1`). Too slow for every push, and
   what they catch — a leak, a drift at scale — does not arrive in a single commit.
 - **Coverage is reported, never gated.** Microsoft's Testing Platform extension collects it from
-  the shipped assemblies only — `ExGrid` and `ExGrid.MudBlazor` — and ReportGenerator merges the
-  three suites. Each run writes the table into its summary. Each push to `main` refreshes line
+  the shipped assemblies only — `ExGrid` and `ExGrid.MudBlazor` (the family's ten since
+  2026-10-03, below) — and ReportGenerator merges the suites. Each run writes the table into its summary. Each push to `main` refreshes line
   and branch badges, and appends to a history file, on a `badges` branch that the README reads.
   No threshold: a number the build must reach invites tests written to reach it, and the
   criteria in the Definition of Done are what "tested" means here.
+  *(Since 2026-10-03, decided with the user: "the shipped assemblies" are the family's ten
+  packages, since ADR-0042 ships them together (#53). Naming only `ExGrid` and
+  `ExGrid.MudBlazor` had left eight shipped assemblies uncounted. The figure is also reported
+  per product: ExGrid (`ExGrid`, `ExGrid.MudBlazor`), ExSheet (`ExSheet`, `ExSheet.Engine`,
+  `ExSheet.MudBlazor`), ExPivot (`ExPivot`, `ExPivot.Engine`, `ExPivot.MudBlazor`) and Data
+  (`ExGrid.Data`, `ExGrid.Data.Arrow`), each by the exact assembly names, beside the total of
+  all ten. The README shows five badges, one per product and the total, each giving lines and
+  branches; they are shields.io endpoint files on the `badges` branch, because a generated
+  badge cannot carry the product's name. The history gained a column pair per product, so
+  the total's line steps where the eight were first counted.)*
 
 ## What CI does not replace
 
