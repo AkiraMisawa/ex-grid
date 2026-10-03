@@ -148,7 +148,7 @@ public class AskingTests : PivotTestContext
         Assert.All(told, layout => Assert.Equal(2, layout.Values.Count));
     }
 
-    [Fact] // ADR-0066/0025, ADR-0067 refined (PV-25): a failed question for the user's layout leaves the report as it was and says so on the toolbar — not a Stale Report — and the layout goes back
+    [Fact] // ADR-0066/0025, ADR-0067 refined (PV-25): a failed question for the user's layout leaves the report as it was and says so on the Pivot Toolbar — not a Stale Report — and the layout goes back
     public async Task A_failure_leaves_the_report_as_it_was_and_says_so()
     {
         var told = new List<PivotLayout>();
@@ -181,7 +181,7 @@ public class AskingTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-refusal-notice"));
     }
 
-    [Fact] // ADR-0067 refined (PV-25): before the first report there is no layout to go back to — a failed first question is said on the toolbar, and the pane keeps the layout
+    [Fact] // ADR-0067 refined (PV-25): before the first report there is no layout to go back to — a failed first question is said on the Pivot Toolbar, and the pane keeps the layout
     public async Task A_failed_first_question_keeps_the_layout()
     {
         var source = Holding();
@@ -404,7 +404,7 @@ public class AskingTests : PivotTestContext
 
     // ---- PV-15: the grid renders only when the report does ------------------------------------
 
-    [Fact] // ADR-0003/0061 (PV-15): a change that is only the pane's — under Defer Layout Update — and the toolbar's menu render no grid row and not the grid
+    [Fact] // ADR-0003/0061 (PV-15): a change that is only the pane's — under Defer Layout Update — and the Pivot Toolbar's menu render no grid row and not the grid
     public async Task The_pane_and_the_toolbar_do_not_render_the_grid()
     {
         var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });

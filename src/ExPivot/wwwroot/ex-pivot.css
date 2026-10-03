@@ -61,9 +61,9 @@
 }
 .ex-pivot-details-status { padding: 16px; }
 
-/* The toolbar above the report (ADR-0061): the report filter band on its left, Layout ▾, Refresh
-   and the Field List's toggle on its right. Its popups open under the button that opened them,
-   over the report. */
+/* The Pivot Toolbar above the report (ADR-0061): the report filter band on its left, Layout ▾,
+   Refresh and the Field List's toggle on its right. Its popups open under the button that opened
+   them, over the report. */
 .ex-pivot-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -89,9 +89,9 @@
 .ex-pivot-toolbar-button[aria-pressed="true"] { border-color: var(--ex-pivot-accent-color, Highlight); }
 .ex-pivot-refusal-notice { padding: 0 0 6px; }
 
-/* The Stale Report's notice, under the toolbar (ADR-0067): the report stays on the last version it
-   could compute, and this says what happened and as of when, with Retry. Its live region, which
-   ExPivot keeps on the page, takes no room while it is empty. */
+/* The Stale Report's notice, under the Pivot Toolbar (ADR-0067): the report stays on the last
+   version it could compute, and this says what happened and as of when, with Retry. Its live
+   region, which ExPivot keeps on the page, takes no room while it is empty. */
 .ex-pivot-stale-notice {
     display: flex;
     flex-wrap: wrap;
@@ -335,7 +335,7 @@
 .ex-pivot-panel-actions { display: flex; justify-content: flex-end; gap: 6px; }
 .ex-pivot-ok, .ex-pivot-cancel { font: inherit; padding: 2px 12px; }
 
-/* The report filter band, on the toolbar's left. */
+/* The report filter band, on the Pivot Toolbar's left. */
 .ex-pivot-filters { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .ex-pivot-filter { display: flex; align-items: center; gap: 6px; }
 .ex-pivot-filter-caption { font-weight: 600; }

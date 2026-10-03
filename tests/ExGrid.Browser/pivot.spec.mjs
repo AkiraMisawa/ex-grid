@@ -7,12 +7,12 @@ import { API_URL, SERVER } from './hosting.mjs';
 // own drag and drop lands on the Area it was dropped on; that the report's − button and a double
 // click reach the pivot through the grid; that Show Details opens a tab at the report's foot, a
 // dialog, or hands the records to the page; that the keyboard goes into a menu and back; that the
-// toolbar above the report holds the report filter band, the Layout menu and the pane's toggle,
-// and that their popups open under it, over the report; that Defer Layout Update holds the report
-// until Update; that the words can be Excel's Japanese edition's; that Month, a part of the trade
-// date, is painted Jan to Sep in the calendar's order; that the code the page shows is the code it
-// runs; and, under MudBlazor, that a select's list takes Escape before its panel and that the
-// palette reaches the pane in both schemes. Everything is found by role and name, which both
+// Pivot Toolbar above the report holds the report filter band, the Layout menu and the pane's
+// toggle, and that their popups open under it, over the report; that Defer Layout Update holds the
+// report until Update; that the words can be Excel's Japanese edition's; that Month, a part of the
+// trade date, is painted Jan to Sep in the calendar's order; that the code the page shows is the
+// code it runs; and, under MudBlazor, that a select's list takes Escape before its panel and that
+// the palette reaches the pane in both schemes. Everything is found by role and name, which both
 // Chromes give the same, so the same test runs under either (ADR-0061: swapping the Chrome changes
 // no behaviour).
 
@@ -29,9 +29,9 @@ const fieldsList = (page) => pane(page).getByRole('list', { name: 'PivotTable Fi
 const field = (page, caption) => fieldsList(page).getByRole('listitem').filter({ has: page.getByRole('checkbox', { name: caption, exact: true }) });
 const areaList = (page, title) => pane(page).getByRole('list', { name: title, exact: true });
 const entry = (page, caption) => pane(page).getByRole('button', { name: `Options for ${caption}`, exact: true });
-// The toolbar's buttons, found by name in the report's column, which both Chromes give the same:
-// ExPivot draws the toolbar there under its own markup, and MudBlazor's controls under the Mud
-// Chrome. That they stand above the report is asserted where it matters.
+// The Pivot Toolbar's buttons, found by name in the report's column, which both Chromes give the
+// same: ExPivot draws the Pivot Toolbar there under its own markup, and MudBlazor's controls under
+// the Mud Chrome. That they stand above the report is asserted where it matters.
 const toolbarButton = (page, name) => pivot(page).locator('.ex-pivot-report').getByRole('button', { name, exact: true });
 // Row 1 is Americas' first desk under the Compact form, column 1 its first product.
 const firstValue = (page) => rows(page).nth(1).locator('[role=gridcell]').nth(1);
@@ -490,7 +490,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.getByRole('menu')).toHaveCount(0);
         });
 
-        test(`ADR-0061: the toolbar above the report holds the report filter band on its left, then Layout and the Field List's toggle on its right (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: the Pivot Toolbar above the report holds the report filter band on its left, then Layout and the Field List's toggle on its right (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const band = await toolbarButton(page, 'Filter Currency').boundingBox();
             const layout = await toolbarButton(page, 'Layout').boundingBox();
@@ -526,7 +526,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(button).toBeFocused();
         });
 
-        test(`ADR-0061: the band's Filter… opens under the toolbar, over the report, and a press beside it closes it (${chrome})`, async ({ page }) => {
+        test(`ADR-0061: the band's Filter… opens under the Pivot Toolbar, over the report, and a press beside it closes it (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const button = toolbarButton(page, 'Filter Currency');
 

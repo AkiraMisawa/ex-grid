@@ -4,7 +4,7 @@
     <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>ExPivot.MudBlazor</RootNamespace>
-    <Description>MudBlazor for ExPivot: a Chrome that draws the PivotTable Fields pane, its menus and panels, the toolbar with its report filter band, Show Details' tabs and dialog, and the Stale Report's notice with MudBlazor's own controls, and a stylesheet mapping ExPivot's tokens onto the MudBlazor palette. The report's grid is dressed by ExGrid.MudBlazor. Ships at the same version as ExPivot and depends on exactly that version.</Description>
+    <Description>MudBlazor for ExPivot: a Chrome that draws the PivotTable Fields pane, its menus and panels, the Pivot Toolbar with its report filter band, Show Details' tabs and dialog, and the Stale Report's notice with MudBlazor's own controls, and a stylesheet mapping ExPivot's tokens onto the MudBlazor palette. The report's grid is dressed by ExGrid.MudBlazor. Ships at the same version as ExPivot and depends on exactly that version.</Description>
     <PackageTags>$(PackageTags);pivot;pivottable;mudblazor;material</PackageTags>
   </PropertyGroup>
 

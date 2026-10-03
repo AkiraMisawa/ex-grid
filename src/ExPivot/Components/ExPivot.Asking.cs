@@ -56,8 +56,8 @@ public partial class ExPivot
     private CancellationTokenSource? _asking;
     private bool _loading;
 
-    // What the report could not do with the user's last change, in words, said on the toolbar; and
-    // the source's last failure.
+    // What the report could not do with the user's last change, in words, said on the Pivot
+    // Toolbar; and the source's last failure.
     private string? _refusal;
     private Exception? _lastError;
 
@@ -91,10 +91,10 @@ public partial class ExPivot
     /// marked. A source that cannot be refreshed — the bundled one — answers the same data again;
     /// it is refreshed by handing ExPivot a new source, or a Change Batch. A Refresh that fails —
     /// the source cannot refresh, or its answer cannot be shown — leaves a Stale Report: the report
-    /// stays on the version shown, and the notice under the toolbar says the source could not
+    /// stays on the version shown, and the notice under the Pivot Toolbar says the source could not
     /// answer, as of when, with Retry, which refreshes again (ADR-0067). The failure is kept
     /// (<see cref="LastError"/>). Before the first report there is nothing to be stale, and the
-    /// toolbar says it instead.
+    /// Pivot Toolbar says it instead.
     /// </summary>
     public Task RefreshAsync() => InvokeAsync(async () =>
     {
@@ -186,10 +186,11 @@ public partial class ExPivot
         return ApplyAsync(layout);
     }
 
-    /// <summary>A gesture on the report or the toolbar — a ± button, a Context Menu command, the
-    /// Layout menu, the report filter band — applied to the layout the report is on. While Defer
-    /// Layout Update holds a pending layout the gesture reaches it too, so Update does not take it
-    /// back. A gesture on a field that no longer stands where it did changes nothing.</summary>
+    /// <summary>A gesture on the report or the Pivot Toolbar — a ± button, a Context Menu command,
+    /// the Layout menu, the report filter band — applied to the layout the report is on. While
+    /// Defer Layout Update holds a pending layout the gesture reaches it too, so Update does not
+    /// take it back. A gesture on a field that no longer stands where it did
+    /// changes nothing.</summary>
     private Task ReportEditAsync(Func<PivotLayout, PivotLayout> edit)
     {
         if (_pending is { } pending && TryEdit(edit, pending) is { } edited)
@@ -262,7 +263,7 @@ public partial class ExPivot
             _refusal = null;
         var carried = _asking is not null && _askingCarries;
         // Each way out renders ExPivot: the gesture's event may have been a view's, which renders
-        // only itself, and the pane, the toolbar and the report are all ExPivot's to paint.
+        // only itself, and the pane, the Pivot Toolbar and the report are all ExPivot's to paint.
         if (NotOffered(source, layout) is { } aggregation)
         {
             Supersede();
@@ -783,7 +784,8 @@ public partial class ExPivot
         _raisePending = false;
     }
 
-    /// <summary>The source failed: the report stays as it was, and the toolbar says why.</summary>
+    /// <summary>The source failed: the report stays as it was, and the Pivot Toolbar
+    /// says why.</summary>
     private void Fail(Exception error)
     {
         _lastError = error;
@@ -792,12 +794,12 @@ public partial class ExPivot
 
     /// <summary>
     /// A question failed. For newer data under the layout on screen, the report is left stale
-    /// (ADR-0067). A failed question for a layout is not stale data: the toolbar says it, and the
-    /// layout goes back to the one the report shows, as a refused one does, so the pane shows what
-    /// the report was laid out under (ADR-0067 refined); nothing is raised for it. Before the first
-    /// report there is none to go back to, and the pane keeps the layout, so the next change asks
-    /// for it again. The pending layout, while Defer Layout Update is ticked, is the user's work in
-    /// the pane, and stays.
+    /// (ADR-0067). A failed question for a layout is not stale data: the Pivot Toolbar says it, and
+    /// the layout goes back to the one the report shows, as a refused one does, so the pane shows
+    /// what the report was laid out under (ADR-0067 refined); nothing is raised for it. Before the
+    /// first report there is none to go back to, and the pane keeps the layout, so the next change
+    /// asks for it again. The pending layout, while Defer Layout Update is ticked, is the user's
+    /// work in the pane, and stays.
     /// </summary>
     private void FailFor(Question kind, PivotLayout layout, Exception error)
     {
@@ -819,7 +821,7 @@ public partial class ExPivot
     /// shown, so the report stays on the version shown as a Stale Report, whose notice says the
     /// source could not answer, as of when, and whose Retry refreshes again — what failed was the
     /// refresh, and asking the source that did not refresh would show its old data as the newest.
-    /// Without a report there is nothing to be stale, and the toolbar says it.
+    /// Without a report there is nothing to be stale, and the Pivot Toolbar says it.
     /// </summary>
     private void RefreshFailed(Exception error)
     {

@@ -93,16 +93,19 @@ public static class PivotCommandIds
     /// <summary>Hide the Field List.</summary>
     public const string HideFieldList = "hide-field-list";
 
-    /// <summary>The toolbar's Layout ▾ button, which opens the Layout menu (ADR-0061).</summary>
+    /// <summary>The Pivot Toolbar's Layout ▾ button, which opens the Layout
+    /// menu (ADR-0061).</summary>
     public const string LayoutMenu = "layout-menu";
 
-    /// <summary>The toolbar's Refresh: Excel's, offered when the source can be refreshed (ADR-0066).</summary>
+    /// <summary>The Pivot Toolbar's Refresh: Excel's, offered when the source can be
+    /// refreshed (ADR-0066).</summary>
     public const string Refresh = "refresh";
 
     /// <summary>The Stale Report's Retry: asks the source again for the report (ADR-0067).</summary>
     public const string Retry = "retry";
 
-    /// <summary>The toolbar's toggle that shows and hides the Field List (ADR-0061).</summary>
+    /// <summary>The Pivot Toolbar's toggle that shows and hides the Field
+    /// List (ADR-0061).</summary>
     public const string FieldListToggle = "field-list-toggle";
 
     /// <summary>The id of a Layout menu choice's command, which is also the id of its word:

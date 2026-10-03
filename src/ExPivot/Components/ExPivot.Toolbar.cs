@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Components;
 
 namespace ExPivot.Components;
 
-// The toolbar above the report (ADR-0061): the report filter band on its left; Layout ▾, Refresh
-// and the Field List's toggle on its right. Its popups open under it, over the report, with a
-// backdrop that closes them.
+// The Pivot Toolbar above the report (ADR-0061): the report filter band on its left; Layout ▾,
+// Refresh and the Field List's toggle on its right. Its popups open under it, over the report, with
+// a backdrop that closes them.
 public partial class ExPivot
 {
     // The Layout menu's choices in Excel's order, each group headed where it starts.
@@ -89,7 +89,7 @@ public partial class ExPivot
         return commands;
     }
 
-    // ---- The report filter band, on the toolbar's left (ADR-0061) -------------------------------
+    // ---- The report filter band, on the Pivot Toolbar's left (ADR-0061) -------------------------
 
     private RenderFragment ReportFilters() => builder =>
     {

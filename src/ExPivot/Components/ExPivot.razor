@@ -5,8 +5,8 @@
 
 @*
     ExPivot holds the Pivot Layout and asks its Pivot Source; ExGrid paints, selects, navigates,
-    copies and reports (ADR-0059/0066). This component renders the toolbar above the report — the
-    report filter band, Layout ▾, Refresh and the Field List's toggle (ADR-0061) — the Stale
+    copies and reports (ADR-0059/0066). This component renders the Pivot Toolbar above the report —
+    the report filter band, Layout ▾, Refresh and the Field List's toggle (ADR-0061) — the Stale
     Report's notice under it (ADR-0067), exactly one ExGrid over the Pivot Report — its rows the
     Window, its label columns pinned Template Columns, its value columns under Header Groups, the
     cells the data changed marked (ADR-0068) — Show Details' tabs at its foot, and the Field List
@@ -22,9 +22,10 @@
        the dialog is modal (ADR-0059). *@
     <div class="ex-pivot-report" inert="@(_dialog is not null)">
         @Toolbar()
-        @* The Stale Report's notice, under the toolbar (ADR-0061/0067): a polite live region that
-           is always present, so a notice that appears in it is announced, without interrupting
-           the reader as the toolbar's refusal of their own change does. Empty, it takes no room. *@
+        @* The Stale Report's notice, under the Pivot Toolbar (ADR-0061/0067): a polite live region
+           that is always present, so a notice that appears in it is announced, without interrupting
+           the reader as the Pivot Toolbar's refusal of their own change does. Empty, it takes
+           no room. *@
         <div class="ex-pivot-stale" role="status">@StaleNotice()</div>
         @* While a details tab is selected its records cover the report, which stays laid out, with
            its state, and is not painted: its own header would otherwise paint over the records'
@@ -96,7 +97,8 @@
     /// whole answer (ADR-0067). The changes are gathered, and the report redrawn at most once per
     /// <see cref="RedrawInterval"/>; a cell whose painted value changed is marked for
     /// <see cref="ChangeHighlightDuration"/>; and when the newest data cannot be shown, the report
-    /// stays on the last version it could compute and says so under the toolbar, with Retry.</para>
+    /// stays on the last version it could compute and says so under the Pivot Toolbar,
+    /// with Retry.</para>
     /// </summary>
     [Parameter, EditorRequired] public PivotSource Source { get; set; } = default!;
 
@@ -161,9 +163,9 @@
     /// on every render.</summary>
     [Parameter] public Func<string, string?>? Label { get; set; }
 
-    /// <summary>What draws the Field List, the toolbar, the menus, the panels and Show Details'
-    /// tabs and dialog (ADR-0061); null for ExPivot's built-in markup. It may also supply the
-    /// report grid's Chrome.</summary>
+    /// <summary>What draws the Field List, the Pivot Toolbar, the menus, the panels and Show
+    /// Details' tabs and dialog (ADR-0061); null for ExPivot's built-in markup. It may also supply
+    /// the report grid's Chrome.</summary>
     [Parameter] public IPivotChrome? PivotChrome { get; set; }
 
     /// <summary>The report grid's Chrome, and the details grids' (ADR-0010); beats
@@ -171,7 +173,7 @@
     [Parameter] public IGridChrome? Chrome { get; set; }
 
     /// <summary>Whether the Field List stands beside the report. Bind it with
-    /// <c>@bind-ShowFieldList</c> to remember the user's choice: the toolbar's toggle and the
+    /// <c>@bind-ShowFieldList</c> to remember the user's choice: the Pivot Toolbar's toggle and the
     /// Context Menu's Show and Hide Field List change it and raise <see cref="ShowFieldListChanged"/>.</summary>
     [Parameter] public bool ShowFieldList { get; set; } = true;
 
@@ -235,12 +237,13 @@
     public bool IsLoading => _loading;
 
     /// <summary>The source's last failure, kept until it next answers (ADR-0025's "a failure is
-    /// never silent"); the toolbar, or the Stale Report's notice, says it where the user sees it.</summary>
+    /// never silent"); the Pivot Toolbar, or the Stale Report's notice, says it where the user
+    /// sees it.</summary>
     public Exception? LastError => _lastError;
 
     /// <summary>Whether the report is a Stale Report (ADR-0067): the newest data could not be
     /// shown — it broke a cap, the source refused or failed, or a Refresh failed — so the report
-    /// stays on the last version it could compute, and the notice under the toolbar says what
+    /// stays on the last version it could compute, and the notice under the Pivot Toolbar says what
     /// happened and as of when, with Retry.</summary>
     public bool IsStale => _stale is not null;
 

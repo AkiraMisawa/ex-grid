@@ -11,8 +11,8 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// Defer Layout Update at the pane's foot, and the toolbar above the report (ADR-0061): the report
-/// filter band on its left; Layout ▾, Refresh and the Field List's toggle on its right.
+/// Defer Layout Update at the pane's foot, and the Pivot Toolbar above the report (ADR-0061): the
+/// report filter band on its left; Layout ▾, Refresh and the Field List's toggle on its right.
 /// </summary>
 public class ToolbarAndDeferTests : PivotTestContext
 {
@@ -109,9 +109,9 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Equal(2, told[1].Values.Count);
     }
 
-    // ---- PV-30: the toolbar ---------------------------------------------------------------------
+    // ---- PV-30: the Pivot Toolbar ---------------------------------------------------------------
 
-    [Fact] // ADR-0061 (PV-30): the toolbar holds the band on its left, and Layout ▾ then the Field List's toggle on its right — no Refresh for a source that cannot be refreshed
+    [Fact] // ADR-0061 (PV-30): the Pivot Toolbar holds the band on its left, and Layout ▾ then the Field List's toggle on its right — no Refresh for a source that cannot be refreshed
     public void The_toolbar_holds_its_controls_in_order()
     {
         var cut = RenderPivot(RegionProduct with { Filters = [P("Online")] });
@@ -155,7 +155,7 @@ public class ToolbarAndDeferTests : PivotTestContext
             RefreshFails = refreshFails,
         };
 
-    [Fact] // ADR-0067 refined (PV-37, PV-30): a failed Refresh is a Stale Report — the report stays on the version shown, and the notice says the source could not answer, as of when, with Retry; nothing is said on the toolbar, and nothing is thrown
+    [Fact] // ADR-0067 refined (PV-37, PV-30): a failed Refresh is a Stale Report — the report stays on the version shown, and the notice says the source could not answer, as of when, with Retry; nothing is said on the Pivot Toolbar, and nothing is thrown
     public async Task A_failed_refresh_is_a_stale_report()
     {
         var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
@@ -228,7 +228,7 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.False(cut.Instance.IsStale);
     }
 
-    [Fact] // ADR-0067 refined (PV-37): before the first report there is nothing to be stale, so a failed Refresh is said on the toolbar
+    [Fact] // ADR-0067 refined (PV-37): before the first report there is nothing to be stale, so a failed Refresh is said on the Pivot Toolbar
     public async Task A_failed_refresh_before_the_first_report_is_said_on_the_toolbar()
     {
         var source = Refreshable(new InvalidOperationException("The server cannot be reached."));
@@ -346,9 +346,9 @@ public class ToolbarAndDeferTests : PivotTestContext
         Assert.Empty(cut.FindAll(".ex-pivot-field-list"));
     }
 
-    // ---- PV-12: the report filter band, on the toolbar's left -------------------------------------
+    // ---- PV-12: the report filter band, on the Pivot Toolbar's left -----------------------------
 
-    [Fact] // ADR-0061 (PV-12): the band's Filter… opens under the toolbar, over the report, with a backdrop; OK filters the report and the keyboard goes back to its button
+    [Fact] // ADR-0061 (PV-12): the band's Filter… opens under the Pivot Toolbar, over the report, with a backdrop; OK filters the report and the keyboard goes back to its button
     public async Task The_bands_filter_opens_under_the_toolbar()
     {
         var cut = RenderPivot(new PivotLayout { Filters = [P("Region")], Rows = [P("Product")], Values = [Sum("Amount")] });

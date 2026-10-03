@@ -42,11 +42,12 @@ public partial class ExPivot
         /// <summary>The Field List entry that opened it, or null.</summary>
         public PivotEntry? Entry { get; init; }
 
-        /// <summary>The report filter that opened it from the toolbar's band, or null.</summary>
+        /// <summary>The report filter that opened it from the Pivot Toolbar's band,
+        /// or null.</summary>
         public string? BandField { get; init; }
 
-        /// <summary>Whether it opened from the toolbar, over the report: the band's Filter… or the
-        /// Layout menu.</summary>
+        /// <summary>Whether it opened from the Pivot Toolbar, over the report: the band's Filter…
+        /// or the Layout menu.</summary>
         public bool OnToolbar => BandField is not null || Kind == Surface.LayoutMenu;
 
         public required int FocusRequest { get; init; }

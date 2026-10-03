@@ -16,9 +16,9 @@ namespace ExPivot.Components.Tests;
 
 /// <summary>
 /// The words of Excel's Japanese edition (ADR-0060, PV-33): chosen in one line, they replace every
-/// word ExPivot paints — the pane, the toolbar, the menus, the panels, the report, Show Details —
-/// and the ExGrid commands in the report's Context Menu. Over data whose captions and Items are
-/// Japanese too, a Latin letter left anywhere is an English word left.
+/// word ExPivot paints — the pane, the Pivot Toolbar, the menus, the panels, the report, Show
+/// Details — and the ExGrid commands in the report's Context Menu. Over data whose captions and
+/// Items are Japanese too, a Latin letter left anywhere is an English word left.
 /// </summary>
 public class JapaneseWordsTests : PivotTestContext
 {
@@ -58,9 +58,9 @@ public class JapaneseWordsTests : PivotTestContext
             source: new OnDemandSource(PivotSource.From(Records, JapaneseFields),
                 new PivotSourceFeatures([PivotAggregation.Sum, PivotAggregation.Count], canRefresh: true)) { AnswersAtOnce = true });
 
-    /// <summary>Every word the pivot shows on every surface, and its accessible names — the
-    /// pane, each entry's menu, each panel, the toolbar and its menu, a refusal, a Show Details
-    /// tab and the report — collected as the user opens them.</summary>
+    /// <summary>Every word the pivot shows on every surface, and its accessible names — the pane,
+    /// each entry's menu, each panel, the Pivot Toolbar and its menu, a refusal, a Show Details tab
+    /// and the report — collected as the user opens them.</summary>
     private static async Task<List<string>> WalkAsync(IRenderedComponent<PivotComponent> cut)
     {
         var seen = new List<string>();

@@ -13,9 +13,9 @@ namespace ExPivot.Components.Tests;
 /// <summary>
 /// The Stale Report (ADR-0067, PV-37): when the newest data cannot be shown — it breaks a cap, or
 /// the source refuses or fails — the report stays on the last version it could compute, and a
-/// notice under the toolbar says what happened and as of when, with Retry, which asks again. The
-/// notice goes when an answer is laid out. A refused layout the user asked for is not a Stale
-/// Report: the layout goes back, and the toolbar says so. The clock is the test's.
+/// notice under the Pivot Toolbar says what happened and as of when, with Retry, which asks again.
+/// The notice goes when an answer is laid out. A refused layout the user asked for is not a Stale
+/// Report: the layout goes back, and the Pivot Toolbar says so. The clock is the test's.
 /// </summary>
 public class StaleReportTests : PivotTestContext
 {
@@ -221,7 +221,7 @@ public class StaleReportTests : PivotTestContext
         Assert.StartsWith($"Showing the data as of {asOf}: ", Notice(cut));
     }
 
-    [Fact] // ADR-0066/0067 (PV-37, PV-29): a layout the user asked for and a cap refused is not a Stale Report — the layout goes back, and the toolbar says so
+    [Fact] // ADR-0066/0067 (PV-37, PV-29): a layout the user asked for and a cap refused is not a Stale Report — the layout goes back, and the Pivot Toolbar says so
     public async Task A_refused_layout_is_not_a_stale_report()
     {
         var source = new LiveSource();

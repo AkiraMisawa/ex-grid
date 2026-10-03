@@ -1,11 +1,11 @@
-@* The toolbar above the report under MudBlazor (ADR-0061/0062): the report filter band on its left,
-   handed over drawn — MudPivotReportFilters — and on its right, in ExPivot's order, Layout ▾,
+@* The Pivot Toolbar above the report under MudBlazor (ADR-0061/0062): the report filter band on its
+   left, handed over drawn — MudPivotReportFilters — and on its right, in ExPivot's order, Layout ▾,
    Refresh when the source can be refreshed, and the Field List's toggle, as text MudButtons with
    Material icons. The roles are the built-in markup's: Layout ▾ says it opens a menu and whether it
    is open, the toggle whether it is pressed. Layout ▾'s wrapper is positioned, so ExPivot's menu
    frame opens under it, over the report, at its right edge; what closes it and what each choice
    does are ExPivot's. What the report could not do with the last change is an error MudAlert under
-   the toolbar, an alert as the built-in notice is: it answers what the user just did. *@
+   the Pivot Toolbar, an alert as the built-in notice is: it answers what the user just did. *@
 <div class="mud-ex-pivot-toolbar">
     <div class="mud-ex-pivot-toolbar-start">@Context.ReportFilters</div>
     <div class="mud-ex-pivot-toolbar-end">
@@ -37,7 +37,7 @@
     /// <summary>What to draw and whom to call back (ADR-0061).</summary>
     [Parameter, EditorRequired] public PivotToolbarContext Context { get; set; } = default!;
 
-    /// <summary>The Chrome this toolbar belongs to.</summary>
+    /// <summary>The Chrome this Pivot Toolbar belongs to.</summary>
     [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
 
     // The toggle's pressed state is the pane's visibility, which ExPivot owns.

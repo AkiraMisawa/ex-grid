@@ -8,10 +8,10 @@ namespace ExPivot.MudBlazor;
 /// <summary>
 /// ExPivot's Chrome under MudBlazor (ADR-0062): every surface ExPivot hands a Chrome drawn with
 /// MudBlazor's own controls — the PivotTable Fields pane with Defer Layout Update, a placed field's
-/// menu and the Layout menu, Filter…, Field Settings…, Value Field Settings…, the toolbar above the
-/// report with its report filter band, Show Details' tabs and the content of its dialog, and the
-/// Stale Report's notice — and the report grid dressed by <see cref="MudGridChrome"/>, so one
-/// parameter dresses both.
+/// menu and the Layout menu, Filter…, Field Settings…, Value Field Settings…, the Pivot Toolbar
+/// above the report with its report filter band, Show Details' tabs and the content of its dialog,
+/// and the Stale Report's notice — and the report grid dressed by <see cref="MudGridChrome"/>, so
+/// one parameter dresses both.
 ///
 /// <para>It draws what ExPivot hands it and calls back. Which commands there are, what a drop
 /// means, the drafts, which tab is selected, and where a menu, panel or dialog opens and what
@@ -19,7 +19,7 @@ namespace ExPivot.MudBlazor;
 /// (ADR-0061). Every frame is ExPivot's — the dialog's too, which is never a <c>MudDialog</c> — and
 /// the Chrome draws inside it. A <c>MudSelect</c>'s list is an Inner Popup of its panel, reported
 /// so that Escape closes the list first (ADR-0039). The words are ExPivot's, by id: one
-/// <c>Label</c> written on ExPivot words the pane, its panels, the toolbar, the tabs and the
+/// <c>Label</c> written on ExPivot words the pane, its panels, the Pivot Toolbar, the tabs and the
 /// report's Context Menu alike.</para>
 /// </summary>
 public sealed class MudPivotChrome : IPivotChrome
@@ -50,12 +50,13 @@ public sealed class MudPivotChrome : IPivotChrome
     /// <summary>The report filter band (<see cref="MudPivotReportFilters"/>).</summary>
     public RenderFragment? ReportFilters(PivotReportFiltersContext context) => View<MudPivotReportFilters, PivotReportFiltersContext>(context);
 
-    /// <summary>The toolbar above the report (<see cref="MudPivotToolbar"/>): the report filter band,
-    /// then Layout ▾, Refresh and the Field List's toggle as <c>MudButton</c>s, and a refusal as an
-    /// error <c>MudAlert</c> (ADR-0061).</summary>
+    /// <summary>The Pivot Toolbar above the report (<see cref="MudPivotToolbar"/>): the report
+    /// filter band, then Layout ▾, Refresh and the Field List's toggle as <c>MudButton</c>s, and a
+    /// refusal as an error <c>MudAlert</c> (ADR-0061).</summary>
     public RenderFragment? Toolbar(PivotToolbarContext context) => View<MudPivotToolbar, PivotToolbarContext>(context);
 
-    /// <summary>A placed field's menu, and the toolbar's Layout menu (<see cref="MudPivotMenu"/>).</summary>
+    /// <summary>A placed field's menu, and the Pivot Toolbar's Layout
+    /// menu (<see cref="MudPivotMenu"/>).</summary>
     public RenderFragment? Menu(PivotMenuContext context) => View<MudPivotMenu, PivotMenuContext>(context);
 
     /// <summary>Filter… (<see cref="MudPivotItemFilter"/>).</summary>

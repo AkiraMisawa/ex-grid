@@ -10,10 +10,10 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.Components.Tests;
 
 /// <summary>
-/// The new surfaces through a substituted Chrome (ADR-0061, PV-9): the toolbar, the Layout menu,
-/// Defer Layout Update, and Show Details' tabs and dialog are handed to the Chrome as contexts, and
-/// its calls back make the layouts the built-in markup makes — swapping the Chrome changes no
-/// behaviour.
+/// The new surfaces through a substituted Chrome (ADR-0061, PV-9): the Pivot Toolbar, the Layout
+/// menu, Defer Layout Update, and Show Details' tabs and dialog are handed to the Chrome as
+/// contexts, and its calls back make the layouts the built-in markup makes — swapping the Chrome
+/// changes no behaviour.
 /// </summary>
 public class SubstitutedChromeTests : PivotTestContext
 {
@@ -24,7 +24,7 @@ public class SubstitutedChromeTests : PivotTestContext
         Values = [Sum("Amount")],
     };
 
-    [Fact] // ADR-0061 (PV-9/PV-30): the toolbar is the Chrome's to draw — handed the band drawn, Layout ▾, no Refresh, and the toggle
+    [Fact] // ADR-0061 (PV-9/PV-30): the Pivot Toolbar is the Chrome's to draw — handed the band drawn, Layout ▾, no Refresh, and the toggle
     public void The_toolbar_is_handed_to_the_chrome()
     {
         var chrome = new StubChrome();

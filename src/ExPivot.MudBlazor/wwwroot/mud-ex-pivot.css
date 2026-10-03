@@ -200,7 +200,7 @@
     flex-shrink: 0;
 }
 
-/* The Stale Report's notice under the toolbar (ADR-0067): a MudAlert whose sentence and Retry
+/* The Stale Report's notice under the Pivot Toolbar (ADR-0067): a MudAlert whose sentence and Retry
    share a line while they fit, Retry wrapping under the sentence when they do not. */
 .mud-ex-pivot-stale-notice { margin: 0 0 8px; }
 .mud-ex-pivot-stale-content {
@@ -212,9 +212,9 @@
 .mud-ex-pivot-stale-message { flex: 1 1 auto; min-width: 0; }
 .mud-ex-pivot-retry { flex: none; text-transform: none; }
 
-/* The toolbar above the report (ADR-0061): the report filter band on its left; Layout ▾, Refresh
-   and the Field List's toggle on its right, keeping the case of Excel's words. Layout ▾'s wrapper
-   is positioned, so ExPivot's menu frame opens under it, over the report. */
+/* The Pivot Toolbar above the report (ADR-0061): the report filter band on its left; Layout ▾,
+   Refresh and the Field List's toggle on its right, keeping the case of Excel's words. Layout ▾'s
+   wrapper is positioned, so ExPivot's menu frame opens under it, over the report. */
 .mud-ex-pivot-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -237,11 +237,11 @@
 .mud-ex-pivot-toolbar-button { text-transform: none; }
 /* The toggle while the pane is shown: pressed, as a selected toolbar button is shaded. */
 .mud-ex-pivot-toolbar-button.mud-ex-pivot-pressed { background-color: rgba(var(--mud-palette-primary-rgb), 0.12); }
-/* What the report could not do with the last change, under the toolbar. */
+/* What the report could not do with the last change, under the Pivot Toolbar. */
 .mud-ex-pivot-refusal-notice { margin: 0 0 8px; }
 
-/* The report filter band, on the toolbar's left: the wrapper around each button is positioned, so
-   ExPivot's Filter… frame opens under it (ADR-0061). */
+/* The report filter band, on the Pivot Toolbar's left: the wrapper around each button is
+   positioned, so ExPivot's Filter… frame opens under it (ADR-0061). */
 .mud-ex-pivot-filters {
     display: flex;
     flex-wrap: wrap;

@@ -230,7 +230,7 @@ public static class PivotWords
         ["show-field-list"] = "Show Field List",
         ["hide-field-list"] = "Hide Field List",
 
-        // The toolbar above the report and its Layout menu, Excel's Design tab (ADR-0061).
+        // The Pivot Toolbar above the report and its Layout menu, Excel's Design tab (ADR-0061).
         ["layout-menu"] = "Layout",
         ["grand-totals"] = "Grand Totals",
         ["report-layout"] = "Report Layout",

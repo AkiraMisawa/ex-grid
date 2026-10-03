@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Components;
 namespace ExPivot.Chrome;
 
 /// <summary>
-/// ExPivot's Chrome (ADR-0061): what draws the Field List, the toolbar above the report with its
-/// report filter band, a menu — a placed field's, and the Layout menu — the three panels, Show
+/// ExPivot's Chrome (ADR-0061): what draws the Field List, the Pivot Toolbar above the report with
+/// its report filter band, a menu — a placed field's, and the Layout menu — the three panels, Show
 /// Details' tabs and dialog, and the Stale Report's notice. Each member returns the content to
 /// draw, or null for ExPivot's built-in plain markup. It renders and calls back; the rules, the
 /// state and the frames are ExPivot's, so swapping it changes no behaviour.
@@ -28,16 +28,19 @@ public interface IPivotChrome
     /// four Areas with their entries, each entry's open menu or panel placed under it.</summary>
     RenderFragment? FieldList(PivotFieldListContext context) => null;
 
-    /// <summary>The report filter band, on the toolbar's left: one entry per field in Filters.</summary>
+    /// <summary>The report filter band, on the Pivot Toolbar's left: one entry per field
+    /// in Filters.</summary>
     RenderFragment? ReportFilters(PivotReportFiltersContext context) => null;
 
-    /// <summary>The toolbar above the report (ADR-0061): the report filter band on its left — the
-    /// context hands it over, drawn by <see cref="ReportFilters"/> — and on its right, in this
-    /// order, Layout ▾, Refresh when the source can be refreshed, and the Field List's toggle.</summary>
+    /// <summary>The Pivot Toolbar above the report (ADR-0061): the report filter band on its left —
+    /// the context hands it over, drawn by <see cref="ReportFilters"/> — and on its right, in this
+    /// order, Layout ▾, Refresh when the source can be refreshed, and the Field
+    /// List's toggle.</summary>
     RenderFragment? Toolbar(PivotToolbarContext context) => null;
 
     /// <summary>A menu, inside the frame ExPivot opens under what opened it: a placed field's, and
-    /// the toolbar's Layout menu, whose commands come in groups with the current choice marked.</summary>
+    /// the Pivot Toolbar's Layout menu, whose commands come in groups with the current
+    /// choice marked.</summary>
     RenderFragment? Menu(PivotMenuContext context) => null;
 
     /// <summary>Filter…: a field's Items to tick, inside ExPivot's frame.</summary>
@@ -59,12 +62,12 @@ public interface IPivotChrome
     RenderFragment? DetailsDialog(PivotDetailsDialogContext context) => null;
 
     /// <summary>
-    /// The Stale Report's notice (ADR-0067), under the toolbar, inside ExPivot's frame — a polite
-    /// live region, so the notice is announced without interrupting the reader; the content adds
-    /// no live region of its own. Asked only while the report is stale: the newest data could not
-    /// be shown, the report stays on the last version it could compute, and the notice says what
-    /// happened and as of when, and offers Retry. A refused layout is not a Stale Report: the
-    /// toolbar says that one (<see cref="PivotToolbarContext.Refusal"/>).
+    /// The Stale Report's notice (ADR-0067), under the Pivot Toolbar, inside ExPivot's frame — a
+    /// polite live region, so the notice is announced without interrupting the reader; the content
+    /// adds no live region of its own. Asked only while the report is stale: the newest data could
+    /// not be shown, the report stays on the last version it could compute, and the notice says
+    /// what happened and as of when, and offers Retry. A refused layout is not a Stale Report: the
+    /// Pivot Toolbar says that one (<see cref="PivotToolbarContext.Refusal"/>).
     /// </summary>
     RenderFragment? StaleReport(PivotStaleReportContext context) => null;
 }
@@ -240,7 +243,7 @@ public sealed record PivotCommand(string Id, string Label, bool Enabled, Func<Ta
     public string? GroupHeading { get; init; }
 }
 
-/// <summary>A menu (ADR-0061): a placed field's, or the toolbar's Layout menu.</summary>
+/// <summary>A menu (ADR-0061): a placed field's, or the Pivot Toolbar's Layout menu.</summary>
 /// <param name="Title">The menu's accessible name.</param>
 /// <param name="Commands">Excel's commands, in its order.</param>
 /// <param name="Close">Closes the menu without running anything.</param>
@@ -420,11 +423,11 @@ public sealed record PivotReportFilterView(
     int FocusRequest);
 
 /// <summary>
-/// The toolbar above the report (ADR-0061). On its left stands the report filter band, which it is
-/// handed drawn; on its right, in this order, Layout ▾, Refresh when the source can be refreshed,
-/// and the Field List's toggle. Its popups — the band's Filter… and the Layout menu — open under it,
-/// over the report, in ExPivot's frame, with a backdrop that closes them; the Chrome places each
-/// frame inside a positioned wrapper around the button that opened it.
+/// The Pivot Toolbar above the report (ADR-0061). On its left stands the report filter band, which
+/// it is handed drawn; on its right, in this order, Layout ▾, Refresh when the source can be
+/// refreshed, and the Field List's toggle. Its popups — the band's Filter… and the Layout menu —
+/// open under it, over the report, in ExPivot's frame, with a backdrop that closes them; the Chrome
+/// places each frame inside a positioned wrapper around the button that opened it.
 /// </summary>
 /// <param name="ReportFilters">The report filter band, drawn by <see cref="IPivotChrome.ReportFilters"/>
 /// or ExPivot's markup; null while no field stands in Filters.</param>
@@ -437,7 +440,7 @@ public sealed record PivotReportFilterView(
 /// refused by name ("This layout needs more than 200,000 cells."), or the source's failure — or
 /// null. The report stays as it was, and this says why where the user sees it, as an alert: it
 /// answers what the user just did. Data that could not be shown is not said here but in the Stale
-/// Report's notice under the toolbar (<see cref="IPivotChrome.StaleReport"/>).</param>
+/// Report's notice under the Pivot Toolbar (<see cref="IPivotChrome.StaleReport"/>).</param>
 /// <param name="Word">ExPivot's words, by id.</param>
 public sealed record PivotToolbarContext(
     RenderFragment? ReportFilters,
@@ -447,7 +450,8 @@ public sealed record PivotToolbarContext(
     string? Refusal,
     Func<string, string> Word);
 
-/// <summary>A toolbar button that opens a menu under the toolbar (ADR-0061): Layout ▾.</summary>
+/// <summary>A button of the Pivot Toolbar that opens a menu under it (ADR-0061):
+/// Layout ▾.</summary>
 /// <param name="Id">Stable, for an icon (<see cref="PivotCommandIds.LayoutMenu"/>).</param>
 /// <param name="Label">What it is called: "Layout".</param>
 /// <param name="IsOpen">Whether its menu is open.</param>

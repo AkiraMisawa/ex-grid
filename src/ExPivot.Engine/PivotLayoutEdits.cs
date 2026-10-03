@@ -51,7 +51,7 @@ public sealed record PivotEditResult(PivotLayout Layout, PivotRefusal? Refusal =
 }
 
 /// <summary>
-/// One choice of the Layout menu on the report's toolbar (ADR-0061): Excel's Design tab settings,
+/// One choice of the Layout menu on the Pivot Toolbar (ADR-0061): Excel's Design tab settings,
 /// under Excel's names, in Excel's order — Subtotals, Grand Totals, then Report Layout. Excel's
 /// Blank Rows is left out: the engine has no blank row.
 /// </summary>

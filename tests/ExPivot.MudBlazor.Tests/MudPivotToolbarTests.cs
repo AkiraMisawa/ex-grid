@@ -15,12 +15,12 @@ using PivotComponent = ExPivot.Components.ExPivot;
 namespace ExPivot.MudBlazor.Tests;
 
 /// <summary>
-/// What the Pivot Source contract and the toolbar added, under MudBlazor (ADR-0061/0062/0066):
-/// Defer Layout Update at the Mud pane's foot, the toolbar above the report drawn with MudBlazor's
-/// controls in ExPivot's order and roles — the Mud band, Layout ▾ opening the Mud menu in ExPivot's
-/// frame, Refresh, the pane's pressed toggle, a refusal as an error alert — making the layouts the
-/// built-in markup makes, and the Aggregations a source does not answer offered disabled with the
-/// reason.
+/// What the Pivot Source contract and the Pivot Toolbar added, under MudBlazor
+/// (ADR-0061/0062/0066): Defer Layout Update at the Mud pane's foot, the Pivot Toolbar above the
+/// report drawn with MudBlazor's controls in ExPivot's order and roles — the Mud band, Layout ▾
+/// opening the Mud menu in ExPivot's frame, Refresh, the pane's pressed toggle, a refusal as an
+/// error alert — making the layouts the built-in markup makes, and the Aggregations a source does
+/// not answer offered disabled with the reason.
 /// </summary>
 public class MudPivotToolbarTests : MudPivotTestContext
 {
@@ -77,7 +77,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
     private static Task OpenLayoutMenuAsync(IRenderedComponent<PivotComponent> cut)
         => cut.Find(".mud-ex-pivot-layout-button").ClickAsync(new MouseEventArgs());
 
-    /// <summary>The toolbar's MudButtons on its right, by their words, in order.</summary>
+    /// <summary>The Pivot Toolbar's MudButtons on its right, by their words, in order.</summary>
     private static string[] ToolbarButtons(IRenderedComponent<PivotComponent> cut)
         => cut.FindAll(".mud-ex-pivot-toolbar-end > .mud-ex-pivot-toolbar-anchor > button, .mud-ex-pivot-toolbar-end > button")
             .Select(b => b.TextContent.Trim()).ToArray();
@@ -138,7 +138,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal((ElementIdOf(layout.Instance), false), LastFocus());
     }
 
-    [Fact] // ADR-0061/0062 (PV-30): the toolbar is MudBlazor's controls in ExPivot's order and roles — the Mud band on its left, then Layout ▾ and the pane's toggle, and no Refresh for a source that cannot be refreshed
+    [Fact] // ADR-0061/0062 (PV-30): the Pivot Toolbar is MudBlazor's controls in ExPivot's order and roles — the Mud band on its left, then Layout ▾ and the pane's toggle, and no Refresh for a source that cannot be refreshed
     public void The_toolbar_is_drawn_with_mudblazor_controls()
     {
         var cut = RenderPivot(RegionAmount with { Filters = [P("Online")] });
@@ -195,7 +195,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal(asked + 1, source.Questions);
     }
 
-    [Fact] // ADR-0066/0062 (PV-29, PV-24): what the report could not do with the last change is an error MudAlert under the toolbar, an alert as the built-in notice is
+    [Fact] // ADR-0066/0062 (PV-29, PV-24): what the report could not do with the last change is an error MudAlert under the Pivot Toolbar, an alert as the built-in notice is
     public void A_refusal_is_an_error_mud_alert()
     {
         var source = new LimitedSource(PivotSource.From(Sales, Fields), new PivotSourceFeatures([PivotAggregation.Sum, PivotAggregation.Count]));
@@ -211,7 +211,7 @@ public class MudPivotToolbarTests : MudPivotTestContext
         Assert.Equal(0, source.Questions);
     }
 
-    [Fact] // ADR-0061/0062 (PV-9, PV-30, PV-12): the toolbar's gestures — a Layout choice, the band's Filter… and the toggle — make the built-in markup's layout under MudBlazor
+    [Fact] // ADR-0061/0062 (PV-9, PV-30, PV-12): the Pivot Toolbar's gestures — a Layout choice, the band's Filter… and the toggle — make the built-in markup's layout under MudBlazor
     public async Task The_toolbar_makes_the_built_ins_layout()
     {
         var start = RegionAmount with { Filters = [P("Online")], Rows = [P("Region"), P("Product")] };

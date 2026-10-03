@@ -13,7 +13,8 @@ public sealed class PivotSourceFeatures
 
     /// <summary>Declares a source's features.</summary>
     /// <param name="aggregations">The Aggregations it answers.</param>
-    /// <param name="canRefresh">Whether it can be refreshed; the toolbar then offers Refresh.</param>
+    /// <param name="canRefresh">Whether it can be refreshed; the Pivot Toolbar then
+    /// offers Refresh.</param>
     public PivotSourceFeatures(IEnumerable<PivotAggregation> aggregations, bool canRefresh = false)
     {
         ArgumentNullException.ThrowIfNull(aggregations);

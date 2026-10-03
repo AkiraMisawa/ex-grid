@@ -15,8 +15,8 @@ using Microsoft.AspNetCore.Components.Web;
 namespace ExPivot.Components;
 
 /// <summary>
-/// Excel's PivotTable, drawn by ExGrid as that grid's Consumer (ADR-0059): the toolbar above the
-/// report, one ExGrid over the Pivot Report, Show Details' tabs at its foot, and the Field List
+/// Excel's PivotTable, drawn by ExGrid as that grid's Consumer (ADR-0059): the Pivot Toolbar above
+/// the report, one ExGrid over the Pivot Report, Show Details' tabs at its foot, and the Field List
 /// beside it (ADR-0061). ExPivot holds the Pivot Layout, asks its Pivot Source for the Leaf
 /// Aggregates and lays the report out with ExPivot.Engine (ADR-0066); ExGrid paints, selects,
 /// navigates, copies and reports.
@@ -619,8 +619,8 @@ public partial class ExPivot
         return ReportEditAsync(layout => PivotLayoutEdits.SetCollapsed(layout, field, item, collapse));
     }
 
-    /// <summary>Shows or hides the Field List — the toolbar's toggle, or the Context Menu — and
-    /// tells a Consumer that binds it (ADR-0061). The user's choice holds until the Consumer's
+    /// <summary>Shows or hides the Field List — the Pivot Toolbar's toggle, or the Context Menu —
+    /// and tells a Consumer that binds it (ADR-0061). The user's choice holds until the Consumer's
     /// <see cref="ShowFieldList"/> itself changes: a Consumer that binds it hands the choice back,
     /// and one that does not keeps passing the value it always passed.</summary>
     private async Task SetFieldListShownAsync(bool shown)

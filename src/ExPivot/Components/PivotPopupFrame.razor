@@ -1,9 +1,9 @@
 @* ExPivot's frame around a menu or a panel (ADR-0061): where it stands and what closes it are
-   ExPivot's; the content inside is the Chrome's. In the Field List it stands under its entry at
-   the place the flow gives it, as wide as the pane and over what follows, so nothing needs a
-   position ExPivot would have to measure; from the toolbar it opens under the button that opened
-   it, over the report — the Layout menu at the button's right edge. Escape closes it — unless a
-   popup of the content's own is open, which ExPivot hears through the context and leaves the key
+   ExPivot's; the content inside is the Chrome's. In the Field List it stands under its entry at the
+   place the flow gives it, as wide as the pane and over what follows, so nothing needs a position
+   ExPivot would have to measure; from the Pivot Toolbar it opens under the button that opened it,
+   over the report — the Layout menu at the button's right edge. Escape closes it — unless a popup
+   of the content's own is open, which ExPivot hears through the context and leaves the key
    to (ADR-0039). *@
 <div class="@FrameClass" role="@Role" aria-label="@Label" @onkeydown="OnKeyDownAsync">
     @ChildContent
@@ -16,7 +16,7 @@
     /// <summary>The frame's accessible name.</summary>
     [Parameter] public string Label { get; set; } = "";
 
-    /// <summary>Whether it opens from the toolbar, over the report.</summary>
+    /// <summary>Whether it opens from the Pivot Toolbar, over the report.</summary>
     [Parameter] public bool Overlay { get; set; }
 
     /// <summary>Whether it stands at its button's right edge rather than its left.</summary>
