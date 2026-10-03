@@ -88,7 +88,8 @@ internal sealed class FunctionNode(string name, IReadOnlyList<Node> arguments, F
     /// <summary>The declared function, or <see langword="null"/> for a name outside the set (<c>#NAME?</c>).</summary>
     public FunctionDefinition? Function { get; } = function;
 
-    public override IEnumerable<Reference> References => Arguments.SelectMany(a => a.References);
+    public override IEnumerable<Reference> References => Arguments.SelectMany(a => a.References)
+        .Concat(FunctionLibrary.CriteriaResultReferences(this));
 
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Arguments.SelectMany(a => a.StructuredReferences);
 

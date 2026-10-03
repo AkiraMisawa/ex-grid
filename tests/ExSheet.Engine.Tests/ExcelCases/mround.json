@@ -1,0 +1,309 @@
+{
+  "area": "mround",
+  "about": "MROUND: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "MROUND-001",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-001",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(6.05,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "4018000000000000",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 6.0
+      },
+      "engineDiffersByDecision": "ADR-0047: fractional multiples are refused until Excel's binary midpoint algorithm is reproduced; no tolerance is inferred from a finite table."
+    },
+    {
+      "id": "MROUND-002",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-002",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(7.05,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "401C666666666667",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 7.1000000000000005
+      },
+      "engineDiffersByDecision": "ADR-0047: fractional multiples are refused until Excel's binary midpoint algorithm is reproduced; no tolerance is inferred from a finite table."
+    },
+    {
+      "id": "MROUND-003",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-003",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(0.15,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FC999999999999A",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 0.2
+      },
+      "engineDiffersByDecision": "ADR-0047: fractional multiples are refused until Excel's binary midpoint algorithm is reproduced; no tolerance is inferred from a finite table."
+    },
+    {
+      "id": "MROUND-004",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-004",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(0.35,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FD999999999999A",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 0.4
+      },
+      "engineDiffersByDecision": "ADR-0047: fractional multiples are refused until Excel's binary midpoint algorithm is reproduced; no tolerance is inferred from a finite table."
+    },
+    {
+      "id": "MROUND-005",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-005",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(2.5,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "MROUND-006",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-006",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(-2.5,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "MROUND-007",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-007",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(-2.5,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "C008000000000000",
+      "expect": {
+        "value2": -3.0
+      }
+    },
+    {
+      "id": "MROUND-008",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-008",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(2.5,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "MROUND-009",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-009",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(0,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "MROUND-010",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-010",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(5,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "MROUND-011",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-011",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(-5,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "MROUND-012",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-012",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(1.000000000000001,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MROUND-013",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-013",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(0.9999999999999999,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "MROUND-014",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-014",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(\"2.5\",1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "MROUND-015",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-015",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(TRUE,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "MROUND-016",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-016",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(A1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "MROUND-017",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-017",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(\"x\",1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "MROUND-018",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/MROUND-018",
+      "values": {},
+      "cells": {
+        "Z1": "=MROUND(NA(),1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    }
+  ]
+}

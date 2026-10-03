@@ -45,11 +45,11 @@
     {
       "id": "REF-006",
       "source": "documented",
-      "description": "A function outside the declared set is #NAME? (VLOOKUP is not declared)",
-      "cells": {"ZZ1000": "=VLOOKUP(1,A1:B2,2,FALSE)"},
+      "description": "A function outside the declared set is #NAME? (IRR is not declared)",
+      "cells": {"ZZ1000": "=IRR(A1:A2)"},
       "check": "ZZ1000",
       "expect": {"value2": "#NAME?"},
-      "engineDiffersByDecision": "ADR-0047: a function outside the declared set is #NAME?; VLOOKUP is not admitted yet"
+      "engineDiffersByDecision": "ADR-0047: a function outside the declared set is #NAME?; IRR is not admitted yet"
     },
     {
       "id": "REF-007",

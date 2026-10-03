@@ -230,6 +230,18 @@ internal static class ExcelCorpus
         {
             Enter(sheet, Fixtures.Value[fixture.GetString()!]);
         }
+        // Observed Value2 fixtures are already typed data, not strings to parse as entries.
+        // In particular, "1" and "#N/A" here are text, and numbers retain every recorded bit.
+        if (c.TryGetProperty("values", out var values))
+        {
+            sheet.SetEntries(values.EnumerateObject().Select(p =>
+                new KeyValuePair<CellAddress, Entry?>(CellAddress.Parse(p.Name), p.Value.ValueKind switch
+                {
+                    JsonValueKind.Null => null,
+                    JsonValueKind.String => Entry.FromValue(Value.FromText(p.Value.GetString()!)),
+                    _ => Entry.FromValue(ToValue(p.Value)!.Value),
+                })));
+        }
         Enter(sheet, c.GetProperty("cells"), widen);
 
         if (c.TryGetProperty("formats", out var formats))

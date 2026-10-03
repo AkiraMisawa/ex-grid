@@ -17,12 +17,12 @@ public class FormulaEntryTests
     }
 
     [Theory] // ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case
-    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUM", "SUMPRODUCT" })]
-    [InlineData("=su|", new[] { "SUBSTITUTE", "SUM", "SUMPRODUCT" })]
+    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
+    [InlineData("=su|", new[] { "SUBSTITUTE", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT" })]
     [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
-    [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COS", "COSH", "COT", "COTH", "COUNT", "COUNTA" })]
-    [InlineData("=SUM(A1,m|", new[] { "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH" })]
+    [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COS", "COSH", "COT", "COTH", "COUNT", "COUNTA", "COUNTBLANK", "COUNTIF", "COUNTIFS" })]
+    [InlineData("=SUM(A1,m|", new[] { "MATCH", "MAX", "MAXIFS", "MEDIAN", "MID", "MIN", "MINIFS", "MINUTE", "MOD", "MONTH", "MROUND" })]
     [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP", "XMATCH", "XNPV", "XOR" })]
     [InlineData("=LOG1|", new[] { "LOG10" })]
     public void Completion_offers_declared_functions(string marked, string[] expected)
@@ -50,7 +50,7 @@ public class FormulaEntryTests
     [Fact] // ADR-0049/0051: Linked Tables' names are offered beside the functions, in one alphabetical list
     public void Completion_offers_linked_tables()
     {
-        Assert.Equal(["ABS", "Accounts", "ACOS", "ACOSH", "ACOT", "ACOTH", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
+        Assert.Equal(["ABS", "Accounts", "ACOS", "ACOSH", "ACOT", "ACOTH", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE", "AVERAGEIF", "AVERAGEIFS"], Names("=a|", "Positions", "Accounts")!);
         Assert.Equal(["Positions"], Names("=SUM(pos|", "Positions", "Accounts")!);
     }
 
@@ -91,6 +91,10 @@ public class FormulaEntryTests
     [InlineData("=if(1,2,3,|", "IF", 3, null)]
     [InlineData("=XLOOKUP(A1,Positions[Id],|", "XLOOKUP", 2, "return_array")]
     [InlineData("=SUM(1,|2,3)", "SUM", 1, "[number2]")]
+    [InlineData("=SUMIFS(A1:A3,B1:B3,1,|", "SUMIFS", 3, "criteria_range1")]
+    [InlineData("=SUMIFS(A1:A3,B1:B3,1,C1:C3,|", "SUMIFS", 4, "criteria1")]
+    [InlineData("=COUNTIFS(A1:A3,1,|", "COUNTIFS", 2, "criteria_range1")]
+    [InlineData("=COUNTIFS(A1:A3,1,B1:B3,|", "COUNTIFS", 3, "criteria1")]
     public void The_hint_follows_the_caret(string marked, string function, int index, string? argument)
     {
         var (text, caret) = AtCaret(marked);

@@ -1,0 +1,704 @@
+{
+  "baseline": "c3ddb7df",
+  "culture": "en-GB",
+  "cases": [
+    {
+      "id": "COUNTIFS-ADDITIONAL-001",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A4,\">0\",B1:B3,\">0\")",
+      "question": "Mismatched range lengths (the main COUNTIFS-035 is a one-range baseline)",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3,
+        "A4": 4,
+        "B1": 1,
+        "B2": 2,
+        "B3": 3
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-001",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-002",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-003",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-004",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-005",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-006",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-007",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-008",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-009",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-010",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-011",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-012",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-013",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-014",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>1\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-015",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"=0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-016",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1,\"<>0\")",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-001",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-002",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-003",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-004",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": 1,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-005",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-006",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-007",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-008",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "1",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-009",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-010",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-011",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-012",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": null,
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-013",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-014",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>1\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-015",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"=0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-016",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1,\"<>0\",B1)",
+      "question": "Isolated equality/inequality: numeric text, number, blank and formula-empty text",
+      "cells": {
+        "A1": "=\"\"",
+        "B1": 10
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-001",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "Σ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-002",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "ΣΣ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-003",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "ΑΣ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-004",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "ΣΑ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-005",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "Σ Σ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-006",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "σ ς Σ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-007",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "ΟΣ ΟΣΑ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-008",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "İ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-009",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "ẞ"
+      }
+    },
+    {
+      "id": "LOWER-ADDITIONAL-010",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Isolated/contextual Unicode lowercase mapping",
+      "cells": {
+        "A1": "𐐀"
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-017",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A3,NA(),B1:B3)",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "SUMIF-ADDITIONAL-018",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A3,\"#N/A\",B1:B3)",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "SUMIFS-ADDITIONAL-001",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B3,A1:A3,NA())",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "SUMIFS-ADDITIONAL-002",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B3,A1:A3,\"#N/A\")",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-017",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A3,NA())",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "COUNTIF-ADDITIONAL-018",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A3,\"#N/A\")",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "COUNTIFS-ADDITIONAL-002",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A3,NA())",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "COUNTIFS-ADDITIONAL-003",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A3,\"#N/A\")",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "AVERAGEIF-ADDITIONAL-001",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A3,NA(),B1:B3)",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "AVERAGEIF-ADDITIONAL-002",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A3,\"#N/A\",B1:B3)",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "AVERAGEIFS-ADDITIONAL-001",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B3,A1:A3,NA())",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "AVERAGEIFS-ADDITIONAL-002",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B3,A1:A3,\"#N/A\")",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "MAXIFS-ADDITIONAL-001",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B3,A1:A3,NA())",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "MAXIFS-ADDITIONAL-002",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B3,A1:A3,\"#N/A\")",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "MINIFS-ADDITIONAL-001",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B3,A1:A3,NA())",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "MINIFS-ADDITIONAL-002",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B3,A1:A3,\"#N/A\")",
+      "question": "Error-valued criterion and literal error text against error and text cells",
+      "cells": {
+        "A1": "=NA()",
+        "A2": "=1/0",
+        "A3": "#N/A",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30
+      }
+    },
+    {
+      "id": "LET-ADDITIONAL-001",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "LET name length 248; locate actual boundary",
+      "cells": {}
+    },
+    {
+      "id": "LET-ADDITIONAL-002",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "LET name length 249; locate actual boundary",
+      "cells": {}
+    },
+    {
+      "id": "LET-ADDITIONAL-003",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "LET name length 250; locate actual boundary",
+      "cells": {}
+    },
+    {
+      "id": "LET-ADDITIONAL-004",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "LET name length 251; locate actual boundary",
+      "cells": {}
+    },
+    {
+      "id": "LET-ADDITIONAL-005",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "LET name length 252; locate actual boundary",
+      "cells": {}
+    },
+    {
+      "id": "LET-ADDITIONAL-006",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "LET name length 253; locate actual boundary",
+      "cells": {}
+    },
+    {
+      "id": "LET-ADDITIONAL-007",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "LET name length 254; locate actual boundary",
+      "cells": {}
+    }
+  ]
+}

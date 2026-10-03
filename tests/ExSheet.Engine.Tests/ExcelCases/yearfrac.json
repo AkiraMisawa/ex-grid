@@ -1,0 +1,913 @@
+{
+  "area": "yearfrac",
+  "about": "YEARFRAC: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "YEARFRAC-001",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-001",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,28),DATE(2020,3,1),0)"
+      },
+      "check": "Z1",
+      "excelBits": "3F81111111111111",
+      "expect": {
+        "value2": 0.008333333333333333
+      }
+    },
+    {
+      "id": "YEARFRAC-002",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-002",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,28),DATE(2020,3,1),1)"
+      },
+      "check": "Z1",
+      "excelBits": "3F7661EC6A5122F9",
+      "expect": {
+        "value2": 0.00546448087431694
+      }
+    },
+    {
+      "id": "YEARFRAC-003",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-003",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,28),DATE(2020,3,1),2)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76C16C16C16C17",
+      "expect": {
+        "value2": 0.005555555555555556
+      }
+    },
+    {
+      "id": "YEARFRAC-004",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-004",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,28),DATE(2020,3,1),3)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76719F3601671A",
+      "expect": {
+        "value2": 0.005479452054794521
+      }
+    },
+    {
+      "id": "YEARFRAC-005",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-005",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,28),DATE(2020,3,1),4)"
+      },
+      "check": "Z1",
+      "excelBits": "3F81111111111111",
+      "expect": {
+        "value2": 0.008333333333333333
+      }
+    },
+    {
+      "id": "YEARFRAC-006",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-006",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,2,28),DATE(2019,3,31),0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB60B60B60B60B6",
+      "expect": {
+        "value2": 0.08611111111111111
+      }
+    },
+    {
+      "id": "YEARFRAC-007",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-007",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,2,28),DATE(2019,3,31),1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB5BE123C515BE1",
+      "expect": {
+        "value2": 0.08493150684931507
+      }
+    },
+    {
+      "id": "YEARFRAC-008",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-008",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,2,28),DATE(2019,3,31),2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB60B60B60B60B6",
+      "expect": {
+        "value2": 0.08611111111111111
+      }
+    },
+    {
+      "id": "YEARFRAC-009",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-009",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,2,28),DATE(2019,3,31),3)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB5BE123C515BE1",
+      "expect": {
+        "value2": 0.08493150684931507
+      }
+    },
+    {
+      "id": "YEARFRAC-010",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-010",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,2,28),DATE(2019,3,31),4)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB6C16C16C16C17",
+      "expect": {
+        "value2": 0.08888888888888889
+      }
+    },
+    {
+      "id": "YEARFRAC-011",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-011",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,29),DATE(2021,2,28),0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "YEARFRAC-012",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-012",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,29),DATE(2021,2,28),1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FEFE99E1395AEDD",
+      "expect": {
+        "value2": 0.9972677595628415
+      }
+    },
+    {
+      "id": "YEARFRAC-013",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-013",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,29),DATE(2021,2,28),2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF038E38E38E38E",
+      "expect": {
+        "value2": 1.0138888888888888
+      }
+    },
+    {
+      "id": "YEARFRAC-014",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-014",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,29),DATE(2021,2,28),3)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "YEARFRAC-015",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-015",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2020,2,29),DATE(2021,2,28),4)"
+      },
+      "check": "Z1",
+      "excelBits": "3FEFE93E93E93E94",
+      "expect": {
+        "value2": 0.9972222222222222
+      }
+    },
+    {
+      "id": "YEARFRAC-016",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-016",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,1,31),DATE(2021,2,28),0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB3E93E93E93E94",
+      "expect": {
+        "value2": 0.07777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-017",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-017",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,1,31),DATE(2021,2,28),1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB3A36B4F413A37",
+      "expect": {
+        "value2": 0.07671232876712329
+      }
+    },
+    {
+      "id": "YEARFRAC-018",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-018",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,1,31),DATE(2021,2,28),2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB3E93E93E93E94",
+      "expect": {
+        "value2": 0.07777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-019",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-019",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,1,31),DATE(2021,2,28),3)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB3A36B4F413A37",
+      "expect": {
+        "value2": 0.07671232876712329
+      }
+    },
+    {
+      "id": "YEARFRAC-020",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-020",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,1,31),DATE(2021,2,28),4)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB3E93E93E93E94",
+      "expect": {
+        "value2": 0.07777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-021",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-021",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,2,28),DATE(2021,3,31),0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB60B60B60B60B6",
+      "expect": {
+        "value2": 0.08611111111111111
+      }
+    },
+    {
+      "id": "YEARFRAC-022",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-022",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,2,28),DATE(2021,3,31),1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB5BE123C515BE1",
+      "expect": {
+        "value2": 0.08493150684931507
+      }
+    },
+    {
+      "id": "YEARFRAC-023",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-023",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,2,28),DATE(2021,3,31),2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB60B60B60B60B6",
+      "expect": {
+        "value2": 0.08611111111111111
+      }
+    },
+    {
+      "id": "YEARFRAC-024",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-024",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,2,28),DATE(2021,3,31),3)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB5BE123C515BE1",
+      "expect": {
+        "value2": 0.08493150684931507
+      }
+    },
+    {
+      "id": "YEARFRAC-025",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-025",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2021,2,28),DATE(2021,3,31),4)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB6C16C16C16C17",
+      "expect": {
+        "value2": 0.08888888888888889
+      }
+    },
+    {
+      "id": "YEARFRAC-026",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-026",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,7,1),DATE(2020,7,1),0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "YEARFRAC-027",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-027",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,7,1),DATE(2020,7,1),1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "YEARFRAC-028",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-028",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,7,1),DATE(2020,7,1),2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0444444444444",
+      "expect": {
+        "value2": 1.0166666666666666
+      }
+    },
+    {
+      "id": "YEARFRAC-029",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-029",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,7,1),DATE(2020,7,1),3)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF00B38CF9B00B4",
+      "expect": {
+        "value2": 1.0027397260273974
+      }
+    },
+    {
+      "id": "YEARFRAC-030",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-030",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(DATE(2019,7,1),DATE(2020,7,1),4)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "YEARFRAC-031",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-031",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(0,61,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3FC5B05B05B05B06",
+      "expect": {
+        "value2": 0.16944444444444445
+      }
+    },
+    {
+      "id": "YEARFRAC-032",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-032",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(0,61,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FC5644BBF795645",
+      "expect": {
+        "value2": 0.16712328767123288
+      }
+    },
+    {
+      "id": "YEARFRAC-033",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-033",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(0,61,2)"
+      },
+      "check": "Z1",
+      "excelBits": "3FC5B05B05B05B06",
+      "expect": {
+        "value2": 0.16944444444444445
+      }
+    },
+    {
+      "id": "YEARFRAC-034",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-034",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(0,61,3)"
+      },
+      "check": "Z1",
+      "excelBits": "3FC5644BBF795645",
+      "expect": {
+        "value2": 0.16712328767123288
+      }
+    },
+    {
+      "id": "YEARFRAC-035",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-035",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(0,61,4)"
+      },
+      "check": "Z1",
+      "excelBits": "3FC5B05B05B05B06",
+      "expect": {
+        "value2": 0.16944444444444445
+      }
+    },
+    {
+      "id": "YEARFRAC-036",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-036",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(59,61,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66C16C16C16C17",
+      "expect": {
+        "value2": 0.002777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-037",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-037",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(59,61,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76719F3601671A",
+      "expect": {
+        "value2": 0.005479452054794521
+      }
+    },
+    {
+      "id": "YEARFRAC-038",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-038",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(59,61,2)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76C16C16C16C17",
+      "expect": {
+        "value2": 0.005555555555555556
+      }
+    },
+    {
+      "id": "YEARFRAC-039",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-039",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(59,61,3)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76719F3601671A",
+      "expect": {
+        "value2": 0.005479452054794521
+      }
+    },
+    {
+      "id": "YEARFRAC-040",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-040",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(59,61,4)"
+      },
+      "check": "Z1",
+      "excelBits": "3F81111111111111",
+      "expect": {
+        "value2": 0.008333333333333333
+      }
+    },
+    {
+      "id": "YEARFRAC-041",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-041",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(61,59,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66C16C16C16C17",
+      "expect": {
+        "value2": 0.002777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-042",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-042",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(61,59,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76719F3601671A",
+      "expect": {
+        "value2": 0.005479452054794521
+      }
+    },
+    {
+      "id": "YEARFRAC-043",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-043",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(61,59,2)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76C16C16C16C17",
+      "expect": {
+        "value2": 0.005555555555555556
+      }
+    },
+    {
+      "id": "YEARFRAC-044",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-044",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(61,59,3)"
+      },
+      "check": "Z1",
+      "excelBits": "3F76719F3601671A",
+      "expect": {
+        "value2": 0.005479452054794521
+      }
+    },
+    {
+      "id": "YEARFRAC-045",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-045",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(61,59,4)"
+      },
+      "check": "Z1",
+      "excelBits": "3F81111111111111",
+      "expect": {
+        "value2": 0.008333333333333333
+      }
+    },
+    {
+      "id": "YEARFRAC-046",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-046",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(45000.9,45001.1,0)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66C16C16C16C17",
+      "expect": {
+        "value2": 0.002777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-047",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-047",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(45000.9,45001.1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66719F3601671A",
+      "expect": {
+        "value2": 0.0027397260273972603
+      }
+    },
+    {
+      "id": "YEARFRAC-048",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-048",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(45000.9,45001.1,2)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66C16C16C16C17",
+      "expect": {
+        "value2": 0.002777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-049",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-049",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(45000.9,45001.1,3)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66719F3601671A",
+      "expect": {
+        "value2": 0.0027397260273972603
+      }
+    },
+    {
+      "id": "YEARFRAC-050",
+      "source": "observed",
+      "description": "Basis, leap year, month end, reverse and fractional serials",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-050",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(45000.9,45001.1,4)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66C16C16C16C17",
+      "expect": {
+        "value2": 0.002777777777777778
+      }
+    },
+    {
+      "id": "YEARFRAC-051",
+      "source": "observed",
+      "description": "Input coercion and invalid date / basis",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-051",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(1,2,-1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "YEARFRAC-052",
+      "source": "observed",
+      "description": "Input coercion and invalid date / basis",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-052",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(1,2,5)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "YEARFRAC-053",
+      "source": "observed",
+      "description": "Input coercion and invalid date / basis",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-053",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(1,2,1.9)"
+      },
+      "check": "Z1",
+      "excelBits": "3F66719F3601671A",
+      "expect": {
+        "value2": 0.0027397260273972603
+      }
+    },
+    {
+      "id": "YEARFRAC-054",
+      "source": "observed",
+      "description": "Input coercion and invalid date / basis",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-054",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(TRUE,2,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "YEARFRAC-055",
+      "source": "observed",
+      "description": "Input coercion and invalid date / basis",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-055",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(\"2020-01-01\",\"2021-01-01\",1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "YEARFRAC-056",
+      "source": "observed",
+      "description": "Input coercion and invalid date / basis",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-056",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(-1,61,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "YEARFRAC-057",
+      "source": "observed",
+      "description": "Input coercion and invalid date / basis",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/YEARFRAC-057",
+      "values": {},
+      "cells": {
+        "Z1": "=YEARFRAC(1,2958466,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    }
+  ]
+}

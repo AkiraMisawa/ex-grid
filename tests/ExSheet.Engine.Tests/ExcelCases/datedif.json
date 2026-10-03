@@ -1,0 +1,780 @@
+{
+  "area": "datedif",
+  "about": "DATEDIF: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "DATEDIF-001",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-001",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),\"Y\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-002",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-002",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),\"M\")"
+      },
+      "check": "Z1",
+      "excelBits": "4026000000000000",
+      "expect": {
+        "value2": 11.0
+      }
+    },
+    {
+      "id": "DATEDIF-003",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-003",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "4076D00000000000",
+      "expect": {
+        "value2": 365.0
+      }
+    },
+    {
+      "id": "DATEDIF-004",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-004",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),\"YM\")"
+      },
+      "check": "Z1",
+      "excelBits": "4026000000000000",
+      "expect": {
+        "value2": 11.0
+      }
+    },
+    {
+      "id": "DATEDIF-005",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-005",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),\"YD\")"
+      },
+      "check": "Z1",
+      "excelBits": "4076D00000000000",
+      "expect": {
+        "value2": 365.0
+      }
+    },
+    {
+      "id": "DATEDIF-006",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-006",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),\"MD\")"
+      },
+      "check": "Z1",
+      "excelBits": "403E000000000000",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 30.0
+      },
+      "engineDiffersByDecision": "ADR-0047: DATEDIF unit MD remains refused as recorded in the function catalogue; the observation does not revoke that decision."
+    },
+    {
+      "id": "DATEDIF-007",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-007",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,1,31),DATE(2021,2,28),\"Y\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-008",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-008",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,1,31),DATE(2021,2,28),\"M\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-009",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-009",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,1,31),DATE(2021,2,28),\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "403C000000000000",
+      "expect": {
+        "value2": 28.0
+      }
+    },
+    {
+      "id": "DATEDIF-010",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-010",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,1,31),DATE(2021,2,28),\"YM\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-011",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-011",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,1,31),DATE(2021,2,28),\"YD\")"
+      },
+      "check": "Z1",
+      "excelBits": "403C000000000000",
+      "expect": {
+        "value2": 28.0
+      }
+    },
+    {
+      "id": "DATEDIF-012",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-012",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,1,31),DATE(2021,2,28),\"MD\")"
+      },
+      "check": "Z1",
+      "excelBits": "403C000000000000",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 28.0
+      },
+      "engineDiffersByDecision": "ADR-0047: DATEDIF unit MD remains refused as recorded in the function catalogue; the observation does not revoke that decision."
+    },
+    {
+      "id": "DATEDIF-013",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-013",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,2,28),DATE(2021,3,31),\"Y\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-014",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-014",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,2,28),DATE(2021,3,31),\"M\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-015",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-015",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,2,28),DATE(2021,3,31),\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "403F000000000000",
+      "expect": {
+        "value2": 31.0
+      }
+    },
+    {
+      "id": "DATEDIF-016",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-016",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,2,28),DATE(2021,3,31),\"YM\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-017",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-017",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,2,28),DATE(2021,3,31),\"YD\")"
+      },
+      "check": "Z1",
+      "excelBits": "403F000000000000",
+      "expect": {
+        "value2": 31.0
+      }
+    },
+    {
+      "id": "DATEDIF-018",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-018",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2021,2,28),DATE(2021,3,31),\"MD\")"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 3.0
+      },
+      "engineDiffersByDecision": "ADR-0047: DATEDIF unit MD remains refused as recorded in the function catalogue; the observation does not revoke that decision."
+    },
+    {
+      "id": "DATEDIF-019",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-019",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2019,12,31),DATE(2020,1,1),\"Y\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-020",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-020",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2019,12,31),DATE(2020,1,1),\"M\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-021",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-021",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2019,12,31),DATE(2020,1,1),\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-022",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-022",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2019,12,31),DATE(2020,1,1),\"YM\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-023",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-023",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2019,12,31),DATE(2020,1,1),\"YD\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-024",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-024",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(DATE(2019,12,31),DATE(2020,1,1),\"MD\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: DATEDIF unit MD remains refused as recorded in the function catalogue; the observation does not revoke that decision."
+    },
+    {
+      "id": "DATEDIF-025",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-025",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(59,61,\"Y\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-026",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-026",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(59,61,\"M\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-027",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-027",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(59,61,\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "DATEDIF-028",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-028",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(59,61,\"YM\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-029",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-029",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(59,61,\"YD\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "DATEDIF-030",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-030",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(59,61,\"MD\")"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 2.0
+      },
+      "engineDiffersByDecision": "ADR-0047: DATEDIF unit MD remains refused as recorded in the function catalogue; the observation does not revoke that decision."
+    },
+    {
+      "id": "DATEDIF-031",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-031",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(61,59,\"Y\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-032",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-032",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(61,59,\"M\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-033",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-033",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(61,59,\"D\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-034",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-034",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(61,59,\"YM\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-035",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-035",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(61,59,\"YD\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-036",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-036",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(61,59,\"MD\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-037",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-037",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(45000.9,45001.1,\"Y\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-038",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-038",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(45000.9,45001.1,\"M\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-039",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-039",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(45000.9,45001.1,\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-040",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-040",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(45000.9,45001.1,\"YM\")"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "DATEDIF-041",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-041",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(45000.9,45001.1,\"YD\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-042",
+      "source": "observed",
+      "description": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-042",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(45000.9,45001.1,\"MD\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "kind": "error",
+        "value2": "#VALUE!"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: DATEDIF unit MD remains refused as recorded in the function catalogue; the observation does not revoke that decision."
+    },
+    {
+      "id": "DATEDIF-043",
+      "source": "observed",
+      "description": "Unit spelling, date coercion and invalid dates",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-043",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(1,2,\"d\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-044",
+      "source": "observed",
+      "description": "Unit spelling, date coercion and invalid dates",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-044",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(1,2,\"foo\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-045",
+      "source": "observed",
+      "description": "Unit spelling, date coercion and invalid dates",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-045",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(-1,61,\"D\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#NUM!"
+      }
+    },
+    {
+      "id": "DATEDIF-046",
+      "source": "observed",
+      "description": "Unit spelling, date coercion and invalid dates",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-046",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(TRUE,2,\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "DATEDIF-047",
+      "source": "observed",
+      "description": "Unit spelling, date coercion and invalid dates",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/DATEDIF-047",
+      "values": {},
+      "cells": {
+        "Z1": "=DATEDIF(\"2020-01-01\",\"2021-01-01\",\"D\")"
+      },
+      "check": "Z1",
+      "excelBits": "4076E00000000000",
+      "expect": {
+        "value2": 366.0
+      }
+    }
+  ]
+}

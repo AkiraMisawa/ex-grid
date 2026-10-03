@@ -43,7 +43,7 @@ public class FormulaEntryWiringTests : SheetTestContext
 
         await StartTypingAsync(cut, "A1", "=SU");
 
-        Assert.Equal(["SUBSTITUTE", "SUM", "SUMPRODUCT"], Candidates(cut));
+        Assert.Equal(["SUBSTITUTE", "SUM", "SUMIF", "SUMIFS", "SUMPRODUCT"], Candidates(cut));
     }
 
     [Fact] // ADR-0051: =X offers every declared function starting with X, without regard to case

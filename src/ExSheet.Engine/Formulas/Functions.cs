@@ -22,6 +22,15 @@ internal static partial class FunctionLibrary
         new("MAX", 1, Open, "number1, [number2], ...", "Returns the largest number in a set of values.", Max),
         new("COUNT", 1, Open, "value1, [value2], ...", "Counts how many numbers are in the list of arguments.", Count),
         new("COUNTA", 1, Open, "value1, [value2], ...", "Counts how many values are in the list of arguments.", CountA),
+        new("SUMIF", 2, 3, "range, criteria, [sum_range]", "Adds numbers whose corresponding cells meet a condition.", SumIf),
+        new("SUMIFS", 3, Open, "sum_range, criteria_range1, criteria1, ...", "Adds numbers whose corresponding cells meet every condition.", SumIfs) { InPairs = true, PairOffset = 1 },
+        new("COUNTIF", 2, 2, "range, criteria", "Counts cells that meet a condition.", CountIf),
+        new("COUNTIFS", 2, 254, "criteria_range1, criteria1, ...", "Counts cells that meet every condition.", CountIfs) { InPairs = true },
+        new("AVERAGEIF", 2, 3, "range, criteria, [average_range]", "Averages numbers whose corresponding cells meet a condition.", AverageIf),
+        new("AVERAGEIFS", 3, Open, "average_range, criteria_range1, criteria1, ...", "Averages numbers whose corresponding cells meet every condition.", AverageIfs) { InPairs = true, PairOffset = 1 },
+        new("MAXIFS", 3, Open, "max_range, criteria_range1, criteria1, ...", "Returns the greatest number whose corresponding cells meet every condition.", MaxIfs) { InPairs = true, PairOffset = 1 },
+        new("MINIFS", 3, Open, "min_range, criteria_range1, criteria1, ...", "Returns the least number whose corresponding cells meet every condition.", MinIfs) { InPairs = true, PairOffset = 1 },
+        new("COUNTBLANK", 1, 1, "range", "Counts blank cells and cells whose formulas return empty text.", CountBlank),
         new("IF", 2, 3, "logical_test, value_if_true, [value_if_false]", "Returns one value if a condition is TRUE and another if it is FALSE.", If),
         new("ROUND", 2, 2, "number, num_digits", "Rounds a number to a specified number of digits, half away from zero.", Round),
         new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError),
@@ -36,6 +45,18 @@ internal static partial class FunctionLibrary
         new("ROUNDDOWN", 2, 2, "number, num_digits", "Rounds a number down, toward zero.", RoundDown),
         new("ABS", 1, 1, "number", "Returns the absolute value of a number.", Abs),
         new("INT", 1, 1, "number", "Rounds a number down to the nearest integer.", Int),
+        new("CEILING.MATH", 1, 3, "number, [significance], [mode]", "Rounds a number up to a multiple of significance.", CeilingMath),
+        new("FLOOR.MATH", 1, 3, "number, [significance], [mode]", "Rounds a number down to a multiple of significance.", FloorMath),
+        new("MROUND", 2, 2, "number, multiple", "Rounds a number to a whole-number multiple; fractional multiples are refused.", MRound),
+        new("YEARFRAC", 2, 3, "start_date, end_date, [basis]", "Returns the year fraction represented by the whole days between two dates.", YearFrac)
+        {
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [2] = [new("0", "0 - US (NASD) 30/360"), new("1", "1 - Actual/actual"),
+                    new("2", "2 - Actual/360"), new("3", "3 - Actual/365"), new("4", "4 - European 30/360")],
+            },
+        },
+        new("DATEDIF", 3, 3, "start_date, end_date, unit", "Returns the difference between two dates in whole years, months or days.", DateDif),
         new("MOD", 2, 2, "number, divisor", "Returns the remainder from division, with the sign of the divisor.", Mod),
         new("DATE", 3, 3, "year, month, day", "Returns the serial number of a particular date.", Date),
         new("TODAY", 0, 0, "", "Returns the serial number of today's date: the Sheet Day.", Today),
@@ -51,6 +72,27 @@ internal static partial class FunctionLibrary
         new("TRIM", 1, 1, "text", "Removes spaces from text, leaving single spaces between words.", Trim),
         new("TEXT", 2, 2, "value, format_text", "Formats a number and converts it to text.", FormatAsText),
         new("CONCAT", 1, 253, "text1, [text2], ...", "Combines the text from multiple ranges and strings.", Concat),
+        new("VLOOKUP", 3, 4, "lookup_value, table_array, col_index_num, [range_lookup]", "Searches the first column of a table and returns the value in the specified column of the matching row.", VLookup)
+        {
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [3] = [new("TRUE", "TRUE - Approximate match"), new("FALSE", "FALSE - Exact match")],
+            },
+        },
+        new("HLOOKUP", 3, 4, "lookup_value, table_array, row_index_num, [range_lookup]", "Searches the first row of a table and returns the value in the specified row of the matching column.", HLookup)
+        {
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [3] = [new("TRUE", "TRUE - Approximate match"), new("FALSE", "FALSE - Exact match")],
+            },
+        },
+        new("MATCH", 2, 3, "lookup_value, lookup_array, [match_type]", "Returns the relative position of an item in an array or range of cells.", Match)
+        {
+            Values = new Dictionary<int, IReadOnlyList<ArgumentValue>>
+            {
+                [2] = [new("1", "1 - Less than"), new("0", "0 - Exact match"), new("-1", "-1 - Greater than")],
+            },
+        },
         new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index),
         new("PRODUCT", 1, Open, "number1, [number2], ...", "Multiplies its arguments.", Product),
         new("MEDIAN", 1, Open, "number1, [number2], ...", "Returns the median of the given numbers.", Median),
@@ -76,6 +118,10 @@ internal static partial class FunctionLibrary
         new("CONCATENATE", 1, Open, "text1, [text2], ...", "Joins several text items into one text item.", Concatenate),
         new("SUBSTITUTE", 3, 4, "text, old_text, new_text, [instance_num]", "Substitutes new text for old text in a text string.", Substitute),
         new("REPLACE", 4, 4, "old_text, start_num, num_chars, new_text", "Replaces characters within text.", Replace),
+        new("LOWER", 1, 1, "text", "Converts text to lowercase.", Lower),
+        new("PROPER", 1, 1, "text", "Capitalizes the first letter of each word.", Proper),
+        new("SEARCH", 2, 3, "find_text, within_text, [start_num]", "Finds one text value within another, ignoring case and accepting wildcards.", SearchText),
+        new("UPPER", 1, 1, "text", "Converts text to uppercase.", Upper),
         new("FIND", 2, 3, "find_text, within_text, [start_num]", "Finds one text value within another, case-sensitive.", Find),
         new("PMT", 3, 5, "rate, nper, pv, [fv], [type]", "Returns the periodic payment for an annuity.", Pmt),
         new("PV", 3, 5, "rate, nper, pmt, [fv], [type]", "Returns the present value of an investment.", Pv),

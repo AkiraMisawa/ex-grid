@@ -1,0 +1,1406 @@
+{
+  "baseline": "c3ddb7df",
+  "culture": "en-GB",
+  "cases": [
+    {
+      "id": "SUMIF-001",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A16,\"=\",B1:B16)",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "SUMIF-040",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A3,1,B1:B3)",
+      "question": "Matched result range coercion / error",
+      "cells": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": "=NA()",
+        "B2": 3,
+        "B3": 999
+      }
+    },
+    {
+      "id": "SUMIFS-001",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B16,A1:A16,\"=\")",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "SUMIFS-041",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B3,A1:A3,1)",
+      "question": "Matched result range coercion / error",
+      "cells": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": "=NA()",
+        "B2": 3,
+        "B3": 999
+      }
+    },
+    {
+      "id": "COUNTIF-001",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A16,\"=\")",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "COUNTIF-035",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A4,\">0\")",
+      "question": "Short sum/average range; COUNTIF normal baseline",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "COUNTIFS-001",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A16,\"=\")",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "COUNTIFS-036",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A16,\">0\",B1:B16,\"<100\")",
+      "question": "Two criteria are ANDed",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "AVERAGEIF-001",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A16,\"=\",B1:B16)",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "AVERAGEIF-040",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A3,1,B1:B3)",
+      "question": "Matched result range coercion / error",
+      "cells": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": "=NA()",
+        "B2": 3,
+        "B3": 999
+      }
+    },
+    {
+      "id": "AVERAGEIFS-001",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B16,A1:A16,\"=\")",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "AVERAGEIFS-041",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B3,A1:A3,1)",
+      "question": "Matched result range coercion / error",
+      "cells": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": "=NA()",
+        "B2": 3,
+        "B3": 999
+      }
+    },
+    {
+      "id": "MAXIFS-001",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B16,A1:A16,\"=\")",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "MAXIFS-041",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B3,A1:A3,1)",
+      "question": "Matched result range coercion / error",
+      "cells": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": "=NA()",
+        "B2": 3,
+        "B3": 999
+      }
+    },
+    {
+      "id": "MINIFS-001",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B16,A1:A16,\"=\")",
+      "question": "Criteria \"=\"; blanks, formula-empty text, numbers, text, booleans and escapes",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "MINIFS-041",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B3,A1:A3,1)",
+      "question": "Matched result range coercion / error",
+      "cells": {
+        "A1": 1,
+        "A2": 1,
+        "A3": 0,
+        "B1": "=NA()",
+        "B2": 3,
+        "B3": 999
+      }
+    },
+    {
+      "id": "COUNTBLANK-001",
+      "function": "COUNTBLANK",
+      "formula": "=COUNTBLANK(A1)",
+      "question": "Isolated blank/empty/text/number/boolean/error",
+      "cells": {
+        "A1": null
+      }
+    },
+    {
+      "id": "COUNTBLANK-019",
+      "function": "COUNTBLANK",
+      "formula": "=COUNTBLANK(A1:A18)",
+      "question": "Mixed range",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": 1,
+        "A5": "1",
+        "A6": "alpha",
+        "A7": "ALPHA",
+        "A8": "a*b",
+        "A9": "a?b",
+        "A10": "a~b",
+        "A11": true,
+        "A12": false,
+        "A13": -1,
+        "A14": " ",
+        "A15": "1.5",
+        "A16": 1.5,
+        "A17": "=NA()",
+        "A18": "=1/0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50,
+        "B6": 60,
+        "B7": 70,
+        "B8": 80,
+        "B9": 90,
+        "B10": 100,
+        "B11": 110,
+        "B12": 120,
+        "B13": 130,
+        "B14": 140,
+        "B15": 150,
+        "B16": 160,
+        "B17": 170,
+        "B18": 180
+      }
+    },
+    {
+      "id": "VLOOKUP-001",
+      "function": "VLOOKUP",
+      "formula": "=VLOOKUP(2,A1:B4,2,FALSE)",
+      "question": "sorted duplicate; key 2, mode FALSE",
+      "cells": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      }
+    },
+    {
+      "id": "VLOOKUP-066",
+      "function": "VLOOKUP",
+      "formula": "=VLOOKUP(1,A1:B2,\"2\",FALSE)",
+      "question": "Index coercion / out of bounds",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      }
+    },
+    {
+      "id": "HLOOKUP-001",
+      "function": "HLOOKUP",
+      "formula": "=HLOOKUP(2,A1:D2,2,FALSE)",
+      "question": "sorted duplicate; key 2, mode FALSE",
+      "cells": {
+        "A1": 1,
+        "A2": 10,
+        "B1": 2,
+        "B2": 20,
+        "C1": 2,
+        "C2": 30,
+        "D1": 3,
+        "D2": 40
+      }
+    },
+    {
+      "id": "HLOOKUP-066",
+      "function": "HLOOKUP",
+      "formula": "=HLOOKUP(1,A1:B2,\"2\",FALSE)",
+      "question": "Index coercion / out of bounds",
+      "cells": {
+        "A1": 1,
+        "B1": 2,
+        "A2": 10,
+        "B2": 20
+      }
+    },
+    {
+      "id": "MATCH-001",
+      "function": "MATCH",
+      "formula": "=MATCH(2,A1:A4,0)",
+      "question": "sorted duplicate; key 2, mode 0",
+      "cells": {
+        "A1": 1,
+        "B1": 10,
+        "A2": 2,
+        "B2": 20,
+        "A3": 2,
+        "B3": 30,
+        "A4": 3,
+        "B4": 40
+      }
+    },
+    {
+      "id": "MATCH-093",
+      "function": "MATCH",
+      "formula": "=MATCH(1,A1:A2,\"0\")",
+      "question": "Mode coercion",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "B1": 10,
+        "B2": 20
+      }
+    },
+    {
+      "id": "MROUND-001",
+      "function": "MROUND",
+      "formula": "=MROUND(6.05,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "MROUND-018",
+      "function": "MROUND",
+      "formula": "=MROUND(NA(),1)",
+      "question": "Scalar coercion/error/blank",
+      "cells": {}
+    },
+    {
+      "id": "CEILING.MATH-001",
+      "function": "CEILING.MATH",
+      "formula": "=CEILING.MATH(6.05,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "CEILING.MATH-021",
+      "function": "CEILING.MATH",
+      "formula": "=CEILING.MATH(NA(),1)",
+      "question": "Scalar coercion/error/blank",
+      "cells": {}
+    },
+    {
+      "id": "FLOOR.MATH-001",
+      "function": "FLOOR.MATH",
+      "formula": "=FLOOR.MATH(6.05,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "FLOOR.MATH-021",
+      "function": "FLOOR.MATH",
+      "formula": "=FLOOR.MATH(NA(),1)",
+      "question": "Scalar coercion/error/blank",
+      "cells": {}
+    },
+    {
+      "id": "YEARFRAC-001",
+      "function": "YEARFRAC",
+      "formula": "=YEARFRAC(DATE(2020,2,28),DATE(2020,3,1),0)",
+      "question": "Basis, leap year, month end, reverse and fractional serials",
+      "cells": {}
+    },
+    {
+      "id": "YEARFRAC-057",
+      "function": "YEARFRAC",
+      "formula": "=YEARFRAC(1,2958466,1)",
+      "question": "Input coercion and invalid date / basis",
+      "cells": {}
+    },
+    {
+      "id": "DATEDIF-001",
+      "function": "DATEDIF",
+      "formula": "=DATEDIF(DATE(2020,2,29),DATE(2021,2,28),\"Y\")",
+      "question": "Unit, month ends, leap year, serials, reverse dates; MD remains refused by catalogue",
+      "cells": {}
+    },
+    {
+      "id": "DATEDIF-047",
+      "function": "DATEDIF",
+      "formula": "=DATEDIF(\"2020-01-01\",\"2021-01-01\",\"D\")",
+      "question": "Unit spelling, date coercion and invalid dates",
+      "cells": {}
+    },
+    {
+      "id": "SEARCH-001",
+      "function": "SEARCH",
+      "formula": "=SEARCH(A1,B1,1)",
+      "question": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "cells": {
+        "A1": "SS",
+        "B1": "straße"
+      }
+    },
+    {
+      "id": "SEARCH-020",
+      "function": "SEARCH",
+      "formula": "=SEARCH(NA(),\"abc\")",
+      "question": "Start coercion and errors",
+      "cells": {}
+    },
+    {
+      "id": "UPPER-001",
+      "function": "UPPER",
+      "formula": "=UPPER(A1)",
+      "question": "Unicode and word boundaries",
+      "cells": {
+        "A1": "abc XYZ"
+      }
+    },
+    {
+      "id": "UPPER-017",
+      "function": "UPPER",
+      "formula": "=UPPER(A1)",
+      "question": "Input coercion/error",
+      "cells": {
+        "A1": "=NA()"
+      }
+    },
+    {
+      "id": "LOWER-001",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Unicode and word boundaries",
+      "cells": {
+        "A1": "abc XYZ"
+      }
+    },
+    {
+      "id": "LOWER-017",
+      "function": "LOWER",
+      "formula": "=LOWER(A1)",
+      "question": "Input coercion/error",
+      "cells": {
+        "A1": "=NA()"
+      }
+    },
+    {
+      "id": "PROPER-001",
+      "function": "PROPER",
+      "formula": "=PROPER(A1)",
+      "question": "Unicode and word boundaries",
+      "cells": {
+        "A1": "abc XYZ"
+      }
+    },
+    {
+      "id": "PROPER-017",
+      "function": "PROPER",
+      "formula": "=PROPER(A1)",
+      "question": "Input coercion/error",
+      "cells": {
+        "A1": "=NA()"
+      }
+    },
+    {
+      "id": "IRR-001",
+      "function": "IRR",
+      "formula": "=IRR(A1:A2)",
+      "question": "single root; guess omitted",
+      "cells": {
+        "A1": -100,
+        "A2": 110,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)"
+      }
+    },
+    {
+      "id": "IRR-060",
+      "function": "IRR",
+      "formula": "=IRR(A1:A4,2)",
+      "question": "large negative root; guess 2",
+      "cells": {
+        "A1": -100,
+        "A2": 1,
+        "A3": 1,
+        "A4": 1,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)",
+        "B4": "=DATE(2023,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-001",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A2,B1:B2)",
+      "question": "single root; guess omitted",
+      "cells": {
+        "A1": -100,
+        "A2": 110,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-067",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A2,B1:B3)",
+      "question": "Mismatched lengths",
+      "cells": {
+        "A1": -100,
+        "A2": 110,
+        "B1": 43831,
+        "B2": 44197,
+        "B3": 44562
+      }
+    },
+    {
+      "id": "RATE-001",
+      "function": "RATE",
+      "formula": "=RATE(12,-100,1000)",
+      "question": "Periods, type, guess, convergence and coercion",
+      "cells": {}
+    },
+    {
+      "id": "RATE-016",
+      "function": "RATE",
+      "formula": "=RATE(12,-100,NA())",
+      "question": "Periods, type, guess, convergence and coercion",
+      "cells": {}
+    },
+    {
+      "id": "MROUND-002",
+      "function": "MROUND",
+      "formula": "=MROUND(7.05,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "MROUND-003",
+      "function": "MROUND",
+      "formula": "=MROUND(0.15,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "MROUND-004",
+      "function": "MROUND",
+      "formula": "=MROUND(0.35,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "CEILING.MATH-002",
+      "function": "CEILING.MATH",
+      "formula": "=CEILING.MATH(7.05,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "CEILING.MATH-003",
+      "function": "CEILING.MATH",
+      "formula": "=CEILING.MATH(0.15,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "CEILING.MATH-004",
+      "function": "CEILING.MATH",
+      "formula": "=CEILING.MATH(0.35,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "FLOOR.MATH-002",
+      "function": "FLOOR.MATH",
+      "formula": "=FLOOR.MATH(7.05,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "FLOOR.MATH-003",
+      "function": "FLOOR.MATH",
+      "formula": "=FLOOR.MATH(0.15,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "FLOOR.MATH-004",
+      "function": "FLOOR.MATH",
+      "formula": "=FLOOR.MATH(0.35,0.1)",
+      "question": "Signs, halfway doubles, zero and boundary",
+      "cells": {}
+    },
+    {
+      "id": "IRR-013",
+      "function": "IRR",
+      "formula": "=IRR(A1:A3)",
+      "question": "multiple roots; guess omitted",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "IRR-014",
+      "function": "IRR",
+      "formula": "=IRR(A1:A3,0.1)",
+      "question": "multiple roots; guess 0.1",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "IRR-015",
+      "function": "IRR",
+      "formula": "=IRR(A1:A3,-0.9)",
+      "question": "multiple roots; guess -0.9",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "IRR-016",
+      "function": "IRR",
+      "formula": "=IRR(A1:A3,0.5)",
+      "question": "multiple roots; guess 0.5",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "IRR-017",
+      "function": "IRR",
+      "formula": "=IRR(A1:A3,-1)",
+      "question": "multiple roots; guess -1",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "IRR-018",
+      "function": "IRR",
+      "formula": "=IRR(A1:A3,2)",
+      "question": "multiple roots; guess 2",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-013",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A3,B1:B3)",
+      "question": "multiple roots; guess omitted",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-014",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A3,B1:B3,0.1)",
+      "question": "multiple roots; guess 0.1",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-015",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A3,B1:B3,-0.9)",
+      "question": "multiple roots; guess -0.9",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-016",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A3,B1:B3,0.5)",
+      "question": "multiple roots; guess 0.5",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-017",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A3,B1:B3,-1)",
+      "question": "multiple roots; guess -1",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "XIRR-018",
+      "function": "XIRR",
+      "formula": "=XIRR(A1:A3,B1:B3,2)",
+      "question": "multiple roots; guess 2",
+      "cells": {
+        "A1": -100,
+        "A2": 230,
+        "A3": -132,
+        "B1": "=DATE(2020,1,1)",
+        "B2": "=DATE(2021,1,1)",
+        "B3": "=DATE(2022,1,1)"
+      }
+    },
+    {
+      "id": "LET-001",
+      "function": "LET",
+      "formula": "=LET(x,2,x+1)",
+      "question": "Basic binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-002",
+      "function": "LET",
+      "formula": "=LET(x,2,y,x+3,x*y)",
+      "question": "Sequential names",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-003",
+      "function": "LET",
+      "formula": "=LET(x,2,X+1)",
+      "question": "Case-insensitive lookup",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-004",
+      "function": "LET",
+      "formula": "=LET(x,2,LET(x,3,x)+x)",
+      "question": "Nested shadowing",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-005",
+      "function": "LET",
+      "formula": "=LET(x,2,LET(y,x+1,y)+x)",
+      "question": "Outer binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-006",
+      "function": "LET",
+      "formula": "=LET(x,1,x,2,x)",
+      "question": "Duplicate name",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-007",
+      "function": "LET",
+      "formula": "=LET(x,y,y,2,x)",
+      "question": "Forward name",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-008",
+      "function": "LET",
+      "formula": "=LET(x,x+1,x)",
+      "question": "Self reference",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-009",
+      "function": "LET",
+      "formula": "=LET(x,NA(),1)",
+      "question": "Unused error binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-010",
+      "function": "LET",
+      "formula": "=LET(x,1/0,IF(FALSE,x,7))",
+      "question": "Unselected error branch",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-011",
+      "function": "LET",
+      "formula": "=LET(x,A1:A3,SUM(x))",
+      "question": "Range binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-012",
+      "function": "LET",
+      "formula": "=LET(x,A1:A3,x*2)",
+      "question": "Array binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-013",
+      "function": "LET",
+      "formula": "=LET(x,A1,x)",
+      "question": "Blank reference binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-014",
+      "function": "LET",
+      "formula": "=LET(x,\"\",x)",
+      "question": "Empty text binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-015",
+      "function": "LET",
+      "formula": "=LET(x,TRUE,x)",
+      "question": "Boolean binding",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-016",
+      "function": "LET",
+      "formula": "=LET(x,SEQUENCE(3),x+10)",
+      "question": "Computed array",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-019",
+      "function": "LET",
+      "formula": "=LET(x,1,IF(TRUE,2,NA()))",
+      "question": "Lazy IF branch",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-020",
+      "function": "LET",
+      "formula": "=LET(x,1,x+z)",
+      "question": "Unbound name",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-021",
+      "function": "LET",
+      "formula": "=LET(c,2,c)",
+      "question": "R1C1 name c",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-022",
+      "function": "LET",
+      "formula": "=LET(r,2,r)",
+      "question": "R1C1 name r",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-023",
+      "function": "LET",
+      "formula": "=LET(A1,2,A1)",
+      "question": "A1 reference cannot be name",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-024",
+      "function": "LET",
+      "formula": "=LET(a.b,2,a.b)",
+      "question": "Dot in name",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-025",
+      "function": "LET",
+      "formula": "=LET(_x,2,_x)",
+      "question": "Underscore in name",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-026",
+      "function": "LET",
+      "formula": "=LET(x,1)",
+      "question": "Missing final calculation",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-027",
+      "function": "LET",
+      "formula": "=LET(1,2,1)",
+      "question": "Numeric name",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-028",
+      "function": "LET",
+      "formula": "=LET(x,1,y,2,x+y,3)",
+      "question": "Even argument count",
+      "cells": {
+        "A2": 2,
+        "A3": 3
+      },
+      "samples": 1
+    },
+    {
+      "id": "LET-029",
+      "function": "LET",
+      "formula": "=LET(name_0,0,name_1,1,name_2,2,name_3,3,name_4,4,name_5,5,name_6,6,name_7,7,name_8,8,name_9,9,name_10,10,name_11,11,name_12,12,name_13,13,name_14,14,name_15,15,name_16,16,name_17,17,name_18,18,name_19,19,name_20,20,name_21,21,name_22,22,name_23,23,name_24,24,name_25,25,name_26,26,name_27,27,name_28,28,name_29,29,name_30,30,name_31,31,name_32,32,name_33,33,name_34,34,name_35,35,name_36,36,name_37,37,name_38,38,name_39,39,name_40,40,name_41,41,name_42,42,name_43,43,name_44,44,name_45,45,name_46,46,name_47,47,name_48,48,name_49,49,name_50,50,name_51,51,name_52,52,name_53,53,name_54,54,name_55,55,name_56,56,name_57,57,name_58,58,name_59,59,name_60,60,name_61,61,name_62,62,name_63,63,name_64,64,name_65,65,name_66,66,name_67,67,name_68,68,name_69,69,name_70,70,name_71,71,name_72,72,name_73,73,name_74,74,name_75,75,name_76,76,name_77,77,name_78,78,name_79,79,name_80,80,name_81,81,name_82,82,name_83,83,name_84,84,name_85,85,name_86,86,name_87,87,name_88,88,name_89,89,name_90,90,name_91,91,name_92,92,name_93,93,name_94,94,name_95,95,name_96,96,name_97,97,name_98,98,name_99,99,name_100,100,name_101,101,name_102,102,name_103,103,name_104,104,name_105,105,name_106,106,name_107,107,name_108,108,name_109,109,name_110,110,name_111,111,name_112,112,name_113,113,name_114,114,name_115,115,name_116,116,name_117,117,name_118,118,name_119,119,name_120,120,name_121,121,name_122,122,name_123,123,name_124,124,name_125,125,name_125)",
+      "question": "126 name/value pairs",
+      "cells": {}
+    },
+    {
+      "id": "LET-030",
+      "function": "LET",
+      "formula": "=LET(name_0,0,name_1,1,name_2,2,name_3,3,name_4,4,name_5,5,name_6,6,name_7,7,name_8,8,name_9,9,name_10,10,name_11,11,name_12,12,name_13,13,name_14,14,name_15,15,name_16,16,name_17,17,name_18,18,name_19,19,name_20,20,name_21,21,name_22,22,name_23,23,name_24,24,name_25,25,name_26,26,name_27,27,name_28,28,name_29,29,name_30,30,name_31,31,name_32,32,name_33,33,name_34,34,name_35,35,name_36,36,name_37,37,name_38,38,name_39,39,name_40,40,name_41,41,name_42,42,name_43,43,name_44,44,name_45,45,name_46,46,name_47,47,name_48,48,name_49,49,name_50,50,name_51,51,name_52,52,name_53,53,name_54,54,name_55,55,name_56,56,name_57,57,name_58,58,name_59,59,name_60,60,name_61,61,name_62,62,name_63,63,name_64,64,name_65,65,name_66,66,name_67,67,name_68,68,name_69,69,name_70,70,name_71,71,name_72,72,name_73,73,name_74,74,name_75,75,name_76,76,name_77,77,name_78,78,name_79,79,name_80,80,name_81,81,name_82,82,name_83,83,name_84,84,name_85,85,name_86,86,name_87,87,name_88,88,name_89,89,name_90,90,name_91,91,name_92,92,name_93,93,name_94,94,name_95,95,name_96,96,name_97,97,name_98,98,name_99,99,name_100,100,name_101,101,name_102,102,name_103,103,name_104,104,name_105,105,name_106,106,name_107,107,name_108,108,name_109,109,name_110,110,name_111,111,name_112,112,name_113,113,name_114,114,name_115,115,name_116,116,name_117,117,name_118,118,name_119,119,name_120,120,name_121,121,name_122,122,name_123,123,name_124,124,name_125,125,name_126,126,name_126)",
+      "question": "127 name/value pairs",
+      "cells": {}
+    }
+  ]
+}

@@ -431,3 +431,61 @@ until Excel is asked how it orders them.
 open they refuse it: `SIN`, `COS` and `TAN` give `#NUM!` from 2^27, the limit documented for `COT`
 and its kin, and `ACOTH` gives `#NUM!` where its page names both `#NUM!` and `#VALUE!`, until a
 Windows run asks Excel.
+
+## Functions admitted from the October 3 observations *(2026-10-03)*
+
+The admission rule is unchanged. The Windows run at
+`verification/2026-10-03-windows-functions/` recorded all 24 Observe functions, plus LET and the
+two random functions. Implementation tickets 08–12 admit these 21 functions:
+
+- `SUMIF`, `SUMIFS`, `COUNTIF`, `COUNTIFS`, `AVERAGEIF`, `AVERAGEIFS`, `MAXIFS`, `MINIFS`,
+  `COUNTBLANK`;
+- `VLOOKUP`, `HLOOKUP`, `MATCH`;
+- `MROUND`, `CEILING.MATH`, `FLOOR.MATH`;
+- `YEARFRAC`, `DATEDIF`;
+- `SEARCH`, `UPPER`, `LOWER`, `PROPER`.
+
+The cases keep the observed input kinds: an absent cell, formula-empty text, numeric text, a
+number, a boolean and an Error Value are not interchangeable. Exact expected doubles come from
+the recorded round-trip spelling, checked against their bits, not PowerShell's rounded JSON
+numeric spelling. Existing Supported functions' uncertain cases were outside this run.
+
+The following apply the existing permission to refuse argument domains, rather than infer an
+answer the evidence does not establish:
+
+- Criteria admit ASCII equality/wildcards and numeric comparisons. Culture-sensitive numeric
+  spellings, numeric text over 15 mantissa digits, non-ASCII matching, text relational ordering
+  and criteria over 255 characters are refused with `#VALUE!`. Error Values can themselves be
+  criteria. The strict propagation of `#CIRC!` and `#GETTING_DATA` is unchanged.
+- `SUMIF` and `AVERAGEIF` read a result footprint the size of the criteria range, starting at the
+  result range's top-left. For literal References this implicit footprint is also a dependency:
+  changing it recalculates, cycles cannot hide in it, and structural edits rebuild it. Resizing a
+  computed Reference remains `#VALUE!` until its dependency footprint can be established. IFS
+  ranges must agree in both dimensions, not just cell count.
+- Legacy approximate lookups retain the sorted-data refusal and the conservative homogeneous,
+  nonblank, error-free domain. Exact text is ASCII; ordered text contains only ASCII letters,
+  digits and spaces. Unobserved outcomes across Error Values, descending nearest non-equal
+  duplicate keys in MATCH, and keys over 255 characters are refused. These functions' observed
+  duplicate choices are distinct from XLOOKUP's and do not change it.
+- `MROUND` admits whole-number multiples. A nonzero fractional multiple with a nonzero operand
+  of the same sign is `#VALUE!`: Excel's observed decimal midpoint direction is not reproduced
+  by an ordinary binary rounding operation. Opposite signs still give `#NUM!`, and zero gives
+  zero. No guessed epsilon is used.
+- `CEILING.MATH` and `FLOOR.MATH` refuse an unobserved integer boundary with `#VALUE!`: a
+  division result that is nonintegral in binary64 but integral at the existing 15-digit
+  precision. That test refuses the case rather than choosing a numeric answer. Underflow
+  of a nonzero quotient is `#NUM!`.
+- `DATEDIF` keeps the existing `MD` refusal. `YD` answers only before a completed anniversary;
+  longer intervals are `#VALUE!` until which calendar supplies the remaining leap day is pinned.
+- Casing and SEARCH answer the explicit character domains documented in the engine's README.
+  Other characters and unobserved sigma contexts give `#VALUE!`, including supplementary-plane
+  cases whose observed answers do not establish the general matching or casing algorithm.
+
+The corpus retains Excel's answer alongside each deliberate refusal. Broadening a domain is
+future work, never a reason to loosen a comparison.
+
+`IRR`, `XIRR` and `RATE` remain undeclared: the reproducible experiment in
+`spikes/exsheet-financial-solvers/` found differences in chosen root, stopping result and failure
+cases at the required 15 significant digits. It does not prove that a matching algorithm is
+impossible. LET's Formula-local names and random functions' reproducibility/persistence still
+need their own decisions. Observing those functions did not admit them.

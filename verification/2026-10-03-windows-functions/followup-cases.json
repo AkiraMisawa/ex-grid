@@ -1,0 +1,1991 @@
+{
+  "baseline": "c3ddb7df",
+  "culture": "en-GB",
+  "cases": [
+    {
+      "id": "SUMIF-FOLLOWUP-001",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A4,D1,B1:B4)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-002",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A4,D2,B1:B4)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-003",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A4,NA(),B1:B4)",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-004",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A4,\"nomatch\",B1:B4)",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-001",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B4,A1:A4,D1)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-002",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B4,A1:A4,D2)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-003",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B4,A1:A4,NA())",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-004",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B4,A1:A4,\"nomatch\")",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-001",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A4,D1)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-002",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A4,D2)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-003",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A4,NA())",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-004",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A4,\"nomatch\")",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-001",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A4,D1)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-002",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A4,D2)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-003",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A4,NA())",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-004",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A4,\"nomatch\")",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-001",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A4,D1,B1:B4)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-002",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A4,D2,B1:B4)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-003",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A4,NA(),B1:B4)",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-004",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A4,\"nomatch\",B1:B4)",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-001",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B4,A1:A4,D1)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-002",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B4,A1:A4,D2)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-003",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B4,A1:A4,NA())",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-004",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B4,A1:A4,\"nomatch\")",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-001",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B4,A1:A4,D1)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-002",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B4,A1:A4,D2)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-003",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B4,A1:A4,NA())",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-004",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B4,A1:A4,\"nomatch\")",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-001",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B4,A1:A4,D1)",
+      "question": "blank criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-002",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B4,A1:A4,D2)",
+      "question": "formula-empty criterion cell",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-003",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B4,A1:A4,NA())",
+      "question": "error criterion",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-004",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B4,A1:A4,\"nomatch\")",
+      "question": "no match",
+      "cells": {
+        "A1": null,
+        "A2": "=\"\"",
+        "A3": 0,
+        "A4": "0",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "D1": null,
+        "D2": "=\"\""
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-001",
+      "function": "VLOOKUP",
+      "formula": "=VLOOKUP(2,A1:B4,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-002",
+      "function": "VLOOKUP",
+      "formula": "=VLOOKUP(3,A1:B4,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-003",
+      "function": "VLOOKUP",
+      "formula": "=VLOOKUP(4,A1:B4,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-004",
+      "function": "VLOOKUP",
+      "formula": "=VLOOKUP(NA(),A1:B4,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "VLOOKUP-FOLLOWUP-005",
+      "function": "VLOOKUP",
+      "formula": "=VLOOKUP(\"2\",A1:B4,2,FALSE)",
+      "question": "Numeric text lookup is distinct from number",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "HLOOKUP-FOLLOWUP-001",
+      "function": "HLOOKUP",
+      "formula": "=HLOOKUP(2,A1:D2,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "B1": 2,
+        "C1": 2,
+        "D1": 3,
+        "A2": 10,
+        "B2": 20,
+        "C2": 30,
+        "D2": null
+      }
+    },
+    {
+      "id": "HLOOKUP-FOLLOWUP-002",
+      "function": "HLOOKUP",
+      "formula": "=HLOOKUP(3,A1:D2,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "B1": 2,
+        "C1": 2,
+        "D1": 3,
+        "A2": 10,
+        "B2": 20,
+        "C2": 30,
+        "D2": null
+      }
+    },
+    {
+      "id": "HLOOKUP-FOLLOWUP-003",
+      "function": "HLOOKUP",
+      "formula": "=HLOOKUP(4,A1:D2,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "B1": 2,
+        "C1": 2,
+        "D1": 3,
+        "A2": 10,
+        "B2": 20,
+        "C2": 30,
+        "D2": null
+      }
+    },
+    {
+      "id": "HLOOKUP-FOLLOWUP-004",
+      "function": "HLOOKUP",
+      "formula": "=HLOOKUP(NA(),A1:D2,2)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "B1": 2,
+        "C1": 2,
+        "D1": 3,
+        "A2": 10,
+        "B2": 20,
+        "C2": 30,
+        "D2": null
+      }
+    },
+    {
+      "id": "HLOOKUP-FOLLOWUP-005",
+      "function": "HLOOKUP",
+      "formula": "=HLOOKUP(\"2\",A1:D2,2,FALSE)",
+      "question": "Numeric text lookup is distinct from number",
+      "cells": {
+        "A1": 1,
+        "B1": 2,
+        "C1": 2,
+        "D1": 3,
+        "A2": 10,
+        "B2": 20,
+        "C2": 30,
+        "D2": null
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-001",
+      "function": "MATCH",
+      "formula": "=MATCH(2,A1:A4)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-002",
+      "function": "MATCH",
+      "formula": "=MATCH(3,A1:A4)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-003",
+      "function": "MATCH",
+      "formula": "=MATCH(4,A1:A4)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-004",
+      "function": "MATCH",
+      "formula": "=MATCH(NA(),A1:A4)",
+      "question": "Omitted mode, duplicate / blank result / beyond max / error key",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "MATCH-FOLLOWUP-005",
+      "function": "MATCH",
+      "formula": "=MATCH(\"2\",A1:A4,0)",
+      "question": "Numeric text lookup is distinct from number",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 2,
+        "A4": 3,
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": null
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-001",
+      "function": "LET",
+      "formula": "=LET(x,A1,x*2)",
+      "question": "Dependency after input changes",
+      "cells": {
+        "A1": 3
+      },
+      "edits": [
+        {
+          "address": "A1",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "LET-FOLLOWUP-002",
+      "function": "LET",
+      "formula": "=LET(x,1,y,x+2,y)",
+      "question": "Sequential binding",
+      "cells": {
+        "A1": 3
+      },
+      "edits": []
+    },
+    {
+      "id": "LET-FOLLOWUP-003",
+      "function": "LET",
+      "formula": "=LET(x,NA(),IF(FALSE,x,7))",
+      "question": "Unused error binding through IF",
+      "cells": {
+        "A1": 3
+      },
+      "edits": []
+    },
+    {
+      "id": "LET-FOLLOWUP-004",
+      "function": "LET",
+      "formula": "=LET(x,1,LET(y,2,x+y))",
+      "question": "Outer lexical scope",
+      "cells": {
+        "A1": 3
+      },
+      "edits": []
+    },
+    {
+      "id": "LET-FOLLOWUP-005",
+      "function": "LET",
+      "formula": "=LET(x,1,1)+x",
+      "question": "Binding does not escape its LET",
+      "cells": {
+        "A1": 3
+      },
+      "edits": []
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-001",
+      "function": "RANDBETWEEN",
+      "formula": "=RANDBETWEEN(1.1,2.1)",
+      "question": "Followup: fractional bounds with/no whole integer",
+      "cells": {},
+      "samples": 64
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-002",
+      "function": "RANDBETWEEN",
+      "formula": "=RANDBETWEEN(-2.1,-1.1)",
+      "question": "Followup: fractional bounds with/no whole integer",
+      "cells": {},
+      "samples": 64
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-003",
+      "function": "RANDBETWEEN",
+      "formula": "=RANDBETWEEN(-0.9,-0.1)",
+      "question": "Followup: fractional bounds with/no whole integer",
+      "cells": {},
+      "samples": 64
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-004",
+      "function": "RANDBETWEEN",
+      "formula": "=RANDBETWEEN(0.1,0.9)",
+      "question": "Followup: fractional bounds with/no whole integer",
+      "cells": {},
+      "samples": 64
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-005",
+      "function": "RANDBETWEEN",
+      "formula": "=RANDBETWEEN(-1.9,-1.9)",
+      "question": "Followup: fractional bounds with/no whole integer",
+      "cells": {},
+      "samples": 64
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-006",
+      "function": "RANDBETWEEN",
+      "formula": "=RANDBETWEEN(1.9,1.9)",
+      "question": "Followup: fractional bounds with/no whole integer",
+      "cells": {},
+      "samples": 64
+    },
+    {
+      "id": "RANDBETWEEN-FOLLOWUP-007",
+      "function": "RANDBETWEEN",
+      "formula": "=RANDBETWEEN(1.000000000000001,1.000000000000001)",
+      "question": "Followup: fractional bounds with/no whole integer",
+      "cells": {},
+      "samples": 64
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-005",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A5,\"a~b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-006",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A5,\"a~~b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-007",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A5,\"a~~~b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-008",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A5,\"a~\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-009",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A5,\"a~*b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-010",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A5,\"a~?b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-005",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B5,A1:A5,\"a~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-006",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B5,A1:A5,\"a~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-007",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B5,A1:A5,\"a~~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-008",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B5,A1:A5,\"a~\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-009",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B5,A1:A5,\"a~*b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-010",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:B5,A1:A5,\"a~?b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-005",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A5,\"a~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-006",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A5,\"a~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-007",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A5,\"a~~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-008",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A5,\"a~\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-009",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A5,\"a~*b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIF-FOLLOWUP-010",
+      "function": "COUNTIF",
+      "formula": "=COUNTIF(A1:A5,\"a~?b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-005",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A5,\"a~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-006",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A5,\"a~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-007",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A5,\"a~~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-008",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A5,\"a~\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-009",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A5,\"a~*b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-010",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A5,\"a~?b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-005",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A5,\"a~b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-006",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A5,\"a~~b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-007",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A5,\"a~~~b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-008",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A5,\"a~\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-009",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A5,\"a~*b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-010",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A5,\"a~?b\",B1:B5)",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-005",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B5,A1:A5,\"a~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-006",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B5,A1:A5,\"a~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-007",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B5,A1:A5,\"a~~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-008",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B5,A1:A5,\"a~\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-009",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B5,A1:A5,\"a~*b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-010",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:B5,A1:A5,\"a~?b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-005",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B5,A1:A5,\"a~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-006",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B5,A1:A5,\"a~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-007",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B5,A1:A5,\"a~~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-008",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B5,A1:A5,\"a~\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-009",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B5,A1:A5,\"a~*b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-010",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:B5,A1:A5,\"a~?b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-005",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B5,A1:A5,\"a~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-006",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B5,A1:A5,\"a~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-007",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B5,A1:A5,\"a~~~b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-008",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B5,A1:A5,\"a~\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-009",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B5,A1:A5,\"a~*b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-010",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:B5,A1:A5,\"a~?b\")",
+      "question": "Followup: literal/escaped/trailing tilde",
+      "cells": {
+        "A1": "a~b",
+        "A2": "ab",
+        "A3": "a~",
+        "A4": "a*b",
+        "A5": "a?b",
+        "B1": 10,
+        "B2": 20,
+        "B3": 30,
+        "B4": 40,
+        "B5": 50
+      }
+    },
+    {
+      "id": "SUMIFS-FOLLOWUP-011",
+      "function": "SUMIFS",
+      "formula": "=SUMIFS(B1:C2,A1:A4,\">0\")",
+      "question": "Same cell count, different range shapes",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3,
+        "A4": 4,
+        "B1": 1,
+        "B2": 2,
+        "C1": 3,
+        "C2": 4
+      }
+    },
+    {
+      "id": "COUNTIFS-FOLLOWUP-011",
+      "function": "COUNTIFS",
+      "formula": "=COUNTIFS(A1:A4,\">0\",B1:C2,\">0\")",
+      "question": "Same cell count, different range shapes",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3,
+        "A4": 4,
+        "B1": 1,
+        "B2": 2,
+        "C1": 3,
+        "C2": 4
+      }
+    },
+    {
+      "id": "AVERAGEIFS-FOLLOWUP-011",
+      "function": "AVERAGEIFS",
+      "formula": "=AVERAGEIFS(B1:C2,A1:A4,\">0\")",
+      "question": "Same cell count, different range shapes",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3,
+        "A4": 4,
+        "B1": 1,
+        "B2": 2,
+        "C1": 3,
+        "C2": 4
+      }
+    },
+    {
+      "id": "MAXIFS-FOLLOWUP-011",
+      "function": "MAXIFS",
+      "formula": "=MAXIFS(B1:C2,A1:A4,\">0\")",
+      "question": "Same cell count, different range shapes",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3,
+        "A4": 4,
+        "B1": 1,
+        "B2": 2,
+        "C1": 3,
+        "C2": 4
+      }
+    },
+    {
+      "id": "MINIFS-FOLLOWUP-011",
+      "function": "MINIFS",
+      "formula": "=MINIFS(B1:C2,A1:A4,\">0\")",
+      "question": "Same cell count, different range shapes",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3,
+        "A4": 4,
+        "B1": 1,
+        "B2": 2,
+        "C1": 3,
+        "C2": 4
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-011",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A4,\">0\")",
+      "question": "Omitted result range",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": "3",
+        "A4": true
+      }
+    },
+    {
+      "id": "SUMIF-FOLLOWUP-012",
+      "function": "SUMIF",
+      "formula": "=SUMIF(A1:A2,1,B1:B2)",
+      "question": "Unmatched result error",
+      "cells": {
+        "A1": 1,
+        "A2": 0,
+        "B1": 2,
+        "B2": "=NA()"
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-011",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A4,\">0\")",
+      "question": "Omitted result range",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": "3",
+        "A4": true
+      }
+    },
+    {
+      "id": "AVERAGEIF-FOLLOWUP-012",
+      "function": "AVERAGEIF",
+      "formula": "=AVERAGEIF(A1:A2,1,B1:B2)",
+      "question": "Unmatched result error",
+      "cells": {
+        "A1": 1,
+        "A2": 0,
+        "B1": 2,
+        "B2": "=NA()"
+      }
+    },
+    {
+      "id": "LET-FOLLOWUP-006",
+      "function": "LET",
+      "formula": "=LET(名前,2,名前+1)",
+      "question": "Unicode, underscore, dot and name length",
+      "cells": {}
+    },
+    {
+      "id": "LET-FOLLOWUP-007",
+      "function": "LET",
+      "formula": "=LET(é,2,é+1)",
+      "question": "Unicode, underscore, dot and name length",
+      "cells": {}
+    },
+    {
+      "id": "LET-FOLLOWUP-008",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "Unicode, underscore, dot and name length",
+      "cells": {}
+    },
+    {
+      "id": "LET-FOLLOWUP-009",
+      "function": "LET",
+      "formula": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)",
+      "question": "Unicode, underscore, dot and name length",
+      "cells": {}
+    },
+    {
+      "id": "LET-FOLLOWUP-010",
+      "function": "LET",
+      "formula": "=LET(_x,2,_x+1)",
+      "question": "Unicode, underscore, dot and name length",
+      "cells": {}
+    },
+    {
+      "id": "LET-FOLLOWUP-011",
+      "function": "LET",
+      "formula": "=LET(a.b,2,a.b+1)",
+      "question": "Unicode, underscore, dot and name length",
+      "cells": {}
+    },
+    {
+      "id": "LET-FOLLOWUP-012",
+      "function": "LET",
+      "formula": "=LET(x,A1:A3,SUM(x))",
+      "question": "Range binding dependency after change",
+      "cells": {
+        "A1": 1,
+        "A2": 2,
+        "A3": 3
+      },
+      "edits": [
+        {
+          "address": "A2",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "LET-FOLLOWUP-013",
+      "function": "LET",
+      "formula": "=LET(x,SEQUENCE(3),SUM(x))",
+      "question": "Computed array binding reduced to one Value",
+      "cells": {}
+    }
+  ]
+}

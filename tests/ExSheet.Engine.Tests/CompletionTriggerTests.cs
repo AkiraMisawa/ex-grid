@@ -11,6 +11,22 @@ namespace ExSheet.Engine.Tests;
 /// </summary>
 public class CompletionTriggerTests
 {
+    [Theory] // ADR-0058: the newly admitted functions offer their documented argument choices.
+    [InlineData("=VLOOKUP(2,A1:B3,2,", new[] { "TRUE", "FALSE" })]
+    [InlineData("=HLOOKUP(2,A1:C2,2,", new[] { "TRUE", "FALSE" })]
+    [InlineData("=MATCH(2,A1:A3,", new[] { "1", "0", "-1" })]
+    [InlineData("=YEARFRAC(A1,A2,", new[] { "0", "1", "2", "3", "4" })]
+    [InlineData("=VLOOKUP(2,A1:B3,2,false", new[] { "FALSE" })]
+    [InlineData("=VLOOKUP(2,A1:B3,2,F", new[] { "TRUE", "FALSE" })]
+    [InlineData("=XLOOKUP(2,A1:A3,B1:B3,,TRUE", new[] { "0", "-1", "1", "2", "3" })]
+    public void Observed_functions_offer_argument_choices(string text, string[] values)
+    {
+        var completion = FormulaEntry.Complete(text, text.Length, []);
+        Assert.NotNull(completion);
+        Assert.Equal(values, completion.Candidates.Select(c => c.InsertText));
+        Assert.All(completion.Candidates, c => Assert.Equal(CompletionKind.ArgumentValue, c.Kind));
+    }
+
     private static readonly string[] MatchModes =
     [
         "0 - Exact match",
@@ -63,12 +79,12 @@ public class CompletionTriggerTests
         Assert.Equal(["1", "-1", "2", "-2"], xlookup.ValuesOf(5).Select(v => v.Value));
     }
 
-    [Fact] // ADR-0058, SH-36: every other argument takes any value, and no other function declares a list
+    [Fact] // ADR-0058, SH-36: unrestricted arguments do not declare a choice list.
     public void Other_arguments_declare_no_values()
     {
         var xlookup = DeclaredFunction.Find("XLOOKUP")!;
         Assert.All([0, 1, 2, 3, 6, -1], index => Assert.Empty(xlookup.ValuesOf(index)));
-        Assert.All(DeclaredFunction.All.Where(f => f.Name != "XLOOKUP"),
+        Assert.All(DeclaredFunction.All.Where(f => f.Name is not ("XLOOKUP" or "VLOOKUP" or "HLOOKUP" or "MATCH" or "YEARFRAC")),
             f => Assert.All(Enumerable.Range(0, 8), index => Assert.Empty(f.ValuesOf(index))));
     }
 

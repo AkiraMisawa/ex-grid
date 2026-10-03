@@ -1,0 +1,388 @@
+{
+  "area": "search",
+  "about": "SEARCH: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "SEARCH-001",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-001",
+      "values": {
+        "A1": "SS",
+        "B1": "straße"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "SEARCH-002",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-002",
+      "values": {
+        "A1": "ß",
+        "B1": "STRASSE"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "SEARCH-003",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-003",
+      "values": {
+        "A1": "i",
+        "B1": "İ"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "SEARCH-004",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-004",
+      "values": {
+        "A1": "i",
+        "B1": "ı"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "SEARCH-005",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-005",
+      "values": {
+        "A1": "σ",
+        "B1": "ς"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "SEARCH-006",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-006",
+      "values": {
+        "A1": "é",
+        "B1": "É"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "SEARCH-007",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-007",
+      "values": {
+        "A1": "𐐨",
+        "B1": "𐐀"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#VALUE!"
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    },
+    {
+      "id": "SEARCH-008",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-008",
+      "values": {
+        "A1": "a?b",
+        "B1": "a😀b"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#VALUE!"
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    },
+    {
+      "id": "SEARCH-009",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-009",
+      "values": {
+        "A1": "a*b",
+        "B1": "a😀b"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    },
+    {
+      "id": "SEARCH-010",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-010",
+      "values": {
+        "A1": "a~*b",
+        "B1": "a*b"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "SEARCH-011",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-011",
+      "values": {
+        "A1": "a~~b",
+        "B1": "a~b"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "SEARCH-012",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-012",
+      "values": {
+        "A1": "",
+        "B1": "abc"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "SEARCH-013",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-013",
+      "values": {
+        "A1": "",
+        "B1": "abc"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,2)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "SEARCH-014",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-014",
+      "values": {
+        "A1": "*",
+        "B1": ""
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "SEARCH-015",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-015",
+      "values": {
+        "A1": "?",
+        "B1": "😀"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": 1.0
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    },
+    {
+      "id": "SEARCH-016",
+      "source": "observed",
+      "description": "Unicode case folding / wildcard / UTF-16 / empty needle",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-016",
+      "values": {
+        "A1": "?",
+        "B1": "😀"
+      },
+      "cells": {
+        "Z1": "=SEARCH(A1,B1,2)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!",
+        "kind": "error"
+      },
+      "excelExpect": {
+        "value2": "#VALUE!"
+      },
+      "engineDiffersByDecision": "ADR-0047: supplementary-plane text remains refused until its casing and SEARCH character boundaries are reproduced as a general rule."
+    },
+    {
+      "id": "SEARCH-017",
+      "source": "observed",
+      "description": "Start coercion and errors",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-017",
+      "values": {},
+      "cells": {
+        "Z1": "=SEARCH(\"a\",\"abc\",0)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "SEARCH-018",
+      "source": "observed",
+      "description": "Start coercion and errors",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-018",
+      "values": {},
+      "cells": {
+        "Z1": "=SEARCH(\"a\",\"abc\",4)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "SEARCH-019",
+      "source": "observed",
+      "description": "Start coercion and errors",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-019",
+      "values": {},
+      "cells": {
+        "Z1": "=SEARCH(\"a\",\"abc\",1.9)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "SEARCH-020",
+      "source": "observed",
+      "description": "Start coercion and errors",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/SEARCH-020",
+      "values": {},
+      "cells": {
+        "Z1": "=SEARCH(NA(),\"abc\")"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    }
+  ]
+}

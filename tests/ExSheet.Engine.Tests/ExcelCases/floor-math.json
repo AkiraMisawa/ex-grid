@@ -1,0 +1,340 @@
+{
+  "area": "floor-math",
+  "about": "FLOOR.MATH: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "FLOORMATH-001",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-001",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(6.05,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "4018000000000000",
+      "expect": {
+        "value2": 6.0
+      }
+    },
+    {
+      "id": "FLOORMATH-002",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-002",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(7.05,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "401C000000000000",
+      "expect": {
+        "value2": 7.0
+      }
+    },
+    {
+      "id": "FLOORMATH-003",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-003",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(0.15,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FB999999999999A",
+      "expect": {
+        "value2": 0.1
+      }
+    },
+    {
+      "id": "FLOORMATH-004",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-004",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(0.35,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FD3333333333334",
+      "expect": {
+        "value2": 0.30000000000000004
+      }
+    },
+    {
+      "id": "FLOORMATH-005",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-005",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(2.5,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "FLOORMATH-006",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-006",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(-2.5,1)"
+      },
+      "check": "Z1",
+      "excelBits": "C008000000000000",
+      "expect": {
+        "value2": -3.0
+      }
+    },
+    {
+      "id": "FLOORMATH-007",
+      "source": "observed",
+      "description": "Negative number, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-007",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(-2.5,1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "C000000000000000",
+      "expect": {
+        "value2": -2.0
+      }
+    },
+    {
+      "id": "FLOORMATH-008",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-008",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(-2.5,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "C008000000000000",
+      "expect": {
+        "value2": -3.0
+      }
+    },
+    {
+      "id": "FLOORMATH-009",
+      "source": "observed",
+      "description": "Negative number, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-009",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(-2.5,-1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "C000000000000000",
+      "expect": {
+        "value2": -2.0
+      }
+    },
+    {
+      "id": "FLOORMATH-010",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-010",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(2.5,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "FLOORMATH-011",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-011",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(0,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "FLOORMATH-012",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-012",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(5,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "FLOORMATH-013",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-013",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(-5,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "FLOORMATH-014",
+      "source": "observed",
+      "description": "Negative number, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-014",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(-5,0,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "FLOORMATH-015",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-015",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(1.000000000000001,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "FLOORMATH-016",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-016",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(0.9999999999999999,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "FLOORMATH-017",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-017",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(\"2.5\",1)"
+      },
+      "check": "Z1",
+      "excelBits": "4000000000000000",
+      "expect": {
+        "value2": 2.0
+      }
+    },
+    {
+      "id": "FLOORMATH-018",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-018",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(TRUE,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "FLOORMATH-019",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-019",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(A1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "FLOORMATH-020",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-020",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(\"x\",1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "FLOORMATH-021",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/FLOOR.MATH-021",
+      "values": {},
+      "cells": {
+        "Z1": "=FLOOR.MATH(NA(),1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    }
+  ]
+}

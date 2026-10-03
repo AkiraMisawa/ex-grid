@@ -1,0 +1,340 @@
+{
+  "area": "ceiling-math",
+  "about": "CEILING.MATH: Windows Excel 16.0.20430.20092, en-GB; October 3 observations.",
+  "cases": [
+    {
+      "id": "CEILINGMATH-001",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-001",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(6.05,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "4018666666666667",
+      "expect": {
+        "value2": 6.1000000000000005
+      }
+    },
+    {
+      "id": "CEILINGMATH-002",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-002",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(7.05,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "401C666666666667",
+      "expect": {
+        "value2": 7.1000000000000005
+      }
+    },
+    {
+      "id": "CEILINGMATH-003",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-003",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(0.15,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FC999999999999A",
+      "expect": {
+        "value2": 0.2
+      }
+    },
+    {
+      "id": "CEILINGMATH-004",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-004",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(0.35,0.1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FD999999999999A",
+      "expect": {
+        "value2": 0.4
+      }
+    },
+    {
+      "id": "CEILINGMATH-005",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-005",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(2.5,1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-006",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-006",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(-2.5,1)"
+      },
+      "check": "Z1",
+      "excelBits": "C000000000000000",
+      "expect": {
+        "value2": -2.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-007",
+      "source": "observed",
+      "description": "Negative number, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-007",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(-2.5,1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "C008000000000000",
+      "expect": {
+        "value2": -3.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-008",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-008",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(-2.5,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "C000000000000000",
+      "expect": {
+        "value2": -2.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-009",
+      "source": "observed",
+      "description": "Negative number, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-009",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(-2.5,-1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "C008000000000000",
+      "expect": {
+        "value2": -3.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-010",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-010",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(2.5,-1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-011",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-011",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(0,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-012",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-012",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(5,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-013",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-013",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(-5,0)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-014",
+      "source": "observed",
+      "description": "Negative number, mode 1",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-014",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(-5,0,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-015",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-015",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(1.000000000000001,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-016",
+      "source": "observed",
+      "description": "Signs, halfway doubles, zero and boundary",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-016",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(0.9999999999999999,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-017",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-017",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(\"2.5\",1)"
+      },
+      "check": "Z1",
+      "excelBits": "4008000000000000",
+      "expect": {
+        "value2": 3.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-018",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-018",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(TRUE,1)"
+      },
+      "check": "Z1",
+      "excelBits": "3FF0000000000000",
+      "expect": {
+        "value2": 1.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-019",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-019",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(A1,1)"
+      },
+      "check": "Z1",
+      "excelBits": "0000000000000000",
+      "expect": {
+        "value2": 0.0
+      }
+    },
+    {
+      "id": "CEILINGMATH-020",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-020",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(\"x\",1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#VALUE!"
+      }
+    },
+    {
+      "id": "CEILINGMATH-021",
+      "source": "observed",
+      "description": "Scalar coercion/error/blank",
+      "culture": "en-GB",
+      "observation": "verification/2026-10-03-windows-functions/CEILING.MATH-021",
+      "values": {},
+      "cells": {
+        "Z1": "=CEILING.MATH(NA(),1)"
+      },
+      "check": "Z1",
+      "expect": {
+        "value2": "#N/A"
+      }
+    }
+  ]
+}

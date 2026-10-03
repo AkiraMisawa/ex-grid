@@ -235,7 +235,7 @@ internal sealed class Parser
         {
             throw new FormulaSyntaxException(_formula, name.Position, $"{function.Name} takes at most {function.MaximumArguments} argument(s).");
         }
-        if (function.InPairs && arguments.Count % 2 != 0)
+        if (function.InPairs && (arguments.Count - function.PairOffset) % 2 != 0)
         {
             throw new FormulaSyntaxException(_formula, name.Position, $"{function.Name} takes its arguments in pairs.");
         }
