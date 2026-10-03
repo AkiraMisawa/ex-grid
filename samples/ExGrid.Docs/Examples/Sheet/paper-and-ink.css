@@ -1,0 +1,5 @@
+/* Your own stylesheet: the colours a Sheet paints its cells on, and its text in. */
+.my-sheets {
+    --ex-sheet-paper: #fdf6e3;
+    --ex-sheet-ink: #073642;
+}

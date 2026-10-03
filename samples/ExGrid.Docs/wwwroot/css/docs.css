@@ -183,3 +183,29 @@ body { font-family: Roboto, Helvetica, Arial, sans-serif; }
 }
 
 .docs-showcase { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* A built-in Example's own buttons: MudBlazor's reset leaves a plain <button> looking like text,
+   so the Examples' controls get a plain, visible button of their own. */
+.docs-example-builtin button:not([class*="ex-"]):not([class*="mud-"]) {
+    font: inherit;
+    font-size: 13px;
+    padding: 4px 12px;
+    margin: 0 6px 8px 0;
+    border: 1px solid var(--docs-code-border);
+    border-radius: 4px;
+    background: var(--docs-code-bg);
+    color: inherit;
+    cursor: pointer;
+}
+.docs-example-builtin button:not([class*="ex-"]):not([class*="mud-"]):hover {
+    border-color: var(--mud-palette-primary);
+}
+
+/* A short quotation in a page's prose: a formula, a call. */
+.docs-section > pre.docs-code {
+    margin: 8px 0 16px;
+    max-width: 820px;
+    background: var(--docs-code-bg);
+    border: 1px solid var(--docs-code-border);
+    border-radius: 6px;
+}

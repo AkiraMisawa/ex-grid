@@ -15,6 +15,9 @@
     <!-- The API tables read the shipped types by reflection, nullability included: keep what
          they read when the publish trims the application. -->
     <NullabilityInfoContextSupport>true</NullabilityInfoContextSupport>
+    <!-- Keep the runtime's own exception messages: an Example that shows one would otherwise read
+         "Arg_ParamName_Name" where the sentence belongs. -->
+    <UseSystemResourceKeys>false</UseSystemResourceKeys>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,8 +52,8 @@
 
   <ItemGroup>
     <!-- An Example's .razor reaches the generator already, as the Razor compiler's input; its
-         .cs files, and the snippets a page quotes (.html, .sh), are handed over here. The code a page shows is the file it runs. -->
-    <AdditionalFiles Include="Examples\**\*.cs;Examples\**\*.html;Examples\**\*.sh" />
+         .cs files, and the snippets a page quotes (.html, .sh, .css), are handed over here. The code a page shows is the file it runs. -->
+    <AdditionalFiles Include="Examples\**\*.cs;Examples\**\*.html;Examples\**\*.sh;Examples\**\*.css" />
     <!-- The decision records, by name only: an API summary's "ADR-0016" links to its file. -->
     <AdditionalFiles Include="..\..\docs\adr\*.md" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />

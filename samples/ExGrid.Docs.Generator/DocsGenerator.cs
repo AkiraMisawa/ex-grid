@@ -15,7 +15,7 @@ namespace ExGrid.Docs.Generator;
 /// <summary>
 /// The Docs Site's build step (ADR-0110). Two inputs reach it as additional files:
 /// <list type="bullet">
-/// <item>every <c>.razor</c>, <c>.cs</c>, <c>.html</c> and <c>.sh</c> under the site's <c>Examples/</c> folder, which it
+/// <item>every <c>.razor</c>, <c>.cs</c>, <c>.html</c>, <c>.sh</c> and <c>.css</c> under the site's <c>Examples/</c> folder, which it
 /// emits as <c>ExampleSources</c>: each file's text and its highlighted HTML;</item>
 /// <item>the shipped assemblies' XML documentation files, which it emits as <c>ApiDocs</c>: each
 /// member's summary as HTML, keyed by its documentation id.</item>
@@ -39,13 +39,14 @@ public sealed class DocsGenerator : IIncrementalGenerator
                 if (relative is null || !relative.StartsWith("Examples/", StringComparison.Ordinal))
                     return null;
                 var extension = Path.GetExtension(relative);
-                if (extension is not (".razor" or ".cs" or ".html" or ".sh"))
+                if (extension is not (".razor" or ".cs" or ".html" or ".sh" or ".css"))
                     return null;
                 var text = file.GetText(cancel)?.ToString().Replace("\r\n", "\n") ?? "";
                 var html = extension switch
                 {
                     ".razor" or ".html" => Highlighter.Razor(text),
                     ".cs" => Highlighter.CSharp(text),
+                    ".css" => Highlighter.Css(text),
                     _ => Highlighter.Shell(text),
                 };
                 return new Example(relative, extension.Substring(1), text, html);

@@ -73,6 +73,61 @@ internal static class Highlighter
         return html.ToString();
     }
 
+    /// <summary>The HTML for a stylesheet: comments, selectors, properties and values.</summary>
+    public static string Css(string source)
+    {
+        var html = new StringBuilder(source.Length * 2);
+        var inBlock = false;
+        var i = 0;
+        while (i < source.Length)
+        {
+            if (string.CompareOrdinal(source, i, "/*", 0, 2) == 0)
+            {
+                var end = source.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                end = end < 0 ? source.Length : end + 2;
+                Span(html, "com", source.Substring(i, end - i));
+                i = end;
+                continue;
+            }
+            var c = source[i];
+            if (c == '{' || c == '}')
+            {
+                inBlock = c == '{';
+                Span(html, "punc", c.ToString());
+                i++;
+                continue;
+            }
+            var stop = i;
+            while (stop < source.Length && source[stop] is not ('{' or '}' or ';') && string.CompareOrdinal(source, stop, "/*", 0, 2) != 0)
+                stop++;
+            var piece = source.Substring(i, stop - i);
+            if (!inBlock)
+                Span(html, "type", piece);
+            else
+            {
+                var colon = piece.IndexOf(':');
+                if (colon < 0)
+                    Text(html, piece);
+                else
+                {
+                    var name = piece.Substring(0, colon);
+                    var lead = name.Length - name.TrimStart().Length;
+                    Text(html, name.Substring(0, lead));
+                    Span(html, "attr", name.Substring(lead));
+                    Span(html, "punc", ":");
+                    Span(html, "aval", piece.Substring(colon + 1));
+                }
+            }
+            if (stop < source.Length && source[stop] == ';')
+            {
+                Span(html, "punc", ";");
+                stop++;
+            }
+            i = stop;
+        }
+        return html.ToString();
+    }
+
     internal static void AppendCSharp(StringBuilder html, string source)
     {
         var tokens = SyntaxFactory.ParseTokens(source).ToList();
