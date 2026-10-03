@@ -1,8 +1,12 @@
 # What to verify on Windows, seventh run
 
-Status: ready-for-human once `claude/exsheet-f4` and `claude/exsheet-headings` are merged into
-`claude/exsheet-start-8cx3v1` — **A, B, then C**. Part A alone can run before that: it asks only
-Excel.
+Status: superseded, never run (2026-10-03). The user merged `claude/exsheet-start-8cx3v1` into
+`main` without this run: the eighth to sixteenth Windows runs came after it, at later tips.
+Kept as written, for what it asked. Its earlier status was:
+
+> Status: ready-for-human once `claude/exsheet-f4` and `claude/exsheet-headings` are merged into
+> `claude/exsheet-start-8cx3v1` — **A, B, then C**. Part A alone can run before that: it asks only
+> Excel.
 
 For the Claude Code session on the Windows desktop of the earlier runs. The fifth run's method,
 tools and advance authorisation still apply: read [`verify-on-windows-6.md`](verify-on-windows-6.md),

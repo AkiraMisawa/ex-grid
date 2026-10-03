@@ -1,6 +1,10 @@
 # What to verify on Windows, sixth run
 
-Status: ready-for-human — **A, B in order**.
+Status: superseded, never run (2026-10-03). The user merged `claude/exsheet-start-8cx3v1` into
+`main` without this run: the eighth to sixteenth Windows runs came after it, at later tips.
+Kept as written, for what it asked. Its earlier status was:
+
+> Status: ready-for-human — **A, B in order**.
 
 For the Claude Code session on the Windows desktop of the earlier runs. The fifth run's method,
 tools and advance authorisation still apply: read [`verify-on-windows-5.md`](verify-on-windows-5.md)
