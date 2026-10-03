@@ -430,7 +430,7 @@ public sealed partial class Sheet
         var recalculated = new List<CellAddress>();
         StagedReader reader = null!;
         Evaluator evaluator = null!;
-        reader = new StagedReader(this, staged, address => formulas.Contains(address) ? Compute(address) : null);
+        reader = new StagedReader(this, staged, address => formulas.Contains(address) ? Compute(address) : null, arrays);
         evaluator = new Evaluator(reader, Culture);
         var ready = new Queue<CellAddress>(waiting.Where(w => w.Value == 0).Select(w => w.Key));
         while (ready.Count > 0)
@@ -454,7 +454,11 @@ public sealed partial class Sheet
         // 3. Publish, all at once.
         foreach (var (address, array) in arrays)
         {
-            if (_cells.GetValueOrDefault(address) is { } anchor) anchor.Array = array;
+            if (_cells.GetValueOrDefault(address) is { } anchor)
+            {
+                anchor.Array = array;
+                if (array is null) anchor.SpillBlocked = false;
+            }
         }
         var valueChanges = new List<CellAddress>();
         foreach (var (address, value) in staged)
@@ -554,7 +558,11 @@ public sealed partial class Sheet
         }
     }
 
-    private sealed class StagedReader(Sheet sheet, Dictionary<CellAddress, Value?> staged, Func<CellAddress, Value?>? onDemand = null) : ICellReader
+    private sealed class StagedReader(
+        Sheet sheet,
+        Dictionary<CellAddress, Value?> staged,
+        Func<CellAddress, Value?>? onDemand = null,
+        Dictionary<CellAddress, ValueArray?>? arrays = null) : ICellReader
     {
         /// <summary>A cell as this recalculation leaves it: staged, or computed now when it is still to be (ADR-0124), or as it stood.</summary>
         public Value? Read(CellAddress address)
@@ -574,6 +582,27 @@ public sealed partial class Sheet
         public DateOnly? Today => sheet.Today;
 
         public DateTime? Now => sheet._moment;
+
+        /// <summary>
+        /// The Anchor's array as this pass computed it, or as it stood. Whether it spills is the last
+        /// layout's answer; a layout that changes it changes the Anchor's Value, which recalculates
+        /// whatever reads <c>A1#</c> (ADR-0125). A blank reads as the 0 its spilled cell shows.
+        /// </summary>
+        public Operand Spill(CellAddress anchor)
+        {
+            Read(anchor);
+            var cell = sheet._cells.GetValueOrDefault(anchor);
+            ValueArray? array = null;
+            if (arrays?.TryGetValue(anchor, out var computed) == true) array = computed;
+            else if (cell is not null) array = cell.Array;
+            if (array is null || cell is null || cell.SpillBlocked) return Operand.Of(ErrorValue.Ref);
+            var shown = new ValueArray(array.Rows, array.Columns);
+            for (var r = 0; r < array.Rows; r++)
+            {
+                for (var c = 0; c < array.Columns; c++) shown[r, c] = array[r, c] ?? Value.FromNumber(0);
+            }
+            return Operand.Of(shown);
+        }
     }
 
     private sealed class Cell(CellAddress address)
@@ -606,6 +635,9 @@ public sealed partial class Sheet
 
         /// <summary>For an Anchor, the array its Formula computed (ADR-0125); <see langword="null"/> for a result of one Value.</summary>
         public ValueArray? Array { get; set; }
+
+        /// <summary>For an Anchor: whether the last layout found its Spill Range in the way, so that it shows <c>#SPILL!</c> (ADR-0125).</summary>
+        public bool SpillBlocked { get; set; }
 
         /// <summary>For a cell of a Spill Range, the Anchor whose array gives its Value; it holds no Entry of its own.</summary>
         public CellAddress? SpilledFrom { get; set; }

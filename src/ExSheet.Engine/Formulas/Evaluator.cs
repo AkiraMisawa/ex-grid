@@ -25,6 +25,12 @@ internal interface ICellReader
 
     /// <summary>Whether a Reference names the Sheet's own cells: unqualified, or qualified with the Sheet's name (ADR-0046).</summary>
     bool IsLocal(Reference reference);
+
+    /// <summary>
+    /// <c>A1#</c> (ADR-0125): the array the Anchor at <paramref name="anchor"/> spills, as this
+    /// recalculation leaves it; <c>#REF!</c> when it does not spill.
+    /// </summary>
+    Operand Spill(CellAddress anchor);
 }
 
 /// <summary>
@@ -136,7 +142,9 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         ErrorNode e => Formulas.Operand.Of(e.Error),
         MissingNode => Formulas.Operand.Missing,
         // One Sheet exists: a Reference qualified with its name reads it, any other qualifier names nothing (ADR-0046).
-        ReferenceNode r => Cells.IsLocal(r.Reference) ? Formulas.Operand.Of(r.Reference.Area) : Formulas.Operand.Of(ErrorValue.Ref),
+        ReferenceNode r => !Cells.IsLocal(r.Reference) ? Formulas.Operand.Of(ErrorValue.Ref)
+            : r.Reference.Spilled ? Cells.Spill(new CellAddress(r.Reference.Row1, r.Reference.Column1))
+            : Formulas.Operand.Of(r.Reference.Area),
         StructuredReferenceNode s => Cells.TableColumn(s.Table, s.Column),
         NameNode or IntersectionNode => Formulas.Operand.Of(ErrorValue.Name),
         ParenthesesNode p => Operand(p.Inner),

@@ -49,6 +49,7 @@ public sealed partial class Sheet
             if (anchor.Entry?.Parsed is null)
             {
                 anchor.Array = null;
+                anchor.SpillBlocked = false;
                 continue;
             }
             var array = anchor.Array!;
@@ -63,6 +64,9 @@ public sealed partial class Sheet
                     blocked = claimed.ContainsKey(address) || _cells.GetValueOrDefault(address)?.Entry is not null;
                 }
             }
+            // Whether it spills is what A1# reads: a change of it is a change, whatever the Value shows.
+            if (anchor.SpillBlocked != blocked) changed.Add(anchor.Address);
+            anchor.SpillBlocked = blocked;
             Set(anchor, blocked ? Value.FromError(ErrorValue.Spill) : array[0, 0] ?? Value.FromNumber(0));
             if (blocked) continue;
             for (var r = 0; r < array.Rows; r++)

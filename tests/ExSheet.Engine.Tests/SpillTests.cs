@@ -224,4 +224,77 @@ public class SpillTests
 
         Assert.Equal(ErrorValue.Spill, sheet.Error("E1"));
     }
+
+    [Fact] // ADR-0125: A1# reads the Spill Range of the Formula in A1, and follows it as it grows
+    public void A_spill_reference_reads_the_spill_range()
+    {
+        var sheet = WithColumn(1, 2, 3);
+        sheet.Enter("C1", "=A1:A2*2");
+        sheet.Enter("E1", "=SUM(C1#)");
+        sheet.Enter("F1", "=ROWS(C1#)");
+        Assert.Equal(6, sheet.Number("E1"));
+        Assert.Equal(2, sheet.Number("F1"));
+
+        sheet.Enter("C1", "=A1:A3*2");
+
+        Assert.Equal(12, sheet.Number("E1"));
+        Assert.Equal(3, sheet.Number("F1"));
+    }
+
+    [Fact] // ADR-0125: A1# spills itself, as a Reference to several cells does
+    public void A_spill_reference_spills()
+    {
+        var sheet = WithColumn(1, 2);
+        sheet.Enter("C1", "=A1:A2");
+        sheet.Enter("E1", "=C1#+10");
+
+        Assert.Equal(11, sheet.Number("E1"));
+        Assert.Equal(12, sheet.Number("E2"));
+    }
+
+    [Fact] // ADR-0125: A1# is #REF! when A1 does not spill: no Formula, one Value, or #SPILL!
+    public void A_spill_reference_to_no_spill_is_ref()
+    {
+        var sheet = WithColumn(1, 2);
+        sheet.Enter("E1", "=SUM(C1#)");
+        Assert.Equal(ErrorValue.Ref, sheet.Error("E1"));
+
+        sheet.Enter("C1", "=A1");
+        Assert.Equal(ErrorValue.Ref, sheet.Error("E1"));
+
+        sheet.Enter("C1", "=A1:A2");
+        Assert.Equal(3, sheet.Number("E1"));
+
+        sheet.Enter("C2", "x");
+        Assert.Equal(ErrorValue.Ref, sheet.Error("E1"));
+
+        sheet.Enter("C2", "");
+        Assert.Equal(3, sheet.Number("E1"));
+    }
+
+    [Fact] // ADR-0125: A1# is written as typed, moves with A1, and is #REF! when A1 is deleted
+    public void A_spill_reference_moves_with_its_anchor()
+    {
+        var sheet = WithColumn(1, 2);
+        sheet.Enter("C2", "=A1:A2");
+        sheet.Enter("E1", "=sum(c2#)");
+        Assert.Equal("=SUM(C2#)", sheet.GetEntryText(At("E1")));
+
+        sheet.InsertRows(0);
+        Assert.Equal("=SUM(C3#)", sheet.GetEntryText(At("E2")));
+        Assert.Equal(3, sheet.Number("E2"));
+
+        sheet.DeleteRows(2);
+        Assert.Equal("=SUM(#REF!)", sheet.GetEntryText(At("E2")));
+    }
+
+    [Theory] // ADR-0125: # follows one cell only, and the @ operator is refused on entry
+    [InlineData("=A1:A2#")]
+    [InlineData("=A:A#")]
+    [InlineData("=@A1:A2")]
+    [InlineData("=SUM(@A1:A2)")]
+    public void Other_spill_syntax_is_refused(string formula)
+    {
+        Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula(formula));
+    }
 }
