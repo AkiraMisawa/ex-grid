@@ -11,6 +11,10 @@ A spreadsheet user's selection, keyboard and clipboard, virtualised on both axes
 keep the same DOM, and a grid that refuses rather than guesses: a number that does not fit shows
 `####`, never a shorter number, and a copy is never truncated.
 
+![ExPivot drawn by ExGrid: a rectangle of cells selected with the mouse and extended with the keyboard, a desk collapsed and expanded, and fields taken off and put back in the PivotTable Fields pane](docs/readme/expivot.gif)
+
+<sub>The demo host's `/pivot-risk` page: a rate-delta report by tenor in ExPivot, drawn by ExGrid.</sub>
+
 One repository, three products, each a separate package:
 
 | | |
