@@ -1,0 +1,89 @@
+@page "/exgrid/editing"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Editing"
+          Lead="ExGrid is display-first: nothing edits until you say so. When a column is editable, the grid runs the editor and reports what the user committed. It never writes the value itself — your application applies it, by handing back a new row.">
+
+    <DocsSection Title="Editable columns and the Edit Intent">
+        <p>
+            Declare <code>editable: true</code> on a column and wire <code>OnEdit</code>. On a selected cell, the
+            user types to replace the value, or presses <kbd>F2</kbd> (or double-clicks) to edit it with a caret.
+            <kbd>Enter</kbd> and <kbd>Tab</kbd> commit and move on, cycling inside the selection, so a block can
+            be filled by typing; <kbd>Escape</kbd> cancels.
+        </p>
+        <p>
+            A commit arrives as a <code>GridEditIntent&lt;TRow&gt;</code>: the row instance, the column's name and
+            the text. Apply it by replacing the row with a <strong>new instance</strong> — with
+            <code>GridSource.From</code>, <code>ReplaceRow(row, replacement)</code>. A row repaints when its
+            instance changes; a row object rewritten in place does not repaint, and the source refuses a
+            "replacement" that is the same instance. Records and <code>with</code> make this one line.
+        </p>
+        <p>
+            If the rows are reordered while the user is typing — a live update, a sort — the entry is dropped
+            rather than written into whatever row now stands there, and <code>OnEditDiscarded</code> says why.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Validation">
+        <p>
+            A column's <code>validate</code> delegate judges each commit and answers an <code>EditVerdict</code>:
+        </p>
+        <ul>
+            <li><code>EditVerdict.Accept</code> — apply it.</li>
+            <li><code>EditVerdict.Reject(message)</code> — the editor stays open with the text, and nothing is raised. For text that cannot be read at all.</li>
+            <li><code>EditVerdict.Flag(message)</code> — the edit goes through, and the cell is marked as an error. For a value that can be read but needs a second look.</li>
+        </ul>
+        <p>
+            <code>GridRuleset&lt;TRow&gt;</code> is a ready-made holder for these rules. Its
+            <code>ValidatorFor</code> is what a column's <code>validate</code> is set to, and after you apply
+            changes, <code>Evaluate</code> re-judges the rows so that a pasted value wears the same mark as a typed
+            one. Bind its <code>State</code> and <code>Message</code> to the grid's <code>CellState</code> and
+            <code>CellMessageOf</code>; rest the pointer on a flagged cell to read why.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Bulk changes, Delete and Undo">
+        <ul>
+            <li>
+                <strong>Paste and the fill keys</strong> — <kbd>Ctrl</kbd>+<kbd>V</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd>
+                (fill down), <kbd>Ctrl</kbd>+<kbd>R</kbd> (fill right) and <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (type once,
+                fill the selection) — all arrive as one <code>OnPaste</code>, carrying a value for every target cell.
+                See <a href="exgrid/clipboard">Clipboard</a> for the shape rules.
+            </li>
+            <li>
+                <strong>The fill handle</strong>, with <code>ShowFillHandle</code>, is the square at the corner of the
+                selection. Drag it and the grid raises <code>OnFill</code> with the source range and the target
+                beside it; what a fill means — a copy, a series — is yours.
+            </li>
+            <li>
+                <strong><kbd>Delete</kbd></strong> raises <code>OnClear</code>: these cells should hold no value.
+                It is not a paste of empty text, which an amount column would read as zero. A column with no blank
+                of its own can simply be left alone.
+            </li>
+            <li>
+                <strong>A gesture that touches a column that is not editable is refused whole</strong> through
+                <code>OnPasteRefused</code>, before anything is raised, never half-applied.
+            </li>
+            <li>
+                <strong><kbd>Ctrl</kbd>+<kbd>Z</kbd> and <kbd>Ctrl</kbd>+<kbd>Y</kbd></strong> are forwarded as
+                <code>OnUndo</code> and <code>OnRedo</code>. The history is yours, because only your application sees
+                every change, including those made outside the grid. Each gesture arrives as one intent, so keeping
+                one step per intent makes a paste of a thousand cells one <kbd>Ctrl</kbd>+<kbd>Z</kbd>. While the
+                editor is open, <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the typing instead.
+            </li>
+        </ul>
+        <DocsExample Title="An editable blotter with validation and undo" Builtin="typeof(EditingGrid)" Mud="typeof(EditingGridMud)"
+                     Files="@(["Examples/Grid/Position.cs"])">
+            Type <code>200000</code> into a quantity to see a flag, or <code>abc</code> to see a rejection. Select a
+            few cells and press <kbd>Ctrl</kbd>+<kbd>D</kbd>, drag the fill handle, press <kbd>Delete</kbd> on
+            traders, then undo each step.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(ExGrid.Cells.EditVerdict)" />
+        <ApiTable Type="typeof(ExGrid.Validation.GridRuleset<>)" />
+        <ApiTable Type="typeof(ExGrid.Selection.GridFillIntent)" />
+        <ApiTable Type="typeof(ExGrid.Clipboard.GridClearIntent)" />
+    </DocsSection>
+</DocsPage>

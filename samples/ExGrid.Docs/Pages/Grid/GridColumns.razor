@@ -1,0 +1,118 @@
+@page "/exgrid/columns"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Columns"
+          Lead="A column says how to read a value from a row, what type the value is, and how wide the column wants to be. Everything else — the format, the alignment, the tone — is optional, and the defaults follow the type.">
+
+    <DocsSection Title="Declaring columns">
+        <p>
+            A <code>GridColumn&lt;TRow&gt;</code> takes a name, a <code>ColumnType</code> and a value accessor.
+            The name addresses the column wherever the grid reports something about it — a sort, a filter,
+            an edit — so it must be unique. The header defaults to the name.
+        </p>
+        <ul>
+            <li>
+                <strong>The type decides the behaviour.</strong> <code>Text</code>, <code>Number</code>,
+                <code>Date</code> and <code>Boolean</code> each bring their own filter operators, comparison and
+                alignment: numbers and dates align right, text and booleans left. A <code>Date</code> column
+                says which date type its values are with <code>dateType</code> (<code>DateTime</code> unless declared).
+            </li>
+            <li>
+                <strong>Widths are Auto or Fixed.</strong> An Auto column grows to fit what it has painted and never
+                narrows on its own. <code>ColumnWidthSpec</code> also carries a minimum (40&nbsp;px by default)
+                and a maximum for what the grid computes (400&nbsp;px). A Fixed width below the minimum is refused
+                when the column is built, not clamped.
+            </li>
+            <li>
+                <strong><code>format</code> is the one text a value shows.</strong> It is what the cell paints, what
+                copy puts on the clipboard as text, what the filter's value list offers and what the editor opens with.
+                Your delegate owns the culture; the grid takes no view on separators.
+            </li>
+            <li>
+                <strong><code>align</code> and <code>headerAlign</code></strong> override the type's alignment.
+            </li>
+            <li>
+                <strong><code>tone</code> says what a value means</strong> — <code>CellTone.Positive</code> or
+                <code>Negative</code> — and the theme says what colour that is. The bare grid paints no colour for a
+                tone until you set <code>--ex-tone-positive-color</code> and <code>--ex-tone-negative-color</code>;
+                ExGrid.MudBlazor maps them onto the palette's success and error colours.
+            </li>
+        </ul>
+        <p>
+            A number or a date too wide for its column is painted <code>####</code>, as Excel does, rather than cut
+            short: a truncated amount looks like a smaller one. Widen the <em>Market value</em> column below and the
+            values come back.
+        </p>
+        <DocsExample Title="Types, widths, formats and tones" Builtin="typeof(ColumnTypes)" Mud="typeof(ColumnTypesMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Keep the column list stable">
+        <p>
+            Build the list once and keep it in a field. The list instance is the grid's signal that the columns
+            changed: a new array on every render makes every row render again. When something does change — a
+            width, the order — hand over a <em>new</em> list rather than editing the old one. Columns are immutable
+            records for the same reason.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Pinned columns and Header Groups">
+        <p>
+            <code>PinnedColumnCount</code> holds the first <em>n</em> columns against the left edge while the rest
+            scroll, like Excel's frozen panes. Pinned cells are painted at every scroll position, so pin a handful,
+            not half the grid.
+        </p>
+        <p>
+            <code>HeaderGroups</code> draws labelled rectangles above the header row. A <code>HeaderGroup</code>
+            names its member columns, which must stand next to each other; <code>tier</code> stacks groups above
+            groups. The grid refuses, naming the group, a member that does not exist, members that are not adjacent,
+            rectangles that overlap, and a group that straddles the pinned boundary.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Resizing, reordering and hiding">
+        <p>
+            Column layout is your application's state, and the grid only reports the gestures:
+        </p>
+        <ul>
+            <li><code>OnColumnWidthChanged</code> fires when a resize drag is released. The grips appear only when it is wired.</li>
+            <li><code>OnColumnOrderChanged</code> hands over the whole new order after a header drag. A drag never splits a group or crosses the pinned boundary.</li>
+            <li><code>OnColumnHidden</code> and <code>OnPinnedCountChanged</code> back the column menu's <em>Hide</em> and <em>Pin</em> commands. <em>Hide</em> is offered only when <code>OnColumnHidden</code> is wired.</li>
+        </ul>
+        <p>
+            Answer each by pushing back a new <code>Columns</code> list. Drag a column edge, drag a header, or hide
+            a column from its ▾ menu.
+        </p>
+        <DocsExample Title="Pinned columns, two tiers of groups, and layout events" Builtin="typeof(ColumnLayout)" Mud="typeof(ColumnLayoutMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Mark, Template and Action columns">
+        <ul>
+            <li>
+                <strong><code>GridColumn.MarkColumn()</code></strong> puts a checkbox on every row and one in the header
+                that marks the whole result. The marks belong to the rows, not to the data:
+                <code>GridSource.From</code> keeps them for you in <code>Marks</code>, by row instance, across sorting,
+                filtering and edits.
+            </li>
+            <li>
+                <strong><code>GridColumn.TemplateColumn(...)</code></strong> paints its cells with your markup. It still
+                takes a value accessor, and that value — never the markup — is what sorts, filters and copies.
+                Keep the template in a static field: a new lambda per render makes the column look changed.
+            </li>
+            <li>
+                <strong><code>GridColumn.ActionColumn(...)</code></strong> carries buttons and no value. A press raises
+                <code>OnAction</code> with the row and the action's name. With the keyboard, Space presses a single
+                action, or enters a cell with several, where ← and → choose.
+            </li>
+        </ul>
+        <DocsExample Title="Marks, a template and actions" Builtin="typeof(SpecialColumns)" Mud="typeof(SpecialColumnsMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(GridColumn<>)" />
+        <ApiTable Type="typeof(ExGrid.Columns.ColumnWidthSpec)" />
+        <ApiTable Type="typeof(ExGrid.Columns.HeaderGroup)" />
+    </DocsSection>
+</DocsPage>

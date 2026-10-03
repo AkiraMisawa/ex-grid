@@ -1,0 +1,401 @@
+@page "/showcase/blotter"
+@layout BareLayout
+@implements IDisposable
+@inject DocsState State
+@using System.Globalization
+@using ExGrid.Cells
+@using ExGrid.Chrome
+@using ExGrid.Columns
+@using ExGrid.Selection
+@using ExGrid.Docs.Examples.Grid.Blotter
+
+<ShowcaseFrame Title="Trade blotter">
+    @if (State.Mud)
+    {
+        <div class="blotter blotter-mud">
+            <MudAppBar Fixed="false" Dense="true" Elevation="0" Color="@(State.Dark ? Color.Surface : Color.Primary)" Class="blotter-mud-bar">
+                <MudIcon Icon="@Icons.Material.Filled.ShowChart" Class="mr-2" />
+                <MudText Typo="Typo.h6" Class="mr-6">Blotter</MudText>
+                <MudToggleGroup T="string" Value="_desk" ValueChanged="SelectDesk" Size="Size.Small" Outlined="false"
+                                Delimiters="false" SelectedClass="blotter-mud-desk-selected" Class="blotter-mud-desks">
+                    @foreach (var desk in Desks)
+                    {
+                        <MudToggleItem Value="@desk" Text="@desk" />
+                    }
+                </MudToggleGroup>
+                <MudSpacer />
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@(_live ? Color.Success : Color.Default)"
+                         Icon="@Icons.Material.Filled.FiberManualRecord" Class="blotter-mud-live">@(_live ? "LIVE" : "PAUSED")</MudChip>
+                <MudText Typo="Typo.body2" Class="mx-3 blotter-clock">@_clock</MudText>
+                <MudIconButton Icon="@(_live ? Icons.Material.Filled.Pause : Icons.Material.Filled.PlayArrow)" Color="Color.Inherit"
+                               OnClick="ToggleLive" aria-label="@(_live ? "Pause prices" : "Resume prices")" />
+                <MudAvatar Size="Size.Small" Color="Color.Secondary" Class="ml-2">KO</MudAvatar>
+            </MudAppBar>
+            <div class="blotter-body">
+            <div class="blotter-kpis">
+                @foreach (var kpi in Kpis())
+                {
+                    <MudPaper Elevation="0" Outlined="true" Class="blotter-kpi">
+                        <MudText Typo="Typo.caption" Class="blotter-kpi-label">@kpi.Label</MudText>
+                        <MudText Typo="Typo.h6" Class="@($"blotter-kpi-value {kpi.Tone}")">@kpi.Value</MudText>
+                    </MudPaper>
+                }
+            </div>
+            <MudExGridPaper Class="blotter-mud-paper" Elevation="0" Outlined="true" Square="true" Striped="true" Hover="true" Dense="true">
+                <ExGrid TRow="BlotterTrade" Source="_source" Columns="_columns" HeaderGroups="Groups" PinnedColumnCount="2"
+                        CellChangedAt="_changedAt" CellState="StateOf" SelectionChanged="OnSelectionChanged"
+                        HighlightFocusRow="true" Chrome="_mudChrome"
+                        ViewportHeight="GridHeight" ViewportWidth="GridWidth" />
+            </MudExGridPaper>
+            <div class="blotter-status">
+                <span>@StatusLeft()</span>
+                <span class="blotter-status-right">@_selectionText</span>
+            </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="blotter blotter-builtin">
+            <header class="blotter-bar">
+                <span class="blotter-logo" aria-hidden="true"></span>
+                <span class="blotter-title">Blotter</span>
+                <nav class="blotter-desks" aria-label="Desk">
+                    @foreach (var desk in Desks)
+                    {
+                        <button type="button" class="@(desk == _desk ? "blotter-desk blotter-desk-on" : "blotter-desk")"
+                                @onclick="() => SelectDesk(desk)">@desk</button>
+                    }
+                </nav>
+                <span class="blotter-spacer"></span>
+                <span class="@(_live ? "blotter-live" : "blotter-live blotter-live-off")">@(_live ? "LIVE" : "PAUSED")</span>
+                <span class="blotter-clock">@_clock</span>
+                <button type="button" class="blotter-bar-button" @onclick="ToggleLive">@(_live ? "Pause" : "Resume")</button>
+                <span class="blotter-avatar">KO</span>
+            </header>
+            <div class="blotter-body">
+            <div class="blotter-kpis">
+                @foreach (var kpi in Kpis())
+                {
+                    <div class="blotter-kpi">
+                        <div class="blotter-kpi-label">@kpi.Label</div>
+                        <div class="@($"blotter-kpi-value {kpi.Tone}")">@kpi.Value</div>
+                    </div>
+                }
+            </div>
+            <div class="blotter-grid">
+                <ExGrid TRow="BlotterTrade" Source="_source" Columns="_columns" HeaderGroups="Groups" PinnedColumnCount="2"
+                        CellChangedAt="_changedAt" CellState="StateOf" SelectionChanged="OnSelectionChanged"
+                        HighlightFocusRow="true" StripeRows="true" Density="GridDensity.Excel"
+                        ViewportHeight="GridHeight" ViewportWidth="GridWidth" />
+            </div>
+            <footer class="blotter-status">
+                <span>@StatusLeft()</span>
+                <span class="blotter-status-right">@_selectionText</span>
+            </footer>
+            </div>
+        </div>
+    }
+</ShowcaseFrame>
+
+<style>
+    /* Laid out for a 1280 × 720 window: 48 + 74 + 2 + 568 + 28. */
+    .blotter { min-height: 100vh; display: flex; flex-direction: column; }
+    .blotter-body { width: 1280px; margin: 0 auto; display: flex; flex-direction: column; }
+    .blotter-grid { flex: none; }
+    .blotter-kpis { display: flex; gap: 10px; height: 74px; box-sizing: border-box; padding: 8px 14px; flex: none; }
+    .blotter-kpi { flex: 1; min-width: 0; padding: 6px 14px; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+    .blotter .blotter-kpi-label { font-size: 11px; line-height: 16px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+    .blotter .blotter-kpi-value { font-size: 20px; line-height: 28px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .blotter-status { display: flex; align-items: center; gap: 16px; height: 28px; padding: 0 14px; font-size: 12px; flex: none; font-variant-numeric: tabular-nums; }
+    .blotter-status-right { margin-left: auto; }
+
+    /* The built-in shell: plain HTML, coloured by the page's scheme. */
+    .blotter-builtin {
+        color-scheme: inherit;
+        background: light-dark(#eef1f5, #0b0f14);
+        color: light-dark(#1b2430, #d5dde6);
+        font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+        --ex-background: light-dark(#ffffff, #10161d);
+        --ex-pinned-background: light-dark(#ffffff, #10161d);
+        --ex-header-background: light-dark(#f4f6f9, #161e27);
+        --ex-header-color: light-dark(#3a4655, #aeb9c6);
+        --ex-row-rule-color: light-dark(#edf0f4, #19212b);
+        --ex-column-rule-color: light-dark(#f1f3f6, #141b23);
+        --ex-row-stripe-background: light-dark(rgba(20, 50, 90, 0.025), rgba(140, 170, 210, 0.035));
+        --ex-selection-fill: rgba(47, 129, 247, 0.15);
+        --ex-focus-row-fill: light-dark(rgba(47, 129, 247, 0.06), rgba(88, 166, 255, 0.08));
+        --ex-tone-positive-color: light-dark(#0f7b3a, #3fb950);
+        --ex-tone-negative-color: light-dark(#c62828, #f85149);
+        --ex-change-highlight-background: light-dark(rgba(255, 196, 0, 0.32), rgba(210, 153, 34, 0.28));
+    }
+    .blotter-bar {
+        display: flex; align-items: center; gap: 14px; height: 48px; padding: 0 14px; flex: none;
+        background: light-dark(#0f2138, #0d1520); color: #e8eef5;
+        border-bottom: 1px solid light-dark(#0f2138, #1d2835);
+    }
+    .blotter-logo { width: 22px; height: 22px; border-radius: 5px; background: linear-gradient(135deg, #2f81f7, #3fb950); }
+    .blotter-title { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; margin-right: 8px; }
+    .blotter-desks { display: flex; gap: 2px; background: rgba(255, 255, 255, 0.07); border-radius: 6px; padding: 2px; }
+    .blotter-desk { appearance: none; border: 0; background: none; color: #b8c4d2; font: 500 12px system-ui, sans-serif; padding: 5px 11px; border-radius: 4px; cursor: pointer; }
+    .blotter-desk:hover { color: #fff; }
+    .blotter-desk-on { background: #2f81f7; color: #fff; }
+    .blotter-spacer { flex: 1; }
+    .blotter-live { font: 700 11px system-ui, sans-serif; letter-spacing: 0.08em; color: #3fb950; display: inline-flex; align-items: center; gap: 6px; }
+    .blotter-live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.25); }
+    .blotter-live-off { color: #8b96a3; }
+    .blotter-live-off::before { box-shadow: none; }
+    .blotter-clock { font-variant-numeric: tabular-nums; color: #b8c4d2; }
+    .blotter-bar-button { appearance: none; border: 1px solid rgba(255, 255, 255, 0.25); background: none; color: #e8eef5; font: 500 12px system-ui, sans-serif; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
+    .blotter-bar-button:hover { background: rgba(255, 255, 255, 0.08); }
+    .blotter-avatar { width: 28px; height: 28px; border-radius: 50%; background: #6e40c9; color: #fff; display: grid; place-items: center; font: 600 11px system-ui, sans-serif; }
+    .blotter-builtin .blotter-kpi { background: light-dark(#ffffff, #10161d); border: 1px solid light-dark(#dde3ea, #1d2733); }
+    .blotter-builtin .blotter-grid { margin: 0 14px; border: 1px solid light-dark(#dde3ea, #1d2733); border-radius: 6px; overflow: hidden; background: light-dark(#ffffff, #10161d); }
+    .blotter-builtin .blotter-status { color: light-dark(#5b6876, #8b96a3); }
+    .blotter-up { color: light-dark(#0f7b3a, #3fb950); }
+    .blotter-down { color: light-dark(#c62828, #f85149); }
+
+    /* The MudBlazor shell: the palette does the colouring. */
+    .blotter-mud { background: var(--mud-palette-background); }
+    .blotter-mud .blotter-mud-bar { flex: none; }
+    .blotter-mud .blotter-mud-desks { background: rgba(255, 255, 255, 0.12); }
+    .blotter-mud .blotter-mud-desks .mud-toggle-item { color: rgba(255, 255, 255, 0.8); }
+    .blotter-mud .blotter-mud-desk-selected { background: rgba(255, 255, 255, 0.22) !important; color: #fff !important; }
+    .blotter-mud .blotter-mud-live { font-weight: 700; letter-spacing: 0.06em; }
+    .blotter-mud .blotter-mud-paper { flex: none; margin: 0 14px; }
+    .blotter-mud .blotter-mud-bar { height: 48px; border-bottom: 1px solid var(--mud-palette-lines-default); }
+    .blotter-mud .blotter-status { color: var(--mud-palette-text-secondary); }
+    .blotter-mud .blotter-up { color: var(--mud-palette-success); }
+    .blotter-mud .blotter-down { color: var(--mud-palette-error); }
+</style>
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly MudGridChrome _mudChrome = new();
+    // Declared sizes: Header Groups do not yet render under ViewportSize.Stretch.
+    private const double GridWidth = 1250;
+    private const double GridHeight = 568;
+    private static readonly string[] Desks = ["All", "Rates", "Credit", "FX", "Equities", "Commodities"];
+    private static readonly string[] LiveColumns = ["Bid", "Ask", "Last", "Change", "DayPnl", "TotalPnl"];
+
+    // To US dollars, for the totals across currencies.
+    private static readonly Dictionary<string, decimal> ToUsd = new()
+    {
+        ["USD"] = 1m, ["EUR"] = 1.0842m, ["GBP"] = 1.2671m, ["JPY"] = 0.0067m, ["CHF"] = 1.1334m, ["CAD"] = 0.7356m, ["MXN"] = 0.0580m,
+    };
+
+    private static readonly HeaderGroup[] Groups =
+    [
+        new("Trade", ["Id", "Instrument"]),
+        new("Position", ["Side", "Quantity", "TradePrice"]),
+        new("Market", ["Last", "Change", "Bid", "Ask"]),
+        new("P&L", ["DayPnl", "TotalPnl"]),
+        new("Booking", ["Desk", "Book", "Trader", "Counterparty"]),
+        new("Settlement", ["Currency", "Notional", "TradeDate", "Status"]),
+    ];
+
+    private static readonly GridColumn<BlotterTrade>[] Columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id, header: "Trade ID", width: Fixed(96), align: CellAlign.Left),
+        new("Instrument", ColumnType.Text, t => t.Instrument, width: Fixed(126), filterUi: FilterUiMode.Both),
+        new("Side", ColumnType.Text, t => t.Side, width: Fixed(72), filterUi: FilterUiMode.ValueList),
+        new("Quantity", ColumnType.Number, t => t.Quantity, width: Fixed(112), format: v => ((long)v).ToString("N0", Invariant)),
+        new("TradePrice", ColumnType.Number, t => t.TradePrice, header: "Trade px", width: Fixed(100), format: Price),
+        new("Last", ColumnType.Number, t => t.Last, width: Fixed(96), format: Price),
+        new("Change", ColumnType.Number, t => t.Change, header: "Chg %", width: Fixed(84), tone: Sign,
+            format: v => ((decimal)v).ToString("+0.00%;-0.00%;0.00%", Invariant)),
+        new("Bid", ColumnType.Number, t => t.Bid, width: Fixed(92), format: Price),
+        new("Ask", ColumnType.Number, t => t.Ask, width: Fixed(92), format: Price),
+        new("DayPnl", ColumnType.Number, t => t.DayPnl, header: "Day P&L", width: Fixed(118), tone: Sign, format: Money),
+        new("TotalPnl", ColumnType.Number, t => t.TotalPnl, header: "Total P&L", width: Fixed(124), tone: Sign, format: Money),
+        new("Desk", ColumnType.Text, t => t.Desk, width: Fixed(100), filterUi: FilterUiMode.ValueList),
+        new("Book", ColumnType.Text, t => t.Book, width: Fixed(128), filterUi: FilterUiMode.Both),
+        new("Trader", ColumnType.Text, t => t.Trader, width: Fixed(110), filterUi: FilterUiMode.Both),
+        new("Counterparty", ColumnType.Text, t => t.Counterparty, width: Fixed(160), filterUi: FilterUiMode.Both),
+        new("Currency", ColumnType.Text, t => t.Currency, header: "Ccy", width: Fixed(56), filterUi: FilterUiMode.ValueList),
+        new("Notional", ColumnType.Number, t => t.Notional, width: Fixed(136), format: v => ((decimal)v).ToString("N0", Invariant)),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", width: Fixed(104), dateType: DateType.DateOnly),
+        new("Status", ColumnType.Text, t => t.Status, width: Fixed(100), filterUi: FilterUiMode.ValueList),
+    ];
+
+    private readonly BlotterMarket _market = new();
+    private readonly CancellationTokenSource _leaving = new();
+    private readonly IReadOnlyList<GridColumn<BlotterTrade>> _columns = Columns;
+    private readonly Dictionary<string, DateTimeOffset> _movedAt = [];
+    private BlotterSource _source = default!;
+    private CellChangeOf<BlotterTrade> _changedAt = default!;
+    private GridSelection _selection = GridSelection.Empty;
+    private string _selectionText = "";
+    private string _desk = "All";
+    private string _clock = "";
+    private bool _live = true;
+    private int _ticks;
+
+    // An amended trade carries the Modified mark on its status.
+    private static readonly CellStateOf<BlotterTrade> StateOf = (trade, column) =>
+        column.Name == "Status" && trade.Status == "Amended" ? CellState.Modified : CellState.Normal;
+
+    protected override void OnInitialized()
+    {
+        _source = new BlotterSource(_market.Book(25_000), LiveColumns);
+        _source.StateChanged += OnSourceChanged;
+        // A price cell is marked when its instrument's quote last moved.
+        _changedAt = (trade, column) => Array.IndexOf(LiveColumns, column.Name) >= 0 && _movedAt.TryGetValue(trade.Instrument, out var at) ? at : null;
+        _clock = DateTime.Now.ToString("HH:mm:ss", Invariant);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            _ = TickAsync(_leaving.Token);
+    }
+
+    private async Task TickAsync(CancellationToken leaving)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(400));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(leaving))
+            {
+                _clock = DateTime.Now.ToString("HH:mm:ss", Invariant);
+                if (_live)
+                {
+                    var moved = _market.Move(3);
+                    var now = DateTimeOffset.Now;
+                    foreach (var quote in moved)
+                        _movedAt[quote.Symbol] = now;
+                    _source.Reprice(moved);
+                    _ticks++;
+                    Measure();
+                }
+                StateHasChanged();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void OnSourceChanged()
+    {
+        Measure();
+        _desk = DeskOf(_source.Filter);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleLive() => _live = !_live;
+
+    // The desk switch is a filter on the Desk column, alongside whatever the filter panels hold.
+    private void SelectDesk(string desk)
+    {
+        var columns = _source.Filter?.Columns.Where(c => c.Key != "Desk").ToDictionary(c => c.Key, c => c.Value) ?? [];
+        if (desk != "All")
+            columns["Desk"] = new FilterSpec([new FilterClause(global::ExGrid.FilterOperator.Equals, desk)]);
+        _source.OnFilterChanged(columns.Count == 0 ? null : new GridFilter(columns));
+    }
+
+    private static string DeskOf(GridFilter? filter)
+        => filter?.Columns.GetValueOrDefault("Desk") is { Clauses: [{ Operator: global::ExGrid.FilterOperator.Equals, Value: string desk }] } ? desk : "All";
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        Measure();
+    }
+
+    // Excel's status bar: how many cells are selected, and the sum of the numbers among them.
+    private void Measure()
+    {
+        if (_selection.IsEmpty || _selection.CellCount <= 1)
+        {
+            _selectionText = "";
+            return;
+        }
+        if (_selection.CellCount > 500_000)
+        {
+            _selectionText = $"Count {_selection.CellCount:N0}";
+            return;
+        }
+        var rows = _source.Window;
+        decimal sum = 0;
+        var numbers = 0;
+        foreach (var range in _selection.Ranges)
+        {
+            for (var r = range.TopRow; r <= Math.Min(range.BottomRow, rows.Count - 1); r++)
+            {
+                for (var c = range.LeftColumn; c <= range.RightColumn; c++)
+                {
+                    switch (_columns[c].Value(rows[r]))
+                    {
+                        case decimal d: sum += d; numbers++; break;
+                        case long l: sum += l; numbers++; break;
+                    }
+                }
+            }
+        }
+        _selectionText = numbers == 0
+            ? $"Count {_selection.CellCount:N0}"
+            : $"Count {_selection.CellCount:N0}    Sum {sum.ToString("#,##0.##", Invariant)}";
+    }
+
+    private string StatusLeft()
+    {
+        var sorted = _source.Sorts.Count == 0 ? "" : " · sorted by " + string.Join(", ", _source.Sorts.Select(s => Columns.First(c => c.Name == s.Column).Header));
+        var filtered = _source.Filter is null ? "" : " · filtered";
+        return $"{_source.Window.Count:N0} of {_source.All.Count:N0} trades{filtered}{sorted} · {_ticks:N0} price updates";
+    }
+
+    private sealed record Kpi(string Label, string Value, string Tone);
+
+    private IEnumerable<Kpi> Kpis()
+    {
+        var rows = _source.Window;
+        decimal day = 0, total = 0, notional = 0;
+        var pending = 0;
+        foreach (var t in rows)
+        {
+            var usd = ToUsd[t.Currency];
+            day += t.DayPnl * usd;
+            total += t.TotalPnl * usd;
+            notional += t.Notional * usd;
+            if (t.Status is "Pending" or "Amended")
+                pending++;
+        }
+        yield return new("Day P&L · USD", Signed(day), ToneOf(day));
+        yield return new("Total P&L · USD", Signed(total), ToneOf(total));
+        yield return new("Gross notional · USD", Short(notional), "");
+        yield return new("Trades", rows.Count.ToString("N0", Invariant), "");
+        yield return new("Pending or amended", pending.ToString("N0", Invariant), "");
+    }
+
+    private static string Signed(decimal usd) => (usd >= 0 ? "+" : "−") + Short(Math.Abs(usd));
+
+    private static string Short(decimal usd) => usd switch
+    {
+        >= 1_000_000_000m => (usd / 1_000_000_000m).ToString("0.00", Invariant) + "bn",
+        >= 1_000_000m => (usd / 1_000_000m).ToString("0.00", Invariant) + "m",
+        _ => usd.ToString("N0", Invariant),
+    };
+
+    private static string ToneOf(decimal value) => value > 0 ? "blotter-up" : value < 0 ? "blotter-down" : "";
+
+    private static CellTone Sign(object value) => (decimal)value switch
+    {
+        > 0 => CellTone.Positive,
+        < 0 => CellTone.Negative,
+        _ => CellTone.None,
+    };
+
+    private static string Price(object value) => ((decimal)value).ToString("#,##0.00###", Invariant);
+
+    private static string Money(object value) => ((decimal)value).ToString("#,##0;(#,##0)", Invariant);
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+
+    public void Dispose()
+    {
+        _leaving.Cancel();
+        _leaving.Dispose();
+        _source.StateChanged -= OnSourceChanged;
+    }
+}

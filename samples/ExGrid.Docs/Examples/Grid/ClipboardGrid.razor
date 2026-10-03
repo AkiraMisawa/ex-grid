@@ -1,0 +1,76 @@
+@using System.Globalization
+@using ExGrid.Clipboard
+@using ExGrid.Columns
+@using ExGrid.Selection
+
+<ExGrid TRow="Position" Source="_source" Columns="_columns" PinnedColumnCount="1" CopyCellCap="2_000"
+        OnPaste="OnPaste" OnCopyRefused="OnCopyRefused" OnPasteRefused="OnPasteRefused"
+        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+<p role="status" style="margin: 12px 0 0; font-size: 14px">@_message</p>
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample(500));
+    private string _message = "Select cells and press Ctrl+C, then paste into Excel — or copy from Excel and paste into Quantity and Price.";
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id, width: Fixed(70), align: CellAlign.Left),
+        new("Desk", ColumnType.Text, p => p.Desk, width: Fixed(100)),
+        new("Instrument", ColumnType.Text, p => p.Instrument, width: Fixed(120)),
+        new("Quantity", ColumnType.Number, p => p.Quantity, width: Fixed(110), editable: true, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, width: Fixed(100), editable: true, format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", width: Fixed(130), format: v => ((decimal)v).ToString("N2", Invariant)),
+    ];
+
+    // The grid names the rule a copy broke; the words are yours.
+    private void OnCopyRefused(CopyRefusalReason reason) => _message = reason switch
+    {
+        CopyRefusalReason.TooLarge => "Not copied: that is more than 2,000 cells. Nothing was put on the clipboard — export instead.",
+        CopyRefusalReason.MisalignedShape => "Not copied: the ranges do not line up into one block.",
+        CopyRefusalReason.EmptySelection => "Select something to copy.",
+        _ => $"Not copied: {reason}.",
+    };
+
+    private void OnPasteRefused(PasteRefusalReason reason) => _message = reason switch
+    {
+        PasteRefusalReason.TargetNotEditable => "Not pasted: only Quantity and Price take a paste.",
+        PasteRefusalReason.SingleCellTarget => "Not pasted: select a range the same shape as what you copied.",
+        PasteRefusalReason.ShapeMismatch => "Not pasted: the copied block does not divide into the selection.",
+        _ => $"Not pasted: {reason}.",
+    };
+
+    // One intent for the whole paste. Each cell is resolved to its row before any row is replaced.
+    private void OnPaste(GridPasteIntent paste)
+    {
+        var writes = (
+            from range in paste.Plan.Targets
+            from row in Enumerable.Range(range.TopRow, range.RowCount)
+            from column in Enumerable.Range(range.LeftColumn, range.ColumnCount)
+            let cell = new CellPosition(row, column)
+            select (Row: _source.Window[row], Column: _columns[column].Name, Text: paste.ValueFor(cell))).ToList();
+
+        var latest = new Dictionary<Position, Position>(ReferenceEqualityComparer.Instance);
+        var written = 0;
+        foreach (var (row, column, text) in writes)
+        {
+            var current = latest.GetValueOrDefault(row, row);
+            Position? replacement = column switch
+            {
+                "Quantity" when int.TryParse(text, NumberStyles.Number, Invariant, out var quantity) => current with { Quantity = quantity },
+                "Price" when decimal.TryParse(text, NumberStyles.Number, Invariant, out var price) => current with { Price = price },
+                _ => null,
+            };
+            if (replacement is null)
+                continue;
+            _source.ReplaceRow(current, replacement);
+            latest[row] = replacement;
+            written++;
+        }
+        _message = $"Pasted {written:N0} of {writes.Count:N0} cells; {writes.Count - written:N0} were not numbers.";
+    }
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+}

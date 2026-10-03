@@ -1,0 +1,53 @@
+@using System.Globalization
+@using ExGrid.Cells
+@using ExGrid.Columns
+@implements IDisposable
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.subtitle2">@(_source.Marks.Counts?.Marked ?? 0) of @_source.Window.Count marked</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body2">@_lastAction</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Position" Source="_source" Columns="_columns" OnAction="OnAction" PinnedColumnCount="2"
+                Chrome="_chrome" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    // A template paints the cell; the value accessor beside it is still what sorts, filters and copies.
+    private static readonly RenderFragment<TemplateCellContext<Position>> LimitBar = cell =>
+        @<div style="display: flex; align-items: center; gap: 8px; height: 100%; padding: 0 8px">
+            <div style="flex: 1; height: 6px; border-radius: 3px; background: rgba(128, 128, 128, 0.2)">
+                <div style="height: 100%; border-radius: 3px; width: @(Math.Min(cell.Row.LimitUsed, 1).ToString("0%", Invariant)); background: @(cell.Row.LimitUsed > 1 ? "#d1242f" : "#2f81f7")"></div>
+            </div>
+            <span style="width: 36px; text-align: right">@cell.Row.LimitUsed.ToString("0%", Invariant)</span>
+        </div>;
+
+    private static readonly GridColumn<Position>[] Columns =
+    [
+        GridColumn<Position>.MarkColumn(),
+        new("Id", ColumnType.Number, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(70)), align: CellAlign.Left),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Trader", ColumnType.Text, p => p.Trader),
+        GridColumn<Position>.TemplateColumn("LimitUsed", ColumnType.Number, p => p.LimitUsed, LimitBar,
+            header: "Limit used", width: new ColumnWidthSpec(ColumnWidth.Fixed(180))),
+        GridColumn<Position>.ActionColumn("Actions", [new GridAction("hedge", "Hedge"), new GridAction("close", "Close")]),
+    ];
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+    private readonly IReadOnlyList<GridColumn<Position>> _columns = Columns;
+    private string _lastAction = "";
+
+    // The source keeps the marks, by row; this page only shows the count.
+    protected override void OnInitialized() => _source.Marks.Changed += StateHasChanged;
+
+    private void OnAction(GridActionEventArgs<Position> action)
+        => _lastAction = $"{action.ActionName} asked for position {action.Row.Id} ({action.Row.Instrument}).";
+
+    public void Dispose() => _source.Marks.Changed -= StateHasChanged;
+}
