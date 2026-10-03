@@ -1,0 +1,377 @@
+@page "/pivot-live"
+@implements IAsyncDisposable
+@inject DemoApiClient Api
+@using System.Diagnostics
+@using System.Globalization
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.SignalR.Client
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+@using global::ExPivot.Chrome
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
+
+@* ?chrome=mud stands both pivots on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's
+   Chrome, as /pivot does; absent or builtin is ExPivot's own markup. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true">
+    <Head>
+        <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <link href="_content/ExPivot.MudBlazor/mud-ex-pivot.css" rel="stylesheet" />
+        }
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>Live pivots — a Change Batch in the page, and a server whose data moves on</h1>
+
+<p>
+    <strong>The use case:</strong> a risk screen whose trades change while it is read — amended,
+    booked and cancelled several times a second. The data changes in one of two places, and what
+    reaches the screen is the same either way (ADR-0067):
+</p>
+<ul>
+    <li>
+        <strong>In this process.</strong> The page holds /pivot's 2,000 trades in a Snapshot, read
+        through typed declarations whose Record Key is the trade's id
+        (<code>PivotSource.From(trades, DemoPivotData.Fields)</code>). Its own timer amends a few trades
+        four times a second and hands each amendment to the source as one Change Batch
+        (<code>source.Apply(DemoPivotData.Fields.Batch(changed: amended))</code>). The source makes the next
+        Snapshot and brings the answer it holds up to date from what the batch removed and added,
+        rather than from 2,000 records again.
+    </li>
+    <li>
+        <strong>On a server.</strong> <code>POST /api/live</code> turns the demo API server's live
+        updates on: twenty trades of its database changed four times a second, and one in eight
+        ticks a trade cancelled and another booked. Its SignalR hub says each new Source Version,
+        and the page passes it on (<code>source.NotifyChanged(version)</code>); ExPivot asks the
+        server again for the whole answer through <code>PivotSource.Fetch</code>, as on /pivot-db.
+    </li>
+</ul>
+<p>
+    ExPivot gathers the changes and redraws at most every 250 ms, from the newest data
+    (<code>RedrawInterval</code>), and marks each value whose painted text changed for a second
+    (<code>ChangeHighlightDuration</code>, ADR-0068). A new layout, a sort or a collapse marks
+    nothing, and the Selection stays while only values change. The page's changes stop, and the
+    server's live updates go off, when you leave the page.
+</p>
+
+<p><code>?trades=1000000&amp;batch=1000</code> holds a million trades in this process and amends a thousand a batch, instead of 2,000 and five.</p>
+
+<div class="demo-toolbar">
+    <button id="pivot-live-local-toggle" @onclick="ToggleLocal">@(_localOn ? "Pause the page's changes" : "Resume the page's changes")</button>
+    <button id="pivot-live-server-toggle" disabled="@(!_connected)" @onclick="ToggleServerAsync">@(_serverOn ? "Turn the server's live updates off" : "Turn the server's live updates on")</button>
+</div>
+
+<div class="demo-pivot-pair">
+    <section id="pivot-live-local" aria-labelledby="pivot-live-local-title">
+        <h2 id="pivot-live-local-title">In this process: Change Batches</h2>
+        <p class="demo-status"><DemoStatusLine @ref="_localLine" Id="pivot-live-local-status" Initial="No batch applied yet." /></p>
+        @Framed(LocalPivot)
+    </section>
+    <section id="pivot-live-server" aria-labelledby="pivot-live-server-title">
+        <h2 id="pivot-live-server-title">On a server: its data moves on</h2>
+        <p class="demo-status"><DemoStatusLine @ref="_serverLine" Id="pivot-live-server-status" Initial="@_serverInitial" /></p>
+        @if (_server is not null)
+        {
+            @Framed(ServerPivot)
+        }
+    </section>
+</div>
+
+<h2>The code</h2>
+<p>
+    What this page runs, read from its source. <code>Api.Http</code> is an <code>HttpClient</code>
+    whose base address is the demo API server, and <code>DemoServerPivot</code> is the server's
+    Pivot Source, shown on /pivot-db.
+</p>
+<DemoCodeBlock File="DemoPivotData.cs" Region="fields" />
+<DemoCodeBlock File="PivotLivePage.razor" Region="batch" />
+<DemoCodeBlock File="PivotLivePage.razor" Region="server" />
+<DemoCodeBlock File="PivotLivePage.razor" Region="pivots" />
+<DemoCodeBlock File="PivotLivePage.razor" Region="leaving" />
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    // How many trades a batch amends unless ?batch= says, and how often.
+    private const int DefaultTradesPerBatch = 5;
+    private static readonly TimeSpan BatchEvery = TimeSpan.FromMilliseconds(250);
+
+    private readonly CancellationTokenSource _leaving = new();
+    private readonly Random _random = new(20261001);
+    private IGridChrome? _gridChrome;
+    private IPivotChrome? _pivotChrome;
+    private DemoStatusLine? _localLine;
+    private DemoStatusLine? _serverLine;
+    private PivotLayout _localLayout = FirstLayout();
+    private PivotLayout _serverLayout = FirstLayout();
+    private bool _localOn = true;
+    private int _batches;
+    private string _serverInitial = "Asking the demo API server for its fields…";
+    private bool _connected;
+    private bool _serverOn;
+
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    [SupplyParameterFromQuery(Name = "trades")]
+    public int? TradesAsked { get; set; }
+
+    [SupplyParameterFromQuery(Name = "batch")]
+    public int? BatchAsked { get; set; }
+
+    // The trades the page holds — ?trades=, or /pivot's 2,000 — and how many a batch amends, never
+    // more than there are.
+    private int TradeCount => TradesAsked is > 0 and var count ? count : DemoPivotData.Count;
+
+    private int TradesPerBatch => Math.Min(BatchAsked is > 0 and var count ? count : DefaultTradesPerBatch, _trades.Length);
+
+    protected override void OnParametersSet()
+    {
+        // The report grids take ExPivot.MudBlazor's grid Chrome through the pivot Chrome, as on
+        // /pivot; DemoChrome refuses any name but builtin and mud.
+        _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
+        _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Interactive only: a prerender on the Server host would start a timer and a connection
+        // for a page about to be replaced.
+        if (!firstRender)
+            return;
+        _ticks = new PeriodicTimer(BatchEvery);
+        _ = Reported(AmendAsync(_ticks));
+        var token = _leaving.Token;
+        try
+        {
+            await ConnectAsync(token);
+            _connected = true;
+            _serverOn = true;
+            DescribeServer(version: null);
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // The page went first.
+        }
+        catch (HttpRequestException error)
+        {
+            _serverInitial = Api.NotAnswering(error);
+            _serverLine?.Show(_serverInitial);
+            StateHasChanged();
+        }
+    }
+
+    #region The code: batch
+    // /pivot's trades in a Snapshot, read through its typed declarations (DemoPivotData.Fields),
+    // whose Record Key is the trade's id: a Change Batch changes a trade by its key (ADR-0064/0067).
+    private DemoPivotTrade[] _trades = [];
+    private SnapshotPivotSource _local = default!;
+    private PeriodicTimer? _ticks;
+
+    protected override void OnInitialized()
+    {
+        _trades = DemoPivotData.Trades(count: TradeCount);
+        _local = PivotSource.From(_trades, DemoPivotData.Fields);
+    }
+
+    // Four times a second, a few trades amended and handed to the source as one Change Batch: the
+    // source makes the next Snapshot, brings the answer it holds up to date from what the batch
+    // removed and added, and raises Changed, which ExPivot listens to (ADR-0067).
+    private async Task AmendAsync(PeriodicTimer ticks)
+    {
+        // A disposed timer ends the loop: the page owns it, and disposes it as it goes.
+        while (await ticks.WaitForNextTickAsync())
+        {
+            if (!_localOn)
+                continue;
+            var amended = Amend(TradesPerBatch);
+            var clock = Stopwatch.StartNew();
+            var change = _local.Apply(DemoPivotData.Fields.Batch(changed: amended));
+            DescribeBatch(amended, change.After, clock.Elapsed);
+        }
+    }
+
+    // A few trades, each picked once, their P&L moved by up to 0.1% of their notional.
+    private DemoPivotTrade[] Amend(int count)
+    {
+        var picked = new HashSet<int>();
+        while (picked.Count < count)
+            picked.Add(_random.Next(_trades.Length));
+        var amended = new List<DemoPivotTrade>(count);
+        foreach (var at in picked)
+        {
+            var trade = _trades[at];
+            var move = Math.Round(trade.Notional * (decimal)(_random.NextDouble() - 0.5) / 500m, 2);
+            amended.Add(_trades[at] = trade with { Pnl = trade.Pnl + move });
+        }
+        return [.. amended];
+    }
+    #endregion
+
+    #region The code: server
+    // The server's trades through PivotSource.Fetch (DemoServerPivot, as on /pivot-db). Then the
+    // server is asked to keep changing them, and the page passes on what its hub says.
+    private FetchingPivotSource? _server;
+    private HubConnection? _hub;
+    private Task? _hubStarting;
+    private bool _liveAsked;
+
+    private async Task ConnectAsync(CancellationToken token)
+    {
+        var (fields, features) = await DemoServerPivot.DeclaredAsync(Api.Http, token);
+        var server = _server = DemoServerPivot.Fetch(Api.Http, fields, features);
+        StateHasChanged();
+        // The hub says each Source Version the data moves on to; the page passes it on, and ExPivot
+        // asks the server again for the whole answer (ADR-0067). Neither ExPivot nor ExGrid learns
+        // how the notice arrived: polling GET /api/status would do as well.
+        var hub = _hub = new HubConnectionBuilder().WithUrl(Api.Hub).WithAutomaticReconnect().Build();
+        hub.On<string>("VersionChanged", version =>
+        {
+            server.NotifyChanged(version);
+            _ = InvokeAsync(() => DescribeServer(version));
+        });
+        // Not cancelled by the page's going: a connection cut off while it opens is an error in the
+        // browser's console. DisposeAsync waits for it instead.
+        await (_hubStarting = hub.StartAsync());
+        // Live updates are off until a page turns them on (ADR-0069), and this one turns them off
+        // as it goes.
+        await SetLiveAsync(true, token);
+    }
+
+    // POST /api/live: twenty trades every 250 ms while on.
+    private async Task SetLiveAsync(bool on, CancellationToken token)
+    {
+        _liveAsked |= on;
+        using var response = await Api.Http.PostAsJsonAsync("api/live", new LiveSettings(on, IntervalMs: 250, TradesPerTick: 20), token);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private sealed record LiveSettings(bool On, int IntervalMs, int TradesPerTick);
+    #endregion
+
+    #region The code: pivots
+    // ExPivot listens to its source's Changed, gathers the changes and redraws at most every
+    // RedrawInterval from the newest data, and marks each value whose painted text changed for
+    // ChangeHighlightDuration (ADR-0067/0068). Both are the defaults, written out.
+    private RenderFragment LocalPivot => @<ExPivot Source="_local" @bind-Layout="_localLayout"
+                                                    RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
+                                                    PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                                    Culture="Culture" ViewportHeight="300" />;
+
+    private RenderFragment ServerPivot => @<ExPivot Source="_server" @bind-Layout="_serverLayout"
+                                                     RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
+                                                     PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                                     Culture="Culture" ViewportHeight="300" />;
+
+    private static readonly TimeSpan RedrawInterval = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan Highlight = TimeSpan.FromSeconds(1);
+    #endregion
+
+    // P&L by region and desk across products, with the currency to filter by.
+    private static PivotLayout FirstLayout() => new()
+    {
+        Filters = [new PivotFieldPlacement("Currency")],
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Desk")],
+        Columns = [new PivotFieldPlacement("Product")],
+        Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    // Under ExGrid.MudBlazor's paper with ?chrome=mud, as /pivot stands its pivot.
+    private RenderFragment Framed(RenderFragment pivot) => DemoChrome.IsMud(ChromeName)
+        ? @<MudExGridPaper Elevation="1" Class="demo-stretch-paper">@pivot</MudExGridPaper>
+        : pivot;
+
+    // The page's own loop, which nothing awaits: a failure in it is reported as a render's is,
+    // never lost with the task.
+    private async Task Reported(Task loop)
+    {
+        try
+        {
+            await loop;
+        }
+        catch (Exception error)
+        {
+            await DispatchExceptionAsync(error);
+        }
+    }
+
+    private void ToggleLocal() => _localOn = !_localOn;
+
+    private async Task ToggleServerAsync()
+    {
+        var token = _leaving.Token;
+        try
+        {
+            await SetLiveAsync(!_serverOn, token);
+            _serverOn = !_serverOn;
+            DescribeServer(version: null);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (HttpRequestException error)
+        {
+            _serverLine?.Show(Api.NotAnswering(error));
+        }
+    }
+
+    // The trades a batch amended — by id while they are a few — and how long it took to apply.
+    private void DescribeBatch(IReadOnlyList<DemoPivotTrade> amended, global::ExGrid.Data.Snapshot snapshot, TimeSpan applied)
+    {
+        _batches++;
+        var which = amended.Count <= DefaultTradesPerBatch
+            ? string.Join(", ", amended.Select(t => t.Id))
+            : $"{amended.Count.ToString("N0", Culture)} trades";
+        _localLine?.Show($"Batch {_batches.ToString("N0", Culture)}: {which} amended, applied in "
+            + $"{applied.TotalMilliseconds.ToString("N0", Culture)} ms; "
+            + $"the Snapshot is at version {snapshot.Version.ToString(CultureInfo.InvariantCulture)}.");
+    }
+
+    private string? _lastVersion;
+
+    private void DescribeServer(string? version)
+    {
+        _lastVersion = version ?? _lastVersion;
+        var live = _serverOn ? "on, twenty trades every 250 ms" : "off";
+        _serverLine?.Show(_lastVersion is null
+            ? $"Live updates {live}; no change heard yet."
+            : $"Live updates {live}; the hub last said version {_lastVersion}.");
+    }
+
+    #region The code: leaving
+    // The page's changes stop, and the server's live updates go off, when the page goes: the data
+    // then holds still for whoever reads it next (ADR-0069).
+    public async ValueTask DisposeAsync()
+    {
+        _leaving.Cancel();
+        _ticks?.Dispose();
+        try
+        {
+            if (_hubStarting is not null)
+                await _hubStarting;
+        }
+        catch (Exception)
+        {
+            // A connection that never opened has nothing to close.
+        }
+        try
+        {
+            if (_liveAsked)
+                await SetLiveAsync(false, CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            // A server that has gone is changing nothing.
+        }
+        if (_hub is not null)
+            await _hub.DisposeAsync();
+    }
+    #endregion
+}

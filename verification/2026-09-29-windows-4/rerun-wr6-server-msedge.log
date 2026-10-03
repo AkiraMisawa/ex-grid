@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ok 1 [msedge] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (611ms)
+  ok 2 [msedge] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (603ms)
+  ok 3 [msedge] › mud-app.spec.mjs:432:1 › WR-6: Striped paints the palette's table-stripe colour in both schemes, and a switch re-renders no row (ADR-0038/0030, RR-1) (740ms)
+
+  3 passed (5.6s)

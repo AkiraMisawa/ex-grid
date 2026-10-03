@@ -4,132 +4,111 @@ using Xunit;
 
 namespace ExGrid.Tests;
 
-/// <summary>Ctrl+D and Ctrl+R (ADR-0035, CP-24/CP-25): where the source is, what the target
-/// is, and every reason a fill is refused.</summary>
+/// <summary>
+/// The fill handle's gesture, pure (ADR-0050, item 5): where the handle stands, which axis a
+/// drag extends along, what a release would fill, and the Editable gate before any intent
+/// (ADR-0035). The meaning of a fill is the Consumer's and is not here.
+/// </summary>
 public class FillRuleTests
 {
-    private static readonly GridExtent Grid = new(1_000, 20);
+    private static readonly GridExtent Grid = new(100, 10);
+
     private static readonly Func<int, bool> Editable = _ => true;
 
-    private static GridSelection Range(int top, int left, int bottom, int right)
-        => GridSelection.Empty.Click(new(top, left), Grid).ExtendTo(new(bottom, right), Grid);
+    // Rows 2-3, columns 1-2.
+    private static readonly SelectionRange Source = new(2, 1, 2, 2);
 
-    [Fact] // ADR-0035 / CP-24: Ctrl+D copies the top row down the rest of the range
-    public void Fill_down_reads_the_top_row_and_writes_the_rows_below_it()
+    [Fact] // ADR-0050 item 5 / DC-12: the handle stands on the Selection's one range
+    public void The_handle_stands_on_the_one_range()
     {
-        var plan = ClipboardRules.PlanFill(Range(3, 2, 7, 4), GridDirection.Down, Editable).Plan;
+        var selection = GridSelection.Empty.Click(new(2, 1), Grid).ExtendTo(new(3, 2), Grid);
 
-        Assert.Equal(new SelectionRange(3, 2, 1, 3), plan.Source);
-        Assert.Equal([new SelectionRange(4, 2, 4, 3)], plan.Paste.Targets);
-        Assert.Equal(new PasteShape(1, 3), plan.Paste.Source);
-        // Tiled by the paste arithmetic: every target row reads source row 0, same column.
-        Assert.Equal(new SourceCell(0, 2), plan.Paste.SourceCellFor(new(7, 4)));
+        Assert.Equal(Source, FillRules.HandleRange(selection));
     }
 
-    [Fact] // ADR-0035 / CP-24: Ctrl+R copies the left column across the rest of the range
-    public void Fill_right_reads_the_left_column_and_writes_the_columns_right_of_it()
+    [Fact] // ADR-0050 item 5 / DC-12: a disjoint Selection shows no handle, and nor does an empty one
+    public void A_disjoint_or_empty_selection_has_no_handle()
     {
-        var plan = ClipboardRules.PlanFill(Range(3, 2, 7, 4), GridDirection.Right, Editable).Plan;
+        var disjoint = GridSelection.Empty.Click(new(0, 0), Grid).ToggleRange(new(5, 5), Grid);
 
-        Assert.Equal(new SelectionRange(3, 2, 5, 1), plan.Source);
-        Assert.Equal([new SelectionRange(3, 3, 5, 2)], plan.Paste.Targets);
-        Assert.Equal(new SourceCell(4, 0), plan.Paste.SourceCellFor(new(7, 4)));
+        Assert.Null(FillRules.HandleRange(disjoint));
+        Assert.Null(FillRules.HandleRange(GridSelection.Empty));
     }
 
-    [Fact] // ADR-0035: a range one row tall fills from the row above — Excel's Ctrl+D on one cell
-    public void A_range_one_row_tall_fills_from_the_row_above()
+    [Fact] // ADR-0050 item 5: a pointer inside the source reaches nothing
+    public void A_pointer_inside_the_source_reaches_nothing()
     {
-        var plan = ClipboardRules.PlanFill(Range(5, 1, 5, 3), GridDirection.Down, Editable).Plan;
-
-        Assert.Equal(new SelectionRange(4, 1, 1, 3), plan.Source);
-        Assert.Equal([new SelectionRange(5, 1, 1, 3)], plan.Paste.Targets);
+        Assert.Null(FillRules.ExtensionFor(Source, new(3, 2)));
+        Assert.Null(FillRules.PlanFill(Source, new(2, 1), Editable));
     }
 
-    [Fact] // ADR-0035: a range one column wide fills from the column to its left
-    public void A_range_one_column_wide_fills_from_the_column_to_its_left()
+    [Fact] // ADR-0050 item 5 / DC-13: down — the rows below, as wide as the source, never the source itself
+    public void Dragging_down_fills_the_rows_below()
     {
-        var plan = ClipboardRules.PlanFill(Range(2, 6, 4, 6), GridDirection.Right, Editable).Plan;
+        var extension = FillRules.ExtensionFor(Source, new(6, 2));
 
-        Assert.Equal(new SelectionRange(2, 5, 3, 1), plan.Source);
-        Assert.Equal([new SelectionRange(2, 6, 3, 1)], plan.Paste.Targets);
+        Assert.Equal(new FillExtension(new SelectionRange(4, 1, 3, 2), GridDirection.Down), extension);
     }
 
-    [Theory] // ADR-0035 / CP-25: at the first row or column there is nothing to fill from
-    [InlineData(GridDirection.Down, 0, 3)]
-    [InlineData(GridDirection.Right, 3, 0)]
-    public void Nothing_to_fill_from_is_refused_by_name(GridDirection direction, int row, int column)
+    [Fact] // ADR-0050 item 5 / DC-13: up, right and left each extend the same way
+    public void Each_direction_extends_beside_the_source()
     {
-        var decision = ClipboardRules.PlanFill(Range(row, column, row, column), direction, Editable);
+        Assert.Equal(new FillExtension(new SelectionRange(0, 1, 2, 2), GridDirection.Up),
+            FillRules.ExtensionFor(Source, new(0, 1)));
+        Assert.Equal(new FillExtension(new SelectionRange(2, 3, 2, 3), GridDirection.Right),
+            FillRules.ExtensionFor(Source, new(3, 5)));
+        Assert.Equal(new FillExtension(new SelectionRange(2, 0, 2, 1), GridDirection.Left),
+            FillRules.ExtensionFor(Source, new(2, 0)));
+    }
 
+    [Fact] // ADR-0050 item 5 / DC-13: one axis only — the larger displacement decides
+    public void The_larger_displacement_decides_the_axis()
+    {
+        // Three rows below and one column right: down, and only down.
+        Assert.Equal(new FillExtension(new SelectionRange(4, 1, 3, 2), GridDirection.Down),
+            FillRules.ExtensionFor(Source, new(6, 3)));
+        // One row below and four columns right: right, and only right.
+        Assert.Equal(new FillExtension(new SelectionRange(2, 3, 2, 4), GridDirection.Right),
+            FillRules.ExtensionFor(Source, new(4, 6)));
+    }
+
+    [Fact] // ADR-0050 item 5: a tie goes to the vertical fill
+    public void A_tie_fills_vertically()
+    {
+        Assert.Equal(GridDirection.Down, FillRules.ExtensionFor(Source, new(5, 4))!.Value.Direction);
+        Assert.Equal(GridDirection.Up, FillRules.ExtensionFor(Source, new(0, 0))!.Value.Direction);
+    }
+
+    [Fact] // ADR-0050 item 5 / DC-13: an approved release carries the extension it reached
+    public void An_approved_fill_carries_target_and_direction()
+    {
+        var decision = FillRules.PlanFill(Source, new(9, 1), Editable);
+
+        Assert.NotNull(decision);
+        Assert.False(decision.IsRefused);
+        Assert.Equal(new FillExtension(new SelectionRange(4, 1, 6, 2), GridDirection.Down), decision.Extension);
+        Assert.Throws<InvalidOperationException>(() => decision.Reason);
+    }
+
+    [Fact] // ADR-0050 item 5 / ADR-0035 / DC-14: a target covering a non-editable column is refused whole
+    public void A_target_covering_a_non_editable_column_is_refused_whole()
+    {
+        var decision = FillRules.PlanFill(Source, new(2, 4), column => column != 4);
+
+        Assert.NotNull(decision);
         Assert.True(decision.IsRefused);
-        Assert.Equal(PasteRefusalReason.NothingToFillFrom, decision.Reason);
-    }
-
-    [Fact] // ADR-0035 / CP-25: several ranges would need several sources
-    public void More_than_one_range_is_refused()
-    {
-        var selection = Range(1, 1, 3, 1).ToggleRange(new(8, 8), Grid);
-
-        var decision = ClipboardRules.PlanFill(selection, GridDirection.Down, Editable);
-
-        Assert.Equal(PasteRefusalReason.MultipleRanges, decision.Reason);
-    }
-
-    [Fact] // ADR-0035 / CP-25: an empty selection names nothing
-    public void An_empty_selection_is_refused()
-        => Assert.Equal(
-            PasteRefusalReason.EmptySelection,
-            ClipboardRules.PlanFill(GridSelection.Empty, GridDirection.Down, Editable).Reason);
-
-    [Fact] // ADR-0035 / CP-25: the columns written must be editable
-    public void A_non_editable_target_column_is_refused_whole()
-    {
-        var decision = ClipboardRules.PlanFill(Range(1, 1, 5, 3), GridDirection.Down, column => column != 3);
-
         Assert.Equal(PasteRefusalReason.TargetNotEditable, decision.Reason);
+        Assert.Throws<InvalidOperationException>(() => decision.Extension);
     }
 
-    [Theory] // ADR-0035 / CP-25: the declaration is reported first — before there being nothing to fill from
-    [InlineData(GridDirection.Down)]
-    [InlineData(GridDirection.Right)]
-    public void The_declaration_outranks_nothing_to_fill_from(GridDirection direction)
+    [Fact] // ADR-0035: the target is judged, not the source — a fill down a locked source column is still refused
+    public void Editable_is_judged_on_the_target_columns()
     {
-        var decision = ClipboardRules.PlanFill(Range(0, 0, 0, 0), direction, _ => false);
-
-        Assert.Equal(PasteRefusalReason.TargetNotEditable, decision.Reason);
+        // Dragging right into editable columns from a source in a locked column: the write
+        // lands only in the target, so it goes through.
+        Assert.False(FillRules.PlanFill(Source, new(2, 5), column => column >= 3)!.IsRefused);
+        // Dragging down keeps the source's columns, so a locked one among them refuses.
+        Assert.Equal(PasteRefusalReason.TargetNotEditable,
+            FillRules.PlanFill(Source, new(8, 1), column => column != 2)!.Reason);
     }
-
-    [Fact] // ADR-0035 / CP-25: and before several ranges, each judged on the target it alone would have
-    public void The_declaration_outranks_multiple_ranges()
-    {
-        var selection = Range(1, 1, 3, 1).ToggleRange(new(8, 4), Grid);
-
-        var decision = ClipboardRules.PlanFill(selection, GridDirection.Down, column => column != 4);
-
-        Assert.Equal(PasteRefusalReason.TargetNotEditable, decision.Reason);
-    }
-
-    [Fact] // ADR-0035 / CP-25: the Ctrl+R source column is read, not written, so it may be non-editable
-    public void A_non_editable_source_column_is_not_refused()
-    {
-        var multi = ClipboardRules.PlanFill(Range(1, 1, 5, 3), GridDirection.Right, column => column != 1);
-        var single = ClipboardRules.PlanFill(Range(1, 2, 5, 2), GridDirection.Right, column => column != 1);
-
-        Assert.False(multi.IsRefused);
-        Assert.False(single.IsRefused);
-    }
-
-    [Fact] // ADR-0035 / ADR-0005: a source past the copy cap is refused, as its read would be
-    public void A_source_past_the_cap_is_refused_as_too_large()
-    {
-        var decision = ClipboardRules.PlanFill(Range(0, 1, 999, 2), GridDirection.Right, Editable, cellCap: 999);
-
-        Assert.Equal(PasteRefusalReason.TooLarge, decision.Reason);
-        Assert.False(ClipboardRules.PlanFill(Range(0, 1, 998, 2), GridDirection.Right, Editable, cellCap: 999).IsRefused);
-    }
-
-    [Fact] // ADR-0035: a fill runs down or right; up and left are not keys the grid has
-    public void Only_down_and_right_are_fill_directions()
-        => Assert.Throws<ArgumentOutOfRangeException>(
-            () => ClipboardRules.PlanFill(Range(1, 1, 2, 2), GridDirection.Up, Editable));
 }

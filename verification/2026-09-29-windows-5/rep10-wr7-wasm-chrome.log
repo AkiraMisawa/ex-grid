@@ -1,0 +1,15 @@
+
+Running 10 tests using 1 worker
+
+  ok  1 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  2 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  3 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  4 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  5 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  6 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  7 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  8 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok  9 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+  ok 10 [chrome] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (2.4s)
+
+  10 passed (39.7s)

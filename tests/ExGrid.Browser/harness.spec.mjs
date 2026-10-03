@@ -1,7 +1,7 @@
 import { test, expect, alterPage, roundTrip, setRoundTrip, watchNextKey } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
 
-// The harness itself (ADR-0048): a spec file boots the app once, each test mounts its page
+// The harness itself (ADR-0056): a spec file boots the app once, each test mounts its page
 // afresh, and whatever a test changes outside its own page the harness puts back — or names.
 // The tests come in pairs, and the order is the point: the first leaves something behind, the
 // second says what it found. A file's tests run in order on one worker (playwright.config.mjs).
@@ -29,7 +29,7 @@ async function openFeatures(page) {
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
 }
 
-test('a spec file boots its app once, at the index (ADR-0048)', async ({ page }) => {
+test('a spec file boots its app once, at the index (ADR-0056)', async ({ page }) => {
     await openFeatures(page);
     expect(await bootedAt(page), 'the document was loaded at the index, not at the page').toBe('/');
     // Inside the test's own page, so nothing the harness has to put back.
@@ -37,14 +37,14 @@ test('a spec file boots its app once, at the index (ADR-0048)', async ({ page })
     left.boots = await documentOf(page);
 });
 
-test('the next test mounts its page afresh on the same document (ADR-0048)', async ({ page }) => {
+test('the next test mounts its page afresh on the same document (ADR-0056)', async ({ page }) => {
     const document = leftBy('boots');
     await openFeatures(page);
     expect(await documentOf(page), 'no second boot').toBe(document);
     await expect(grid(page), 'a new grid, not the last test\'s').not.toHaveAttribute('data-harness-first', /.*/);
 });
 
-test('what a test changed through the harness is put back when it ends (ADR-0048)', async ({ page, context }) => {
+test('what a test changed through the harness is put back when it ends (ADR-0056)', async ({ page, context }) => {
     await page.setViewportSize({ width: 900, height: 600 });
     await openFeatures(page);
     await alterPage(page, () => {
@@ -75,7 +75,7 @@ test('what a test changed through the harness is put back when it ends (ADR-0048
     left.changes = true;
 });
 
-test('the next test finds none of it (ADR-0048)', async ({ page }) => {
+test('the next test finds none of it (ADR-0056)', async ({ page }) => {
     leftBy('changes');
     await openFeatures(page);
     const found = await page.evaluate(async () => ({
@@ -102,7 +102,7 @@ test('the next test finds none of it (ADR-0048)', async ({ page }) => {
     expect(await page.evaluate(() => document.activeElement?.outerHTML)).toBe(first);
 });
 
-test.describe('a change made behind the harness\'s back is named, and the page is not handed on (ADR-0048)', () => {
+test.describe('a change made behind the harness\'s back is named, and the page is not handed on (ADR-0056)', () => {
     test.describe(() => {
         test.use({ expectedLeaks: [/navigator\.clipboard\.write\b/] });
         test('a native stubbed with page.evaluate', async ({ page }) => {
@@ -168,13 +168,13 @@ test.describe('a change made behind the harness\'s back is named, and the page i
     });
 });
 
-test('a test that leaves a key held hands no page on (ADR-0048)', async ({ page }) => {
+test('a test that leaves a key held hands no page on (ADR-0056)', async ({ page }) => {
     await openFeatures(page);
     left.keyHeld = await documentOf(page);
     await page.keyboard.down('Shift');
 });
 
-test('after it, the next test boots, with no key held (ADR-0048)', async ({ page }) => {
+test('after it, the next test boots, with no key held (ADR-0056)', async ({ page }) => {
     const document = leftBy('keyHeld');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
@@ -183,40 +183,40 @@ test('after it, the next test boots, with no key held (ADR-0048)', async ({ page
     expect(await page.evaluate(() => window.__keySeen), 'a plain a, not a Shift+A').toBe(true);
 });
 
-test('a test that leaves a mouse button held hands no page on (ADR-0048)', async ({ page }) => {
+test('a test that leaves a mouse button held hands no page on (ADR-0056)', async ({ page }) => {
     await openFeatures(page);
     left.buttonHeld = await documentOf(page);
     await page.mouse.move(5, 5);
     await page.mouse.down();
 });
 
-test('after it too, the next test boots (ADR-0048)', async ({ page }) => {
+test('after it too, the next test boots (ADR-0056)', async ({ page }) => {
     const document = leftBy('buttonHeld');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
 });
 
-test('a test whose console reports an error hands no page on (ADR-0048)', async ({ page }) => {
+test('a test whose console reports an error hands no page on (ADR-0056)', async ({ page }) => {
     test.fail(true, 'reports an error on purpose, which CON-1 fails: the point is what the next test is given');
     await openFeatures(page);
     left.reported = await documentOf(page);
     await page.evaluate(() => console.error('harness.spec: an error on purpose'));
 });
 
-test('after that, the next test boots (ADR-0048)', async ({ page }) => {
+test('after that, the next test boots (ADR-0056)', async ({ page }) => {
     const document = leftBy('reported');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
 });
 
-test('a test that fails hands no page on (ADR-0048)', async ({ page }) => {
+test('a test that fails hands no page on (ADR-0056)', async ({ page }) => {
     test.fail(true, 'fails on purpose, to see what the next test is given');
     await openFeatures(page);
     left.failed = await documentOf(page);
     expect(false).toBe(true);
 });
 
-test('after a failure, the next test boots (ADR-0048)', async ({ page }) => {
+test('after a failure, the next test boots (ADR-0056)', async ({ page }) => {
     const document = leftBy('failed');
     await openFeatures(page);
     expect(await documentOf(page)).not.toBe(document);
@@ -224,7 +224,7 @@ test('after a failure, the next test boots (ADR-0048)', async ({ page }) => {
 
 test.describe(() => {
     test.use({ freshDocument: true });
-    test('a test that asks for a document of its own loads its page for real (ADR-0048)', async ({ page }) => {
+    test('a test that asks for a document of its own loads its page for real (ADR-0056)', async ({ page }) => {
         await openFeatures(page);
         expect(await bootedAt(page)).toBe('/features');
     });

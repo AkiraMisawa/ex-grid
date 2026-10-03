@@ -3,9 +3,12 @@
 An Excel-like grid component for Blazor. **The specification is settled; implementation
 is underway** (pure-logic core, first component layer, and the demo host exist).
 
-The products are **ExGrid** (display-oriented, the one that is specified) and **ExSheet**
-(edit-oriented, later). `Ex` is a prefix that names the claim — Excel-like operability — in the
-same position where `ag-grid` puts `ag` = "AGnostic". Both live in one repository and ship as
+The products are **ExGrid** (display-oriented, the one that is specified), **ExSheet**
+(edit-oriented, being specified: a general-purpose sheet drawn by ExGrid as that grid's Consumer,
+[ADR-0046](docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)) and **ExPivot** (Excel's PivotTable drawn by ExGrid the same way, with a
+MudBlazor Wrapper; [ADR-0059](docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md) to ADR-0069, decided with the user,
+which also put the family's immutable data, the **Snapshot**, into a package of its own, `ExGrid.Data`). `Ex` is a prefix that names the claim — Excel-like operability — in the
+same position where `ag-grid` puts `ag` = "AGnostic". All live in one repository and ship as
 separate packages ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)).
 
 This document holds only what you will get wrong without being told. It does not restate the
@@ -20,20 +23,24 @@ specification.
 Conversation with the user may be in any language. **Anything that lands in the repository —
 documents, ADRs, code, comments, commit messages, test names, UI strings — is English.**
 
-Domain terms stay as `CONTEXT.md` defines them (Focus, Anchor, Overlay, Window, Consumer,
+Domain terms stay as `CONTEXT.md` defines them (Focus, Extent, Overlay, Window, Consumer,
 Chrome, Overwrite, Caret, …); do not translate those.
 
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **five** permitted uses:
+shows the Blazor-side approach is too slow. There are currently **eight** permitted uses:
 capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
 reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
 it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
 popover, ADR-0034 — a Blazor handler would be a wire round trip per frame on Server). The last
 two turn on a distinction worth keeping: the grid never **measures** (a synchronous read it
 performs, on the path to a paint), it is **told** when something the browser already knows has
-changed or settled.
+changed or settled. The sixth is a `ResizeObserver` reporting the Layout Ceiling, the tallest
+element the browser lays out at the current scale and zoom (ADR-0053). The seventh is the Keyboard
+Field's composition and focus on the root, so an IME can start on a selected cell (ADR-0080). The
+eighth is a `matchMedia` listener that reports the Device Pixel when the resolution changes, so lines
+and column edges lie on Device Pixels at every scale and zoom (ADR-0090).
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
@@ -47,7 +54,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 48 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 74 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -90,7 +97,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 48 ADRs. **A new decision that follows these will not
+The principles that run through all 74 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and
@@ -104,6 +111,11 @@ collide with the existing ones.**
 4. **Chrome renders and calls back; the core decides meaning.** Swapping Chrome must not change
    behaviour.
 5. **Selection is cheap, so it is not capped. Caps belong on what cannot be executed.**
+6. **An outcome never depends on timing.** Users drive the grid with Playwright and similar
+   tools as well as by hand, at machine speed and over a circuit's round trip. When a race is
+   found, take the fix that makes the result deterministic — a gesture carries what it was
+   taken against, and is refused if that no longer holds — not one that narrows the window, or
+   a wait, retry or longer timeout. This holds for the product and for its tests alike.
 
 ## Traps that are hard to spot
 
@@ -121,18 +133,23 @@ the kind that still look correct on screen**, so review will not catch them.
 - **`StateHasChanged()` can complete the render synchronously.** A field set just before it may
   already have been cleared by `OnAfterRender` when you read it back — this produced a real
   `NullReferenceException`. Copy to a local first.
-- **A text field whose value changes while it is typed in goes through `@bind`, never
-  `value="@x"` beside an `@oninput`** (a value fixed for the field's lifetime, such as a
-  Chrome editor's `InitialText`, is safe). Only
-  `@bind` tells Blazor that the field's own value outranks a render's. Written by hand, every
-  render writes the server's copy back, and on a circuit that copy is a round trip behind the
-  typing: `…123456789` became `…1289` in the Cell Editor, and the page looked fine (SRV-7).
-- **Three name collisions exist.** A Razor page class with the same name as the root namespace
+- **A text field whose value changes while it is typed in is bound with `@bind` (or
+  `@bind:get`/`@bind:set` on `oninput`), never `value="@x"` beside a plain `@oninput`** (a value
+  fixed for the field's lifetime, such as a Chrome editor's `InitialText`, is safe). Only a binding
+  tells Blazor that the field's own value outranks a render's. Written by hand, every render writes
+  the server's copy back, and on a circuit that copy is a round trip behind the typing:
+  `…123456789` became `…1289` in the Cell Editor, and the page looked fine (SRV-7; measured again
+  2026-09-27).
+- **Four name collisions exist.** A Razor page class with the same name as the root namespace
   shadows the namespace (`Bench.razor` in namespace `Bench` → CS0426). An enum named
   `RenderMode` collides with `Microsoft.AspNetCore.Components.Web.RenderMode`, which
   `_Imports.razor` pulls in. And inside any namespace nested under `ExGrid` — the DemoHost,
   the Wrapper itself — a bare `@using MudBlazor` resolves to `ExGrid.MudBlazor`, so `Color`
-  and `Typo` vanish: write `@using global::MudBlazor`.
+  and `Typo` vanish: write `@using global::MudBlazor`. Last, Razor writes `global::` on the
+  outermost type argument of a component parameter only. An `EventCallback<IReadOnlyList<ExSheet.X>>`
+  is emitted with a bare `ExSheet.X` inside, and on a Consumer's page that imports
+  `ExSheet.Components`, `ExSheet` is the component class: CS0426, and no handler binds. Give such
+  a parameter a non-generic argument type of its own (`LinkedColumnColours`, ADR-0057).
 
 ### Specific to this component
 
@@ -149,8 +166,9 @@ the kind that still look correct on screen**, so review will not catch them.
 - **CSS classes take an `ex-` prefix; JS is a module returning per-instance handles.**
   `spikes/render-bench` uses `.r` `.c` `.sel` and `window.bench` as a **bad example** on
   purpose (it is disposable). Do not carry that into product code (ADR-0018).
-- **A scrollbar takes about 15px out of the Viewport on Windows and Linux, and 0 on macOS.**
-  Every geometry bug this causes is invisible on the development machine. The gutter is
+- **A scrollbar takes a strip out of the Viewport.** The grid draws its own (12px by default,
+  on every platform since 2026-09-29, ADR-0029); a native one is about 15px on Windows and Linux
+  and 0 on macOS. Every geometry bug this causes is invisible where the strip happens to be 0. The gutter is
   reported by the browser and subtracted in `ViewportBox` (ADR-0013 / 0021) — never assumed,
   never measured once at attach (`overflow: auto` shows no bar until the content overflows,
   so attach is the moment the answer is 0).
@@ -159,6 +177,11 @@ the kind that still look correct on screen**, so review will not catch them.
 
 - **`pkill -f "Bench.Host"` kills the calling shell**, because the pattern matches the shell's
   own command line. Stop the spike host with `fuser -k 5199/tcp`.
+- **`pgrep -f <pattern>` in a wait loop matches the loop itself.** `until ! pgrep -f "playwright
+  test …"; do sleep 5; done` never ends: the loop's own `bash -c` line contains the pattern. Two
+  loops like that also keep each other alive. Six such loops were left behind by finished agents on
+  2026-09-27. Wait on the PID you started (`wait $pid`, or `while kill -0 $pid`), or write the
+  pattern so it cannot match itself (`[p]laywright`).
 - **Headless Chrome on macOS keeps overlay scrollbars on the horizontal axis** whatever the CSS
   asks for, so a scrollbar test written there passes without testing anything. Layer 3 runs
   headed for that reason (ADR-0026).
@@ -177,6 +200,20 @@ nix develop -c dotnet test ExGrid.slnx      # layers 1 and 2, both suites
   took first — which is exactly why layer 3 exists, and why the worst bugs in this project were
   invisible to suites that were passing at the time. Use `tests/ExGrid.Browser`, and read the
   layer 3 rules below before trusting a pass.
+- **The browser that exercises a change is a targeted run locally, and CI's full run.**
+  - **Locally, run the targeted run**: the spec files and `--grep` the change bears on, on one
+    host with `--project=chrome`. When CI fails, fix that test and rerun it alone.
+  - **The full run, both hosts and both browsers, is CI's.** CI runs it sharded on Linux in
+    about ten minutes. One host on a Mac takes about twenty-five, and the worktree cannot be
+    rebuilt meanwhile, because a rebuild under a running DemoHost breaks it.
+  - **CI is also the judge of a failure seen only locally.** A Mac has failures of its own, so a
+    local failure in a spec the change does not touch is left to CI, not settled by a full run
+    of the base.
+  - **CI runs a pull request only while it merges cleanly with its base**, so resolve conflicts
+    before waiting on it.
+  - **A background agent's brief carries the same scope.**
+  - **A full local run earns its time only where CI cannot look**: a macOS-only path, or a trace CI
+    did not keep.
 - **An unexpected console message or runtime exception is a failure**, not noise to scroll past.
   This component displays money; something the browser is complaining about may be something the
   reader is already seeing wrong.
@@ -192,7 +229,7 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
 
 | Layer | Where | Tool | Covers |
 |---|---|---|---|
-| 1. Pure logic | `tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Anchor/Focus, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
+| 1. Pure logic | `tests/ExGrid.Tests` | xUnit | Selection rectangle arithmetic, Focus/Extent, Enter/Tab cycling, paste shape rules, copy refusal rules, overflow decisions, Auto width, row sequence version |
 | 2. Component | `tests/ExGrid.Components` | bUnit (no browser) | Which rows get rendered, and **whether row memoisation actually skips** (count renders) |
 | 3. Browser | `tests/ExGrid.Browser` | Playwright | The Scrollbar Gutter, capture-phase keys, the clipboard, popovers under both Chromes, Row Stripes as painted, multiple-instance independence, large data |
 
@@ -205,10 +242,9 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   tautologies. CI runs it on Linux on every push, against both hosts; **Windows (VZ-14) and a real IME are still
   runs by hand**, and a CI artifact does not file the Step 4 record in `verification/`.
   `tests/ExGrid.Browser/README.md` says what it asserts and what it deliberately does not.
-  While iterating, run what you touched — a spec file, `--grep "ADR-0039"`, `--last-failed`,
-  `--project=chrome` — and leave both browsers and both hosts to the full run and to CI.
+  What to run locally, and what to leave to CI, is in "What counts as verified".
 
-- **A layer-3 spec file boots the app once, and its tests share the document** (ADR-0048).
+- **A layer-3 spec file boots the app once, and its tests share the document** (ADR-0056).
   Each `page.goto` mounts a new page, but anything a test changes outside its own grids — a
   global, a listener on `window` or `document`, the head, `body`, `<html>`, `#app` (which is
   the grid's parent on WebAssembly) — goes through `alterPage`, which undoes it. A plain
@@ -216,6 +252,12 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
   changed fails the test by name, because it would have reached every later test of the
   file; a listener, a timer or an observer it leaves is not seen, so that is on you. A test
   about loading itself asks for `freshDocument`.
+
+- **A layer-3 test waits for what it reads, never for a fixed time** (ADR-0056, 2026-10-02).
+  On the Server host, a reading that must see all the host will say awaits `circuitQuiet()`.
+  Two pictures to compare are taken with `stillPictures`. A colour is judged with `paints`,
+  where the boundary lies on a device pixel. A new or changed spec runs with `--repeat-each`
+  before it goes in. `tests/ExGrid.Browser/README.md` says how.
 
 - **The packages are checked as a Consumer takes them.** `tests/ExGrid.PackageSmoke/check.sh`
   packs `ExGrid` and `ExGrid.MudBlazor`, reads back each `.nuspec`, and publishes a `net10.0`
@@ -270,7 +312,11 @@ rules that make this safe:
   already-running host is reused, so a second runner would be testing the *other*
   worktree's code and passing. The suite is also single-worker: the OS clipboard is one
   per display, the records are read-modify-written, and on the Server host the latency
-  proxy and the host log belong to the whole process (ADR-0048).
+  proxy and the host log belong to the whole process (ADR-0056).
+- **Numbers come from a reserved block.** An ADR, an ExSheet ticket, a Windows run and a Sheet
+  Document version each take a number that another branch may be taking at the same time, and git
+  will not notice. Take them only from your branch's block in `docs/agents/numbering.md`, and
+  reserve a block there first.
 - **Remove a worktree when its agent is done.** `git worktree list` shows the leftovers; a
   stale one starts the next agent from an old tip.
 
@@ -297,7 +343,7 @@ rules that make this safe:
 
 Project skills from [mattpocock/skills](https://github.com/mattpocock/skills) live in
 `.claude/skills/`: `/grill-with-docs` (with `grilling` and `domain-modeling`), `tdd` (with
-`codebase-design`), `/to-spec`, `/implement`, and `/setup-matt-pocock-skills`. They are ordinary
+`codebase-design`), `/to-spec`, `/implement`, `/research`, and `/setup-matt-pocock-skills`. They are ordinary
 files; where one disagrees with this document, this document wins.
 
 ### Implement
@@ -307,8 +353,8 @@ onto this repo as follows:
 
 - **"Typechecking"** is `nix develop -c dotnet build ExGrid.slnx`; **a single test file** is
   `nix develop -c dotnet test <project> --filter <class>`; **the full suite** is the one in
-  "What counts as verified", plus layer 3 when the change faces the UI. A green build is still
-  not a result.
+  "What counts as verified", plus the targeted layer-3 run when the change faces the UI, with the
+  full layer-3 run left to CI. A green build is still not a result.
 - **Invoking `/implement` is the request to commit** its work to the current branch. It is not a
   request to push.
 - **A ticket that turns out to need a decision stops there.** Record the ADR first (or, as a

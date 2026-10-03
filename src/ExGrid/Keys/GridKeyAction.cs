@@ -12,7 +12,7 @@ public enum GridKeyKind
     /// <summary>Arrow: collapse and move.</summary>
     Move,
 
-    /// <summary>Shift+arrow: the Anchor stays and the range grows.</summary>
+    /// <summary>Shift+arrow: the Focus stays and the Extent moves (ADR-0052).</summary>
     Extend,
 
     /// <summary>Ctrl+arrow, Home, End: jump to the edge.</summary>
@@ -46,7 +46,9 @@ public enum GridKeyKind
     /// <summary>Space: engage with the cell's content (ADR-0020).</summary>
     Engage,
 
-    /// <summary>Escape: leave the grid, which is the way out of Tab's cycle.</summary>
+    /// <summary>Escape with nothing left to dismiss: the way out of Tab's cycle. The grid keeps
+    /// DOM focus and releases Tab, so the next Tab or Shift+Tab is the browser's (ADR-0012,
+    /// rewritten 2026-10-01).</summary>
     Leave,
 
     /// <summary>The Context Menu key and Shift+F10: open the context menu on the Focus
@@ -66,7 +68,7 @@ public enum GridKeyKind
     /// while <see cref="GridKeyClaims.CanRedo"/>.</summary>
     Redo,
 
-    /// <summary>Delete: one Clear Intent over the selection (ADR-0046). Claimed only on a
+    /// <summary>Delete: one Clear Intent over the selection (ADR-0054). Claimed only on a
     /// grid with an editable column.</summary>
     Clear,
 
@@ -82,9 +84,20 @@ public enum GridKeyKind
     /// a grid with an editable column.</summary>
     FillRight,
 
-    /// <summary>Ctrl+F: the find panel, or a refusal where nothing can search (ADR-0047).
+    /// <summary>Ctrl+F: the find panel, or a refusal where nothing can search (ADR-0055).
     /// Claimed on every grid.</summary>
     Find,
+
+    /// <summary>Ctrl+. (period): move the Focus to the next corner of the range holding it,
+    /// clockwise; the Selection does not change (ADR-0052).</summary>
+    MoveFocusToNextCorner,
+
+    /// <summary>Ctrl+Backspace: scroll the Focus into view and change nothing else
+    /// (ADR-0052).</summary>
+    RevealFocus,
+
+    /// <summary>Shift+Backspace: collapse the Selection to the Focus (ADR-0052).</summary>
+    CollapseToFocus,
 }
 
 /// <summary>

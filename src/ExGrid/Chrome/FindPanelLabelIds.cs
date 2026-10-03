@@ -1,7 +1,7 @@
 namespace ExGrid.Chrome;
 
 /// <summary>
-/// The words of the find panel (ADR-0047), by id. The built-in panel resolves them as the
+/// The words of the find panel (ADR-0055), by id. The built-in panel resolves them as the
 /// built-in menus resolve theirs — through the grid's <c>CommandLabel</c>, falling back to
 /// <see cref="BuiltInCommandLabels"/> — and a substituted Chrome may use the same ids for its
 /// own wording, as <c>ExGrid.MudBlazor</c> does. The grid holds no sentence: which one a step's

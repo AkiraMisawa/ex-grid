@@ -1,0 +1,32 @@
+@* The Formula Bar's Name Box seam (ADR-0051/0030): a bare input filling the box the core
+   stands in the bar, inside the core's form — Enter is that form's implicit submission, and
+   what the text means is the core's and the Consumer's. This only paints the control and
+   reports what is typed, as the Cell Editor's content does. *@
+<input class="mud-ex-name-box" @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput" tabindex="-1" aria-label="@Label"
+       @onfocus="OnFocus" @onblur="OnBlur" />
+
+@code {
+    /// <summary>The core's contract for the Name Box (ADR-0051): what it shows, and where
+    /// what is typed, a focus and a blur go.</summary>
+    [Parameter, EditorRequired] public NameBoxContext Context { get; set; } = default!;
+
+    /// <summary>The control's accessible name, in the Chrome's words (WR-3).</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    private Task OnFocus() => Context.Focused();
+
+    // Bound, not value= beside @oninput: the renderer then takes what the browser reports as
+    // what the control shows, and what it renders follows the typing, never an echo of it a
+    // round trip old (SRV-5, ED-22).
+    private readonly FieldText _text = new();
+
+    private void OnInput(string? text)
+    {
+        _text.Typed(text ?? "");
+        Context.TextChanged(_text.Shown);
+    }
+
+    private void OnBlur() => Context.Blurred();
+
+    protected override void OnParametersSet() => _text.Told(Context.Text);
+}

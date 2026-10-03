@@ -1,0 +1,15 @@
+
+Running 10 tests using 1 worker
+
+  ok  1 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.9s)
+  ok  2 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.9s)
+  ok  3 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.8s)
+  ok  4 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.9s)
+  ok  5 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.9s)
+  ok  6 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.8s)
+  ok  7 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.9s)
+  ok  8 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.9s)
+  ok  9 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.8s)
+  ok 10 [chrome] › declarations.spec.mjs:291:5 › DC-19/DC-34: pointing from the Formula Bar; a press into the bar keeps its caret; moving the caret enters Caret (mud Chrome) (4.9s)
+
+  10 passed (57.9s)

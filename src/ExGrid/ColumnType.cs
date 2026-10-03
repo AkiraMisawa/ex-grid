@@ -17,8 +17,8 @@ public enum ColumnType
     Number,
 
     /// <summary>Values are <see cref="DateTime"/>, <see cref="DateTimeOffset"/> or
-    /// <see cref="DateOnly"/> — one of them per column — each compared by its own .NET
-    /// semantics, with no truncation to the day (ADR-0023). A value too wide for its
+    /// <see cref="DateOnly"/> — the one the column declares as its <see cref="ExGrid.DateType"/> —
+    /// each compared by its own .NET semantics, with no truncation to the day (ADR-0023). A value too wide for its
     /// column becomes <c>####</c> (ADR-0016).</summary>
     Date,
 

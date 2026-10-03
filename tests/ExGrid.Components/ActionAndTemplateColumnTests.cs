@@ -79,12 +79,12 @@ public class ActionAndTemplateColumnTests : GridTestContext
     {
         var raised = 0;
         var cut = RenderGrid(WithActions(new GridAction("open", "Open")), _ => raised++);
-        var focusCalls = JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus");
+        var focusCalls = Js.FocusCalls;
 
         cut.FindAll(".ex-action")[1].Click();
 
         Assert.Equal(1, raised);
-        Assert.Equal(focusCalls, JSInterop.Invocations.Count(i => i.Identifier == "Blazor._internal.domWrapper.focus"));
+        Assert.Equal(focusCalls, Js.FocusCalls);
     }
 
     [Fact] // ADR-0020: one button per declared action, painted as plain markup in the row

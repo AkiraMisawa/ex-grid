@@ -139,12 +139,13 @@ public class ValidationTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "a");
         await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
-        var focusBefore = cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        var focusBefore = KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
+        Assert.NotNull(focusBefore);
 
         await ClickCellAsync(cut, 150, 50);
 
         Assert.NotEmpty(cut.FindAll(".ex-editor"));
-        Assert.Equal(focusBefore, cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.Equal(focusBefore, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
     }
 
     [Fact] // ADR-0034 / ED-15: Escape remains the only exit without applying
@@ -185,6 +186,19 @@ public class ValidationTests : GridTestContext
         var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("'abc' is not a date"));
 
         await TypeAndCommitAsync(cut, "abc");
+
+        Assert.Equal("'abc' is not a date", cut.Find(".ex-announce").TextContent);
+    }
+
+    [Fact] // ADR-0033/0034: a Focus move after a Reject leaves the relayed sentence alone — only a selection sentence is the selection's to empty
+    public async Task A_focus_move_after_a_reject_leaves_its_sentence()
+    {
+        var cut = RenderGrid(validate: (_, _) => EditVerdict.Reject("'abc' is not a date"));
+        await TypeAndCommitAsync(cut, "abc");
+        await PressAsync(cut, "Escape");
+
+        await ClickCellAsync(cut, 50, 50);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
 
         Assert.Equal("'abc' is not a date", cut.Find(".ex-announce").TextContent);
     }
@@ -423,12 +437,13 @@ public class ValidationTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "a");
         await cut.Find(".ex-editor").InputAsync(new ChangeEventArgs { Value = "abc" });
-        var focusBefore = cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        var focusBefore = KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
+        Assert.NotNull(focusBefore);
 
         await cut.Find(".ex-viewport").ContextMenuAsync(new MouseEventArgs { OffsetX = 150, OffsetY = 50 });
 
         Assert.NotEmpty(cut.FindAll(".ex-editor"));
-        Assert.Equal(focusBefore, cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.Equal(focusBefore, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
         Assert.Empty(cut.FindAll("[role=menu] button[role=menuitem]"));
     }
 

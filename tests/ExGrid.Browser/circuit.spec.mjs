@@ -1,5 +1,6 @@
-import { test, expect, alterPage, setRoundTrip } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet, layoutCeilingTold, setRoundTrip } from './fixtures.mjs';
 import { SERVER } from './hosting.mjs';
+import { activeDescendant, expectActiveDescendant, expectTabStopTaken } from './keyboard.mjs';
 
 // What a Blazor Server circuit can fail and a WebAssembly tab cannot (Definition of Done
 // §24): keys typed faster than a round trip (ED-22), a paste past the hub's message
@@ -21,8 +22,9 @@ async function openFeatures(page) {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     // Interactive, not merely painted: on Server the prerendered grid is on screen
-    // before its circuit connects, and takes no tab stop until it has (A11Y-20).
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    // before its circuit connects, and takes no tab stop until it has (A11Y-20) — its
+    // Keyboard Field's, since this grid edits (ADR-0080).
+    await expectTabStopTaken(grid(page));
 }
 
 test.describe('keys typed faster than the round trip are neither lost nor reordered (ED-22, SRV-5)', () => {
@@ -56,12 +58,12 @@ test.describe('keys typed faster than the round trip are neither lost nor reorde
         await page.keyboard.type('x');
         await page.keyboard.press('ArrowDown');
 
-        await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
+        await expect.poll(() => activeDescendant(grid(page))).toMatch(/r1c0$/);
         await expect(grid(page).locator('input.ex-editor')).toHaveCount(0);
     });
 });
 
-test('a paste past a Server hub\'s message limit arrives whole (CP-21)', async ({ page, context }) => {
+test('a paste past a Server hub\'s message limit arrives whole (CP-21, ADR-0052)', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await openFeatures(page);
     // Two cells of about 100 KB each in the HTML flavour, as a spreadsheet puts on the
@@ -81,9 +83,10 @@ test('a paste past a Server hub\'s message limit arrives whole (CP-21)', async (
     await page.keyboard.press('ControlOrMeta+V');
 
     await expect(page.locator('#paste-status')).toContainText('2 cells from 2x1');
-    // The circuit is still there: the grid still answers a key.
+    // The circuit is still there: the grid still answers a key. The arrow moves from the
+    // Focus, which Shift+↓ left on row 0 (ADR-0052).
     await page.keyboard.press('ArrowDown');
-    await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).toMatch(/r2c1$/);
+    await expect.poll(() => activeDescendant(grid(page))).toMatch(/r1c1$/);
 });
 
 test('a clipboard write the browser rejects is refused by name (CP-23)', async ({ page }) => {
@@ -92,7 +95,7 @@ test('a clipboard write the browser rejects is refused by name (CP-23)', async (
     // activation. Stubbed rather than provoked: CDP's permission override does not reach
     // a Playwright browser context, and what is under test is the grid's answer to the
     // rejection, not the browser's reasons for it. Through alterPage, which puts the
-    // native back as the test ends: the next test shares this document (ADR-0048).
+    // native back as the test ends: the next test shares this document (ADR-0056).
     await alterPage(page, () => {
         const write = navigator.clipboard.write;
         navigator.clipboard.write = () => Promise.reject(
@@ -132,7 +135,7 @@ test('keys typed together in a menu run the item the keys chose (ADR-0039, SRV-5
 test('keys typed straight after a key that opens a menu reach the menu (KB-33, ADR-0010/0039)', async ({ page }) => {
     await openFeatures(page);
     await clickCell(page, 1, 0);
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c0$/);
+    await expectActiveDescendant(grid(page), /r1c0$/);
     await setRoundTrip(150);
 
     // Alt+↓ opens Book's menu a round trip later; ↓ and Enter typed with it are the
@@ -149,7 +152,7 @@ test('keys typed straight after a key that opens a menu reach the menu (KB-33, A
 for (const chrome of ['builtin', 'mud']) {
     test(`a search typed straight after E lands whole in the search box, and Enter applies it (ADR-0044, ADR-0010, SRV-5, ${chrome})`, async ({ page }) => {
         await page.goto(`/features?chrome=${chrome}`);
-        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(grid(page));
         const all = await grid(page).getAttribute('aria-rowcount');
         await clickCell(page, 1, 0);
         await page.keyboard.press('Alt+ArrowDown');
@@ -174,9 +177,38 @@ for (const chrome of ['builtin', 'mud']) {
     });
 }
 
+for (const chrome of ['builtin', 'mud']) {
+    test(`a search matching nothing, typed straight after E with its Enter, applies nothing (ADR-0009/0023, SRV-5, ticket 76, ${chrome})`, async ({ page }) => {
+        await page.goto(`/features?chrome=${chrome}`);
+        await expectTabStopTaken(grid(page));
+        const all = await grid(page).getAttribute('aria-rowcount');
+        await clickCell(page, 1, 0);
+        await page.keyboard.press('Alt+ArrowDown');
+        const search = grid(page).locator('.ex-popover input[type=search], .ex-popover .mud-ex-grid-filter-search input');
+        await expect(search).toBeVisible();
+        await expect.poll(() => page.evaluate(() => document.activeElement?.closest('[role=menu]') !== null)).toBe(true);
+        await setRoundTrip(150);
+
+        // E sends the keyboard to the search box a round trip later, and the keys typed
+        // meanwhile are held and handed on: the text typed at the caret, the Enter as the
+        // form's submission. "Alpha " is what a replay once left in the box when a held Tab
+        // went through (ticket 75): it matches no value, so nothing is chosen among the
+        // matches — an In with no values, which the engine refuses (ADR-0023). The panel
+        // stands rather than hand it on.
+        await page.keyboard.press('e');
+        await page.keyboard.type('Alpha ');
+        await page.keyboard.press('Enter');
+
+        await expect(search).toHaveValue('Alpha ');
+        await page.waitForTimeout(600);
+        await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
+        expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+    });
+}
+
 test('a key typed straight after a letter that runs a command waits for the popover to close (ADR-0010/0044, SRV-5)', async ({ page }) => {
     await page.goto('/features');
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(grid(page));
     await clickCell(page, 1, 0);
     await page.keyboard.press('Alt+ArrowDown');
     await expect.poll(() => page.evaluate(() => document.activeElement?.textContent?.trim())).toBe('Sort ascending');
@@ -195,7 +227,7 @@ test('a key typed straight after a letter that runs a command waits for the popo
 
 test('a held Tab that script cannot perform stops the held typing there, rather than letting it land in the wrong field (ADR-0010/0044, SRV-5)', async ({ page }) => {
     await page.goto('/features');
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(grid(page));
     const all = await grid(page).getAttribute('aria-rowcount');
     await clickCell(page, 1, 0);
     await page.keyboard.press('Alt+ArrowDown');
@@ -227,7 +259,7 @@ for (const [what, column, open, closes] of [
 ]) {
     test(`an Escape pressed straight after ${what} opens is not the grid's (KB-35, ADR-0039)`, async ({ page }) => {
         await page.goto('/features?chrome=mud');
-        await expect(grid(page)).toHaveAttribute('tabindex', '0');
+        await expectTabStopTaken(grid(page));
         await clickCell(page, 1, column);
         await page.keyboard.press('Alt+ArrowDown');
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
@@ -263,7 +295,7 @@ for (const [what, column, open, closes] of [
 // moved into the operator by Tab from the commands above it (ADR-0044).
 async function openMudNotionalPanel(page) {
     await page.goto('/features?chrome=mud');
-    await expect(grid(page)).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(grid(page));
     await clickCell(page, 1, 2);
     await page.keyboard.press('Alt+ArrowDown');
     const panel = grid(page).locator('.mud-ex-grid-filter');
@@ -313,7 +345,7 @@ test('Escape, Escape straight after an Inner Popup closes it and then the panel 
 test('a menu taking the keyboard a round trip late keeps the scroll the user gave it (ADR-0039/0040, SRV-5)', async ({ page }) => {
     await page.goto('/features?chrome=mud');
     const short = page.locator('.ex-grid').nth(1);
-    await expect(short).toHaveAttribute('tabindex', '0');
+    await expectTabStopTaken(short);
     await setRoundTrip(150);
 
     // The second grid is 140px tall, so its column menu scrolls (UX-11). Opened by pointer,
@@ -331,10 +363,10 @@ test('a menu taking the keyboard a round trip late keeps the scroll the user gav
 
 test.describe(() => {
     // The prerender and the circuit connecting happen on a load, which an in-app navigation
-    // skips: this test loads its page for real (ADR-0048).
+    // skips: this test loads its page for real (ADR-0056).
     test.use({ freshDocument: true });
 
-    test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20)', async ({ page }) => {
+    test('a Prerendered grid is busy and takes no tab stop until its circuit connects (A11Y-20, ADR-0080)', async ({ page }) => {
         test.skip(!SERVER, 'WebAssembly has no prerender: its grid is interactive from its first paint');
         // The document as the server sends it, before any script has run.
         const html = await (await page.request.get('/features')).text();
@@ -343,6 +375,9 @@ test.describe(() => {
         expect(root).toContain('ex-loading');
         expect(root).toContain('aria-busy="true"');
         expect(root).not.toContain('tabindex');
+        // Nor its Keyboard Field, the tab stop of a grid that edits: it stands only once the key
+        // listener is attached (ADR-0080).
+        expect(html).not.toMatch(/class="[^"]*\bex-key-field\b/);
 
         await openFeatures(page);
         await expect(grid(page)).not.toHaveAttribute('aria-busy', /.*/);
@@ -363,7 +398,7 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
             await page.goto('/shared');
             await second.goto('/shared');
             for (const p of [page, second]) {
-                await expect(grid(p)).toHaveAttribute('tabindex', '0');
+                await expectTabStopTaken(grid(p));
             }
             const notional = (p) => grid(p).locator("[id$='r0c2']");
             const before = await notional(page).textContent();
@@ -397,6 +432,246 @@ test.describe('two users, one store (SRV-3, ADR-0018)', () => {
     });
 });
 
+// A click between keys (ED-22, ADR-0010): click F1, type 1, Enter; click F2, type 2, Enter; …
+// The Enter is held in the listener behind the 1 until the editor holds DOM focus, and a click
+// that followed it was applied first: the Enter's move then carried the Focus past the clicked
+// cell, and each value landed one row too low (verification/2026-09-27-windows-excel,
+// typing-probe-2.mjs: wrong on Server at 0, 30 and 60 ms pauses, on WebAssembly at 0). The
+// press must be ordered after the keys typed before it, and before the keys typed after it.
+// The root's capture-phase mousedown and mouseup hold a primary press on the rows while keys
+// are held or a mode change is being answered, and replay it in its place (ADR-0021/0010,
+// added 2026-09-27).
+test.describe('a click between keys is ordered with them (ED-22, ADR-0010)', () => {
+    const sheetGrid = (page) => page.locator('.ex-grid').first();
+    const columnF = (page, row) => sheetGrid(page).locator(`[id$='-r${row}c5']`);
+
+    async function openSheet(page) {
+        await page.goto('/sheet');
+        await expect(sheetGrid(page).locator("[id$='-r0c0']")).toHaveText('Item');
+        await expectTabStopTaken(sheetGrid(page));
+    }
+
+    /** typing-probe-2.mjs's steps: each value typed into the cell clicked for it, then Enter. */
+    async function clickTypeEnter(page, pauseMs) {
+        for (const [row, value] of [[0, '1'], [1, '2'], [2, '3'], [6, '7']]) {
+            await columnF(page, row).click({ force: true });
+            if (pauseMs) await page.waitForTimeout(pauseMs);
+            await page.keyboard.type(value);
+            await page.keyboard.press('Enter');
+            if (pauseMs) await page.waitForTimeout(pauseMs);
+        }
+    }
+
+    async function expectEachValueInItsCell(page) {
+        // The last Enter moves the Focus to F8: once it is there, every key and click has landed.
+        await expect(sheetGrid(page).locator('input.ex-name-box')).toHaveValue('F8');
+        await expect.poll(() => sheetGrid(page).evaluate((root) => [0, 1, 2, 3, 4, 5, 6, 7]
+            .map((r) => root.querySelector(`[id$='-r${r}c5']`)?.textContent.trim() ?? '')))
+            .toEqual(['1', '2', '3', '', '', '', '7', '']);
+    }
+
+    for (const pauseMs of [0, 30, 60]) {
+        test(`with ${pauseMs} ms between the steps, each value lands in the cell clicked for it`, async ({ page }) => {
+            await openSheet(page);
+            await clickTypeEnter(page, pauseMs);
+            await expectEachValueInItsCell(page);
+        });
+    }
+
+    // A press held behind a key kept its default, DOM focus onto the rows, and the rows hand
+    // focus to the root a round trip later. When that hand-over arrived after the Cell Editor the
+    // held key had opened took DOM focus, the root took the keyboard from the editor, and the
+    // listener went on holding every key and click behind it for an editor that no longer had
+    // focus — until its two-second fallback (Server host: typing-probe-2 found nothing landed
+    // 1.5 s later in 6 of 12 trials at 30 ms on Windows, and 4 of 12 at 0 ms on Linux). The
+    // bound here is that fallback, not a performance figure: an answered step takes a round
+    // trip or two.
+    test('a click straight after a key waits for no fallback: each step lands before the hold would give up (ED-22, ADR-0010)', async ({ page }) => {
+        await openSheet(page);
+        const nameBox = sheetGrid(page).locator('input.ex-name-box');
+        // Twelve rows in pairs: the second click of each pair comes while the first pair's key
+        // and Enter are still being answered, which is where the hand-over overtook the editor.
+        for (let row = 0; row < 12; row += 2) {
+            for (const r of [row, row + 1]) {
+                await columnF(page, r).click({ force: true });
+                await page.keyboard.type(String(r % 10));
+                await page.keyboard.press('Enter');
+            }
+            await expect(nameBox, `the pair from F${row + 1} was answered`).toHaveValue(`F${row + 3}`, { timeout: 1500 });
+        }
+        await expect.poll(() => sheetGrid(page).evaluate((root) => [...Array(12).keys()]
+            .map((r) => root.querySelector(`[id$='-r${r}c5']`)?.textContent.trim() ?? '')))
+            .toEqual([...Array(12).keys()].map((r) => String(r % 10)));
+    });
+
+    test('with a 150 ms round trip and no pause, each value lands in the cell clicked for it (SRV-5)', async ({ page }) => {
+        await openSheet(page);
+        await setRoundTrip(150);
+        await clickTypeEnter(page, 0);
+        await expectEachValueInItsCell(page);
+    });
+
+    // A press held behind keys that move the view lands where it was made (ED-31, ADR-0021's note
+    // of 2026-10-02). It was replayed with its screen coordinates, measured again against the rows
+    // the move had brought there: on the Server host, at every round trip, the `2` went into F18,
+    // a page below the F6 the browser showed under the pointer. Which row that was is read from the
+    // press itself, in the document's capture phase, ahead of the grid: on WebAssembly the move can
+    // be painted before the press, and the row under the pointer is then the page's.
+    for (const rtt of [0, 150]) {
+        test(`a press held behind a page move lands on the row painted under it at the press, at ${rtt} ms (ED-31, ADR-0021)`, async ({ page }) => {
+            test.skip(!SERVER && rtt > 0, 'WebAssembly has no round trip to set');
+            await openSheet(page);
+            const grid = sheetGrid(page);
+            const rowHeight = (await columnF(page, 0).boundingBox()).height;
+            await alterPage(page, () => {
+                const onPress = (event) => {
+                    const viewport = event.target instanceof Element ? event.target.closest('.ex-viewport') : null;
+                    if (event.isTrusted && viewport !== null && window.__pressed === undefined) {
+                        window.__pressed = { first: Number(viewport.getAttribute('data-ex-first-row')), y: event.offsetY };
+                    }
+                };
+                document.addEventListener('mousedown', onPress, true);
+                return () => {
+                    document.removeEventListener('mousedown', onPress, true);
+                    delete window.__pressed;
+                };
+            });
+            await setRoundTrip(rtt);
+            await columnF(page, 0).click({ force: true });
+            await page.evaluate(() => { delete window.__pressed; });
+            // F6's place before anything moves; the keys below move the view a page down.
+            const f6 = await columnF(page, 5).boundingBox();
+            await page.keyboard.type('1');
+            await page.keyboard.press('Enter');
+            await page.keyboard.press('PageDown');
+            await page.keyboard.type('9');
+            await page.mouse.click(f6.x + f6.width / 2, f6.y + f6.height / 2);
+            await page.keyboard.type('2');
+            await page.keyboard.press('Enter');
+
+            const pressed = await page.evaluate(() => window.__pressed);
+            const row = pressed.first + Math.floor(pressed.y / rowHeight);
+            // The Enter after the `2` moves the Focus one row down from where the press put it.
+            await expect(grid.locator('input.ex-name-box')).toHaveValue(`F${row + 2}`);
+            await expect(columnF(page, row)).toHaveText('2');
+            if (SERVER) {
+                // On a circuit the press is held behind the keys, and the page has not moved yet.
+                expect(row, 'the browser still showed F6 under the pointer').toBe(5);
+            }
+        });
+    }
+});
+
+// A field the core renders never has its own typing written back into it (SRV-5, ED-22). On a
+// circuit each input event arrives a round trip after it was typed, and a render answering it
+// that set the field's value put back the text as it stood then, over what was typed since:
+// `Xabcdefghij` typed at 10 keys a second at 150 ms arrived as `Xabdfhj`, `nonsense` in the Name
+// Box as `nnse` (found by ticket 18's suite, 2026-09-27). Each field now tells the renderer the
+// value it reports is what it already shows; a render writes it only when the core changes it.
+test.describe('typing into an open field on a 150 ms circuit loses nothing (SRV-5, ED-22)', () => {
+    /** Every write of the field's value from script, recorded: none is expected. */
+    async function recordWrites(page, selector) {
+        await alterPage(page, (sel) => {
+            window.__valueWrites = [];
+            const field = document.querySelector(sel);
+            const own = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+            Object.defineProperty(field, 'value', {
+                configurable: true,
+                get() { return own.get.call(this); },
+                set(v) { window.__valueWrites.push(v); own.set.call(this, v); },
+            });
+            return () => { delete field.value; delete window.__valueWrites; };
+        }, selector);
+    }
+
+    // The built-in editor, and ExGrid.MudBlazor's (a Chrome's control reporting its own text).
+    for (const [chrome, field] of [['builtin', 'input.ex-editor'], ['mud', 'input.mud-ex-editor']]) {
+        test(`the Cell Editor, at 10 keys a second (${chrome})`, async ({ page }) => {
+            await page.goto(`/features?chrome=${chrome}`);
+            await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+            await expectTabStopTaken(grid(page));
+            await clickCell(page, 0, 1);              // Trader, editable
+            await page.keyboard.type('X');
+            const editor = grid(page).locator(field);
+            await expect(editor).toHaveValue('X');
+            await expect(editor).toBeFocused();
+            await recordWrites(page, `.ex-grid ${field}`);
+            await setRoundTrip(150);
+
+            await page.keyboard.type('abcdefghij', { delay: 100 });
+
+            // Every answer has landed: on the Server host once the circuit is quiet, however long
+            // that takes; the fixed wait is the page's own time, all there is on WebAssembly.
+            await page.waitForTimeout(1000);
+            await circuitQuiet();
+            await expect(editor).toHaveValue('Xabcdefghij');
+            expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
+            await page.keyboard.press('Enter');
+            await expect(grid(page).locator("[id$='r0c1']")).toHaveText('Xabcdefghij');
+        });
+    }
+
+    test('the Name Box, at 10 keys a second', async ({ page }) => {
+        await page.goto('/sheet');
+        const sheet = grid(page);
+        await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
+        await expectTabStopTaken(sheet);
+        const nameBox = sheet.locator('input.ex-name-box');
+        await nameBox.click();
+        await nameBox.fill('');
+        await recordWrites(page, '.ex-grid input.ex-name-box');
+        await setRoundTrip(150);
+
+        await page.keyboard.type('nonsense', { delay: 100 });
+
+        await page.waitForTimeout(1000);
+        await circuitQuiet();
+        await expect(nameBox).toHaveValue('nonsense');
+        expect(await page.evaluate(() => window.__valueWrites)).toEqual([]);
+    });
+});
+
+// A ← typed as the completion list is painted is the editor's (ADR-0051, ADR-0010). On a circuit
+// the render that paints the list and the message that tells the key gate are two messages; a
+// key between them was gated as Overwrite's and swallowed (ticket 18's notes). The gate now reads
+// the list's own mark, which lands with the paint. The key is dispatched from a MutationObserver,
+// so it lands exactly in that gap: on WebAssembly there is no gap, and the test is the case
+// without one.
+test('a ← typed as the completion list is painted is left to the editor (ADR-0051, ADR-0010)', async ({ page }) => {
+    await page.goto('/sheet');
+    const sheet = grid(page);
+    await expect(sheet.locator("[id$='-r0c0']")).toHaveText('Item');
+    await expectTabStopTaken(sheet);
+    await sheet.locator("[id$='-r4c5']").click({ force: true });
+    await page.keyboard.type('=');
+    const editor = sheet.locator('input.ex-editor:not(.ex-formula-bar-text)');
+    await expect(editor).toHaveValue('=');
+    await expect(editor).toBeFocused();
+    await alterPage(page, () => {
+        window.__arrowTaken = null;
+        const root = document.querySelector('.ex-grid');
+        const observer = new MutationObserver(() => {
+            if (window.__arrowTaken !== null || !root.querySelector('.ex-completion [role=listbox]')) {
+                return;
+            }
+            observer.disconnect();
+            const arrow = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true });
+            document.activeElement.dispatchEvent(arrow);
+            window.__arrowTaken = arrow.defaultPrevented;
+        });
+        observer.observe(root, { childList: true, subtree: true });
+        return () => { observer.disconnect(); delete window.__arrowTaken; };
+    });
+
+    await page.keyboard.type('S');
+
+    await expect.poll(() => page.evaluate(() => window.__arrowTaken)).toBe(false);
+    // Not forwarded: the list the ← would have closed is still open.
+    await expect(sheet.locator('.ex-completion-list')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+});
+
 // A field whose value the grid renders by hand — value="@x" with an @oninput beside it — is
 // written back with the server's copy by every render, and on a circuit that copy is a round
 // trip behind the typing: "1000000.00123456789" became "1000000.001289", quietly. Only @bind
@@ -406,7 +681,7 @@ for (const chrome of ['builtin', 'mud']) {
         test.beforeEach(async ({ page }) => {
             await page.goto(`/features?chrome=${chrome}`);
             await expect(grid(page).locator('.ex-row').first()).toBeVisible();
-            await expect(grid(page)).toHaveAttribute('tabindex', '0');
+            await expectTabStopTaken(grid(page));
             await setRoundTrip(50);
         });
 
@@ -419,12 +694,14 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('123456789');
 
             await expect.poll(() => editor.inputValue(), { timeout: 3000 }).toMatch(/123456789$/);
-            // And stays whole once every round trip has landed.
+            // And stays whole once every round trip has landed: on the Server host once the
+            // circuit is quiet, however long that takes; on WebAssembly after the fixed wait.
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await editor.inputValue()).toMatch(/123456789$/);
         });
 
-        test('in the find field (ADR-0047)', async ({ page }) => {
+        test('in the find field (ADR-0055)', async ({ page }) => {
             await clickCell(page, 0, 0);
             await page.keyboard.press('ControlOrMeta+f');
             const field = grid(page).locator('.ex-popover-find input').first();
@@ -432,6 +709,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('5320984.5');
 
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await field.inputValue()).toBe('5320984.5');
         });
 
@@ -444,6 +722,7 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('Gammadelta');
 
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await field.inputValue()).toBe('Gammadelta');
         });
 
@@ -456,7 +735,92 @@ for (const chrome of ['builtin', 'mud']) {
             await page.keyboard.type('1234567.89');
 
             await page.waitForTimeout(500);
+            await circuitQuiet();
             expect(await field.inputValue()).toBe('1234567.89');
         });
     });
 }
+
+// A reveal paints where it is going (ADR-0012, 2026-09-29): the render that writes the scroll
+// offset also paints the slice at it — the rows the Consumer has, Placeholders for the rest —
+// so a far jump never shows a Viewport with no rows while its scroll event is on the wire. On
+// a circuit that event was a round trip away, and for that round trip the grid painted
+// neither the rows it had left nor the rows it was going to, and the status line called the
+// Focus "outside the visible range". On WebAssembly the same test is the case without one.
+/**
+ * Samples every frame for `ms`: how many of the Viewport's rows (Placeholders included)
+ * overlap the readable box under the header, and what the status line says. Read in
+ * requestAnimationFrame, so what is sampled is what the next paint shows.
+ */
+function sampleFrames(page, ms) {
+    return page.evaluate((ms) => new Promise((resolve) => {
+        const root = document.querySelector('.ex-grid');
+        const scroller = root.querySelector('.ex-scroller');
+        const header = root.querySelector('.ex-header');
+        const frames = [];
+        const end = performance.now() + ms;
+        const tick = () => {
+            const box = scroller.getBoundingClientRect();
+            const top = header ? header.getBoundingClientRect().bottom : box.top;
+            const bottom = box.top + scroller.clientHeight;
+            let rows = 0;
+            for (const row of root.querySelectorAll('.ex-viewport [role=row]')) {
+                const r = row.getBoundingClientRect();
+                if (r.height > 0 && r.bottom > top + 1 && r.top < bottom - 1) {
+                    rows++;
+                }
+            }
+            frames.push({
+                rows,
+                scrollTop: scroller.scrollTop,
+                status: root.querySelector('.ex-status')?.textContent ?? '',
+                focus: root.getAttribute('aria-activedescendant') ?? '',
+            });
+            if (performance.now() < end) {
+                requestAnimationFrame(tick);
+            } else {
+                resolve(frames);
+            }
+        };
+        requestAnimationFrame(tick);
+    }), ms);
+}
+
+test('a far reveal paints rows in every frame, and never calls the Focus it scrolls to off screen (ADR-0012, ADR-0053)', async ({ page }) => {
+    await page.goto('/wide');
+    const root = grid(page);
+    await expect(root.locator("[id$='-r0c0']")).toHaveText('K-000000', { timeout: 15_000 });
+    await expectTabStopTaken(root);
+    // What is under test is a reveal through the geometry the grid knows. Before its Layout
+    // Ceiling is told the grid computes as if at scale 1, and at 150% a reveal through that
+    // aims past what the browser lays out — the untold window ADR-0053 accepts, not this test's
+    // subject. CI pressed Ctrl+End inside it on the first test of a shard, on both hosts.
+    await layoutCeilingTold(root);
+    await clickCell(page, 0, 0);
+    await expect(root).toHaveAttribute('aria-activedescendant', /-r0c0$/);
+    // A round trip long enough that a frame between the Focus move and the scroll event
+    // cannot be missed: before this was fixed, about 220 ms of empty Viewport at 60 ms.
+    await setRoundTrip(150);
+
+    for (const [key, lands] of [
+        ['ControlOrMeta+End', /-r999999c99$/],
+        ['ControlOrMeta+Home', /-r0c0$/],
+        ['ControlOrMeta+ArrowDown', /-r999999c0$/],
+        ['ControlOrMeta+ArrowUp', /-r0c0$/],
+    ]) {
+        const sampling = sampleFrames(page, 2000);
+        await page.keyboard.press(key);
+        const frames = await sampling;
+        await expect(root).toHaveAttribute('aria-activedescendant', lands);
+
+        const detail = `${key}: ${frames.length} frames, ` +
+            JSON.stringify(frames.map((f) => [f.rows, Math.round(f.scrollTop), f.focus.replace(/^.*-r/, 'r'), f.status]));
+        expect(frames.some((frame) => lands.test(frame.focus)), `the Focus landed while sampled; ${detail}`).toBe(true);
+        // Not one frame with the Viewport empty…
+        expect(frames.every((frame) => frame.rows > 0), detail).toBe(true);
+        // …and the status line never judged the Focus against where the scroller had been.
+        expect(frames.some((frame) => frame.status.includes('outside the visible range')), detail).toBe(false);
+        // Once the scroll lands the Consumer's rows arrive, as the Range Request asked.
+        await expect(root.locator('.ex-viewport .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
+    }
+});

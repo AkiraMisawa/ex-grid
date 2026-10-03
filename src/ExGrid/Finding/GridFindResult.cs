@@ -1,7 +1,7 @@
 namespace ExGrid.Finding;
 
 /// <summary>
-/// A Find step's answer (ADR-0047): a position — a row in the current order and a column
+/// A Find step's answer (ADR-0055): a position — a row in the current order and a column
 /// name — or <see cref="NotFound"/>.
 /// </summary>
 public sealed class GridFindResult

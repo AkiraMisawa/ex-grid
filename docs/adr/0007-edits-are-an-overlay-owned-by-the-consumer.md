@@ -153,11 +153,16 @@ there are no Overrides to consult for Cell State "modified", and no reset-by-del
 the pre-edit instance is gone from the base. The single library-provided **Overlay**
 application this ADR promises — and the bundled undo stack with it — remains to be built, and
 its trigger is the first scenario-backed Consumer, where the base is fetched and the diff is
-what gets persisted. `ReplaceRow` neither replaces that obligation nor prejudges its shape.
+what gets persisted. *(ExSheet's undo stack is not that stack either:
+[ADR-0048](./0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md) gives
+ExSheet one of its own, over Entries, and leaves this one reserved.)* `ReplaceRow` neither replaces that obligation nor prejudges its shape.
 
 ## The forwarding this ADR promised was never wired — settled 2026-09-26
 
-*(Recorded when a comparison against Excel found it.)* "The grid only forwards Ctrl+Z" was
+*(Recorded when a comparison against Excel found it. The ExSheet branch reached the same gap from
+the other side, as [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) item 8; when the two
+were merged on 2026-09-28 the user kept this section as the one definition, and item 8 points
+here.)* "The grid only forwards Ctrl+Z" was
 written here, and nothing forwarded it: `GridKeys` had no entry for the key, the listener let it
 through to the browser, and a Consumer that had built an undo stack had no way to hear the one
 gesture every Excel user reaches for first. The ADR and the code disagreed, and the ADR is the

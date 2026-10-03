@@ -127,7 +127,7 @@ async function frameIntervals(page, axis, step, count) {
 
 test.describe(() => {
     // Measured from a load, boot included, as every record filed so far was: the page is
-    // loaded for real rather than reached inside a booted app (ADR-0048).
+    // loaded for real rather than reached inside a booted app (ADR-0056).
     test.use({ freshDocument: true });
 
     test('mount to first painted row at 10⁶ rows (BIG-7)', async ({ page }, testInfo) => {

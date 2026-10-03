@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ok 1 [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (874ms)
+  ok 2 [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (864ms)
+  ok 3 [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (877ms)
+
+  3 passed (6.2s)

@@ -1,0 +1,21 @@
+{
+    "ran":  "2026-09-28 10:36:45",
+    "regionalFormat":  "en-GB",
+    "registryTwoDigitYearMax":  "absent",
+    "dotnetTwoDigitYearMax":  2049,
+    "excelOptionsSearched":  [
+                                 "General (84 texts)",
+                                 "Formulas (69 texts)",
+                                 "Data (63 texts)",
+                                 "Proofing (35 texts)",
+                                 "Save (74 texts)",
+                                 "Language (60 texts)",
+                                 "Accessibility (44 texts)",
+                                 "Advanced (218 texts)",
+                                 "Add-ins (175 texts)",
+                                 "Trust Center (28 texts)"
+                             ],
+    "excelOptionsMatches":  [
+                                "Formulas: Cells containing years represented as 2 digits"
+                            ]
+}

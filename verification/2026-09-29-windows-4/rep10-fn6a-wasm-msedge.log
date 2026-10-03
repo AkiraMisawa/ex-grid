@@ -1,0 +1,15 @@
+
+Running 10 tests using 1 worker
+
+  ok  1 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  2 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  3 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  4 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  5 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  6 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  7 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  8 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+  ok  9 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.2s)
+  ok 10 [msedge] › sizing.spec.mjs:145:1 › a window narrower than the pinned block suspends pinning, and widening restores it (FN-6a, ADR-0045) (1.3s)
+
+  10 passed (28.4s)

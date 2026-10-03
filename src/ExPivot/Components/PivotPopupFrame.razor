@@ -1,0 +1,39 @@
+@* ExPivot's frame around a menu or a panel (ADR-0061): where it stands and what closes it are
+   ExPivot's; the content inside is the Chrome's. In the Field List it stands under its entry at the
+   place the flow gives it, as wide as the pane and over what follows, so nothing needs a position
+   ExPivot would have to measure; from the Pivot Toolbar it opens under the button that opened it,
+   over the report — the Layout menu at the button's right edge. Escape closes it — unless a popup
+   of the content's own is open, which ExPivot hears through the context and leaves the key
+   to (ADR-0039). *@
+<div class="@FrameClass" role="@Role" aria-label="@Label" @onkeydown="OnKeyDownAsync">
+    @ChildContent
+</div>
+
+@code {
+    /// <summary><c>menu</c> for a menu, <c>dialog</c> for a panel.</summary>
+    [Parameter] public string Role { get; set; } = "dialog";
+
+    /// <summary>The frame's accessible name.</summary>
+    [Parameter] public string Label { get; set; } = "";
+
+    /// <summary>Whether it opens from the Pivot Toolbar, over the report.</summary>
+    [Parameter] public bool Overlay { get; set; }
+
+    /// <summary>Whether it stands at its button's right edge rather than its left.</summary>
+    [Parameter] public bool AlignEnd { get; set; }
+
+    /// <summary>Escape was pressed inside it.</summary>
+    [Parameter] public EventCallback OnEscape { get; set; }
+
+    /// <summary>The Chrome's content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string FrameClass => (Overlay, AlignEnd) switch
+    {
+        (true, true) => "ex-pivot-popup ex-pivot-popup-overlay ex-pivot-popup-end",
+        (true, false) => "ex-pivot-popup ex-pivot-popup-overlay",
+        _ => "ex-pivot-popup",
+    };
+
+    private Task OnKeyDownAsync(KeyboardEventArgs e) => e.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
+}

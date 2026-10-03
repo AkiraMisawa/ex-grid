@@ -3,7 +3,7 @@ using ExGrid.Selection;
 namespace ExGrid.Finding;
 
 /// <summary>
-/// The reference implementation of a Find step (ADR-0047), which
+/// The reference implementation of a Find step (ADR-0055), which
 /// <see cref="InMemoryGridSource{TRow}"/> answers with and a remote Source is held to — as
 /// <see cref="GridQueryEngine"/> is for filtering and sorting (ADR-0023).
 ///

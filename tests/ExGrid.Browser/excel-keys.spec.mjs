@@ -1,6 +1,6 @@
 import { test, expect, watchNextKey, keySeenUntouched } from './fixtures.mjs';
 
-// Excel's editing keys with real keys on /features (ADR-0007/0035/0046): undo and redo
+// Excel's editing keys with real keys on /features (ADR-0007/0035/0054): undo and redo
 // forwarded to the Consumer's history, Delete's Clear Intent, Backspace, and the fill keys —
 // and the keydown each one takes from the browser, or leaves it. The page's Consumer keeps
 // an undo stack and applies every intent; the grid only asks.
@@ -25,7 +25,7 @@ async function clickCell(page, row, column, modifiers = []) {
     await cell(page, row, column).click({ force: true, modifiers });
 }
 
-test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken (KB-37, ADR-0007)', async ({ page }) => {
+test('Ctrl+Z and Ctrl+Y reach the Consumer\'s history, and the keydown is taken (KB-39, ADR-0007)', async ({ page }) => {
     const trader = cell(page, 0, 1);
     const before = await trader.textContent();
     await clickCell(page, 0, 1);
@@ -65,7 +65,7 @@ test('inside the editor Ctrl+Z, Delete and Backspace are the input\'s own (ADR-0
     await expect(page.locator('#history-status')).toContainText('—');
 });
 
-test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24, ADR-0046)', async ({ page }) => {
+test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24, ADR-0054)', async ({ page }) => {
     await clickCell(page, 0, 1);
     await clickCell(page, 2, 1, ['Shift']);
     await watchNextKey(page, 'Delete');
@@ -83,7 +83,7 @@ test('Delete raises one Clear Intent, and the Consumer blanks what it can (ED-24
     await expect(cell(page, 1, 1)).not.toHaveText('');
 });
 
-test('Delete over a non-editable column is refused whole, and says so (ED-24, ADR-0046)', async ({ page }) => {
+test('Delete over a non-editable column is refused whole, and says so (ED-24, ADR-0054)', async ({ page }) => {
     const trader = await cell(page, 0, 1).textContent();
     await clickCell(page, 0, 0);
     await page.keyboard.press('Shift+ArrowRight');
@@ -140,7 +140,7 @@ test('Ctrl+D on the first row is refused by name (CP-25, ADR-0035)', async ({ pa
     await expect(page.locator('#paste-refused-status')).toContainText('NothingToFillFrom');
 });
 
-test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-37, ADR-0046/0035/0007)', async ({ page }) => {
+test('a display-only grid leaves Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25, KB-39, ADR-0054/0035/0007)', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();

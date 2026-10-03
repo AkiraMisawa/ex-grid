@@ -92,6 +92,14 @@ public sealed record CellEditorContext(
 `string? Error` to the record, so the editor can paint `aria-invalid` while a Reject holds it
 open.)*
 
+*(Changed 2026-09-30, decided with the user, with
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of that day.)* A Chrome's
+editor control, for the Cell Editor or the Formula Bar's text, no longer takes DOM focus with its
+own `FocusAsync` when its context's `FocusRequest` changes. It calls a focus function its context
+hands it, and the core grants the focus only while the keyboard is still this grid's. The request
+number still says when; the core says whether. A Chrome that focused itself would take the keyboard
+back from another grid the user had just moved to, where the built-in editor would not.
+
 ### Two editing states
 
 Excel has two editing states, and **the same arrow key means different things in each**.
@@ -198,6 +206,28 @@ report). Mid-composition Enter, Escape and the arrows choose and commit a candid
 them there breaks typing in any language that needs an IME, and moves the grid under a
 half-finished word.
 
+*(A real IME, the fifteenth Windows run, 2026-10-01, `verification/2026-10-01-windows-15/`.)* With
+the Microsoft Japanese IME driven by real keys, in an open edit (F2 first) and in the Formula Bar,
+the Name Box and Find, under both Chromes and both browsers, on both hosts and behind 150 ms, every
+composing key reached the field and the core took none: nothing committed or moved while composing,
+the first Enter ended the composition and the second committed, the first Escape ended only the
+composition, and ↓ chose among the candidates without pointing. **On a selected cell with no edit
+open, the IME cannot start.** DOM focus is on the root, an element that is not editable; Chrome and
+Edge give it no input context, so the IME's key leaves it off and `kana` types Latin text, which
+opens an edit with `k`. Excel composes from the first key on a selected cell. The user chose to have a
+prototype built and tried on Windows before deciding (ticket 79): a text field that holds the
+keyboard while a cell is selected, whose composition is carried into the Cell Editor. Until then,
+Japanese is typed after F2 or in the Formula Bar.
+
+*(Decided with the user on 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md).)* On a grid that edits, the keyboard with no
+edit open is held by the **Keyboard Field**, a text field of the grid's own inside the root, over the
+Focus cell and unseen. The guard above widens to it: a key aimed at the root or at this grid's own
+field is the root's. A composing key reaches the field and the IME composes there, drawn over the
+Focus cell; no edit is open while it lasts. Its end opens Overwrite holding its text, as a typed
+character does: the text is one more kind of held item, in order among the keys and presses. The
+editor's request for the keyboard waits while the field composes, since DOM focus moving would end
+the composition. A Chrome's editor receives the text as `InitialText`, so this seam is unchanged.
+
 ### Keys that follow a mode change are held until it lands *(added 2026-09-25)*
 
 The gate decides from the mode it was **last told**. The mode is C#'s, and C# tells the
@@ -231,6 +261,28 @@ keys, which is exactly what they would have done had the answer come first.
 Plain navigation is not held. An arrow outside editing changes no mode; holding behind it
 would pace a held-down arrow key to one row per round trip on Server, for no correctness
 gained.
+
+*(Widened 2026-09-29, decided with the user.)* **A press on the rows while an edit is open is a
+mode change too**, and the keys after it are held until the core has answered it. The press
+commits and moves, or points; either way the mode the next key meets is decided by the answer.
+Found while building [ADR-0018](./0018-multiple-instances-must-be-independent.md), section 6:
+`99` typed over a cell, a click on another cell, then `7` at once, and the `7` was lost. It went
+into the Cell Editor the commit was removing, and B2 never opened. That happened on the Server
+host at 150 ms, and without injected latency too.
+
+*(Settled while building, the same day; an ordering inside the core, not a new decision.)* The hold alone still lost the key in 3 runs of 20 at 0 ms on the Server
+host. It went to `body`. An ending edit asked for the keyboard back only after the gate had answered,
+and the render that removed the editor went out first, so for that moment DOM focus was on nothing
+and no root listener heard the key. The core now sends both requests, the gate's new mode and the
+hand-back, before it yields, as closing a popover already does. The gate is still told first. This
+changes the order for every way an edit ends: 0 runs of 30 lost the key afterwards, on each host.
+
+*(Added 2026-09-30, with [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s note of
+that day.)* The hold above lasts "until that editor holds DOM focus". The editor's focus is now
+declined when the keyboard has left this grid before the focus lands. Keys held behind the opening
+key then do not wait for a focus that will not come, and are not handed to wherever the keyboard
+went. They were typed while the keyboard was this grid's, and they go into the edit, in order, as
+they would have once it held focus.
 
 Rejected: **appending on the C# side** — C# receiving the printable keys and adding them to
 the editor's text. Keys typed after the editor has DOM focus go straight into its input,
@@ -277,6 +329,51 @@ Space, Enter would search for "Alpha " and apply it. The typing stops short inst
 and nothing is applied that was not typed where it was meant. It happens only faster than a
 round trip, so on a Server circuit.
 
+*(Decided with the user, 2026-10-02.)* **A clipboard key is not held as a key: the copy, cut or
+paste it fires is taken in its place, and done at its turn.** Ctrl+C and Ctrl+V — and every key
+whose default is the browser's copy, cut or paste: Ctrl+X, Ctrl+Insert, Shift+Insert,
+Shift+Delete, Ctrl+Shift+V, unless the Consumer declared it — do nothing when dispatched from
+script, so held they were lost. Nothing showed it. A lost copy left the clipboard holding what it
+held before, and the next paste pasted that, which is the outcome
+[ADR-0005](./0005-copy-refuses-rather-than-truncates.md) refuses; a lost paste never landed.
+Found as CP-6's intermittent failure on the Server host (CI, 2026-10-02): an edit ended by Enter
+or Tab, a click on another cell straight after it was held behind the answer, and the Ctrl+C or
+Ctrl+V behind the click was lost — 4 to 7 runs in 100 locally, on this branch and on its base
+alike. No wait in a test removes it: in every failure logged, DOM focus was back on the grid
+before the click was held.
+
+So while a hold stands, a clipboard key's default runs, and the event it fires is taken before
+any listener or field hears it and put among the held keys in the key's place. The event is the
+only moment either can be taken: a paste's data is readable only inside it, and the browser lets
+a copy write only from it. So the paste's data is read then, and the copy's write is started
+then, through ADR-0005's asynchronous route, with a payload built at its turn. At its turn it is
+done where the keyboard is, against the mode and the Selection the keys before it left:
+
+- **With the keyboard the grid's**, the grid's copy of the Selection or its paste into it. The
+  keys after it wait for the core's answer. A cut does nothing, as the grid makes none unheld.
+- **In a text field** — a popover's, the Name Box, the Formula Bar, the Cell Editor — what the
+  field would have done: its selection copied as plain text, or cut, or replaced by the pasted
+  text. Pasted into a one-line field, each line break becomes a space, as Chromium pastes it
+  there (measured on Chromium 141: `a\r\nb` pastes as `a b`, where text set from script loses
+  the break).
+- **On any other control**, nothing, as there.
+
+No JavaScript is added to [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s list:
+this is its clipboard entry, and nothing is measured.
+
+Rejected: **refusing it visibly**, a notice at its turn asking for the key again. It is
+deterministic, but it asks the user to repeat a key the grid can do. And **a wait in the test**,
+the first fix tried: it narrowed the window, and the test still failed 2 runs in 100, one of them
+the step it waited before.
+
+What is still dropped: a clipboard key held behind a key that is itself dropped (above) goes with
+it, as every key behind that one does. A copy so dropped lands nothing, and the clipboard keeps
+what it held.
+
+ED-22 holds the cases. Its test types every key on a 150 ms circuit, so each one lands inside a
+hold on every run, not in 4 to 7 of 100: on the script before this decision it failed in 8 runs of
+8, and it passes in 20 of 20 after. CP-6, unchanged, passed in 100 runs of 100 after it.
+
 ## Consequences
 
 - **The core carries a small amount of JavaScript.** A capture-phase listener can only be attached
@@ -297,9 +394,20 @@ round trip, so on a Server circuit.
   ([ADR-0020](./0020-action-and-template-columns.md)). It rides on the same capture-phase key
   handling.
 
+*(Added 2026-09-27: ED-22's promise, that keys are neither lost nor reordered, covers a primary
+press on the rows as well. A press is ordered among held keys by the root's capture-phase pointer
+listener ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)).)*
+
+*(Added 2026-10-02, decided with the user: a held press lands where it was made.)* Keeping its
+place was not enough. A press held behind keys that moved the view was replayed at its screen
+coordinates, and landed on whatever row the move had brought there (ED-31). A press now carries
+what it was taken against, the painted rows, the scroll and the layout, and the core resolves it
+against that and brings the view back to it. It lands on no cell if the rows' order or the columns
+themselves have changed since (ADR-0021, note of the same day).
+
 ## One key the listener answers itself — 2026-09-27
 
-*(Recorded when Find was built, [ADR-0047](./0047-find-is-asked-of-the-consumer-like-sort-and-filter.md).)*
+*(Recorded when Find was built, [ADR-0055](./0055-find-is-asked-of-the-consumer-like-sort-and-filter.md).)*
 The rule above — the core decides what a key means, the listener only looks it up — has one
 exception, and it is written here so that it stays one. **Ctrl+F in the find panel's own field
 selects the field's text, and the listener does it without asking the core.** Selecting a text
@@ -309,3 +417,48 @@ to one input. It takes no new JavaScript use: it runs inside the capture-phase `
 ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)'s first entry), beside the held-key
 replay that already types into a field. Any further key answered in the listener needs its own
 line here.
+
+*(Added 2026-09-30, decided with the user.)* **On macOS the capture-phase listener places the caret
+for Home and End in Caret, rather than leaving them to the browser.** The table above gives those
+keys to the editor in Caret, to move the caret. That holds on Windows and Linux, where an
+`<input>`'s Home and End move the caret. Chrome on macOS binds them to scrolling the document
+instead. The grid's scroller then scrolled away from the open edit, the edited cell left the painted
+rows, and the Cell Editor lost DOM focus with the user's text in it. So on Apple platforms, with an
+edit open in Caret (in the Cell Editor or the Formula Bar), the listener claims Home and End, and
+Shift+Home and Shift+End, and moves or extends the caret to the start or end of the text, as the
+same keys do elsewhere. Any other key that macOS binds to a scroll inside a text field is treated
+the same way. It is the allowlisted listener placing a caret, as it already does after a rewrite
+([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)); it reads no layout. *(Found in CI
+the same day: a Home or End held behind a press on a circuit, on any platform, and replayed once the
+press was answered, set the caret without scrolling the field to it, and without Shift's extension.
+The replay now places it the same way, scrolled to that end.)* *(Decided with the user the same
+day:)* **PageUp and PageDown do nothing while an edit is open, on every platform.** They move no
+caret in a one-line field, and a browser scrolls the grid with them from the field: on macOS it
+lost the edit outright. Whether Excel commits and moves a page from an edit was not asked; if it is
+wanted, it is a decision of its own.
+
+
+## A seam whose frame the Chrome chooses — 2026-09-30
+
+*(Decided with the user, with [ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md).)* ExSheet's **Format Cells** is a Chrome seam. As at every
+other seam, ExSheet decides what is offered: the tabs, the Number Format categories, the palette and
+the line styles. It also decides what OK means. The Chrome draws the dialog and calls back with the
+change.
+
+**Unlike every seam above, the frame is the Chrome's.** Where the dialog shows, and how it opens and
+closes, belong to the Chrome.
+- The built-in Chrome puts it in the grid's popover frame
+  ([ADR-0040](./0040-a-popover-stays-inside-its-grids-box.md);
+  [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md), item 16).
+- The MudBlazor Chrome shows it in a `MudDialog` at page level.
+
+**Why this seam is different.** A dialog of five tabs is too large for a small grid's box. A design
+system that already has a page-level dialog can show it whole without a script of ours, while the
+built-in Chrome could do so only with `showModal()`, which is not on ADR-0021's allowlist.
+
+**What a Chrome that takes the frame must still do.**
+- It returns the keyboard to the grid when it closes, through the core's focus function (ADR-0021's
+  note of 2026-09-30).
+- It holds nothing of the grid's state, and decides nothing.
+
+Every other seam keeps the core's frame.

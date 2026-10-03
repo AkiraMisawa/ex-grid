@@ -1,0 +1,42 @@
+{
+  "area": "min",
+  "about": "MIN (ADR-0047).",
+  "cases": [
+    {
+      "id": "MIN-001",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MIN(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "MIN-002",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MIN(A5:A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "MIN-003",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MIN(\"5\",7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "MIN-004",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MIN(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

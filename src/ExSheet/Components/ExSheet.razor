@@ -1,0 +1,1714 @@
+@using System.Globalization
+@using System.Runtime.CompilerServices
+
+@*
+    ExSheet holds and computes; ExGrid paints, selects, navigates and reports (ADR-0046). This
+    component renders exactly one ExGrid, as that grid's Consumer: it builds the Columns A … XFD,
+    answers every Range Request from the Sheet, hands back a new row instance for every row the
+    engine's SheetChange names and the same instance for every other row, and turns each Edit
+    Intent into one engine step on the one undo stack (ADR-0048).
+
+    What is deliberately not wired: ExGrid's sort and filter. They reorder a view of rows a
+    Consumer owns, and a Sheet's rows are places (ADR-0046); OnSortChanged and OnFilterChanged are
+    left without a delegate, and HeaderClickSelects gives the header click Excel's meaning.
+    HideColumnMenu keeps the resize grips and drops the column-menu button: Excel's Headings
+    carry no menu, and size to fit stays on a double-click of the edge (ADR-0050 item 12).
+    HideCopyWithHeaders leaves copy with headers out, since a Sheet's column letters are addresses,
+    not headers, unless the Consumer switches it on with AllowCopyWithHeaders (ADR-0048, ADR-0050
+    item 13).
+*@
+@* One element around the Sheet, laid out as if it were not there (display: contents), so the
+   browser's focus events reach ExSheet: while the Sheet is in a Pointing Scope, whether DOM focus is
+   inside it decides whether it points (ADR-0058). Without a Scope nothing listens. *@
+@* With the Sheet Toolbar shown (ADR-0100), the same element is the Sheet's box: the toolbar above,
+   the grid below with what the toolbar leaves. The element is always there, so showing the toolbar
+   never re-creates the grid. *@
+<div class="ex-sheet" style="@FrameStyle" @attributes="_keyboardListeners">
+@if (ShowToolbar)
+{
+    <SheetToolbar Context="_toolbar" Content="ToolbarContent" HeightPx="ToolbarPx" />
+}
+<ExGrid TRow="SheetRow" @ref="_grid"
+        Window="_window" WindowStart="_windowStart" TotalCount="Sheet.RowCount"
+        Columns="_columns" OnColumnWidthChanged="_columnWidthChanged" HideColumnMenu="true"
+        RowHeight="RowHeight" ViewportHeight="GridViewportHeight" ViewportWidth="ViewportWidth"
+        PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
+        OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"
+        CellType="SheetColumns.CellType" CellAlign="SheetColumns.CellAlign" EditorTextOf="SheetColumns.EditorText"
+        PaintedText="SheetColumns.PaintedText" CellAppearance="_cellAppearance" EdgeBorder="SheetAppearance.EdgeBorder" EditorAppearance="SheetAppearance.Editor"
+        HeaderClickSelects="true" HideHeader="!ShowColumnHeadings"
+        RowHeadings="(ShowRowHeadings ? RowLabels : null)"
+        DataEdge="_dataEdge"
+        ShowFormulaBar="ShowFormulaBar" NameBoxLabel="NameBoxLabelOf" NameBoxSizeLabel="NameBoxSizeOf" OnNameBoxEntered="OnNameBoxEnteredAsync"
+        CompleteEditorText="_complete" PointAt="PointAtCaret" ReferenceText="ReferenceTextOf" CycleReference="CycleReferenceAt"
+        OnPointStateChanged="_pointStateChanged" OnPointArrowFromOutside="_pointArrow"
+        ReferencesIn="_references" OnReferenceKeyColoursChanged="_keyColoursChanged"
+        ContextCommands="_contextCommands" CommandLabel="_commandLabel"
+        PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
+        CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
+        ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
+        OnCopyRowsNeeded="_rowsNeeded"
+        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
+        DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" />
+@* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
+   grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
+   stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
+@if (_formatCellsFrame is { } formatCellsFrame)
+{
+    @formatCellsFrame
+}
+@* What ExSheet has to tell the user — an address the Name Box cannot read, an operation the
+   Sheet refused. The same element throughout, so a screen reader hears each change to it. *@
+<div class="ex-sheet-notice" role="status">@_notice</div>
+@* The browser's answer to a render, which a focusout waits for (ADR-0058). Renders nothing. *@
+@BrowserTurnMarkup
+</div>
+
+@code {
+    /// <summary>Excel's default row height in ExGrid's geometry, and the Grid's own default: 28 px.</summary>
+    public const double DefaultRowHeightPx = 28;
+
+    // Rows beyond what the grid asked for, on either side, so that ordinary scrolling is
+    // answered from rows already in hand.
+    private const int ReadAhead = 50;
+    private const int InitialRows = 100;
+
+    private static readonly Func<int, string> RowLabels = static row => (row + 1).ToString(CultureInfo.InvariantCulture);
+
+    // Point mode's two answers and F4's rewrite (ADR-0051) read only the text, the caret and the
+    // range they are handed, so one instance of each serves every ExSheet.
+    private static readonly Func<string, int, bool> PointAtCaret = SheetFormulaAids.PointAt;
+    private static readonly Func<SelectionRange, string> ReferenceTextOf = SheetFormulaAids.ReferenceText;
+    private static readonly Func<string, int, int, EditorRewrite?> CycleReferenceAt = SheetFormulaAids.CycleReference;
+
+    private static readonly Func<CellPosition, string?> NameBoxLabelOf =
+        static focus => new CellAddress(focus.Row, focus.Column).ToString();
+
+    // While a drag's button is down, Excel's Name Box shows the range's size, rows then
+    // columns, and names the active cell again on release (ADR-0052).
+    private static readonly Func<SelectionRange, string?> NameBoxSizeOf =
+        static range => string.Create(CultureInfo.InvariantCulture, $"{range.RowCount}R x {range.ColumnCount}C");
+
+    private readonly SheetHistory _history = new();
+
+    // Every document this instance handed out. A Consumer that binds DocumentChanged back into
+    // Document hands one of them in again, and that is the Sheet already open, not a
+    // replacement: reopening it would clear the undo stack on every edit.
+    private readonly ConditionalWeakTable<SheetDocument, object> _emitted = new();
+
+    private readonly Func<CellPosition, GridDirection, CellPosition> _dataEdge;
+    private readonly Func<string, int, ValueTask<EditorCompletion?>> _complete;
+    private readonly Func<string, IReadOnlyList<EditorReference>> _references;
+    private readonly EventCallback<IReadOnlyList<ReferenceKeyColour>> _keyColoursChanged;
+    private readonly Func<ContextMenuContext<SheetRow>, IEnumerable<GridCommand>> _contextCommands;
+    private readonly Func<string, string?> _commandLabel;
+    private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
+    private readonly Func<global::ExGrid.Finding.GridFindRequest, CancellationToken, Task<global::ExGrid.Finding.GridFindResult>> _find;
+    private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _rowsNeeded;
+    private readonly EventCallback<GridSelection> _selectionChanged;
+    private readonly EventCallback _undo;
+    private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
+    private readonly EventCallback _redo;
+    private readonly EventCallback<bool> _editingChanged;
+    private readonly EventCallback<EditDiscardReason> _editDiscarded;
+    private readonly EventCallback<GridDeclaredKeyPress> _formatKey;
+    private readonly Action<FormatCellsTab> _formatCellsTabShown;
+    private readonly Func<Task> _returnKeyboard;
+    private readonly Func<Task> _formatCellsFromMenu;
+
+    // Format Cells (ADR-0071): the tab it reopens on, this Sheet's own and Number at first (case
+    // 22); the context while it is open; and the fragment of a Chrome that draws it in a frame of
+    // its own, rendered beside the grid.
+    private FormatCellsTab _formatCellsTab = FormatCellsTab.Number;
+    private FormatCellsContext? _formatCells;
+    private RenderFragment? _formatCellsFrame;
+
+    private ExGrid<SheetRow>? _grid;
+    // The Sheet Toolbar's state, cascaded to its items (ADR-0100). Made once, as the component is.
+    private SheetToolbarContext _toolbar = default!;
+    private SheetColumnList _columns = SheetColumnList.Default;
+    // Each cell's Font, Fill and Borders (ADR-0050 item 15, ADR-0071), read once per row for each
+    // reading of the Sheet's formatting. A change that may reformat rows the engine does not name
+    // starts a new reading, and the grid asks every painted row again (SheetAppearance.Lookup).
+    private int _formatReading;
+    private CellAppearanceOf<SheetRow> _cellAppearance = SheetAppearance.Lookup(0);
+    // A resize of several whole columns the grid is still reporting, one column at a time: the
+    // step that began it, and the columns not yet reported (ADR-0016, FN-12c).
+    private (SheetStep First, HashSet<int> Pending)? _resizing;
+    private Sheet? _sheet;
+    private SheetEdges _edges = new();
+    private SheetRow[] _window = [];
+    private int _windowStart;
+    private GridSelection _selection = GridSelection.Empty;
+    // The Linked Table columns the Consumer was last told, so a change is told once (SH-31).
+    private LinkedColumnColours _linkedColumnsTold = LinkedColumnColours.None;
+    // What ExSheet has to tell the user. It stands until the user's own next action — an edit,
+    // a paste, a command, a selection change — and a Consumer's Linked Table push, declaration
+    // or new Sheet Document does not clear it: the user has not yet acted on what it says.
+    private string? _notice;
+    // A notice raised by a commit: the grid moves the Focus after the commit, as part of the
+    // same gesture, and that move does not clear it.
+    private bool _noticeOutlivesCommitMove;
+    // The copy this Sheet last wrote, recognised on a paste by its fields (ADR-0050 item 9).
+    internal SheetOwnCopy? OwnCopy { get; private set; }
+    // The engine's sentence for the copy refused last, for the notice the refusal raises.
+    private string? _copyRefusal;
+    private bool _initialised;
+    private SheetDocument? _documentParameter;
+    // Set when a new Sheet Document was opened in place of the one shown, until any edit open
+    // over it has been discarded (ADR-0048).
+    private bool _documentReplaced;
+    // ExSheet's own sentence for a discard it asked of the grid, said when the grid raises it.
+    private string? _ownDiscard;
+    private CultureInfo? _cultureParameter;
+
+    /// <summary>Creates the component; the Sheet is opened when its parameters arrive.</summary>
+    public ExSheet()
+    {
+        // Held in fields: a delegate's identity reaches the grid, and one made per render would
+        // look like a change every time (ADR-0003).
+        _dataEdge = FindEdge;
+        InitialisePointing();
+        // Answered synchronously from the engine, so the list shows in the render the keystroke
+        // causes (ADR-0051). It reads this Sheet's Linked Tables, so it is the instance's own.
+        _contextCommands = ContextCommandsFor;
+        // Asked synchronously on both copy routes (ADR-0050 item 9).
+        _copyAnswer = AnswerCopy;
+        // Find over the Sheet's own cells (ADR-0055): answered from the engine at once, since the
+        // Sheet is in hand; a step on another Row Sequence Version names nothing here, as a
+        // Sheet's rows never move (ADR-0046).
+        // Rows the grid reads outside the Window: a fill key's source row scrolled away
+        // (ADR-0035). Every row is in hand, so the answer is whole and at once; a copy never asks
+        // it, since CopyAnswer answers every copy (ADR-0050 item 9).
+        _rowsNeeded = (range, _) =>
+        {
+            var sheet = CurrentSheet;
+            var rows = new SheetRow[range.Count];
+            for (var i = 0; i < rows.Length; i++) rows[i] = new SheetRow(sheet, range.Start + i);
+            return Task.FromResult<IReadOnlyList<SheetRow>>(rows);
+        };
+        _find = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
+            ? SheetFind.Step(sheet, request)
+            : global::ExGrid.Finding.GridFindResult.NotFound);
+        // The Consumer's wording first, then ExSheet's own English for its commands; null falls
+        // back to the grid's built-in words for the grid's own commands (ADR-0036).
+        _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
+        _complete = (text, caret) => ValueTask.FromResult(_sheet is { } sheet ? SheetFormulaAids.Complete(sheet, text, caret) : null);
+        // The References the grid colours and outlines while a Formula is edited (ADR-0057),
+        // answered from the engine at once. It reads this Sheet's name, so it is the instance's own.
+        _references = text => _sheet is { } sheet ? SheetFormulaAids.References(sheet, text) : [];
+        // The grid tells the colour each Linked Table column's key was given; the Consumer is told
+        // the columns (ADR-0057). No receiver: nothing on this Sheet changes for it.
+        _keyColoursChanged = new EventCallback<IReadOnlyList<ReferenceKeyColour>>(null,
+            (Func<IReadOnlyList<ReferenceKeyColour>, Task>)(keys => OnKeyColoursChangedAsync(keys)));
+        // No receiver: a selection change re-renders the grid, not this component.
+        _selectionChanged = new EventCallback<GridSelection>(null, (Func<GridSelection, Task>)(selection =>
+        {
+            // A formatting key adopts the Selection it carries, and a command the grid's, before
+            // this notification lands on a circuit (OnFormatKeyAsync, AdoptGridSelection), so the
+            // notification can name the Selection already held: that is no move.
+            var moved = !selection.Equals(_selection);
+            _selection = selection;
+            RefreshToolbar();
+            // Format Cells shows the Selection it opened over and sets what OK names on the
+            // Selection: a Selection moved under it, by the Name Box or a Consumer, ends it.
+            if (moved && _formatCells is not null) _ = InvokeAsync(EndFormatCellsAsync);
+            // A selection change is the user's own action, and clears the notice — except the
+            // move that completes the commit gesture whose refusal the notice reports.
+            if (_noticeOutlivesCommitMove) _noticeOutlivesCommitMove = false;
+            else if (_notice is not null)
+            {
+                ClearNotice();
+                StateHasChanged();
+            }
+            return SelectionChanged.InvokeAsync(selection);
+        }));
+        // Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z while no edit is open (ADR-0050 item 8, ADR-0048):
+        // the same stack a Consumer walks with UndoAsync and RedoAsync, with a refusal said
+        // rather than thrown into the grid's key handler. No receiver, as above: an undo
+        // re-renders what its change names itself.
+        _undo = new EventCallback(null, (Func<Task>)(() => StepByKeyAsync(UndoAsync)));
+        _redo = new EventCallback(null, (Func<Task>)(() => StepByKeyAsync(RedoAsync)));
+        // A resize is the user's, and the width is the document's (ADR-0046): it is recorded in
+        // the Sheet as one step on the undo stack, and the column list follows the Sheet.
+        _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change => OnColumnWidthChangedAsync(change)));
+        // The grid says when an edit opens and ends, at the change and before the browser hears
+        // of it (ADR-0050 section 6), so a command given in between is refused (ADR-0048). No
+        // receiver: nothing this component paints depends on it.
+        _editingChanged = new EventCallback<bool>(null, (Func<bool, Task>)(open =>
+        {
+            IsEditing = open;
+            // The toolbar greys out once the grid has answered the key or press that opened or
+            // ended the edit, not inside that answer: drawn there, on a circuit, its render landed
+            // among the keys and presses the grid holds behind the answer and lost what was typed
+            // (layer 3, the Server host, SRV-5).
+            if (ShowToolbar) _ = InvokeAsync(RefreshToolbarLaterAsync);
+            return EditingChanged.InvokeAsync(open);
+        }));
+        // Typing thrown away is said, whoever discarded it: the grid, or ExSheet itself for a
+        // replaced Sheet Document (ADR-0011, ADR-0048). No receiver: the notice renders itself.
+        _editDiscarded = new EventCallback<EditDiscardReason>(null, (Func<EditDiscardReason, Task>)(reason =>
+        {
+            OnEditDiscarded(reason);
+            return Task.CompletedTask;
+        }));
+        // Excel's formatting keys, which the grid claims for this Sheet and raises with whether an
+        // edit is open (ADR-0071, ADR-0050 item 14). No receiver: a format re-renders what its
+        // change names, and a refusal renders its notice itself.
+        _formatKey = new EventCallback<GridDeclaredKeyPress>(null, (Func<GridDeclaredKeyPress, Task>)(press => OnFormatKeyAsync(press)));
+        // Format Cells (ADR-0071): the tab each opening reopens on, and the core's focus function a
+        // Chrome whose frame lies outside the grid calls on closing (ADR-0021's note of 2026-09-30).
+        _formatCellsTabShown = tab => _formatCellsTab = tab;
+        _returnKeyboard = () => _grid?.ReturnKeyboardAsync() ?? Task.CompletedTask;
+        _formatCellsFromMenu = OpenFormatCellsByUserAsync;
+    }
+
+    /// <summary>
+    /// What a Wrapper cascades to the grid inside this component (ADR-0030): the glyph widths
+    /// the grid resolves its Cell Metrics from, read here so that a column widened on entry is
+    /// widened in the grid's own measure.
+    /// </summary>
+    [CascadingParameter] private GridPresentationDefaults? Presentation { get; set; }
+
+    /// <summary>
+    /// The Sheet Document to show (ADR-0048). Handing over a different document replaces the
+    /// Sheet and clears the undo stack, and an edit open over the Sheet it replaces is discarded,
+    /// and said, rather than committed into the new one; handing back a document this component
+    /// raised through <see cref="DocumentChanged"/> — as binding <c>Document</c> two ways does —
+    /// changes nothing. Null is an empty Sheet in <see cref="Culture"/>.
+    /// </summary>
+    /// <exception cref="SheetDocumentException">The document's version is one the engine does not know.</exception>
+    [Parameter] public SheetDocument? Document { get; set; }
+
+    /// <summary>
+    /// Raised after every change to the Sheet with its Sheet Document — Entries, never Values
+    /// (ADR-0048). The application persists it; ExSheet never does.
+    /// </summary>
+    [Parameter] public EventCallback<SheetDocument> DocumentChanged { get; set; }
+
+    /// <summary>
+    /// The declared culture of a Sheet started empty: how typed constants are read and how
+    /// Values are shown (ADR-0048). A <see cref="Document"/> carries its own culture, which is
+    /// the one that counts for it. Null is the current culture when the Sheet is created. It is
+    /// the Sheet's, recorded in its document, so changing it on a live Sheet is refused by name:
+    /// Entries already typed would not be read again.
+    /// </summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    /// <summary>How many leading columns are pinned — the Sheet's frozen panes, columns only (ADR-0046).</summary>
+    [Parameter] public int PinnedColumnCount { get; set; }
+
+    /// <summary>
+    /// Every row's height, in pixels (ADR-0013/0046). Excel's 1,048,576 rows have to fit under
+    /// the browser's scroll ceiling, header included, so a height at which they do not is
+    /// refused by name (SH-3). The Sheet is never quietly made shorter.
+    /// </summary>
+    [Parameter] public double RowHeight { get; set; } = DefaultRowHeightPx;
+
+    /// <summary>The outer height of the sheet, Formula Bar and header included; passed to ExGrid as is.</summary>
+    [Parameter] public ViewportSize ViewportHeight { get; set; } = 600;
+
+    /// <summary>The outer width of the sheet; passed to ExGrid as is.</summary>
+    [Parameter] public ViewportSize ViewportWidth { get; set; } = 800;
+
+    /// <summary>Whether the Row Headings — the row numbers — are shown (ADR-0050). The Sheet still addresses <c>A1</c> without them.</summary>
+    [Parameter] public bool ShowRowHeadings { get; set; } = true;
+
+    /// <summary>Whether the Column Headings — the column letters — are shown (ADR-0050). The Sheet still addresses <c>A1</c> without them.</summary>
+    [Parameter] public bool ShowColumnHeadings { get; set; } = true;
+
+    /// <summary>Whether the Formula Bar with its Name Box is shown (ADR-0051).</summary>
+    [Parameter] public bool ShowFormulaBar { get; set; } = true;
+
+    /// <summary>
+    /// Whether the Sheet Toolbar is shown (ADR-0100): off unless asked for. It stands above the
+    /// Formula Bar, inside the Sheet's box, and the Sheet's <see cref="ViewportHeight"/> includes it.
+    /// It shows and hides every Toolbar Row together, the default row included.
+    /// </summary>
+    [Parameter] public bool ShowToolbar { get; set; }
+
+    /// <summary>
+    /// Raised with the other value when the user asks to hide or show the Sheet Toolbar with Ctrl+F1,
+    /// Excel's key for the ribbon (ADR-0100). The Sheet holds nothing: whether the toolbar is shown is
+    /// View State, the Consumer's, so binding <c>@bind-ShowToolbar</c> is what lets the key work.
+    /// Unbound, Ctrl+F1 is not claimed and stays the browser's.
+    /// </summary>
+    [Parameter] public EventCallback<bool> ShowToolbarChanged { get; set; }
+
+    /// <summary>
+    /// What the Sheet Toolbar holds, in order (ADR-0100): <see cref="ToolbarRow"/>s of Toolbar Items —
+    /// ExSheet's formatting items and the Consumer's own <see cref="ToolbarButton"/>s — or Toolbar
+    /// Items alone, which are one row. Null shows the default row, Excel's Home tab's formatting
+    /// commands, which is only an example: the order is the Consumer's to declare.
+    /// </summary>
+    [Parameter] public RenderFragment? ToolbarContent { get; set; }
+
+    /// <summary>
+    /// Raised whenever the grid's Selection changes, as ExGrid raises it (ADR-0011/0014): what a
+    /// status line counts. It is raised after the render that shows the move, a round trip later
+    /// on Blazor Server, so the formatting commands do not wait for it: they act on the Selection
+    /// as the grid holds it when they run.
+    /// </summary>
+    [Parameter] public EventCallback<GridSelection> SelectionChanged { get; set; }
+
+    /// <summary>
+    /// Tells the Consumer each Linked Table column the Formula being edited reads, and the colour
+    /// its References wear in the editor (ADR-0057, ADR-0049): each column once, in order of first
+    /// appearance, under the table's and the column's names as the Consumer declared them. Raised
+    /// once whenever that list changes and never when it does not, and with an empty list when the
+    /// edit ends. A table or column not declared names nothing and is not told. ExSheet does not
+    /// know where, or whether, the table is on screen, and outlines none of it itself. A
+    /// <see cref="PointingScope"/> outlines the columns in the grids registered in it (ADR-0058); for
+    /// any other grid, the Consumer passes the list to the grid that shows the table (ExGrid's
+    /// <c>OutlinedColumns</c>). Either way, only the Consumer can vouch that that grid shows the rows
+    /// the Formula reads.
+    /// </summary>
+    [Parameter] public EventCallback<LinkedColumnColours> OnLinkedColumnColoursChanged { get; set; }
+
+    /// <summary>
+    /// The wording for a command id in the menus the built-in Chrome renders (ADR-0036): the
+    /// grid's own ids and ExSheet's (<see cref="SheetCommandIds"/>). Null for an id falls back to
+    /// ExSheet's English for its own commands and the grid's for the rest.
+    /// </summary>
+    [Parameter] public Func<string, string?>? CommandLabel { get; set; }
+
+    /// <summary>
+    /// Whether the Context Menu offers copy with headers, which copies the Values with the column
+    /// letters as the first row (ADR-0048). Off by default: a Sheet's column letters are addresses,
+    /// not headers, and Excel has no such command, so ExSheet declares ExGrid's
+    /// <c>HideCopyWithHeaders</c> unless this is on (ADR-0050 item 13).
+    /// </summary>
+    [Parameter] public bool AllowCopyWithHeaders { get; set; }
+
+    /// <summary>
+    /// The grid's Chrome, passed to ExGrid as is (ADR-0010). A Chrome that is also an
+    /// <see cref="ISheetChrome"/> may draw Format Cells in a frame of its own (ADR-0071); otherwise
+    /// the built-in Format Cells stands in the grid's popover frame.
+    /// </summary>
+    [Parameter] public IGridChrome? Chrome { get; set; }
+
+    /// <summary>
+    /// Raised when <see cref="IsEditing"/> changes: <see langword="true"/> when an edit opens,
+    /// <see langword="false"/> when it is committed, cancelled or discarded (ADR-0048). While an
+    /// edit is open the commands that change the Sheet are refused, so this is where the
+    /// application greys out its own buttons for them, as Excel greys out its ribbon.
+    /// </summary>
+    [Parameter] public EventCallback<bool> EditingChanged { get; set; }
+
+    /// <summary>
+    /// Raised when one of Excel's formatting keys is pressed while an edit is open (ADR-0071): the
+    /// key changed nothing, and its reason is said in ExSheet's notice. In that state Excel formats
+    /// the selected characters, and a Cell Format is per cell. The key is still claimed, so the
+    /// browser's own meaning does not run either: Ctrl+U opens no page source.
+    /// </summary>
+    [Parameter] public EventCallback<SheetRefusal> OnFormatKeyRefused { get; set; }
+
+    /// <summary>
+    /// Whether an edit is open in the grid: from the moment a cell or the Formula Bar is typed in,
+    /// or opened with F2 or a double click, until the edit is committed, cancelled or discarded.
+    /// A commit the Sheet rejects — a Formula it cannot read — leaves it open (ADR-0034). While it
+    /// is, <see cref="DoAsync"/>, <see cref="UndoAsync"/>, <see cref="RedoAsync"/>,
+    /// <see cref="SetCellFormatAsync"/>, <see cref="SetNumberFormatAsync"/>,
+    /// <see cref="SetAlignmentAsync"/> and <see cref="OpenFormatCellsAsync"/> are refused by name
+    /// (ADR-0048, ADR-0071), and Excel's formatting keys change nothing
+    /// (<see cref="OnFormatKeyRefused"/>).
+    /// <see cref="CellFormatAt"/> is a read, and answers. ExSheet learns it from its grid
+    /// (ADR-0050 section 6).
+    /// </summary>
+    public bool IsEditing { get; private set; }
+
+    /// <summary>Whether there is a step to undo.</summary>
+    public bool CanUndo => _history.CanUndo;
+
+    /// <summary>Whether there is an undone step to redo.</summary>
+    public bool CanRedo => _history.CanRedo;
+
+    private Sheet CurrentSheet => _sheet ?? throw new InvalidOperationException("The Sheet opens when the component's parameters arrive.");
+
+    // The Cell Metrics the grid resolves, which convert a width in characters to pixels and back
+    // as the painted text converts the column's width (ADR-0047, third round).
+    private global::ExGrid.Columns.CellTextMetrics CellMetrics =>
+        GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, defaults: Presentation).CellMetrics;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        RefuseUnreachableRows();
+        BindPointingScope();
+        ResolveToolbar();
+        if (!_initialised)
+        {
+            _initialised = true;
+            _documentParameter = Document;
+            _cultureParameter = Culture;
+            Open(Document);
+            RefreshToolbar();
+            return;
+        }
+        if (!Equals(Culture, _cultureParameter))
+        {
+            throw new InvalidOperationException(
+                $"The Sheet's culture is {CurrentSheet.Culture.Name}, and it is the Sheet's own: Entries already typed were read under it (ADR-0048). " +
+                "To show a Sheet under another culture, hand over a Sheet Document declaring that culture.");
+        }
+        if (!ReferenceEquals(Document, _documentParameter))
+        {
+            _documentParameter = Document;
+            if (Document is null || !_emitted.TryGetValue(Document, out _))
+            {
+                Open(Document);
+                _documentReplaced = true;
+            }
+        }
+        // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
+        if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
+        RefreshToolbar();
+    }
+
+    /// <summary>
+    /// A new Sheet Document shown while an edit is open discards the edit, and says so (ADR-0048,
+    /// ADR-0050 section 6): kept open, it would be committed into the new document's cell at the
+    /// same place, and a parameter cannot be refused. The grid discards it with ExSheet's own
+    /// sentence; the Sheet already shown is the new one.
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_documentReplaced) return;
+        _documentReplaced = false;
+        if (_grid is not { } grid) return;
+        _ownDiscard = SheetWords.EditDiscardedByNewDocument;
+        if (!await grid.DiscardEditAsync(_ownDiscard)) _ownDiscard = null;
+    }
+
+    /// <summary>
+    /// Undoes the latest operation — the user's or a Consumer command's, whichever came last
+    /// (ADR-0048). Answers false when there is nothing to undo.
+    /// </summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> UndoAsync() => OnDispatcherAsync(async () =>
+    {
+        RefuseWhileEditing();
+        if (_history.Undo() is not { } changes) return false;
+        await ChangedAsync(changes);
+        return true;
+    });
+
+    /// <summary>Redoes the operation undone last. Answers false when there is nothing to redo.</summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> RedoAsync() => OnDispatcherAsync(async () =>
+    {
+        RefuseWhileEditing();
+        if (_history.Redo() is not { } changes) return false;
+        await ChangedAsync(changes);
+        return true;
+    });
+
+    /// <summary>
+    /// A Consumer command: does <paramref name="edit"/> as one operation on the user's undo
+    /// stack, in its place in the order (ADR-0048), and raises <see cref="DocumentChanged"/>.
+    /// </summary>
+    /// <exception cref="SheetRefusedException">The Sheet refuses the operation, or an edit is open
+    /// (<see cref="IsEditing"/>); nothing changed.</exception>
+    /// <exception cref="FormulaSyntaxException">A typed Formula cannot be read; nothing changed.</exception>
+    public Task DoAsync(SheetEdit edit)
+    {
+        ArgumentNullException.ThrowIfNull(edit);
+        // Async, so the refusal arrives in the returned task, as the engine's own do, even when the
+        // caller is already on the renderer's context and the work runs inline.
+        return InvokeAsync(async () =>
+        {
+            RefuseWhileEditing();
+            await PerformAsync(edit);
+        });
+    }
+
+    /// <summary>
+    /// Sets the parts of a Cell Format that <paramref name="change"/> names on the Selection as the
+    /// grid holds it when the command runs, which on Blazor Server can be ahead of the last
+    /// <see cref="SelectionChanged"/>, as one operation on the undo stack (ADR-0071, ADR-0048,
+    /// ADR-0050 item 14's note of 2026-10-01). Every part it does not name stays as
+    /// each cell has it, each Font emphasis on its own: a change that sets bold keeps each cell's
+    /// italic, Fill and Number Format. A Cell Format lives at three levels, as in Excel (ADR-0047):
+    /// a Selection of whole columns or whole rows sets it on the columns or rows, one entry each,
+    /// and any other range on its cells. A Selection of several ranges, whole columns and rows
+    /// among them, is one operation too (ADR-0046), and the change's Borders are relative to each
+    /// range, so each range gets its own outline, as in Excel. Answers false when nothing is
+    /// selected.
+    /// </summary>
+    /// <exception cref="ArgumentException">The change sets no part of a Cell Format.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The change's alignment is not one.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    /// <remarks>
+    /// A Number Format widens each column whose numbers it no longer fits, in the same operation,
+    /// as Excel's formatting keys do (ADR-0071, case 17): a column the user has not sized, to hold
+    /// the widest of them, recorded as a width an entry widened (SH-26). A column the user sized
+    /// never widens (case 18). Format Cells' OK does the same. A Font, a Fill or Borders widens
+    /// nothing, strikethrough among them: Excel's Ctrl+5 widens as a Number Format key does (the
+    /// fourteenth Windows run, case 7), but Format Cells' Font tab is read as Ctrl+B is, which no
+    /// run has seen widen, and this method sets a Font as that tab does. <see cref="DoAsync"/> does
+    /// an edit exactly as it is written, and widens nothing.
+    /// </remarks>
+    public Task<bool> SetCellFormatAsync(CellFormatChange change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        if (change.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
+        if (change.Alignment is { } alignment && !Enum.IsDefined(alignment))
+        {
+            throw new ArgumentOutOfRangeException(nameof(change), alignment, "Not an alignment.");
+        }
+        return OnDispatcherAsync(() =>
+        {
+            RefuseWhileEditing();
+            AdoptGridSelection();
+            return FormatSelectionAsync(change);
+        });
+    }
+
+    /// <summary>
+    /// Sets on the Selection a change made from the Focus cell's Cell Format as it shows when the
+    /// command runs, as a toggle key reads it (ADR-0071, ADR-0100): Bold on over a Focus cell that is
+    /// not bold and off over one that is, read from the Selection as the grid holds it then, not as
+    /// it was last heard. Otherwise it acts, refuses and answers as <see cref="SetCellFormatAsync"/>.
+    /// Answers false when nothing is selected.
+    /// </summary>
+    /// <param name="change">The change, made from the Focus cell's Cell Format.</param>
+    /// <exception cref="ArgumentException">The change it makes sets no part of a Cell Format.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetCellFormatFromFocusAsync(Func<CellFormat, CellFormatChange> change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        return OnDispatcherAsync(async () =>
+        {
+            RefuseWhileEditing();
+            AdoptGridSelection();
+            if (_selection.IsEmpty) return false;
+            var focus = _selection.Focus;
+            var made = change(CellFormatAt(new CellAddress(focus.Row, focus.Column)));
+            ArgumentNullException.ThrowIfNull(made, nameof(change));
+            if (made.IsEmpty) throw new ArgumentException("The change sets no part of a Cell Format.", nameof(change));
+            return await FormatSelectionAsync(made);
+        });
+    }
+
+    /// <summary>
+    /// Sets the Number Format of the Selection; <see langword="null"/> is General. A shorthand for
+    /// <see cref="SetCellFormatAsync"/> with a change that names the Number Format alone
+    /// (ADR-0071), so it acts, refuses and answers as that change does.
+    /// </summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetNumberFormatAsync(NumberFormat? format) =>
+        SetCellFormatAsync(new CellFormatChange { NumberFormat = format ?? NumberFormat.General });
+
+    /// <summary>
+    /// Sets the horizontal alignment of the Selection. A shorthand for
+    /// <see cref="SetCellFormatAsync"/> with a change that names the Alignment alone (ADR-0071), so
+    /// it acts, refuses and answers as that change does.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The alignment is not one.</exception>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing changed.</exception>
+    public Task<bool> SetAlignmentAsync(HorizontalAlignment alignment) =>
+        SetCellFormatAsync(new CellFormatChange { Alignment = alignment });
+
+    /// <summary>
+    /// The Cell Format of the cell at <paramref name="address"/> as it shows (ADR-0071): each part
+    /// the cell's own, else its row's, else its column's, else the part's default — cell over row
+    /// over column, as in Excel — and each Border side the edge as shown, which reads the same from
+    /// the cell beside it (<see cref="Sheet.GetBorders"/>). What a toolbar reads for the Focus cell
+    /// whenever the Selection changes. It is a read, so it answers while an edit is open too: until
+    /// the edit is committed, the cell is as it was.
+    /// </summary>
+    public CellFormat CellFormatAt(CellAddress address) => CurrentSheet.GetCellFormat(address);
+
+    /// <summary>
+    /// One of Excel's formatting keys (ADR-0071, "Keys"), claimed by the grid and raised with
+    /// whether an edit is open (ADR-0050 item 14). With no edit open it sets what Excel sets under
+    /// the Sheet's culture on the Selection, as one step on the undo stack, a toggle in the
+    /// direction the Focus cell gives it (<see cref="SheetFormatKeys.ChangeFor"/>). A Number Format
+    /// key and Ctrl+5 widen the columns whose numbers no longer fit, in that step
+    /// (<see cref="SheetFormatKeys.WidensAsANumberFormatDoes"/>). While an edit is
+    /// open it changes nothing, says why, and is raised through <see cref="OnFormatKeyRefused"/>
+    /// (SH-43). Ctrl+1 opens Format Cells instead of setting anything, and while an edit is open it
+    /// is refused as the others are: Excel opens a Font-only Format Cells there, for rich text
+    /// ExSheet does not have (ADR-0071, case 21). ExSheet hears an edit end a render late when a
+    /// parameter change discarded it (ADR-0050 section 6), so its own word counts as well as the
+    /// grid's. The key acts on the Selection the grid held at the key, which it carries: the grid
+    /// raises a move after the render that shows it, a round trip later on a circuit, and a key
+    /// pressed straight after Shift+arrow arrives first. Formatted from the Selection last heard,
+    /// fewer cells than are selected would change, with nothing to say so.
+    /// </summary>
+    private async Task OnFormatKeyAsync(GridDeclaredKeyPress press)
+    {
+        if (await OnToolbarKeyAsync(press)) return;
+        if (SheetStructureKeys.KindOf(press.Key) is { } structure)
+        {
+            await OnStructureKeyAsync(press, structure);
+            return;
+        }
+        if (SheetFormatKeys.KindOf(press.Key) is not { } kind) return;
+        // Rows are places, so the Selection is written in version 0 (ADR-0046).
+        if (press.RowSequenceVersion == 0) _selection = press.Selection;
+        if (press.EditOpen || IsEditing)
+        {
+            var refusal = new SheetRefusal(SheetRefusalReason.EditIsOpen, SheetWords.FormatKeyWhileEditing);
+            Tell(refusal.Message);
+            StateHasChanged();
+            await OnFormatKeyRefused.InvokeAsync(refusal);
+            return;
+        }
+        if (_selection.IsEmpty) return;
+        // Ctrl+1 opens Format Cells and sets nothing itself (ADR-0071, case 22).
+        if (kind == SheetFormatKeys.Kind.FormatCells)
+        {
+            await ShowFormatCellsAsync();
+            return;
+        }
+        var focus = _selection.Focus;
+        // On the Selection the key carries, which SetCellFormatAsync would read from the grid again.
+        await FormatSelectionAsync(
+            SheetFormatKeys.ChangeFor(kind, CellFormatAt(new CellAddress(focus.Row, focus.Column)), CurrentSheet.Culture),
+            widen: SheetFormatKeys.WidensAsANumberFormatDoes(kind));
+    }
+
+    /// <summary>
+    /// Ctrl+Plus and Ctrl+Minus (ADR-0050 item 14's note of 2026-10-02): over a Selection of whole
+    /// rows they insert or delete those rows, over whole columns those columns, as the Context
+    /// Menu's commands do, each one step on the undo stack. Over any other Selection, and while an
+    /// edit is open, nothing changes and the notice says why. They act on the Selection the key
+    /// carries, as a formatting key does: one pressed straight after Shift+Space arrives before the
+    /// move's notification on a circuit.
+    /// </summary>
+    private async Task OnStructureKeyAsync(GridDeclaredKeyPress press, SheetStructureKeys.Kind kind)
+    {
+        var insert = kind == SheetStructureKeys.Kind.Insert;
+        // Rows are places, so the Selection is written in version 0 (ADR-0046).
+        if (press.RowSequenceVersion == 0) _selection = press.Selection;
+        if (press.EditOpen || IsEditing)
+        {
+            Tell(SheetWords.StructureKeyWhileEditing(insert));
+            StateHasChanged();
+            return;
+        }
+        if (_selection.IsEmpty) return;
+        if (SheetStructureKeys.EditFor(kind, _selection, new GridExtent(Sheet.RowCount, Sheet.ColumnCount)) is not { } edit)
+        {
+            Tell(SheetWords.StructureKeyNeedsWholeRowsOrColumns(insert));
+            StateHasChanged();
+            return;
+        }
+        await StructureAsync(edit);
+    }
+
+    /// <summary>
+    /// Opens Format Cells over the Selection as the grid holds it when the command runs, as
+    /// <see cref="SetCellFormatAsync"/> reads it, from the Consumer's own button (ADR-0071). It opens on
+    /// the Focus cell's Cell Format, with the parts that differ across the Selection shown as Excel
+    /// shows them, and on the tab shown last in this Sheet — Number the first time. OK sets the
+    /// parts the user touched as one undo step, as <see cref="SetCellFormatAsync"/> does, and Cancel
+    /// or Escape sets nothing. A Chrome that is an <see cref="ISheetChrome"/> may draw it in a frame
+    /// of its own; otherwise it is a popover inside the Sheet's box (ADR-0050 item 16). Opening it
+    /// again while it stands opens it afresh. Answers false when nothing is selected.
+    /// </summary>
+    /// <exception cref="SheetRefusedException">An edit is open (<see cref="IsEditing"/>); nothing opened.</exception>
+    public Task<bool> OpenFormatCellsAsync() => OnDispatcherAsync(() =>
+    {
+        RefuseWhileEditing();
+        AdoptGridSelection();
+        return ShowFormatCellsAsync();
+    });
+
+    // The Context Menu's "Format Cells…" (ADR-0036, ADR-0071). The menu stands only while no edit is
+    // open; one opened in between is refused in words rather than thrown into the menu's handler.
+    // It opens over the Selection the menu was opened on, which the grid still holds: a move closes
+    // the menu. That Selection's notification waits behind the menu's own focus, a round trip on a
+    // circuit, so it is read from the grid.
+    private async Task OpenFormatCellsByUserAsync()
+    {
+        if (IsEditing)
+        {
+            Tell(SheetWords.EditIsOpen);
+            StateHasChanged();
+            return;
+        }
+        AdoptGridSelection();
+        await ShowFormatCellsAsync();
+    }
+
+    /// <summary>
+    /// Adopts the grid's Selection as it is now as the one ExSheet acts on (ADR-0050 item 14's note
+    /// of 2026-10-01). The grid raises a move after the render that shows it, a round trip later on
+    /// a circuit, so a command given straight after Shift+arrow would otherwise act on the Selection
+    /// last heard: fewer cells than are selected, or others, with nothing to say so. Adopted, the
+    /// late notification names the Selection already held, which is no move. Rows are places, so the
+    /// Selection is written in version 0 (ADR-0046), and under any other it names nothing here
+    /// (ADR-0011).
+    /// </summary>
+    private void AdoptGridSelection()
+    {
+        if (_grid is { } grid) _selection = grid.ReadSelection().Under(0).Selection;
+    }
+
+    private async Task<bool> ShowFormatCellsAsync()
+    {
+        if (_selection.IsEmpty || _grid is not { } grid) return false;
+        var focus = _selection.Focus;
+        var draft = FormatCellsDraft.Open(CurrentSheet, new CellAddress(focus.Row, focus.Column), [.. _selection.Ranges.Select(SheetFormulaAids.RangeOf)]);
+        FormatCellsContext? context = null;
+        context = new FormatCellsContext(draft, _formatCellsTab, _formatCellsTabShown,
+            () => OkFormatCellsAsync(context!), () => CancelFormatCells(context!), _returnKeyboard);
+        ClearNotice();
+        if ((Chrome as ISheetChrome)?.FormatCells(context) is { } frame)
+        {
+            // The frame is the Chrome's (ADR-0071): a built-in one standing from an earlier opening goes.
+            if (_formatCells is not null && _formatCellsFrame is null) await grid.ClosePopoverAsync();
+            // The keyboard is the frame's from here, however Format Cells was opened — the menu's
+            // command, Ctrl+1 or the Consumer's own call: the keys typed until the frame takes it
+            // are held for it, never the grid's (ADR-0050 item 16, 2026-10-01).
+            await grid.HandKeyboardToFrameAsync();
+            _formatCells = context;
+            _formatCellsFrame = frame;
+            StateHasChanged();
+            return true;
+        }
+        _formatCells = context;
+        _formatCellsFrame = null;
+        StateHasChanged();
+        if (await grid.OpenPopoverAsync(popover => BuiltInFormatCells(context, popover), SheetWords.FormatCellsTitle)) return true;
+        _formatCells = null;
+        return false;
+    }
+
+    // The built-in Chrome's Format Cells, in the grid's popover frame (ADR-0050 item 16).
+    private static RenderFragment BuiltInFormatCells(FormatCellsContext context, GridPopoverContext popover) =>
+        @<FormatCellsPanel FormatCells="context" Popover="popover" />;
+
+    /// <summary>
+    /// Format Cells' OK (ADR-0071, SH-45): the parts the user touched, set on the Selection as one
+    /// undo step, and Format Cells ends. With nothing touched nothing is set and no step recorded. A
+    /// draft holding a refusal — a Custom code the engine does not read, text that is not a colour —
+    /// sets nothing and leaves Format Cells open, for the Chrome to show why.
+    /// </summary>
+    private async Task<bool> OkFormatCellsAsync(FormatCellsContext context)
+    {
+        if (!ReferenceEquals(context, _formatCells)) return true;
+        if (context.Draft.Refusal is not null) return false;
+        var change = context.Draft.Change;
+        if (!change.IsEmpty)
+        {
+            try
+            {
+                RefuseWhileEditing();
+                await FormatSelectionAsync(change);
+            }
+            catch (SheetRefusedException refused)
+            {
+                Tell(SheetWords.Refused(refused.Refusal));
+            }
+        }
+        await EndFormatCellsAsync();
+        return true;
+    }
+
+    // Cancel sets nothing (ADR-0071).
+    private void CancelFormatCells(FormatCellsContext context)
+    {
+        if (ReferenceEquals(context, _formatCells)) _ = InvokeAsync(EndFormatCellsAsync);
+    }
+
+    // Ends Format Cells in whichever frame it stands: the Chrome's fragment is no longer rendered,
+    // and the grid's popover closes and gives the keyboard back to the root (ADR-0039).
+    private async Task EndFormatCellsAsync()
+    {
+        if (_formatCells is null) return;
+        var ownFrame = _formatCellsFrame is not null;
+        _formatCells = null;
+        _formatCellsFrame = null;
+        if (ownFrame) StateHasChanged();
+        else if (_grid is { } grid) await grid.ClosePopoverAsync();
+    }
+
+    // Undo or redo from the grid's own keys (ADR-0050 item 8). The grid forwards them only while
+    // no edit is open, but ExSheet hears an edit end a render late when a parameter change
+    // discarded it (ADR-0050 section 6); a refusal in that render is said, as ExSheet says the
+    // grid's refusals, and never thrown into the grid's key handler.
+    private async Task StepByKeyAsync(Func<Task<bool>> step)
+    {
+        try
+        {
+            await step();
+        }
+        catch (SheetRefusedException refused)
+        {
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
+    }
+
+    // While an edit is open, a command that changes the Sheet is refused by name and changes
+    // nothing (ADR-0048): the Cell Editor stands over a place, and a row inserted above it would
+    // carry the typing into another row when it is committed. Asked on the renderer's context,
+    // where IsEditing is written.
+    private void RefuseWhileEditing()
+    {
+        if (IsEditing) throw new SheetRefusedException(new SheetRefusal(SheetRefusalReason.EditIsOpen, SheetWords.EditIsOpen));
+    }
+
+    /// <summary>
+    /// The Linked Tables declared on the Sheet, in the order they were declared (ADR-0049): each
+    /// one's name, columns and key, whether it is waiting for a snapshot, and how many rows the
+    /// last one held.
+    /// </summary>
+    public IReadOnlyList<LinkedTable> LinkedTables => CurrentSheet.LinkedTables;
+
+    /// <summary>
+    /// Declares a Linked Table by name, columns and key, before any of its rows arrive (ADR-0049).
+    /// Formulas naming it stop being <c>#NAME?</c> and show <c>#GETTING_DATA</c> until the first
+    /// snapshot is pushed, and completion offers its name. The declaration is recorded in the Sheet
+    /// Document, so <see cref="DocumentChanged"/> is raised when it changes what was declared.
+    /// Declaring the same table with the same columns and key changes nothing. Other columns or
+    /// another key replace the declaration and drop the rows held so far. It is the Consumer's
+    /// data, not a user's operation, so it is no step on the undo stack.
+    /// </summary>
+    /// <param name="name">The name Formulas read the table by.</param>
+    /// <param name="columns">The column names, in order: none empty, no two the same without regard to case.</param>
+    /// <param name="key">
+    /// The key column, one of <paramref name="columns"/>, or <see langword="null"/> for none
+    /// (ADR-0049, 2026-09-30). A row is read by its key, and every snapshot of a keyed table is
+    /// checked: one in which a key repeats is refused (<see cref="PushLinkedTableAsync"/>). A table
+    /// whose rows are told apart by several columns is given a column that joins them, and that
+    /// column is its key.
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// The name or the columns are not ones a structured reference can name, or the key is not one
+    /// of the columns.
+    /// </exception>
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, string? key = null)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(columns);
+        return InvokeAsync(async () =>
+        {
+            var sheet = CurrentSheet;
+            var before = sheet.LinkedTables;
+            var change = sheet.DeclareLinkedTable(name, columns, key);
+            await ChangedAsync(change, raiseDocument: !SameDeclarations(before, sheet.LinkedTables), byUser: false);
+        });
+    }
+
+    /// <summary>
+    /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049): no
+    /// recalculation sees part of one snapshot and part of another. Only the Formulas that read
+    /// the table, and what depends on them, recalculate, and only the rows whose Values changed
+    /// repaint. The Sheet Document never holds a table's rows, so nothing is raised through
+    /// <see cref="DocumentChanged"/>, and nothing goes on the undo stack.
+    /// </summary>
+    /// <param name="name">The declared table's name.</param>
+    /// <param name="rows">The rows, each holding one Value per declared column, in order; null is a blank.</param>
+    /// <exception cref="InvalidOperationException">No table of that name is declared.</exception>
+    /// <exception cref="RepeatedKeyException">
+    /// The table was declared with a key, and a key repeats in the snapshot, compared as
+    /// <c>XLOOKUP</c>'s exact match compares (case does not tell keys apart; blank keys are not
+    /// compared). The snapshot is refused and the previous one is not kept: the table waits again,
+    /// and every Formula that reads it shows <c>#GETTING_DATA</c> before the refusal is thrown.
+    /// </exception>
+    /// <exception cref="ArgumentException">A row does not have one Value per column, or holds a Value that is not data.</exception>
+    public Task PushLinkedTableAsync(string name, IEnumerable<IReadOnlyList<Value?>> rows)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(rows);
+        return InvokeAsync(async () =>
+        {
+            SheetChange change;
+            try
+            {
+                change = CurrentSheet.PushLinkedTable(name, rows);
+            }
+            catch (RepeatedKeyException refused)
+            {
+                // The table went back to waiting: its readers show #GETTING_DATA, and then the
+                // Consumer hears why (ADR-0049, 2026-09-30).
+                await ChangedAsync(refused.Change, raiseDocument: false, byUser: false);
+                throw;
+            }
+            await ChangedAsync(change, raiseDocument: false, byUser: false);
+        });
+    }
+
+    // The colours the grid gave the keys of the Formula being edited, as the Linked Table columns
+    // they name (ADR-0057): told to the Consumer when they differ from what it was last told.
+    private Task OnKeyColoursChangedAsync(IReadOnlyList<ReferenceKeyColour> keys)
+    {
+        var columns = _sheet is { } sheet ? SheetFormulaAids.LinkedColumnsOf(sheet, keys) : LinkedColumnColours.None;
+        if (SameLinkedColumns(columns, _linkedColumnsTold)) return Task.CompletedTask;
+        _linkedColumnsTold = columns;
+        // The Scope outlines them in its grids, and the Consumer hears them for any other grid.
+        _joinedScope?.OutlineLinkedColumns(this, columns);
+        return OnLinkedColumnColoursChanged.InvokeAsync(columns);
+    }
+
+    // Told in order, each column once, so the same list is the same entries at the same places;
+    // the names compared as declared.
+    private static bool SameLinkedColumns(IReadOnlyList<LinkedColumnColour> a, IReadOnlyList<LinkedColumnColour> b) =>
+        a.Count == b.Count && a.Zip(b).All(p =>
+            p.First.Colour == p.Second.Colour
+            && string.Equals(p.First.Column.Table, p.Second.Column.Table, StringComparison.Ordinal)
+            && string.Equals(p.First.Column.Column, p.Second.Column.Column, StringComparison.Ordinal));
+
+    // What the Sheet Document records of the tables: names, columns and keys, in order (ADR-0049).
+    private static bool SameDeclarations(IReadOnlyList<LinkedTable> a, IReadOnlyList<LinkedTable> b) =>
+        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns) && p.First.Key == p.Second.Key);
+
+    /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
+    public SheetDocument ToDocument() => CurrentSheet.ToDocument();
+
+    // A public method may be called from outside the renderer's context — a Consumer's timer,
+    // a service — so each one runs its work there.
+    private async Task<T> OnDispatcherAsync<T>(Func<Task<T>> work)
+    {
+        T result = default!;
+        await InvokeAsync(async () => result = await work());
+        return result;
+    }
+
+    private void RefuseUnreachableRows()
+    {
+        // The header takes one row height of the scrollable area when it is shown (ADR-0013).
+        var bands = Sheet.RowCount + (ShowColumnHeadings ? 1 : 0);
+        var ceiling = global::ExGrid.ViewportGeometry.MaxScrollHeightPx;
+        var tallest = ceiling / bands;
+        if (RowHeight > tallest)
+        {
+            throw new ArgumentOutOfRangeException(nameof(RowHeight), RowHeight, FormattableString.Invariant(
+                $"A row height of {RowHeight}px puts the Sheet's {Sheet.RowCount:N0} rows past the {ceiling:N0}px a browser can scroll, and the rows beyond it could never be reached. The tallest row that fits is {Math.Floor(tallest * 100) / 100}px. The Sheet is not made shorter to fit (ADR-0046)."));
+        }
+    }
+
+    private void Open(SheetDocument? document)
+    {
+        _sheet = document is null ? new Sheet(Culture ?? CultureInfo.CurrentCulture) : Sheet.Open(document);
+        _edges = SheetEdges.Of(_sheet);
+        _history.Clear();
+        _resizing = null;
+        // Widths are the document's (ADR-0046): the Sheet opened brings its own.
+        _columns = SheetColumnList.Of(_sheet, CellMetrics);
+        // Every row is new: the rows of the Sheet that was replaced say nothing about this one.
+        var (start, count) = _window.Length == 0 ? (0, InitialRows) : (_windowStart, _window.Length);
+        _window = [];
+        ShowRows(start, count);
+    }
+
+    private void ShowRows(int start, int count)
+    {
+        var sheet = CurrentSheet;
+        var from = Math.Max(0, start - ReadAhead);
+        var to = Math.Min(Sheet.RowCount, start + count + ReadAhead);
+        var rows = new SheetRow[Math.Max(0, to - from)];
+        for (var i = 0; i < rows.Length; i++)
+        {
+            var index = from + i;
+            var held = index - _windowStart;
+            rows[i] = held >= 0 && held < _window.Length ? _window[held] : new SheetRow(sheet, index);
+        }
+        _window = rows;
+        _windowStart = from;
+    }
+
+    private Task OnRangeNeededAsync(RowRange range)
+    {
+        ShowRows(range.Start, range.Count);
+        return Task.CompletedTask;
+    }
+
+    private async Task OnEditAsync(GridEditIntent<SheetRow> intent)
+    {
+        if (!CellAddress.TryParseColumn(intent.Column, out var column)) return;
+        try
+        {
+            var address = new CellAddress(intent.Row.Index, column);
+            await PerformAsync(SheetEdit.Enter(address, intent.Value), widenOver: [new CellRange(address)]);
+        }
+        catch (FormulaSyntaxException error)
+        {
+            // The column's verdict rejects an unreadable Formula before the intent is raised
+            // (ADR-0034); this is the net under it, and it changes nothing either.
+            Tell(SheetWords.FormulaUnreadable(error), outlivesCommitMove: true);
+        }
+        catch (SheetRefusedException refused)
+        {
+            Tell(SheetWords.Refused(refused.Refusal), outlivesCommitMove: true);
+        }
+    }
+
+    /// <summary>
+    /// Says that typing was thrown away (ADR-0011): in ExSheet's own words for a discard it asked
+    /// for, and in its words for the grid's reason otherwise. A discard at the commit is part of
+    /// the commit gesture, so the move that completes the gesture leaves the notice standing.
+    /// </summary>
+    private void OnEditDiscarded(EditDiscardReason reason)
+    {
+        var own = reason == EditDiscardReason.DiscardedByConsumer ? _ownDiscard : null;
+        _ownDiscard = null;
+        Tell(own ?? SheetWords.EditDiscarded(reason),
+            outlivesCommitMove: reason is EditDiscardReason.RowLeftTheWindow or EditDiscardReason.ColumnNoLongerEditable);
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Raises a notice. It stands until the user's own next action (an edit, a paste, a command,
+    /// a selection change); a Consumer's programmatic change leaves it. A notice raised by a
+    /// commit outlives the move that completes the commit gesture.
+    /// </summary>
+    private void Tell(string sentence, bool outlivesCommitMove = false)
+    {
+        _notice = sentence;
+        _noticeOutlivesCommitMove = outlivesCommitMove;
+    }
+
+    /// <summary>The user acted: what the notice said is behind them.</summary>
+    private void ClearNotice()
+    {
+        _notice = null;
+        _noticeOutlivesCommitMove = false;
+    }
+
+    private async Task OnNameBoxEnteredAsync(string typed)
+    {
+        if (!NameBoxText.TryParse(typed, out var range))
+        {
+            Tell(SheetWords.AddressUnreadable(typed));
+            return;
+        }
+        ClearNotice();
+        var place = new SelectionRange(range.First.Row, range.First.Column, range.RowCount, range.ColumnCount);
+        // Rows are places, so the Row Sequence Version never moves from 0 (ADR-0046).
+        if (_grid is { } grid) await grid.PlaceSelectionAsync(place, new CellPosition(range.First.Row, range.First.Column), 0);
+    }
+
+    /// <summary>
+    /// ExSheet's Context Menu commands (ADR-0036): inserting and deleting the rows or columns the
+    /// Selection spans, and Format Cells (ADR-0071). Rows and columns are places, so the Row Sequence Version does not move
+    /// and the Selection stays where it was (ADR-0046); each command is one step on the undo
+    /// stack (ADR-0048). A Selection of several ranges has no one span to act on, so the
+    /// commands are unavailable for it rather than guessing one.
+    /// </summary>
+    private IEnumerable<GridCommand> ContextCommandsFor(ContextMenuContext<SheetRow> context)
+    {
+        var span = context.Selection.Count == 1 ? context.Selection[0] : (SelectionRange?)null;
+        var enabled = span is not null;
+        var r = span.GetValueOrDefault();
+        return
+        [
+            new(SheetCommandIds.InsertRows, enabled, () => StructureAsync(SheetEdit.InsertRows(r.TopRow, r.RowCount))),
+            new(SheetCommandIds.DeleteRows, enabled, () => StructureAsync(SheetEdit.DeleteRows(r.TopRow, r.RowCount))),
+            new(SheetCommandIds.InsertColumns, enabled, () => StructureAsync(SheetEdit.InsertColumns(r.LeftColumn, r.ColumnCount))),
+            new(SheetCommandIds.DeleteColumns, enabled, () => StructureAsync(SheetEdit.DeleteColumns(r.LeftColumn, r.ColumnCount))),
+            // Format Cells acts on every range of the Selection, so it stands for several as for one.
+            new(SheetCommandIds.FormatCells, context.Selection.Count > 0, _formatCellsFromMenu),
+        ];
+    }
+
+    private async Task StructureAsync(SheetEdit edit)
+    {
+        try
+        {
+            await PerformAsync(edit);
+        }
+        catch (SheetRefusedException refused)
+        {
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// A paste (ADR-0048, ADR-0050 items 3, 9 and 10), one step on the undo stack. When its fields
+    /// equal, field for field, the ones this Sheet's last copy wrote, it is that copy, and its
+    /// Entries are pasted with their relative References shifted by the distance pasted.
+    /// Otherwise every target cell takes its field as typed under the Sheet's culture: shown text
+    /// as it is, an invariant value as that value (<see cref="SheetClipboard.TypedFor"/>) — and an
+    /// invariant number as its exact double, every digit it holds
+    /// (<see cref="SheetClipboard.ExactNumberFor"/>). The
+    /// grid has already judged the shape, <c>Editable</c> and a spill past the Sheet's edge; a
+    /// spilled block becomes the Selection when this returns, unless the paste is refused. A field beginning with <c>=</c>
+    /// that cannot be read as a Formula is taken as text, as Excel takes it (ADR-0048). A shown
+    /// field that is a run of <c>#</c> is a value too wide for its source column, the value itself
+    /// missing, and refuses the whole paste by name (<see cref="SheetClipboard.IsTooNarrowToShow"/>).
+    /// Every refusal is told to the grid (<see cref="global::ExGrid.Clipboard.GridPasteIntent.Refuse"/>)
+    /// before this completes, so the Selection stays where it was, as in Excel (ADR-0050 item 3),
+    /// and the notice stands until the user's own next action.
+    /// </summary>
+    private async Task OnPasteAsync(global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        // Rows are places, so the order never moves (ADR-0046); an intent written under any
+        // other version names positions that mean something else, and is dropped (ADR-0011).
+        if (intent.RowSequenceVersion != 0)
+        {
+            intent.Refuse();
+            return;
+        }
+        // Ctrl+D and Ctrl+R (ADR-0035): the grid names the range it read, and ExSheet copies that
+        // range's Entries rather than its Values, with relative References shifted, formats and
+        // alignment with them, as Excel's fill keys do (ADR-0050 item 5, 2026-09-28).
+        if (intent.FillSource is { } fillSource)
+        {
+            await FillByKeyAsync(fillSource, intent);
+            return;
+        }
+        // Ctrl+Enter (ADR-0050 item 5, 2026-09-28): text typed, not pasted. The grid names the
+        // cell it was entered in, and the engine reads it there: a Formula goes into every other
+        // cell with its relative References shifted by that cell's offset, as Excel's does.
+        if (intent.EnteredAt is { } enteredAt)
+        {
+            await EnterIntoAsync(enteredAt, intent);
+            return;
+        }
+        if (OwnCopy is { } own && own.IsPastedAs(intent.Values))
+        {
+            await PasteEntriesAsync(own.Block, intent);
+            return;
+        }
+        var sheet = CurrentSheet;
+        var typed = new Dictionary<CellAddress, string>();
+        var exact = new Dictionary<CellAddress, Entry?>();
+        foreach (var range in intent.Plan.Targets)
+        {
+            for (var row = range.TopRow; row <= range.BottomRow; row++)
+            {
+                for (var column = range.LeftColumn; column <= range.RightColumn; column++)
+                {
+                    var at = new CellPosition(row, column);
+                    var field = intent.ValueFor(at);
+                    if (SheetClipboard.ExactNumberFor(field, intent.OriginFor(at)) is { } number)
+                    {
+                        exact[new CellAddress(row, column)] = Entry.FromValue(Value.FromNumber(number));
+                        continue;
+                    }
+                    if (SheetClipboard.IsTooNarrowToShow(field, intent.OriginFor(at)))
+                    {
+                        intent.Refuse();
+                        Tell(SheetWords.PasteTooNarrowToShow(field, new CellAddress(row, column)));
+                        StateHasChanged();
+                        return;
+                    }
+                    if (SheetClipboard.TypedFor(field, intent.OriginFor(at), sheet.Culture) is not { } text)
+                    {
+                        intent.Refuse();
+                        Tell(SheetWords.PasteReadsDifferently(field, sheet.Culture));
+                        StateHasChanged();
+                        return;
+                    }
+                    typed[new CellAddress(row, column)] = text;
+                }
+            }
+        }
+        try
+        {
+            if (exact.Count == 0)
+            {
+                await PerformAsync(SheetEdit.PasteText(typed));
+                return;
+            }
+            // The typed fields and the exact numbers are one operation on the undo stack
+            // (ADR-0048). The engine takes typed text, whose reading can give a cell a format,
+            // and exact Entries in separate edits, so the paste is two engine steps, typed first.
+            var steps = new List<SheetStep>(2);
+            if (typed.Count > 0) steps.Add(sheet.Do(SheetEdit.PasteText(typed)));
+            try
+            {
+                steps.Add(sheet.Do(SheetEdit.SetEntries(exact)));
+            }
+            catch (SheetRefusedException)
+            {
+                // Nothing is half pasted: the typed fields are put back.
+                if (steps.Count > 0) await ChangedAsync(steps[0].Undo(), raiseDocument: false);
+                throw;
+            }
+            _history.Record(steps);
+            await ChangedAsync([.. steps.Select(step => step.Change)]);
+        }
+        catch (SheetRefusedException refused)
+        {
+            intent.Refuse();
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// This Sheet's own copy pasted back (ADR-0048): its Entries, formats and alignment, with
+    /// relative References shifted by the distance pasted, written over each target range the
+    /// grid approved — from its top-left when the range is the block's size, repeated over it
+    /// when the range is a whole multiple of it. Several ranges exist only for a block of one
+    /// cell (ADR-0014); they are several engine steps and one operation on the undo stack. A
+    /// refusal is told to the grid, which then leaves the Selection where it was.
+    /// </summary>
+    private async Task PasteEntriesAsync(SheetBlock block, global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        var sheet = CurrentSheet;
+        var targets = intent.Plan.Targets;
+        var steps = new List<SheetStep>(targets.Count);
+        try
+        {
+            foreach (var target in targets)
+            {
+                var edit = target.RowCount == block.RowCount && target.ColumnCount == block.ColumnCount
+                    ? SheetEdit.Paste(block, new CellAddress(target.TopRow, target.LeftColumn))
+                    : SheetEdit.Paste(block, SheetFormulaAids.RangeOf(target));
+                steps.Add(sheet.Do(edit));
+            }
+        }
+        catch (SheetRefusedException refused)
+        {
+            // Nothing is half pasted: what was written before the refusal is put back.
+            var undone = new List<SheetChange>();
+            for (var i = steps.Count - 1; i >= 0; i--) undone.Add(steps[i].Undo());
+            intent.Refuse();
+            if (undone.Count > 0) await ChangedAsync(undone, raiseDocument: false);
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+            return;
+        }
+        _history.Record(steps);
+        await ChangedAsync([.. steps.Select(step => step.Change)]);
+    }
+
+    /// <summary>
+    /// A Fill Intent (ADR-0050, item 5), resolved as Excel fills by the engine: copy with
+    /// References shifted, a linear series from two or more numbers, dates by day, as one step
+    /// on the undo stack. Any other pattern is refused before anything is written: the grid is
+    /// told, so the Selection stays on the source, and the user is told why.
+    /// </summary>
+    private async Task OnFillAsync(GridFillIntent intent)
+    {
+        if (intent.RowSequenceVersion != 0)
+        {
+            intent.Refuse();
+            return;
+        }
+        var edit = SheetEdit.Fill(SheetFormulaAids.RangeOf(intent.Source), SheetFormulaAids.RangeOf(intent.Target), DirectionOf(intent.Direction));
+        // Refused synchronously, before the handler's first await: the grid reads the answer
+        // when the handler completes, and a refusal leaves the Selection on the source.
+        if (CurrentSheet.Check(edit) is { } refusal)
+        {
+            intent.Refuse();
+            Tell(SheetWords.Refused(refusal));
+            StateHasChanged();
+            return;
+        }
+        await PerformAsync(edit);
+    }
+
+    /// <summary>
+    /// Ctrl+D or Ctrl+R (ADR-0035; ADR-0050 item 5, 2026-09-28): the source the grid read, copied
+    /// over the target it approved as one step on the undo stack — never a series, so a date or a
+    /// number is copied as it is. The target lies below the source for Ctrl+D and to its right for
+    /// Ctrl+R. A refusal is told to the grid and to the user, and nothing is written.
+    /// </summary>
+    private async Task FillByKeyAsync(SelectionRange source, global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        var target = intent.Plan.Targets[0];
+        var direction = target.TopRow > source.BottomRow ? FillDirection.Down : FillDirection.Right;
+        var edit = SheetEdit.FillCopy(SheetFormulaAids.RangeOf(source), SheetFormulaAids.RangeOf(target), direction);
+        if (CurrentSheet.Check(edit) is { } refusal)
+        {
+            intent.Refuse();
+            Tell(SheetWords.Refused(refusal));
+            StateHasChanged();
+            return;
+        }
+        await PerformAsync(edit);
+    }
+
+    /// <summary>
+    /// Ctrl+Enter over the Selection (ADR-0050 item 5, 2026-09-28): the typed text, read as entered
+    /// in <paramref name="enteredAt"/>, written into every target cell as one step on the undo stack
+    /// (<see cref="SheetEdit.EnterInto"/>) — a Formula with its relative References shifted by each
+    /// cell's offset from <paramref name="enteredAt"/>, anything else as typed, and no format copied.
+    /// The editor's verdict has already rejected a Formula the engine cannot read (ADR-0034); a
+    /// refusal here is the net under it, told to the grid and to the user, and nothing is written.
+    /// </summary>
+    private async Task EnterIntoAsync(CellPosition enteredAt, global::ExGrid.Clipboard.GridPasteIntent intent)
+    {
+        var targets = intent.Plan.Targets.Select(SheetFormulaAids.RangeOf);
+        var edit = SheetEdit.EnterInto(targets, new CellAddress(enteredAt.Row, enteredAt.Column), intent.ValueFor(enteredAt));
+        try
+        {
+            await PerformAsync(edit);
+        }
+        catch (FormulaSyntaxException error)
+        {
+            intent.Refuse();
+            Tell(SheetWords.FormulaUnreadable(error));
+            StateHasChanged();
+        }
+        catch (SheetRefusedException refused)
+        {
+            intent.Refuse();
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Delete's Clear Intent (ADR-0054): every cell of the Selection that holds an Entry is
+    /// cleared, as one step on the undo stack (ADR-0048), and the Selection and the Focus stay
+    /// where they were (ADR-0052, case 14) — the grid does not move them for a clear. Formats and
+    /// alignment stay, as Excel's Delete leaves them. Only occupied cells are named, so a Delete
+    /// over whole columns costs what they hold, not a million cells each; over nothing, nothing is
+    /// written and no step is recorded.
+    /// </summary>
+    private async Task OnClearAsync(global::ExGrid.Clipboard.GridClearIntent intent)
+    {
+        if (intent.RowSequenceVersion != 0) return;
+        var cleared = new List<KeyValuePair<CellAddress, Entry?>>();
+        foreach (var address in CurrentSheet.EntryAddresses)
+        {
+            foreach (var target in intent.Targets)
+            {
+                if (target.Contains(new CellPosition(address.Row, address.Column)))
+                {
+                    cleared.Add(new(address, null));
+                    break;
+                }
+            }
+        }
+        if (cleared.Count == 0) return;
+        try
+        {
+            await PerformAsync(SheetEdit.SetEntries(cleared));
+        }
+        catch (SheetRefusedException refused)
+        {
+            Tell(SheetWords.Refused(refused.Refusal));
+            StateHasChanged();
+        }
+    }
+
+    private static FillDirection DirectionOf(GridDirection direction) => direction switch
+    {
+        GridDirection.Down => FillDirection.Down,
+        GridDirection.Up => FillDirection.Up,
+        GridDirection.Right => FillDirection.Right,
+        GridDirection.Left => FillDirection.Left,
+        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Not a direction a fill extends in."),
+    };
+
+    private void OnPasteRefused(global::ExGrid.Clipboard.PasteRefusalReason reason)
+    {
+        Tell(SheetWords.PasteRefused(reason));
+        StateHasChanged();
+    }
+
+    private void OnCopyRefused(global::ExGrid.Clipboard.CopyRefusalReason reason)
+    {
+        // A refusal of the Sheet's own is said in the engine's words; the grid's by its reason.
+        Tell(reason == global::ExGrid.Clipboard.CopyRefusalReason.RefusedByConsumer && _copyRefusal is { } sentence
+            ? sentence
+            : SheetWords.CopyRefused(reason));
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// A copy (ADR-0050 item 9, ADR-0048): the engine copies the range, so the clipboard carries
+    /// the Values exactly as the engine gives them — shown for <c>text/plain</c>, unformatted and
+    /// invariant for <c>text/html</c> — however far the range runs beyond the Window, and a copy
+    /// reaching <c>#GETTING_DATA</c> is refused in the engine's words (ADR-0049). The Entries of a
+    /// one-range copy are kept, so that a paste of exactly this block back into the Sheet carries
+    /// them.
+    /// </summary>
+    private global::ExGrid.Clipboard.GridCopyAnswer AnswerCopy(global::ExGrid.Clipboard.GridCopyRequest request)
+    {
+        var (answer, own) = SheetClipboard.Answer(CurrentSheet, request);
+        if (answer.IsRefused)
+        {
+            // The clipboard still holds the last copy, so the Entries kept for it still stand.
+            _copyRefusal = answer.Sentence;
+            return answer;
+        }
+        OwnCopy = own;
+        return answer;
+    }
+
+    private CellPosition FindEdge(CellPosition focus, GridDirection direction)
+    {
+        var edge = _edges.Find(new CellAddress(focus.Row, focus.Column), direction);
+        return new CellPosition(edge.Row, edge.Column);
+    }
+
+    /// <summary>
+    /// A formatting command on the Selection, as one step (ADR-0046, ADR-0048, ADR-0071): every
+    /// range goes to the engine as a range, so whole columns and whole rows are recorded as one
+    /// entry each (ADR-0047, SH-21), any other range sets its cells, and Borders are set relative
+    /// to each range; nothing is capped (principle 5). A part the change does not name is left as
+    /// it is. A Number Format widens the columns whose numbers it no longer fits, in the same
+    /// step (ADR-0071, case 17), and so does a change <paramref name="widen"/> names although it
+    /// sets none: Ctrl+5's (the fourteenth run's case 7).
+    /// </summary>
+    private async Task<bool> FormatSelectionAsync(CellFormatChange change, bool widen = false)
+    {
+        var ranges = _selection.Ranges;
+        if (ranges.Count == 0) return false;
+        var cells = ranges.Select(SheetFormulaAids.RangeOf).ToList();
+        await PerformAsync(SheetEdit.SetCellFormat(cells, change), widenOver: widen || change.NumberFormat is not null ? cells : null);
+        return true;
+    }
+
+    private async Task PerformAsync(SheetEdit edit, IReadOnlyList<CellRange>? widenOver = null)
+    {
+        var step = CurrentSheet.Do(edit);
+        // The operation and the widths it widens its columns to are one operation: one undo puts
+        // back both (ADR-0048; ADR-0071, case 17).
+        if (widenOver is not null && Widen(widenOver) is { Count: > 0 } widened)
+        {
+            SheetStep[] steps = [step, .. widened];
+            _history.Record(steps);
+            await ChangedAsync([.. steps.Select(s => s.Change)]);
+            return;
+        }
+        _history.Record(step);
+        await ChangedAsync(step.Change);
+    }
+
+    /// <summary>
+    /// A column the user resized — dragged, or sized to fit on a double-click of its edge
+    /// (ADR-0016). The width is recorded in the Sheet as custom, the user's, so an entry never
+    /// widens the column again (ADR-0046), in characters converted from the grid's
+    /// pixels as the painted text converts them (ADR-0047, third round), as one step on the undo
+    /// stack, and <see cref="DocumentChanged"/> is raised (ADR-0046). The grid reports a resize of
+    /// several whole columns one column at a time; the columns of one resize are one step.
+    /// </summary>
+    private async Task OnColumnWidthChangedAsync(ColumnWidthChange change)
+    {
+        if (!CellAddress.TryParseColumn(change.Column, out var column)) return;
+        if (SheetColumns.CharactersOfColumn(change.WidthPx, CellMetrics) is not { } characters) return;
+        var step = CurrentSheet.Do(SheetEdit.SetColumnWidth(CellRange.WholeColumns(column, column), characters));
+        if (_resizing is { } resizing && resizing.Pending.Remove(column) && _history.TryExtend(resizing.First, step))
+        {
+            if (resizing.Pending.Count == 0) _resizing = null;
+        }
+        else
+        {
+            _history.Record(step);
+            // The whole columns the grid resizes with this one, as it reports them (FN-12c): from
+            // the Selection it holds, which it chose them by.
+            AdoptGridSelection();
+            var resized = _selection.WholeColumns(new GridExtent(Sheet.RowCount, Sheet.ColumnCount));
+            _resizing = resized.Contains(column) && resized.Count > 1 ? (step, [.. resized.Where(c => c != column)]) : null;
+        }
+        await ChangedAsync(step.Change);
+    }
+
+    /// <summary>
+    /// The columns a number widens, as Excel's do (<see cref="SheetWidening"/>): a number or date
+    /// the user typed into a column that does not fit (ADR-0047, second round; SH-20), a typed
+    /// Formula whose result is a number, as Excel was observed to widen it (WD-007), and the
+    /// numbers a Number Format, or Ctrl+5, no longer fits (ADR-0071, case 17; the fourteenth run's
+    /// case 7), in a column the user has not
+    /// sized (SH-26; case 18). Each width is recorded in the Sheet like any other (ADR-0046), as a
+    /// step of the operation's own; none where no column is widened.
+    /// </summary>
+    private List<SheetStep> Widen(IReadOnlyList<CellRange> cells)
+    {
+        var sheet = CurrentSheet;
+        return [.. SheetWidening.Of(sheet, cells, _columns, CellMetrics).Select(widened => sheet.Do(WidenedByEntry(widened.Column, widened.Characters)))];
+    }
+
+    /// <summary>The edit that records a width an entry widened a column to: the entry's kind, which a longer entry widens again (SH-26).</summary>
+    private static SheetEdit WidenedByEntry(int column, double characters) =>
+        SheetEdit.SetAutomaticColumnWidth(CellRange.WholeColumns(column, column), characters);
+
+    // ---- The Sheet Toolbar (ADR-0100) ----
+
+    /// <summary>The toolbar's height: its rows' count times one row's, nothing while it is hidden.</summary>
+    private double ToolbarPx => ShowToolbar ? _toolbar.RowCount * _toolbar.RowHeightPx : 0;
+
+    /// <summary>What the grid is given: the Sheet's height less the toolbar's, where it is declared
+    /// (ADR-0028). Under Stretch the grid takes what the toolbar leaves in the Sheet's box.</summary>
+    private ViewportSize GridViewportHeight =>
+        ShowToolbar && !ViewportHeight.IsStretch ? ViewportHeight.Px - ToolbarPx : ViewportHeight;
+
+    /// <summary>
+    /// The Sheet's box. Without the toolbar the element lays out as if it were not there, as it always
+    /// has. With it, the element holds the toolbar and the grid: at the declared width, or under a
+    /// Stretch height as a column as tall as its parent, as the grid's own root is under Stretch, in
+    /// which the grid takes what the toolbar leaves.
+    /// </summary>
+    private string FrameStyle
+    {
+        get
+        {
+            if (!ShowToolbar) return "display: contents";
+            var width = ViewportWidth.IsStretch ? "; min-width: 0" : FormattableString.Invariant($"; width: {ViewportWidth.Px}px");
+            return ViewportHeight.IsStretch
+                ? "display: flex; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0" + width
+                : "display: block" + width;
+        }
+    }
+
+    private void ResolveToolbar()
+    {
+        _toolbar ??= new SheetToolbarContext(this, "ex-sheet-" + RuntimeHelpers.GetHashCode(this).ToString(CultureInfo.InvariantCulture),
+            OpenToolbarChoicesAsync, _returnKeyboard,
+            sentence => { Tell(sentence); StateHasChanged(); },
+            () => _ = InvokeAsync(StateHasChanged));
+        // One Toolbar Row is the Formula Bar's height, from the same Density (ADR-0100, ADR-0028).
+        ListenForKeyUps();
+        _toolbar.RowHeightPx = GridMetrics.Resolve(Presentation?.Density ?? GridDensity.Compact, RowHeight, defaults: Presentation).FormulaBarHeightPx;
+        if (ShowToolbar && !ViewportHeight.IsStretch && ViewportHeight.Px <= ToolbarPx)
+        {
+            throw new ArgumentException(FormattableString.Invariant(
+                $"ViewportHeight ({ViewportHeight.Px}px) includes the Sheet Toolbar ({ToolbarPx}px) and must exceed it, with room for the grid (ADR-0100)."));
+        }
+    }
+
+    // The Sheet Toolbar's keys (ADR-0100; ADR-0050 item 14's note of 2026-10-02): the Alt key alone
+    // and F10, declared while the toolbar is shown, which start the KeyTips unless an edit is open,
+    // and Ctrl+F1, Excel's key for the ribbon, where the Consumer binds ShowToolbarChanged. With the
+    // toolbar hidden, or the toggle unbound, each stays the browser's. They are not re-declared as
+    // an edit opens and ends: that would re-render the Sheet at every edit, which it never does, and
+    // on a circuit the re-render and the claims it re-tells landed among the keys and presses of the
+    // edit and lost what was typed (layer 3, the Server host, SRV-5).
+    private const string AltAlone = "Alt+Alt";
+    private const string KeyTipsKey = "F10";
+    private const string ToolbarToggleKey = "Control+F1";
+    // Excel's formatting keys (ADR-0071) and its insert and delete keys (ADR-0050 item 14, 2026-10-02),
+    // which every Sheet declares whether or not its toolbar is shown.
+    private static readonly IReadOnlyCollection<string> SheetKeys = [.. SheetFormatKeys.Declared, .. SheetStructureKeys.Declared];
+    private static readonly IReadOnlyCollection<string> WithKeyTips = [.. SheetKeys, AltAlone, KeyTipsKey];
+    private static readonly IReadOnlyCollection<string> WithToggle = [.. SheetKeys, ToolbarToggleKey];
+    private static readonly IReadOnlyCollection<string> WithKeyTipsAndToggle = [.. SheetKeys, AltAlone, KeyTipsKey, ToolbarToggleKey];
+
+    private IReadOnlyCollection<string> DeclaredSheetKeys => (ShowToolbar, ShowToolbarChanged.HasDelegate) switch
+    {
+        (true, true) => WithKeyTipsAndToggle,
+        (true, false) => WithKeyTips,
+        (false, true) => WithToggle,
+        _ => SheetKeys,
+    };
+
+    // The Alt key went down alone, and its release has not been heard: the release starts the
+    // KeyTips, unless another key was released first — a chord, which is not a KeyTip.
+    private bool _altAlone;
+    private KeyUpListener? _keyUpListener;
+
+    // Answers whether the key was one of the toolbar's.
+    private async Task<bool> OnToolbarKeyAsync(GridDeclaredKeyPress press)
+    {
+        switch (press.Key)
+        {
+            case ToolbarToggleKey:
+                await ShowToolbarChanged.InvokeAsync(!ShowToolbar);
+                return true;
+            case AltAlone:
+                _altAlone = ShowToolbar && !press.EditOpen && !IsEditing;
+                return true;
+            case KeyTipsKey:
+                if (ShowToolbar && !press.EditOpen && !IsEditing && _toolbar.StartKeyTips is { } start) await start();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    // Every key's release, heard while the toolbar is shown: the Alt key's starts the KeyTips when
+    // it went down alone, and any other key's makes the Alt a chord's.
+    private async Task OnKeyUpAsync(KeyboardEventArgs e)
+    {
+        if (e.Key != "Alt")
+        {
+            _altAlone = false;
+            return;
+        }
+        if (!_altAlone) return;
+        _altAlone = false;
+        if (ShowToolbar && !IsEditing && _toolbar.StartKeyTips is { } start) await start();
+    }
+
+    // The release listener, on the Sheet's own element while the toolbar is shown. Its target is not
+    // the component: a release repaints nothing.
+    private void ListenForKeyUps()
+    {
+        if (ShowToolbar)
+        {
+            _keyUpListener ??= new KeyUpListener(this);
+            _keyboardListeners["onkeyup"] = (Func<KeyboardEventArgs, Task>)_keyUpListener.Up;
+        }
+        else
+        {
+            _keyboardListeners.Remove("onkeyup");
+            _altAlone = false;
+        }
+    }
+
+    private sealed class KeyUpListener(ExSheet sheet)
+    {
+        public Task Up(KeyboardEventArgs e) => sheet.OnKeyUpAsync(e);
+    }
+
+    private async Task RefreshToolbarLaterAsync()
+    {
+        await Task.Yield();
+        RefreshToolbar();
+    }
+
+    /// <summary>Tells the toolbar's items what they show: the Focus cell's Cell Format, and whether an edit is open.</summary>
+    private void RefreshToolbar()
+    {
+        if (_toolbar is null || _sheet is null) return;
+        var focus = _selection.IsEmpty ? CellFormat.Default : CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        _toolbar.Update(focus, !_selection.IsEmpty, IsEditing, _sheet.Culture, Chrome as ISheetChrome);
+    }
+
+    // A Toolbar Item's choices under the built-in Chrome: a menu in the grid's popover frame, which
+    // takes the keyboard and gives it back when it closes (ADR-0039, ADR-0040).
+    private async Task OpenToolbarChoicesAsync(string title, IReadOnlyList<ToolbarChoice> choices)
+    {
+        if (_grid is not { } grid || choices.Count == 0) return;
+        await grid.OpenPopoverAsync(popover => ToolbarChoices(title, choices, popover), title);
+    }
+
+    private static RenderFragment ToolbarChoices(string title, IReadOnlyList<ToolbarChoice> choices, GridPopoverContext popover) =>
+        @<ToolbarChoicesPanel Title="@title" Choices="choices" Popover="popover" />;
+
+    private Task ChangedAsync(SheetChange change, bool raiseDocument = true, bool byUser = true) => ChangedAsync([change], raiseDocument, byUser);
+
+    /// <summary>
+    /// What one operation changed, in the order its engine steps changed it. An operation of the
+    /// user's own clears the notice; a Consumer's programmatic change (<paramref name="byUser"/>
+    /// false — a Linked Table's declaration or snapshot) leaves it standing.
+    /// </summary>
+    private async Task ChangedAsync(IReadOnlyList<SheetChange> changes, bool raiseDocument = true, bool byUser = true)
+    {
+        var sheet = CurrentSheet;
+        foreach (var change in changes) _edges.Update(sheet, change);
+        if (byUser) ClearNotice();
+        // A whole row's or column's Cell Format reaches cells that hold nothing, whether it was set
+        // or moved by an insertion or deletion, and an insertion or deletion brings two cells' sides
+        // together on a new edge, which a cell that holds nothing shows as well: the engine does not
+        // name their rows, so every painted row is read again, and the grid repaints those whose
+        // look changed.
+        if (changes.Any(change => change.ReformatsUnnamedRows)) _cellAppearance = SheetAppearance.Lookup(++_formatReading);
+        // The widths the Sheet records follow the change, its undo and redo included (ADR-0046).
+        var widths = changes.SelectMany(change => change.Columns).Distinct().ToList();
+        if (widths.Count > 0) _columns = _columns.Refreshed(sheet, widths, CellMetrics);
+        if (changes.Any(change => change.Rows.Count > 0))
+        {
+            // A new instance for every row the change names, the same instance for every other
+            // row, so only the changed rows repaint (ADR-0003, SH-4).
+            var rows = (SheetRow[])_window.Clone();
+            foreach (var row in changes.SelectMany(change => change.Rows).Distinct())
+            {
+                var at = row - _windowStart;
+                if (at >= 0 && at < rows.Length) rows[at] = new SheetRow(sheet, row);
+            }
+            _window = rows;
+        }
+        StateHasChanged();
+        RefreshToolbar();
+        if (raiseDocument && DocumentChanged.HasDelegate)
+        {
+            var document = sheet.ToDocument();
+            _emitted.AddOrUpdate(document, document);
+            await DocumentChanged.InvokeAsync(document);
+        }
+    }
+}

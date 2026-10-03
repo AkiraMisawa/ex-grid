@@ -5,7 +5,7 @@ using Xunit;
 namespace ExGrid.Tests;
 
 /// <summary>
-/// The reference Find (ADR-0047, FD-7/FD-9): what a match is, and the order a step walks.
+/// The reference Find (ADR-0055, FD-7/FD-9): what a match is, and the order a step walks.
 /// Pinned exhaustively because a remote Source is held to it, as to ADR-0023.
 /// </summary>
 public class GridFindTests
@@ -51,26 +51,26 @@ public class GridFindTests
         return (result.Row, result.Column);
     }
 
-    [Fact] // ADR-0047 / FD-7: by rows — across a row in column order, then down
+    [Fact] // ADR-0055 / FD-7: by rows — across a row in column order, then down
     public void A_step_walks_by_rows_from_the_cell_after_from()
     {
         Assert.Equal((1, "Trader"), Find(Ask("nova", from: new(0, 2))));
         Assert.Equal((2, "Trader"), Find(Ask("nova", from: new(1, 1))));
     }
 
-    [Fact] // ADR-0047 / FD-7: with no Focus, from the first cell
+    [Fact] // ADR-0055 / FD-7: with no Focus, from the first cell
     public void With_no_from_the_walk_starts_at_the_first_cell()
         => Assert.Equal((0, "Book"), Find(Ask("alpha")));
 
-    [Fact] // ADR-0047 / FD-7: past the last cell the walk wraps to the first
+    [Fact] // ADR-0055 / FD-7: past the last cell the walk wraps to the first
     public void The_walk_wraps()
         => Assert.Equal((0, "Book"), Find(Ask("alpha", from: new(3, 0))));
 
-    [Fact] // ADR-0047 / FD-7: the cell From names is considered last, so a lone match finds itself
+    [Fact] // ADR-0055 / FD-7: the cell From names is considered last, so a lone match finds itself
     public void A_lone_match_finds_itself()
         => Assert.Equal((1, "Book"), Find(Ask("beta", from: new(1, 0))));
 
-    [Fact] // ADR-0047 / FD-7: backward walks the other way and wraps too
+    [Fact] // ADR-0055 / FD-7: backward walks the other way and wraps too
     public void Backward_walks_the_other_way()
     {
         Assert.Equal((0, "Book"), Find(Ask("alpha", from: new(3, 0), backward: true)));
@@ -78,7 +78,7 @@ public class GridFindTests
         Assert.Equal((3, "Book"), Find(Ask("alpha", backward: true)));
     }
 
-    [Fact] // ADR-0047 / ADR-0023: OrdinalIgnoreCase unless MatchCase
+    [Fact] // ADR-0055 / ADR-0023: OrdinalIgnoreCase unless MatchCase
     public void Case_is_ignored_unless_asked_for()
     {
         Assert.Equal((1, "Trader"), Find(Ask("NOVAK")));
@@ -86,7 +86,7 @@ public class GridFindTests
         Assert.Equal((-1, null), Find(Ask("NOVAK", matchCase: true)));
     }
 
-    [Fact] // ADR-0047 / FD-7: containment unless WholeCell
+    [Fact] // ADR-0055 / FD-7: containment unless WholeCell
     public void Containment_unless_whole_cell()
     {
         Assert.Equal((1, "Book"), Find(Ask("et")));
@@ -94,14 +94,14 @@ public class GridFindTests
         Assert.Equal((1, "Book"), Find(Ask("BETA", wholeCell: true)));
     }
 
-    [Fact] // ADR-0047: what is matched is the displayed text, never the raw value
+    [Fact] // ADR-0055: what is matched is the displayed text, never the raw value
     public void The_displayed_text_is_what_matches()
     {
         Assert.Equal((1, "Notional"), Find(Ask("2,500.50")));
         Assert.Equal((-1, null), Find(Ask("2500.5")));
     }
 
-    [Fact] // ADR-0047 / FD-7: within the scope when there is one; a cell covered twice counts once
+    [Fact] // ADR-0055 / FD-7: within the scope when there is one; a cell covered twice counts once
     public void A_scope_confines_the_walk()
     {
         SelectionRange[] scope = [new(2, 0, 2, 2), new(3, 0, 1, 1)];
@@ -109,15 +109,15 @@ public class GridFindTests
         Assert.Equal((-1, null), Find(Ask("ishikawa", scope: scope)));
     }
 
-    [Fact] // ADR-0047: a column with no text, or one the Source does not know, is skipped
+    [Fact] // ADR-0055: a column with no text, or one the Source does not know, is skipped
     public void Unknown_columns_are_skipped()
         => Assert.Equal((1, "Book"), Find(Ask("beta", columns: ["Actions", "Book"])));
 
-    [Fact] // ADR-0047: an empty text asks nothing
+    [Fact] // ADR-0055: an empty text asks nothing
     public void An_empty_text_finds_nothing()
         => Assert.False(GridFind.Step(Rows, Ask(""), TextOf).IsFound);
 
-    [Fact] // ADR-0047 / FD-7: the in-memory Source matches the columns' displayed text as the grid handed it over
+    [Fact] // ADR-0055 / FD-7: the in-memory Source matches the columns' displayed text as the grid handed it over
     public async Task The_in_memory_source_searches_the_result_in_its_order()
     {
         var source = GridSource.From(Rows);
@@ -137,7 +137,7 @@ public class GridFindTests
         Assert.Equal("Notional", result.Column);
     }
 
-    [Fact] // ADR-0047 / FD-9: a fetching Source searches only with a find delegate
+    [Fact] // ADR-0055 / FD-9: a fetching Source searches only with a find delegate
     public async Task The_fetching_source_finds_through_its_delegate()
     {
         static ValueTask<GridPage<Trade>> Fetch(GridQuery query, CancellationToken token)
@@ -179,7 +179,7 @@ public class GridFindTests
             => Task.FromResult(Chrome.DistinctValues.TooMany);
     }
 
-    [Fact] // ADR-0047 / FD-9: a Source written before Find compiles and says it cannot search
+    [Fact] // ADR-0055 / FD-9: a Source written before Find compiles and says it cannot search
     public async Task A_source_without_find_says_it_cannot()
     {
         IGridSource<Trade> source = new OldSource();
@@ -187,7 +187,7 @@ public class GridFindTests
         await Assert.ThrowsAsync<NotSupportedException>(() => source.FindAsync(Ask("x"), CancellationToken.None));
     }
 
-    [Fact] // ADR-0047: a step searching the selection moves only the Focus, inside it
+    [Fact] // ADR-0055: a step searching the selection moves only the Focus, inside it
     public void Focus_on_moves_the_focus_inside_the_selection()
     {
         var extent = new GridExtent(10, 5);
@@ -197,11 +197,15 @@ public class GridFindTests
 
         Assert.Equal(new CellPosition(3, 2), moved.Focus);
         Assert.Equal(selection.Ranges, moved.Ranges);
-        Assert.Equal(selection.Anchor, moved.Anchor);
+        // The range holding it becomes the Focus's, and the Extent follows the Focus (ADR-0052):
+        // on neither edge of either axis, it is the Focus's own row and column.
+        Assert.Equal(selection.FocusRange, moved.FocusRange);
+        Assert.Equal(new CellPosition(3, 2), moved.Extent);
+        Assert.Equal(new CellPosition(1, 1), selection.FocusOn(new(4, 3)).Extent);
         Assert.Throws<ArgumentOutOfRangeException>(() => selection.FocusOn(new(9, 4)));
     }
 
-    [Fact] // ADR-0047 (2026-09-27): a rebuilt column is the same column to a Source — no requery on repush
+    [Fact] // ADR-0055 (2026-09-27): a rebuilt column is the same column to a Source — no requery on repush
     public void A_rebuilt_column_carries_an_equal_info()
     {
         static GridColumn<Trade> Build() => new("Notional", ColumnType.Number, t => t.Notional,
@@ -210,7 +214,7 @@ public class GridFindTests
         Assert.Equal(Build().Info, Build().Info);
     }
 
-    [Fact] // ADR-0047: the displayed text is one rule — the row paints by it and a Source matches by it
+    [Fact] // ADR-0055: the displayed text is one rule — the row paints by it and a Source matches by it
     public void The_info_answers_the_displayed_text()
     {
         var formatted = new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional,
@@ -223,7 +227,7 @@ public class GridFindTests
         Assert.Equal("", blank.TextOf(Rows[1]));
     }
 
-    [Fact] // ADR-0047 / FD-7: GridSource.From answers every clause exactly as the reference step does
+    [Fact] // ADR-0055 / FD-7: GridSource.From answers every clause exactly as the reference step does
     public async Task The_in_memory_source_agrees_with_the_reference_on_every_clause()
     {
         var source = GridSource.From(Rows);

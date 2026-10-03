@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>The Ex family's immutable data: a Snapshot of tabular data held column by column — text as a dictionary, money as exact scaled integers — built from objects, a CSV read under a declared Schema, a DbDataReader or columns, and moved on by Change Batches keyed by a Record Key. No dependency.</Description>
+    <PackageTags>snapshot;columnar;immutable;change-batch;pivot;excel</PackageTags>
+    <!-- Trimmable (DA-8): a browser application is trimmed member by member, so one that never asks
+         for CsvEncoding.ShiftJis — the only member that refers to the code pages — publishes without
+         System.Text.Encoding.CodePages. Untrimmable, the package would be kept whole under Blazor's
+         default partial trimming, and that member would bring the code pages into every application.
+         It also turns the trim analysers on, so the build says when code stops being trim-safe. -->
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <!-- No package and no project references, deliberately (ADR-0064, DA-1): every bundled source
+       of the family can read a Snapshot, a server with no UI included. -->
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExGrid.Data.Tests" />
+  </ItemGroup>
+
+</Project>

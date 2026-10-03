@@ -1,0 +1,26 @@
+@* The built-in tabs at the report's foot (ADR-0059), where Excel's sheet tabs are: the report's
+   own, then one per Show Details, titled by its cell, each with a close button. A tab's button
+   takes DOM focus when ExPivot asks: when Show Details has just opened it, and when the tab
+   holding the keyboard closed. *@
+<div class="ex-pivot-tabs" role="tablist" aria-label="@Context.Title">
+    @Tab(Context.Report)
+    @foreach (var tab in Context.Tabs)
+    {
+        @Tab(tab)
+    }
+</div>
+
+@code {
+    /// <summary>The tabs and whom to call back (ADR-0059).</summary>
+    [Parameter, EditorRequired] public PivotDetailsTabsContext Context { get; set; } = default!;
+
+    private RenderFragment Tab(PivotDetailsTab tab) => @<div @key="tab.Id" class="@(tab.IsSelected ? "ex-pivot-tab ex-pivot-tab-selected" : "ex-pivot-tab")">
+        <PivotFocusButton Class="ex-pivot-tab-button" OnClick="tab.Select" FocusRequest="tab.FocusRequest" TakeKeyboard="Context.TakeKeyboard"
+                          role="tab" id="@tab.Id" aria-selected="@(tab.IsSelected ? "true" : "false")"
+                          aria-controls="@(tab.Close is null ? null : tab.Id + "-panel")">@tab.Title</PivotFocusButton>
+        @if (tab.Close is { } close)
+        {
+            <button type="button" class="ex-pivot-tab-close" aria-label="@tab.CloseLabel" title="@tab.CloseLabel" @onclick="close">×</button>
+        }
+    </div>;
+}

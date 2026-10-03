@@ -3,24 +3,13 @@
 @using ExGrid.Chrome
 @using ExGrid.Clipboard
 @using ExGrid.Finding
-@using global::ExGrid.MudBlazor
 @* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
 @using global::MudBlazor
 
 @* ?chrome=mud runs this page's grids with ExGrid.MudBlazor's Chrome instead of the
    built-in one, so the same browser tests can be run under both (FN-17, WR-5): the
-   Chrome is the only thing that changes — no paper, no presentation defaults — and what
-   MudBlazor's own controls need to render comes with it: its stylesheet and the theme
-   and popover providers. Without the parameter nothing here renders and the page is
-   what it always was. *@
-@if (_mudChrome)
-{
-    <HeadContent>
-        <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    </HeadContent>
-    <MudThemeProvider />
-    <MudPopoverProvider />
-}
+   Chrome is the only thing that changes — no paper, no presentation defaults (DemoChrome). *@
+<DemoChromeAssets Name="@ChromeName" />
 
 <DemoNav />
 
@@ -89,11 +78,7 @@
         Chrome="_chrome" />
 
 @code {
-    /// <summary>Which Chrome the grids run with: absent or <c>builtin</c> is the core's
-    /// own (null), <c>mud</c> is <see cref="MudGridChrome.Default"/>. Anything else is
-    /// refused by name rather than quietly run as the built-in one — a mistyped value
-    /// would otherwise make a test "under both Chromes" pass twice against the same
-    /// one.</summary>
+    /// <summary>Which Chrome the grids run with (<see cref="DemoChrome"/>).</summary>
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
 
@@ -109,22 +94,13 @@
     [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
 
     private IGridChrome? _chrome;
-    private bool _mudChrome;
 
     public void Dispose() => MudPopovers.Value.ModalOverlay = false;
 
     protected override void OnParametersSet()
     {
         MudPopovers.Value.ModalOverlay = ModalOverlay == "1";
-        _mudChrome = ChromeName == "mud";
-        _chrome = ChromeName switch
-        {
-            null or "builtin" => null,
-            "mud" => MudGridChrome.Default,
-            _ => throw new ArgumentException(
-                $"Unknown chrome '{ChromeName}': this page runs with ?chrome=builtin (the default) or ?chrome=mud.",
-                nameof(ChromeName)),
-        };
+        _chrome = DemoChrome.From(ChromeName);
     }
 
     private InMemoryGridSource<DemoTrade> _source = default!;
@@ -221,7 +197,7 @@
     private string _widthStatus = "—";
 
 
-    /// <summary>Find's refusals (ADR-0047). This page's grid is bound to GridSource.From, which
+    /// <summary>Find's refusals (ADR-0055). This page's grid is bound to GridSource.From, which
     /// searches, so Unavailable never arrives here; the panel words NotFound itself too.</summary>
     private void OnFindRefused(FindRefusalReason reason)
         => Status(reason, reason.ToString(), s => _findStatus = s);
@@ -287,7 +263,7 @@
         _historyStatus = $"{step.Changes.Count} changes {verb}";
     }
 
-    /// <summary>Delete's Clear Intent (ADR-0046): no value at all, mapped per column onto
+    /// <summary>Delete's Clear Intent (ADR-0054): no value at all, mapped per column onto
     /// this Consumer's own Blank. Trader has one — the empty name; Notional does not, so a
     /// clear there applies nothing, and says so, rather than writing a zero.</summary>
     private void OnClear(GridClearIntent intent)

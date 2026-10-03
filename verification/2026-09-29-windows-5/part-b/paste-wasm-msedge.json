@@ -1,0 +1,157 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "part": "paste",
+ "started": "2026-09-29T17:23:48.695Z",
+ "steps": [
+  {
+   "item": 3,
+   "steps": [
+    {
+     "step": "=A1 copied from Notepad (Ctrl+A, Ctrl+C), its tab closed (Ctrl+W)",
+     "text": "=A1",
+     "notepadProcessesBefore": 1,
+     "notepadWindowsAfter": 1,
+     "thisFileStillOpen": false,
+     "length": 3,
+     "closedWithCtrlW": true,
+     "formats": [
+      "Text",
+      "UnicodeText",
+      "EnterpriseDataProtectionId"
+     ]
+    },
+    {
+     "step": "opened",
+     "nameBox": "",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": null,
+     "ranges": [],
+     "focus": null,
+     "announce": "",
+     "documentFocus": "body",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "A1": "Item",
+      "B1": "Qty",
+      "C1": "Price",
+      "B2": "12",
+      "C2": "0.5",
+      "B3": "7",
+      "C3": "0.75"
+     }
+    },
+    {
+     "step": "click B2, Shift+click C3",
+     "nameBox": "B2",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2:C3"
+     ],
+     "focus": "B2",
+     "announce": "2 rows by 2 columns selected, B 2 to C 3",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "A1": "Item",
+      "B1": "Qty",
+      "C1": "Price",
+      "B2": "12",
+      "C2": "0.5",
+      "B3": "7",
+      "C3": "0.75"
+     },
+     "clipboard": {
+      "length": 3,
+      "formats": [
+       "Text",
+       "UnicodeText"
+      ],
+      "text": "=A1"
+     },
+     "shot": "shots/B-paste-B2-C3-selected-wasm-msedge.png"
+    },
+    {
+     "step": "Ctrl+V",
+     "nameBox": "B2",
+     "formulaBar": "=A1",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2"
+     ],
+     "focus": "B2",
+     "announce": "2 rows by 2 columns selected, B 2 to C 3",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "A1": "Item",
+      "B1": "Qty",
+      "C1": "Price",
+      "B2": "Item",
+      "C2": "0.5",
+      "B3": "7",
+      "C3": "0.75"
+     },
+     "seen": [
+      {
+       "t": 3936,
+       "type": "keydown",
+       "key": "Control",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 3939,
+       "type": "keydown",
+       "key": "v",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 3939,
+       "type": "paste",
+       "key": null,
+       "ctrl": null,
+       "target": "div.ex-grid"
+      }
+     ],
+     "shot": "shots/B-paste-Ctrl-V-wasm-msedge.png"
+    }
+   ],
+   "entries": {
+    "B2": "=A1",
+    "C2": "0.5",
+    "B3": "7",
+    "C3": "0.75"
+   },
+   "clipboardAfter": {
+    "length": 3,
+    "formats": [
+     "Text",
+     "UnicodeText"
+    ],
+    "text": "=A1"
+   }
+  }
+ ],
+ "browserVersion": "154.0.4258.37",
+ "console": [],
+ "ended": "2026-09-29T17:24:00.818Z"
+}

@@ -1,12 +1,34 @@
-// The five permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
+// The six permitted uses of JavaScript (ADR-0021): the capture-phase keydown listener,
 // reading and setting scroll offsets, the clipboard, being told what the scrollbar takes
-// out of the box, and being told about the pointer — when it moves onto another row, and
-// when it comes to rest. Anything else — text measurement, overlay geometry, popovers —
-// stays in C#; adding to this file needs an ADR.
+// out of the box, being told about the pointer — when it moves onto another row, and
+// when it comes to rest — and being told the Layout Ceiling (ADR-0053). Beside them, the notes ADR-0021 has added since: a capture-phase
+// mousedown and mouseup that keep a press on the rows in its place among held keys, and hold the
+// keys after one made while an edit is open; the root taking the keyboard back only while DOM
+// focus is still its own; that same mousedown bringing the keyboard back to an edit left
+// standing when a press returns to the rows or the headings; that same mousedown, while the grid
+// is pointed at through a Pointing Scope, dispatching one event, `ex-press-handed-on`, on the root
+// of the grid that points, and the listener for that event on each root, which gives the press
+// its place among the keys held there (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30);
+// that same mousedown and mouseup, and the keydown, selecting the Name Box's text for the press
+// that gives it the keyboard (ADR-0051, ticket 78); that same mousedown and mouseup telling the
+// core what each press on the rows was taken against, so a held one lands where it was made
+// (ED-31, ADR-0021's note of 2026-10-02);
+// and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
+// seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
+// `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
+// place among the held keys; the root's `focus`, passing focus that lands on the root itself on to
+// its field; and the root's `focusout`, emptying the field as it is left and ending the release of
+// Tab when DOM focus leaves the grid (ADR-0012). Anything
+// else — text measurement, overlay geometry, popovers — stays in C#; adding to this file needs an
+// ADR.
 //
 // A module returning per-instance handles, never a global: a second grid on the page must
 // not reach into the first (ADR-0018). The scroll listener itself is Blazor's @onscroll on
-// the instance's own element, so the only listener attached here is the key one.
+// the instance's own element. Every listener here is on the instance root, but one:
+// `selectionchange` fires only on the document, so that one acts only while DOM focus is in
+// an editor surface inside this instance's root, and is removed with the instance. One instance
+// reaches another in one place only: a press handed on is told to the root its own render names,
+// by a DOM event that is the whole message, and nothing of either instance is kept by the other.
 
 /**
  * @param {HTMLElement} root the instance's root element — where keys are captured, so a
@@ -20,11 +42,52 @@
  * @param {number} restDelayMs how long the pointer must be still before the core is told
  *   — the core's own constant, so the number lives in one place (ADR-0034)
  * @param {boolean} canFind whether a search is wired — Ctrl+F then opens the find panel,
- *   and the keys after it wait for the panel; otherwise it is refused (ADR-0047)
+ *   and the keys after it wait for the panel; otherwise it is refused (ADR-0055)
+ * @param {string[]} declaredKeys canonical forms of the keys the Consumer declared (ADR-0050,
+ *   item 14), already among takenKeys: the editing branch claims them too
  * @returns a handle owned by that one grid
  */
-export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind) {
+export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys) {
     let taken = new Set(takenKeys);
+    // The Consumer's declared keys (ADR-0050, item 14), handed by C# like the core's own. With no
+    // edit open they are in `taken`; while one is open they are claimed beside the editor's keys,
+    // and the Consumer is told an edit is open. This file names none of them.
+    let declared = new Set(declaredKeys ?? []);
+
+    // A reveal's scroll write, held until the render that paints its slice has reached the
+    // DOM (ADR-0012, 2026-09-29). The core sends the write from inside that render, so on a
+    // circuit it arrives as the message just ahead of the render's batch, and a frame
+    // painted between the two showed the scroller at its target over the rows it had left:
+    // an empty Viewport. The render carries the reveal's number on the root, and the write
+    // is made in the same task that applies that render — the attribute's change is
+    // observed, and a MutationObserver's callback runs before the browser can paint — so
+    // the offset and the slice are painted together. It reads an attribute, never layout,
+    // and observes only while a write is held. While it is held, it is where the scroller
+    // stands for every read and every conditional write.
+    let pendingReveal = null;
+    let revealTimer = 0;
+    const revealObserver = new MutationObserver(() => applyReveal(false));
+    const applyReveal = (anyway) => {
+        const reveal = pendingReveal;
+        if (!reveal || (!anyway && Number(root.getAttribute('data-ex-reveal')) < reveal.token)) {
+            return;
+        }
+        dropReveal();
+        scroller.scrollTop = reveal.top;
+        scroller.scrollLeft = reveal.left;
+    };
+    const holdReveal = (reveal) => {
+        pendingReveal = reveal;
+        revealObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-reveal'] });
+        // A batch that never comes — the circuit went — must not hold the write forever.
+        revealTimer = setTimeout(() => applyReveal(true), 2000);
+    };
+    const dropReveal = () => {
+        pendingReveal = null;
+        revealObserver.disconnect();
+        clearTimeout(revealTimer);
+        revealTimer = 0;
+    };
 
     // Whether the synchronous channel exists — WebAssembly has it, a server circuit
     // does not. Probed once with a no-op, so a real .NET failure during a copy is
@@ -51,22 +114,76 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // these are gates only, and their mirror is the cases of OnEditingKeyAsync, which
     // reads the same canonical form — the two must move together.
     let editing = 'none';
+    // Whether each input in an editor surface reports its caret (ADR-0051), told by C# with
+    // the mode: only where completion or pointing is declared.
+    let reportCaret = false;
+    // Whether F4 joins the editing set (ADR-0051, 2026-09-29: it cycles the Reference at the
+    // caret), told by C# with the mode: only where the Consumer declared what it does. Never
+    // consulted while no edit is open, where F4 stays the browser's.
+    let cycleReferences = false;
     // Whether a popover's contents have a popup of their own open (ADR-0039), told by C#.
     let innerPopup = false;
+    // Whether Escape with nothing to dismiss has released Tab (ADR-0012, rewritten 2026-10-01),
+    // told by C#: the next Tab or Shift+Tab on the root is the browser's. Spent by that Tab, and
+    // ended by any other key (gate), a press on the grid (onPress), or DOM focus leaving the grid
+    // (onFocusLeft; ADR-0080). The presses this root has heard and the times DOM focus has left it,
+    // and how many there had been when the last Escape was forwarded: a press the hold does not
+    // take — on a heading, in the Name Box — reaches the core at once, DOM focus can leave while
+    // the Escape is being answered, and a release answered for an Escape either came after is not
+    // granted (releaseTab).
+    let tabReleased = false;
+    let releaseEndsHeard = 0;
+    let releaseEndsAtEscape = 0;
     // Ctrl+F too, taken and answered with nothing: Find is disabled while a cell is being
-    // edited, and the browser's own find would search only the painted rows (ADR-0047).
+    // edited, and the browser's own find would search only the painted rows (ADR-0055).
     const editingKeys = new Set(
         ['Escape', 'Enter', 'Shift+Enter', 'Control+Enter', 'Tab', 'Shift+Tab', 'F2',
             'Control+f', 'Control+F']);
     const overwriteKeys = new Set([
         ...editingKeys, 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End']);
+    // Pointing (ADR-0051's second round): Overwrite's keys and the four Shift+arrows, which
+    // extend the outline rather than select text in the input. And while a completion list
+    // is open, only its ↑/↓ beside the editing keys (Tab, Escape): ←, →, Home, End and the
+    // Shift+arrows are the editor's — unless the list is open over Point, where they do what
+    // Point does with them, as they do without it (ADR-0058: the tenth Windows run, and Part B
+    // of the ninth).
+    const pointKeys = new Set([
+        ...overwriteKeys, 'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+    // Pointing from outside (ADR-0058, "The keyboard"): while what Point wrote was written for a
+    // press on another grid, and the Consumer that wrote it hears the arrows, Point's keys and the
+    // Primary Modifier's arrows, with Shift or without, which the Consumer refuses rather than let
+    // them move the caret.
+    const pointedKeys = new Set([
+        ...pointKeys, 'Control+ArrowUp', 'Control+ArrowDown', 'Control+ArrowLeft', 'Control+ArrowRight',
+        'Control+Shift+ArrowUp', 'Control+Shift+ArrowDown', 'Control+Shift+ArrowLeft', 'Control+Shift+ArrowRight']);
+    const completionKeys = new Set([...editingKeys, 'ArrowUp', 'ArrowDown']);
+    const completionOverPointKeys = new Set([
+        ...completionKeys, 'ArrowLeft', 'ArrowRight', 'Home', 'End',
+        'Shift+ArrowUp', 'Shift+ArrowDown', 'Shift+ArrowLeft', 'Shift+ArrowRight']);
+    const claimedWhile = {
+        overwrite: overwriteKeys, point: pointKeys, pointed: pointedKeys, completion: completionKeys,
+        completionOverPoint: completionOverPointKeys,
+    };
+    // The keys macOS binds to a scroll in a text field, where Windows and Linux move the caret
+    // (ADR-0010's note of 2026-09-30, ticket 32): Home and End scroll the document there, PageUp
+    // and PageDown a page. Left to the browser in an editor surface, they scrolled the grid away
+    // from the open edit — the edited cell left the painted rows, the Cell Editor went, and DOM
+    // focus with it. So on Apple platforms, found by the test that makes Meta the Primary
+    // Modifier, Home and End left to an editor field are answered here, Shift with them or not:
+    // they place the caret or extend the selection as they do elsewhere. PageUp and PageDown,
+    // which move no caret in a one-line field, do nothing, on every platform (decided with the
+    // user the same day): a browser scrolls the grid with them from a field anywhere. The keys
+    // the core claims — Home and End in Overwrite and Point — stay the core's.
+    const appleCaretKeys = new Set(['Home', 'End', 'Shift+Home', 'Shift+End']);
+    const pageKeys = new Set(['PageUp', 'PageDown']);
+    const listShown = () => (root ? root.querySelector('.ex-completion[data-ex-list]') : null);
 
     // The keys that open a popover from the root (ADR-0039): the popover takes DOM focus a
     // round trip later on a circuit, and a key typed in between must be the popover's, not
     // the grid's (ADR-0010's hold, widened).
     const popoverOpeners = new Set(['Alt+ArrowDown', 'Shift+F10', 'ContextMenu']);
 
-    // Find's key (ADR-0047), both cases for CapsLock, and the modifiers' own keydowns, which
+    // Find's key (ADR-0055), both cases for CapsLock, and the modifiers' own keydowns, which
     // mean nothing by themselves.
     const findKeys = new Set(['Control+f', 'Control+F']);
     const modifierKeys = new Set(['Shift', 'Control', 'Alt', 'Meta']);
@@ -75,7 +192,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // popover, so the keys after it are held until the popover holds DOM focus; 'mode' — the
     // core's, and it can change the editing mode, so the keys after it are held until it is
     // answered;
-    // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded;
+    // 'core' — the core's, and changes no mode; 'drop' — taken and never forwarded; 'caret' —
+    // Home or End on an Apple platform, taken and answered here (ticket 32); 'out' — a Tab
+    // released by Escape, the browser's, which takes the keyboard out of the grid (ADR-0012);
     // null — the browser's, or a control's inside the grid. Read from a snapshot of the
     // event rather than the event itself, so a held key can be gated again, against the
     // mode its predecessor's answer left.
@@ -89,6 +208,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             + (k.shiftKey ? 'Shift+' : '') + (k.altKey ? 'Alt+' : '') + k.key;
     };
 
+    // The clipboard's keys: the browser's own copy, cut and paste commands are their default, and
+    // the events those fire are what the core answers (ADR-0005, ADR-0014) and what a field acts on.
+    // The mirror of GridKeys' AnsweredOutsideTable, with cut, which the core does not answer and a
+    // field does, and paste as plain text; one the Consumer declared is its own, and is a key.
+    // Read only while a hold stands, where such a key is not held but taken by its event
+    // (onHeldClipboard; ADR-0010, 2026-10-02).
+    const clipboardKeys = new Set([
+        'Control+c', 'Control+C', 'Control+Insert',
+        'Control+x', 'Control+X', 'Shift+Delete',
+        'Control+v', 'Control+V', 'Shift+Insert', 'Control+Shift+v', 'Control+Shift+V',
+    ]);
+    const isClipboardKey = (k) => {
+        const canonical = canonicalOf(k);
+        return clipboardKeys.has(canonical) && !declared.has(canonical);
+    };
+
     const gate = (k) => {
         // The mirror of GridKeys.Canonical — the two must move together. It exists here
         // only to decide whether to take the key: preventDefault has to happen now, and
@@ -99,6 +234,21 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const canonical = canonicalOf(k);
         const control = k.ctrlKey || (k.metaKey && metaIsPrimary);
         const foreign = k.metaKey && !metaIsPrimary;
+
+        // Escape with nothing to dismiss released Tab (ADR-0012, rewritten 2026-10-01): the next
+        // Tab or Shift+Tab on the root is left to the browser, which moves to the page's next or
+        // previous element, so a keyboard user is never trapped. Any other key ends the release
+        // and keeps its meaning; a modifier's own keydown — the Shift of Shift+Tab — is not a
+        // key, and nor is a held Escape's repeat, which is the press that released Tab (KB-44;
+        // the core answers it with nothing, ADR-0070). Counted here rather than at the keydown,
+        // as an Inner Popup's Escape is: a key held behind the Escape ends the release in its
+        // turn, after the answer that granted it.
+        if (tabReleased && !modifierKeys.has(k.key) && !(k.repeat === true && k.key === 'Escape')) {
+            if (editing === 'none' && k.onRoot && (canonical === 'Tab' || canonical === 'Shift+Tab')) {
+                return 'out';
+            }
+            tabReleased = false;
+        }
 
         if (editing === 'none') {
             if (!k.onRoot) {
@@ -112,7 +262,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // taken from there, Space would type nothing, arrows would move the
                 // selection instead of a caret and Ctrl+A would select the grid instead
                 // of the field's text.
-                // Ctrl+F in one of the grid's own popovers is the grid's too (ADR-0047, settled
+                // Ctrl+F in one of the grid's own popovers is the grid's too (ADR-0055, settled
                 // 2026-09-27): the browser's find would see only the painted rows. In the find
                 // field it selects the field's text, the field's own behaviour and no meaning of
                 // the core's; anywhere else in a popover it opens Find, as from the root. A
@@ -172,14 +322,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (!taken.has(canonical)) {
                 return null;
             }
+            // Escape may release Tab, which changes the keys this gate claims (ADR-0012,
+            // rewritten 2026-10-01): a mode change, so the keys after it wait for its answer.
+            if (canonical === 'Escape') {
+                releaseEndsAtEscape = releaseEndsHeard;
+                return 'mode';
+            }
             if (popoverOpeners.has(canonical)) {
                 return 'popover';
             }
             // Ctrl+F opens a popover only where a search is wired; elsewhere it is refused
             // and opens nothing, and holding the keys after it for a panel that never comes
-            // would stall them (ADR-0047).
+            // would stall them (ADR-0055).
             if (findKeys.has(canonical)) {
                 return canFind ? 'popover' : 'core';
+            }
+            // A declared key is the Consumer's to answer, and may open a popover or a frame of
+            // the Consumer's own (Format Cells' Ctrl+1): the keys after it wait for its answer,
+            // and then for wherever the answer said the keyboard is going (handOff; ADR-0050
+            // item 16, 2026-10-01).
+            if (declared.has(canonical)) {
+                return 'mode';
             }
             // Space and Backspace open an editor (ADR-0010/0035): a mode change.
             return canonical === ' ' || canonical === 'Backspace' ? 'mode' : 'core';
@@ -193,10 +356,39 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (!k.onRoot && !k.inEditor) {
             return null;
         }
-        const claimed = editing === 'overwrite' ? overwriteKeys : editingKeys;
+        // A declared key changes nothing in the editor and no mode: the core raises it with the
+        // edit open, and the Consumer decides (ADR-0050, item 14). Taken, so the browser's own
+        // meaning — Ctrl+U's page source — does not run either.
+        if (declared.has(canonical)) {
+            return 'core';
+        }
+        // A list of candidates painted is open, whatever the gate was last told: on a circuit
+        // the render that paints it and the message that tells the gate are two messages, and a
+        // ← typed between them would be claimed as Overwrite's and swallowed. The core marks
+        // the list on its box (data-ex-list) in the render itself, and a list open over Point
+        // (data-ex-over-point), whose ←, →, Home, End and Shift+arrows point (ADR-0058); read,
+        // not measured.
+        const list = listShown();
+        const claimed = list === null
+            ? (claimedWhile[editing] ?? editingKeys)
+            : (list.hasAttribute('data-ex-over-point') ? completionOverPointKeys : completionKeys);
         // Every key the core claims while editing commits, cancels, moves or switches
-        // the mode: each is a mode change.
-        return claimed.has(canonical) ? 'mode' : null;
+        // the mode: each is a mode change. F4 rewrites the text, and the keys after it wait
+        // for the rewrite, so that each carries the text the one before it left.
+        if (claimed.has(canonical) || (cycleReferences && canonical === 'F4')) {
+            return 'mode';
+        }
+        // Left to an editor field, a key the browser would scroll the grid with is answered here:
+        // Home and End on an Apple platform, PageUp and PageDown on every one (ticket 32).
+        if (k.inEditor) {
+            if (metaIsPrimary && appleCaretKeys.has(canonical)) {
+                return 'caret';
+            }
+            if (pageKeys.has(canonical)) {
+                return 'drop';
+            }
+        }
+        return null;
     };
 
     // The scroll container is the grid's own, not a control inside it: it carries
@@ -204,7 +396,22 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // on the rows give it DOM focus, and C# hands focus on to the root — a round trip later
     // on a circuit. A key, a copy or a paste in between is the root's, as it would have
     // been a moment on.
-    const isRoot = (target) => target === root || (!!scroller && target === scroller);
+    //
+    // The Keyboard Field (ADR-0080). While the grid has an editable column, the keyboard with no
+    // edit open is held by a text field of the grid's own instead of the root itself, so that an
+    // IME has somewhere to start (the fifteenth Windows run: on the root, Chrome and Edge give it
+    // no input context). It stands for the root in everything here — ADR-0010's guard widens to
+    // it: a key, a copy or a paste aimed at it is the root's. It is this grid's own, never a nested
+    // grid's.
+    const isKeyField = (target) => target instanceof HTMLInputElement && target.classList.contains('ex-key-field')
+        && root !== null && target.closest('.ex-grid') === root;
+    const isRoot = (target) => target === root || (!!scroller && target === scroller) || isKeyField(target);
+    // This grid's Keyboard Field, where the grid has one: the first in its markup, the Viewport's
+    // first child, ahead of any grid nested in a cell.
+    const keyFieldOf = () => {
+        const field = root ? root.querySelector('.ex-key-field') : null;
+        return field !== null && isKeyField(field) ? field : null;
+    };
     const snapshot = (event) => ({
         key: event.key,
         ctrlKey: event.ctrlKey,
@@ -218,16 +425,317 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         inFindField: isTextField(event.target) && event.target.closest('.ex-popover-find') !== null,
     });
 
-    const forward = (k) => core.invokeMethodAsync(
-        'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot)
-        .catch((error) => {
-            // Disposal can overtake a key in flight, and that is not a fault. Anything
-            // else is reported: a swallowed failure here means keys that silently stop
-            // working.
-            if (core) {
-                console.error('[ex-grid] the grid failed to handle a key', error);
+    // While editing, the key carries the editor's text and caret (ADR-0051): the core decides
+    // what an arrow means from what the user sees now, never from an answer a round trip old.
+    // Read as the key is forwarded — a held key's after the keys before it were typed — from
+    // the editor surface that holds DOM focus. A read of the field's own value, not a
+    // measurement: no layout is read. The selection's end goes with it for F4, which cycles
+    // every Reference a selection covers, and so does whether the user moved the caret in that
+    // very text: until the core's placement lands, the browser's own caret there is not the
+    // user's, and the core tells the two apart as it does for a report (ADR-0051, 2026-09-29).
+    // Whether the key is a held key's repeat goes with it too: auto-repeat is visible only here,
+    // and by the time a key reaches .NET a repeat looks like a press. The core raises a
+    // Consumer's OnLeave once per press, however long Escape is held (ADR-0070). A field of the
+    // event the listener already reads; no listener is added and no layout is read.
+    const forward = (k) => {
+        const input = editing !== 'none' ? editorInput() : null;
+        return core.invokeMethodAsync(
+            'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
+            input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
+            input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false,
+            k.repeat === true)
+            .catch((error) => {
+                // Disposal can overtake a key in flight, and that is not a fault. Anything
+                // else is reported: a swallowed failure here means keys that silently stop
+                // working.
+                if (core) {
+                    console.error('[ex-grid] the grid failed to handle a key', error);
+                }
+            });
+    };
+
+    // The caret in an editor surface is reported (ADR-0051's second round): an input event
+    // carries no caret, and working it out from the change is ambiguous where letters repeat;
+    // and a caret moved by ← / → or a click inside the text, with the text unchanged, would
+    // leave the core pointing and completing from a caret that is no longer there. The value
+    // and selection start of the field, read, not measured: no layout is read. Only while C#
+    // asked for it, and never a report that says what the last one said.
+    let reportedText = null;
+    let reportedCaret = -1;
+    // The user's own move of the caret in an editor surface — a press in its text, or a caret
+    // key the browser carries out — with the text it was made in. The core places the caret a
+    // round trip after it wrote the text on a circuit, and a move made in that text before the
+    // placement lands is newer than the placement: the user's caret stands, and the report of
+    // it says it is the user's, so the core takes it over the placement it has in flight
+    // (ADR-0051's third round: a press in the text while pointing ends pointing; found on the
+    // Server host, Windows, fourth run, DC-19/DC-34). Only while the field still holds that
+    // text: once it has changed, the move was made in text the core no longer holds.
+    let caretMoved = null;
+    const noteCaretMove = (input) => {
+        caretMoved = { input, text: input.value };
+    };
+    const movedByUser = (input) => caretMoved !== null && caretMoved.input === input && caretMoved.text === input.value;
+    const reportCaretOf = (input) => {
+        const caret = input.selectionStart ?? input.value.length;
+        if (input.value === reportedText && caret === reportedCaret) {
+            return;
+        }
+        reportedText = input.value;
+        reportedCaret = caret;
+        core.invokeMethodAsync('OnEditorCaretAsync', input.value, caret, movedByUser(input))
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear the caret', error);
+                }
+            });
+    };
+    // The editor surface of this grid's own that `element` is, or is inside: the box that wears
+    // .ex-editor — the Cell Editor over this grid's rows, or its Formula Bar's text — and never
+    // a surface of a grid nested in one of its cells, whose own root stands nearer (ADR-0018).
+    const ownSurface = (element) => {
+        const surface = element instanceof Element ? element.closest('.ex-editor') : null;
+        return surface !== null && root !== null && surface.closest('.ex-grid') === root ? surface : null;
+    };
+    // The text field of an editor surface: of `surface`, one of this grid's own, or, given none,
+    // of the first of them in the markup — the Cell Editor while its cell is painted, the
+    // Formula Bar's text when it is not. A substituted Chrome's surface is a box around its
+    // control (ADR-0010): the control that has DOM focus inside it, if one has, or its first.
+    const surfaceField = (surface) => {
+        const chosen = surface
+            ?? (root ? [...root.querySelectorAll('.ex-editor')].find((box) => ownSurface(box) === box) : null);
+        if (!chosen) {
+            return null;
+        }
+        if (chosen instanceof HTMLInputElement || chosen instanceof HTMLTextAreaElement) {
+            return chosen;
+        }
+        const active = document.activeElement;
+        return (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) && chosen.contains(active)
+            ? active
+            : chosen.querySelector('input, textarea');
+    };
+
+    // The editor surface that last held the keyboard here (ADR-0018, section 6): the one of this
+    // grid's own in which this listener last saw a key, an input or a press. An edit stands when
+    // DOM focus leaves the root, and a press back on the rows or the headings puts the keyboard
+    // here (onPress). Taken afresh as an edit opens, from the surface holding DOM focus then, and
+    // forgotten as it ends: the bar outlives an edit, and one typed in there must not claim the
+    // next.
+    let lastSurface = null;
+    const noteSurface = (target) => {
+        lastSurface = ownSurface(target) ?? lastSurface;
+    };
+
+    // Each input reports at once: Blazor's input event is on its way, and the core waits for
+    // this report before it asks anything about the new text.
+    const onEditorInput = (event) => {
+        // Text an IME inserts into the Keyboard Field without composing it — a full-width space, a
+        // character some IMEs commit at once — is carried as a composition's text is; anything
+        // else put there outside a composition — the browser's own undo, a drop — is not typing
+        // the grid takes, and goes (ADR-0080). The field is no editor surface.
+        if (isKeyField(event.target)) {
+            if (!event.isComposing && !keyFieldComposing) {
+                if (event.inputType === 'insertText' || event.inputType === 'insertReplacementText') {
+                    event.target.classList.add('ex-key-field-composing');
+                    carryKeyFieldText(event.target);
+                } else {
+                    event.target.value = event.target.value.slice(0, keyFieldCarried);
+                }
+            }
+            return;
+        }
+        heardReferenceInput(event);
+        // Text put into the Name Box without a key — pasted from a menu, dropped — is the user's,
+        // and the first key after it types on (nameBoxSelected).
+        if (event.target === nameBoxSelected) {
+            nameBoxSelected = null;
+        }
+        const input = event.target;
+        noteSurface(input);
+        if (!reportCaret || !core || !(input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement)
+            || input.closest('.ex-editor') === null) {
+            return;
+        }
+        // Typed on: the text a move was made in is gone, and so is the move.
+        caretMoved = null;
+        reportCaretOf(input);
+    };
+    root.addEventListener('input', onEditorInput, true);
+    // The text field of an editor surface in this instance that holds DOM focus, or null.
+    const focusedEditorField = () => {
+        const active = document.activeElement;
+        return root && (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)
+            && root.contains(active) && active.closest('.ex-editor') !== null
+            ? active
+            : null;
+    };
+    // Whenever the caret moves: `selectionchange` fires on the document only, so this instance
+    // acts on it only while DOM focus is in one of its own editor surfaces (ADR-0018). A burst
+    // — a held arrow, a drag across the text, an input's own change — is one report per
+    // animation frame, of where the caret stands when the frame comes.
+    let caretFrame = 0;
+    const onSelectionChange = () => {
+        if (watchingReferenceTexts) {
+            gateReferenceTexts();
+        }
+        if (!reportCaret || !core || caretFrame !== 0 || focusedEditorField() === null) {
+            return;
+        }
+        caretFrame = requestAnimationFrame(() => {
+            caretFrame = 0;
+            const input = reportCaret && core ? focusedEditorField() : null;
+            if (input) {
+                reportCaretOf(input);
             }
         });
+    };
+    document.addEventListener('selectionchange', onSelectionChange);
+
+    // The coloured text (ADR-0057): beneath an editor surface, a layer the core renders with the
+    // field's text stands immediately before the field, and carries the text it was rendered for
+    // (data-ex-text). On a circuit that is a round trip behind the typing, and colours on text typed
+    // past would stand on the wrong characters, so the layer shows — and the field's own text turns
+    // transparent — only while the two texts are one: the listener sets one class on the field then,
+    // and the stylesheet does the rest. Only in the surface the edit is in, as Excel colours it: the
+    // field holding DOM focus, the one held keys are handed to (ADR-0051) — the other surface keeps
+    // its plain text, and a press from one into the other takes the colours with it. Compared on each
+    // input, when a layer's text or colours change (those two attributes, observed while an edit is
+    // open) and whenever the selection moves, which is how a field that has just taken focus, or just
+    // opened over its layer, is heard. A field holding an IME composition is ahead of anything
+    // rendered, and is never shown over; every input of a composition, its last included, says so,
+    // and the composition's end comes with no input after it, so the end is heard too, and the
+    // colours come back then rather than at the next keystroke. The layer's line scrolls with the
+    // field: the scroll-offset entry, on one more element (ADR-0021). Reads values, two attributes,
+    // which element has focus and scroll offsets; no layout.
+    //
+    // The layer's text is one run, as the field's is, and its References are coloured by the CSS
+    // Custom Highlight API (ADR-0057 and ADR-0021, notes of 2026-10-01): when the layer shows, one
+    // Range per stretch the core wrote on it (data-ex-colours: "start,length,name" each), over its
+    // one text node, in the highlight of that name; when it hides, they are taken out again. The
+    // names are this grid's own, and so are the highlights registered under them, which go with the
+    // grid: CSS.highlights is one registry per document, and a shared name would let one grid clear
+    // another's colours (ADR-0018). The grid's generated stylesheet paints them.
+    let composingIn = null;
+    let watchingReferenceTexts = false;
+    const highlights = new Map();
+    const colouredLayers = new Map();
+    const referenceTextOf = (field) => {
+        const layer = field.previousElementSibling;
+        return layer !== null && layer.classList.contains('ex-reference-text') ? layer : null;
+    };
+    const uncolour = (layer) => {
+        const coloured = colouredLayers.get(layer);
+        if (coloured !== undefined) {
+            for (const [highlight, range] of coloured.ranges) {
+                highlight.delete(range);
+            }
+            colouredLayers.delete(layer);
+        }
+    };
+    // Built again only when the layer's text, its colours or its run has changed since, or a range
+    // no longer spans what it was built over — a change to the run's text moves the ranges in it.
+    const colour = (layer) => {
+        const text = layer.getAttribute('data-ex-text');
+        const colours = layer.getAttribute('data-ex-colours') ?? '';
+        const run = layer.firstElementChild?.firstChild;
+        const coloured = colouredLayers.get(layer);
+        if (coloured !== undefined && coloured.text === text && coloured.colours === colours && coloured.run === run
+            && coloured.ranges.every(([, range, length]) => range.endOffset - range.startOffset === length)) {
+            return;
+        }
+        uncolour(layer);
+        if (!(run instanceof Text) || colours === '' || typeof Highlight !== 'function') {
+            return;
+        }
+        const ranges = [];
+        for (const stretch of colours.split(' ')) {
+            const [start, length, name] = stretch.split(',');
+            const from = Number(start);
+            const to = from + Number(length);
+            if (!(from >= 0 && to <= run.length)) {
+                continue;
+            }
+            let highlight = highlights.get(name);
+            if (highlight === undefined) {
+                highlight = new Highlight();
+                highlights.set(name, highlight);
+                CSS.highlights.set(name, highlight);
+            }
+            const range = new Range();
+            range.setStart(run, from);
+            range.setEnd(run, to);
+            highlight.add(range);
+            ranges.push([highlight, range, to - from]);
+        }
+        colouredLayers.set(layer, { text, colours, run, ranges });
+    };
+    const gateReferenceText = (field, layer) => {
+        const shown = editing !== 'none' && field === document.activeElement && composingIn !== field
+            && layer.getAttribute('data-ex-text') === field.value;
+        field.classList.toggle('ex-reference-text-shown', shown);
+        if (shown) {
+            colour(layer);
+        } else {
+            uncolour(layer);
+        }
+        layer.firstElementChild.scrollLeft = field.scrollLeft;
+    };
+    const gateReferenceTexts = () => {
+        for (const layer of root.getElementsByClassName('ex-reference-text')) {
+            const field = layer.nextElementSibling;
+            if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+                gateReferenceText(field, layer);
+            }
+        }
+    };
+    const referenceTextObserver = new MutationObserver(gateReferenceTexts);
+    const heardReferenceInput = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            composingIn = event.isComposing === true ? field : null;
+            gateReferenceText(field, layer);
+        }
+    };
+    const onFieldScroll = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            layer.firstElementChild.scrollLeft = field.scrollLeft;
+        }
+    };
+    const onCompositionEnd = (event) => {
+        const field = event.target;
+        const layer = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement ? referenceTextOf(field) : null;
+        if (layer !== null) {
+            composingIn = null;
+            gateReferenceText(field, layer);
+        }
+    };
+    // Only while an edit is open, which is the only time a layer holds a text; closing takes every
+    // field's class away with it.
+    const watchReferenceTexts = (on) => {
+        if (on === watchingReferenceTexts) {
+            return;
+        }
+        watchingReferenceTexts = on;
+        if (on) {
+            referenceTextObserver.observe(root, { attributes: true, attributeFilter: ['data-ex-text', 'data-ex-colours'], subtree: true });
+            root.addEventListener('scroll', onFieldScroll, true);
+            root.addEventListener('compositionend', onCompositionEnd, true);
+            return;
+        }
+        referenceTextObserver.disconnect();
+        root.removeEventListener('scroll', onFieldScroll, true);
+        root.removeEventListener('compositionend', onCompositionEnd, true);
+        composingIn = null;
+        for (const field of root.querySelectorAll('.ex-reference-text-shown')) {
+            field.classList.remove('ex-reference-text-shown');
+        }
+        for (const layer of [...colouredLayers.keys()]) {
+            uncolour(layer);
+        }
+    };
 
     // Keys that follow a mode change are held until it lands (ADR-0010). The mode is
     // C#'s, and it tells this listener after the fact: in-process on WebAssembly, a round
@@ -238,6 +746,49 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // answer has landed. Plain navigation changes no mode and is never held behind.
     const held = [];
     let answering = false;
+    // A clipboard key's keydown let through a hold, until the copy, cut or paste event its default
+    // fires in the same task takes its place among the held keys (onHeldClipboard).
+    let clipboardKeyHeld = false;
+    // A press on the rows while an edit is open is a mode change too (ADR-0010, widened
+    // 2026-09-29), and the keys after it wait for the core's answer to it (holdBehindPress):
+    // the press still to be asked about, and the answer the keys wait for while one is awaited.
+    let pressToAsk = null;
+    let pressAnswer = null;
+    // The answer the drain waits for first, when it is the answer to a press on another grid,
+    // handed on to this root (onPressHandedOn): a press on this grid's own rows does not pass on
+    // ahead of it, as it would behind one of its own — Blazor keeps this grid's presses in order,
+    // and that one travels through the other grid's core.
+    let handedOnAnswer = null;
+    // A field beside the rows — the Formula Bar or the Name Box — still holding DOM focus only
+    // because a press on the rows had the default that would have moved it suppressed: held
+    // here, or passed on while an edit is open where the core keeps the keyboard in the edit
+    // (onPress). Null once the field is pressed again, the hand-back has taken it, or the press
+    // has been answered (replayPress, askAboutPress). Each mark is numbered, so taking one
+    // press's mark off never takes a later press's.
+    let staleField = null;
+    let staleMarks = 0;
+    const markStale = (field) => {
+        staleField = field;
+        return ++staleMarks;
+    };
+
+    // This grid's Name Box (ADR-0051): the built-in input, or a Chrome's control inside the core's
+    // box — never one of a grid nested in a cell — while it takes typing.
+    const ownNameBox = (element) => (element instanceof HTMLInputElement && root !== null
+        && element.closest('.ex-name-box')?.closest('.ex-grid') === root && !element.readOnly && !element.disabled
+        ? element : null);
+    // A press that gives the Name Box the keyboard selects its whole text, as Excel's does, so what
+    // is typed replaces the address shown (ADR-0051, decided with the user 2026-10-01; ticket 78).
+    // The press keeps its default, which gives the field the keyboard and puts the caret where it
+    // landed; its release selects the text, and takes the release's default, which would put the
+    // caret back there. No focus is moved from here. A press into the Name Box while it holds the
+    // keyboard is the field's own: it places the caret, and a drag selects.
+    let nameBoxPressed = null;
+    // The Name Box so selected, until the first key, input or press after it. A render that renames
+    // it meanwhile — the commit the press made, the pointed cell giving way to the Focus, or a render
+    // a round trip behind the press on a circuit — writes the new name over the selection, and the
+    // browser leaves the caret after it: the first key selects the whole of it again (onKeyDown).
+    let nameBoxSelected = null;
 
     // Whether the editor holds DOM focus. Until it does, a key typed with editing on lands
     // on the root, where no editing mode claims a printable key — it would be lost.
@@ -245,6 +796,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const active = document.activeElement;
         return active instanceof Element && root.contains(active) && active.closest('.ex-editor') !== null;
     };
+    // Whether the core's request that the open edit take the keyboard was declined, because the
+    // keyboard had gone to another grid or a control of the page's before it landed (focusEditor,
+    // ADR-0021's note of 2026-09-30). The edit stands without DOM focus; the keys held behind the
+    // key that opened it are this edit's all the same, and go into it rather than wait for a focus
+    // that will not come (ADR-0010, same day). Forgotten as an edit opens or ends, and once a press
+    // back puts the keyboard in the edit.
+    let focusDeclined = false;
 
     // Whether one of this grid's popovers holds DOM focus — where the keys held behind a key
     // that opened one are handed.
@@ -253,6 +811,33 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         return active instanceof Element && root.contains(active) && active.closest('.ex-popover') !== null;
     };
     let awaitingPopover = false;
+
+    // Where the core has said the keyboard is going (handOff; ADR-0039 and ADR-0050 item 16,
+    // 2026-10-01): 'popover' — a Consumer's popover the core opened, whose contents take the
+    // keyboard on their count — or 'frame' — a frame of the Consumer's own, outside this root
+    // (HandKeyboardToFrameAsync). Until it has arrived, the keys typed on the root — its Keyboard
+    // Field among them (isRoot; ADR-0080) — or the menu are held, and then handed to what took
+    // it; if it never arrives within the hold's fallback they are dropped, never gated against
+    // the grid: a digit there would open an edit behind the frame. Set by C# ahead of the key's
+    // answer and of the render that closes the menu the command ran from. Meanwhile the root
+    // keeps the keyboard where it can (the hand-back after a command, into the Keyboard Field on
+    // a grid that edits), so the keys are heard here: one typed on nothing reaches no grid at all.
+    let handOff = null;
+    // The hand-off the drain is delivering: 'frame' once DOM focus has left the root for the
+    // frame, and whether the keyboard never arrived, so the held keys are dropped.
+    let deliveringOutside = false;
+    let handOffMissed = false;
+    // Outside this root and not on nothing: where a frame of the Consumer's own has the keyboard.
+    const outsideControl = () => {
+        const active = document.activeElement;
+        return active instanceof Element && active !== document.body && active !== document.documentElement
+            && !(root && root.contains(active)) ? active : null;
+    };
+    // Another grid has the keyboard: the user moved there before it reached what this one handed it
+    // to, and the keys held here are not that grid's (ADR-0018).
+    const inOtherGrid = () => outsideControl()?.closest('.ex-grid') != null;
+    const handedOver = () => handOff === null
+        || (handOff === 'popover' ? popoverFocused() : outsideControl() !== null && !inOtherGrid());
 
     // The keyboard handed on inside a popover, or out of it (ADR-0044): Tab, Shift+Tab or E on
     // a command moves it into the filter below, E on the value list to the search box, and a
@@ -315,16 +900,13 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     };
 
     // The editor the answer opened, once its element is there — the render that made it
-    // and the answer travel separately, and the answer can arrive first.
-    const editorInput = () => {
-        const editor = root && root.querySelector('.ex-editor');
-        if (!editor) {
-            return null;
-        }
-        return editor instanceof HTMLInputElement || editor instanceof HTMLTextAreaElement
-            ? editor
-            : editor.querySelector('input, textarea');
-    };
+    // and the answer travel separately, and the answer can arrive first. Of the editor
+    // surfaces, the one holding DOM focus: the Formula Bar when the user was typing there,
+    // not the cell's editor that comes first in the markup (ADR-0051). The first one only
+    // when none holds it — the two-second hold has run out.
+    // Declined its focus, the edit is the surface that last held the keyboard here, as the press
+    // back finds it (standingField).
+    const editorInput = () => (focusDeclined ? standingField() : surfaceField(ownSurface(document.activeElement)));
     // When the hold that is standing began: two seconds from it, whatever the keys held
     // since have asked for, the rest is handed on (ADR-0010).
     let holdStartedAt = 0;
@@ -336,11 +918,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // any round trip the grid is usable over; after it the held keys are replayed
             // against whatever there is, rather than held forever.
             const disposed = !core;
-            const editorReady = disposed || editing === 'none' || editorFocused();
+            const editorReady = disposed || editing === 'none' || editorFocused() || focusDeclined;
             const popoverReady = disposed || !awaitingPopover || popoverFocused();
-            if (disposed || (editorReady && popoverReady && moved()) || performance.now() - holdStartedAt > 2000) {
+            const handOffReady = disposed || handedOver() || (handOff !== null && inOtherGrid());
+            if (disposed || (editorReady && popoverReady && handOffReady && moved()) || performance.now() - holdStartedAt > 2000) {
                 awaitingPopover = false;
                 awaitingMove = null;
+                if (handOff !== null) {
+                    handOffMissed = !disposed && !handedOver();
+                    deliveringOutside = handOff === 'frame' && !handOffMissed;
+                    handOff = null;
+                }
                 resolve();
             } else {
                 requestAnimationFrame(look);
@@ -355,25 +943,78 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const typeInto = (input, k) => {
         const start = input.selectionStart ?? input.value.length;
         const end = input.selectionEnd ?? start;
-        if (k.key.length === 1) {
-            input.setRangeText(k.key, start, end, 'end');
+        // A composition's text from the Keyboard Field (ADR-0080) is typed as a character is.
+        if (k.text !== undefined || k.key.length === 1) {
+            input.setRangeText(k.text ?? k.key, start, end, 'end');
         } else if (k.key === 'Backspace') {
             input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
         } else if (k.key === 'Delete') {
             input.setRangeText('', start, start === end ? Math.min(input.value.length, end + 1) : end, 'end');
-        } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight' || k.key === 'Home' || k.key === 'End') {
-            const at = k.key === 'Home' ? 0
-                : k.key === 'End' ? input.value.length
-                : k.key === 'ArrowLeft' ? Math.max(0, start - 1)
+        } else if (k.key === 'Home' || k.key === 'End') {
+            // As the field would have: to the start or the end, Shift extending the selection, and
+            // scrolled to show it. Setting the selection from script moves no view, so a held End
+            // replayed on a circuit left the caret at the end and the text shown from its start
+            // (ticket 32, seen in CI on the Server host).
+            placeCaretAtEnd(input, k, input.closest('.ex-editor') !== null);
+            return true;
+        } else if (k.key === 'ArrowLeft' || k.key === 'ArrowRight') {
+            const at = k.key === 'ArrowLeft' ? Math.max(0, start - 1)
                 : Math.min(input.value.length, end + 1);
+            if (input.closest('.ex-editor') !== null) {
+                noteCaretMove(input);
+            }
             input.setSelectionRange(at, at);
+            showCaret(input, at);
             return true;
         } else {
             return false;
         }
+        // Shown as the field shows what is typed: the text set from script moves no view, so the
+        // keys held while an edit opened on a circuit left the caret at the end of the text and
+        // the field showing its start (ticket 75, found by its test on the Server host).
+        showCaret(input, input.selectionEnd);
         // The field hears it as it hears typing (its @oninput).
         input.dispatchEvent(new Event('input', { bubbles: true }));
         return true;
+    };
+    // A caret placed from script at either end of the text, brought into view as the field brings
+    // the user's own: setting the value or the selection from script moves no view (ticket 32;
+    // ticket 75, where a Reference Point wrote at the end of a Formula stood past the Cell
+    // Editor's right edge). At the start the field shows its start; at the end the offset is set
+    // past the far end, and the browser clamps it, so the caret stands at the field's right edge.
+    // Nothing is read but the field's value (ADR-0021). A caret short of the end is left where the
+    // browser shows it: no place for it can be set without the width of the text before it
+    // (ticket 75's Comments). The layer that colours the field follows the offset through the
+    // field's scroll event, as it does when the user types (ADR-0057).
+    const showCaret = (input, at) => {
+        if (at <= 0) {
+            input.scrollLeft = 0;
+        } else if (at >= input.value.length) {
+            input.scrollLeft = Number.MAX_SAFE_INTEGER;
+        }
+    };
+    // Home or End answered in an editor field on an Apple platform (ticket 32), as Windows and
+    // Linux answer them, and a held Home or End replayed on any platform: the caret to the
+    // text's start or end, or with Shift the selection extended there from its anchor; in an
+    // editor surface, the user's own move. The field is scrolled to show that end (showCaret),
+    // so nothing is read but the field's value and selection (ADR-0021).
+    const placeCaretAtEnd = (input, k, ownMove = true) => {
+        const toEnd = k.key === 'End';
+        const edge = toEnd ? input.value.length : 0;
+        if (ownMove) {
+            noteCaretMove(input);
+        }
+        if (k.shiftKey) {
+            const anchor = input.selectionDirection === 'backward' ? input.selectionEnd : input.selectionStart;
+            if (toEnd) {
+                input.setSelectionRange(anchor ?? edge, edge, 'forward');
+            } else {
+                input.setSelectionRange(edge, anchor ?? edge, 'backward');
+            }
+        } else {
+            input.setSelectionRange(edge, edge);
+        }
+        showCaret(input, edge);
     };
     const typeIntoEditor = (k) => {
         const input = editorInput();
@@ -418,6 +1059,10 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // dropped: the typing stops short rather than going on in a field it was not meant for
     // ("Alpha", Tab, Space, Enter would otherwise search for "Alpha " and apply it).
     const caretKeys = new Set(['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter']);
+    // The keys a tab of ARIA's tabs pattern answers itself.
+    const tabKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
+    // The keys that move the caret in a field without changing its text.
+    const caretMoveKeys = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
     const reproducible = (target, k) => {
         if (k.key === 'Escape' || target.closest('[role=menu]')) {
             return true;
@@ -425,7 +1070,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (isTextField(target)) {
             return !k.ctrlKey && !k.metaKey && !k.altKey && (k.key.length === 1 || caretKeys.has(k.key));
         }
+        // A frame of the Consumer's own took the keyboard (HandKeyboardToFrameAsync): what a key
+        // means there is its handlers' to say, and every key but Tab — the browser's alone to
+        // act on — is handed to it.
+        if (root && !root.contains(target)) {
+            return k.key !== 'Tab';
+        }
         const role = target.getAttribute('role');
+        // A tab of ARIA's tabs pattern answers its arrows, Home and End with its own handlers.
+        if (role === 'tab' && tabKeys.has(k.key) && !k.ctrlKey && !k.metaKey && !k.altKey) {
+            return true;
+        }
         return k.key.length === 1 && k.key !== ' ' && !k.ctrlKey && !k.metaKey && !k.altKey
             && target.tagName !== 'SELECT' && role !== 'combobox' && role !== 'listbox';
     };
@@ -444,7 +1099,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         if (isTextField(target) && !k.ctrlKey && !k.metaKey && !k.altKey) {
             if (k.key === 'Enter' && target.form) {
                 // The keydown first, so the field's own handlers hear what the key was — Shift
-                // held turns the find panel's Enter into "previous" (ADR-0047) — then the
+                // held turns the find panel's Enter into "previous" (ADR-0055) — then the
                 // submission, which a dispatched keydown does not perform.
                 replayInto(target, k);
                 target.form.requestSubmit();
@@ -457,13 +1112,104 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         replayInto(target, k);
     };
 
+    // The held keys dropped, every one behind the key that could not be handed on (ADR-0010). A
+    // copy among them is abandoned, and its write lands nothing: the clipboard keeps what it held,
+    // as it does when a copy is refused (ADR-0005).
+    const dropHeld = () => {
+        for (const k of held) {
+            if (k.clipboard === 'copy') {
+                k.take(false);
+            }
+        }
+        held.length = 0;
+    };
+
+    // A hold begins: the keys typed from now are held, in order, and handed on by drain — at
+    // once, or once `answer` has come, for a key the core is answering. The two-second fallback
+    // counts from here. Each caller asks first whether a hold stands, and a drain already running
+    // takes what it holds.
+    const startHold = (answer) => {
+        answering = true;
+        holdStartedAt = performance.now();
+        if (answer) {
+            answer.then(drain);
+        } else {
+            drain();
+        }
+    };
+
     const drain = async () => {
+        // Behind a press, its answer first (holdBehindPress); a press passed on behind it while
+        // nothing was held replaces the question, and its answer comes after the first one's.
+        while (pressAnswer !== null) {
+            const answer = pressAnswer;
+            await answer;
+            if (pressAnswer === answer) {
+                pressAnswer = null;
+            }
+            if (handedOnAnswer === answer) {
+                handedOnAnswer = null;
+            }
+        }
         // Settled before anything else, even with nothing held yet: the answer can arrive
         // before the popover or the editor has taken DOM focus, and a key typed in that
         // gap must still be held, not gated against the root.
         await editorSettled();
         while (held.length > 0 && core) {
+            // The keyboard never reached what the core handed it to: the keys are dropped, not
+            // gated against the grid (handOff).
+            if (handOffMissed) {
+                dropHeld();
+                break;
+            }
             const k = held.shift();
+            if (k.barPress) {
+                await answerBarPress();
+                continue;
+            }
+            if (k.press) {
+                await replayPress(k);
+                continue;
+            }
+            // A press on another grid, handed on to this root: its turn has come, so its answer
+            // may be given now, and the keys after it wait for that answer (onPressHandedOn).
+            if (k.handedOn) {
+                k.handedOn.inTurn();
+                await k.handedOn.answered;
+                await editorSettled();
+                continue;
+            }
+            // A composition that ended in the Keyboard Field (ADR-0080): with no edit open, the
+            // core opens one holding its text, as a typed character opens one holding it, and the
+            // keys after it wait for the editor; with one open — a second composition the IME
+            // finished there before the first one's editor had the keyboard — it is typed into
+            // the edit at its caret, as a held character is.
+            if (k.text !== undefined) {
+                if (editing === 'none') {
+                    const opened = await core.invokeMethodAsync('OnKeyFieldTextAsync', k.text).catch((error) => {
+                        if (core) {
+                            console.error('[ex-grid] the grid failed to take a composition', error);
+                        }
+                        return false;
+                    });
+                    if (!opened) {
+                        settleKeyField();
+                    }
+                    await editorSettled();
+                } else {
+                    const input = editorInput();
+                    if (input && k.text.length > 0) {
+                        typeInto(input, k);
+                    }
+                }
+                continue;
+            }
+            // A copy, cut or paste the keys before it held (onHeldClipboard), done where the
+            // keyboard is now.
+            if (k.clipboard !== undefined) {
+                await takeClipboard(k);
+                continue;
+            }
             // A modifier's own keydown — the Shift pressed for a capital, or for Shift+Enter —
             // is held with the rest to keep their order, and means nothing by itself: the key
             // that follows carries it. Replaying it would be a key no field can reproduce, and
@@ -471,8 +1217,8 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (modifierKeys.has(k.key)) {
                 continue;
             }
-            const target = focusedControl();
-            // Find's key held behind a popover is the grid's there too (ADR-0047), and is not
+            const target = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+            // Find's key held behind a popover is the grid's there too (ADR-0055), and is not
             // replayed into the popover — a menu would take it as a keydown of its own, and a
             // text field cannot reproduce a Ctrl chord at all, which would drop it and every
             // key after it. In the find field it selects the text; anywhere else in a popover
@@ -492,7 +1238,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 // A held key that itself sends the keyboard across the popover holds the
                 // rest again, until DOM focus has followed it.
                 if (!reproducible(target, k)) {
-                    held.length = 0;
+                    dropHeld();
                     break;
                 }
                 const move = handsOver(target, k);
@@ -509,22 +1255,51 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 ...k, onRoot: editing === 'none', inEditor: editing !== 'none', inPopover: false, inFindField: false,
             };
             const verdict = gate(rebased);
+            if (verdict === 'out') {
+                // A released Tab held behind its Escape: the browser's move of DOM focus cannot be
+                // made from script (ADR-0021), so it is dropped with every key behind it, as a held
+                // Tab is in a popover, rather than hand the grid keys meant for the page's next
+                // element. The release stands, for the Tab the user presses again.
+                dropHeld();
+                break;
+            }
             if (verdict === 'mode' || verdict === 'popover') {
                 awaitingPopover = verdict === 'popover';
                 await forward(rebased);
                 await editorSettled();
             } else if (verdict === 'core') {
                 forward(rebased);
+            } else if (verdict === 'caret') {
+                const input = editorInput();
+                if (input) {
+                    placeCaretAtEnd(input, rebased);
+                }
             } else if (verdict === null && editing !== 'none') {
                 typeIntoEditor(rebased);
             }
         }
         answering = false;
+        handOffMissed = false;
+        deliveringOutside = false;
     };
 
     const onKeyDown = (event) => {
         if (!core) {
             return;
+        }
+        // The keyboard is in use: whatever puts it in the Keyboard Field next did not come of a
+        // press on the grid (KB-12, onFocused).
+        keyboardByPress = false;
+        // A key typed in an editor surface: that surface holds the keyboard.
+        noteSurface(event.target);
+        // The first key after a press selected the Name Box's text replaces the whole name, whatever
+        // a render has written over that selection since (nameBoxSelected) — an IME's first
+        // composing key too, so it is done before those are let through.
+        if (nameBoxSelected !== null) {
+            if (event.target === nameBoxSelected) {
+                nameBoxSelected.select();
+            }
+            nameBoxSelected = null;
         }
         // Mid-composition an IME owns Enter, Escape and the arrows — they choose and
         // commit a candidate. Taking them there breaks typing in any language that needs
@@ -533,6 +1308,25 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         const k = snapshot(event);
+        // While the root itself holds the keyboard, the document keeps no text selection: a
+        // key here is the grid's, and so is the clipboard command it may be (ADR-0005). The
+        // browser aims `copy` and `paste` at the element holding the document's selection, and
+        // at the focused element only while there is none. An edit that ends leaves a collapsed
+        // caret where its field stood, and the next press on the rows — user-select: none —
+        // moves that caret to the nearest text the page can select, outside the grid: every
+        // Ctrl+C and Ctrl+V after the first edit went there, and the root never heard them,
+        // until DOM focus left the grid and came back (found on /sheet, 2026-09-29). Dropped
+        // here, in the keydown, before the browser runs the command it is the default of. The
+        // user's own selection is never the grid's to copy (CP-10); a selection inside a field
+        // is not touched, since the root does not hold the keyboard then.
+        // Not from the Keyboard Field (ADR-0080): the document's selection is the caret inside it
+        // then, which the IME needs, and copy and paste are aimed at the field already.
+        if (k.onRoot && !isKeyField(event.target)) {
+            const selection = document.getSelection();
+            if (selection && selection.rangeCount > 0) {
+                selection.removeAllRanges();
+            }
+        }
         // Held while a mode change is unanswered, and also while editing is on but the
         // editor has not yet taken DOM focus — the answer can land before the focus does.
         // Every key under the root is held then, whatever it was aimed at: one that went
@@ -542,23 +1336,36 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const sentinel = !replaying && !answering && onSentinel(event.target);
         // A hold behind a move or a close is over the moment DOM focus has followed, though
         // its check runs a frame later: a key typed in between is the new holder's already.
-        const holdOver = answering && awaitingMove !== null && held.length === 0 && moved();
+        const holdOver = answering && awaitingMove !== null && held.length === 0 && moved() && handedOver();
         if (!replaying && !holdOver && (answering || sentinel || (editing !== 'none' && k.onRoot && !editorFocused()))) {
-            event.preventDefault();
             event.stopPropagation();
-            held.push(k);
+            // A clipboard key is not held as a key: a copy or a paste dispatched from script does
+            // nothing, so held it was lost — the clipboard kept what it held before, and a paste
+            // never landed (CP-6 on the Server host, 2026-10-02). Its default runs, and the copy,
+            // cut or paste event it fires is taken in its place among the held keys
+            // (onHeldClipboard): the paste's data read now, which only the event can read, and
+            // the copy's write started now, which only the event may start. What either does is
+            // decided at its turn, against the mode and the Selection the keys before it leave.
+            if (isClipboardKey(k)) {
+                clipboardKeyHeld = true;
+                setTimeout(() => {
+                    clipboardKeyHeld = false;
+                });
+            } else {
+                event.preventDefault();
+                held.push(k);
+            }
             if (!answering) {
-                answering = true;
-                holdStartedAt = performance.now();
                 if (sentinel) {
-                    // A column's popover wraps back to its commands; the find panel, which
-                    // has none, to its own contents (ADR-0044/0047).
+                    // A column's popover wraps back to its commands; the find panel and a
+                    // Consumer's popover, which have none, to their own contents
+                    // (ADR-0044/0055; ADR-0050 item 16).
                     const into = popoverOf(event.target)?.querySelector('.ex-popover-commands')
                         ? '.ex-popover-commands'
-                        : '.ex-popover-find-body';
+                        : '.ex-popover-body';
                     awaitingMove = { from: event.target, into };
                 }
-                drain();
+                startHold();
             }
             return;
         }
@@ -572,17 +1379,27 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (move.into) {
                 event.preventDefault();
             }
-            holdStartedAt = performance.now();
             awaitingMove = move;
-            // Behind a hold that is over but not yet cleared, its drain takes this one too.
-            if (!answering) {
-                answering = true;
-                drain();
+            // Behind a hold that is over but not yet cleared, its drain takes this one too, and
+            // counts its fallback from here.
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold();
             }
             return;
         }
         const verdict = gate(k);
+        if (verdict === 'out') {
+            // The browser takes the keyboard out of the grid with it, and the release is spent.
+            tabReleased = false;
+            return;
+        }
         if (verdict === null) {
+            // A caret key left to an editor surface moves the caret there: the user's move.
+            if (k.inEditor && caretMoveKeys.has(event.key) && isTextField(event.target) && root.contains(event.target)) {
+                noteCaretMove(event.target);
+            }
             return;
         }
         event.preventDefault();
@@ -594,12 +1411,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             event.target.select();
             return;
         }
+        if (verdict === 'caret') {
+            const input = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement
+                ? event.target
+                : editorInput();
+            if (input) {
+                placeCaretAtEnd(input, k);
+            }
+            return;
+        }
         const answer = forward(k);
         if (verdict === 'mode' || verdict === 'popover') {
-            answering = true;
-            holdStartedAt = performance.now();
             awaitingPopover = verdict === 'popover';
-            answer.then(drain);
+            startHold(answer);
         }
     };
 
@@ -619,14 +1443,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     let reportRows = false;
     let reportRest = false;
     let lastPointerRow = -2;
+    // The Viewport's own top edge is the first painted row's, so the offset divides into
+    // rows from there. Which row that is, C# writes on the Viewport: once the height is
+    // compressed the transform no longer says it (ADR-0053).
     const rowUnder = (viewport, offsetY) => {
         const rowHeight = parseFloat(root.style.getPropertyValue('--ex-row-height'));
-        if (!(rowHeight > 0)) {
+        const written = viewport.getAttribute('data-ex-first-row');
+        const firstRow = written === null ? NaN : Number(written);
+        if (!(rowHeight > 0) || !Number.isInteger(firstRow)) {
             return -2;
         }
-        const match = /translateY\(([-\d.]+)px\)/.exec(viewport.style.transform);
-        const translateY = match ? Number(match[1]) : 0;
-        return Math.floor((offsetY + translateY) / rowHeight);
+        return firstRow + Math.floor(offsetY / rowHeight);
     };
     const onPointerMove = (event) => {
         // Cells are pointer-events: none, so the Viewport is what a move over the rows
@@ -690,6 +1517,601 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // already have moved its caret (ADR-0010 / ADR-0018).
     root.addEventListener('keydown', onKeyDown, true);
 
+    // The seventh entry (ADR-0021, ADR-0080): the Keyboard Field's composition. The listener above
+    // leaves every composing key alone (ADR-0010), so an IME composes in the field that holds the
+    // keyboard. The field is drawn over the Focus cell while it composes (a class, which the
+    // stylesheet turns into the Cell Editor's look), and the core is told, so the Focus is
+    // revealed if a scroll had taken it away. When the composition ends, its text takes its place
+    // among the held keys (drain): the core opens the Cell Editor in Overwrite holding it, and the
+    // keys typed after it wait for the editor, as after a typed character. The field keeps showing
+    // the text until the keyboard has gone to the editor, so nothing blinks out for a round trip.
+    // Heard always, where the coloured text's own compositionend is heard only while an edit is
+    // open (ADR-0057): this one is for a composition with no edit open.
+    //
+    // DOM focus never moves while a composition lasts: moving it would end the composition there
+    // and then, and the next keys would start another — `kana` would come out `ｋあ`, as the
+    // fifteenth Windows run saw `k穴` in i1y. So a request that the editor take the keyboard
+    // waits while the field composes (focusEditor), and a press that would take it — on the rows,
+    // the headings, or a field beside them — ends the composition first, so that its text
+    // reaches the core ahead of the press (onPress).
+    let keyFieldComposing = false;
+    // How much of the field's value has already been handed on: a second composition finished in
+    // the field before the keyboard left it is appended to the first, and only its own text goes.
+    let keyFieldCarried = 0;
+    // The editor's request for the keyboard, made while the field was composing or as a
+    // composition ended: granted once the field has stopped composing (keyFieldEnded).
+    let deferredEditorFocus = null;
+    // A composition's end holds the keyboard in the field until the task after it, for the key
+    // that ends one composition can start the next: the sixteenth Windows run's k6, where the `k`
+    // of `kanji` ended `かな` and started `ｋ`. The browser tells the page of that start only once
+    // the end's listeners, and everything they ran, have returned — and on WebAssembly that is
+    // the core's whole answer to the text, the Cell Editor opened and its request for the
+    // keyboard made, 22 ms of it in that run. Granted then, between the end and the start, the
+    // request moved DOM focus, the IME carried `ｋ` into the editor without its romaji, and the
+    // `a` composed `あ`: `かな暗示`. The events the IME's key still owes the page are waiting by the
+    // end of that task, and the browser runs waiting input ahead of a timer, so a timer of no
+    // delay is the first moment the next composition, if there is one, has said so. No layout is
+    // read, and nothing is listened to (ADR-0021's seventh entry).
+    let keyFieldEndTimer = 0;
+    // The field goes back to being unseen and empty: once the keyboard has left it, or when the
+    // composition's text opened nothing (a cell that does not edit).
+    const settleKeyField = () => {
+        const field = keyFieldOf();
+        if (field === null || keyFieldComposing) {
+            return;
+        }
+        field.value = '';
+        keyFieldCarried = 0;
+        field.classList.remove('ex-key-field-composing');
+    };
+    const onKeyFieldCompositionStart = (event) => {
+        if (!core || !isKeyField(event.target)) {
+            return;
+        }
+        keyFieldComposing = true;
+        event.target.classList.add('ex-key-field-composing');
+        if (editing === 'none' && !answering) {
+            core.invokeMethodAsync('OnKeyFieldCompositionStartAsync').catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear a composition', error);
+                }
+            });
+        }
+    };
+    const onKeyFieldCompositionEnd = (event) => {
+        const field = event.target;
+        if (!core || !isKeyField(field)) {
+            return;
+        }
+        keyFieldComposing = false;
+        carryKeyFieldText(field);
+    };
+    // The text the field holds past what has already gone takes its place among the held keys,
+    // and a request for the editor's focus that waited for it, or that the core makes in answer to
+    // it before this task is over, is granted in the task after (keyFieldEndTimer).
+    const carryKeyFieldText = (field) => {
+        clearTimeout(keyFieldEndTimer);
+        keyFieldEndTimer = setTimeout(keyFieldEnded, 0);
+        const text = field.value.slice(keyFieldCarried);
+        keyFieldCarried = field.value.length;
+        held.push({ text });
+        if (!answering) {
+            startHold();
+        }
+        // Ended by the keyboard leaving the field, the text stays only as long as it is on its way.
+        if (document.activeElement !== field) {
+            settleKeyField();
+        }
+    };
+    // The task after a composition's end: the request is granted unless the key that ended it
+    // started another, which it then waits for, as it waits for any composition.
+    const keyFieldEnded = () => {
+        keyFieldEndTimer = 0;
+        const pending = deferredEditorFocus;
+        if (pending !== null && !keyFieldComposing) {
+            deferredEditorFocus = null;
+            handle.focusEditor(pending.bar, pending.fromField);
+        }
+    };
+    root.addEventListener('compositionstart', onKeyFieldCompositionStart, true);
+    root.addEventListener('compositionend', onKeyFieldCompositionEnd, true);
+
+    // The seventh entry's focus listeners (ADR-0021, ADR-0080), on every grid, with a field or not.
+    //
+    // KB-12: the root's ring says the grid holds the keyboard. A text field matches :focus-visible
+    // on every focus, a click's too, so on a grid that edits the root is marked instead
+    // (data-ex-focus-visible, which the stylesheet draws as it draws .ex-grid:focus-visible) while
+    // its field holds the keyboard that did not come of a press on the grid. The capture-phase
+    // mousedown and keydown above say which came last (keyboardByPress), and DOM focus leaving the
+    // grid forgets it: Tab back in is the keyboard's. An attribute, which no render of the core
+    // touches: the root's class is rewritten whole whenever it changes. Reads no layout.
+    let keyboardByPress = false;
+    const markFocusVisible = (on) => {
+        if (root) {
+            root.toggleAttribute('data-ex-focus-visible', on);
+        }
+    };
+    // Focus that lands on the root itself — a press on a part of it that takes no focus of its
+    // own, a Consumer's or the scroller's hand-back — goes on to the Keyboard Field at once, before
+    // the next key: Blazor's own focus would land a round trip later on a circuit. One of the five
+    // decisions about focus made in script (ADR-0021). Heard in the capture phase, where the
+    // field's own focus, which does not bubble, is heard too.
+    const onFocused = (event) => {
+        const field = keyFieldOf();
+        if (field === null) {
+            return;
+        }
+        if (event.target === root) {
+            field.focus({ preventScroll: true });
+        } else if (event.target === field) {
+            markFocusVisible(!keyboardByPress);
+        }
+    };
+    // The Keyboard Field left: emptied and unseen again, and the root's ring goes with it. DOM
+    // focus leaving the grid — for another grid, a control of the page's, or nothing — ends the
+    // release of Tab (ADR-0012, ADR-0080): Escape, a press elsewhere, then Tab back into the grid,
+    // and Tab cycles inside the selection again. Counted, so a release answered for an Escape the
+    // departure came after is not granted (releaseTab). The window losing focus is not a
+    // departure: the browser says so with no next holder too, but DOM focus stays where it is,
+    // still the document's active element while the event is told, and comes back there.
+    const onFocusLeft = (event) => {
+        if (isKeyField(event.target)) {
+            settleKeyField();
+            markFocusVisible(false);
+        }
+        const next = event.relatedTarget;
+        if (event.target === document.activeElement || (next instanceof Node && root && root.contains(next))) {
+            return;
+        }
+        tabReleased = false;
+        releaseEndsHeard++;
+        keyboardByPress = false;
+    };
+    root.addEventListener('focus', onFocused, true);
+    root.addEventListener('focusout', onFocusLeft, true);
+
+    // A press into the Formula Bar's text, with no edit open, opens one (ADR-0051): a change of
+    // editing mode, which this listener is told a round trip later on a circuit. Until then the
+    // gate would take the keys typed into the bar as the browser's — F2 would do nothing and ↓
+    // would only move the caret (found on the Server host, 2026-09-27) — and a key already held
+    // for another reason would be handed on against "not editing" and lost. So the press takes
+    // its place among held keys, and the keys after it are held until the core has answered it
+    // and gated against the mode it left, as after a key that changes the mode (ADR-0010). The
+    // press itself passes untouched: DOM focus onto the bar is its default, and the bar's focus
+    // is what the core answers. Only a field that takes typing — a read-only bar opens nothing —
+    // and only one not already holding DOM focus, which a press would not focus again.
+    //
+    // With an edit open in the cell the press is held the same way. It moves the edit into the
+    // bar in Caret (ED-29), a change of mode too; and on a circuit the bar's text is a round trip
+    // behind the typing in the cell. A key typed into the bar before the core's answer went into
+    // that older text, and the render of the cell's last input then wrote the cell's text over
+    // it: the keys were gone from the page, while the core held the older text with them, which
+    // Enter would have committed (found on CI, the Server host, 2026-10-01). Held, they are typed
+    // once the answer is in, into the text the answer left.
+    const holdsBarPress = (event) => {
+        const target = event.target;
+        return !!core && !replaying && event.button === 0
+            && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)
+            && !target.readOnly && !target.disabled && document.activeElement !== target
+            && target.closest('.ex-formula-bar-text') !== null && root.contains(target);
+    };
+    const holdBehindBarPress = () => {
+        held.push({ barPress: true });
+        if (!answering) {
+            startHold();
+        }
+    };
+    // Asked once the press's focus has gone to the core: focusing the bar is the press's default
+    // action, dispatched after the listener in the same task, so the question waits for a later
+    // task. The core answers once that focus has been handled in full (ExGrid.PressAnsweredAsync).
+    //
+    // The press's focus reaches the core at once, but its turn among the held keys comes later:
+    // a press on the rows held before it can end, in its turn, the edit the bar's focus joined
+    // (a character typed onto a cell, a row pressed, the bar pressed, all within one round
+    // trip). The bar still holds DOM focus, and the keys after it are the bar's — so, at its
+    // turn, the core is told whether the bar is still where the keyboard is, and answers the
+    // press again from there if no edit stands.
+    const answerBarPress = async () => {
+        await new Promise((resolve) => setTimeout(resolve));
+        const active = document.activeElement;
+        const inBar = active instanceof Element && root.contains(active)
+            && active.closest('.ex-formula-bar-text') !== null;
+        await core.invokeMethodAsync('BarPressAnsweredAsync', inBar).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to answer a press', error);
+            }
+        });
+        await editorSettled();
+    };
+
+    // A press on the rows keeps its place among held keys (ADR-0021/0010, ED-22). While keys
+    // are held, or a change of editing mode is being answered, a primary-button press on the
+    // rows is held too, in order, and its release with it: a click straight after Enter
+    // reached C# before the held Enter, and the Enter's move carried the Focus past the
+    // clicked cell. When nothing is held the press passes through untouched, and while an edit
+    // is open the keys after it wait for its answer (holdBehindPress). No layout is read.
+    const mouseInit = (event) => ({
+        bubbles: true, cancelable: true, view: window, detail: event.detail,
+        screenX: event.screenX, screenY: event.screenY, clientX: event.clientX, clientY: event.clientY,
+        ctrlKey: event.ctrlKey, shiftKey: event.shiftKey, altKey: event.altKey, metaKey: event.metaKey,
+        button: event.button, buttons: event.buttons,
+    });
+
+    // This grid's own rows and headings, not those of a grid nested in one of its cells, whose
+    // own scroller stands nearer: a press on the rows lands on the Viewport (cells are
+    // pointer-events: none), and one on the column headings anywhere in their band. A press into
+    // the Cell Editor's own text is not one: it takes the keyboard by its own default.
+    const inOwnScroller = (target) => target instanceof Element && !!scroller
+        && target.closest('.ex-scroller') === scroller;
+    const isOwnRows = (target) => inOwnScroller(target) && target.classList.contains('ex-viewport');
+    const isOwnRowsOrHeadings = (target) => isOwnRows(target)
+        || (inOwnScroller(target) && target.closest('.ex-header') !== null);
+    // What a press or release on this grid's own rows was taken against (ED-31; ADR-0021, note of
+    // 2026-10-02): the offsets the browser gave it, the first row the Viewport painted, the
+    // horizontal scroll, and the row order and the columns and row height the painting render
+    // carried (data-ex-sequence, data-ex-layout). A replayed event is measured again, against the
+    // rows painted at the replay, so a held press replayed after a key had moved the view landed on
+    // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
+    // Server host: the `2` typed next went into F18). The core is told this just before Blazor
+    // dispatches the event — at once, or at the replay of a held one — and resolves the cell
+    // against it. Reads attributes and the scroll offset; nothing is measured.
+    const takenAt = (event) => {
+        const viewport = event.target;
+        const number = (name) => {
+            const value = viewport.getAttribute(name);
+            return value === null ? -1 : Number(value);
+        };
+        return {
+            x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
+            left: scroller ? scroller.scrollLeft : 0,
+            sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
+        };
+    };
+    const tellTaken = (kind, taken) => {
+        if (!core || !taken) {
+            return;
+        }
+        core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
+            taken.sequence, taken.layout).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to hear where a press was taken', error);
+            }
+        });
+    };
+
+    // The text field to put the keyboard back into: the surface that last held it while it is
+    // still there, or else the first of this grid's own (surfaceField).
+    const standingField = () => surfaceField(ownSurface(lastSurface));
+    // The hold behind a press (ADR-0010, widened 2026-09-29; ADR-0021's note of the same day). A
+    // press on the rows while an edit is open commits and moves, or points, so the mode the next
+    // key meets is the core's answer to it: the keys typed after it are held, in order, until
+    // that answer, and handed on against the mode it leaves. `99` typed over a cell, a press on
+    // another, `7` at once: where the core keeps DOM focus in the editor through the press
+    // (ADR-0051), the `7` went into the editor the commit was removing, and was lost. The press
+    // itself passes on untouched.
+    //
+    // The core answers for the press or release it heard last (ExGrid.PressAnsweredAsync), so
+    // the question goes after the press has reached it and ahead of its release: from a later
+    // task, or from this grid's own release (onRelease), which runs before Blazor hears it,
+    // whichever comes first. A click made in one go releases before a later task runs, and a
+    // release answered in the press's place overtook the press's hand-back (found on the Server
+    // host). The answer also takes off the mark the press left on a field beside the rows: a
+    // press that committed has had its hand-back by then, and one that pointed has left the edit
+    // open, the field the user's again.
+    const askAboutPress = () => {
+        const press = pressToAsk;
+        if (press === null) {
+            return;
+        }
+        pressToAsk = null;
+        const answered = core
+            ? core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to answer a press', error);
+                }
+            })
+            : Promise.resolve();
+        answered.then(() => {
+            if (press.mark !== null && staleMarks === press.mark) {
+                staleField = null;
+            }
+            press.resolve();
+        });
+    };
+    const holdBehindPress = (mark) => {
+        askAboutPress();
+        pressAnswer = new Promise((resolve) => {
+            pressToAsk = { mark, resolve };
+        });
+        setTimeout(askAboutPress);
+        if (!answering) {
+            startHold();
+        }
+    };
+
+    // A press handed on through a Pointing Scope keeps its place among the keys of the grid that
+    // points (ADR-0058, "On a circuit"; ADR-0021's note of 2026-09-30). On a circuit, the text this
+    // grid's Consumer writes for a press reaches the pointing grid's field a round trip later, and a
+    // key typed there meanwhile would reach the field first; and this grid sends its press to its
+    // own core, where it could overtake keys typed before it that the pointing grid still holds
+    // (`=1+` and a press at once gave `=XLOOKUP(...)`). So, while this grid is pointed at, the render
+    // that says so names the root of the grid that points (data-ex-pointed-from), and each primary
+    // press on the rows or the headings that goes on to Blazor — at once, or at its replay if it
+    // was held here — is told to that root by one event. The listener there (onPressHandedOn) gives
+    // the press its place among its keys: it says when the keys before it have been handed on
+    // (inTurn), and holds the keys after it until this grid's core has answered the press
+    // (answered). This core hands the press over only once it is in turn, and answers it once its
+    // Consumer has taken it — written or refused — or at once, for a press that hands nothing over
+    // (ExGrid.PressHandedOnAsync). The core is told of the press here, in the capture phase, ahead
+    // of Blazor's own dispatch of it, so the press it hears next is the one it was told of.
+    //
+    // Nothing is kept of the other grid: its root is found from this render's attribute at the
+    // press, and the event is the whole message. An event nobody takes — a root with no listener —
+    // leaves the press to go on at once. Reads an attribute; no layout.
+    let pressesHandedOn = 0;
+    const handOn = (event) => {
+        const pointing = root ? root.getAttribute('data-ex-pointed-from') : null;
+        if (!core || !pointing || event.button !== 0 || !isOwnRowsOrHeadings(event.target)) {
+            return;
+        }
+        const other = root.ownerDocument.getElementById(pointing);
+        if (!(other instanceof Element) || other === root || !other.classList.contains('ex-grid')) {
+            return;
+        }
+        const press = ++pressesHandedOn;
+        let told = false;
+        let inTurn = false;
+        let answer = null;
+        const answered = new Promise((resolve) => {
+            answer = resolve;
+        });
+        const detail = {
+            inTurn: () => {
+                if (inTurn) {
+                    return;
+                }
+                inTurn = true;
+                if (told && core) {
+                    core.invokeMethodAsync('PressInTurn', press).catch((error) => {
+                        if (core) {
+                            console.error('[ex-grid] the grid failed to hand on a press', error);
+                        }
+                    });
+                }
+            },
+            answered,
+        };
+        const taken = !other.dispatchEvent(new CustomEvent('ex-press-handed-on', { cancelable: true, detail }));
+        if (!taken) {
+            answer();
+            return;
+        }
+        told = true;
+        answer(core.invokeMethodAsync('PressHandedOnAsync', press, inTurn).catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to hand on a press', error);
+            }
+        }));
+    };
+
+    // A press on another grid, handed on to this root while this grid points at it (handOn, on
+    // that grid's listener). It takes its place among the keys held here: with nothing held and
+    // nothing being answered it is in turn at once; otherwise it waits in the queue, and is in turn
+    // when the drain reaches it, after every key typed before it. The keys typed after it are held
+    // until the other grid's core has answered it, and are then handed on against the mode that
+    // answer leaves: the hold behind a press on this grid's own rows (holdBehindPress), whose
+    // answer is the other core's because only that core knows whether it handed the press over at
+    // all. Taking the event (preventDefault) says the press has its place here.
+    const onPressHandedOn = (event) => {
+        const hand = event.detail;
+        if (!core || !hand || typeof hand.inTurn !== 'function') {
+            return;
+        }
+        event.preventDefault();
+        if (answering) {
+            held.push({ handedOn: hand });
+            return;
+        }
+        hand.inTurn();
+        pressAnswer = hand.answered;
+        handedOnAnswer = pressAnswer;
+        startHold();
+    };
+    root.addEventListener('ex-press-handed-on', onPressHandedOn);
+
+    const onPress = (event) => {
+        // A press while the Keyboard Field composes (ADR-0080): the press would end the
+        // composition by its default, after the core had heard the press, and the composed text
+        // would open an edit wherever the press had moved the Focus. So the composition ends
+        // here first — the field gives up the keyboard, and the IME ends it there — and its text
+        // is held ahead of the press, which is then held behind it as behind any key. One of the
+        // six decisions about focus made in script (ADR-0021).
+        if (keyFieldComposing && core && !replaying && event.button === 0) {
+            keyFieldOf()?.blur();
+        }
+        // A press on the grid ends a release of Tab: the user has come back to it (ADR-0012,
+        // 2026-10-01). A held press ends it again at its replay, after the answer it waited for.
+        // And the keyboard this press brings to the Keyboard Field shows no ring (KB-12).
+        tabReleased = false;
+        if (!replaying) {
+            releaseEndsHeard++;
+            keyboardByPress = true;
+        }
+        // A press into a field beside the rows gives that field a focus of its own, which a
+        // late hand-back leaves alone (reclaimFocus).
+        if (event.target instanceof Element && event.target.closest('.ex-formula-bar') !== null) {
+            staleField = null;
+        }
+        // A press that gives the Name Box the keyboard has its text selected at its release
+        // (nameBoxPressed).
+        const nameBox = event.button === 0 && !replaying ? ownNameBox(event.target) : null;
+        nameBoxPressed = nameBox !== document.activeElement ? nameBox : null;
+        nameBoxSelected = null;
+        // A press into an editor surface puts the keyboard there.
+        noteSurface(event.target);
+        // A press in an editor surface's text puts the caret where it lands: the user's move.
+        if (event.button === 0 && !replaying && isTextField(event.target) && event.target.closest('.ex-editor') !== null) {
+            noteCaretMove(event.target);
+        }
+        if (holdsBarPress(event)) {
+            holdBehindBarPress();
+            return;
+        }
+        // An edit is left standing here when DOM focus goes elsewhere — to another grid, a
+        // control of the page's, or nothing (ADR-0018, section 6). A press on this grid's rows
+        // or headings puts the keyboard back into the surface that last held it, now, before
+        // anything hears the press. The press then points, or commits and moves, exactly as if
+        // the keyboard had never left: where the core keeps DOM focus through a press on the rows
+        // (ADR-0051) it keeps it in the edit, and the hand-back after a commit finds it inside
+        // this root. Handed back from C#, a round trip later, the keys typed in between would
+        // reach the grid the user had just left. This is one of the six decisions about focus
+        // made in script (ADR-0021, added 2026-09-29), beside reclaimFocus, focusEditor, the
+        // root's own focus passed on to its Keyboard Field (onFocused), the field given up by a
+        // press during a composition (above; ADR-0080) and the keyboard handed on to a control of
+        // the Consumer's (handKeyboardTo); it reads document.activeElement and no layout. Held or
+        // not, the press keeps its place among the keys: only where the keyboard is has changed.
+        const focusAtPress = document.activeElement;
+        if (core && !replaying && editing !== 'none' && !(focusAtPress instanceof Element && root.contains(focusAtPress))
+            && isOwnRowsOrHeadings(event.target)) {
+            standingField()?.focus({ preventScroll: true });
+            focusDeclined = false;
+        }
+        // A press on one of the menu's items runs its command and closes the menu, as Enter on it
+        // does (handsOver): a change of who holds the keyboard, and the keys typed after it wait
+        // until the keyboard has followed — to the root, or to what the command opened (handOff;
+        // ADR-0039, 2026-10-01).
+        if (core && !replaying && event.button === 0 && event.target instanceof Element) {
+            const item = event.target.closest('[role=menuitem]');
+            const menu = item ? popoverOf(item) : null;
+            if (item && menu && !item.matches(':disabled, [aria-disabled=true]')) {
+                awaitingMove = { from: item, closes: menu };
+                if (answering) {
+                    holdStartedAt = performance.now();
+                } else {
+                    startHold();
+                }
+            }
+        }
+        // Only a press on this grid's own rows is held or holds the keys after it: one on a
+        // nested grid's rows is that grid's to answer, and this core never hears it. A press that
+        // goes on to Blazor from here, or is replayed, is told to the grid that points, if this
+        // one is pointed at (handOn).
+        // What the press was taken against, told as it goes on to Blazor (takenAt).
+        const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;
+        if (!core || replaying || event.button !== 0 || !isOwnRows(event.target)) {
+            handOn(event);
+            tellTaken('mousedown', taken);
+            return;
+        }
+        // The Formula Bar or the Name Box holding DOM focus, which a press on the rows would take
+        // by its default — read again, after the keyboard may have been put back above.
+        const focusAfterReturn = document.activeElement;
+        const field = focusAfterReturn instanceof Element && root.contains(focusAfterReturn)
+            && focusAfterReturn.closest('.ex-formula-bar') !== null
+            ? focusAfterReturn
+            : null;
+        // Not held, the press goes on as it is, when there is nothing it could overtake: nothing
+        // held, and no key being answered. Behind a press still being answered, with no key held
+        // after it, it goes on too: Blazor keeps presses in order among themselves, and the
+        // second press of a double click reaches it ahead of the double click, as it always did.
+        // Not behind a press on another grid handed on to this root: that one reaches this core
+        // through the other grid's, and this press, which may point too, would overtake it.
+        if (held.length === 0 && (!answering || (pressAnswer !== null && pressAnswer !== handedOnAnswer))) {
+            handOn(event);
+            tellTaken('mousedown', taken);
+            // While an edit is open, the keys after it wait for its answer (holdBehindPress).
+            // Where a press may point, the core also suppresses its default so the keyboard stays
+            // in the edit (ADR-0051), and a Formula Bar the edit was typed in keeps DOM focus
+            // only for that. Should the press commit instead, that focus is left standing, not
+            // the user's choice, and the hand-back takes it as the press would have
+            // (reclaimFocus): the keyboard left in the bar with no edit open took typing that went
+            // nowhere. Where the default is not suppressed, it has moved DOM focus off the bar
+            // already. The mark is for that hand-back alone: a press that points leaves the edit
+            // open with the keyboard in the bar, and a mark left standing would let a later
+            // hand-back — the rows' focus handed on, a popover's dismissal — take the bar the
+            // user is still typing in. It comes off with the press's answer.
+            if (editing !== 'none') {
+                holdBehindPress(field !== null ? markStale(field) : null);
+            }
+            return;
+        }
+        // Out of Blazor's sight until its turn, and so is its default, DOM focus onto the rows:
+        // the rows hand focus on to the root as soon as they get it, a round trip later on a
+        // circuit, and that hand-over is not held. Taken at the press, it overtook the keys
+        // held before it — landing after the Cell Editor a held key had opened took DOM focus,
+        // it took the keyboard from the editor, and every key and click held behind it waited
+        // for an editor that no longer had focus, until the two-second fallback (Server host,
+        // typing-probe-2, 2026-09-27). The keyboard stays where the held keys have it; whether
+        // the press keeps an open edit is the core's to say at its turn (ADR-0051), and a
+        // press that commits it hands the keyboard to the root then.
+        event.preventDefault();
+        event.stopPropagation();
+        // The default suppressed here would have taken DOM focus off a field beside the rows
+        // that held it. That focus is now only left standing, not the user's choice: the
+        // hand-back after the press takes it, as the press would have (reclaimFocus).
+        if (field !== null) {
+            markStale(field);
+        }
+        held.push({ press: 'mousedown', target: event.target, init: mouseInit(event), taken });
+    };
+    // A release is held only behind its press: once the press has been handed on, the
+    // release follows it to Blazor as it comes, and Blazor keeps the two in order.
+    const onRelease = (event) => {
+        // A passed-on press the keys wait behind is asked about now, ahead of this release
+        // (holdBehindPress).
+        if (!replaying) {
+            askAboutPress();
+        }
+        // The press gave the Name Box the keyboard: its whole text is selected now, and stays so
+        // (nameBoxPressed).
+        const nameBox = nameBoxPressed;
+        nameBoxPressed = null;
+        if (nameBox !== null && event.button === 0 && !replaying && document.activeElement === nameBox) {
+            event.preventDefault();
+            nameBox.select();
+            nameBoxSelected = nameBox;
+        }
+        const taken = core && !replaying && isOwnRows(event.target) ? takenAt(event) : null;
+        if (!core || replaying || !held.some((k) => k.press === 'mousedown')) {
+            tellTaken('mouseup', taken);
+            return;
+        }
+        event.stopPropagation();
+        held.push({ press: 'mouseup', target: event.target, init: mouseInit(event), taken });
+    };
+    // A held press or release, handed to Blazor as the event it was, in its place: on the
+    // element it landed on, or on the Viewport if a render has replaced that one, with the core
+    // told first what it was taken against (takenAt): its own offsets and rows, not the replay's.
+    // The keys held behind it wait until the core says it has answered it — a press can commit
+    // an open edit and wait on the Consumer hearing it, and those keys must be gated against the
+    // mode it leaves (ExGrid.PressAnsweredAsync). The listener asks straight after dispatching, so
+    // the core has always heard the press first; the answer is the core's, never a guess.
+    const replayPress = async (k) => {
+        const target = k.target.isConnected ? k.target : root.querySelector('.ex-viewport');
+        if (!target) {
+            return;
+        }
+        tellTaken(k.press, k.taken);
+        replaying = true;
+        try {
+            target.dispatchEvent(new MouseEvent(k.press, k.init));
+        } finally {
+            replaying = false;
+        }
+        await core.invokeMethodAsync('PressAnsweredAsync').catch((error) => {
+            if (core) {
+                console.error('[ex-grid] the grid failed to answer a press', error);
+            }
+        });
+        // The hand-back the press asked for, if it asked for one, has run by now.
+        staleField = null;
+        // An edit the press kept stands with DOM focus in it, and one it ended is gone: the
+        // keys after it are gated once that has settled, as after a key.
+        await editorSettled();
+    };
+    root.addEventListener('mousedown', onPress, true);
+    root.addEventListener('mouseup', onRelease, true);
+
     // The clipboard (ADR-0005) — the fourth allowlist entry (ADR-0021). Both events
     // fire on the focused root — verified on the real Chrome: a non-editable,
     // user-select:none element with focus receives both — so Ctrl+C / Ctrl+V are never
@@ -701,17 +2123,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Chrome accepts a promise as a ClipboardItem value, so the user-activation context
     // survives the wait. A rejected promise aborts the whole write and the clipboard
     // stays as it was — never a fraction of the selection.
-    const writeAsync = (withHeaders) => {
-        const answer = core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders)
-            .catch((error) => {
-                // A .NET failure — a Consumer delegate that threw, a circuit that
-                // dropped. Reported here, because the null it becomes reads as a
-                // refusal below and would otherwise make the copy a silent no-op.
-                if (core) {
-                    console.error('[ex-grid] the grid failed to build a copy', error);
-                }
-                return null;
-            });
+    const buildCopy = (withHeaders) => core.invokeMethodAsync('BuildCopyPayloadAsync', withHeaders)
+        .catch((error) => {
+            // A .NET failure — a Consumer delegate that threw, a circuit that
+            // dropped. Reported here, because the null it becomes reads as a
+            // refusal below and would otherwise make the copy a silent no-op.
+            if (core) {
+                console.error('[ex-grid] the grid failed to build a copy', error);
+            }
+            return null;
+        });
+    const writeAsync = (withHeaders) => writeCopy(buildCopy(withHeaders));
+    // The write of a copy whose payload is `answer`: a null one is a refusal, and lands nothing.
+    const writeCopy = (answer) => {
         const flavour = (type, field) => answer.then((p) => {
             if (!p) {
                 throw new Error('the copy was refused');
@@ -729,23 +2153,26 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             if (error instanceof Error && error.message === 'the copy was refused') {
                 return;
             }
-            // The browser would not let the grid write. Nothing landed either — but no
-            // reason has been raised yet, and a user told nothing pastes the old
-            // clipboard believing it is the copy. It is a Refusal of its own (ADR-0005).
-            if (error instanceof DOMException && error.name === 'NotAllowedError') {
-                if (core) {
-                    core.invokeMethodAsync('OnCopyWriteRejectedAsync').catch((reportError) => {
-                        if (core) {
-                            console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
-                        }
-                    });
-                }
-                return;
-            }
-            if (core) {
-                console.error('[ex-grid] the grid failed to write a copy', error);
-            }
+            copyNotWritten(error);
         });
+    };
+    // A write the browser would not make. Nothing landed — but no reason has been raised
+    // yet, and a user told nothing pastes the old clipboard believing it is the copy. It is
+    // a Refusal of its own (ADR-0005).
+    const copyNotWritten = (error) => {
+        if (error instanceof DOMException && error.name === 'NotAllowedError') {
+            if (core) {
+                core.invokeMethodAsync('OnCopyWriteRejectedAsync').catch((reportError) => {
+                    if (core) {
+                        console.error('[ex-grid] the grid failed to report a rejected copy', reportError);
+                    }
+                });
+            }
+            return;
+        }
+        if (core) {
+            console.error('[ex-grid] the grid failed to write a copy', error);
+        }
     };
     const onCopy = (event) => {
         // Only when the root itself holds the keyboard: a control inside a Template
@@ -799,28 +2226,125 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // in C# (ADR-0014). preventDefault regardless: pasting into a non-editable
         // element does nothing by default, and must not start doing something later.
         event.preventDefault();
-        // Handed over as streams, never as two strings in one call (ADR-0005): on a
-        // Blazor Server circuit that call is one hub message, and a message past the
-        // hub's receive limit — 32 KB unless the application raised it — closes the
-        // connection. Excel's HTML for a few hundred cells is past it. A stream is
-        // Blazor's own route for large interop data and is not subject to that limit;
-        // its length travels with it, so C# can refuse a paste past the grid's ceiling
-        // without reading a byte. An empty flavour is sent as nothing at all.
+        sendPaste(event.clipboardData.getData('text/plain'), event.clipboardData.getData('text/html'));
+    };
+    // Handed over as streams, never as two strings in one call (ADR-0005): on a
+    // Blazor Server circuit that call is one hub message, and a message past the
+    // hub's receive limit — 32 KB unless the application raised it — closes the
+    // connection. Excel's HTML for a few hundred cells is past it. A stream is
+    // Blazor's own route for large interop data and is not subject to that limit;
+    // its length travels with it, so C# can refuse a paste past the grid's ceiling
+    // without reading a byte. An empty flavour is sent as nothing at all.
+    const sendPaste = (plain, markup) => {
         const encoder = new TextEncoder();
         const stream = (value) => (value
             ? DotNet.createJSStreamReference(encoder.encode(value))
             : null);
-        const text = stream(event.clipboardData.getData('text/plain'));
-        const html = stream(event.clipboardData.getData('text/html'));
-        core.invokeMethodAsync('OnPasteStreamsAsync', text, html)
+        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup))
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
                 }
             });
     };
+
+    // A copy, cut or paste fired by a clipboard key let through a hold (onKeyDown), taken in the
+    // key's place among the held keys and done at its turn (takeClipboard; ADR-0010, 2026-10-02).
+    // Taken before any other listener hears it, and before the default of a field that holds the
+    // keyboard: done now, it would overtake the keys typed before it — a paste into a field ahead
+    // of the text it follows, a copy of the Selection a held press is about to move.
+    const onHeldClipboard = (event) => {
+        if (!clipboardKeyHeld || !core) {
+            return;
+        }
+        clipboardKeyHeld = false;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.type === 'paste') {
+            held.push({
+                clipboard: 'paste',
+                plain: event.clipboardData.getData('text/plain'),
+                markup: event.clipboardData.getData('text/html'),
+            });
+        } else if (event.type === 'copy') {
+            // The write started inside the event, as the browser lets a copy write
+            // (writeAsync), and built at its turn: the grid's copy of the Selection then, or
+            // nothing at all.
+            let take = null;
+            const turn = new Promise((resolve) => {
+                take = resolve;
+            });
+            const answer = turn.then((grids) => (grids ? buildCopy(false) : null));
+            writeCopy(answer);
+            held.push({ clipboard: 'copy', take, answer });
+        } else {
+            held.push({ clipboard: 'cut' });
+        }
+        if (!answering) {
+            startHold();
+        }
+    };
+
+    // A held copy, cut or paste at its turn, done where the keyboard is then, as the browser
+    // would have done it there. With the keyboard the grid's, the grid's copy of the Selection or
+    // its paste, and the keys after it wait for the core's answer; no cut, which the grid does
+    // not make unheld either. In a text field — a popover's, the Name Box, the Formula Bar, the
+    // Cell Editor — the field's own: its selection copied as plain text, cut, or replaced by what
+    // is pasted, with each line break a space in a one-line field, as Chromium pastes it there.
+    // On any other control, nothing, as there.
+    const takeClipboard = async (k) => {
+        // Where the keyboard is: a control, the open edit's surface, or with no edit open the
+        // Formula Bar a press has given it — a read-only one, over a cell that is not Editable,
+        // where a paste does nothing. Only with none of these is it the grid's.
+        const active = document.activeElement;
+        let field = focusedControl() ?? (deliveringOutside ? outsideControl() : null);
+        if (field === null && editing !== 'none') {
+            field = editorInput();
+        } else if (field === null && active instanceof Element && root.contains(active) && !isRoot(active)) {
+            field = active;
+        }
+        if (field === null && editing === 'none') {
+            if (k.clipboard === 'copy') {
+                k.take(true);
+                await k.answer;
+            } else if (k.clipboard === 'paste') {
+                await sendPaste(k.plain, k.markup);
+            }
+            return;
+        }
+        if (k.clipboard === 'copy') {
+            k.take(false);
+        }
+        const writable = field !== null && isTextField(field);
+        const readable = writable || (field instanceof HTMLInputElement && field.type === 'text')
+            || field instanceof HTMLTextAreaElement;
+        if (!readable || (k.clipboard !== 'copy' && !writable)) {
+            return;
+        }
+        if (k.clipboard === 'paste') {
+            // Typed at the caret as a held key's text is (typeInto). No text, no change.
+            if (k.plain === '') {
+                return;
+            }
+            typeInto(field, { text: field instanceof HTMLInputElement ? k.plain.replace(/\r\n|\r|\n/g, ' ') : k.plain });
+            return;
+        }
+        const start = field.selectionStart ?? field.value.length;
+        const end = field.selectionEnd ?? start;
+        if (start === end || field.type === 'password') {
+            return;
+        }
+        await navigator.clipboard.writeText(field.value.slice(start, end)).catch(copyNotWritten);
+        if (k.clipboard === 'cut') {
+            // The selection deleted as a held Delete deletes it (typeInto).
+            typeInto(field, { key: 'Delete' });
+        }
+    };
     root.addEventListener('copy', onCopy);
     root.addEventListener('paste', onPaste);
+    root.addEventListener('copy', onHeldClipboard, true);
+    root.addEventListener('cut', onHeldClipboard, true);
+    root.addEventListener('paste', onHeldClipboard, true);
 
     // The Scrollbar Gutter — how much of the declared box the scrollbars take. A classic
     // scrollbar is drawn INSIDE the element's own box, so the columns and rows get about
@@ -885,7 +2409,67 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         observer.observe(scroller, { box: 'content-box' });
     }
 
-    return {
+    // The Layout Ceiling (ADR-0053, the sixth allowlist entry). Chromium clamps any layout
+    // length just under 2^25 zoomed pixels, so in CSS pixels the tallest element it lays out
+    // depends on the display scale and the page zoom — and devicePixelRatio does not say
+    // which: emulation moves one without the other. So it is not computed: C# renders an
+    // element declared 2^25 px tall inside a zero-size box, and the size the browser lays
+    // it out at IS the ceiling. The observer reports it once at attach, and again only when
+    // the scale or the zoom moves it; nothing here reads layout on the path to a paint, and
+    // nothing writes to the DOM.
+    let ceiling = -1;
+    const ceilingProbe = root.querySelector(':scope > .ex-ceiling-probe > div');
+    const ceilingObserver = new ResizeObserver((entries) => {
+        if (!core || entries.length === 0) {
+            return;
+        }
+        const size = entries[entries.length - 1].borderBoxSize[0];
+        if (!size || size.blockSize === ceiling) {
+            return;
+        }
+        ceiling = size.blockSize;
+        core.invokeMethodAsync('OnLayoutCeilingAsync', ceiling)
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to take the layout ceiling', error);
+                }
+            });
+    });
+    if (ceilingProbe) {
+        ceilingObserver.observe(ceilingProbe);
+    }
+
+    // The Device Pixel (ADR-0090, the eighth allowlist entry). Lines are drawn in Device
+    // Pixels and column edges are put on them, so C# needs devicePixelRatio at every
+    // resolution, not only at the stylesheet's steps. It is told, never read on the path to
+    // a paint: a media query on the current resolution stops matching when the display
+    // scale or the page zoom moves, and only then is the new ratio reported and the query
+    // armed again on it. Never per render, and nothing here writes to the DOM.
+    let devicePixelRatio = -1;
+    let resolutionQuery = null;
+    const armResolution = () => {
+        resolutionQuery?.removeEventListener('change', armResolution);
+        resolutionQuery = null;
+        if (!core) {
+            return;
+        }
+        const ratio = window.devicePixelRatio;
+        resolutionQuery = window.matchMedia(`(resolution: ${ratio}dppx)`);
+        resolutionQuery.addEventListener('change', armResolution);
+        if (ratio === devicePixelRatio) {
+            return;
+        }
+        devicePixelRatio = ratio;
+        core.invokeMethodAsync('OnDevicePixelAsync', ratio)
+            .catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to take the device pixel', error);
+                }
+            });
+    };
+    armResolution();
+
+    const handle = {
         // The two pointer reports' switches (ADR-0021's fifth entry): rows for the
         // hover band, rest for the error popover. Told by C#, which knows who consumes
         // what; off, the listener above computes nothing for that report.
@@ -917,13 +2501,90 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // this always writes through the asynchronous API. Still the fourth allowlist
         // entry — the clipboard — and not a fifth (ADR-0021).
         writeCopy: (withHeaders) => writeAsync(withHeaders === true),
-        // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite'
-        // or 'caret'. Set by the core when the mode changes — a mode change is a
-        // different set of claimed keys. (A focusable descendant holding the keyboard
-        // — ADR-0020's interactive cell — is not a mode: it is read off event.target,
-        // which is true whether focus arrived by click or by key.)
-        setEditing: (mode) => {
+        // Which editing mode the key gate runs under (ADR-0010): 'none', 'overwrite',
+        // 'caret', 'point', 'completion' (ADR-0051), 'completionOverPoint' (ADR-0058: a list
+        // open where ←, →, Home, End and the Shift+arrows point) or 'pointed' (ADR-0058: what
+        // Point wrote came from a press on another grid), whether inputs report their caret,
+        // and whether F4 is claimed while editing. Set by the core when the mode changes —
+        // a mode change is a different set of claimed keys. (A focusable descendant holding
+        // the keyboard — ADR-0020's interactive cell — is not a mode: it is read off
+        // event.target, which is true whether focus arrived by click or by key.)
+        setEditing: (mode, reportsCaret, cyclesReferences) => {
+            const opened = editing === 'none' && mode !== 'none';
             editing = mode;
+            reportCaret = reportsCaret === true;
+            cycleReferences = cyclesReferences === true;
+            if (mode === 'none') {
+                caretMoved = null;
+            }
+            // The surface an edit belongs to starts as the one holding DOM focus as it opens — the
+            // Formula Bar a press opened it from — or none yet, and the Cell Editor is taken for
+            // it (standingField); the edit's end forgets it.
+            if (opened || mode === 'none') {
+                lastSurface = opened ? ownSurface(document.activeElement) : null;
+                focusDeclined = false;
+            }
+            watchReferenceTexts(mode !== 'none');
+            // A new state starts a new conversation: a report equal to one sent before it is
+            // news to the core now (the next edit can open on the same text and caret).
+            reportedText = null;
+            reportedCaret = -1;
+            // An edit opened by a press into an editor surface's text keeps the caret where the
+            // press put it (ADR-0051's third round). The press's own selectionchange can have
+            // been reported before the core was editing, and was not heard, so the caret is
+            // reported once more as the edit opens. Read, not measured: no layout is read. An
+            // edit opened by typing or F2 is placed by the core, which disregards this report.
+            if (opened && reportCaret && core) {
+                const input = focusedEditorField();
+                if (input) {
+                    reportCaretOf(input);
+                }
+            }
+        },
+        // After the core wrote the editor's text itself — an accepted candidate, a pointed
+        // Reference, F4's rewrite — the caret goes where the core says (ADR-0051's second
+        // round), or the selection F4's rewrite answered, from the caret to its end. Only while
+        // the surface still holds that text: typed on since, the user's own caret stands.
+        // Also when an edit opens: the caret goes to the end of the opening text, placed rather
+        // than assumed. The caret placed is the core's already, so it is not reported back.
+        // Not after the user moved the caret in that same text, before the placement came: the
+        // user's caret stands, and is reported once more as the user's — its own report can
+        // have reached the core while the placement was in flight, or have been spared as a
+        // repeat.
+        setCaret: (text, caret, end) => {
+            const input = editorInput();
+            if (input && input.value === text) {
+                if (movedByUser(input)) {
+                    reportedText = null;
+                    reportCaretOf(input);
+                    return;
+                }
+                // In view: what Point wrote at the end of a long Formula is read as it is written,
+                // as is the end of F4's selection there, where the browser's own move would show it
+                // (ADR-0058, the thirteenth Windows run; ticket 75).
+                showCaret(input, end);
+                input.setSelectionRange(caret, end);
+                reportedText = text;
+                reportedCaret = caret;
+            }
+        },
+        // Where the keyboard is going (handOff above): to a Consumer's popover the core has
+        // opened, or to a frame of the Consumer's own outside this root. Told before the key's
+        // answer and before the render that closes the menu a command ran from, so the hold
+        // already standing waits for it; with none standing, one starts, for the keys typed on
+        // the root until the keyboard arrives. No focus is moved and no layout is read: what
+        // holds DOM focus is read, as the hold always has.
+        handOff: (to) => {
+            if (!core || (to !== 'popover' && to !== 'frame')) {
+                return;
+            }
+            handOff = to;
+            handOffMissed = false;
+            if (answering) {
+                holdStartedAt = performance.now();
+            } else {
+                startHold();
+            }
         },
         // A popover's contents reported a popup of their own opening or closing
         // (ADR-0039): while one is open, a descendant's Escape is left to it.
@@ -933,34 +2594,173 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // Which keys this grid takes, whether any column edits and whether a search is
         // wired — re-told when a parameter change changes the answer, so a grid that
         // becomes display-only stops taking printable keys, and one whose Consumer stops
-        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0047).
-        setClaims: (takenKeys, editable, findable) => {
+        // listening for undo gives Ctrl+Z back to the page (ADR-0007/0010/0020/0055) — and
+        // which of them the Consumer declared (ADR-0050, item 14).
+        setClaims: (takenKeys, editable, findable, declaredKeys) => {
             taken = new Set(takenKeys);
             canEdit = editable;
             canFind = findable;
+            declared = new Set(declaredKeys ?? []);
         },
-        getScrollOffset: () => (scroller
-            ? { top: scroller.scrollTop, left: scroller.scrollLeft }
-            : { top: 0, left: 0 }),
+        getScrollOffset: () => (pendingReveal
+            ? { top: pendingReveal.top, left: pendingReveal.left }
+            : scroller
+                ? { top: scroller.scrollTop, left: scroller.scrollLeft }
+                : { top: 0, left: 0 }),
         // Where the Focus is kept visible (ADR-0012). The offsets are computed in C#,
         // which is what keeps scrollIntoView out of it: that would tuck the cell under the
-        // sticky header or the Pinned Columns, neither of which it knows about.
-        setScrollOffset: (top, left) => {
-            if (scroller) {
-                scroller.scrollTop = top;
-                scroller.scrollLeft = left;
+        // sticky header or the Pinned Columns, neither of which it knows about. A reveal
+        // names the render that paints it (token), and is written as that render lands
+        // (pendingReveal above); any other write is made at once, and replaces a reveal
+        // still held.
+        setScrollOffset: (top, left, token) => {
+            if (!scroller) {
+                return;
+            }
+            dropReveal();
+            if (token !== undefined && token !== null
+                && Number(root.getAttribute('data-ex-reveal')) < token) {
+                holdReveal({ top, left, token });
+                return;
+            }
+            scroller.scrollTop = top;
+            scroller.scrollLeft = left;
+        },
+        // The first visible row kept across a change of the row height or the Layout Ceiling
+        // (ADR-0028/0053), written only while the scroller still stands where the core last
+        // knew it (fromTop, to a pixel). A scroll the core has not heard yet moved it, and the
+        // user's scroll wins over an anchor computed from before it: answers false, and the
+        // core reads the offset instead. The comparison is here because only here are the
+        // write and the user's scroll ordered.
+        anchorScrollTop: (top, fromTop) => {
+            const standing = pendingReveal ? pendingReveal.top : scroller?.scrollTop;
+            if (!scroller || Math.abs(standing - fromTop) > 1) {
+                return false;
+            }
+            if (pendingReveal) {
+                pendingReveal.top = top;
+                return true;
+            }
+            scroller.scrollTop = top;
+            return true;
+        },
+        // The keyboard back to this grid's root — to its Keyboard Field where it has one, the
+        // element that holds the keyboard with no edit open (ADR-0080) — asked for by the core a
+        // round trip after the gesture that wanted it (ADR-0021, ADR-0018): only while DOM focus
+        // is still inside this root, or on nothing. A second grid the user has pressed in the
+        // meantime keeps its keyboard. The condition reads document.activeElement and no layout.
+        // It is one of the six decisions about focus made in script, all for the same reason —
+        // made from C#, a round trip late, they would take or leave the keyboard in the wrong
+        // place, or end a composition; the others are the press that brings the keyboard back to
+        // an edit left standing (onPress, ADR-0018 section 6), the open edit's own focus
+        // (focusEditor), the root's own focus passed on to its Keyboard Field (onFocused), the
+        // field given up by a press during a composition (onPress) and the keyboard handed on to
+        // a control of the Consumer's (handKeyboardTo).
+        //
+        // Nor from a field beside the rows with focus of its own — the Formula Bar and the Name
+        // Box, built in or drawn by a Chrome, all inside the band the core renders them into
+        // (ADR-0021, widened 2026-09-28): a row press's hand-back, landing after a press into
+        // one of them, took the keyboard the user had just put there. Only when the core means
+        // to take the keyboard out of that field — Enter or Escape typed in it, an edit in the
+        // bar ending — does it say so, and the field is left. Everything else inside the root,
+        // the Cell Editor over the rows included, is taken back as before.
+        // A field a press on the rows left standing (staleField) — held, or kept for an edit it
+        // might have pointed into, until that press is answered — is not the user's, and is
+        // taken as the press would have taken it.
+        reclaimFocus: (fromField) => {
+            const active = document.activeElement;
+            const own = active instanceof Element && active !== staleField
+                && active.closest('.ex-formula-bar') !== null;
+            if (root && (!active || active === document.body || active === document.documentElement
+                || (root.contains(active) && (fromField === true || !own)))) {
+                staleField = null;
+                (keyFieldOf() ?? root).focus({ preventScroll: true });
             }
         },
-        // Escape's way out of Enter/Tab cycling. Setting focus is Blazor's FocusAsync;
-        // releasing it has no Blazor API, and it is this instance's own root either way.
-        blur: () => {
-            // Whatever inside the grid holds the keyboard, not only the root itself: an
-            // action button that was clicked has DOM focus, and blurring the root would
-            // do nothing at all.
+        // The keyboard this grid holds, handed on to a control of the Consumer's own outside it —
+        // the first control of a frame or a tab the Consumer opened from the grid, a dialog's Close
+        // (HandKeyboardToAsync; ADR-0070's note of 2026-10-02) — in place of that control's own
+        // focus. It lands a round trip after the render that drew the control, and is granted only
+        // while the keyboard is still this grid's: DOM focus inside this root or on nothing, the
+        // condition reclaimFocus reads. A press the user made meanwhile — on the frame's own
+        // content, another grid, a control of the page's — keeps the keyboard where it put it
+        // (ADR-0018), and so does a field beside the rows with focus of its own, as reclaimFocus
+        // leaves it; a field a press on the rows left standing (staleField) is not one, and gives
+        // the keyboard up as it does to reclaimFocus. The sixth decision about focus made in script
+        // (ADR-0021's note of 2026-10-02); it reads document.activeElement and no layout. The
+        // control scrolls into view, as its own focus would have had it.
+        handKeyboardTo: (element) => {
             const active = document.activeElement;
-            if (root && active instanceof HTMLElement && root.contains(active)) {
-                active.blur();
+            const own = active instanceof Element && active !== staleField
+                && active.closest('.ex-formula-bar') !== null;
+            if (root && element instanceof HTMLElement && element.isConnected
+                && (!active || active === document.body || active === document.documentElement
+                    || (root.contains(active) && !own))) {
+                staleField = null;
+                element.focus();
             }
+        },
+        // The core's request that the open edit's surface take the keyboard: on opening, on F2,
+        // after a Reject — the Cell Editor's (bar false) or the Formula Bar's text (bar true),
+        // the built-in field or a Chrome's control inside the core's box, found as the press back
+        // finds it (surfaceField), so the core holds no reference to a control it did not render
+        // (ADR-0010). It lands a round trip after the render that painted the surface, and is
+        // granted only while DOM focus is still inside this root or on nothing, the condition
+        // reclaimFocus reads: a grid or a control the user has pressed in the meantime keeps the
+        // keyboard, and the edit is left standing there (ADR-0018 section 6). The third decision
+        // about focus made in script (ADR-0021's note of 2026-09-30); it reads
+        // document.activeElement and no layout. Declined, the keys held behind the key that
+        // opened the edit go into it (focusDeclined). While the Keyboard Field composes it waits
+        // (ADR-0080, below).
+        //
+        // Nor from a field beside the rows with focus of its own, as reclaimFocus leaves it — the
+        // Formula Bar's text or the Name Box the user pressed while the request was on its way,
+        // whose press the core heard only after asking — unless the core means to take the
+        // keyboard out of that field (fromField: a Reject the press into the Name Box met). The
+        // keyboard stays where the user put it, and the edit goes on there: a request for the
+        // Cell Editor, landing after a press into the bar, took the keyboard from the bar, and the
+        // key typed next opened an edit in the cell (found on CI, msedge, the Server host).
+        focusEditor: (bar, fromField) => {
+            if (!root) {
+                return;
+            }
+            // While the Keyboard Field composes, the request waits for the composition to end
+            // there, and is granted then (carryKeyFieldText; ADR-0080): moving DOM focus now would
+            // end it half-typed. So it does in the task a composition ended in, before the browser
+            // has told the page whether the same key started the next (keyFieldEndTimer).
+            if (keyFieldComposing || keyFieldEndTimer !== 0) {
+                deferredEditorFocus = { bar, fromField };
+                return;
+            }
+            const box = [...root.querySelectorAll('.ex-editor')]
+                .find((b) => ownSurface(b) === b && b.classList.contains('ex-formula-bar-text') === (bar === true));
+            const field = box ? surfaceField(box) : null;
+            if (!field) {
+                return;
+            }
+            const active = document.activeElement;
+            const fieldOfItsOwn = active instanceof Element && active !== staleField && !field.contains(active)
+                && root.contains(active) && active.closest('.ex-formula-bar') !== null;
+            if (fieldOfItsOwn && fromField !== true) {
+                return;
+            }
+            if (!active || active === document.body || active === document.documentElement || root.contains(active)) {
+                focusDeclined = false;
+                // Scrolled into view as Blazor's FocusAsync scrolled it: an editor opened by keys
+                // below the fold is brought on screen.
+                field.focus();
+            } else if (editing !== 'none') {
+                // The surface the core asked for is the edit's: the held keys go into it, and a
+                // press back puts the keyboard there (standingField), the bar's when it was the bar.
+                lastSurface = box;
+                focusDeclined = true;
+            }
+        },
+        // Escape's way out of Enter/Tab cycling (ADR-0012, rewritten 2026-10-01): the next Tab
+        // or Shift+Tab is the browser's, and DOM focus stays where it is meanwhile. Told before
+        // the Escape's answer, so the keys held behind it meet the release.
+        releaseTab: () => {
+            tabReleased = releaseEndsHeard === releaseEndsAtEscape;
         },
         dispose: () => {
             // Left attached, a grid that is gone goes on eating every key its root still
@@ -968,15 +2768,62 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             // scroller and the .NET reference the same way, and a notification arriving
             // after disposal would call into a component that no longer exists.
             observer.disconnect();
+            ceilingObserver.disconnect();
+            resolutionQuery?.removeEventListener('change', armResolution);
+            resolutionQuery = null;
+            dropReveal();
             clearTimeout(restTimer);
             root.removeEventListener('mousemove', onPointerMove);
             root.removeEventListener('mouseleave', onPointerLeave);
             root.removeEventListener('keydown', onKeyDown, true);
+            root.removeEventListener('mousedown', onPress, true);
+            root.removeEventListener('mouseup', onRelease, true);
+            root.removeEventListener('ex-press-handed-on', onPressHandedOn);
+            // A press on another grid still waiting for its turn here is let go: that grid's core
+            // hands it over rather than wait for keys this grid will never hand on.
+            for (const k of held) {
+                k.handedOn?.inTurn();
+            }
+            root.removeEventListener('input', onEditorInput, true);
+            root.removeEventListener('compositionstart', onKeyFieldCompositionStart, true);
+            root.removeEventListener('compositionend', onKeyFieldCompositionEnd, true);
+            root.removeEventListener('focus', onFocused, true);
+            root.removeEventListener('focusout', onFocusLeft, true);
+            clearTimeout(keyFieldEndTimer);
+            keyFieldEndTimer = 0;
+            deferredEditorFocus = null;
+            markFocusVisible(false);
+            document.removeEventListener('selectionchange', onSelectionChange);
+            cancelAnimationFrame(caretFrame);
+            caretFrame = 0;
+            watchReferenceTexts(false);
+            // The grid's highlights go with it: their names are its own, and nothing else paints
+            // or empties them.
+            for (const [name, highlight] of highlights) {
+                if (CSS.highlights.get(name) === highlight) {
+                    CSS.highlights.delete(name);
+                }
+            }
+            highlights.clear();
             root.removeEventListener('copy', onCopy);
             root.removeEventListener('paste', onPaste);
+            root.removeEventListener('copy', onHeldClipboard, true);
+            root.removeEventListener('cut', onHeldClipboard, true);
+            root.removeEventListener('paste', onHeldClipboard, true);
+            lastSurface = null;
+            staleField = null;
+            nameBoxPressed = null;
+            nameBoxSelected = null;
+            // A press still to be asked about has no core left to answer it: the keys held behind
+            // it are let go with the rest.
+            pressToAsk?.resolve();
+            pressToAsk = null;
+            // A copy still held has no grid left to copy from: its write lands nothing.
+            dropHeld();
             root = null;
             scroller = null;
             core = null;
         },
     };
+    return handle;
 }

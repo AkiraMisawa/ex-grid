@@ -359,7 +359,9 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   deal with the real value.
 - **The focused-cell value display may live in Chrome.** Producing the value is the core's;
   painting it is Chrome's (the rule in
-  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)).
+  [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)). *(It arrived as the Formula
+  Bar, [ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md): a band
+  inside the root that a Consumer switches on, and the Cell Editor's second surface.)*
 - **`MinWidth` is also the lower bound for dragging.** A column cannot be crushed until it
   disappears. To hide one, use the column menu's "hide this column", which records the intent
   clearly and goes into the saved view.
@@ -407,6 +409,46 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   did **not** cover weight 600 (9.058px), and `%` at 13.836px broke the single-width contract
   outright, which is what moved the estimate to per-class widths rather than a retuned
   constant.)*
+  *(2026-10-01, ticket 82: "the boldest weight" is wrong for a variable face.)*
+  - Roboto, which `ExGrid.MudBlazor` paints, is variable. Its `/`, `#`, `+` and `−` get narrower as
+    the weight rises: `/` measured 5.781px at 400 and 5.328 at 600.
+  - So each class's width is **the widest of its glyphs at every weight painted**, not at the
+    boldest one.
+  - Roboto's digit class also missed `£`, which measured 8.281px at 600 against 8.0. The class now
+    declares 8.3, and its narrow class 5.8 (bold 5.25).
+- **No glyph a Number Format can emit is charged below its width** *(2026-10-01, from ticket 82's
+  measurement; principle 1).*
+  - Ticket 82 measured 3,015 strings that ExSheet's built-in formats produce across 24 cultures.
+    After its fix, 63 were still estimated as fitting when they did not.
+  - Every one of them held a glyph wider than its class: the currency signs `₼ ₽ ¤ ₱ ₩ ₦ ₪`, or a
+    letter such as `M` in `AM`/`PM` or in a month's name. `₪` measured 12.22px against a wide class
+    of 10.4. Under the core's defaults, `₩` is 15.45px in DejaVu.
+  - A date or a number is then cut instead of shown as `####`, and reads as another value. That is
+    what principle 1 forbids.
+  - So the estimate gains a class for those glyphs, or charges them at a width that covers them.
+    Ticket 83 measures and builds it. It errs towards `####`, never towards a cut number.
+  - *(2026-10-01, ticket 83, built.)* **Letters and currency signs are charged their own measured
+    widths.** Each face's `GlyphWidthTable` holds every letter and currency sign it draws, regular and
+    bold, measured at every weight painted.
+    - The core's table has 438 glyphs: those DejaVu draws, each at the wider of DejaVu and macOS
+      system-ui, measured at 14px and at 12px. Roboto's has 415.
+    - **Glyphs no table holds** fall to a fifth class, **other**, charged at the widest such glyph
+      (15.46px in the core, 12.44 in Roboto). That covers glyphs a face lacks, unforeseen glyphs,
+      and a Consumer's font that supplies no table.
+    - **Only Number and Date values use the table and the other class** (`For(ColumnType)`). Text,
+      headers and labels spill or clip as before, and are charged as before.
+    - **The corpus.** All 3,015 strings, in three faces, at four weights and two sizes, paint within
+      their estimate. The corpus and the tool are in `tests/GlyphWidths`.
+    - **Why a table rather than the other class alone.** Charging every letter at the widest glyph
+      also never cut, but it brought `####` 17px early for a date such as `Sep 30, 2026`. The table
+      lies closer to the painted width than the estimate before ticket 83 did: a median of 4.36px
+      over, against 5.41. That is the user's criterion, as close to Excel as possible.
+    - **The core's widths gained a margin** (digit 9.742 → 9.75), since a lone `0` painted 0.008px
+      past the old average. The Excel preset is measured at 12px, not scaled, because SF is
+      optically sized.
+    - **Public shape:** `GlyphWidthTable`; `CellTextMetrics.GlyphWidths`, `WithGlyphWidths`,
+      `OtherWidthPx` / `BoldOtherWidthPx` and `For(ColumnType)`; `GridPresentationDefaults`'
+      optional glyph widths; `MudExGridPresentation.RobotoGlyphWidths`.
 - **Alignment is a closed enum, not a stylesheet hook** *(added with the tiered-header design)*.
   `CellAlign { Auto, Left, Center, Right }` on the column (`Align`, and `HeaderAlign` for its
   header cell): `Auto` derives from the type — Number/Date right, Text/Boolean left, exactly
@@ -416,3 +458,27 @@ runtime object** (`CONTEXT.md`). Only the interaction with saved views needs set
   defaults to Center ([ADR-0032](./0032-tiered-headers-are-declared-rectangles-not-a-column-tree.md)).
   There is no vertical alignment anywhere: a single-line fixed row centres by construction, and
   a multi-tier header cell centres in its rectangle by arithmetic.
+
+## The `####` fill is cut by the browser at the last whole `#` *(2026-10-02, decided with the user)*
+
+Part C of the eleventh Windows run (case 3c) showed six `#` where Excel showed nine, in a cell that was
+wider than Excel's. The rule above, "the `####` fill counts `#` at its own width", was not what the
+code did: `#` is in the wide class for whether a number fits, and the fill was counted at that class's
+width, 14.04px, the widest `%` measured on any platform. In the face a cell is painted in, `#` is
+narrower, so the run left the cell part empty. The user's criterion for the fill is that it fills the
+cell, as Excel's does, and not that it matches Excel's count, because the face and the cell size
+differ.
+
+- **The run is longer than the cell, and the browser cuts it at the last whole `#` that fits.** The core
+  emits a run counted at half a digit's width, which no supported face draws `#` under. The run may
+  break between any two `#`, and a cell is one line tall, so what does not fit falls to a second line
+  that the cell hides. So the line shown is exactly as many `#` as fit, in the face and the weight the
+  cell is painted in, and never a cut `#` and never an ellipsis.
+- **No measurement.** The browser lays out the run as it lays out any text. Nothing reads its width,
+  and no script is involved (ADR-0021's "text measurement for overflow" stays out).
+- **Whether a number fits is decided exactly as before.** Only the fill's length changes. A number
+  that does not fit is still `####`, its accessible name is still the value (A11Y-7), and the clipboard
+  still takes the value (CP-5).
+- **Only a `####` run may break.** A number that is shown keeps `white-space: nowrap`, so an estimate
+  that came out under the painted width would still show its ellipsis rather than wrap a digit out of
+  sight.

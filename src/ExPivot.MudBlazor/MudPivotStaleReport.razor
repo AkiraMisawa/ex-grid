@@ -1,0 +1,20 @@
+@* The Stale Report's notice under MudBlazor (ADR-0062/0067): a warning MudAlert saying what
+   happened and the time of the data shown, with a Retry MudButton that asks the source again. It
+   stands inside ExPivot's live region under the Pivot Toolbar; MudAlert adds no role of its own, so
+   the notice is announced once, politely. *@
+<MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mud-ex-pivot-stale-notice">
+    <div class="mud-ex-pivot-stale-content">
+        <span class="mud-ex-pivot-stale-message">@Context.Message</span>
+        <MudButton Variant="Variant.Text" Color="Color.Warning" Size="Size.Small" Class="mud-ex-pivot-retry"
+                   StartIcon="@Chrome.IconFor(Context.Retry.Id)" Disabled="@(!Context.Retry.Enabled)"
+                   OnClick="Context.Retry.Invoke">@Context.Retry.Label</MudButton>
+    </div>
+</MudAlert>
+
+@code {
+    /// <summary>What to say and whom to call back (ADR-0067).</summary>
+    [Parameter, EditorRequired] public PivotStaleReportContext Context { get; set; } = default!;
+
+    /// <summary>The Chrome this notice belongs to.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+}

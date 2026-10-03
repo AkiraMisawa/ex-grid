@@ -17,7 +17,12 @@ internal static class TradeColumns
     public static readonly ColumnInfo<Trade> TradedOn = new("TradedOn", ColumnType.Date, t => t.TradedOn);
     public static readonly ColumnInfo<Trade> Cleared = new("Cleared", ColumnType.Boolean, t => t.Cleared);
 
-    public static readonly IReadOnlyList<ColumnInfo<Trade>> All = [Book, Amount, TradedOn, Cleared];
+    // The same field read by columns that declare the other two date types (ADR-0023, section
+    // of 2026-10-02): TradedOn declares none, so it holds DateTime.
+    public static readonly ColumnInfo<Trade> TradedOnDay = new("TradedOnDay", ColumnType.Date, t => t.TradedOn, DateType: DateType.DateOnly);
+    public static readonly ColumnInfo<Trade> TradedAt = new("TradedAt", ColumnType.Date, t => t.TradedOn, DateType: DateType.DateTimeOffset);
+
+    public static readonly IReadOnlyList<ColumnInfo<Trade>> All = [Book, Amount, TradedOn, Cleared, TradedOnDay, TradedAt];
 
     public static GridFilter FilterOn(string column, params FilterClause[] clauses)
         => new(new Dictionary<string, FilterSpec> { [column] = new(clauses) });

@@ -90,6 +90,34 @@ goes through it. A null value paints empty and is not offered to the delegate �
 absent value is a Cell State's business (Missing), not a format's. The delegate owns
 the culture; the grid takes no view on separators.
 
+*(2026-10-01, decided with the user: without a Format, a date or a time shows in an ISO form.)*
+- Without a `Format`, the grid showed a value's own `ToString()`. For a date, that depends on the
+  culture the code runs under: `10/1/2026 12:00:00 AM` under en-US, `2026/10/01 0:00:00` under
+  ja-JP. On the Server host, that is the server's culture, not the reader's. Day and month can be
+  read the wrong way round, which is quietly wrong for a grid that shows money and risk.
+- **So a value with no `Format` shows in one form, whatever the culture**, by its type:
+  - `DateOnly` as `yyyy-MM-dd`;
+  - `DateTime` as `yyyy-MM-dd HH:mm:ss`;
+  - `DateTimeOffset` as `yyyy-MM-dd HH:mm:ss zzz`, for example `+09:00`;
+  - `TimeOnly` as `HH:mm:ss`.
+  The form follows the type, not the value, so a column never mixes forms.
+- **This is ExGrid's choice, not Excel's.** Excel shows its regional short date. ExSheet keeps
+  Excel's built-in formats (ADR-0047, ADR-0071).
+- **A `Format` still wins.** A `DateTime` column that should hide its time declares
+  `yyyy-MM-dd` as its `Format`.
+- **Numbers and the other types are unchanged.** For them, the grid still takes no view on
+  separators.
+- Since this is the one text the grid shows, it is also what copy's `text/plain`, the value list,
+  the Auto width and the editor's opening text use.
+- *(Ticket 94, as built.)* **The Formula Bar's full value of an unformatted date follows the same
+  form** (ticket 95). It showed the current culture's spelling, which on the Server host is the
+  server's, and the same day/month confusion this note removes. ExSheet supplies its own text, so
+  it is not affected.
+- **A filter operand reopens in a text that reads back to the same value.** Ticket 94 found and
+  fixed this for dates: under en-GB, a date operand reopened as `05/01/2026` and OK read it as 1 May.
+  Numbers have the same fault under a comma-decimal culture: `1234.5` reopens as `1234,5`, which
+  reads back as 12345. Ticket 96 fixes it.
+
 **Value-derived decoration** is a second delegate on the column, the **tone rule**
 `Func<object, CellTone>`, answering a closed enum — `None / Positive / Negative` — that is
 painted as an interned class (`ex-tone-positive`, `ex-tone-negative`) and coloured by a

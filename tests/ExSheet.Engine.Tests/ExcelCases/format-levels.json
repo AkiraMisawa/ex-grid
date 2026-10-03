@@ -1,0 +1,415 @@
+{
+  "area": "format-levels",
+  "about": "Number formats and alignment at cell, row and column level, cell over row over column, and how insertion and deletion carry them (ADR-0047, ADR-0046, SH-21). A format action on B:B or 2:2 is set on the whole column or row, as the Format Cells dialog sets it on a selected column or row. A range written with commas, such as B:B,3:3, is several ranges formatted in one step (ADR-0046), as Excel formats a selection of several areas; a cellFormat action sets a Number Format, an alignment or both on them at once. A plain number typed into a cell that shows percentages is divided by 100, Excel's automatic percent entry, which only a typed entry shows: those cases are asked by keys.Microsoft documents that an inserted row takes the formatting of the row above and an inserted column that of the column to its left (the Insert Options button's default, Format Same As Above / Left). Which level wins where a row and a column are both formatted, and what formatting a whole column does to a cell formatted before it, are not documented: those cases are uncertain until the oracle asks Excel.",
+  "cases": [
+    {
+      "id": "LVL-001",
+      "source": "observed",
+      "description": "A number in a formatted column shows the column's format",
+      "cells": {"B5": "1.5"},
+      "action": {"do": "format", "range": "B:B", "format": "0.00"},
+      "check": "B5",
+      "expect": {"text": "1.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-002",
+      "source": "observed",
+      "description": "A number typed into a column after it was formatted shows the column's format",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "enter", "cells": {"B1000": "2"}}
+      ],
+      "check": "B1000",
+      "expect": {"text": "2.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-003",
+      "source": "observed",
+      "description": "A blank cell in a formatted row reports the row's format",
+      "cells": {},
+      "action": {"do": "format", "range": "3:3", "format": "0%"},
+      "check": "Q3",
+      "expect": {"numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-004",
+      "source": "observed",
+      "description": "A row formatted after its column wins where they cross",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "3:3", "format": "0%"}
+      ],
+      "check": "B3",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-005",
+      "source": "observed",
+      "description": "A column formatted after a row wins where they cross: formatting the column formats every cell in it",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "3:3", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"}
+      ],
+      "check": "B3",
+      "expect": {"text": "0.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-006",
+      "source": "observed",
+      "description": "The row formatted before a column keeps its format away from the crossing",
+      "cells": {"C3": "0.5"},
+      "action": [
+        {"do": "format", "range": "3:3", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"}
+      ],
+      "check": "C3",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-007",
+      "source": "observed",
+      "description": "A cell formatted after its column keeps its own format",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "B2", "format": "0%"}
+      ],
+      "check": "B2",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-008",
+      "source": "observed",
+      "description": "Formatting a whole column replaces the format of a cell in it formatted before",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-009",
+      "source": "observed",
+      "description": "A cell set to General inside a formatted column shows General",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "B2", "format": "General"}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-010",
+      "source": "observed",
+      "description": "A row set to General over a formatted column shows General where they cross",
+      "cells": {"B3": "1.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "format", "range": "3:3", "format": "General"}
+      ],
+      "check": "B3",
+      "expect": {"text": "1.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-011",
+      "source": "observed",
+      "description": "Formatting the whole sheet replaces every row's and column's format",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "3:3", "format": "0%"},
+        {"do": "format", "range": "A:XFD", "format": "0.00"}
+      ],
+      "check": "B3",
+      "expect": {"text": "0.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-012",
+      "source": "observed",
+      "description": "A row's alignment is its cells' alignment",
+      "cells": {"D2": "x"},
+      "action": {"do": "align", "range": "2:2", "align": "center"},
+      "check": "D2",
+      "expect": {"alignment": "center"}
+    },
+    {
+      "id": "LVL-013",
+      "source": "observed",
+      "description": "A cell's own alignment wins over its column's",
+      "cells": {"D2": "x"},
+      "action": [
+        {"do": "align", "range": "D:D", "align": "right"},
+        {"do": "align", "range": "D2", "align": "left"}
+      ],
+      "check": "D2",
+      "expect": {"alignment": "left"}
+    },
+    {
+      "id": "LVL-014",
+      "source": "observed",
+      "description": "Alignment and number format are set independently: aligning a column keeps a cell's format",
+      "cells": {"D2": "0.5"},
+      "action": [
+        {"do": "format", "range": "D2", "format": "0%"},
+        {"do": "align", "range": "D:D", "align": "center"}
+      ],
+      "check": "D2",
+      "expect": {"text": "50%", "numberFormat": "0%", "alignment": "center"}
+    },
+    {
+      "id": "LVL-015",
+      "source": "observed",
+      "description": "A row inserted below a formatted row takes its format (Format Same As Above), and a number typed into it is read as a percentage, Excel's automatic percent entry: 0.5 is 0.005 (verification/2026-09-27-windows-excel-2, with real keys)",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "insertRows", "row": 3},
+        {"do": "enter", "cells": {"B3": "0.5"}}
+      ],
+      "check": "B3",
+      "expect": {"value2": 0.005, "text": "1%", "numberFormat": "0%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "LVL-016",
+      "source": "observed",
+      "description": "A formatted row moves down when a row is inserted above it, and the new row takes the unformatted row above",
+      "cells": {"B2": "0.25"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "insertRows", "row": 2},
+        {"do": "enter", "cells": {"B2": "0.5"}}
+      ],
+      "check": "B3",
+      "expect": {"text": "25%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-017",
+      "source": "observed",
+      "description": "A row inserted above a formatted row takes the row above it, not the formatted one below",
+      "cells": {"B2": "0.25"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "insertRows", "row": 2},
+        {"do": "enter", "cells": {"B2": "0.5"}}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-018",
+      "source": "observed",
+      "description": "Deleting a formatted row takes its format with it; the row that moves up brings its own",
+      "cells": {"B3": "0.5"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "deleteRows", "row": 2}
+      ],
+      "check": "B2",
+      "expect": {"text": "0.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-019",
+      "source": "observed",
+      "description": "A column inserted to the right of a formatted column takes its format (Format Same As Left)",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "insertColumns", "column": "C"},
+        {"do": "enter", "cells": {"C7": "3"}}
+      ],
+      "check": "C7",
+      "expect": {"text": "3.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-020",
+      "source": "observed",
+      "description": "Deleting a column moves the formatted columns to its right left with their formats",
+      "cells": {"D4": "3"},
+      "action": [
+        {"do": "format", "range": "D:D", "format": "0.00"},
+        {"do": "deleteColumns", "column": "B"}
+      ],
+      "check": "C4",
+      "expect": {"text": "3.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-021",
+      "source": "observed",
+      "description": "A cell copied out of a formatted column carries the format it showed",
+      "cells": {"B5": "1.5"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "copy", "source": "B5", "destination": "E5"}
+      ],
+      "check": "E5",
+      "expect": {"text": "1.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-022",
+      "source": "observed",
+      "description": "An unformatted cell pasted into a formatted column brings its General with it",
+      "cells": {"E5": "1.5", "B5": "7"},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "copy", "source": "E5", "destination": "B5"}
+      ],
+      "check": "B5",
+      "expect": {"text": "1.5", "numberFormat": "General"}
+    },
+    {
+      "id": "LVL-023",
+      "source": "uncertain",
+      "description": "Undoing a column's format puts back the cell formatted before it",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "format", "range": "B:B", "format": "0.00"},
+        {"do": "undo"}
+      ],
+      "check": "B2",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-024",
+      "source": "uncertain",
+      "description": "Undoing a row's deletion puts back its format",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "2:2", "format": "0%"},
+        {"do": "deleteRows", "row": 2},
+        {"do": "undo"}
+      ],
+      "check": "B2",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-025",
+      "source": "observed",
+      "description": "A format set on several whole columns at once formats each of them",
+      "cells": {"D9": "1.5"},
+      "action": {"do": "format", "range": "B:B,D:D", "format": "0.00"},
+      "check": "D9",
+      "expect": {"text": "1.50", "numberFormat": "0.00"}
+    },
+    {
+      "id": "LVL-026",
+      "source": "observed",
+      "description": "A format set on a block and a whole row at once reaches the row outside the block",
+      "cells": {"A5": "0.5"},
+      "action": {"do": "format", "range": "B2:C3,5:5", "format": "0%"},
+      "check": "A5",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-027",
+      "source": "observed",
+      "description": "A format and an alignment set on a column and a row at once meet where they cross",
+      "cells": {"B3": "0.5"},
+      "action": {"do": "cellFormat", "range": "B:B,3:3", "format": "0.00", "align": "right"},
+      "check": "B3",
+      "expect": {"text": "0.50", "numberFormat": "0.00", "alignment": "right"}
+    },
+    {
+      "id": "LVL-028",
+      "source": "observed",
+      "description": "An alignment set on several cells at once leaves their number formats as they were",
+      "cells": {"D4": "0.5"},
+      "formats": {"D4": "0%"},
+      "action": {"do": "cellFormat", "range": "B2,D4", "align": "center"},
+      "check": "D4",
+      "expect": {"text": "50%", "numberFormat": "0%", "alignment": "center"}
+    },
+    {
+      "id": "LVL-029",
+      "source": "observed",
+      "description": "A column between two formatted at once is left General",
+      "cells": {"C7": "1.5"},
+      "action": {"do": "cellFormat", "range": "B:B,D:D", "format": "0.00", "align": "left"},
+      "check": "C7",
+      "expect": {"text": "1.5", "numberFormat": "General", "alignment": "general"}
+    },
+    {
+      "id": "LVL-030",
+      "source": "uncertain",
+      "description": "Undoing a format set on several ranges at once puts back the cell formatted before it",
+      "cells": {"B2": "0.5"},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "format", "range": "B:B,2:2", "format": "0.00"},
+        {"do": "undo"}
+      ],
+      "check": "B2",
+      "expect": {"text": "50%", "numberFormat": "0%"}
+    },
+    {
+      "id": "LVL-031",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a whole number typed into a percent cell is divided by 100 too: 10 is 10%",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "enter", "cells": {"B2": "10"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.1, "text": "10%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "LVL-032",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a percentage typed into a percent cell is not divided again",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "enter", "cells": {"B2": "50%"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.5, "text": "50%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "LVL-033",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number typed into a column formatted 0.00% is divided by 100",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B:B", "format": "0.00%"},
+        {"do": "enter", "cells": {"B2": "0.5"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.005, "text": "0.50%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "LVL-034",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: text pasted into a percent cell is taken as the number it spells, not divided",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "pasteText", "rows": [["0.5"]], "at": "B2"}
+      ],
+      "check": "B2",
+      "expect": {"value2": 0.5, "text": "50%"}
+    },
+    {
+      "id": "LVL-035",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative number typed into a percent cell is divided by 100",
+      "cells": {},
+      "action": [
+        {"do": "format", "range": "B2", "format": "0%"},
+        {"do": "enter", "cells": {"B2": "-5"}}
+      ],
+      "check": "B2",
+      "expect": {"value2": -0.05, "text": "-5%"},
+      "oracleSkip": "A number set through COM is not read as a percentage; typed with real keys, Excel's automatic percent entry divides it by 100 (verification/2026-09-27-windows-excel-2); ask by keys"
+    }
+  ]
+}

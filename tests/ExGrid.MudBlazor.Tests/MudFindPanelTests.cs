@@ -10,7 +10,7 @@ using Xunit;
 namespace ExGrid.MudBlazor.Tests;
 
 /// <summary>
-/// The find panel under MudBlazor (ADR-0047, WR-1/3): MudBlazor's controls over the whole
+/// The find panel under MudBlazor (ADR-0055, WR-1/3): MudBlazor's controls over the whole
 /// FindContext — the steps, the options, the outcome worded into a live region — deciding
 /// nothing of its own.
 /// </summary>
@@ -31,7 +31,7 @@ public class MudFindPanelTests : MudTestContext
     private IRenderedComponent<ContainerFragment> RenderPanel(FindContext context, MudGridChrome? chrome = null)
         => Render((chrome ?? MudGridChrome.Default).FindPanel(context)!);
 
-    [Fact] // ADR-0047: the field reports its text, and the two steps are the context's
+    [Fact] // ADR-0055: the field reports its text, and the two steps are the context's
     public async Task The_field_and_the_steps_call_back()
     {
         var cut = RenderPanel(Context());
@@ -45,7 +45,7 @@ public class MudFindPanelTests : MudTestContext
         Assert.Equal(1, _previous);
     }
 
-    [Fact] // ADR-0047: Enter is the form's submission — next, and previous with Shift held
+    [Fact] // ADR-0055: Enter is the form's submission — next, and previous with Shift held
     public async Task Enter_steps_forward_and_shift_enter_back()
     {
         var cut = RenderPanel(Context("Novak"));
@@ -58,7 +58,7 @@ public class MudFindPanelTests : MudTestContext
         Assert.Equal(1, _previous);
     }
 
-    [Fact] // ADR-0047 / ADR-0033: the outcome is the Chrome's words, in a live region
+    [Fact] // ADR-0055 / ADR-0033: the outcome is the Chrome's words, in a live region
     public void Not_found_is_worded_into_a_live_region()
     {
         var cut = RenderPanel(Context(outcome: FindOutcome.NotFound));
@@ -68,7 +68,7 @@ public class MudFindPanelTests : MudTestContext
         Assert.Equal("No match", outcome.TextContent.Trim());
     }
 
-    [Fact] // ADR-0047 / ADR-0030 / WR-3: the Chrome's Label words the panel
+    [Fact] // ADR-0055 / ADR-0030 / WR-3: the Chrome's Label words the panel
     public void The_chrome_words_the_panel()
     {
         var chrome = new MudGridChrome { Label = id => id == FindPanelLabelIds.Next ? "Weiter" : null };

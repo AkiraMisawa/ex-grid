@@ -86,8 +86,10 @@ public class InteractiveTests : GridTestContext
     private static Task ClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, int row, int column)
         => ClickAsync(cut, column switch { 0 => 50, 1 => 150, 2 => 350, _ => 450 }, (row * RowHeightPx) + 10);
 
+    // Read from the element that holds the keyboard: Review edits, so this grid's Keyboard Field
+    // carries the attribute, and its root does not (ADR-0080).
     private static string? ActiveDescendant(IRenderedComponent<ExGrid<TestRow>> cut)
-        => cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        => KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
 
     private static IReadOnlyList<string> Chosen(IRenderedComponent<ExGrid<TestRow>> cut)
         => [.. cut.FindAll("button.ex-action-chosen").Select(button => button.TextContent)];
@@ -98,7 +100,7 @@ public class InteractiveTests : GridTestContext
     private Dictionary<int, int> RowRenders(IRenderedComponent<ExGrid<TestRow>> cut)
         => cut.FindComponents<ExGridRow<TestRow>>().ToDictionary(row => row.Instance.RowIndex, row => row.RenderCount);
 
-    private int FocusCalls => JSInterop.Invocations.Count(invocation => invocation.Identifier == FocusIdentifier);
+    private int FocusCalls => Js.FocusCalls;
 
     /// <summary>Scrolls, and lets the fling settle (ADR-0004): a jump of more than a
     /// Viewport paints Placeholders until the delay passes, and a Placeholder is not a
@@ -224,7 +226,7 @@ public class InteractiveTests : GridTestContext
         Assert.Equal(CellAt(cut, 0, Review).Id, ActiveDescendant(cut));
     }
 
-    [Fact] // ADR-0037/0012 / KB-22: Escape leaves the cell, and only the next one leaves the grid
+    [Fact] // ADR-0037/0012 / KB-22 / KB-8: Escape leaves the cell, and only the next one releases Tab
     public async Task Escape_leaves_the_cell_without_releasing_the_grid()
     {
         var cut = RenderGrid();
@@ -234,11 +236,11 @@ public class InteractiveTests : GridTestContext
         await PressAsync(cut, "Escape");
 
         Assert.Empty(Chosen(cut));
-        Assert.Equal(0, Js.BlurCount);
+        Assert.Equal(0, Js.TabReleases);
         Assert.Equal(CellAt(cut, 0, Review).Id, ActiveDescendant(cut));
 
         await PressAsync(cut, "Escape");
-        Assert.Equal(1, Js.BlurCount);
+        Assert.Equal(1, Js.TabReleases);
     }
 
     [Fact] // ADR-0037 / KB-22: a pointer press leaves — even one on the Interactive cell itself
@@ -340,12 +342,38 @@ public class InteractiveTests : GridTestContext
         Assert.All(_noteRenders, render => Assert.Equal(0, render.Request));
     }
 
+    [Fact] // ADR-0037 / ADR-0012 (2026-09-29): a far reveal paints the Focus row in its own render, and hands the request over there
+    public async Task A_far_request_is_handed_over_in_the_render_the_reveal_paints()
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 0, Note);
+        await ScrollAndSettleAsync(cut, 20 * RowHeightPx);
+        _noteRenders.Clear();
+
+        await PressAsync(cut, " ");
+
+        // The reveal moved the view in the render Space caused, so the Focus row was
+        // painted there — rows the Consumer has, not a fling's Placeholders — and took
+        // the request with it.
+        Assert.Contains(Js.ScrolledTo, offset => offset.Top == 0);
+        var request = Assert.Single(_noteRenders, render => render.Request != 0);
+        Assert.Equal("Row 000000", request.Book);
+
+        // The browser's scroll event confirms what is painted: no row is painted again, and
+        // the only Note render is the request's own clearing on the next render (RR-12).
+        var renders = _noteRenders.Count;
+        await ScrollToAsync(cut.Find(".ex-scroller"), 0);
+        Assert.Equal([("Row 000000", 0)], _noteRenders.Skip(renders));
+    }
+
     [Fact] // ADR-0037 / KB-23: the request waits for the cell to be painted
     public async Task The_request_waits_until_the_cell_is_painted()
     {
         var cut = RenderGrid();
         await ClickCellAsync(cut, 0, Note);
-        await ScrollAndSettleAsync(cut, 20 * RowHeightPx);
+        // A jump of more than a Viewport, not yet settled: a fling, painting Placeholders
+        // (ADR-0004), and the reveal's own render paints them too.
+        await ScrollToAsync(cut.Find(".ex-scroller"), 20 * RowHeightPx);
         _noteRenders.Clear();
 
         await PressAsync(cut, " ");
@@ -355,8 +383,8 @@ public class InteractiveTests : GridTestContext
         Assert.DoesNotContain(_noteRenders, render => render.Request != 0);
         Assert.Contains(Js.ScrolledTo, offset => offset.Top == 0);
 
-        // The browser answers the reveal with a scroll event. That jump is a fling, which
-        // paints Placeholders first — still nothing to hand it to…
+        // The browser answers the reveal with a scroll event; the fling is still
+        // unsettled, so there is still nothing to hand it to…
         await ScrollToAsync(cut.Find(".ex-scroller"), 0);
         Assert.DoesNotContain(_noteRenders, render => render.Request != 0);
 
@@ -372,8 +400,10 @@ public class InteractiveTests : GridTestContext
     {
         var cut = RenderGrid();
         await ClickCellAsync(cut, 0, Note);
-        await ScrollAndSettleAsync(cut, 20 * RowHeightPx);
+        // Unsettled, so the reveal's render paints Placeholders and the request waits.
+        await ScrollToAsync(cut.Find(".ex-scroller"), 20 * RowHeightPx);
         await PressAsync(cut, " ");
+        Assert.DoesNotContain(_noteRenders, render => render.Request != 0);
 
         await PressAsync(cut, "ArrowDown");
         // Back onto the very cell that was asked for: a request kept alive would now be

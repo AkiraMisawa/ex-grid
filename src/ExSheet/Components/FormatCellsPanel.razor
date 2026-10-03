@@ -1,0 +1,557 @@
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Rendering
+
+@*
+    Format Cells under the built-in Chrome (ADR-0071): the contents ExSheet shows in the grid's
+    popover frame (ADR-0050 item 16). The frame is the grid's — where it stands, its bound, Escape,
+    a press elsewhere and the box shrinking — and these contents draw what ExSheet offers
+    (FormatCellsOffer), set what the user chooses through the draft, and call back on OK and Cancel.
+    Nothing here decides what a choice means: that is FormatCellsDraft's, under every Chrome.
+
+    The tabs are ARIA's tabs pattern: one tab stop, the arrow keys and Home and End move between the
+    tabs and show the one they reach. Excel's Ctrl+Tab is not offered, as the browser takes it. Each
+    list of choices is a group of native radio buttons, so the arrow keys move inside it as the
+    browser moves them, and a field typed into is bound, never written by hand (SRV-7). No script is
+    added: DOM focus moves by Blazor's FocusAsync when the frame's counts ask (ADR-0039).
+*@
+<form class="ex-format-cells" @onsubmit="OkAsync" @onsubmit:preventDefault>
+    <div class="ex-format-cells-tabs" role="tablist" aria-label="Format Cells">
+        @foreach (var tab in FormatCellsOffer.Tabs)
+        {
+            var shown = tab;
+            <button type="button" role="tab" class="ex-format-cells-tab" id="@TabId(shown)"
+                    aria-selected="@(shown == _tab ? "true" : "false")" aria-controls="@PanelId"
+                    tabindex="@(shown == _tab ? 0 : -1)"
+                    @onclick="() => Show(shown, focus: false)" @onkeydown="OnTabKey"
+                    @ref="_tabs[(int)shown]">@FormatCellsOffer.NameOf(shown)</button>
+        }
+    </div>
+    <div class="ex-format-cells-panel" role="tabpanel" id="@PanelId" aria-labelledby="@TabId(_tab)">
+        @switch (_tab)
+        {
+            case FormatCellsTab.Number:
+                NumberTab(__builder);
+                break;
+            case FormatCellsTab.Alignment:
+                AlignmentTab(__builder);
+                break;
+            case FormatCellsTab.Font:
+                FontTab(__builder);
+                break;
+            case FormatCellsTab.Border:
+                BorderTab(__builder);
+                break;
+            default:
+                FillTab(__builder);
+                break;
+        }
+    </div>
+    @if (_refusal is { } refusal)
+    {
+        <div class="ex-format-cells-refusal" role="alert">@refusal</div>
+    }
+    <div class="ex-popover-actions ex-format-cells-actions">
+        <button type="submit" class="ex-format-cells-ok">OK</button>
+        <button type="button" class="ex-format-cells-cancel" @onclick="Cancel" @ref="_cancel">Cancel</button>
+    </div>
+</form>
+
+@code {
+    private static int _instances;
+
+    // Ids unique on the page, for the tabs' aria-controls and aria-labelledby and the radio groups'
+    // names: two Sheets on one page each have their own (ADR-0018).
+    private readonly string _id = "ex-format-cells-" + Interlocked.Increment(ref _instances).ToString(CultureInfo.InvariantCulture);
+    private readonly ElementReference[] _tabs = new ElementReference[5];
+    private ElementReference _cancel;
+    private FormatCellsTab _tab;
+    private bool _focusTab;
+    private string? _refusal;
+    private int _answeredFocus;
+    private int _answeredLast;
+
+    // What the last render was drawn from: a render the grid's own causes with nothing new for
+    // these contents is skipped, as the grid renders on every scroll frame (ADR-0003).
+    private FormatCellsContext? _drawnFrom;
+    private int _drawnFocus;
+    private int _drawnLast;
+    private bool _parametersChanged = true;
+    private bool _renderFromParameters;
+
+    /// <summary>What ExSheet offers and opens on, and its callbacks (ADR-0071).</summary>
+    [Parameter, EditorRequired] public FormatCellsContext FormatCells { get; set; } = default!;
+
+    /// <summary>The grid's popover frame's context (ADR-0050 item 16): its focus requests and its close.</summary>
+    [Parameter, EditorRequired] public GridPopoverContext Popover { get; set; } = default!;
+
+    private FormatCellsDraft Draft => FormatCells.Draft;
+
+    private string PanelId => _id + "-panel";
+
+    private string TabId(FormatCellsTab tab) => _id + "-tab-" + tab.ToString().ToLowerInvariant();
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => _tab = FormatCells.Tab;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        _parametersChanged = !ReferenceEquals(_drawnFrom, FormatCells)
+            || _drawnFocus != Popover.FocusRequest || _drawnLast != Popover.FocusLastRequest;
+        _drawnFrom = FormatCells;
+        _drawnFocus = Popover.FocusRequest;
+        _drawnLast = Popover.FocusLastRequest;
+        _renderFromParameters = true;
+    }
+
+    /// <inheritdoc />
+    protected override bool ShouldRender()
+    {
+        // A render that follows new parameters draws only what they changed; one that follows the
+        // user's own action here always draws.
+        if (!_renderFromParameters) return true;
+        _renderFromParameters = false;
+        return _parametersChanged;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The frame asks for the first control on opening and when Tab wraps back from the last,
+        // and for the last when Shift+Tab wraps from the first (ADR-0039). The opening's focus does
+        // not scroll: a frame the user has already scrolled is not pulled back.
+        if (Popover.FocusRequest != _answeredFocus)
+        {
+            _answeredFocus = Popover.FocusRequest;
+            _answeredLast = Popover.FocusLastRequest;
+            await FocusQuietlyAsync(_tabs[(int)_tab], preventScroll: firstRender);
+        }
+        else if (Popover.FocusLastRequest != _answeredLast)
+        {
+            _answeredLast = Popover.FocusLastRequest;
+            await FocusQuietlyAsync(_cancel, preventScroll: false);
+        }
+        else if (_focusTab)
+        {
+            _focusTab = false;
+            await FocusQuietlyAsync(_tabs[(int)_tab], preventScroll: false);
+        }
+    }
+
+    private static async Task FocusQuietlyAsync(ElementReference element, bool preventScroll)
+    {
+        if (element.Context is null) return;
+        try
+        {
+            await element.FocusAsync(preventScroll);
+        }
+        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+        {
+            // The frame closed, or the circuit did, between the render and the focus.
+        }
+    }
+
+    private void Show(FormatCellsTab tab, bool focus)
+    {
+        _tab = tab;
+        _focusTab = focus;
+        FormatCells.TabShown(tab);
+    }
+
+    /// <summary>ARIA's tabs pattern: the arrows move to the previous or next tab, wrapping, and Home and End to the first and last; the tab reached is shown.</summary>
+    private void OnTabKey(KeyboardEventArgs e)
+    {
+        var count = FormatCellsOffer.Tabs.Count;
+        var at = (int)_tab;
+        int? to = e.Key switch
+        {
+            "ArrowRight" => (at + 1) % count,
+            "ArrowLeft" => (at + count - 1) % count,
+            "Home" => 0,
+            "End" => count - 1,
+            _ => null,
+        };
+        if (to is { } next) Show(FormatCellsOffer.Tabs[next], focus: true);
+    }
+
+    private async Task OkAsync()
+    {
+        _refusal = null;
+        if (!await FormatCells.Ok()) _refusal = Draft.Refusal;
+    }
+
+    private void Cancel() => FormatCells.Cancel();
+
+    // ---- Number ----
+
+    private void NumberTab(RenderTreeBuilder __builder)
+    {
+        <div class="ex-format-cells-columns">
+            <fieldset class="ex-format-cells-categories">
+                <legend>Category</legend>
+                @foreach (var offer in FormatCellsOffer.Categories)
+                {
+                    var category = offer.Category;
+                    var reasonId = _id + "-reason-" + category.ToString().ToLowerInvariant();
+                    <label class="ex-format-cells-choice">
+                        <input type="radio" name="@(_id + "-category")" checked="@(Draft.Category == category)"
+                               disabled="@(!offer.Enabled)" aria-describedby="@(offer.Enabled ? null : reasonId)"
+                               @onchange="() => Draft.SelectCategory(category)" />
+                        @FormatCellsOffer.NameOf(category)
+                    </label>
+                    @if (offer.DisabledReason is { } reason)
+                    {
+                        <span class="ex-format-cells-reason" id="@reasonId">@reason</span>
+                    }
+                }
+            </fieldset>
+            <div class="ex-format-cells-options">
+                @NumberOptions
+            </div>
+        </div>
+    }
+
+    private RenderFragment NumberOptions => __builder =>
+    {
+        var category = Draft.Category;
+        @if (category == NumberFormatCategory.General)
+        {
+            <p>General cells have no specific number format.</p>
+        }
+        else if (category == NumberFormatCategory.Text)
+        {
+            <p>Text cells show what is typed, as typed.</p>
+        }
+        @if (Draft.TakesDecimalPlaces)
+        {
+            <label class="ex-format-cells-field">
+                Decimal places
+                <input type="number" class="ex-format-cells-places" min="0" max="30"
+                       @bind:get="Draft.DecimalPlaces" @bind:set="SetPlaces" @bind:event="oninput" />
+            </label>
+        }
+        @if (category == NumberFormatCategory.Number)
+        {
+            <label class="ex-format-cells-choice">
+                <input type="checkbox" class="ex-format-cells-separator" checked="@Draft.ThousandsSeparator"
+                       @onchange="e => Draft.SetThousandsSeparator(e.Value is true)" />
+                Use 1000 Separator (,)
+            </label>
+        }
+        @if (category == NumberFormatCategory.Currency)
+        {
+            <p class="ex-format-cells-symbol">Symbol: @Draft.CurrencySymbol</p>
+        }
+        @if (Draft.NegativeNumbers is { Count: > 0 } negatives)
+        {
+            <fieldset class="ex-format-cells-negatives">
+                <legend>Negative numbers</legend>
+                @for (var i = 0; i < negatives.Count; i++)
+                {
+                    var index = i;
+                    <label class="ex-format-cells-choice">
+                        <input type="radio" name="@(_id + "-negative")" checked="@(Draft.NegativeNumber == index)"
+                               @onchange="() => Draft.SetNegativeNumber(index)" />
+                        <code>@negatives[index]</code>
+                    </label>
+                }
+            </fieldset>
+        }
+        @if (category == NumberFormatCategory.Custom)
+        {
+            <label class="ex-format-cells-field">
+                Type
+                <input type="text" class="ex-format-cells-code" spellcheck="false" aria-describedby="@(_id + "-code-refusal")"
+                       @bind:get="Draft.TypeCode" @bind:set="SetCode" @bind:event="oninput" />
+            </label>
+            <span class="ex-format-cells-refusal" id="@(_id + "-code-refusal")">@Draft.NumberFormatRefusal</span>
+        }
+        @if (Draft.Types is { Count: > 0 } types)
+        {
+            <fieldset class="ex-format-cells-types">
+                <legend>@(category == NumberFormatCategory.Custom ? "Codes" : "Type")</legend>
+                @foreach (var type in types)
+                {
+                    var typeCode = type;
+                    <label class="ex-format-cells-choice">
+                        <input type="radio" name="@(_id + "-type")" checked="@(string.Equals(Draft.TypeCode, typeCode, StringComparison.Ordinal))"
+                               @onchange="() => Draft.SetType(typeCode)" />
+                        <code>@typeCode</code>
+                    </label>
+                }
+            </fieldset>
+        }
+    };
+
+    private void SetPlaces(int places) => Draft.SetDecimalPlaces(Math.Clamp(places, 0, 30));
+
+    private void SetCode(string? code) => Draft.SetType(code ?? "");
+
+    // ---- Alignment ----
+
+    private void AlignmentTab(RenderTreeBuilder __builder)
+    {
+        <label class="ex-format-cells-field">
+            Horizontal
+            <select class="ex-format-cells-alignment" @onchange="e => Draft.SetAlignment(Enum.Parse<HorizontalAlignment>((string)e.Value!))">
+                @foreach (var alignment in FormatCellsOffer.Alignments)
+                {
+                    <option value="@alignment" selected="@(Draft.Alignment == alignment)">@FormatCellsOffer.NameOf(alignment)</option>
+                }
+            </select>
+        </label>
+    }
+
+    // ---- Font ----
+
+    private void FontTab(RenderTreeBuilder __builder)
+    {
+        <div class="ex-format-cells-columns">
+            <fieldset class="ex-format-cells-font-styles">
+                <legend>Font style</legend>
+                @foreach (var style in FormatCellsOffer.FontStyles)
+                {
+                    var chosen = style;
+                    <label class="ex-format-cells-choice">
+                        <input type="radio" name="@(_id + "-font-style")" checked="@(Draft.FontStyle == chosen)"
+                               @onchange="() => Draft.SetFontStyle(chosen)" />
+                        @FormatCellsOffer.NameOf(chosen)
+                    </label>
+                }
+            </fieldset>
+            <div class="ex-format-cells-options">
+                <label class="ex-format-cells-field">
+                    Underline
+                    <select class="ex-format-cells-underline" @onchange="e => Draft.SetUnderline((string)e.Value! == Single)">
+                        <option value="None" selected="@(!Draft.Underline)">None</option>
+                        <option value="@Single" selected="@Draft.Underline">@Single</option>
+                    </select>
+                </label>
+                <label class="ex-format-cells-choice">
+                    <input type="checkbox" class="ex-format-cells-strikethrough" checked="@Draft.Strikethrough"
+                           @onchange="e => Draft.SetStrikethrough(e.Value is true)" />
+                    Strikethrough
+                </label>
+                @* Excel's Normal font (ADR-0071, 2026-10-02): checking it sets every part of the Font to
+                   its default. It shows checked while they are, so unchecking it changes nothing, and
+                   the click that would only clear the box is not let through. *@
+                <label class="ex-format-cells-choice">
+                    <input type="checkbox" class="ex-format-cells-normal-font" checked="@Draft.IsNormalFont"
+                           @onclick:preventDefault="Draft.IsNormalFont"
+                           @onchange="e => { if (e.Value is true) Draft.SetNormalFont(); }" />
+                    Normal font
+                </label>
+            </div>
+        </div>
+        <fieldset class="ex-format-cells-colour">
+            <legend>Colour</legend>
+            @Palette(ColourTarget.Font, Draft.FontColour)
+        </fieldset>
+    }
+
+    private const string Single = "Single";
+
+    // ---- Border ----
+
+    private void BorderTab(RenderTreeBuilder __builder)
+    {
+        <div class="ex-format-cells-columns">
+            <fieldset class="ex-format-cells-line-styles">
+                <legend>Style</legend>
+                <div class="ex-format-cells-columns">
+                    @foreach (var column in FormatCellsOffer.LineStyleColumns)
+                    {
+                        <div class="ex-format-cells-line-column">
+                            @foreach (var style in column)
+                            {
+                                var chosen = style;
+                                <label class="ex-format-cells-choice" title="@FormatCellsOffer.NameOf(chosen)">
+                                    <input type="radio" name="@(_id + "-line-style")" aria-label="@FormatCellsOffer.NameOf(chosen)"
+                                           checked="@(Draft.LineStyle == chosen)" @onchange="() => Draft.SetLineStyle(chosen)" />
+                                    @LineSample(chosen)
+                                </label>
+                            }
+                        </div>
+                    }
+                </div>
+            </fieldset>
+            <div class="ex-format-cells-options">
+                <div class="ex-format-cells-presets" role="group" aria-label="Presets">
+                    @foreach (var preset in FormatCellsOffer.Presets)
+                    {
+                        var chosen = preset;
+                        <button type="button" class="ex-format-cells-preset" disabled="@(!Draft.CanApply(chosen))"
+                                @onclick="() => Draft.ApplyPreset(chosen)">@chosen</button>
+                    }
+                </div>
+                <div class="ex-format-cells-edges" role="group" aria-label="Border">
+                    @foreach (var edge in FormatCellsOffer.Edges)
+                    {
+                        var chosen = edge;
+                        <button type="button" class="ex-format-cells-edge" data-edge="@chosen" disabled="@(!Draft.CanSet(chosen))"
+                                aria-pressed="@PressedOf(Draft.EdgeLine(chosen))"
+                                @onclick="() => Draft.ToggleEdge(chosen)">@FormatCellsOffer.NameOf(chosen)</button>
+                    }
+                </div>
+                @Preview
+            </div>
+        </div>
+        <fieldset class="ex-format-cells-colour">
+            <legend>Colour</legend>
+            @Palette(ColourTarget.Border, Draft.LineColour)
+        </fieldset>
+    }
+
+    // An edge shows its line; one whose cells' sides differ reads mixed, as Excel's reads its button.
+    private static string PressedOf(BorderLine? line) => line switch
+    {
+        null => "mixed",
+        { IsNone: true } => "false",
+        _ => "true",
+    };
+
+    // A line style's sample, as the Border tab draws it: a stroke and its dashes. Only a picture of
+    // the style; how a Border is painted on the Sheet is the grid's (ADR-0071).
+    private static RenderFragment LineSample(BorderLineStyle style) => __builder =>
+    {
+        var (width, dashes) = StrokeOf(style);
+        <svg class="ex-format-cells-line" width="56" height="8" aria-hidden="true">
+            @if (style == BorderLineStyle.Double)
+            {
+                <line x1="0" y1="2.5" x2="56" y2="2.5" stroke="currentColor" stroke-width="1" />
+                <line x1="0" y1="5.5" x2="56" y2="5.5" stroke="currentColor" stroke-width="1" />
+            }
+            else if (style != BorderLineStyle.None)
+            {
+                <line x1="0" y1="4" x2="56" y2="4" stroke="currentColor" stroke-width="@width" stroke-dasharray="@dashes" />
+            }
+        </svg>
+    };
+
+    private static (string Width, string? Dashes) StrokeOf(BorderLineStyle style) => style switch
+    {
+        BorderLineStyle.Hair => ("1", "1 1"),
+        BorderLineStyle.Dotted => ("1", "1 2"),
+        BorderLineStyle.DashDotDot => ("1", "6 2 1 2 1 2"),
+        BorderLineStyle.DashDot => ("1", "6 2 1 2"),
+        BorderLineStyle.Dashed => ("1", "4 2"),
+        BorderLineStyle.MediumDashDotDot => ("2", "6 2 2 2 2 2"),
+        BorderLineStyle.SlantedDashDot => ("2", "8 2 4 2"),
+        BorderLineStyle.MediumDashDot => ("2", "8 2 2 2"),
+        BorderLineStyle.MediumDashed => ("2", "6 3"),
+        BorderLineStyle.Medium => ("2", null),
+        BorderLineStyle.Thick => ("3", null),
+        _ => ("1", null),
+    };
+
+    // The preview: the range's edges as they will be — outer ones round the box, inner ones across
+    // it where a range has them — and an edge whose cells' sides differ as a grey dotted line, as
+    // Excel draws it (the eleventh Windows run, case 24).
+    private RenderFragment Preview => __builder =>
+    {
+        <svg class="ex-format-cells-preview" width="120" height="72" viewBox="0 0 120 72" role="img" aria-label="Preview">
+            @PreviewEdge(BorderEdge.Top, 4, 4, 116, 4)
+            @PreviewEdge(BorderEdge.Bottom, 4, 68, 116, 68)
+            @PreviewEdge(BorderEdge.Left, 4, 4, 4, 68)
+            @PreviewEdge(BorderEdge.Right, 116, 4, 116, 68)
+            @if (Draft.HasInsideHorizontal)
+            {
+                @PreviewEdge(BorderEdge.InsideHorizontal, 4, 36, 116, 36)
+            }
+            @if (Draft.HasInsideVertical)
+            {
+                @PreviewEdge(BorderEdge.InsideVertical, 60, 4, 60, 68)
+            }
+        </svg>
+    };
+
+    private RenderFragment PreviewEdge(BorderEdge edge, int x1, int y1, int x2, int y2) => __builder =>
+    {
+        var line = Draft.EdgeLine(edge);
+        if (line is null)
+        {
+            <line class="ex-format-cells-differs" data-edge="@edge" x1="@x1" y1="@y1" x2="@x2" y2="@y2" stroke="#808080" stroke-width="1" stroke-dasharray="1 2" />
+        }
+        else if (!line.Value.IsNone)
+        {
+            var (width, dashes) = StrokeOf(line.Value.Style);
+            <line data-edge="@edge" x1="@x1" y1="@y1" x2="@x2" y2="@y2" stroke="@ColourOf(line.Value.Colour)" stroke-width="@width" stroke-dasharray="@dashes" />
+        }
+    };
+
+    // ---- Fill ----
+
+    private void FillTab(RenderTreeBuilder __builder)
+    {
+        <fieldset class="ex-format-cells-colour">
+            <legend>Background Colour</legend>
+            @Palette(ColourTarget.Fill, Draft.Fill.Colour)
+        </fieldset>
+    }
+
+    // ---- The palette ----
+
+    // Case 23's palette as one group of radio buttons: Automatic (the Font and the Border) or No
+    // Colour (the Fill) first, then the theme's sixty and the ten standard colours, each named as
+    // Excel names it, and More Colours, which takes a hex value.
+    private RenderFragment Palette(ColourTarget target, CellColour? chosen) => __builder =>
+    {
+        var name = _id + "-palette-" + target.ToString().ToLowerInvariant();
+        var first = target == ColourTarget.Fill ? "No Colour" : "Automatic";
+        var none = target == ColourTarget.Fill ? chosen is null : chosen is { IsAutomatic: true };
+        <div class="ex-format-cells-palette" role="radiogroup" aria-label="@(target == ColourTarget.Fill ? "Background Colour" : "Colour")">
+            <label class="ex-format-cells-choice ex-format-cells-first-colour">
+                <input type="radio" name="@name" checked="@none" @onchange="() => Choose(target, null)" />
+                @first
+            </label>
+            <div class="ex-format-cells-swatches">
+                @foreach (var row in FormatCellsOffer.ThemeColours)
+                {
+                    @foreach (var swatch in row)
+                    {
+                        @Swatch(name, target, swatch, chosen)
+                    }
+                }
+            </div>
+            <div class="ex-format-cells-swatches">
+                @foreach (var swatch in FormatCellsOffer.StandardColours)
+                {
+                    @Swatch(name, target, swatch, chosen)
+                }
+            </div>
+            <label class="ex-format-cells-field">
+                More Colours
+                <input type="text" class="ex-format-cells-hex" data-target="@target" placeholder="#RRGGBB" spellcheck="false" maxlength="7"
+                       @bind:get="Draft.ColourText(target)" @bind:set="text => Draft.SetColourText(target, text ?? string.Empty)" @bind:event="oninput" />
+            </label>
+        </div>
+    };
+
+    private RenderFragment Swatch(string name, ColourTarget target, PaletteSwatch swatch, CellColour? chosen) => __builder =>
+    {
+        <input type="radio" name="@name" class="ex-format-cells-swatch" style="@("background-color: " + ColourOf(swatch.Colour))"
+               aria-label="@swatch.Name" title="@swatch.Name" data-rgb="@ColourOf(swatch.Colour)"
+               checked="@(chosen is { IsAutomatic: false } colour && colour == swatch.Colour)"
+               @onchange="() => Choose(target, swatch.Colour)" />
+    };
+
+    // A colour chosen for a target: null is Automatic for the Font and the Border, and No Colour for the Fill.
+    private void Choose(ColourTarget target, CellColour? colour)
+    {
+        switch (target)
+        {
+            case ColourTarget.Font:
+                Draft.SetFontColour(colour ?? CellColour.Automatic);
+                break;
+            case ColourTarget.Fill:
+                Draft.SetFill(colour is { } fill ? CellFill.Solid(fill) : CellFill.None);
+                break;
+            default:
+                Draft.SetLineColour(colour ?? CellColour.Automatic);
+                break;
+        }
+    }
+
+    // A colour as the preview and the swatches paint it: Automatic is the Ink of the text around it.
+    private static string ColourOf(CellColour colour) => colour.IsAutomatic ? "currentColor" : colour.ToString();
+}

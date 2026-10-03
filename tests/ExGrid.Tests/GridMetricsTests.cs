@@ -15,17 +15,17 @@ public class GridMetricsTests
         Assert.Equal(28, metrics.RowHeightPx);
         Assert.Equal(28, metrics.HeaderHeightPx);
         Assert.Equal(14, metrics.FontSizePx);
-        Assert.Equal(9.742, metrics.DigitWidthPx);
+        Assert.Equal(9.75, metrics.DigitWidthPx);
         Assert.Equal(8, metrics.CellPaddingXPx);
         // The action chrome ex-grid.css always used: 6px padding, 1px border, 4px gap.
         Assert.Equal((6 * 2) + (1 * 2) + 4, metrics.ActionButtonChromePx);
     }
 
     [Theory] // ADR-0028: each preset is a complete, self-consistent metric set
-    [InlineData(GridDensity.Comfortable, 40, 14, 9.742, 12)]
-    [InlineData(GridDensity.Standard, 32, 14, 9.742, 8)]
-    [InlineData(GridDensity.Compact, 28, 14, 9.742, 8)]
-    [InlineData(GridDensity.Excel, 20, 12, 8.351, 4)]
+    [InlineData(GridDensity.Comfortable, 40, 14, 9.75, 12)]
+    [InlineData(GridDensity.Standard, 32, 14, 9.75, 8)]
+    [InlineData(GridDensity.Compact, 28, 14, 9.75, 8)]
+    [InlineData(GridDensity.Excel, 20, 12, 8.36, 4)]
     public void Each_preset_resolves_whole(
         GridDensity density, double row, double font, double digit, double padding)
     {
@@ -46,7 +46,7 @@ public class GridMetricsTests
         // A 22px row with Excel's font, padding and digit width — the ADR's own example.
         Assert.Equal(22, metrics.RowHeightPx);
         Assert.Equal(12, metrics.FontSizePx);
-        Assert.Equal(8.351, metrics.DigitWidthPx);
+        Assert.Equal(8.36, metrics.DigitWidthPx);
         Assert.Equal(4, metrics.CellPaddingXPx);
     }
 
@@ -89,13 +89,13 @@ public class GridMetricsTests
         Assert.Throws<ArgumentOutOfRangeException>(() => GridMetrics.Resolve(GridDensity.Compact, rowHeightPx: double.NaN));
     }
 
-    [Theory] // ADR-0016 (2026-09-25): each default is the widest measured for its class on any platform
-    [InlineData(GridDensity.Compact, 14.028, 9.742, 6.398, 14)]
-    [InlineData(GridDensity.Standard, 14.028, 9.742, 6.398, 14)]
-    [InlineData(GridDensity.Comfortable, 14.028, 9.742, 6.398, 14)]
-    [InlineData(GridDensity.Excel, 12.024, 8.351, 5.484, 12)]
+    [Theory] // ADR-0016 (2026-09-25; ticket 83): each default is the widest measured for its class on any platform
+    [InlineData(GridDensity.Compact, 14.04, 9.75, 6.41, 14, 15.46)]
+    [InlineData(GridDensity.Standard, 14.04, 9.75, 6.41, 14, 15.46)]
+    [InlineData(GridDensity.Comfortable, 14.04, 9.75, 6.41, 14, 15.46)]
+    [InlineData(GridDensity.Excel, 12.04, 8.36, 5.49, 12, 13.26)]
     public void The_default_widths_cover_the_widest_platform_measured(
-        GridDensity density, double wide, double digit, double narrow, double fullWidth)
+        GridDensity density, double wide, double digit, double narrow, double fullWidth, double other)
     {
         var metrics = GridMetrics.Resolve(density).CellMetrics;
 
@@ -103,6 +103,7 @@ public class GridMetricsTests
         Assert.Equal(digit, metrics.DigitWidthPx);
         Assert.Equal(narrow, metrics.NarrowWidthPx);
         Assert.Equal(fullWidth, metrics.FullWidthPx);
+        Assert.Equal(other, metrics.OtherWidthPx);
     }
 
     [Fact] // ADR-0016: DejaVu Sans Bold paints "123,456,789,012.50" at 157.66px; the default must not under-charge it
@@ -117,7 +118,9 @@ public class GridMetricsTests
     public void A_header_requires_its_label_slack_menu_band_and_sort_room()
     {
         var metrics = GridMetrics.Resolve(GridDensity.Compact);
-        var label = metrics.CellMetrics.EstimatePx("Amount");
+        // A label is text, so its letters are charged at the digit, not the other class (ticket 83).
+        var label = metrics.CellMetrics.For(ColumnType.Text).EstimatePx("Amount");
+        Assert.Equal(6 * 9.75 + 16, label, 9);
 
         Assert.Equal(label + 14, metrics.HeaderRequiredPx("Amount", menuButton: false, sortable: false));
         Assert.Equal(label + 14 + metrics.MenuButtonBandPx,
@@ -149,5 +152,13 @@ public class GridMetricsTests
         Assert.Equal(14, uniform.CellMetrics.FullWidthPx);
         Assert.Equal(9, uniform.CellMetrics.DigitWidthPx); // nothing else moves
         Assert.Equal(30, generous.CellMetrics.FullWidthPx); // wider than an em is the theme's to say
+    }
+
+    [Fact] // ADR-0051/0028: the Formula Bar's height is the header's, resolved with it
+    public void The_formula_bar_height_follows_the_header()
+    {
+        Assert.Equal(28, GridMetrics.Resolve(GridDensity.Compact).FormulaBarHeightPx);
+        Assert.Equal(34, GridMetrics.Resolve(GridDensity.Compact, rowHeightPx: 22, headerHeightPx: 34).FormulaBarHeightPx);
+        Assert.Equal(22, GridMetrics.Resolve(GridDensity.Compact, rowHeightPx: 22).FormulaBarHeightPx);
     }
 }

@@ -9,7 +9,7 @@ a premise instead, as `ko-grid` (Knockout) and `ng-grid` (Angular) did, ages wit
 
 ## Language
 
-### The two products
+### The products
 
 **ExGrid**:
 A grid whose main purpose is to **show** large numbers of rows quickly. The data is owned
@@ -18,10 +18,22 @@ aggregation are its territory. **This is the one that is specified.**
 _Avoid_: DataGrid (fine as a common noun, but the product is ExGrid), table, list, list view
 
 **ExSheet**:
-A grid whose main purpose is to reproduce Excel's **editing** behaviour. It owns a mutable cell
-model of its own and may have a fill handle, row/column insertion and deletion, and formulas.
-**Future.**
-_Avoid_: Sheet (fine as a common noun), spreadsheet, worksheet
+A grid whose main purpose is to reproduce Excel's **editing** behaviour, for general use rather
+than for one screen's data. It holds a **Sheet** — cells addressed `A1`, their **Entries**, and
+a formula engine that computes their **Values** — and it is drawn by ExGrid, as that grid's
+**Consumer**: ExSheet holds and computes, ExGrid paints and reports. It may have a fill handle,
+row/column insertion and deletion, and **Formulas**. **Being specified** ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
+_Avoid_: spreadsheet, worksheet, and **Sheet**, which names what ExSheet holds, not the product
+
+**ExPivot**:
+Excel's PivotTable inside the application. The Consumer gives it a **Pivot Source** over the
+**Source Records** and declares their **Pivot Fields**; the user places Pivot Fields into **Areas**
+through the **Field List**, and ExPivot computes the **Pivot Report** from the source's **Leaf
+Aggregates**. It is drawn by ExGrid, as that grid's **Consumer**: ExPivot holds the **Pivot Layout**
+and computes the report, ExGrid paints and reports. **Decided** with the user, 2026-09-30
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+_Avoid_: pivot grid, OLAP grid, cube (the cube is how the engine keeps what it aggregated, not the
+product), and **Pivot Report**, which names what ExPivot computes, not the product
 
 > **How far do formulas go?** What people call "a formula" splits three ways, and **two of them
 > are already possible in ExGrid**.
@@ -36,7 +48,9 @@ _Avoid_: Sheet (fine as a common noun), spreadsheet, worksheet
 > data ([ADR-0001](./docs/adr/0001-consumer-pushes-the-window-grid-does-not-fetch.md)). And with
 > the real Excel sitting next to it, there is no reason to reimplement a worse formula engine
 > (copy round-trips with the raw value preserved,
-> [ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md)).
+> [ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md)). ExSheet answers that sentence
+> for itself — it lives inside the application, and its Formulas read the application's data
+> ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
 
 > The **only** grounds separating ExGrid from ExSheet are **data ownership** (reflecting
 > something external versus holding it) and **whether there is a formula engine**. Virtual
@@ -61,6 +75,21 @@ the size, and the parent must have a definite size on that axis
 **Fill** until 2026-09-26, when that word went to Excel's gesture.
 _Avoid_: Fill (that is the editing gesture), auto (that is a column width), 100%, responsive
 (that is ADR-0045's "following the box")
+
+**Layout Ceiling**:
+The tallest element the browser will lay out, in CSS pixels. It is 2²⁵ px divided by the display
+scale and the page zoom, so it shrinks at 150%. Above it the grid compresses its scroll height
+([ADR-0053](./docs/adr/0053-the-scroll-height-is-compressed-above-the-browsers-layout-ceiling.md)).
+It is reported by the browser, like the Scrollbar Gutter.
+_Avoid_: max height, scroll limit (VZ-8's refusal is a different, fixed ceiling)
+
+**Device Pixel**:
+One point of the screen. How many of them a CSS pixel covers depends on the display scale and the
+page zoom: one and a half at 150%, two and a quarter at 150% zoomed to 150%. Excel's lines are
+counted in them, so a thin line is one Device Pixel at every scale. The browser reports it when it
+changes, and the grid puts its column edges on it
+([ADR-0090](./docs/adr/0090-the-grid-is-told-its-device-pixel-and-puts-column-edges-on-it.md)).
+_Avoid_: screen pixel, physical pixel, pixel on its own (a pixel with no qualifier is a CSS pixel)
 
 **Scrollbar Gutter**:
 How much of the declared Viewport its own scrollbars occupy. A classic scrollbar is drawn
@@ -136,6 +165,32 @@ defines whether `contains` is case-sensitive and whether nulls sort first or las
 server-side implementations match it.
 _Avoid_: data provider, repository, feed, data source (which suggests the grid pulls)
 
+**Snapshot**:
+An immutable copy of the Consumer's tabular data at one version, which the Ex family's bundled
+sources read. A change to the data is a new Snapshot, never a rewrite of this one. ExPivot's bundled
+Pivot Source aggregates one; ExGrid's and ExSheet's bundled sources may read one, each adopting it
+by an ADR of its own.
+_Avoid_: DataTable, DataSet (.NET's own types), data frame, table (a Linked Table is ExSheet's),
+pivot cache (Excel's word, for a pivot's alone)
+
+**Schema**:
+How a delimited text file is read into a Snapshot: each column's header, kind and format and the
+strings that count as a Blank, and the file's encoding and separator. It is declared, never
+guessed; one suggested from a file's first rows is used only once the user has confirmed it
+([ADR-0064](./docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)).
+_Avoid_: import settings, mapping, dialect, type inference (there is none)
+
+**Change Batch**:
+The records added, the records changed and the Record Keys removed since a Snapshot, applied as
+one to make the next Snapshot. A component shows the Snapshot before it or the one after it, never
+a batch half applied.
+_Avoid_: delta (a risk measure here — rate delta, credit delta), diff, patch, transaction
+
+**Record Key**:
+The declared column whose value tells one record of a Snapshot from every other. A
+Change Batch changes and removes records by it, and two records under one key are refused.
+_Avoid_: Row Identity (the grid's test for sameness), id, primary key (the database's)
+
 **Query**:
 The whole of what the grid asks for — which range, under which Filter, under which Sort. Being
 serialisable is a requirement
@@ -177,7 +232,8 @@ Context Menu, the cell editor, the cell's message, the loading indicator. **It r
 back; it does not decide meaning**
 (which operators exist, and what a filter means, are the core's). Substituting it does not change
 behaviour. Each of those places is a **Chrome seam**: the core owns its frame — where it appears,
-how it opens and closes — and hands the Chrome the contents to draw.
+how it opens and closes — and hands the Chrome the contents to draw. One seam, ExSheet's **Format
+Cells**, leaves its frame to the Chrome ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
 _Avoid_: skin (appearance only is a **Theme**, a term of its own below), template
 
 **Inner Popup**:
@@ -248,13 +304,53 @@ breaks row memoisation
 uncommitted text lives.
 _Avoid_: input, editing cell
 
+**Keyboard Field**:
+The unseen text field of a grid's own that holds the keyboard while a cell is selected and no edit
+is open, on a grid with an editable column, so that an IME can start there. It stands over the
+Focus cell; a composition in it is drawn there, and its end opens the **Cell Editor** holding the
+composed text. It is the grid's one tab stop. A display-only grid has none
+([ADR-0080](./docs/adr/0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)).
+_Avoid_: hidden input, hidden textarea, proxy input
+
 **Overwrite / Caret**:
-The two states of cell **editing** (three modes in total, with **Interactive**). **Overwrite** is
+The two states of cell **editing** (four modes in total, with **Interactive** and **Point**). **Overwrite** is
 entered by typing straight onto a selected cell: the original value is replaced, and **the arrow
 keys commit and move to the neighbouring cell**. **Caret** is entered with F2 or a double click:
 the original value stays and **the arrow keys move the caret within the text**. The distinction
 is Excel's, and without it "type, arrow to the next cell" does not work as continuous entry.
 _Avoid_: input mode / edit mode (both read as "editing" and the distinction disappears)
+
+**Point**:
+The editing state in which the arrow keys and the mouse **point at cells for a Formula** instead
+of committing: a **Reference Outline** moves over the grid and its Reference is written at the
+caret. It holds only while the Consumer says the caret stands where a Reference can go; F2 switches
+between it and Caret. The Selection and the Focus do not move ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+Through a **Pointing Scope**, a press on another grid that shows a Linked Table points too
+([ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).
+_Avoid_: reference mode, pick mode
+
+**Reference Outline**:
+The coloured outline drawn over the cells a **Reference** names, for each Reference in the Formula
+being edited, while the text of that Reference wears the same colour in the Cell Editor and the
+Formula Bar. It shows in every editing state while a Formula is open, not only in **Point**; the
+outline Point moves is the Reference Outline of the Reference it is writing. It is gone when the
+edit commits or is cancelled. A structured reference's outline is drawn over the **Linked Table**'s
+column by whichever grid the Consumer shows that table in, told the colour by ExSheet
+([ADR-0057](./docs/adr/0057-references-are-outlined-in-colour-while-a-formula-is-edited.md)).
+_Avoid_: range finder (Excel's name for it; nothing is found), highlight (the word is kept out of
+Selection's vocabulary), pointing outline
+
+**Formula Bar**:
+A band inside the grid's root, above the header, showing the **Name Box** and the Focus cell's
+full text — the Entry on a Sheet, the full value on a display grid. It is the Cell Editor's second
+surface: one uncommitted text, shown in two places ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+_Avoid_: edit bar, input bar, toolbar
+
+**Name Box**:
+The Formula Bar's field that says where the Focus is, in the Consumer's words (`D200` on a Sheet);
+while a Formula is pointing, it names the pointed cell instead, as Excel does. Typing an address into
+it moves the Selection there ([ADR-0051](./docs/adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md)).
+_Avoid_: address bar, cell reference box
 
 **Interactive**:
 The state of being **inside** a cell. Entered with Space and left with Esc, on an Action Column
@@ -290,6 +386,13 @@ come from different batch runs, so it cannot be expressed per row.
 of (book × metric) and the Consumer can answer it.
 _Avoid_: attribute, tag, annotation
 
+**Change Highlight**:
+A cell's mark, held for a short time, that its displayed value has just changed with the data —
+never with a change of layout, sort or collapse. The Consumer says when a cell changed, as it
+answers Cell Metadata; the grid paints the mark and takes it away, without animating either.
+_Avoid_: flash, blink, tick (it does not animate), Mark (that is a Row Mark), Cell State (a state
+lasts; this passes)
+
 **Overflow**:
 The state of a value not fitting the column width. **Text is cut with an ellipsis; numbers and
 dates become `####`** — truncated text is visibly truncated, whereas a truncated number **looks
@@ -308,7 +411,7 @@ _Avoid_: not interactive, static (both collide — see Flagged ambiguities)
 
 **Overlay**:
 A sparse diff laid over an immutable base. It holds only the overridden columns and never copies
-rows. Reset is **deleting an entry** (the original is still in the base, so nothing needs
+rows. Reset is **deleting the override** (the original is still in the base, so nothing needs
 saving).
 _Avoid_: diff, patch, change set, draft
 
@@ -326,18 +429,26 @@ _Avoid_: change event, commit, update
 
 **Fill**:
 Excel's gesture of writing one value, or one row or column of values, over the rest of a
-selection: Ctrl+Enter writes the editor's text into every selected cell, Ctrl+D copies a range's
-top row down it and Ctrl+R its left column across it. The grid assembles the values and raises
-them as one paste intent, judged by the paste gate
+selection. The keys: Ctrl+Enter writes the editor's text into every selected cell, Ctrl+D copies a
+range's top row down it and Ctrl+R its left column across it; the grid assembles the values and
+raises them as one paste intent, judged by the paste gate
 ([ADR-0035](./docs/adr/0035-paste-and-fill-respect-the-editable-declaration.md)). The fill
-*handle* — the drag from a range's corner — is reserved, not built.
+*handle* — the drag from the Selection's corner — raises a Fill Intent instead
+([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
 _Avoid_: copy down, autofill, stretch (that is a Viewport axis)
+
+**Fill Intent**:
+The notification the grid raises when a user drags the fill handle — the source range, the target
+range, and the direction. The grid writes nothing; what a fill means is the Consumer's, and on a
+Sheet a pattern ExSheet does not implement is refused rather than filled with copies
+([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
+_Avoid_: autofill, drag-fill, fill-down (Ctrl+D's fill is a paste-shaped write, not this)
 
 **Clear Intent**:
 The notification Delete raises over the Selection: these positions should hold **no value**. It
 carries no value at all, which is what separates it from a paste of empty text — on an amount
 column the two mean different things
-([ADR-0046](./docs/adr/0046-delete-raises-a-clear-intent-not-a-paste-of-nothing.md)).
+([ADR-0054](./docs/adr/0054-delete-raises-a-clear-intent-not-a-paste-of-nothing.md)).
 _Avoid_: delete (that is the key, and suggests removing rows), erase, empty paste
 
 **Edit Verdict**:
@@ -382,7 +493,7 @@ _Avoid_: rejection, validation failure, error (that is a Cell State), denial
 Moving the Focus to the next cell whose displayed text matches what the user typed, searching
 every row — not only the painted ones. The grid asks and the Consumer answers with a position,
 as it answers for sort and filter; the grid only moves the Focus
-([ADR-0047](./docs/adr/0047-find-is-asked-of-the-consumer-like-sort-and-filter.md)).
+([ADR-0055](./docs/adr/0055-find-is-asked-of-the-consumer-like-sort-and-filter.md)).
 _Avoid_: search (that is the filter panel's box over the value list), filter (that hides rows;
 Find hides nothing), lookup
 
@@ -400,11 +511,20 @@ Identity ([ADR-0008](./docs/adr/0008-selection-is-painted-by-an-overlay.md)).
 _Avoid_: highlight, active cell (the single point inside a Selection is **Focus**)
 
 **Focus**:
-The one cell that keyboard operations start from. The **moving** end of range extension; the
-fixed end is the **Anchor**. Enter / Tab cycling moves only the Focus, and **the range stays
-selected** ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)). It must always
-be visible; if it leaves the Viewport the grid scrolls to it.
-_Avoid_: cursor, current cell, selected cell
+The one cell a user is on — Excel's **active cell**. Typing enters it, the Cell Editor opens on it,
+the Name Box names it and the Formula Bar edits it; Enter / Tab cycling moves it within the
+Selection, and **the range stays selected**. While a range is extended, the Focus is the end that
+stays fixed; the end that moves is the **Extent**. It must always be visible; if it leaves the
+Viewport the grid scrolls to it
+([ADR-0052](./docs/adr/0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md),
+which redefines ADR-0012's Focus; the implementation follows once Excel's remaining answers are in).
+_Avoid_: cursor, current cell, selected cell, active cell (Excel's name for it — say Focus)
+
+**Extent**:
+The end of a range that moves while it is extended — by Shift+arrow, Shift+click, Ctrl+Shift+arrow
+or a drag. The grid keeps it in view while extending, as Excel does. The fixed end is the Focus
+([ADR-0052](./docs/adr/0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+_Avoid_: anchor (retired), moving end, cursor
 
 **Held Selection**:
 A Selection paired with the Row Sequence Version it was made under. Reconciling it
@@ -413,12 +533,11 @@ this pairing, not in each holder's discipline
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 _Avoid_: selection snapshot, selection cache (nothing is restored from it)
 
-**Anchor**:
-The **fixed** end of range extension. Moved by a click and by Ctrl+click. When there are disjoint
-ranges, Shift+arrow extends **the range the Anchor belongs to**. After Ctrl+click deselects a
-cell, Anchor and Focus stand **detached** — on that cell, outside every range — and the next
-extension starts a new range ([ADR-0012](./docs/adr/0012-anchor-focus-and-keyboard-navigation.md)).
-_Avoid_: origin, base cell
+**Anchor** *(retired by ADR-0052)*:
+ADR-0012's name for the fixed end of range extension. Under ADR-0052 the fixed end is the
+**Focus** and the moving end is the **Extent**. It has left the code and the criteria; older ADRs
+that say it mean the fixed end.
+_Avoid_: using it for anything new
 
 **Row Mark**:
 A row the user has singled out for an action that follows — the checkbox beside a row.
@@ -447,7 +566,8 @@ _Avoid_: checkbox column, selection column
 
 **Column**:
 A runtime object. Beyond the header's appearance it holds **how to extract the value from a
-row**, the type (which decides the filter UI and the default format), an optional display
+row**, the type (which decides the filter UI and the default format; a date column also says
+which kind of date it holds), an optional display
 format that replaces the default, and the width (`Auto | Fixed` plus `MinWidth` /
 `MaxWidth`). A statically listed column and a column generated
 from data (each tenor of a tenor ladder) are the same Column, not distinguished.
@@ -512,13 +632,337 @@ when the core asks
 ([ADR-0037](./docs/adr/0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)).
 _Avoid_: custom column, render column
 
+### Sheets
+
+**Sheet**:
+The grid of cells ExSheet holds, addressed by column letter and row number (`A1`) over Excel's
+extent. The product is **ExSheet**; a Sheet is what it holds. Its rows and columns are places:
+inserting a row changes what the rows below hold, and moves none of them ([ADR-0046](./docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)).
+_Avoid_: worksheet, tab, spreadsheet
+
+**Entry**:
+What a user put into a cell — a constant (`42`, `Tokyo`, `TRUE`) or a **Formula**. It is what a
+**Sheet Document** records, and what the user sees again when they edit the cell. Distinct from
+the **Value** the cell shows ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
+_Avoid_: input (that is the Cell Editor's element), content, raw value (that is a copy's
+unformatted value)
+
+**Value**:
+What a cell evaluates to: a number, text, a boolean, or an **Error Value**. A constant Entry is
+its own Value; a Formula's Value is its result. A date is a number shown with a date format, as
+in Excel. It is never recorded — it is computed again wherever a Sheet Document is opened
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
+_Avoid_: result, cached value, computed value
+
+**Formula**:
+An Entry beginning with `=`, written in Excel's syntax, that computes a Value from other cells'
+Values. A function ExSheet does not know yields `#NAME?`; it is never guessed at
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
+_Avoid_: expression, calculation, computed column (that is ExGrid's — a Column whose accessor
+computes)
+
+**Reference**:
+The part of a Formula that names cells — `A1`, `$A$1`, `A1:B2`, and with the Sheet named,
+`Sheet2!A1`. A relative Reference shifts when its Formula is copied or filled. Inserting or
+deleting rows and columns rewrites every Reference so that it keeps naming the same cells; one
+whose cells are deleted becomes `#REF!` ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
+_Avoid_: link, pointer, address (an address is where a cell is; a Reference is how a Formula
+names it)
+
+**Error Value**:
+A Value that is an error — `#DIV/0!`, `#NAME?`, `#REF!`, `#VALUE!`, `#N/A` and the rest of
+Excel's set, plus `#CIRC!` for a Formula that depends on itself, where Excel would show 0 —
+produced by a Formula and carried into every Formula that uses it. It is data, like a number. **Not the Cell State Error**, which is the Consumer's verdict on a value, painted and
+never computed ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
+_Avoid_: error (that is a Cell State), exception
+
+**Linked Table**:
+A named table of rows the Consumer supplies to ExSheet, which Formulas read with Excel's
+structured references — `SUM(Positions[PV])`. Its rows are reached by key through functions
+(`XLOOKUP`), never by position: another grid's order is its user's to change, and a positional
+Reference into it would change value without anyone editing it. ExSheet never reads another
+component instance; what a Linked Table holds comes from the Consumer, pushed as one whole
+snapshot. Until it has arrived, a Formula that reads it shows `#GETTING_DATA` — never 0, never an
+older value — and `IFERROR` does not catch the wait. The Consumer may declare one of its columns as
+its key; a snapshot in which a key repeats is refused, and the table waits again ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md)).
+_Avoid_: external reference (Excel's name for a reference into another workbook), data
+connection, link
+
+**Pointing Scope**:
+The Sheets and grids a Consumer groups so that a Formula can **Point** across instances. For each
+grid in it, the Consumer says which **Linked Table** the grid shows and which of the grid's columns
+are which of the table's; the key column is the table's own, declared with it. While a Sheet in the
+scope is pointing, a press on one of its grids moves neither DOM focus nor that grid's Selection. It
+writes what reads the pressed cell by key (`XLOOKUP("R-4471", Positions[Id], Positions[PV])`) or the pressed
+column's name (`Positions[PV]`). Only the Sheet that holds the keyboard points. Nothing on a page
+is joined unless the Consumer put it in the same scope, and a grid in no scope behaves as it
+always does ([ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).
+_Avoid_: link (it sounds like one pair), workbook (ADR-0049 keeps that for Sheets that read each
+other)
+
+**Headings**:
+The column letters and row numbers framing a Sheet — Column Headings and Row Headings. Clicking
+one selects its whole column or row, as in Excel. The Consumer may hide either; a Sheet shown
+without them still addresses its cells `A1`. The Row Headings are a band beside the rows, never a
+column ([ADR-0050](./docs/adr/0050-what-exsheet-asks-of-exgrids-core.md)).
+_Avoid_: header (that is ExGrid's column header, whose click sorts), labels, row numbers
+
+**Size Tip**:
+The label at the Headings that says how many rows and columns a drag across them covers
+(`1048576R x 3C`), shown at the Heading the Extent is on while the drag covers more than one. The
+Name Box is empty while it shows, as in Excel. A drag over cells shows its size in the Name Box
+instead ([ADR-0052](./docs/adr/0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+_Avoid_: tooltip, ScreenTip (Excel's name for any hover label), badge
+
+**Sheet Document**:
+The serialisable form of a Sheet that ExSheet hands to its Consumer and takes back. It holds
+Entries, never Values, with constants already parsed — so opening it under another culture
+cannot change a number. The Consumer persists it; ExSheet does not ([ADR-0048](./docs/adr/0048-a-sheet-document-holds-entries-and-exsheet-holds-the-one-undo-stack.md)).
+_Avoid_: file, workbook, Snapshot (that is the Consumer's tabular data), save data
+
+### Pivots
+
+**Source Record**:
+One record of the data a pivot aggregates. The bundled Pivot Source holds it in a Snapshot and
+never writes to it, and a new Snapshot or a Change Batch is a refresh, as in Excel; behind a
+server's Pivot Source it stays on the server
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+_Avoid_: row (a row is the report's), item (that is a field's distinct value), fact, entity
+
+**Pivot Source**:
+What ExPivot asks for a report's aggregates, a field's Items and the Source Records behind a cell.
+The bundled one aggregates a Snapshot in process and is the reference implementation, as
+`GridSource.From` is ExGrid's; a Consumer's server may answer instead, and is held to the bundled
+one's answers.
+_Avoid_: data source, provider, backend, pivot cache (Excel's word; here that is the Snapshot)
+
+**Source Version**:
+Which state of the data a Pivot Source's answer came from. The records behind a cell and a field's
+Items are asked for under the version the report was computed from, and a source that can no
+longer answer under it refuses rather than answer from newer data.
+_Avoid_: data version (it names nothing here), Row Sequence Version (that is the grid's order),
+timestamp, revision
+
+**Leaf Aggregate**:
+What a Pivot Source answers a report with: for each combination of the row and column fields'
+Items that has records, the parts each Value Field's Aggregation is computed from — counts, sums,
+extremes. ExPivot computes every cell, subtotal and grand total from them; a source never answers
+with the report itself
+([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+_Avoid_: cube (the engine's own word for what it holds), summary, pre-aggregate, rollup
+
+**Pivot Field**:
+A named attribute of the Source Records the user can place in an Area: its caption, how it is read
+from a record, and its declared type, which decides where a ticked field goes and which
+Aggregation it takes by default. The same Pivot Field may stand in Rows and, as a Value Field, in
+Values ([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+_Avoid_: field alone (ExGrid avoids it for a Column), column (that is the grid's), dimension and
+measure (a Pivot Field is either, by the Area it stands in)
+
+**Area**:
+One of the four places a Pivot Field stands — **Filters**, **Columns**, **Rows**, **Values** —
+Excel's names. A field stands at most once across Filters, Rows and Columns
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+_Avoid_: zone, well, shelf, drop box
+
+**Pivot Layout**:
+Which Pivot Fields stand in which Areas and in what order, with each one's settings — Hidden Items,
+order, subtotals, collapsed Items, a Value Field's Aggregation — and the report's form and totals.
+It is ExPivot's **View State**: serialisable, persisted by the Consumer, a **Saved View** when
+named. Nothing in it is a value
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+_Avoid_: configuration, definition, pivot settings, and layout alone (that is also the browser's)
+
+**Item**:
+One distinct value of a Pivot Field in Rows, Columns or Filters — a row label, a column label, a
+choice in a filter. Text Items are told apart ignoring case; a Blank is the Item `(blank)`. A
+**collapsed** Item hides the Items under it and shows their totals
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+_Avoid_: member (OLAP's), label (the text an Item is painted with), category
+
+**Hidden Item**:
+An Item the user unticked in its field's filter. Every record carrying it is left out of the
+report, totals included. The layout holds what is hidden, not what is shown, so an Item that first
+appears later is shown
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+_Avoid_: filtered item, excluded value, and Filter (that is ExGrid's model of conditions)
+
+**Order Key**:
+A Pivot Field's function from a value to what its Items are ordered by, ascending — a tenor to its
+length. An Item it gives no key comes after the keyed ones. It orders Items and never makes two
+values one Item: `18M` and `1Y6M` stay two Items, side by side.
+_Avoid_: comparer, custom sort, custom list (that is a field's declared Item order, Excel's word)
+
+**Value Field**:
+A Pivot Field placed in Values, with its **Aggregation**, its caption (`Sum of Amount`), its number
+format and how its values are shown (**Show Values As**: % of Grand Total and the rest). One Pivot
+Field may be several Value Fields
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+_Avoid_: data field (Excel's older name), measure, metric
+
+**Aggregation**:
+How a Value Field summarises the records at a cell — Sum, Count, Average, Max, Min, Product, Count
+Numbers, StdDev, StdDevp, Var, Varp; Excel's "Summarize Values By". A total is aggregated from its
+records, never from the totals below it
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+_Avoid_: function (that is a Formula's), rollup, reduce
+
+**Σ Values**:
+The pseudo-field that says where the Value Fields' captions stand when there are two or more — in
+Columns, where Excel puts it, or in Rows. In the first version it is always innermost
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+_Avoid_: data field, measures dimension
+
+**Pivot Report**:
+What ExPivot computes and ExGrid paints: rows for Items, **group rows**, **subtotals** and the
+**grand total**, label columns, and value columns under the column Items' Header Groups. It is
+computed and read-only
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+_Avoid_: pivot table (the whole product on screen), result (ExGrid's word for rows after a
+filter), view
+
+**Stale Report**:
+A Pivot Report left on the last version of the data it could be computed from, because the newest
+cannot be shown — the layout would break a cap, or the source failed — and saying so: what
+happened, and as of when
+([ADR-0067](./docs/adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+_Avoid_: cached report, outdated, frozen (it is not stopped; it is waiting for an answer)
+
+**Defer Layout Update**:
+Excel's switch at the foot of the Field List: while it is on, the pane's changes build a pending
+Pivot Layout that the report does not follow until Update
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+_Avoid_: manual mode, batch edit, draft layout (a draft is a panel's, until OK)
+
+**Report Form**:
+How a Pivot Report sets out its row labels — **Compact** (one indented label column, Excel's
+default), **Outline** or **Tabular** (a label column per row field). Excel's "Report Layout"
+([ADR-0060](./docs/adr/0060-the-pivot-engine-answers-as-excels-pivottable-and-is-the-reference.md)).
+_Avoid_: layout (that is the Pivot Layout), view, mode
+
+**Field List**:
+The pane where the user builds the report: every Pivot Field with a checkbox and a search, and the
+four Areas, with drag and drop and each placed field's menu — Excel's "PivotTable Fields". ExPivot
+decides what each gesture means; its Chrome draws it
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+_Avoid_: field chooser, designer, pivot panel
+
+**Pivot Toolbar**:
+The band above a Pivot Report: the report filter band on its left, and on its right Layout ▾
+(Excel's Design tab: Subtotals, Grand Totals, Report Layout), Refresh when the source can be asked
+again, and the Field List's toggle. A Stale Report's notice stands beneath it. ExPivot decides
+what each of them means; its Chrome draws it
+([ADR-0061](./docs/adr/0061-the-field-list-is-excels-pane-and-the-core-decides-what-a-move-means.md)).
+_Avoid_: toolbar on its own (a Sheet's is the Sheet Toolbar), ribbon, Design tab (Excel's, which
+the Layout menu stands in for)
+
+**Show Details**:
+The Source Records behind one cell of the report — Excel's drill-down, from a double click on a
+value or the Context Menu — which ExPivot shows in a tab beside the report or in a dialog, or hands
+to the Consumer to show, as the Consumer chooses
+([ADR-0063](./docs/adr/0063-what-expivot-asks-of-exgrids-core.md)).
+_Avoid_: drill-through, drill-down (Excel's older name), underlying data
+
+**Cell Format**:
+How a Sheet's cell is shown, recorded apart from its Entry: its **Number Format**, **Alignment**,
+**Font**, **Fill** and **Border**. It is recorded at three levels, cell over row over column, so
+formatting a whole column records one thing, and a cell may hold a Cell Format and no Entry. It is
+document data, recorded in the Sheet Document: a colour in it is the user's choice and is painted
+as recorded. Not ExGrid's Column `Format`, which turns a value into the text shown for it
+([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: style (Excel's named Cell Styles, and the CSS attribute), formatting (the act of setting
+one), format on its own
+
+**Number Format**:
+Excel's format code that turns a Value into the text a cell shows — `#,##0.00`, `yyyy-mm-dd`,
+`0%`, and General, which fits its column. A date is a number with a date Number Format. A code
+ExSheet does not read is refused, never shown as General
+([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
+_Avoid_: format string, display format (that is ExGrid's Column `Format`)
+
+**Alignment**:
+Where a cell's text sits across its width: General (Excel's: numbers right, text left, booleans
+and Error Values centred), left, centre or right. Horizontal only — every row has one height, so
+there is nothing to align vertically.
+_Avoid_: justification, text-align
+
+**Font**:
+The colour and emphasis of a cell's text: its colour, bold, italic, underline and strikethrough.
+Not its size or typeface: every row has one height, and one digit width decides what fits. An
+**Automatic** colour is the **Ink**, not a recorded colour ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: text style, typeface
+
+**Fill**:
+The one solid colour behind a cell's text. No patterns and no gradients ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: background, shading, highlight
+
+**Border**:
+A line on one side of a cell — top, bottom, left or right — in one of Excel's line styles and a
+colour. Each cell records its own four sides, as Excel's files do, but the line between two cells is
+one line: setting it from either cell replaces it for both, and the later setting wins. Where both
+cells still record a line, after a copy or a deletion, the upper or left cell's is the one shown.
+No diagonals ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: gridline (the Sheet's own faint lines, which are not recorded), outline (that is a
+**Reference Outline**), frame
+
+**Paper / Ink**:
+The ground a Sheet's cells lie on, and the colour of text whose Font colour is Automatic: Excel's
+white and black, in every colour scheme. A dark page does not darken them, as Excel's cells stay
+white under its Black theme, so a colour a user recorded reads as it did when it was chosen. What
+lies on the Paper — the Focus, the Selection, Reference Outlines, the editor in the cell — takes
+its light-scheme appearance; what frames it — the Headings, the Name Box, the Formula Bar,
+popovers — follows the colour scheme. Both are Visual Tokens: a Consumer may change them, and
+takes on what that does to recorded colours ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: background, canvas
+
+**Format Cells**:
+Excel's dialog for setting a Cell Format, opened by Ctrl+1 or from the Context Menu: Number,
+Alignment, Font, Border and Fill. ExSheet decides what it offers and what OK means, and OK sets only
+what the user touched. It is the one Chrome seam whose frame is the Chrome's: a popover inside the
+Sheet's box under the built-in Chrome, a page-level dialog under MudBlazor's ([ADR-0071](./docs/adr/0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+_Avoid_: format dialog, properties, style editor
+
+**Sheet Toolbar**:
+The bands of buttons a Sheet shows above its Formula Bar when asked to, and only then. It belongs
+to one Sheet and acts on that Sheet's Selection. What it holds, and in which order, is the
+Consumer's to declare; while an edit is open, every Toolbar Item in it is unavailable ([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: ribbon, ToolBarContent (the slot of ExGrid's MudBlazor paper, outside the grid), toolbar on
+its own
+
+**Toolbar Row**:
+One band of a Sheet Toolbar. Every Toolbar Row of a Sheet is the same height, so the Sheet Toolbar's
+height is a count of rows. A Toolbar Row is what a ribbon tab is to a KeyTip ([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: toolbar line, section
+
+**Toolbar Item**:
+One element of a Toolbar Row: a formatting command ExSheet offers, or a Consumer's own action. It
+declares what it means; the Chrome decides how it looks, so swapping the Chrome keeps every item's
+meaning ([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: tool, toolbar button (a Toolbar Item need not be a button)
+
+**KeyTip**:
+Excel's letter over a Toolbar Row or a Toolbar Item, shown when Alt is released alone or F10 is
+pressed; typing the letters runs the item, as Alt, H, 1 sets bold. A letter is Excel's where Excel
+has one, and otherwise ExSheet's own or the Consumer's declared one, never assigned by position
+([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
+_Avoid_: access key, accelerator, mnemonic, shortcut (a shortcut is a chord, a KeyTip is a sequence)
+
 ## Flagged ambiguities
 
-- **"Grid" on its own does not say whether ExGrid or ExSheet is meant.** When it is ambiguous,
-  always commit to one. To mean both, write "the Ex family". Do not invent a single umbrella
-  noun (`ag-grid` has none either).
+- **"Grid" on its own does not say whether ExGrid, ExSheet or ExPivot is meant.** When it is
+  ambiguous, always commit to one. To mean all of them, write "the Ex family". Do not invent a
+  single umbrella noun (`ag-grid` has none either).
 - **"User" gets used two ways** — the developer embedding this component, and the end user
   touching the screen. The former is the **Consumer**; the latter is the **user**.
+- **"Consumer" has two levels once ExSheet or ExPivot is involved.** ExSheet and ExPivot are
+  each ExGrid's Consumer, and the application embedding one is that one's. Unqualified,
+  **Consumer** is always the application; write "ExSheet, as ExGrid's Consumer" (or ExPivot) when
+  that relationship is meant.
+- **"Row" means two things in a pivot.** A **Source Record** is what the Consumer pushes; a row is
+  the Pivot Report's, one per Item, subtotal or grand total. Never call a Source Record a row.
+- **"Filter" means two things in a pivot.** ExGrid's **Filter** is a model of conditions the grid
+  hands its Consumer; a pivot's filter is its **Hidden Items**, held in the Pivot Layout, and
+  **Filters** is the Area. The report's grid is handed no Filter at all.
 - **"Seam" means two things.** A **Chrome seam** is one of the places Chrome is substituted
   into. In talk about tests, a seam is the public boundary a test observes behaviour through —
   write **test seam** for that, and never "seam" alone where either could be meant.
@@ -530,6 +974,14 @@ _Avoid_: custom column, render column
   Template's control takes DOM focus inside the Focus cell (**Interactive**). Write "DOM focus"
   whenever the browser's is meant; `FocusRequest` in the Chrome and template contexts asks for
   DOM focus, not for a Focus move.
+- **"Caret" names an editing state here, and the text cursor in everyday speech.** **Caret**
+  (with Overwrite) is the state F2 enters, in which the arrow keys move within the text. The
+  blinking insertion point itself is the **caret position** — write that, never "the Caret", when
+  the position is meant: completion and Point both act at the caret position, in any state.
+- **"Paper" is a Sheet's ground here, and a Material surface in MudBlazor.** The Wrapper's
+  outer element, `MudExGridPaper`, is named after `MudPaper`: a surface around one or more
+  grids that follows the colour scheme. A Sheet's **Paper** does not. Write the component's name
+  for the surface, and **Paper** only for the Sheet's ground.
 - **"Interactive" names a cell mode here, and a render mode in Blazor.** Blazor calls a
   component that has connected and can handle events "interactive", and its render modes are
   `InteractiveServer` / `InteractiveWebAssembly`. In this project **Interactive** is only the

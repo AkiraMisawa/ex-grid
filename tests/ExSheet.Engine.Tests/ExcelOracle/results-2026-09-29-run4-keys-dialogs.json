@@ -1,0 +1,1135 @@
+{
+    "ran":  "2026-09-29T10:45:29",
+    "excel":  "16.0 (build 20326); EXCEL.EXE 16.0.20326.20158",
+    "windowsRegionalFormat":  "en-US",
+    "formulasEnteredThrough":  "typed (keyboard input), as every other cell of a case",
+    "constantsEnteredThrough":  "typed (keyboard input: SendInput, then Enter)",
+    "summary":  {
+                    "agree":  20,
+                    "disagree":  4,
+                    "blocked":  0,
+                    "recorded":  10
+                },
+    "cases":  [
+                  {
+                      "id":  "ERR-078",
+                      "area":  "errors",
+                      "source":  "documented",
+                      "description":  "A cycle is #CIRC! in each member and each dependent (A1)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=B1+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:13.147 ERR-078: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-079",
+                      "area":  "errors",
+                      "source":  "documented",
+                      "description":  "A cycle is #CIRC! in each member and each dependent (B1)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:16.446 ERR-079: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-080",
+                      "area":  "errors",
+                      "source":  "documented",
+                      "description":  "A cycle is #CIRC! in each member and each dependent (C1)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  2,
+                                    "kind":  "number",
+                                    "number":  "2",
+                                    "text":  "2",
+                                    "formula":  "=A1*2",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:19.729 ERR-080: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-081",
+                      "area":  "errors",
+                      "source":  "documented",
+                      "description":  "A cycle is #CIRC! in each member and each dependent (D1)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  "2x",
+                                    "kind":  "text",
+                                    "text":  "2x",
+                                    "formula":  "=C1\u0026\"x\"",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:22.914 ERR-081: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-082",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "A cell outside the cycle keeps its Value",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  7
+                                   },
+                      "engineExpect":  {
+                                           "value2":  7
+                                       },
+                      "excel":  {
+                                    "value2":  7,
+                                    "kind":  "number",
+                                    "number":  "7",
+                                    "text":  "7",
+                                    "formula":  "7",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:26.095 ERR-082: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-083",
+                      "area":  "errors",
+                      "source":  "documented",
+                      "description":  "A Formula that reads itself is #CIRC!",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=A1+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:27.465 ERR-083: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-084",
+                      "area":  "errors",
+                      "source":  "documented",
+                      "description":  "A Formula entered later that reads a cycle is #CIRC! too",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=A1+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:29.337 ERR-084: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-085",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Breaking the cycle recovers every member and dependent (A1)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  12
+                                   },
+                      "engineExpect":  {
+                                           "value2":  12
+                                       },
+                      "excel":  {
+                                    "value2":  12,
+                                    "kind":  "number",
+                                    "number":  "12",
+                                    "text":  "12",
+                                    "formula":  "=B1+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:32.119 ERR-085: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-086",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Breaking the cycle recovers every member and dependent (B1)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  11
+                                   },
+                      "engineExpect":  {
+                                           "value2":  11
+                                       },
+                      "excel":  {
+                                    "value2":  11,
+                                    "kind":  "number",
+                                    "number":  "11",
+                                    "text":  "11",
+                                    "formula":  "=C1+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:35.403 ERR-086: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-087",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Breaking the cycle recovers every member and dependent (C1)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  10
+                                   },
+                      "engineExpect":  {
+                                           "value2":  10
+                                       },
+                      "excel":  {
+                                    "value2":  10,
+                                    "kind":  "number",
+                                    "number":  "10",
+                                    "text":  "10",
+                                    "formula":  "10",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:38.581 ERR-087: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-088",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Breaking the cycle recovers every member and dependent (D1)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  24
+                                   },
+                      "engineExpect":  {
+                                           "value2":  24
+                                       },
+                      "excel":  {
+                                    "value2":  24,
+                                    "kind":  "number",
+                                    "number":  "24",
+                                    "text":  "24",
+                                    "formula":  "=A1*2",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:41.764 ERR-088: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-089",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Clearing a member breaks the cycle too",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  0
+                                   },
+                      "engineExpect":  {
+                                           "value2":  0
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=B1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:44.446 ERR-089: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-090",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Two separate cycles do not disturb each other: the broken one recovers",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  3
+                                   },
+                      "engineExpect":  {
+                                           "value2":  3
+                                       },
+                      "excel":  {
+                                    "value2":  3,
+                                    "kind":  "number",
+                                    "number":  "3",
+                                    "text":  "3",
+                                    "formula":  "=B1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:46.319 ERR-090: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-091",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Two separate cycles do not disturb each other: the other stays #CIRC! (X1)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  0
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=Y1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:49.603 ERR-091: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-092",
+                      "area":  "errors",
+                      "source":  "observed",
+                      "description":  "Two separate cycles do not disturb each other: the other stays #CIRC! (Y1)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  0
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=X1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:52.789 ERR-092: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ERR-093",
+                      "area":  "errors",
+                      "source":  "documented",
+                      "description":  "A range that includes its own cell is a cycle",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=SUM(A:A)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:44:56.076 ERR-093: typing =SUM(A:A): [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TEXT-012",
+                      "area":  "formula-text",
+                      "source":  "observed",
+                      "description":  "A range spanning every column is written as whole rows, the rows absolute, as Excel writes it",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=$1:$1048576"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=$1:$1048576"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=$1:$1048576",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:57.548 TEXT-012: typing =A:XFD: [Microsoft Excel] Microsoft Excel | Error Icon | Excel ran out of resources while attempting to calculate one or more formulas. As a result, these formulas cannot be evaluated. | OK | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TEXT-013",
+                      "area":  "formula-text",
+                      "source":  "observed",
+                      "description":  "Every Reference form is written back exactly as typed",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=1:1048576"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=1:1048576"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=1:1048576",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:44:58.915 TEXT-013: typing =1:1048576: [Microsoft Excel] Microsoft Excel | Error Icon | Excel ran out of resources while attempting to calculate one or more formulas. As a result, these formulas cannot be evaluated. | OK | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TEXT-078",
+                      "area":  "formula-text",
+                      "source":  "observed",
+                      "description":  "A no-break space between tokens is refused on entry, as a tab is (inferred from the observed whitespace rules (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =A1 +1 was refused: TEXT-078: typing =A1 +1: [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:00.583 TEXT-078: typing =A1 +1: [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  },
+                  {
+                      "id":  "TEXT-082",
+                      "area":  "formula-text",
+                      "source":  "observed",
+                      "description":  "A range spanning the whole Sheet is written as whole rows (inferred from Excel\u0027s observed A:XFD and A1:A1048576 (verification/2026-09-27-windows-excel), not yet asked of Excel)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=1:1048576"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=1:1048576"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=1:1048576",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:01.649 TEXT-082: typing =A1:XFD1048576: [Microsoft Excel] Microsoft Excel | Error Icon | Excel ran out of resources while attempting to calculate one or more formulas. As a result, these formulas cannot be evaluated. | OK | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TEXT-103",
+                      "area":  "formula-text",
+                      "source":  "observed",
+                      "description":  "=1E308, above Excel\u0027s largest number 9.99999999999999E+307, is refused. Excel refuses it through COM and, typed, offers to correct it to =E1308; ExSheet does not correct a Formula into another one (verification/2026-09-27-windows-excel-2; ADR-0047)",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=E1308",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:03.019 TEXT-103: typing =1E308: [Microsoft Excel] Microsoft Excel | Information Icon | We found a typo in your formula and tried to correct it to:  ‭=E1308‬  Do you want to accept this correction? | Yes | No | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TEXT-113",
+                      "area":  "formula-text",
+                      "source":  "observed",
+                      "description":  "Engine\u0027s answer, Excel to be asked: a negated 1E308 is refused as 1E308 is",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "refusedEntry":  true
+                                   },
+                      "engineExpect":  {
+                                           "refusedEntry":  true
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=-E1308",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+                                          "expected the entry refused; Excel entered it"
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:04.285 TEXT-113: typing =-1E308: [Microsoft Excel] Microsoft Excel | Information Icon | We found a typo in your formula and tried to correct it to:  ‭=-E1308‬  Do you want to accept this correction? | Yes | No | System Menu Bar | System | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "IF-015",
+                      "area":  "if",
+                      "source":  "observed",
+                      "description":  "A branch not taken that reads a cycle still makes the Formula #CIRC!",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  1
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  1,
+                                    "kind":  "number",
+                                    "number":  "1",
+                                    "text":  "1",
+                                    "formula":  "=IF(TRUE,1,A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: IFERROR and ISERROR do not catch #CIRC!, and a Formula whose text references a cycle member is #CIRC! whether or not the branch is taken",
+                      "keyDialogs":  [
+                                         "10:45:06.057 IF-015: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "IFERROR-010",
+                      "area":  "iferror",
+                      "source":  "observed",
+                      "description":  "IFERROR does not catch #CIRC!",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  0
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=IFERROR(A1,0)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: IFERROR and ISERROR do not catch #CIRC!, and a Formula whose text references a cycle member is #CIRC! whether or not the branch is taken",
+                      "keyDialogs":  [
+                                         "10:45:08.433 IFERROR-010: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "ISERROR-010",
+                      "area":  "iserror",
+                      "source":  "documented",
+                      "description":  "ISERROR does not catch #CIRC!",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "excelExpect",
+                      "expected":  {
+                                       "value2":  0
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=ISERROR(A1)",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: IFERROR and ISERROR do not catch #CIRC!, and a Formula whose text references a cycle member is #CIRC! whether or not the branch is taken",
+                      "keyDialogs":  [
+                                         "10:45:10.811 ISERROR-010: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TABLE-011",
+                      "area":  "linked-tables",
+                      "source":  "documented",
+                      "description":  "A column the table does not have is #REF!",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#REF!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#REF!"
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =SUM(Positions[Delta]) was refused: TABLE-011: typing =SUM(Positions[Delta]): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+                                          "the keyboard entry of =SUM(Positions[Delta]) was refused: TABLE-011: typing =SUM(Positions[Delta]): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:13.588 TABLE-011: typing =SUM(Positions[Delta]): [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  },
+                  {
+                      "id":  "TABLE-013",
+                      "area":  "linked-tables",
+                      "source":  "documented",
+                      "description":  "A structured reference to a Linked Table that was never declared is #NAME?",
+                      "status":  "disagree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#NAME?"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#NAME?"
+                                       },
+                      "excel":  {
+                                    "refusedEntry":  "the keyboard entry of =Positions[PV] was refused: TABLE-013: typing =Positions[PV]: [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                },
+                      "differences":  [
+                                          "the keyboard entry of =Positions[PV] was refused: TABLE-013: typing =Positions[PV]: [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:14.856 TABLE-013: typing =Positions[PV]: [Microsoft Excel] Microsoft Excel | Warning Icon | There\u0027s a problem with this formula.  Not trying to type a formula? When the first character is an equal (\"=\") or minus (\"-\") sign, Excel thinks it\u0027s a formula:  • you type:   =1+1, cell shows:   2  To get around this, type an apostrophe ( \u0027 ) first:  • you type:   \u0027=1+1, cell shows:   =1+1 | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button); Escape then cancelled the edit"
+                                     ]
+                  },
+                  {
+                      "id":  "NAME-009",
+                      "area":  "sheet-names",
+                      "source":  "documented",
+                      "description":  "A cycle through the Sheet\u0027s own name is a cycle (A1)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=Sheet1!B1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:45:16.235 NAME-009: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "NAME-010",
+                      "area":  "sheet-names",
+                      "source":  "documented",
+                      "description":  "A cycle through the Sheet\u0027s own name is a cycle (B1)",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:45:18.110 NAME-010: typing =A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "STRUCT-021",
+                      "area":  "structure",
+                      "source":  "documented",
+                      "description":  "A Formula reading a cycle is #CIRC!",
+                      "status":  "recorded",
+                      "reason":  null,
+                      "comparedWith":  null,
+                      "expected":  null,
+                      "engineExpect":  {
+                                           "value2":  "#CIRC!"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "engineDiffersByDecision":  "ADR-0047: a circular reference is #CIRC! in every member and dependent, where Excel shows 0",
+                      "keyDialogs":  [
+                                         "10:45:19.983 STRUCT-021: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "STRUCT-022",
+                      "area":  "structure",
+                      "source":  "observed",
+                      "description":  "Deleting a cell of a cycle breaks it: the Reference becomes #REF!",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#REF!",
+                                       "formula":  "=#REF!+1"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#REF!",
+                                           "formula":  "=#REF!+1"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=#REF!+1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:22.358 STRUCT-022: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "STRUCT-023",
+                      "area":  "structure",
+                      "source":  "observed",
+                      "description":  "Deleting a cell of a cycle breaks it: what read the cycle follows",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "value2":  "#REF!"
+                                   },
+                      "engineExpect":  {
+                                           "value2":  "#REF!"
+                                       },
+                      "excel":  {
+                                    "value2":  "#REF!",
+                                    "kind":  "error",
+                                    "text":  "#REF!",
+                                    "formula":  "=A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:25.038 STRUCT-023: typing =A1+1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TYPED-019",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Ticket 19 row 26: a leading + before a Reference makes a Formula (here reading its own cell)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=+A1"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=+A1"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=+A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:27.215 TYPED-019: typing +A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  },
+                  {
+                      "id":  "TYPED-020",
+                      "area":  "typed-constants",
+                      "source":  "observed",
+                      "description":  "Ticket 19 row 26: a leading - before a Reference makes a Formula (here reading its own cell)",
+                      "status":  "agree",
+                      "reason":  null,
+                      "comparedWith":  "expect",
+                      "expected":  {
+                                       "formula":  "=-A1"
+                                   },
+                      "engineExpect":  {
+                                           "formula":  "=-A1"
+                                       },
+                      "excel":  {
+                                    "value2":  0,
+                                    "kind":  "number",
+                                    "number":  "0",
+                                    "text":  "0",
+                                    "formula":  "=-A1",
+                                    "numberFormat":  "General",
+                                    "alignment":  "general",
+                                    "columnWidth":  8.09,
+                                    "standardWidth":  8.09,
+                                    "widens":  false,
+                                    "refused":  false
+                                },
+                      "differences":  [
+
+                                      ],
+                      "keyDialogs":  [
+                                         "10:45:28.583 TYPED-020: typing -A1: [Microsoft Excel] Microsoft Excel | Warning Icon | There are one or more circular references where a formula refers to its own cell either directly or indirectly. This might cause them to calculate incorrectly.   Try removing or changing these references, or moving the formulae to different cells. | OK | System Menu Bar | System | Context help | Close -\u003e Enter (its default button)"
+                                     ]
+                  }
+              ]
+}

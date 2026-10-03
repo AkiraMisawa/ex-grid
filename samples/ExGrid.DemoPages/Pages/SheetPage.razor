@@ -1,0 +1,401 @@
+@page "/sheet"
+@implements IDisposable
+@using System.Globalization
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md),
+   and because inside ExSheet.Components the name ExSheet is the component, not the namespace. *@
+@using global::ExSheet
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud runs the Sheet with ExGrid.MudBlazor's Chrome instead of the built-in one, so the
+   browser tests of the Formula Bar, the completion list and the coloured text run under both
+   Chromes (DC-17, ADR-0030; DemoChrome). Unlike /features, which changes the Chrome alone, the
+   Sheet stands on the Wrapper's paper with its stylesheet: the Chrome's fields meet the coloured
+   text's contract (no padding, no ground, filling the core's box) only through that stylesheet,
+   and the Chrome used alone is not supported where References are coloured (ADR-0057, "The
+   Wrapper's shape is required…"; ADR-0030). Its Chrome is ExSheet.MudBlazor's, which is the
+   Wrapper's in every seam of the grid and draws Format Cells as a MudDialog (ADR-0071). *@
+@* ?scheme=dark shows the page in the dark scheme, where the Sheet's Paper stays white and its frame
+   darkens (ADR-0071). ?case= opens one of the eleventh Windows run's set-ups instead of the page's own
+   Sheet (SheetCases), for Part C to put beside Excel's screenshots. ?pin=N pins N leading columns,
+   for a test that needs a case beside a Pinned Column. ?toolbar=off opens the Sheet without its
+   Sheet Toolbar, which Ctrl+F1 also hides and shows (ADR-0100); a case opens without it unless
+   ?toolbar=on asks. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" Dark="Dark" />
+
+<DemoNav />
+
+<h1>Sheet — ExSheet drawn by ExGrid</h1>
+
+<p>
+    ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's
+    Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the
+    Formula Bar, type an address such as <code>D200</code> into the Name Box, and use Ctrl+arrow to
+    jump to the end of a block. The status line counts the cells of the Sheet Document the page
+    receives after every change (ADR-0048).
+</p>
+
+<p>
+    The grid on the right shows this page's positions, and the Sheet reads the same data as the
+    Linked Table <code>Positions</code> (ADR-0049): by key in B12, by column in B11. Its key column is
+    <code>Id</code>, so a snapshot in which an Id repeats would be refused and its readers would wait
+    again. The page pushes its first snapshot a moment after the Sheet opens, so those cells show <code>#GETTING_DATA</code>
+    until it lands; <i>Revalue</i> changes the data both show, and only the Formulas reading the
+    table recalculate. Type <code>=SUM(Po</code> into a cell to see the table offered, and finish it as
+    <code>=SUM(Positions[PV])</code>: while the Formula is edited, the PV column of the grid on the right
+    is outlined in the colour its Reference wears (ADR-0057). The Sheet tells which columns it reads,
+    and the Pointing Scope the page put the Sheet and that grid in, which knows that the grid shows the
+    table, outlines them there (ADR-0058). Click a header of the grid on the right to sort it.
+</p>
+
+<div class="demo-toolbar">
+    <button id="sheet-undo" disabled="@_editing" @onclick="UndoAsync">Undo</button>
+    <button id="sheet-redo" disabled="@_editing" @onclick="RedoAsync">Redo</button>
+    <button id="sheet-format-cells" disabled="@_editing" @onclick="FormatCellsAsync">Format Cells…</button>
+    <button id="sheet-insert-row" disabled="@_editing" @onclick="InsertRowAsync">Insert a row above row 2</button>
+    <button id="sheet-revalue" @onclick="RevalueAsync">Revalue the positions by +1%</button>
+</div>
+
+<p class="demo-status">
+    <span id="sheet-status">@_status</span>
+</p>
+
+@* ?box=window gives the Sheet a box that follows the window's height (ViewportSize.Stretch), so a
+   popover's room changes with the window: the browser tests shrink it under Format Cells
+   (DC-60, ADR-0040). *@
+<div class="demo-side-by-side" style="@(InWindowBox ? "height: calc(100vh - 360px); min-height: 0" : null)">
+    @if (DemoChrome.IsMud(ChromeName))
+    {
+        <MudExGridPaper>@Sheet</MudExGridPaper>
+    }
+    else
+    {
+        @Sheet
+    }
+    <div id="sheet-positions">
+        <ExGrid TRow="Position" Source="_positionsShown" Columns="PositionColumns" RowHeight="28"
+                ViewportHeight="420" ViewportWidth="330" PointedAt="_positionsPointedAt" />
+    </div>
+</div>
+
+@* Why a press on the positions grid wrote nothing into the Formula, as the Sheet tells the page
+   (ADR-0058). Below the grids, for the reason the paragraph below gives. *@
+<p class="demo-status">
+    <span id="sheet-pointing">@_pointingStatus</span>
+</p>
+
+@* Below the Sheet, not above it: the page's tests press cells by where the grid stands in a
+   720 px window, and text above the grid moves every row down. *@
+<p class="demo-status">
+    Focus cell: <span id="sheet-focus-font">@_focusFont</span>,
+    <span id="sheet-focus-number-format">@_focusNumberFormat</span>
+</p>
+
+<p>
+    The Sheet Toolbar above the Formula Bar is ExSheet's own (ADR-0100): its first row is Excel's Home
+    tab's formatting commands, each following the Focus cell and greyed out while a cell is edited,
+    and its second row is this page's, with an action of its own. The page declares what the toolbar
+    holds and in which order; Ctrl+F1 hides and shows it, and the page holds whether it is shown.
+</p>
+
+<p>
+    Excel's formatting keys work on the Selection, each as one step Ctrl+Z undoes (ADR-0071): Ctrl+B,
+    Ctrl+I, Ctrl+U and Ctrl+5 (or Ctrl+2 to Ctrl+4) toggle bold, italic, underline and
+    strikethrough from the Focus cell's state, and Ctrl+Shift with <code>~ ! @@ # $ % ^</code> applies
+    General, <code>#,##0.00</code>, a time, a date, the currency, a percentage and scientific; with
+    <code>&amp;</code> an outline, and with <code>_</code> no borders. The line above reads the
+    Focus cell's Cell Format back. While a cell is being edited the keys change nothing, and the
+    Sheet says why.
+</p>
+
+<p>
+    The Sheet and the positions grid are in one Pointing Scope (ADR-0058). While a Formula is typed,
+    wherever a Reference can go — after <code>=</code>, an operator, <code>(</code> or <code>,</code>
+    — a press on a positions cell writes what reads it by its key,
+    <code>XLOOKUP("R-4471", Positions[Id], Positions[PV])</code>, and a press on a column's header
+    writes <code>Positions[PV]</code>. The positions grid keeps neither the keyboard nor a Selection for
+    it: the pressed cell or column is dashed until something is typed after what the press wrote, and
+    the dashes stay on that position's row wherever a sort puts it. A press that stands for more than
+    one cell writes nothing, and the line above says why.
+</p>
+
+<p>
+    While a cell is being edited, the commands that change the Sheet are greyed out, as Excel greys
+    out its ribbon: ExSheet refuses them until the edit is committed or cancelled, so a row inserted
+    above the cell cannot carry the typing into another row (ADR-0048). <i>Revalue</i> stays: a
+    Linked Table's snapshot is data arriving, not a command (ADR-0049).
+</p>
+
+@code {
+    /// <summary>Which Chrome the Sheet runs with (<see cref="DemoChrome"/>).</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    /// <summary><c>window</c> sizes the Sheet's height by the window's rather than declaring it.</summary>
+    [SupplyParameterFromQuery(Name = "box")]
+    public string? Box { get; set; }
+
+    private bool InWindowBox => Box == "window";
+
+    /// <summary><c>dark</c> shows the page in the dark scheme (<see cref="DemoChrome.IsDark"/>).</summary>
+    [SupplyParameterFromQuery(Name = "scheme")]
+    public string? Scheme { get; set; }
+
+    /// <summary>One of the eleventh Windows run's cases (<see cref="SheetCases"/>), opened in place of the page's own Sheet.</summary>
+    [SupplyParameterFromQuery(Name = "case")]
+    public string? Case { get; set; }
+
+    /// <summary>How many leading columns to pin, in place of the page's own choice.</summary>
+    [SupplyParameterFromQuery(Name = "pin")]
+    public int? Pin { get; set; }
+
+    private bool Dark => DemoChrome.IsDark(Scheme);
+
+    // The page's own Sheet pins column A; a run's case does not, as Excel's workbook in the run had
+    // no frozen panes, so what Part C puts beside Excel's picture is drawn as Excel drew it. ?pin=
+    // overrides both, for a test about a Pinned Column.
+    private int PinnedColumns => Pin ?? (Case is null ? 1 : 0);
+
+    private IGridChrome? _chrome;
+
+    // The Sheet, on the Wrapper's paper under ExGrid.MudBlazor's Chrome and bare under the core's.
+    private RenderFragment Sheet => @<ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="Count" Culture="Culture" PinnedColumnCount="@PinnedColumns" Chrome="_chrome"
+                                              EditingChanged="_editingChanged" ViewportHeight="@(InWindowBox ? ViewportSize.Stretch : SheetHeight)" ViewportWidth="720"
+                                              SelectionChanged="_selectionChanged" OnFormatKeyRefused="_formatKeyRefused"
+                                              PointingScope="_scope" OnPointingRefused="ShowPointingRefusal"
+                                              @bind-ShowToolbar="_toolbarShown">
+                                         <ToolbarContent>
+                                             <DefaultToolbarRow />
+                                             <ToolbarRow KeyTip="Y" Label="This page">
+                                                 <ToolbarButton Text="Mark reviewed" OnClick="MarkReviewedAsync" KeyTip="R" />
+                                             </ToolbarRow>
+                                         </ToolbarContent>
+                                     </ExSheet>;
+
+    /// <summary><c>off</c> opens the Sheet without its Sheet Toolbar (ADR-0100).</summary>
+    [SupplyParameterFromQuery(Name = "toolbar")]
+    public string? Toolbar { get; set; }
+
+    // Whether the Sheet Toolbar is shown: the page's View State, which Ctrl+F1 changes (ADR-0100).
+    private bool _toolbarShown = true;
+
+    // The Sheet's height includes its toolbar (ADR-0100). The page adds the toolbar's two rows, each
+    // the Formula Bar's height, so that the grid keeps the rows it showed before the toolbar came.
+    private static readonly double ToolbarRowPx = GridMetrics.Resolve(GridDensity.Compact, ExSheet.DefaultRowHeightPx).FormulaBarHeightPx;
+
+    private double SheetHeight => 420 + (_toolbarShown ? 2 * ToolbarRowPx : 0);
+
+    protected override void OnParametersSet()
+    {
+        _chrome = DemoChrome.ForSheet(ChromeName);
+        // A run's case is drawn as Excel drew it, to be put beside Excel's picture: without the
+        // toolbar, at the place the case's specs measure it.
+        if (Toolbar == "off" || (Case is not null && Toolbar != "on")) _toolbarShown = false;
+    }
+
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private const string Table = "Positions";
+    private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+    // A row is read by its Id, and no Id appears twice in a snapshot (ADR-0049, 2026-09-30).
+    private const string TableKey = "Id";
+
+    // The page's own data: what the positions grid shows and what the Sheet reads, from one
+    // source (ADR-0049's first rule: ExSheet never reads the grid).
+    private sealed record Position(string Id, string Book, double PV);
+
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
+            format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
+    ];
+
+    private readonly CancellationTokenSource _closing = new();
+    private static readonly Position[] OpeningPositions =
+    [
+        new("R-1102", "Rates", 1_250),
+        new("R-2210", "Rates", -420.5),
+        new("R-4471", "FX", 318.25),
+        new("R-5093", "Credit", 97.4),
+        new("R-6120", "FX", -55.75),
+    ];
+    private Position[] _positions = OpeningPositions;
+    // The positions as the grid on the right shows them, sorted as its headers ask; the Sheet reads
+    // the table by key, whatever order the grid shows (ADR-0049's second rule).
+    private readonly InMemoryGridSource<Position> _positionsShown = GridSource.From(OpeningPositions);
+
+    private ExSheet? _sheet;
+    private SheetDocument? _document;
+    // The Sheet and the positions grid, pointed at while the Sheet points (ADR-0058). The grid is
+    // registered with the table it shows and how its rows are the table's rows: its columns are
+    // named as the table's are declared, so no column needs an entry. The Scope also outlines there
+    // the columns of the table the Formula being edited reads (ADR-0057): only the page knows which
+    // grid shows the table (ADR-0049's first rule, ADR-0018), and it says so once, here.
+    private readonly PointingScope _scope = new();
+    private GridPointedAt<Position>? _positionsPointedAt;
+    // Why the last press on the positions grid wrote nothing, until the edit opens or ends.
+    private string _pointingStatus = "";
+    private string _status = "";
+    // Whether an edit is open in the Sheet, as ExSheet raises it: the toolbar's commands are
+    // greyed out while it is (ADR-0048).
+    private bool _editing;
+    private EventCallback<bool> _editingChanged;
+    // The Focus cell's Cell Format, read back from the Sheet whenever the Selection or the Sheet
+    // changes (ADR-0071's CellFormatAt), and a formatting key the Sheet refused, said in the status
+    // line as the page says a refused command (ADR-0071, SH-43).
+    private EventCallback<GridSelection> _selectionChanged;
+    private EventCallback<SheetRefusal> _formatKeyRefused;
+    private GridSelection _selection = GridSelection.Empty;
+    private string _focusFont = "";
+    private string _focusNumberFormat = "";
+
+    // A few values, Formulas over them, and a date: the tracer's A1 + B1 and a little more.
+    private static SheetDocument Opening()
+    {
+        var sheet = new Sheet(Culture);
+        (string Address, string Typed)[] cells =
+        [
+            ("A1", "Item"), ("B1", "Qty"), ("C1", "Price"), ("D1", "Amount"),
+            ("A2", "Apples"), ("B2", "12"), ("C2", "0.5"), ("D2", "=B2*C2"),
+            ("A3", "Pears"), ("B3", "7"), ("C3", "0.75"), ("D3", "=B3*C3"),
+            ("A4", "Plums"), ("B4", "20"), ("C4", "0.2"), ("D4", "=B4*C4"),
+            ("A5", "Total"), ("B5", "=SUM(B2:B4)"), ("D5", "=SUM(D2:D4)"),
+            ("A7", "As of"), ("B7", "9/26/2026"),
+            ("A8", "Due"), ("B8", "=B7+30"),
+            ("A10", "Positions"),
+            ("A11", "Total PV"), ("B11", $"=SUM({Table}[PV])"),
+            ("A12", "PV of R-4471"), ("B12", $"=XLOOKUP(\"R-4471\", {Table}[Id], {Table}[PV])"),
+            ("A13", "Count"), ("B13", $"=COUNTA({Table}[Id])"),
+        ];
+        // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
+        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
+        foreach (var (address, typed) in cells) sheet.Enter(CellAddress.Parse(address), typed);
+        return sheet.ToDocument();
+    }
+
+    protected override void OnInitialized()
+    {
+        _document = SheetCases.Document(Case, Culture) ?? Opening();
+        _positionsPointedAt = _scope.RegisterGrid<Position>(Table, TableRow);
+        // Held in a field: a method group would be a new delegate on every render (AGENTS.md,
+        // the Blazor traps).
+        _editingChanged = EventCallback.Factory.Create<bool>(this, OnEditingChanged);
+        _selectionChanged = EventCallback.Factory.Create<GridSelection>(this, OnSelectionChanged);
+        _formatKeyRefused = EventCallback.Factory.Create<SheetRefusal>(this, refusal => _status = refusal.Message);
+        Count();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _sheet is null) return;
+        // Declaring what the document already declares changes nothing; a page that opens a
+        // document without it declares it here.
+        await _sheet.DeclareLinkedTableAsync(Table, TableColumns, TableKey);
+        try
+        {
+            // Long enough to see #GETTING_DATA: the data is "on its way".
+            await Task.Delay(TimeSpan.FromSeconds(1.5), _closing.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        await PushAsync();
+    }
+
+    private async Task RevalueAsync()
+    {
+        Position[] revalued = [.. _positions.Select(p => p with { PV = Math.Round(p.PV * 1.01, 2) })];
+        // Each position is a new instance, where the grid shows it in the order it is sorted.
+        for (var i = 0; i < revalued.Length; i++) _positionsShown.ReplaceRow(_positions[i], revalued[i]);
+        _positions = revalued;
+        await PushAsync();
+    }
+
+    private Task PushAsync() =>
+        _sheet is null
+            ? Task.CompletedTask
+            : _sheet.PushLinkedTableAsync(Table, _positions.Select(TableRow));
+
+    // A position as the table's row, in the declared column order: what the page pushes, and what
+    // the Scope reads a pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) => [Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+
+    private void ShowPointingRefusal(PointingRefusal refusal) => _pointingStatus = refusal.Message;
+
+    public void Dispose()
+    {
+        _closing.Cancel();
+        _closing.Dispose();
+    }
+
+    private void OnEditingChanged(bool open)
+    {
+        _editing = open;
+        _pointingStatus = "";
+    }
+
+    private Task UndoAsync() => CommandAsync(sheet => sheet.UndoAsync());
+
+    private Task RedoAsync() => CommandAsync(sheet => sheet.RedoAsync());
+
+    // The page's own action on the Sheet Toolbar (ADR-0100): Excel's light green under the Selection.
+    private Task MarkReviewedAsync() => CommandAsync(sheet => sheet.SetCellFormatAsync(new CellFormatChange { Fill = CellFill.Solid(CellColour.FromRgb(0xE2EFDA)) }));
+
+    private Task InsertRowAsync() => CommandAsync(sheet => sheet.DoAsync(SheetEdit.InsertRows(1)));
+
+    // The Consumer's own button for Format Cells (ADR-0071), beside the Context Menu's command.
+    private Task FormatCellsAsync() => CommandAsync(sheet => sheet.OpenFormatCellsAsync());
+
+    // A command ExSheet refuses changes nothing and says why (ADR-0048): an insertion that would
+    // push an Entry off the Sheet, or any command while an edit is open. The buttons are greyed
+    // out then, but a press can still land before the render that greys them does.
+    private async Task CommandAsync(Func<ExSheet, Task> command)
+    {
+        if (_sheet is null) return;
+        try
+        {
+            await command(_sheet);
+            Count();
+        }
+        catch (SheetRefusedException refused)
+        {
+            _status = refused.Message;
+        }
+    }
+
+    private void Count()
+    {
+        _status = $"{_document?.Cells.Count ?? 0} cells in the Sheet Document.";
+        ReadFocus();
+    }
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        ReadFocus();
+    }
+
+    private void ReadFocus()
+    {
+        if (_sheet is null || _selection.IsEmpty)
+        {
+            _focusFont = _focusNumberFormat = "";
+            return;
+        }
+        var format = _sheet.CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        string[] emphases =
+        [
+            .. format.Font.Bold ? ["bold"] : Array.Empty<string>(),
+            .. format.Font.Italic ? ["italic"] : Array.Empty<string>(),
+            .. format.Font.Underline ? ["underline"] : Array.Empty<string>(),
+            .. format.Font.Strikethrough ? ["strikethrough"] : Array.Empty<string>(),
+        ];
+        _focusFont = emphases.Length == 0 ? "regular" : string.Join(" ", emphases);
+        _focusNumberFormat = format.NumberFormat.Code;
+    }
+}

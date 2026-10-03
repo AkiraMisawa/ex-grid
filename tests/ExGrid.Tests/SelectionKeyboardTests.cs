@@ -7,7 +7,7 @@ public class SelectionKeyboardTests
 {
     private static readonly GridExtent Grid = new(100, 26);
 
-    [Fact] // ADR-0012: arrows collapse the selection to one cell and move
+    [Fact] // ADR-0012/0052: arrows collapse the selection to one cell and move from the Focus, not the Extent
     public void Arrow_collapses_the_selection_and_moves_from_the_focus()
     {
         var selection = GridSelection.Empty
@@ -15,9 +15,9 @@ public class SelectionKeyboardTests
             .ExtendTo(new(4, 4), Grid)
             .Move(GridDirection.Down, Grid);
 
-        Assert.Equal([new SelectionRange(5, 4, 1, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(5, 4), selection.Anchor);
-        Assert.Equal(new CellPosition(5, 4), selection.Focus);
+        Assert.Equal([new SelectionRange(3, 2, 1, 1)], selection.Ranges);
+        Assert.Equal(new CellPosition(3, 2), selection.Focus);
+        Assert.Equal(new CellPosition(3, 2), selection.Extent);
     }
 
     [Fact] // ADR-0012: an arrow at the grid edge clamps — the Focus stays put
@@ -33,8 +33,8 @@ public class SelectionKeyboardTests
         Assert.Equal(new CellPosition(2, 2), bottomRight.Move(GridDirection.Right, small).Focus);
     }
 
-    [Fact] // ADR-0012: shift+arrow grows the range with the Anchor fixed, and shrinking back through it flips
-    public void Shift_arrow_grows_shrinks_and_flips_around_the_anchor()
+    [Fact] // ADR-0052: shift+arrow moves the Extent with the Focus fixed, and shrinking back through the Focus flips
+    public void Shift_arrow_grows_shrinks_and_flips_around_the_focus()
     {
         var grown = GridSelection.Empty
             .Click(new(2, 2), Grid)
@@ -46,8 +46,8 @@ public class SelectionKeyboardTests
 
         var flipped = shrunk.Extend(GridDirection.Up, Grid);
         Assert.Equal([new SelectionRange(1, 2, 2, 1)], flipped.Ranges);
-        Assert.Equal(new CellPosition(2, 2), flipped.Anchor);
-        Assert.Equal(new CellPosition(1, 2), flipped.Focus);
+        Assert.Equal(new CellPosition(2, 2), flipped.Focus);
+        Assert.Equal(new CellPosition(1, 2), flipped.Extent);
     }
 
     [Fact] // ADR-0011: Ctrl+Down jumps to the last row — not a block edge, which needs data the grid does not have
@@ -62,7 +62,7 @@ public class SelectionKeyboardTests
         Assert.Equal([new SelectionRange(99, 3, 1, 1)], start.MoveToEdge(GridDirection.Down, Grid).Ranges);
     }
 
-    [Fact] // ADR-0012: shift+ctrl+arrow extends the range to the edge
+    [Fact] // ADR-0012/0052: shift+ctrl+arrow runs the Extent to the edge; the Focus stays
     public void Shift_ctrl_arrow_extends_to_the_edge()
     {
         var selection = GridSelection.Empty
@@ -70,8 +70,8 @@ public class SelectionKeyboardTests
             .ExtendToEdge(GridDirection.Down, Grid);
 
         Assert.Equal([new SelectionRange(5, 3, 95, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(5, 3), selection.Anchor);
-        Assert.Equal(new CellPosition(99, 3), selection.Focus);
+        Assert.Equal(new CellPosition(5, 3), selection.Focus);
+        Assert.Equal(new CellPosition(99, 3), selection.Extent);
     }
 
     [Fact] // ADR-0012: Ctrl+Shift+Down from the first row is effectively a whole-column selection
@@ -84,7 +84,7 @@ public class SelectionKeyboardTests
         Assert.Equal([new SelectionRange(0, 3, 100, 1)], selection.Ranges);
     }
 
-    [Fact] // ADR-0012: Ctrl+Space expands the last range to every row, keeping its column span
+    [Fact] // ADR-0012/0052: Ctrl+Space expands the range holding the Focus to every row, keeping its column span; the Focus stays
     public void Ctrl_space_selects_whole_columns()
     {
         var selection = GridSelection.Empty
@@ -93,8 +93,7 @@ public class SelectionKeyboardTests
             .SelectWholeColumns(Grid);
 
         Assert.Equal([new SelectionRange(0, 3, 100, 2)], selection.Ranges);
-        Assert.Equal(new CellPosition(5, 3), selection.Anchor);
-        Assert.Equal(new CellPosition(7, 4), selection.Focus);
+        Assert.Equal(new CellPosition(5, 3), selection.Focus);
     }
 
     [Fact] // ADR-0012: Shift+Space expands the last range to every visible column, keeping its row span
@@ -108,31 +107,35 @@ public class SelectionKeyboardTests
         Assert.Equal([new SelectionRange(5, 0, 3, 26)], selection.Ranges);
     }
 
-    [Fact] // ADR-0012: Ctrl+Space from a detached Anchor starts a whole-column range at the deselected cell
-    public void Ctrl_space_after_a_toggle_off_starts_a_column_range_at_the_anchor()
+    [Fact] // ADR-0052: after a cell is taken out, Ctrl+Space grows the fragment holding the Focus — there is no detached state
+    public void Ctrl_space_after_a_toggle_off_grows_the_fragment_holding_the_focus()
     {
         var selection = GridSelection.Empty
             .Click(new(2, 2), Grid)
             .ExtendTo(new(4, 4), Grid)
-            .ToggleRange(new(3, 3), Grid)   // detaches on (3,3); four fragments remain
+            .ToggleRange(new(3, 3), Grid)   // four fragments, bottom to top; the Focus on (2,2), the first remaining cell by rows
             .SelectWholeColumns(Grid);
 
-        Assert.Equal(5, selection.Ranges.Count);
-        Assert.Equal(new SelectionRange(0, 3, 100, 1), selection.Ranges[^1]); // the Anchor's column, not a fragment's
-        Assert.Equal(new CellPosition(3, 3), selection.Anchor);
+        Assert.Equal(4, selection.Ranges.Count);
+        Assert.Equal(new SelectionRange(0, 2, 100, 3), selection.Ranges[3]); // the top band, (2,2)-(2,4), listed last, made whole columns
+        Assert.Equal(new CellPosition(2, 2), selection.Focus);
     }
 
-    [Fact] // ADR-0012: Shift+Space from a detached Anchor starts a whole-row range at the deselected cell
-    public void Shift_space_after_a_toggle_off_starts_a_row_range_at_the_anchor()
+    [Fact] // ADR-0052 case 9: Ctrl+Space and Shift+Space act on the range holding the Focus, which Enter moved — B3 in B2:D4 gives B:D and 2:4
+    public void The_space_pair_selects_the_focus_range_and_the_focus_does_not_move()
     {
-        var selection = GridSelection.Empty
-            .Click(new(0, 0), Grid)
-            .ExtendTo(new(2, 2), Grid)
-            .ToggleRange(new(1, 2), Grid)
-            .SelectWholeRows(Grid);
+        var b2d4 = GridSelection.Empty
+            .Click(new(1, 1), Grid)
+            .ExtendTo(new(3, 3), Grid)
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid); // Enter: B3
 
-        Assert.Equal(new SelectionRange(1, 0, 1, 26), selection.Ranges[^1]);
-        Assert.Equal(new CellPosition(1, 2), selection.Anchor);
+        var columns = b2d4.SelectWholeColumns(Grid);
+        Assert.Equal([new SelectionRange(0, 1, 100, 3)], columns.Ranges);
+        Assert.Equal(new CellPosition(2, 1), columns.Focus);
+
+        var rows = b2d4.SelectWholeRows(Grid);
+        Assert.Equal([new SelectionRange(1, 0, 3, 26)], rows.Ranges);
+        Assert.Equal(new CellPosition(2, 1), rows.Focus);
     }
 
     [Fact] // ADR-0012: keyboard needs a Focus to start from — on an empty selection it is a no-op
@@ -147,7 +150,7 @@ public class SelectionKeyboardTests
         Assert.True(GridSelection.Empty.CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid).IsEmpty);
     }
 
-    [Fact] // ADR-0012: PageDown collapses and moves the Focus by the rows the caller passed
+    [Fact] // ADR-0012/0052: PageDown collapses and moves the Focus — not the Extent — by the rows the caller passed
     public void Move_by_viewport_steps_the_focus_by_the_given_rows()
     {
         var selection = GridSelection.Empty
@@ -155,10 +158,10 @@ public class SelectionKeyboardTests
             .ExtendTo(new(4, 4), Grid)
             .MoveByViewport(20, Grid);
 
-        Assert.Equal([new SelectionRange(24, 4, 1, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(24, 4), selection.Focus);
+        Assert.Equal([new SelectionRange(22, 2, 1, 1)], selection.Ranges);
+        Assert.Equal(new CellPosition(22, 2), selection.Focus);
 
-        Assert.Equal(new CellPosition(4, 4), selection.MoveByViewport(-20, Grid).Focus);
+        Assert.Equal(new CellPosition(2, 2), selection.MoveByViewport(-20, Grid).Focus);
     }
 
     [Fact] // ADR-0012: at the first and last row the step clamps — the Focus stays inside
@@ -171,16 +174,16 @@ public class SelectionKeyboardTests
         Assert.Equal(new CellPosition(99, 5), nearBottom.MoveByViewport(20, Grid).Focus);
     }
 
-    [Fact] // ADR-0012: Shift+PageDown redraws the Anchor's range between Anchor and moved Focus
-    public void Extend_by_viewport_grows_the_range_from_the_anchor()
+    [Fact] // ADR-0052 case 11: Shift+PageDown moves the Extent a Viewport of rows and the Focus stays
+    public void Extend_by_viewport_moves_the_extent_and_keeps_the_focus()
     {
         var selection = GridSelection.Empty
             .Click(new(10, 3), Grid)
             .ExtendByViewport(20, Grid);
 
         Assert.Equal([new SelectionRange(10, 3, 21, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(10, 3), selection.Anchor);
-        Assert.Equal(new CellPosition(30, 3), selection.Focus);
+        Assert.Equal(new CellPosition(10, 3), selection.Focus);
+        Assert.Equal(new CellPosition(30, 3), selection.Extent);
 
         var back = selection.ExtendByViewport(-20, Grid);
         Assert.Equal([new SelectionRange(10, 3, 1, 1)], back.Ranges);
@@ -217,8 +220,8 @@ public class SelectionKeyboardTests
     }
 
 
-    [Fact] // ADR-0012/0015: the page-context SelectAll names a region — Anchor and Focus stay
-    public void Select_all_in_a_context_keeps_anchor_and_focus()
+    [Fact] // ADR-0012/0015/0052: the page-context SelectAll names a region — the Focus stays
+    public void Select_all_in_a_context_keeps_the_focus()
     {
         var selection = GridSelection.Empty.Click(new(52, 3), Grid);
 
@@ -226,10 +229,9 @@ public class SelectionKeyboardTests
 
         Assert.Equal([new SelectionRange(50, 0, 25, 26)], paged.Ranges);
         Assert.Equal(new CellPosition(52, 3), paged.Focus);
-        Assert.Equal(new CellPosition(52, 3), paged.Anchor);
     }
 
-    [Fact] // From Empty — or from another page — Anchor and Focus land on the context's first cell
+    [Fact] // ADR-0015: from Empty — or from another page — the Focus lands on the context's first cell
     public void Select_all_in_a_context_relocates_a_foreign_focus()
     {
         var fromEmpty = GridSelection.Empty.SelectAll(Grid, 50, 25);

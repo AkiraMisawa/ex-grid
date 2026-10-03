@@ -52,8 +52,32 @@ public static class MudExGridWords
     /// "Operator", so the two are not one name twice to a screen reader.</summary>
     public const string SecondCondition = "second-condition";
 
+    /// <summary>The Formula Bar's Name Box, as its accessible name (ADR-0051).</summary>
+    public const string NameBox = "name-box";
+
+    /// <summary>The Formula Bar's text field, as its accessible name (ADR-0051).</summary>
+    public const string FormulaBar = "formula-bar";
+
+    /// <summary>A condition's number that is not a number as the culture writes it (ticket 96).
+    /// Without the Chrome's word for it, the panel says what was typed and why, in the core's
+    /// English (<see cref="FilterPanelChoices.RefusalText"/>).</summary>
+    public const string OperandNotReadable = "operand-not-readable";
+
+    /// <summary>A condition's number that reads as two numbers, refused rather than guessed
+    /// (ticket 96). Without the Chrome's word for it, the panel names both readings in the core's
+    /// English.</summary>
+    public const string OperandReadsTwoWays = "operand-reads-two-ways";
+
+    /// <summary>A condition's date that is not of the column's declared date type: a time on a
+    /// column of days, an offset on a column without them, or none on a column of moments
+    /// (ADR-0023, section of 2026-10-02; ticket 98). Without the Chrome's word for it, the panel
+    /// names the form to type in the core's English.</summary>
+    public const string OperandNotTheColumnsDateForm = "operand-not-the-columns-date-form";
+
     private static string English(string id) => id switch
     {
+        NameBox => "Name Box",
+        FormulaBar => "Formula Bar",
         Search => "Search",
         BlankValue => "(Blanks)",
         IsOneOf => "is one of",
@@ -66,6 +90,9 @@ public static class MudExGridWords
         JoinOr => "Or",
         NoSecondCondition => "(none)",
         SecondCondition => "Second condition",
+        OperandNotReadable => "Not a number as this column reads numbers.",
+        OperandReadsTwoWays => "This reads as two different numbers. Type it without separators.",
+        OperandNotTheColumnsDateForm => "Not a date of the kind this column holds.",
         _ => BuiltInCommandLabels.For(id),
     };
 

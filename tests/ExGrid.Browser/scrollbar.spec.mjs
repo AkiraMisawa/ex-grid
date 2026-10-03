@@ -65,6 +65,10 @@ async function focusAgainstClientBox(page) {
                 dpr: window.devicePixelRatio,
                 gutterWidth: scroller.offsetWidth - scroller.clientWidth,
                 gutterHeight: scroller.offsetHeight - scroller.clientHeight,
+                // Past 2^24 device pixels Chromium holds scroll and layout positions every
+                // second device pixel (ADR-0053, "Accepted after the fourth Windows run").
+                deviceRounding: scroller.scrollTop * window.devicePixelRatio >= 2 ** 24
+                    ? 2 / window.devicePixelRatio : 0,
             },
         };
     });
@@ -87,9 +91,11 @@ function expectFocusInsideClientBox(measured, testInfo) {
     const [focus] = measured.focus;
     const { client } = measured;
     expect(focus.left, 'the Focus is left of the readable area').toBeGreaterThanOrEqual(client.left - SLACK_PX);
-    expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - SLACK_PX);
+    // Deep in a compressed spacer the browser places rows to two device pixels (ADR-0053).
+    const vertical = SLACK_PX + measured.diagnostics.deviceRounding;
+    expect(focus.top, 'the Focus is above the readable area').toBeGreaterThanOrEqual(client.top - vertical);
     expect(focus.right, 'the Focus is behind the vertical scrollbar').toBeLessThanOrEqual(client.right + SLACK_PX);
-    expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + SLACK_PX);
+    expect(focus.bottom, 'the Focus is behind the horizontal scrollbar').toBeLessThanOrEqual(client.bottom + vertical);
 }
 
 /**
@@ -201,6 +207,14 @@ async function pressAndAwaitCorner(page, key) {
             return false;
         }
         const at = (actual, want) => Math.abs(actual - want) <= settled;
+        // And the grid has painted there. The overlay is clipped to the painted rows
+        // (ADR-0053), so a Focus a million rows away has no outline until the render that
+        // answers the scroll — a round trip on a Server circuit.
+        const painted = [...document.querySelectorAll('.ex-focus')]
+            .some((element) => element.getBoundingClientRect().height > 0);
+        if (!painted) {
+            return false;
+        }
         if (corner === 'Home') {
             return at(scroller.scrollTop, 0);
         }

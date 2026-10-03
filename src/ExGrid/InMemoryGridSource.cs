@@ -213,11 +213,11 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         return Task.FromResult(Chrome.DistinctValues.Of(values));
     }
 
-    /// <summary>Always: every row is in hand (ADR-0047).</summary>
+    /// <summary>Always: every row is in hand (ADR-0055).</summary>
     public bool CanFind => true;
 
     /// <summary>
-    /// The reference Find (ADR-0047): <see cref="Finding.GridFind.Step{TRow}"/> over the
+    /// The reference Find (ADR-0055): <see cref="Finding.GridFind.Step{TRow}"/> over the
     /// current result, matching each column's displayed text as the grid handed it over in
     /// <see cref="ColumnInfo{TRow}.TextOf(TRow)"/>. A column this source was not told about, or one
     /// with no text of its own, is skipped. A request read under another version is answered

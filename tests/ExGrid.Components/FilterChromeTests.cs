@@ -299,8 +299,8 @@ public class FilterChromeTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Escape", false, false, false, false, false));
 
         Assert.Empty(cut.FindAll(".ex-popover"));
-        // The grid was not blurred: Escape's Leave only fires with nothing to dismiss.
-        Assert.False(Js.BlurCount > 0);
+        // Tab was not released: Escape's Leave only fires with nothing to dismiss.
+        Assert.False(Js.TabReleases > 0);
     }
 
     [Fact] // Escape works from inside the popover too: the capture listener forwards a
@@ -315,8 +315,8 @@ public class FilterChromeTests : GridTestContext
             fromDescendant: true));
 
         Assert.Empty(cut.FindAll(".ex-popover"));
-        // Reclaimed, not blurred: the way out of the popover leads back to the grid.
-        Assert.False(Js.BlurCount > 0);
+        // Reclaimed, Tab not released: the way out of the popover leads back to the grid.
+        Assert.False(Js.TabReleases > 0);
     }
 
     [Fact] // Clicking past an open popover dismisses it, as menus close everywhere else
@@ -471,6 +471,95 @@ public class FilterChromeTests : GridTestContext
         await OkAsync(cut);
 
         Assert.Equal(["Gamma"], AppliedValues(source));
+    }
+
+    // ---- Nothing ticked (ticket 76): an In with no values keeps nothing, and the engine
+    // refuses it (ADR-0023). No panel applies it, and OK shows it is unavailable, as Excel's.
+
+    private IRenderedComponent<ExGrid<TestRow>> RenderOverReference(InMemoryGridSource<TestRow> source)
+        => Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Source, source)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350));
+
+    private static IElement Ok(IRenderedComponent<ExGrid<TestRow>> cut)
+        => cut.FindAll(".ex-popover-actions button").Single(b => b.TextContent == "OK");
+
+    [Fact] // ADR-0009/0023 (ticket 76): with nothing ticked OK is unavailable, and neither OK nor Enter hands the engine the In it refuses
+    public async Task Nothing_ticked_is_not_applied()
+    {
+        var source = GridSource.From(TestRows.Window());
+        var cut = RenderOverReference(source);
+        await OpenPanelAsync(cut);
+
+        await cut.Find(".ex-popover .ex-select-all").ClickAsync(new MouseEventArgs()); // all → none
+
+        // Enter in the search box — the form's own submission — then a press on OK that
+        // reached a circuit ahead of the render that disabled it.
+        await cut.Find(".ex-popover form").SubmitAsync();
+        await OkAsync(cut);
+
+        Assert.Null(source.Filter);
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Equal(3, cut.FindAll(".ex-row").Count);
+        Assert.True(Ok(cut).HasAttribute("disabled"));
+    }
+
+    [Fact] // ADR-0009/0023 / FL-10 (ticket 76): a search with no chosen value among its matches is nothing to apply — SRV-5's "Alpha " and its Enter
+    public async Task A_search_with_nothing_chosen_among_its_matches_is_not_applied()
+    {
+        var source = GridSource.From(TestRows.Window());
+        var cut = RenderOverReference(source);
+        await OpenPanelAsync(cut);
+
+        await cut.Find(".ex-popover input[type=search]").InputAsync(new ChangeEventArgs { Value = "Alpha " });
+        await cut.Find(".ex-popover form").SubmitAsync();
+
+        Assert.Null(source.Filter);
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.Equal(3, cut.FindAll(".ex-row").Count);
+        Assert.True(Ok(cut).HasAttribute("disabled"));
+
+        // A match ticked again is something to apply.
+        await cut.Find(".ex-popover input[type=search]").InputAsync(new ChangeEventArgs { Value = "Alpha" });
+        Assert.False(Ok(cut).HasAttribute("disabled"));
+    }
+
+    [Fact] // ADR-0009 / FL-9 (ticket 76): a list in force that the domain no longer shows opens with nothing ticked, and OK is unavailable
+    public async Task A_list_in_force_outside_the_domain_opens_with_nothing_to_apply()
+    {
+        var source = PushedSource();
+        source.OnFilterChanged(new GridFilter(new Dictionary<string, FilterSpec>
+        {
+            ["Book"] = new([new FilterClause(FilterOperator.In, Values: new object?[] { "Beta" })]),
+        }));
+        // Another column's filter has since left this column only Alpha and Gamma.
+        source.DistinctAnswer = DistinctValues.Of(["Alpha", "Gamma"]);
+        var cut = RenderGrid(source);
+        await OpenPanelAsync(cut);
+
+        await OkAsync(cut);
+        await cut.Find(".ex-popover form").SubmitAsync();
+
+        Assert.Single(source.FilterChanges); // the one this test made
+        Assert.Single(cut.FindAll(".ex-popover"));
+        Assert.True(Ok(cut).HasAttribute("disabled"));
+    }
+
+    [Fact] // ADR-0009/0023 / FN-17 (ticket 76): an In with no values handed to the context's Apply by a substituted panel is refused by the core, and the panel stands
+    public async Task The_core_refuses_an_in_with_no_values_from_any_chrome()
+    {
+        var source = PushedSource();
+        var stub = new StubChrome();
+        var cut = RenderGrid(source, stub);
+        await OpenPanelAsync(cut);
+
+        await cut.InvokeAsync(() => stub.Panel!.Apply(new FilterSpec([new FilterClause(FilterOperator.In, Values: [])])));
+
+        Assert.Empty(source.FilterChanges);
+        Assert.Single(cut.FindAll(".ex-stub-panel"));
     }
 
     [Fact] // ADR-0009 / FL-14: two conditions joined by Or apply as one spec of two clauses
@@ -646,8 +735,7 @@ public class FilterChromeTests : GridTestContext
     }
 
     private string? LastFocusedId()
-        => JSInterop.Invocations.Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
-            .Select(i => ((ElementReference)i.Arguments[0]!).Id).LastOrDefault();
+        => Js.Focused.LastOrDefault();
 
     [Fact] // ADR-0044 / FL-15: where no value list stands, E goes to the condition's value — where a search is typed — not its operator
     public async Task E_on_a_condition_column_goes_to_its_value()

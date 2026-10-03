@@ -84,7 +84,7 @@ public class RenderAllocationTests : GridTestContext
     /// </summary>
     private (long Bytes, int Cells) LeastAllocatedByReRenders(
         GridColumn<TestRow>[] columns, IReadOnlyList<SortSpec>? sorts, IReadOnlyList<HeaderGroup>? groups,
-        bool stripes = false, int renders = 10, int runs = 10)
+        bool stripes = false, int renders = 10, int runs = 10, CellChangeOf<TestRow>? changedAt = null)
     {
         var cut = Render<ExGrid<TestRow>>(ps => ps
             .Add(g => g.Window, TestRows.Many(50))
@@ -93,6 +93,7 @@ public class RenderAllocationTests : GridTestContext
             .Add(g => g.Sorts, sorts)
             .Add(g => g.HeaderGroups, groups)
             .Add(g => g.StripeRows, stripes)
+            .Add(g => g.CellChangedAt, changedAt)
             .Add(g => g.RowHeight, 20d)
             .Add(g => g.ViewportHeight, 120)
             // Every column painted, so the cell count is rows × columns exactly.
@@ -118,24 +119,24 @@ public class RenderAllocationTests : GridTestContext
     /// between a grid of 4 columns and one of 16.</summary>
     private double PerCellPerRender(
         Func<int, GridColumn<TestRow>[]> columns, IReadOnlyList<SortSpec>? sorts = null,
-        Func<int, HeaderGroup[]>? groups = null, bool stripes = false)
+        Func<int, HeaderGroup[]>? groups = null, bool stripes = false, CellChangeOf<TestRow>? changedAt = null)
     {
         const int renders = 10;
         // One throwaway pass at each size: the JIT's first compilations land on whoever
         // goes first.
-        LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders);
-        LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders);
+        LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders, changedAt: changedAt);
+        LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders, changedAt: changedAt);
 
-        var few = LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders);
-        var many = LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders);
+        var few = LeastAllocatedByReRenders(columns(4), sorts, groups?.Invoke(4), stripes, renders, changedAt: changedAt);
+        var many = LeastAllocatedByReRenders(columns(16), sorts, groups?.Invoke(16), stripes, renders, changedAt: changedAt);
         return (double)(many.Bytes - few.Bytes) / ((many.Cells - few.Cells) * renders);
     }
 
     private void AssertNothingPerCell(
         Func<int, GridColumn<TestRow>[]> columns, IReadOnlyList<SortSpec>? sorts = null,
-        Func<int, HeaderGroup[]>? groups = null, bool stripes = false)
+        Func<int, HeaderGroup[]>? groups = null, bool stripes = false, CellChangeOf<TestRow>? changedAt = null)
     {
-        var perCellPerRender = PerCellPerRender(columns, sorts, groups, stripes);
+        var perCellPerRender = PerCellPerRender(columns, sorts, groups, stripes, changedAt);
         Assert.True(
             perCellPerRender < 1,
             $"a re-render allocated {perCellPerRender:N1} bytes per painted cell (PF-3).");
@@ -161,6 +162,24 @@ public class RenderAllocationTests : GridTestContext
     [Fact] // PF-3 / RR-13 / ADR-0038: a Row Stripe is one interned class on the row, never composed per render
     public void Re_rendering_striped_rows_allocates_nothing_per_cell()
         => AssertNothingPerCell(TextColumns, stripes: true);
+
+    [Fact] // PF-3 / ADR-0068 / ADR-0027 P5: a Change Highlight is asked without allocating and painted as one interned class
+    public void Re_rendering_marked_cells_allocates_nothing_per_cell()
+    {
+        // Every cell changed at the instant the grid's clock stands still at, so every value
+        // cell of every render wears the mark and none of them ends while it is measured.
+        var at = Clock.GetUtcNow();
+        CellChangeOf<TestRow> justNow = (_, _) => at;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, TextColumns(2))
+            .Add(g => g.CellChangedAt, justNow));
+        // The premise: the cells really are marked, or this measures nothing new.
+        Assert.Equal(cut.FindAll(".ex-cell").Count, cut.FindAll(".ex-changed").Count);
+
+        AssertNothingPerCell(TextColumns, changedAt: justNow);
+    }
 
     [Fact] // PF-3 / ADR-0033: a header's aria-sort is answered without allocating, sorted or not
     public void Re_rendering_a_sorted_grid_allocates_nothing_per_cell()

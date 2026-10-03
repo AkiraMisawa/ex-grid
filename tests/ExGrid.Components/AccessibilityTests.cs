@@ -270,10 +270,37 @@ public class AccessibilityTests : GridTestContext
         var sentence = cut.Find(".ex-announce").TextContent;
         Assert.Contains("5 rows by 2 columns selected", sentence);
 
-        // Arrow keys without Shift collapse to the Focus: the region is unchanged.
+        // A bare Focus move from one cell to another announces nothing: the region is
+        // unchanged (A11Y-10).
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        var afterCollapse = cut.Find(".ex-announce").TextContent;
         await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
         await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
-        Assert.Equal(sentence, cut.Find(".ex-announce").TextContent);
+        Assert.Equal(afterCollapse, cut.Find(".ex-announce").TextContent);
+    }
+
+    [Theory] // ADR-0033: a collapse to one cell announces nothing, and leaves no sentence naming the range it replaced
+    [InlineData("arrow")]
+    [InlineData("click")]
+    public async Task A_collapse_to_one_cell_empties_the_range_sentence(string how)
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 50, 10);
+        await cut.Find(".ex-viewport").MouseMoveAsync(new MouseEventArgs { Buttons = 1, OffsetX = 150, OffsetY = 50 });
+        await cut.Find(".ex-viewport").MouseUpAsync(new MouseEventArgs { Button = 0, OffsetX = 150, OffsetY = 50 });
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        Assert.Contains("3 rows by 2 columns selected", cut.Find(".ex-announce").TextContent);
+
+        if (how == "arrow")
+            await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
+        else
+            await ClickCellAsync(cut, 250, 90);
+
+        // Emptied at once, not after the settle: the sentence is untrue from this render on.
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
     }
 
     [Fact] // A11Y-14: announcing costs no row render — the counts match a drag without it
@@ -302,10 +329,54 @@ public class AccessibilityTests : GridTestContext
 
         await scroller.FocusAsync(new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
 
-        var focused = JSInterop.Invocations
-            .Where(i => i.Identifier == "Blazor._internal.domWrapper.focus")
-            .Select(i => ((ElementReference)i.Arguments[0]!).Id)
-            .ToArray();
+        var focused = Js.Focused;
         Assert.Equal(root, focused.Last());
+    }
+
+    [Fact] // ADR-0021/0018: the keyboard goes back to the root only through the handle's conditional reclaim, never Blazor's unconditional focus
+    public async Task The_root_is_asked_for_through_the_conditional_reclaim_only()
+    {
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns()));
+        var root = Js.RootReferenceId;
+
+        await cut.Find(".ex-scroller").FocusAsync(new Microsoft.AspNetCore.Components.Web.FocusEventArgs());
+
+        // The browser decides whether DOM focus is still this grid's to take (a second grid
+        // pressed a round trip earlier keeps it); the core only asks.
+        Assert.Single(Js.FocusReclaimed.Invocations);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == GridJSInterop.BlazorFocus
+            && ((ElementReference)i.Arguments[0]!).Id == root);
+    }
+
+    [Fact] // ADR-0033 (note of 2026-10-03) / A11Y-20: focus reaching the scroller before the root is a tab stop — a press on rows painted before the attach's render — goes to the root once a render has made it one, and is asked for once
+    public async Task Focus_reaching_the_scroller_before_the_root_is_a_tab_stop_goes_to_it_once_it_is()
+    {
+        var listening = Js.UnansweredMetaIsPrimary();
+        var tabIndexAtReclaim = new List<string?>();
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        Js.OnFocusReclaimed(() => tabIndexAtReclaim.Add(cut!.Find(".ex-grid").GetAttribute("tabindex")));
+        cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Window())
+            .Add(g => g.Columns, TestRows.Columns()));
+        Assert.Null(cut.Find(".ex-grid").GetAttribute("tabindex"));
+
+        await cut.Find(".ex-scroller").FocusAsync(new FocusEventArgs());
+
+        // The root could not take it yet: its own focus would do nothing, so nothing is asked...
+        Assert.Empty(Js.FocusReclaimed.Invocations);
+
+        // ...until the attach has finished and its render has made the root a tab stop.
+        await cut.InvokeAsync(() => listening.SetResult(false));
+        cut.WaitForAssertion(() => Assert.Single(Js.FocusReclaimed.Invocations));
+        Assert.Equal(["0"], tabIndexAtReclaim);
+        Assert.Equal(Js.RootReferenceId, Js.Focused[^1]);
+        // Asked through the hand-back's condition, never by the root's own focus (ADR-0018).
+        Assert.False((bool)Js.FocusReclaimed.Invocations.First().Arguments[0]!);
+
+        // Owed once: the renders after it ask nothing more.
+        cut.Render();
+        Assert.Single(Js.FocusReclaimed.Invocations);
     }
 }

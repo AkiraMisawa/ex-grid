@@ -1,0 +1,78 @@
+{
+  "area": "count",
+  "about": "COUNT (ADR-0047).",
+  "cases": [
+    {
+      "id": "COUNT-001",
+      "source": "observed",
+      "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNT(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "COUNT-002",
+      "source": "observed",
+      "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNT(1,\"2\",TRUE,\"abc\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "COUNT-003",
+      "source": "observed",
+      "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNT(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "COUNT-004",
+      "source": "observed",
+      "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNT(#N/A,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "COUNT-005",
+      "source": "observed",
+      "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNT(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "COUNT-006",
+      "source": "observed",
+      "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNT(D1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "COUNT-007",
+      "source": "observed",
+      "description": "COUNT: numbers only in a range; typed booleans and numeric text count; errors are not counted and not errors",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNT(A:A)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "COUNT-008",
+      "source": "observed",
+      "description": "Ticket 19 row 9: missing arguments are each 0, and counted",
+      "ticket19Row": 9,
+      "cells": {"ZZ1000": "=COUNT(,)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    }
+  ]
+}

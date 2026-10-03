@@ -1,0 +1,157 @@
+@page "/sheets"
+@using System.Globalization
+@* global::, for the reasons SheetPage.razor gives. *@
+@using global::ExSheet
+@using global::ExSheet.Components
+@using global::ExSheet.Engine
+@using global::ExGrid.Chrome
+@using global::ExGrid.MudBlazor
+
+@* ?chrome=mud runs both Sheets with ExGrid.MudBlazor's Chrome, each on the Wrapper's paper, whose
+   stylesheet maps the grid's Visual Tokens onto MudBlazor's palette (ADR-0030) — so the browser
+   tests that look at a Sheet's paint run under both Chromes (ED-27; DemoChrome). The Chrome is
+   ExSheet.MudBlazor's, so each Sheet's Format Cells is a MudDialog of its own (ADR-0071). Without
+   the parameter each Sheet stands on the page as it always did. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true" Sheet="true" />
+
+<DemoNav />
+
+<h1>Two sheets — independent instances</h1>
+
+<p>
+    Two ExSheets on one page, each with its own Sheet, its own undo stack and its own Formula Bar
+    (ADR-0018, ADR-0048). Keys typed into one never reach the other, a completion list opens in
+    the one being typed in, and Ctrl+Z undoes only the Sheet that has the keyboard.
+</p>
+
+<p>
+    Both Sheets read the page's positions as the Linked Table <code>Positions</code> (ADR-0049), and
+    beneath each is a grid showing them. Each Sheet and the grid beneath it are a Pointing Scope of
+    their own (ADR-0058): <code>=SUM(Positions[PV])</code> typed into one outlines the PV column under
+    that one only (ADR-0057), and while a Formula is typed on the left, a press on the left grid writes
+    what reads the pressed cell, and a press on the right grid is an ordinary press.
+</p>
+
+<div class="demo-side-by-side">
+    <div id="sheet-left">
+        @OnPaper(@<ExSheet @ref="_leftSheet" @bind-Document="_left" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                           PointingScope="_leftScope" OnPointingRefused="RefusedLeft" />)
+        <div id="sheet-left-positions">
+            <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                    ViewportHeight="200" ViewportWidth="330" PointedAt="_leftPointedAt" />
+        </div>
+    </div>
+    <div id="sheet-right">
+        @OnPaper(@<ExSheet @ref="_rightSheet" @bind-Document="_right" @bind-Document:after="Count" Culture="Culture" Chrome="_chrome" ViewportHeight="360" ViewportWidth="520"
+                           PointingScope="_rightScope" OnPointingRefused="RefusedRight" />)
+        <div id="sheet-right-positions">
+            <ExGrid TRow="Position" Window="Positions" Columns="PositionColumns" RowHeight="28"
+                    ViewportHeight="200" ViewportWidth="330" PointedAt="_rightPointedAt" />
+        </div>
+    </div>
+</div>
+
+<p class="demo-status">
+    <span id="sheets-status">@_status</span>
+</p>
+
+@* Why a press on a positions grid wrote nothing, as the Sheet of its Scope tells the page. *@
+<p class="demo-status">
+    <span id="sheets-pointing">@_pointingStatus</span>
+</p>
+
+@code {
+    /// <summary>Which Chrome the Sheets run with (<see cref="DemoChrome"/>); under the Wrapper's,
+    /// each stands on a <see cref="MudExGridPaper"/>.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    private IGridChrome? _chrome;
+
+    protected override void OnParametersSet() => _chrome = DemoChrome.ForSheet(ChromeName);
+
+    // A Sheet under the Wrapper's Chrome stands on its paper; under the core's, on the page.
+    private RenderFragment OnPaper(RenderFragment sheet)
+        => DemoChrome.IsMud(ChromeName) ? @<MudExGridPaper>@sheet</MudExGridPaper> : sheet;
+
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private const string Table = "Positions";
+    private static readonly string[] TableColumns = ["Id", "Book", "PV"];
+    // A row is read by its Id, and no Id appears twice in a snapshot (ADR-0049, 2026-09-30).
+    private const string TableKey = "Id";
+
+    // The page's own data, shown by both grids and read by both Sheets (ADR-0049).
+    private sealed record Position(string Id, string Book, double PV);
+
+    private static readonly Position[] Positions =
+    [
+        new("R-1102", "Rates", 1_250),
+        new("R-4471", "FX", 318.25),
+        new("R-5093", "Credit", 97.4),
+    ];
+
+    // Named as the table's columns are declared, so a column a Sheet names is the grid's column of
+    // the same name.
+    private static readonly IReadOnlyList<GridColumn<Position>> PositionColumns =
+    [
+        new("Id", ColumnType.Text, p => p.Id, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("Book", ColumnType.Text, p => p.Book, width: new ColumnWidthSpec(ColumnWidth.Fixed(90))),
+        new("PV", ColumnType.Number, p => p.PV, width: new ColumnWidthSpec(ColumnWidth.Fixed(120)),
+            format: v => ((double)v).ToString("N2", CultureInfo.InvariantCulture)),
+    ];
+
+    private SheetDocument? _left = Opening("Left", 10);
+    private SheetDocument? _right = Opening("Right", 20);
+    private ExSheet? _leftSheet;
+    private ExSheet? _rightSheet;
+    private string _status = "";
+    // One Pointing Scope per side (ADR-0058): a Sheet points only at the grid beneath it, and outlines
+    // the columns its Formula reads only there, nothing from the other (ADR-0018).
+    private readonly PointingScope _leftScope = new();
+    private readonly PointingScope _rightScope = new();
+    private GridPointedAt<Position>? _leftPointedAt;
+    private GridPointedAt<Position>? _rightPointedAt;
+    private string _pointingStatus = "";
+
+    // Each Sheet names itself in A1 and holds a number and a Formula over it, so a key that
+    // crossed from one to the other would show in the other's cells.
+    private static SheetDocument Opening(string name, int value)
+    {
+        var sheet = new Sheet(Culture);
+        sheet.Enter(CellAddress.Parse("A1"), name);
+        sheet.Enter(CellAddress.Parse("B1"), value.ToString(CultureInfo.InvariantCulture));
+        sheet.Enter(CellAddress.Parse("C1"), "=B1*2");
+        // The declaration travels in the Sheet Document; the rows never do (ADR-0049).
+        sheet.DeclareLinkedTable(Table, TableColumns, TableKey);
+        return sheet.ToDocument();
+    }
+
+    protected override void OnInitialized()
+    {
+        _leftPointedAt = _leftScope.RegisterGrid<Position>(Table, TableRow);
+        _rightPointedAt = _rightScope.RegisterGrid<Position>(Table, TableRow);
+        Count();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        foreach (var sheet in new[] { _leftSheet, _rightSheet })
+        {
+            if (sheet is not null)
+                await sheet.PushLinkedTableAsync(Table, Positions.Select(TableRow));
+        }
+    }
+
+    // A position as the table's row, in the declared column order: what the page pushes, and what
+    // each Scope reads a pressed row's key from.
+    private static IReadOnlyList<Value?> TableRow(Position p) => [Value.FromText(p.Id), Value.FromText(p.Book), Value.FromNumber(p.PV)];
+
+    private void RefusedLeft(PointingRefusal refusal) => _pointingStatus = "Left: " + refusal.Message;
+
+    private void RefusedRight(PointingRefusal refusal) => _pointingStatus = "Right: " + refusal.Message;
+
+    private void Count() =>
+        _status = $"Left: {_left?.Cells.Count ?? 0} cells; right: {_right?.Cells.Count ?? 0} cells.";
+}

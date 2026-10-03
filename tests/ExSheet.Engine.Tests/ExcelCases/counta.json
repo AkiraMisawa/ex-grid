@@ -1,0 +1,78 @@
+{
+  "area": "counta",
+  "about": "COUNTA (ADR-0047).",
+  "cases": [
+    {
+      "id": "COUNTA-001",
+      "source": "observed",
+      "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNTA(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "COUNTA-002",
+      "source": "observed",
+      "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNTA(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "COUNTA-003",
+      "source": "observed",
+      "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNTA(D1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "COUNTA-004",
+      "source": "observed",
+      "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNTA(1,\"a\",TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "COUNTA-005",
+      "source": "observed",
+      "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNTA(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "COUNTA-006",
+      "source": "observed",
+      "description": "COUNTA: everything but a blank cell, Error Values and empty text included",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COUNTA(A1:E2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "COUNTA-007",
+      "source": "observed",
+      "description": "Ticket 19 row 9: missing arguments are each counted",
+      "ticket19Row": 9,
+      "cells": {"ZZ1000": "=COUNTA(,)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "COUNTA-008",
+      "source": "observed",
+      "description": "Ticket 19 row 17: a typed Error Value as an argument",
+      "ticket19Row": 17,
+      "cells": {"ZZ1000": "=COUNTA(#N/A,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    }
+  ]
+}

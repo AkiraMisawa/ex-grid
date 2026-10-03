@@ -1,0 +1,94 @@
+@namespace ExSheet
+@implements IDisposable
+
+@*
+    One band of a Sheet Toolbar (ADR-0100). Every Toolbar Row of a Sheet is the same height, resolved
+    in C# and written here inline, so the toolbar's height is a count of rows and the Sheet gives the
+    grid what they leave (ADR-0028). What the row holds is fitted to it and clipped, never allowed to
+    grow it. Its KeyTip is what a ribbon tab's is: the formatting row's is H, Excel's Home.
+*@
+<div class="ex-sheet-toolbar-row" role="group" aria-label="@Label" style="@Style">
+    @if (Context.KeyTips == KeyTipStage.Rows && KeyTip is { } letters)
+    {
+        <span class="ex-sheet-keytip ex-sheet-row-keytip" aria-hidden="true">@letters</span>
+    }
+    <CascadingValue Value="this" IsFixed="true">
+        <CascadingValue Value="Place" IsFixed="true">@ChildContent</CascadingValue>
+    </CascadingValue>
+</div>
+
+@code {
+    /// <summary>The Sheet Toolbar this row stands in.</summary>
+    [CascadingParameter] public SheetToolbarContext? Toolbar { get; set; }
+
+    /// <summary>The row's Toolbar Items, in order.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The row's accessible name.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>The row's KeyTip letter, as a ribbon tab's (ADR-0100). None unless declared, except on ExSheet's default row, which is H.</summary>
+    [Parameter] public string? KeyTip { get; set; }
+
+    private SheetToolbarContext? _joined;
+
+    /// <summary>The scope the row takes its place from.</summary>
+    [CascadingParameter] public ToolbarOrder? Order { get; set; }
+
+    /// <summary>Where the row stands on the toolbar, and the scope its items take theirs from.</summary>
+    internal ToolbarOrder Place { get; private set; } = new();
+
+    /// <inheritdoc />
+    protected override void OnInitialized() => Place = Order?.Next() ?? Place;
+
+    private SheetToolbarContext Context => Toolbar
+        ?? throw new InvalidOperationException("ToolbarRow is a Toolbar Row: it stands inside an ExSheet's ToolbarContent (ADR-0100).");
+
+    private string Style => FormattableString.Invariant($"height: {Context.RowHeightPx}px");
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var context = Context;
+        if (ReferenceEquals(context, _joined)) return;
+        if (_joined is { } previous)
+        {
+            previous.Changed -= OnToolbarChanged;
+            previous.LeaveRow(this);
+        }
+        _joined = context;
+        context.JoinRow(this);
+        context.Changed += OnToolbarChanged;
+        context.RefuseCollidingKeyTips();
+    }
+
+    // The row's own letter comes and goes with the KeyTips.
+    private bool _drawnLetter;
+
+    private void OnToolbarChanged()
+    {
+        var shown = Context.KeyTips == KeyTipStage.Rows && KeyTip is not null;
+        if (shown != _drawnLetter) _ = InvokeAsync(StateHasChanged);
+    }
+
+    // What the render about to be drawn shows, noted as it is drawn: on a circuit OnAfterRender
+    // waits for the browser, and a change and its undoing within that wait would be judged against
+    // a render that was never the last one (layer 3, the Server host).
+    /// <inheritdoc />
+    protected override bool ShouldRender()
+    {
+        _drawnLetter = Context.KeyTips == KeyTipStage.Rows && KeyTip is not null;
+        return true;
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_joined is { } joined)
+        {
+            joined.Changed -= OnToolbarChanged;
+            joined.LeaveRow(this);
+        }
+        _joined = null;
+    }
+}

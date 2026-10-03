@@ -236,6 +236,37 @@ public class CellEditorTests : GridTestContext
         var fill = Assert.Single(pastes);
         Assert.Equal(3, fill.CellCount);
         Assert.Equal("9", fill.ValueFor(new CellPosition(2, 0)));
+        // Typed text, not a range read (ADR-0050 item 5, 2026-09-28): no fill source.
+        Assert.Null(fill.FillSource);
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-09-28) / DC-41: Ctrl+Enter and a one-field paste differ only in EnteredAt
+    public async Task Ctrl_enter_names_the_cell_it_was_entered_in_and_a_paste_does_not()
+    {
+        var pastes = new List<GridPasteIntent>();
+        var cut = RenderGrid(onPaste: pastes.Add);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        await PressAsync(cut, "9");
+        await PressAsync(cut, "Enter", ctrl: true);
+        // The same Selection, pasted over from the clipboard with the same one field, copied as
+        // a table — one field of plain text alone would go into one cell (ADR-0014, amended
+        // 2026-09-29).
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("9", "<table><tr><td>9</td></tr></table>"));
+
+        Assert.Equal(2, pastes.Count);
+        var (typed, pasted) = (pastes[0], pastes[1]);
+        Assert.Equal(new CellPosition(0, 0), typed.EnteredAt);
+        Assert.Null(pasted.EnteredAt);
+        // Field for field the same intent otherwise.
+        Assert.Equal(pasted.Plan.Targets, typed.Plan.Targets);
+        Assert.Equal(pasted.Plan.Source, typed.Plan.Source);
+        Assert.Equal(pasted.Values.Select(r => r.ToArray()), typed.Values.Select(r => r.ToArray()));
+        Assert.Equal(pasted.Origins.Select(r => r.ToArray()), typed.Origins.Select(r => r.ToArray()));
+        Assert.Equal(pasted.RowSequenceVersion, typed.RowSequenceVersion);
+        Assert.Null(typed.FillSource);
+        Assert.Null(pasted.FillSource);
     }
 
     [Fact] // ADR-0012 / KB-3: the editor's keys fold Command into Control too, where Meta is Command
@@ -314,7 +345,7 @@ public class CellEditorTests : GridTestContext
         Assert.Equal("5x", intent.Value);
         Assert.Empty(cut.FindAll(".ex-editor"));
         // And the press kept its own meaning: the Focus stands on the clicked cell.
-        Assert.EndsWith("r2c0", cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.EndsWith("r2c0", KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
     }
 
     [Fact] // ADR-0010: a header press mid-edit commits before it sorts or grabs a column
@@ -340,7 +371,8 @@ public class CellEditorTests : GridTestContext
         var cut = RenderGrid();
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, "5");
-        var before = cut.Find(".ex-grid").GetAttribute("aria-activedescendant");
+        var before = KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid"));
+        Assert.NotNull(before);
 
         // stopPropagation leaves the press with no handler anywhere on its path — the
         // exception is the assertion.
@@ -349,7 +381,7 @@ public class CellEditorTests : GridTestContext
                 new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 3, OffsetY = 3 }));
 
         Assert.Single(cut.FindAll("input.ex-editor"));
-        Assert.Equal(before, cut.Find(".ex-grid").GetAttribute("aria-activedescendant"));
+        Assert.Equal(before, KeyboardHolder.ActiveDescendant(cut.Find(".ex-grid")));
     }
 
     [Fact] // An AltGr character — Control+Alt held together on Windows — is typing, not a chord
@@ -384,10 +416,10 @@ public class CellEditorTests : GridTestContext
         var pastes = new List<GridPasteIntent>();
         PasteRefusalReason? refused = null;
         var cut = RenderGrid(onPaste: pastes.Add, onPasteRefused: r => refused = r);
-        await ClickCellAsync(cut, 150, 10);                      // Amount, not editable
-        // Extend left so the Focus lands on Book: the editor opens on an editable cell,
-        // and the selection still covers Amount — the case that used to write anyway.
-        await PressAsync(cut, "ArrowLeft", shift: true);
+        await ClickCellAsync(cut, 50, 10);                       // Book, editable
+        // Extend right: the Focus stays on Book (ADR-0052), so the editor opens on an
+        // editable cell, and the selection covers Amount — the case that used to write anyway.
+        await PressAsync(cut, "ArrowRight", shift: true);
         await PressAsync(cut, "9");
 
         await PressAsync(cut, "Enter", ctrl: true);
@@ -467,14 +499,63 @@ public class CellEditorTests : GridTestContext
         Assert.Equal(EditDiscardReason.RowLeftTheWindow, discarded);
     }
 
+    [Fact] // ADR-0050 section 6 / ADR-0011: the Consumer discards the edit for a reason of its own, and it is announced as its own
+    public async Task A_consumer_discard_throws_the_text_away_and_is_announced_with_its_sentence()
+    {
+        EditDiscardReason? discarded = null;
+        var edits = new List<GridEditIntent<TestRow>>();
+        var cut = RenderGrid(onEdit: edits.Add, onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+        await TypeAsync(cut, "99");
+
+        var done = await cut.InvokeAsync(() => cut.Instance.DiscardEditAsync("What was typed was not entered: the data was replaced."));
+
+        Assert.True(done);
+        Assert.Empty(cut.FindAll(".ex-editor"));
+        Assert.Equal(EditDiscardReason.DiscardedByConsumer, discarded);
+        Assert.Equal("What was typed was not entered: the data was replaced.", cut.Find(".ex-announce").TextContent);
+        // Nothing was committed, and Enter is now an ordinary key: it moves, and writes nothing.
+        await PressAsync(cut, "Enter");
+        Assert.Empty(edits);
+    }
+
+    [Fact] // ADR-0050 section 6: with no edit open, a Consumer's discard changes nothing and says nothing
+    public async Task A_consumer_discard_with_no_edit_open_changes_nothing()
+    {
+        EditDiscardReason? discarded = null;
+        var cut = RenderGrid(onEditDiscarded: r => discarded = r);
+        await ClickCellAsync(cut, 50, 10);
+
+        var done = await cut.InvokeAsync(() => cut.Instance.DiscardEditAsync("The data was replaced."));
+
+        Assert.False(done);
+        Assert.Null(discarded);
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+    }
+
+    [Theory] // ADR-0050 section 6 / ADR-0011: a discard that says nothing is the silent loss the discard rule refuses
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task A_consumer_discard_without_a_sentence_is_refused_and_keeps_the_edit(string reason)
+    {
+        var cut = RenderGrid();
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, "9");
+
+        await Assert.ThrowsAsync<ArgumentException>(() => cut.InvokeAsync(() => cut.Instance.DiscardEditAsync(reason)));
+
+        Assert.Equal("9", cut.Find(".ex-editor").GetAttribute("value"));
+    }
+
     [Fact] // ADR-0035 / ED-19: the refusal judged the operation, so it does not take the text with it
     public async Task A_refused_fill_holds_the_editor_and_enter_still_commits_the_one_cell()
     {
         var edits = new List<GridEditIntent<TestRow>>();
         var pastes = new List<GridPasteIntent>();
         var cut = RenderGrid(onEdit: edits.Add, onPaste: pastes.Add);
-        await ClickCellAsync(cut, 150, 10);                      // Amount, not editable
-        await PressAsync(cut, "ArrowLeft", shift: true);         // Focus on Book, selection still covers Amount
+        await ClickCellAsync(cut, 50, 10);                       // Book, editable
+        await PressAsync(cut, "ArrowRight", shift: true);        // Focus stays on Book, selection covers Amount (ADR-0052)
         await PressAsync(cut, "9");
 
         await PressAsync(cut, "Enter", ctrl: true);

@@ -10,7 +10,7 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// Excel's editing keys, from the component's entry point down (ADR-0007/0035/0046):
+/// Excel's editing keys, from the component's entry point down (ADR-0007/0035/0054):
 /// undo and redo forwarded, Backspace, Delete's Clear Intent, and the fill keys. Whether
 /// the browser's keydown is taken is the gate's, and layer 3's; which keys the gate is
 /// told to take is asserted here. 20px rows, Book (editable) and Amount (editable) then
@@ -79,9 +79,9 @@ public class ExcelKeyTests : GridTestContext
     private static Task TypeAsync(IRenderedComponent<ExGrid<TestRow>> cut, string text)
         => cut.Find(".ex-editor").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = text });
 
-    // ---- Undo and redo (ADR-0007, KB-37) ----
+    // ---- Undo and redo (ADR-0007, KB-39) ----
 
-    [Fact] // ADR-0007 / KB-37: Ctrl+Z raises OnUndo, and nothing about the grid changes
+    [Fact] // ADR-0007 / KB-39: Ctrl+Z raises OnUndo, and nothing about the grid changes
     public async Task Ctrl_z_is_forwarded_as_undo()
     {
         var heard = new Heard();
@@ -96,7 +96,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(before, cut.Markup);
     }
 
-    [Theory] // ADR-0007 / KB-37: redo answers both Excel spellings, Command folding in on a Mac
+    [Theory] // ADR-0007 / KB-39: redo answers both Excel spellings, Command folding in on a Mac
     [InlineData("y", false, false)]
     [InlineData("Z", true, false)]
     [InlineData("Z", true, true)]
@@ -111,7 +111,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(0, heard.Undos);
     }
 
-    [Fact] // ADR-0007 / KB-37: a key is taken only for someone listening
+    [Fact] // ADR-0007 / KB-39: a key is taken only for someone listening
     public void The_gate_is_told_to_take_undo_only_with_a_listener()
     {
         var heard = new Heard();
@@ -180,9 +180,9 @@ public class ExcelKeyTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-editor"));
     }
 
-    // ---- Delete (ADR-0046, ED-24) ----
+    // ---- Delete (ADR-0054, ED-24) ----
 
-    [Fact] // ADR-0046 / ED-24: one Clear Intent over the whole selection, carrying no value
+    [Fact] // ADR-0054 / ED-24: one Clear Intent over the whole selection, carrying no value
     public async Task Delete_raises_one_clear_intent_over_the_selection()
     {
         var heard = new Heard();
@@ -200,7 +200,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(0, heard.Validations);
     }
 
-    [Fact] // ADR-0046 / ED-24: a selection covering a non-editable column is refused whole
+    [Fact] // ADR-0054 / ED-24: a selection covering a non-editable column is refused whole
     public async Task Delete_over_a_non_editable_column_is_refused()
     {
         var heard = new Heard();
@@ -214,7 +214,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal([PasteRefusalReason.TargetNotEditable], heard.Refusals);
     }
 
-    [Fact] // ADR-0046 / ADR-0012: with no Focus, Delete only places one
+    [Fact] // ADR-0054 / ADR-0012: with no Focus, Delete only places one
     public async Task Delete_with_no_focus_only_places_it()
     {
         var heard = new Heard();
@@ -235,7 +235,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal(new CellPosition(0, 0), selection!.Focus);
     }
 
-    [Fact] // ADR-0046 / ED-25: the gate is told to take the writing keys only on a grid that edits
+    [Fact] // ADR-0054 / ED-25: the gate is told to take the writing keys only on a grid that edits
     public void The_writing_keys_are_taken_only_on_a_grid_that_edits()
     {
         RenderGrid(new Heard(), editable: false);
@@ -266,6 +266,26 @@ public class ExcelKeyTests : GridTestContext
         Assert.Equal("1234.5", paste.ValueFor(new(3, 1)));
         Assert.Empty(heard.Refusals);
         Assert.Equal(0, heard.Validations);
+    }
+
+    [Fact] // ADR-0050 item 5 (2026-09-28) / ADR-0035: a fill key's intent names the range it read, so a Consumer can tell it from a paste
+    public async Task A_fill_key_intent_names_its_source_range()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard);
+        await ClickCellAsync(cut, 50, 50);  // (2, 0)
+        await ClickCellAsync(cut, 150, 90, shift: true); // (4, 1)
+        await PressAsync(cut, "d", ctrl: true);
+        await ClickCellAsync(cut, 150, 10);  // (0, 1)
+        await ClickCellAsync(cut, 150, 50, shift: true); // (2, 1)
+        await PressAsync(cut, "r", ctrl: true);
+
+        Assert.Equal(2, heard.Pastes.Count);
+        Assert.Equal(new SelectionRange(2, 0, 1, 2), heard.Pastes[0].FillSource);
+        Assert.Equal(new SelectionRange(0, 0, 3, 1), heard.Pastes[1].FillSource);
+        // A fill key reads a range, it was not typed anywhere (ADR-0050 item 5, 2026-09-28).
+        Assert.Null(heard.Pastes[0].EnteredAt);
+        Assert.Null(heard.Pastes[1].EnteredAt);
     }
 
     [Fact] // ADR-0035 / CP-24: Ctrl+R on one column fills from the column to its left
@@ -340,7 +360,7 @@ public class ExcelKeyTests : GridTestContext
         Assert.Empty(heard.Refusals);
     }
 
-    [Fact] // ADR-0007 / KB-37: a Consumer that stops listening gives Ctrl+Z back — the gate is told again
+    [Fact] // ADR-0007 / KB-39: a Consumer that stops listening gives Ctrl+Z back — the gate is told again
     public void The_gate_is_told_again_when_the_claims_change()
     {
         var heard = new Heard();

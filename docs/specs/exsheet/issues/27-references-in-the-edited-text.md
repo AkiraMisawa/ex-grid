@@ -1,0 +1,58 @@
+# 27: The References in the text being edited
+
+Status: done
+
+**What to build:** ExSheet's half of ADR-0057, "Who decides what". A pure function over the editor's
+text that answers every Reference in it, with its span, and either the cells it names or, for a
+structured reference, a key naming the table and the column. It is what ExSheet will hand the core
+as the References function (ticket 28), and what the Linked Table notification reads (ticket 30).
+
+**Blocked by:** None (can start immediately). Build on F4's `Lexer.MatchReference` and the tolerant
+scan in `FormulaEntry`. The strict `Lexer.Tokenize` throws on an unfinished Formula, and a Formula
+is unfinished for as long as it is typed.
+
+- [x] A Reference's span and cells: `A1`, `$A$1`, `A1:B2`, `B2:A1` (as A1:B2), `A:A`, `1:1`, and
+      each with this Sheet's own qualifier (`Sheet1!A1`, `'Sheet 1'!A1`) (SH-30)
+- [x] A Reference qualified with another Sheet's name is not answered: it names no cells (SH-30)
+- [x] A structured reference (`Positions[PV]`, `Positions[[PV]]`) is answered with its span and a
+      key naming the table and the column, in a form that compares equal however the name was cased
+      (SH-30)
+- [x] An unfinished Formula is answered as far as it goes: `=SUM(A1,`, `=A1+`, `=SUM(A1:B2`, and one
+      with an unclosed string, whose References before the string are answered (SH-30)
+- [x] Nothing inside a string, and no function name, even where the name reads as a cell
+      (`LOG10(`) (SH-30)
+- [x] Text that is not a Formula is answered with nothing (SH-30)
+- [x] Layer 1 covers each reading of ADR-0057 by name, so a reading the eighth Windows run
+      contradicts fails a test that says which (SH-30)
+
+## Comments
+
+The readings are asked of Excel in [verify-on-windows-8.md](../verify-on-windows-8.md), Part A. A
+reading that Excel contradicts is fixed after the run, with the ADR paragraph.
+
+Done (layer 1, `tests/ExSheet.Engine.Tests/FormulaReferencesTests.cs`): `FormulaEntry.References(text,
+sheetName)` and `Sheet.References(text)` answer a list of `FormulaReference` (start, length, and
+either a `CellRange` or a `LinkedTableColumn`). A Reference is what `Lexer` reads as one over the
+whole of an operand of the tolerant `Scan`, as for F4; there is no second grammar. The key keeps the
+names as written and compares without regard to case, as the Sheet finds a table and its column.
+The readings that belong to the core (the palette, the order colours are given in, Point's dashed
+line) are ticket 28's to pin.
+
+Read by the implementation, and not asked in Part A:
+
+- Signed text (`-B2`, `+A1`) is answered with nothing, as F4 and Point treat it: a Formula being
+  edited begins with `=`. Entered, the same text becomes the Formula `=-B2` (`Entry.SignedFormula`).
+- `=SUM(A1:`, a range typed as far as its colon, answers nothing: the grammar reads no Reference in
+  `A1:`. `A1` is coloured again once the second corner is typed.
+- ~~A structured reference is answered from the text alone, whether or not the table or the column is
+  declared.~~ *Decided with the user, 2026-09-29 (ADR-0057's readings):* `FormulaEntry.References`
+  still answers from the text alone, but `Sheet.References` keeps a structured reference only when
+  its table is declared with that column, as a Reference to another Sheet is not coloured. A
+  declared table still waiting for its data is kept.
+
+*(2026-09-30, after cases 24–32 of the eighth Windows run.)* Two of the readings above were wrong,
+and both are now Excel's. Text beginning with `+` or `-` is answered as a Formula is (`+A1` colours
+A1). A range typed as far as its colon, or into its second corner, answers its first corner
+(`=SUM(A1:` and `=SUM(A1:B` colour A1). `=A1:B2:C3` still answers nothing, because it is not a range
+being typed.
+

@@ -1,0 +1,26 @@
+@* The generated stylesheet of CellFormatClasses and of the two border modes: one rule per distinct
+   format or line, rewritten whole when one is added (ticket 44). It renders only when its version
+   moves, so a scroll never touches it; a column change that brings a new format does, and the
+   browser then parses the sheet again. *@
+<style>@Css</style>
+
+@code {
+    /// <summary>Renders since the page last reset it (see FormatRow.Renders).</summary>
+    public static int Renders;
+
+    [Parameter] public string Css { get; set; } = "";
+    [Parameter] public int Version { get; set; }
+
+    private int _renderedVersion = -1;
+
+    protected override bool ShouldRender()
+    {
+        if (_renderedVersion == Version) return false;
+        _renderedVersion = Version;
+        return true;
+    }
+
+    protected override void OnInitialized() => _renderedVersion = Version;
+
+    protected override void OnAfterRender(bool firstRender) => Renders++;
+}

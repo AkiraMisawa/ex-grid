@@ -1,0 +1,160 @@
+== declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome
+last frame: frames/rep10-dc19-server-chrome/declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome.jpeg
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an add
+
+== declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat3
+last frame: frames/rep10-dc19-server-chrome/declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat3.jpeg
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an add
+
+== declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat5
+last frame: frames/rep10-dc19-server-chrome/declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat5.jpeg
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an add
+
+== declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat7
+last frame: frames/rep10-dc19-server-chrome/declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat7.jpeg
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an add
+
+== declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat9
+last frame: frames/rep10-dc19-server-chrome/declarations-DC-19-DC-34-p-f33e5-et-enters-Caret-mud-Chrome--chrome-repeat9.jpeg
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+Expected: 0
+Received: 1
+Timeout:  5000ms
+
+Call log:
+  - Expect "toHaveCount" with timeout 5000ms
+  - waiting for locator('.ex-grid:has(> .ex-formula-bar)').first().locator('.ex-point')
+    14 × locator resolved to 1 element
+       - unexpected value "1"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - link "All pages" [ref=e3] [cursor=pointer]:
+      - /url: ""
+    - generic [ref=e4]: Sheet
+  - heading "Sheet — ExSheet drawn by ExGrid" [level=1] [ref=e5]
+  - paragraph [ref=e6]:
+    - text: ExSheet holds a Sheet of Entries and computes their Values; one ExGrid paints it, as that grid's Consumer (ADR-0046). Type into a cell, press F2 on a Formula to edit it, read the Entry in the Formula Bar, type an add
+

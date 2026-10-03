@@ -1,0 +1,292 @@
+
+Running 80 tests using 1 worker
+
+  ok  1 [chrome] › sheet-vs-excel.spec.mjs:118:1 › item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07) (6.5s)
+  ok  2 [chrome] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ADR-0052, ticket 07) (3.4s)
+  x   3 [chrome] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) (5.9s)
+  ok  4 [chrome] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ADR-0052, ticket 06) (902ms)
+  x   5 [chrome] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) (5.9s)
+  ok  6 [chrome] › sheet-vs-excel.spec.mjs:239:1 › active cell, case 1: Shift+arrows move the far corner, the Focus stays, and the view follows the Extent (ADR-0052) (7.3s)
+  ok  7 [chrome] › sheet-vs-excel.spec.mjs:254:1 › active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and D5 stays active after D5 to B2 (ADR-0052) (750ms)
+  ok  8 [chrome] › sheet-vs-excel.spec.mjs:267:1 › active cell, case 3: after Enter, Shift+arrow moves the edge opposite the Focus, and nothing from the middle (ADR-0052) (2.4s)
+  ok  9 [chrome] › sheet-vs-excel.spec.mjs:293:1 › active cell, case 6: Ctrl+click on the active cell takes it out and the next cell in Tab order is active (ADR-0052) (1.3s)
+  x  10 [chrome] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) (6.3s)
+  ok 11 [chrome] › sheet-vs-excel.spec.mjs:328:1 › active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052) (1.6s)
+  ok 12 [chrome] › sheet-vs-excel.spec.mjs:347:1 › item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09) (864ms)
+  ok 13 [chrome] › sheet-vs-excel.spec.mjs:370:1 › item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08) (1.3s)
+  ok 14 [chrome] › sheet-vs-excel.spec.mjs:383:1 › item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08) (1.4s)
+  ok 15 [chrome] › sheet-vs-excel.spec.mjs:402:1 › item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11) (1.3s)
+  ok 16 [chrome] › sheet-vs-excel.spec.mjs:420:1 › item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11) (923ms)
+  ok 17 [chrome] › sheet-vs-excel.spec.mjs:438:1 › item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11) (1.3s)
+  ok 18 [chrome] › sheet-vs-excel.spec.mjs:451:1 › item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11) (807ms)
+  ok 19 [chrome] › sheet-vs-excel.spec.mjs:460:1 › item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10) (1.6s)
+  ok 20 [chrome] › sheet-vs-excel.spec.mjs:483:1 › item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10) (971ms)
+  ok 21 [chrome] › sheet-vs-excel.spec.mjs:495:1 › item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09) (1.1s)
+  -  22 [chrome] › sheet-vs-excel.spec.mjs:510:12 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)
+  -  23 [chrome] › sheet-vs-excel.spec.mjs:520:12 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)
+  -  24 [chrome] › sheet-vs-excel.spec.mjs:533:6 › item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)
+  -  25 [chrome] › sheet-vs-excel.spec.mjs:546:12 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)
+  -  26 [chrome] › sheet-vs-excel.spec.mjs:551:12 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)
+  -  27 [chrome] › sheet-vs-excel.spec.mjs:556:12 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)
+  ok 28 [chrome] › sheet-vs-excel.spec.mjs:564:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ADR-0052, ticket 15) (2.2s)
+  ok 29 [chrome] › sheet-vs-excel.spec.mjs:575:1 › item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15) (3.7s)
+  ok 30 [chrome] › sheet-vs-excel.spec.mjs:590:1 › item 20: 1, 2, 4 continue as Excel's trend, to the 15 digits Excel keeps (ADR-0050, ticket 15) (2.8s)
+  ok 31 [chrome] › sheet-vs-excel.spec.mjs:602:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ADR-0052, ticket 15) (2.1s)
+  ok 32 [chrome] › sheet-vs-excel.spec.mjs:615:1 › item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15) (2.1s)
+  ok 33 [chrome] › sheet-vs-excel.spec.mjs:626:1 › item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050) (3.6s)
+  ok 34 [chrome] › sheet-vs-excel.spec.mjs:638:1 › item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15) (809ms)
+  ok 35 [chrome] › sheet-vs-excel.spec.mjs:648:1 › item 22: inserting rows above a selected range keeps the Selection where it was, and the Focus (ADR-0046, ADR-0052, ticket 13) (843ms)
+  ok 36 [chrome] › sheet-vs-excel.spec.mjs:660:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (1.8s)
+  -  37 [chrome] › sheet-vs-excel.spec.mjs:671:6 › item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)
+  ok 38 [chrome] › sheet-vs-excel.spec.mjs:679:1 › item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046) (813ms)
+  ok 39 [chrome] › sheet-vs-excel.spec.mjs:687:1 › item 26: a number too wide for its column shows #### (ADR-0016) (1.0s)
+  ok 40 [chrome] › sheet-vs-excel.spec.mjs:697:1 › item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047) (1.8s)
+  ok 41 [msedge] › sheet-vs-excel.spec.mjs:118:1 › item 1: Ctrl+Down stops at each block edge, then the last row (ADR-0050 §2, ticket 07) (6.3s)
+  ok 42 [msedge] › sheet-vs-excel.spec.mjs:149:1 › item 2: Ctrl+Shift+Right from inside a row block selects to its end, then to the last column (ADR-0050 §2, ADR-0052, ticket 07) (3.3s)
+  x  43 [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) (5.9s)
+  ok 44 [msedge] › sheet-vs-excel.spec.mjs:192:1 › item 4: a row number selects the row, Shift+click extends, the Focus in the first column on screen (ADR-0050 §1, ADR-0052, ticket 06) (925ms)
+  x  45 [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) (6.0s)
+  ok 46 [msedge] › sheet-vs-excel.spec.mjs:239:1 › active cell, case 1: Shift+arrows move the far corner, the Focus stays, and the view follows the Extent (ADR-0052) (7.3s)
+  ok 47 [msedge] › sheet-vs-excel.spec.mjs:254:1 › active cell, case 2: while a drag is held the Name Box shows 4R x 3C, and D5 stays active after D5 to B2 (ADR-0052) (758ms)
+  ok 48 [msedge] › sheet-vs-excel.spec.mjs:267:1 › active cell, case 3: after Enter, Shift+arrow moves the edge opposite the Focus, and nothing from the middle (ADR-0052) (2.4s)
+  ok 49 [msedge] › sheet-vs-excel.spec.mjs:293:1 › active cell, case 6: Ctrl+click on the active cell takes it out and the next cell in Tab order is active (ADR-0052) (1.3s)
+  x  50 [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) (6.3s)
+  ok 51 [msedge] › sheet-vs-excel.spec.mjs:328:1 › active cell, cases 12 and 13: typing enters the Focus only, and Ctrl+Enter fills the Selection and moves nothing (ADR-0052) (1.7s)
+  ok 52 [msedge] › sheet-vs-excel.spec.mjs:347:1 › item 6: the Name Box selects what it is given and scrolls only as far as it must (ADR-0050, ticket 09) (986ms)
+  ok 53 [msedge] › sheet-vs-excel.spec.mjs:370:1 › item 7: in Enter mode an arrow key commits and moves (ADR-0012, ticket 08) (1.3s)
+  ok 54 [msedge] › sheet-vs-excel.spec.mjs:383:1 › item 8: F2 on a Formula shows it with the caret at the end, and the arrows move the caret (ADR-0051, ticket 08) (1.5s)
+  ok 55 [msedge] › sheet-vs-excel.spec.mjs:402:1 › item 9: Point mode by keys writes each Reference as the pointer moves (ADR-0051, ticket 11) (1.3s)
+  ok 56 [msedge] › sheet-vs-excel.spec.mjs:420:1 › item 10: Point mode by mouse writes the clicked cell, then the dragged range (ADR-0051, ticket 11) (946ms)
+  ok 57 [msedge] › sheet-vs-excel.spec.mjs:438:1 › item 11: F2 while pointing turns the arrows back to the caret (ADR-0051, ticket 11) (1.3s)
+  ok 58 [msedge] › sheet-vs-excel.spec.mjs:451:1 › item 12: typing = in the Formula Bar and pressing Down does not point (ADR-0051, ticket 11) (815ms)
+  ok 59 [msedge] › sheet-vs-excel.spec.mjs:460:1 › item 13: completion lists candidates, Tab takes one with its parenthesis, Escape closes only the list (ADR-0051, ticket 10) (1.6s)
+  ok 60 [msedge] › sheet-vs-excel.spec.mjs:483:1 › item 14: the argument hint names every argument and marks the current one (ADR-0051, ticket 10) (1.1s)
+  ok 61 [msedge] › sheet-vs-excel.spec.mjs:495:1 › item 15: Escape in the Formula Bar cancels the edit and gives the keys back to the grid (ADR-0051, ticket 09) (1.1s)
+  -  62 [msedge] › sheet-vs-excel.spec.mjs:510:12 › item 16: a copied Formula pastes with its relative References shifted (ADR-0048, ticket 14)
+  -  63 [msedge] › sheet-vs-excel.spec.mjs:520:12 › item 17: a 3×3 block pasted onto one cell fills 3×3 and becomes the Selection (ADR-0050, ticket 14)
+  -  64 [msedge] › sheet-vs-excel.spec.mjs:533:6 › item 18: cells from Excel, and to Excel (ADR-0048, ticket 14)
+  -  65 [msedge] › sheet-vs-excel.spec.mjs:546:12 › item 19: pasted text =A1+1 is a Formula (ADR-0048, ticket 14)
+  -  66 [msedge] › sheet-vs-excel.spec.mjs:551:12 › item 19: pasted text 1,234 is 1234 formatted #,##0, as Excel takes it (ADR-0048, ticket 14)
+  -  67 [msedge] › sheet-vs-excel.spec.mjs:556:12 › item 19 and Part A item 10: pasted text =1+ is taken as that text (ADR-0048, ticket 14)
+  ok 68 [msedge] › sheet-vs-excel.spec.mjs:564:1 › item 20: the fill handle continues a series, and leaves source and target selected (ADR-0050 item 5, ADR-0052, ticket 15) (2.1s)
+  ok 69 [msedge] › sheet-vs-excel.spec.mjs:575:1 › item 20: one number is copied, one date goes on by day, a Formula shifts (ADR-0050, ticket 15) (3.8s)
+  ok 70 [msedge] › sheet-vs-excel.spec.mjs:590:1 › item 20: 1, 2, 4 continue as Excel's trend, to the 15 digits Excel keeps (ADR-0050, ticket 15) (2.9s)
+  ok 71 [msedge] › sheet-vs-excel.spec.mjs:602:1 › item 20: a series filled up goes backwards, and the Focus stays on the source (ADR-0050, ADR-0052, ticket 15) (2.1s)
+  ok 72 [msedge] › sheet-vs-excel.spec.mjs:615:1 › item 20: text in two cells filled left repeats backwards (ADR-0050, ticket 15) (2.1s)
+  ok 73 [msedge] › sheet-vs-excel.spec.mjs:626:1 › item 20: Item 1, Mon and a date with a time are refused, by decision (ADR-0050) (3.6s)
+  ok 74 [msedge] › sheet-vs-excel.spec.mjs:638:1 › item 21: with several ranges selected there is no fill handle (ADR-0050, ticket 15) (807ms)
+  ok 75 [msedge] › sheet-vs-excel.spec.mjs:648:1 › item 22: inserting rows above a selected range keeps the Selection where it was, and the Focus (ADR-0046, ADR-0052, ticket 13) (841ms)
+  ok 76 [msedge] › sheet-vs-excel.spec.mjs:660:1 › item 23: deleting a row a Formula references writes #REF! in its place (ADR-0046, ticket 13) (1.8s)
+  -  77 [msedge] › sheet-vs-excel.spec.mjs:671:6 › item 24: a rename is undone by Ctrl+Z, as Excel undoes it (ADR-0048, ticket 12)
+  ok 78 [msedge] › sheet-vs-excel.spec.mjs:679:1 › item 25: a long text is cut with an ellipsis, by decision; Excel lets it run over (ADR-0046) (824ms)
+  ok 79 [msedge] › sheet-vs-excel.spec.mjs:687:1 › item 26: a number too wide for its column shows #### (ADR-0016) (1.0s)
+  ok 80 [msedge] › sheet-vs-excel.spec.mjs:697:1 › item 27: every cell of a cycle and its dependents is #CIRC!, by decision; Excel shows 0 (ADR-0047) (1.8s)
+
+
+  1) [chrome] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      185 |     // Scrolled to row 100, Excel's Focus is D100: the top visible row, not row 1.
+      186 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 187 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      188 |     await header('D').click({ force: true });
+      189 |     await expectActive(page, 'D100');
+      190 | });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:187:38
+
+    Error Context: test-results\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chrome] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      214 |     await click(page, 'C3');
+      215 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 216 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      217 |     await sheet(page).locator('.ex-headings-corner').click({ force: true });
+      218 |     await expectSelection(page, 'A1', 'XFD1048576');
+      219 |     await expectActive(page, 'A100');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:216:38
+
+    Error Context: test-results\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chrome] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+
+
+      313 |     await expectSelection(page, 'E1', 'G3');
+      314 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 299 * 28; });
+    > 315 |     await expect(cell(page, 'E300')).toBeVisible();
+          |                                      ^
+      316 |     await page.keyboard.press('Control+Backspace');
+      317 |     await expectInView(page, 'E1');
+      318 |     await expectSelection(page, 'E1', 'G3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:315:38
+
+    Error Context: test-results\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--chrome\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--chrome\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--chrome\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      185 |     // Scrolled to row 100, Excel's Focus is D100: the top visible row, not row 1.
+      186 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 187 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      188 |     await header('D').click({ force: true });
+      189 |     await expectActive(page, 'D100');
+      190 | });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:187:38
+
+    Error Context: test-results\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      214 |     await click(page, 'C3');
+      215 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 216 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      217 |     await sheet(page).locator('.ex-headings-corner').click({ force: true });
+      218 |     await expectSelection(page, 'A1', 'XFD1048576');
+      219 |     await expectActive(page, 'A100');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:216:38
+
+    Error Context: test-results\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+
+
+      313 |     await expectSelection(page, 'E1', 'G3');
+      314 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 299 * 28; });
+    > 315 |     await expect(cell(page, 'E300')).toBeVisible();
+          |                                      ^
+      316 |     await page.keyboard.press('Control+Backspace');
+      317 |     await expectInView(page, 'E1');
+      318 |     await expectSelection(page, 'E1', 'G3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:315:38
+
+    Error Context: test-results\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6 failed
+    [chrome] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+    [chrome] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+    [chrome] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+    [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+  14 skipped
+  60 passed (2.7m)

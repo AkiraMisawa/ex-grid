@@ -1,0 +1,415 @@
+{
+  "area": "general-width",
+  "about": "What a number shows in a column of a given width, and whether typing it widens a column still at its default width (ADR-0047, SH-20). columnWidth is the check column's width in Excel's unit, characters of the default font (8.43 is Excel's default with Calibri; Microsoft 365's Aptos Narrow makes it 8.09, which is why widths are compared only as widens or not), set before anything is entered; the engine charges every character one digit width. Microsoft documents that General rounds decimals when the cell is not wide enough, that twelve or more digits go scientific, that a narrow column may show 123456789 as 1.2E+08, and that a formatted number or date too wide for its column shows #####. How many characters General keeps and when it prefers scientific for small numbers are not documented: those cases are uncertain until the oracle asks Excel. When Excel widens a column on entry was observed by typing with real keys (verification/2026-09-27-windows-excel/behaviours.md): a value set through COM widens nothing, so the oracle skips those cases. widens compares with Excel's column width after the entry (wider than 8.43 or not); widthOnEntry is the engine's answer in characters, which Excel's is recorded beside.",
+  "cases": [
+    {
+      "id": "GW-001",
+      "source": "observed",
+      "description": "=1/3 in a default column reads 0.333333: decimals rounded to the width (the rounding is documented, the eight characters are the engine's digit-width model)",
+      "columnWidth": 8.43,
+      "cells": {"A1": "=1/3"},
+      "check": "A1",
+      "expect": {"text": "0.333333"}
+    },
+    {
+      "id": "GW-002",
+      "source": "observed",
+      "description": "=2/3 in a default column rounds its last digit up",
+      "columnWidth": 8.43,
+      "cells": {"A1": "=2/3"},
+      "check": "A1",
+      "expect": {"text": "0.666667"}
+    },
+    {
+      "id": "GW-003",
+      "source": "observed",
+      "description": "A minus sign takes one of a default column's characters",
+      "columnWidth": 8.43,
+      "cells": {"A1": "=-1/3"},
+      "check": "A1",
+      "expect": {"text": "-0.33333"}
+    },
+    {
+      "id": "GW-004",
+      "source": "observed",
+      "description": "General in a wide column stops at eleven characters",
+      "columnWidth": 100,
+      "cells": {"A1": "=22/7"},
+      "check": "A1",
+      "expect": {"text": "3.142857143"}
+    },
+    {
+      "id": "GW-005",
+      "source": "observed",
+      "description": "A typed number with decimals is rounded to a column of fixed width",
+      "columnWidth": 8.43,
+      "cells": {"A1": "1234.5678"},
+      "check": "A1",
+      "expect": {"text": "1234.568"}
+    },
+    {
+      "id": "GW-006",
+      "source": "observed",
+      "description": "An integer wider than a default column goes scientific, with the mantissa the width leaves",
+      "columnWidth": 8.43,
+      "cells": {"A1": "123456789"},
+      "check": "A1",
+      "expect": {"text": "1.23E+08"}
+    },
+    {
+      "id": "GW-007",
+      "source": "observed",
+      "description": "Microsoft's example: in a narrow column 123456789 displays something like 1.2E+08 (the width that gives exactly this is not documented)",
+      "columnWidth": 7,
+      "cells": {"A1": "123456789"},
+      "check": "A1",
+      "expect": {"text": "1.2E+08"}
+    },
+    {
+      "id": "GW-008",
+      "source": "observed",
+      "description": "Eight digits fit a default column as typed",
+      "columnWidth": 8.43,
+      "cells": {"A1": "12345678"},
+      "check": "A1",
+      "expect": {"text": "12345678"}
+    },
+    {
+      "id": "GW-009",
+      "source": "observed",
+      "description": "Eleven digits show as typed in a wide column: only twelve or more go scientific",
+      "columnWidth": 100,
+      "cells": {"A1": "12345678901"},
+      "check": "A1",
+      "expect": {"text": "12345678901"}
+    },
+    {
+      "id": "GW-010",
+      "source": "observed",
+      "description": "Twelve digits go scientific even in a wide column (documented); six significant digits are the eleven-character limit",
+      "columnWidth": 100,
+      "cells": {"A1": "123456789012"},
+      "check": "A1",
+      "expect": {"text": "1.23457E+11"}
+    },
+    {
+      "id": "GW-011",
+      "source": "observed",
+      "description": "A small number goes scientific where that shows it more closely than eleven characters of decimals",
+      "columnWidth": 100,
+      "cells": {"A1": "=1/300000"},
+      "check": "A1",
+      "expect": {"text": "3.33333E-06"}
+    },
+    {
+      "id": "GW-012",
+      "source": "observed",
+      "description": "A small number decimals show exactly stays decimal",
+      "columnWidth": 100,
+      "cells": {"A1": "0.00001"},
+      "check": "A1",
+      "expect": {"text": "0.00001"}
+    },
+    {
+      "id": "GW-013",
+      "source": "observed",
+      "description": "A number too small for eleven characters of decimals goes scientific",
+      "columnWidth": 100,
+      "cells": {"A1": "0.0000000001"},
+      "check": "A1",
+      "expect": {"text": "1E-10"}
+    },
+    {
+      "id": "GW-014",
+      "source": "observed",
+      "description": "Decimals round away when only the integer part fits",
+      "columnWidth": 8.43,
+      "cells": {"A1": "12345678.9"},
+      "check": "A1",
+      "expect": {"text": "12345679"}
+    },
+    {
+      "id": "GW-015",
+      "source": "observed",
+      "description": "Rounding that carries into a ninth digit goes scientific",
+      "columnWidth": 8.43,
+      "cells": {"A1": "99999999.7"},
+      "check": "A1",
+      "expect": {"text": "1E+08"}
+    },
+    {
+      "id": "GW-016",
+      "source": "observed",
+      "description": "Where not even the shortest scientific form fits, the number is ####",
+      "columnWidth": 4,
+      "cells": {"A1": "123456789"},
+      "check": "A1",
+      "expect": {"text": "####"}
+    },
+    {
+      "id": "GW-017",
+      "source": "observed",
+      "description": "A number that is not zero is rounded to a bare 0 where nothing else fits the column",
+      "columnWidth": 1,
+      "cells": {"A1": "=1/3"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-018",
+      "source": "observed",
+      "description": "The fitted form uses the culture's decimal separator",
+      "culture": "de-DE",
+      "columnWidth": 8.43,
+      "cells": {"A1": "=1/3"},
+      "check": "A1",
+      "expect": {"text": "0,333333"}
+    },
+    {
+      "id": "GW-019",
+      "source": "observed",
+      "description": "A date too wide for its column shows ####: dates are never shortened",
+      "columnWidth": 8.43,
+      "cells": {"A1": "46291"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "####"}
+    },
+    {
+      "id": "GW-020",
+      "source": "observed",
+      "description": "A number in a fixed format too wide for its column shows ####: only General is shortened",
+      "columnWidth": 8.43,
+      "cells": {"A1": "1234567.891"},
+      "formats": {"A1": "#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "####"}
+    },
+    {
+      "id": "GW-021",
+      "source": "observed",
+      "description": "A number in a fixed format shows whole once the column holds its characters",
+      "columnWidth": 12,
+      "cells": {"A1": "1234567.891"},
+      "formats": {"A1": "#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "1,234,567.89"}
+    },
+    {
+      "id": "GW-022",
+      "source": "observed",
+      "description": "Text wider than its column is never ####",
+      "columnWidth": 8.43,
+      "cells": {"A1": "A heading far wider than its column"},
+      "check": "A1",
+      "expect": {"text": "A heading far wider than its column"}
+    },
+    {
+      "id": "GW-023",
+      "source": "observed",
+      "description": "A three-digit exponent is written in full",
+      "columnWidth": 100,
+      "cells": {"A1": "=1E+100*1"},
+      "check": "A1",
+      "expect": {"text": "1E+100"}
+    },
+    {
+      "id": "GW-024",
+      "source": "observed",
+      "description": "A negative integer wider than a default column goes scientific in the characters the sign leaves",
+      "columnWidth": 8.43,
+      "cells": {"A1": "-123456789"},
+      "check": "A1",
+      "expect": {"text": "-1.2E+08"}
+    },
+    {
+      "id": "GW-025",
+      "source": "observed",
+      "description": "Zero is 0 at any width",
+      "columnWidth": 1,
+      "cells": {"A1": "0"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "WD-001",
+      "source": "observed",
+      "description": "Nine typed digits widen a default-width column to hold them",
+      "cells": {"A1": "123456789"},
+      "check": "A1",
+      "expect": {"widens": true, "widthOnEntry": 9},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-002",
+      "source": "observed",
+      "description": "Eight typed digits fit a default-width column and do not widen it",
+      "cells": {"A1": "12345678"},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": 8},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-003",
+      "source": "observed",
+      "description": "Typed decimals do not widen a column: General rounds them to the width instead, which is what Microsoft documents it does when the cell is not wide enough",
+      "cells": {"A1": "1.23456789"},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": 1, "text": "1.23456789"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-004",
+      "source": "observed",
+      "description": "Twelve typed digits are scientific at any width, and widen the column to that form",
+      "cells": {"A1": "123456789012"},
+      "check": "A1",
+      "expect": {"widens": true, "widthOnEntry": 11},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-005",
+      "source": "observed",
+      "description": "A typed date widens a default-width column to its whole text",
+      "cells": {"A1": "9/26/2026"},
+      "check": "A1",
+      "expect": {"widens": true, "widthOnEntry": 9, "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-006",
+      "source": "observed",
+      "description": "Typed text never widens a column",
+      "cells": {"A1": "A heading far wider than its column"},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": null},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-007",
+      "source": "observed",
+      "description": "A Formula's numeric result widens a column as a typed number does",
+      "cells": {"A1": "=123456789*10"},
+      "check": "A1",
+      "expect": {"widens": true, "widthOnEntry": 10},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-008",
+      "source": "observed",
+      "description": "A typed percentage that fits does not widen a column",
+      "cells": {"A1": "12.5%"},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": 6, "numberFormat": "0.00%"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-009",
+      "source": "observed",
+      "description": "A typed number whose integer part fits once its decimals round away does not widen a column",
+      "cells": {"A1": "1234567.891"},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": 7},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-010",
+      "source": "observed",
+      "description": "A typed negative number counts its minus sign",
+      "cells": {"A1": "-12345678"},
+      "check": "A1",
+      "expect": {"widens": true, "widthOnEntry": 9},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "GW-026",
+      "source": "observed",
+      "description": "A negative number rounded to a bare 0 keeps its minus sign: -0 (verification/2026-09-27-windows-excel-2)",
+      "columnWidth": 2,
+      "cells": {"A1": "=-1/3"},
+      "check": "A1",
+      "expect": {"text": "-0"}
+    },
+    {
+      "id": "GW-027",
+      "source": "observed",
+      "description": "A negative number rounded to a bare 0 does not fit a column one character wide, which has no room for -0: #### (verification/2026-09-27-windows-excel-2)",
+      "columnWidth": 1,
+      "cells": {"A1": "=-1/3"},
+      "check": "A1",
+      "expect": {"text": "####"}
+    },
+    {
+      "id": "GW-028",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form does not fit is a bare 0",
+      "columnWidth": 4,
+      "cells": {"A1": "=1E-20"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "GW-029",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a tiny number whose scientific form fits is shown scientific, not as 0",
+      "columnWidth": 8.09,
+      "cells": {"A1": "=1E-20"},
+      "check": "A1",
+      "expect": {"text": "1E-20"}
+    },
+    {
+      "id": "GW-030",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a number of 0.5 or more in a column one character wide is rounded to 1",
+      "columnWidth": 1,
+      "cells": {"A1": "=2/3"},
+      "check": "A1",
+      "expect": {"text": "1"}
+    },
+    {
+      "id": "WD-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula whose result is text never widens a column",
+      "cells": {"A1": "=\"A heading far wider than its column\""},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": null},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula whose result fits does not widen a column",
+      "cells": {"A1": "=1234*10"},
+      "check": "A1",
+      "expect": {"widens": false, "widthOnEntry": 5},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "WD-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula that takes a date format on entry widens a default-width column to its whole text",
+      "cells": {"B1": "9/26/2026", "A1": "=B1+1"},
+      "check": "A1",
+      "expect": {"widens": true, "widthOnEntry": 9, "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "GW-031",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negative number that rounds to 0 at the one decimal a column shows keeps its minus sign",
+      "columnWidth": 4,
+      "cells": {"A1": "=-1/30"},
+      "check": "A1",
+      "expect": {"text": "-0"}
+    },
+    {
+      "id": "GW-032",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negative number too small for any decimal a column shows is -0 there too",
+      "columnWidth": 3,
+      "cells": {"A1": "=-0.0001"},
+      "check": "A1",
+      "expect": {"text": "-0"}
+    }
+  ]
+}

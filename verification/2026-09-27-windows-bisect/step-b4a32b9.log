@@ -1,0 +1,15 @@
+commit b4a32b9497610aa1517f2d0ab8bdcdf6635ffd35
+start 2026-09-27 23:28:13 BST
+
+Running 7 tests using 1 worker
+
+  ok 1 [chrome] › scrollbar.spec.mjs:213:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with the platform's own scrollbars (869ms)
+  ok 2 [chrome] › scrollbar.spec.mjs:223:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › with scrollbars that occupy layout (799ms)
+  ok 3 [chrome] › scrollbar.spec.mjs:249:5 › the Focus is never behind a scrollbar (ADR-0012/0013) › at every zoom level, after moving again (973ms)
+  ok 4 [chrome] › scrollbar.spec.mjs:328:5 › on a Windows desktop at fractional display scaling (VZ-14) › the Focus stays readable with the OS doing the scaling (841ms)
+  ok 5 [chrome] › virtualisation.spec.mjs:31:1 › the far corner is reachable and painted at 100,000 rows (BIG-1-shaped, on /wide) (1.2s)
+  ok 6 [chrome] › virtualisation.spec.mjs:47:1 › scrolling changes which rows exist, not how many elements do (VZ-1-shaped) (1.5s)
+  ok 7 [chrome] › virtualisation.spec.mjs:65:1 › the selection overlay is rectangles, not per-cell paint (SL-6/DOM-2-shaped) (770ms)
+
+  7 passed (7.9s)
+end 2026-09-27 23:28:21 BST

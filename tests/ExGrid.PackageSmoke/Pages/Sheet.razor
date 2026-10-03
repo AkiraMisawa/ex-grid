@@ -1,0 +1,10 @@
+@page "/sheet"
+@* The Sheet in src/ExSheet/README.md, as written there, taken from the packed ExSheet. *@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<ExSheet @bind-Document="_document" ViewportHeight="480" ViewportWidth="900" />
+
+@code {
+    private SheetDocument? _document;   // null: an empty Sheet in the current culture
+}

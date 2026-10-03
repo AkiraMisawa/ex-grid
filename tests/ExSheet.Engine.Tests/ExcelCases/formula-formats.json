@@ -1,0 +1,345 @@
+{
+  "area": "formula-formats",
+  "about": "The format a Formula gives a General cell when it is entered (ADR-0047, second round). Microsoft does not document the rule for any function ExSheet declares (it does for DATE, TODAY and NOW, which ExSheet does not have), so the engine applies only what these cases have observed Excel to do: simple arithmetic (single-cell References, number constants, +, -, * and /, parentheses) takes the format of the first formatted cell it reads, except that a date minus a date gives none and a percentage is not carried through * or /; MIN, MAX and SUM over References and number constants take the format of their first formatted Reference; a number constant with % gives 0.0% only when added to or subtracted from an operand that gives no format, and otherwise none; anything else gives none. This is the smallest rule consistent with every observed case (ADR-0047, \"What the third observation settled\"). Multiplication, SUM and % were observed in the second run (verification/2026-09-27-windows-excel-2), division, SUM with a constant and % beside a formatted operand in the third (verification/2026-09-28-windows-excel-3), with real keys: through COM Excel formats fewer results, so those cases are asked by keys. It applies only when the cell's format is General, and only when the Formula is entered. The uncertain cases record the engine's answer where Excel has not been asked.",
+  "cases": [
+    {
+      "id": "FF-001",
+      "source": "observed",
+      "description": "A date plus a number shows as a date",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1+7"}},
+      "check": "B1",
+      "expect": {"value2": 46298, "text": "10/3/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-002",
+      "source": "observed",
+      "description": "A number plus a date shows as a date: the first formatted Reference, not the first operand",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=7+A1"}},
+      "check": "B1",
+      "expect": {"text": "10/3/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-003",
+      "source": "observed",
+      "description": "A date minus a date is a number of days, and gives no format",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-A2"}},
+      "check": "B1",
+      "expect": {"value2": 6, "text": "6", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-004",
+      "source": "observed",
+      "description": "A Formula that is one Reference takes that cell's format",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1"}},
+      "check": "B1",
+      "expect": {"text": "9/26/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-005",
+      "source": "observed",
+      "description": "A negated Reference in parentheses takes that cell's format",
+      "cells": {"A1": "12.5%"},
+      "action": {"do": "enter", "cells": {"B1": "=-(A1)+1"}},
+      "check": "B1",
+      "expect": {"text": "87.50%", "numberFormat": "0.00%"}
+    },
+    {
+      "id": "FF-006",
+      "source": "observed",
+      "description": "The first Reference whose cell is formatted gives the format, an unformatted one before it passed over",
+      "cells": {"A1": "5", "A2": "10%"},
+      "action": {"do": "enter", "cells": {"B1": "=A1+A2"}},
+      "check": "B1",
+      "expect": {"text": "510%", "numberFormat": "0%"}
+    },
+    {
+      "id": "FF-007",
+      "source": "observed",
+      "description": "A cell formatted before the Formula is entered keeps its format",
+      "cells": {"A1": "9/26/2026"},
+      "action": [
+        {"do": "format", "range": "B1", "format": "0.00"},
+        {"do": "enter", "cells": {"B1": "=A1+1"}}
+      ],
+      "check": "B1",
+      "expect": {"text": "46292.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "FF-008",
+      "source": "observed",
+      "description": "The format is taken once, at entry: formatting the cell read afterwards does not change it",
+      "cells": {"A1": "5"},
+      "action": [
+        {"do": "enter", "cells": {"B1": "=A1+1"}},
+        {"do": "format", "range": "A1", "format": "0.00"}
+      ],
+      "check": "B1",
+      "expect": {"text": "6", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-009",
+      "source": "observed",
+      "description": "A cell read in a formatted column gives the column's format",
+      "cells": {"A5": "3"},
+      "action": [
+        {"do": "format", "range": "A:A", "format": "0.00"},
+        {"do": "enter", "cells": {"C5": "=A5+1"}}
+      ],
+      "check": "C5",
+      "expect": {"text": "4.00", "numberFormat": "0.00"}
+    },
+    {
+      "id": "FF-010",
+      "source": "observed",
+      "description": "A Formula pasted as text takes a format as a typed one does",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "pasteText", "rows": [["=A1+1"]], "at": "B1"},
+      "check": "B1",
+      "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-011",
+      "source": "observed",
+      "description": "Multiplication over a date takes the date format (verification/2026-09-27-windows-excel-2, with real keys)",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1*1"}},
+      "check": "B1",
+      "expect": {"text": "9/26/2026", "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-012",
+      "source": "observed",
+      "description": "MAX over dates takes the date format",
+      "cells": {"A1": "9/26/2026", "A2": "9/27/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=MAX(A1:A2)"}},
+      "check": "B1",
+      "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-013",
+      "source": "observed",
+      "description": "A date plus a product takes the date format (verification/2026-09-27-windows-excel-2, with real keys)",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1+2*3"}},
+      "check": "B1",
+      "expect": {"text": "10/2/2026", "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-014",
+      "source": "observed",
+      "description": "Text joined with & gives no format",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1&\"\""}},
+      "check": "B1",
+      "expect": {"value2": "46291", "kind": "text", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-015",
+      "source": "observed",
+      "description": "Arithmetic on General cells alone gives no format",
+      "cells": {"A1": "5", "A2": "6"},
+      "action": {"do": "enter", "cells": {"B1": "=A1+A2"}},
+      "check": "B1",
+      "expect": {"text": "11", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-016",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a date minus a number is a date",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-7"}},
+      "check": "B1",
+      "expect": {"text": "9/19/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-017",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: MIN over dates takes the date format",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=MIN(A1:A2)"}},
+      "check": "B1",
+      "expect": {"text": "9/20/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-018",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: MAX over dates plus a number takes the date format",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=MAX(A1:A2)+1"}},
+      "check": "B1",
+      "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-019",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: MAX takes the format of its first formatted argument, an unformatted one before it passed over",
+      "cells": {"A1": "9/26/2026", "C1": "5"},
+      "action": {"do": "enter", "cells": {"B1": "=MAX(C1,A1)"}},
+      "check": "B1",
+      "expect": {"text": "9/26/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-020",
+      "source": "observed",
+      "description": "SUM over dates takes the date format (verification/2026-09-27-windows-excel-2)",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=SUM(A1:A2)"}},
+      "check": "B1",
+      "expect": {"text": "6/17/2153", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-021",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a date minus a date plus a number gives no format: the difference is days, and the number is General",
+      "cells": {"A1": "9/26/2026", "A2": "9/20/2026", "A3": "7"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-A2+A3"}},
+      "check": "B1",
+      "expect": {"text": "13", "numberFormat": "General"}
+    },
+    {
+      "id": "FF-022",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a date minus a date formatted as a percentage is a date",
+      "cells": {"A1": "9/26/2026", "A2": "10%"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-A2"}},
+      "check": "B1",
+      "expect": {"numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-023",
+      "source": "observed",
+      "description": "A date divided by a number takes the date format, as a date plus a number does (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1/2"}},
+      "check": "B1",
+      "expect": {"text": "5/14/1963", "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-024",
+      "source": "observed",
+      "description": "A percentage constant alone gives no format (verification/2026-09-28-windows-excel-3)",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=50%"}},
+      "check": "B1",
+      "expect": {"text": "0.5", "numberFormat": "General"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-025",
+      "source": "observed",
+      "description": "A product over a cell in 0% gives no format: a percentage is not carried through * (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "10%"},
+      "action": {"do": "enter", "cells": {"B1": "=A1*2"}},
+      "check": "B1",
+      "expect": {"text": "0.2", "numberFormat": "General"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-026",
+      "source": "observed",
+      "description": "SUM with a constant among its arguments takes the date format of the date it reads (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=SUM(A1,5)"}},
+      "check": "B1",
+      "expect": {"text": "10/1/2026", "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-027",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: % on a Reference is not inferred",
+      "cells": {"A1": "5"},
+      "action": {"do": "enter", "cells": {"B1": "=A1%"}},
+      "check": "B1",
+      "expect": {"numberFormat": "General"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-028",
+      "source": "observed",
+      "description": "A product with a percentage constant gives no format (verification/2026-09-28-windows-excel-3)",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=2*50%"}},
+      "check": "B1",
+      "expect": {"text": "1", "numberFormat": "General"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-029",
+      "source": "observed",
+      "description": "A date plus a percentage constant gives no format: a percentage constant gives 0.0% only beside an operand with none (ARITH-006) (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1+50%"}},
+      "check": "B1",
+      "expect": {"text": "46291.5", "numberFormat": "General"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-030",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a cell in 0% plus a number takes 0%, as FF-006's number plus a percentage does",
+      "cells": {"A1": "10%"},
+      "action": {"do": "enter", "cells": {"B1": "=A1+1"}},
+      "check": "B1",
+      "expect": {"text": "110%", "numberFormat": "0%"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-031",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a cell in 0% subtracted from a number takes 0%",
+      "cells": {"A1": "10%"},
+      "action": {"do": "enter", "cells": {"B1": "=1-A1"}},
+      "check": "B1",
+      "expect": {"text": "90%", "numberFormat": "0%"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-032",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a cell in 0% divided gives no format, as a product does (FF-025)",
+      "cells": {"A1": "10%"},
+      "action": {"do": "enter", "cells": {"B1": "=A1/2"}},
+      "check": "B1",
+      "expect": {"text": "0.05", "numberFormat": "General"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-033",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a date multiplied by 2 takes the date format, as a date multiplied by 1 does (FF-011)",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1*2"}},
+      "check": "B1",
+      "expect": {"text": "6/23/2153", "numberFormat": "m/d/yyyy"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-034",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a percentage constant subtracted from a number gives 0.0%, as one added does (ARITH-006)",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=10-50%"}},
+      "check": "B1",
+      "expect": {"text": "950.0%", "numberFormat": "0.0%"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-035",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a percentage constant subtracted from a date gives no format, as one added does (FF-029)",
+      "cells": {"A1": "9/26/2026"},
+      "action": {"do": "enter", "cells": {"B1": "=A1-50%"}},
+      "check": "B1",
+      "expect": {"text": "46290.5", "numberFormat": "General"},
+      "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    }
+  ]
+}

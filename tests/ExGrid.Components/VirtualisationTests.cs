@@ -44,13 +44,13 @@ public class VirtualisationTests : GridTestContext
         // 100,000 rows of 20px, and one row height for the header standing at the top of
         // the content — which is also why the row offsets below carry no header term.
         Assert.Contains("height: 2000020px", cut.Find(".ex-spacer").GetAttribute("style"));
-        Assert.Contains("translateY(0px)", cut.Find(".ex-viewport").GetAttribute("style"));
+        Assert.Contains("translateY(round(nearest, 0px, var(--ex-dp, 1px)))", cut.Find(".ex-viewport").GetAttribute("style"));
 
         // Five rows — one Viewport exactly, so this is ordinary scrolling and the rows
         // are painted for real (a longer jump is a fling; FlingTests covers that).
         await ScrollToAsync(cut.Find(".ex-scroller"), 5 * RowHeightPx);
 
-        Assert.Contains("translateY(100px)", cut.Find(".ex-viewport").GetAttribute("style"));
+        Assert.Contains("translateY(round(nearest, 100px, var(--ex-dp, 1px)))", cut.Find(".ex-viewport").GetAttribute("style"));
         Assert.Equal("Row 000005", cut.FindAll(".ex-row")[0].QuerySelector(".ex-cell")!.TextContent);
     }
 
@@ -205,7 +205,7 @@ public class VirtualisationTests : GridTestContext
     [Fact] // ADR-0013: the header band spends a row of the browser's budget, and the guard counts it
     public void A_result_that_only_fits_without_the_header_is_refused()
     {
-        // The rows alone clear the 2^25 px ceiling at both of these counts, so the pure
+        // The rows alone clear the scale-1 Layout Ceiling at both of these counts, so the pure
         // guard lets them through; the spacer is a header taller than the rows, and at
         // the second one that is what the browser clamps away — the last row unreachable,
         // in silence.

@@ -15,7 +15,9 @@ namespace ExGrid.Clipboard;
 /// it — no reselection of that shape would be accepted.
 /// <see cref="TooLarge"/> is not about shape either (ADR-0005): the clipboard is past the
 /// grid's byte ceiling, so it was not read at all — or a fill key's source is past the copy
-/// cap (ADR-0035).
+/// cap (ADR-0035). The byte ceiling is component-level, never produced by the pure rules.
+/// <see cref="SpillPastExtent"/> exists only where a Consumer declared that a paste may
+/// spill (ADR-0050, item 3): the block would run past the grid's last row or column.
 /// </summary>
 public enum PasteRefusalReason
 {
@@ -43,6 +45,11 @@ public enum PasteRefusalReason
     /// would be refused (ADR-0035).</summary>
     TooLarge,
 
+    /// <summary>A spilled paste (ADR-0050, item 3) whose block would run past the grid's
+    /// last row or last column. Nothing is written — the block is never clipped to the
+    /// edge. Raised only where the Consumer declared that a paste may spill.</summary>
+    SpillPastExtent,
+
     /// <summary>A fill key (Ctrl+D, Ctrl+R) on a range one row tall at the first row, or
     /// one column wide at the first column: there is no row above, or column to the left,
     /// to fill from (ADR-0035).</summary>
@@ -69,13 +76,22 @@ public enum PasteRefusalReason
 /// </summary>
 public sealed class PastePlan
 {
-    internal PastePlan(IReadOnlyList<SelectionRange> targets, PasteShape source)
+    internal PastePlan(IReadOnlyList<SelectionRange> targets, PasteShape source, bool collapsesSelection = false)
     {
         Targets = targets;
         Source = source;
+        CollapsesSelection = collapsesSelection;
     }
 
-    /// <summary>The ranges to fill. More than one only with a 1×1 source (ADR-0014).</summary>
+    /// <summary>
+    /// One value of plain text over a Selection of more than one cell (ADR-0014, amended
+    /// 2026-09-29): the one target is the top-left cell of the range made last, and once the
+    /// Consumer accepts the paste the Selection collapses to that cell, as Excel's does.
+    /// </summary>
+    internal bool CollapsesSelection { get; }
+
+    /// <summary>The ranges to fill. More than one only with a 1×1 source (ADR-0014). A
+    /// spilled paste (ADR-0050, item 3) is one range, the block itself.</summary>
     public IReadOnlyList<SelectionRange> Targets { get; }
 
     /// <summary>The block on the clipboard, tiled from each target range's top-left.</summary>

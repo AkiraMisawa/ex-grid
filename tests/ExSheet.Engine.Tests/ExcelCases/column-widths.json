@@ -1,0 +1,316 @@
+{
+  "area": "column-widths",
+  "about": "Column widths set on columns, and how insertion and deletion carry them (ADR-0046, ADR-0047, SH-22). A width is in Excel's unit, characters of the default font; setColumnWidth sets the columns its range spans, as Range.ColumnWidth does, and a null width puts them back at the standard width (Range.UseStandardWidth). width is the check column's recorded width, null where none is recorded, which Excel reports as its standard width (8.43). Microsoft documents Range.ColumnWidth in characters, setting it on every column of a range, 8.43 as the default and 255 as the widest; Excel snaps a width to whole pixels, so the cases use whole numbers. Microsoft documents that an inserted column takes the formatting of the column to its left (Insert Options, Format Same As Left), but not whether its width is part of that, nor how deletion moves widths: those cases are uncertain until the oracle asks Excel. custom says whether the check column's width is marked custom, Excel's customWidth attribute of a column in its files, which ECMA-376 documents as false when absent; the oracle reads it from a saved copy. A recorded width is one of two kinds, both marked custom (ADR-0046, 2026-09-28): one the user set (a drag, a size to fit, sizeToFit, which the oracle does as AutoFit, or a command), which an entry never widens, and one a typed entry widened the column to (CW-018, CW-027..029), which a longer entry widens again (CW-028). A width widened by entry (automatic) is set by nothing in Excel but a typed entry, so the oracle blocks those cases. A case with widens, widthAtMost or widthAtLeast is typed: the oracle types it with real keys (ask by keys), and the engine harness widens the check column after each of the case's cells as the component does, recording the width as widened by entry in the engine's characters. widthAtMost and widthAtLeast bound the check column's width after every entry, in characters; widthAtLeast asks whether a longer entry widens a column again.",
+  "cases": [
+    {
+      "id": "CW-001",
+      "source": "observed",
+      "description": "A column nobody set is at the standard width, and records none",
+      "cells": {"B2": "1"},
+      "check": "B2",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-002",
+      "source": "observed",
+      "description": "A width set on a column is that column's width",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
+      "check": "B1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-003",
+      "source": "observed",
+      "description": "A width set on a range of cells is set on every column the range spans",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B2:D3", "width": 15},
+      "check": "D9",
+      "expect": {"width": 15}
+    },
+    {
+      "id": "CW-004",
+      "source": "observed",
+      "description": "Setting one column's width leaves its neighbour at the standard width",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
+      "check": "C1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-005",
+      "source": "observed",
+      "description": "A column put back at the standard width records none",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "setColumnWidth", "range": "B:B", "width": null}
+      ],
+      "check": "B1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-006",
+      "source": "observed",
+      "description": "An inserted column takes the width of the column to its left, as it takes its formats",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "insertColumns", "column": "C", "count": 2}
+      ],
+      "check": "D1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-007",
+      "source": "observed",
+      "description": "A column's width moves right with it when columns are inserted before it",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "C:C", "width": 30},
+        {"do": "insertColumns", "column": "C", "count": 2}
+      ],
+      "check": "E1",
+      "expect": {"width": 30}
+    },
+    {
+      "id": "CW-008",
+      "source": "observed",
+      "description": "A column inserted after a column at the standard width is at the standard width, whatever the column it pushed right",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "C:C", "width": 30},
+        {"do": "insertColumns", "column": "C"}
+      ],
+      "check": "C1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-009",
+      "source": "observed",
+      "description": "A column inserted at A has no column to its left, and is at the standard width",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "A:A", "width": 20},
+        {"do": "insertColumns", "column": "A"}
+      ],
+      "check": "A1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-010",
+      "source": "observed",
+      "description": "Deleting a column moves the widths to its right left with their columns",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "setColumnWidth", "range": "C:C", "width": 30},
+        {"do": "deleteColumns", "column": "B"}
+      ],
+      "check": "B1",
+      "expect": {"width": 30}
+    },
+    {
+      "id": "CW-011",
+      "source": "observed",
+      "description": "Deleting columns drops their widths: the column that moves into their place brings its own",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:C", "width": 20},
+        {"do": "deleteColumns", "column": "B", "count": 2}
+      ],
+      "check": "B1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-012",
+      "source": "observed",
+      "description": "Inserting rows leaves the column widths alone",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "insertRows", "row": 1, "count": 3}
+      ],
+      "check": "B1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-013",
+      "source": "uncertain",
+      "description": "Undoing a width puts back the standard width",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "undo"}
+      ],
+      "check": "B1",
+      "expect": {"width": null}
+    },
+    {
+      "id": "CW-014",
+      "source": "uncertain",
+      "description": "Undoing a column's deletion puts back its width",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "deleteColumns", "column": "B"},
+        {"do": "undo"}
+      ],
+      "check": "B1",
+      "expect": {"width": 20}
+    },
+    {
+      "id": "CW-015",
+      "source": "observed",
+      "description": "The widest column Excel allows is 255 characters",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 255},
+      "check": "B1",
+      "expect": {"width": 255}
+    },
+    {
+      "id": "CW-016",
+      "source": "observed",
+      "description": "A width the user sets is custom",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 20},
+      "check": "B1",
+      "expect": {"width": 20, "custom": true}
+    },
+    {
+      "id": "CW-017",
+      "source": "observed",
+      "description": "A column nobody set records no width, and is not custom",
+      "cells": {"B2": "1"},
+      "check": "B2",
+      "expect": {"width": null, "custom": false}
+    },
+    {
+      "id": "CW-018",
+      "source": "observed",
+      "description": "A typed number that widens its column makes the width custom, as Excel's file marks it (verification/2026-09-27-windows-excel-2: widened to 10.18, customWidth set; ADR-0047, \"What the second observation settled\"). The engine leaves the widening to the component; the harness widens as the component does",
+      "cells": {"B2": "1234567890"},
+      "check": "B2",
+      "expect": {"widens": true, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; typed with real keys, Excel was observed to give this answer (verification/2026-09-27-windows-excel-2/results.md); ask by keys"
+    },
+    {
+      "id": "CW-019",
+      "source": "observed",
+      "description": "Size to fit is a width the user set: custom, like a drag (the engine is handed the width the component fitted; Excel fits its own, so only the flag is compared)",
+      "cells": {"B2": "1234567890"},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 11, "sizeToFit": true},
+      "check": "B2",
+      "expect": {"custom": true}
+    },
+    {
+      "id": "CW-020",
+      "source": "observed",
+      "description": "A column put back at the standard width is no longer custom",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "setColumnWidth", "range": "B:B", "width": null}
+      ],
+      "check": "B1",
+      "expect": {"width": null, "custom": false}
+    },
+    {
+      "id": "CW-021",
+      "source": "uncertain",
+      "description": "A width widened by entry, which a component records with an automatic width (ADR-0046, 2026-09-28), is recorded, and marked custom as Excel's file marks it",
+      "cells": {},
+      "action": {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+      "check": "B1",
+      "expect": {"width": 11, "custom": true}
+    },
+    {
+      "id": "CW-022",
+      "source": "uncertain",
+      "description": "The user setting a width over one widened by entry makes it the user's: recorded and marked as before, and never widened by an entry (ColumnWidthTests)",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+        {"do": "setColumnWidth", "range": "B:B", "width": 11}
+      ],
+      "check": "B1",
+      "expect": {"width": 11, "custom": true}
+    },
+    {
+      "id": "CW-023",
+      "source": "uncertain",
+      "description": "An inserted column takes the width widened by entry of the column to its left, of the same kind",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+        {"do": "insertColumns", "column": "C"}
+      ],
+      "check": "C1",
+      "expect": {"width": 11, "custom": true}
+    },
+    {
+      "id": "CW-024",
+      "source": "observed",
+      "description": "An inserted column takes the custom width of the column to its left, and it stays custom",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "insertColumns", "column": "C"}
+      ],
+      "check": "C1",
+      "expect": {"width": 20, "custom": true}
+    },
+    {
+      "id": "CW-025",
+      "source": "uncertain",
+      "description": "Deleting a column moves a width widened by entry to its right left, of the same kind",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "C:C", "width": 11, "automatic": true},
+        {"do": "deleteColumns", "column": "B"}
+      ],
+      "check": "B1",
+      "expect": {"width": 11, "custom": true}
+    },
+    {
+      "id": "CW-026",
+      "source": "uncertain",
+      "description": "Undoing the user's width over one widened by entry puts that width back, of its kind",
+      "cells": {},
+      "action": [
+        {"do": "setColumnWidth", "range": "B:B", "width": 11, "automatic": true},
+        {"do": "setColumnWidth", "range": "B:B", "width": 20},
+        {"do": "undo"}
+      ],
+      "check": "B1",
+      "expect": {"width": 11, "custom": true}
+    },
+    {
+      "id": "CW-027",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a typed date that widens its column makes the width custom, as a typed number does (CW-018 observed the flag for a number only)",
+      "cells": {"B2": "9/26/2026"},
+      "check": "B2",
+      "expect": {"widens": true, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    },
+    {
+      "id": "CW-028",
+      "source": "observed",
+      "description": "After a typed number widened B (to 10.18), a longer typed number widens it again (to 11.18), and Excel's file still marks it custom: a width widened by entry widens again (ADR-0046, 2026-09-28) (verification/2026-09-28-windows-excel-3)",
+      "cells": {"B2": "1234567890", "B3": "12345678901"},
+      "check": "B3",
+      "expect": {"widens": true, "custom": true, "widthAtLeast": 10.5},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    },
+    {
+      "id": "CW-029",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a typed Formula whose number widens its column (WD-007's shape) makes the width custom, as a typed number does",
+      "cells": {"B2": "=123456789*10"},
+      "check": "B2",
+      "expect": {"widens": true, "custom": true},
+      "oracleSkip": "A value set through COM never widens a column; the case is typed with real keys; ask by keys"
+    }
+  ]
+}

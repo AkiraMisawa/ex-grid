@@ -1,37 +1,48 @@
-# Anchor / Focus and keyboard navigation — Enter and Tab cycle inside the selection
+# Focus / Extent and keyboard navigation — Enter and Tab cycle inside the selection
 
-Selection is driven by two points: the **Anchor** (fixed end) and the **Focus** (moving end).
-Keyboard behaviour follows Excel. **When a range is selected, Enter and Tab cycle inside it and
-never leave it.**
+Selection is driven by two points: the **Focus**, Excel's active cell, which stays fixed while a
+range is extended, and the **Extent**, the end that moves. Keyboard behaviour follows Excel. **When
+a range is selected, Enter and Tab cycle inside it and never leave it.**
 
-## Anchor and Focus
+## Focus and Extent
+
+*(Rewritten 2026-09-27 for [ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md).
+This section first made the Focus the moving end of range extension and named the fixed end the
+Anchor. Excel keeps its active cell at the fixed end; ExGrid now does too, and the Anchor is
+retired.)*
 
 | | Meaning | Moved by |
 |---|---|---|
-| **Anchor** | the fixed end of range extension | click, Ctrl+click (a new range — or a toggle-off, which detaches it) |
-| **Focus** | where keyboard operations start from; the moving end | arrows, Shift+arrow, Enter / Tab cycling |
+| **Focus** | Excel's active cell: typing enters it, the Cell Editor opens on it, the Name Box names it, `aria-activedescendant` points at it. The end that stays fixed while a range is extended | click, Ctrl+click (a new range), arrows, Ctrl+arrow, Home/End, PageUp/PageDown, Enter / Tab cycling, Ctrl+. |
+| **Extent** | the end of the range holding the Focus that moves while it is extended; the grid keeps it in view while extending | Shift+arrow, Shift+click, Ctrl+Shift+arrow, Shift+Home/End, Shift+PageUp/PageDown, a drag |
 
-- **Click** — Anchor = Focus = that cell. The selection collapses to one cell
-- **Shift+click** — Anchor stays; Focus moves to the clicked cell and the range is redrawn
+- **Click** — the Focus is that cell. The selection collapses to one cell
+- **Shift+click** (and each move of a drag) — the Focus stays; the range holding it is redrawn
+  from the Focus to the clicked cell, which is its Extent
 - **Ctrl+click** — on an unselected cell, adds a new range
-  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md));
-  Anchor and Focus move to the new range. On a selected cell, **toggles it off** (see the
-  subsection below)
-- **Arrows** — collapse the selection to one cell and move
-- **Shift+arrow** — Anchor fixed, Focus moves, the range grows or shrinks
+  ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) and
+  the Focus moves into it. On a selected cell, **takes it out** (see the subsection below)
+- **Arrows** — collapse the selection to one cell and move from the Focus
+- **Shift+arrow** — the Focus fixed, the Extent moves one step: the edge opposite the Focus moves,
+  the range grows or shrinks, and shrinking back through the Focus flips it. On an axis where the
+  Focus is on neither edge (Enter or Tab walked it inside), the key changes nothing
 - **Ctrl+arrow** — jump to the edge (last / first row vertically, last / first column
   horizontally). Not Excel's "edge of the non-blank block" — query results have no blank rows,
   and finding a block edge would require the whole dataset (ADR-0011)
-- **Shift+Ctrl+arrow** — extend the range to the edge
-- **Ctrl+Space / Shift+Space** — select the whole column / whole row (as in Excel).
-  *(Refined while implementing: the growing range expands to full height / full width
-  keeping its column / row span, so a range spanning three columns becomes three whole
-  columns — Excel's behaviour. Anchor and Focus stay where they are.)*
+- **Shift+Ctrl+arrow** — the Extent runs to the edge (or to the Consumer's edge answer, asked for
+  the Extent — ADR-0050)
+- **Ctrl+Space / Shift+Space** — the range holding the Focus becomes whole columns / whole rows,
+  keeping its column / row span (as in Excel); the Focus does not move
+- **Ctrl+. (period)** — the Focus moves to the next corner of the range holding it, clockwise; the
+  Selection does not change
+- **Shift+Backspace** — the Selection collapses to the Focus. **Ctrl+Backspace** — the Focus is
+  scrolled into view and nothing else changes
 
-**With disjoint ranges, the most recently created one is the one that grows.** Both Shift+arrow
-and Shift+click move only the range the Anchor belongs to.
+**With disjoint ranges, the range holding the Focus is the one that grows** — the one added last,
+unless Enter or Tab has since cycled the Focus into another. Shift+arrow and Shift+click move only
+that range, from its own Focus.
 
-### Ctrl+click on a selected cell toggles it off
+### Ctrl+click on a selected cell takes it out
 
 *(Added while implementing the selection model; the original text said only "adds a new
 range".)* **Ctrl+click on an already-selected cell deselects it, as Excel 365 does.** The
@@ -54,18 +65,21 @@ natural case (ADR-0011). Holes could not be punched in a selection before a bulk
 (select all, exclude two rows, Ctrl+Enter). And the duplicate overlapping ranges that
 append-only accumulates would paint twice through the translucent overlay.
 
-After a toggle-off, Anchor and Focus stand **detached** — on the deselected cell, outside
-every range — as Excel behaves after a deselect. The detachment is **stored, never inferred
-from geometry**: the subtraction fragments make "which range is the Anchor's" unanswerable
-by coordinates. From the detached state:
+*(Rewritten 2026-09-27 for ADR-0052. This first left Anchor and Focus **detached** on the
+deselected cell, outside every range, with rules for Shift+arrow, Enter/Tab and the Space pair
+from there, and toggling off the last cell left the empty selection. Excel keeps its active cell
+inside the Selection, so the detached state is withdrawn.)* After a cell is taken out, the Focus
+stays inside the Selection:
 
-- Shift+arrow / Shift+click starts a **new** range (appended, so it is the one that grows)
-- Enter / Tab enters the first range at its first cell (backward: the last range at its
-  last cell)
-- Ctrl+Space / Shift+Space starts a new **whole-column / whole-row** range at the
-  detached cell (expanding an arbitrary subtraction fragment instead would select a
-  column the user never pointed at)
-- Toggling off the last selected cell leaves the empty selection
+- A cell other than the Focus: the Focus stays, and the range holding it is the fragment of its
+  old range that contains it. Shift+arrow extends that fragment
+- The Focus's own cell: the Focus moves to the next cell of what remains in Tab order — across its
+  range, then on into the next range, wrapping — and that cell's range holds it. *(Excel was
+  observed for the top-left cell only.)*
+- **The only selected cell cannot be taken out**: Ctrl+click on it changes nothing
+
+Which range holds the Focus is **stored, never inferred from geometry** — fragments and overlaps
+make it unanswerable by coordinates.
 
 ## Enter and Tab cycling
 
@@ -91,11 +105,10 @@ With no range (a single cell), Enter moves down and Tab moves right, and the sel
 follows. *(Refined while implementing: at the last row / last column the Focus clamps and
 stays put, as at Excel's sheet edge — no wrap target is invented.)*
 
-*(Refined while implementing: cycling can park the Focus in a range the Anchor is not in.
-A Shift+arrow from there **re-anchors at the Focus and starts a new range** — redrawing
-the Anchor's range would bridge the two ranges into one block with a single keystroke,
-selecting cells the user never touched. Shift+click keeps the Anchor and redraws its
-range: its target is the absolute cell the user pointed at, not a step from the Focus.)*
+*(Withdrawn by ADR-0052, 2026-09-27. This said a Shift+arrow from a range the Anchor was not in
+re-anchored at the Focus and started a new range. The Focus is now always in the range that
+extends, so a Shift+arrow extends the range holding the Focus from the edge opposite it, and
+Shift+click redraws that range from the Focus to the cell pointed at.)*
 
 ### Why the cycling matters
 
@@ -143,24 +156,23 @@ several whole columns at once
 
 **A range spanning every row keeps spanning every row under Shift+← / Shift+→**, and a range
 spanning every column keeps spanning every column under Shift+↑ / Shift+↓. This is what Excel
-does. Before this, Shift+→ after Ctrl+Space redrew the range between the Anchor and the Focus,
-which are two cells, and the whole-column selection collapsed to one row. A user extending a
+does. Before this, Shift+→ after Ctrl+Space redrew the range between the Anchor and the Focus
+(ADR-0012's model before ADR-0052), which are two cells, and the whole-column selection collapsed to one row. A user extending a
 column selection never asked for that. Only the axis the range already spans in full is kept;
-the other axis moves the Focus as it always has. *(Refined while implementing, 2026-09-26: the
+the other axis moves the Extent. *(Refined while implementing, 2026-09-26: the
 same holds for the other extensions along an axis — Ctrl+Shift+arrow runs whole columns to the
 edge, as it does in Excel, and Shift+PageUp / PageDown keeps a whole-row range whole. They are
 the same gesture at a different stride, and leaving them out would collapse the range on one
 key and not the next.)*
 
-**Shift+click on a column header selects whole columns**, from the Anchor's column to the
-clicked one. This is Excel's gesture, and it is the mouse route to several whole columns. The
+**Shift+click on a column header selects whole columns**, from the Focus's column to the
+clicked one; the Focus stays (ADR-0052). This is Excel's gesture, and it is the mouse route to several whole columns. The
 plain click stays a sort, as decided above; the modifier had no meaning on a header before. It
 takes the gesture many data grids give to multi-column sorting. That is acceptable because
 multi-column sorting here is expressed through the `Sorts` model or the column menu, never
 through a header click (see "What one header click does to the Sorts list" below). A Shift+click
-does not sort. From Empty it selects the clicked column alone, anchored on the first visible row,
-as the first key after focus is (KB-9), so the Viewport does not move for a header click. From a
-detached Anchor it starts a new range from the Anchor's column, as Shift+click on a cell does.
+does not sort. From Empty it selects the clicked column alone, with the Focus on the first visible row,
+as the first key after focus is (KB-9), so the Viewport does not move for a header click.
 *(The last two sentences were settled while implementing, 2026-09-26; the first draft read "from
 Empty, or with nothing anchored", which named neither the row nor the detached case.)*
 
@@ -180,6 +192,29 @@ grid could not tab out, which contradicts
 the grid as one tab stop". Excel is an application; this is one component on someone's
 page. **Escape releases the grid's DOM focus** — it has no other meaning outside editing,
 and when the Interactive and Overwrite modes arrive it stays the outermost of them.
+
+*(Rewritten 2026-10-01, decided with the user.)* **Escape with nothing left to dismiss releases
+Tab, not DOM focus.** The fifteenth Windows run (`verification/2026-10-01-windows-15/`) saw the cost of
+the blur in ExSheet: an Escape typed twice out of Excel's habit, once to cancel the edit and once more,
+sent the keyboard to `body`, while the cell still looked selected, and the next keys reached nothing.
+Excel's Escape with nothing to cancel does nothing. So the root keeps the keyboard, and the next Tab
+or Shift+Tab is left to the browser, which moves to the next or the previous element of the page:
+a keyboard user still leaves by Escape and Tab, as before, and is never trapped. Any other key after
+the Escape means what it always means, and ends the release: a character opens an edit in the
+selected cell, an arrow moves, and a later Tab cycles inside the selection again. So does a press
+on the grid *(decided with the user the same day, when ticket 77 was built)*: a user who clicks back
+into the grid has come back to it. A press elsewhere on the page is not heard, since that would need
+a listener outside the grid (ADR-0018, ADR-0021). Escape there is a
+change of the keys the gate claims (ADR-0010: a mode change is a different set), so the keys typed
+after it are held until it is answered, as after any mode change. It holds for ExGrid and ExSheet
+alike, since the reason above holds for both. The options set aside: ExSheet ignoring that Escape, as
+Excel does, which brings the trap back and would need another way out (Excel's F6); and keeping the
+blur, which loses the keyboard silently.
+*(Added 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md).)* **The release also ends when DOM focus leaves the grid.** The
+root's `focusout` tells it, on every grid. So Escape, a press elsewhere on the page and Tab back into
+the grid leave no release standing, and the next Tab cycles; ticket 77 had recorded that case as
+open. On a grid that edits, the keyboard is held by its Keyboard Field, which is the grid's one tab
+stop; the released Tab and Shift+Tab leave from there.
 
 An open popover — a column menu or a filter panel — sits **inside** that layering *(recorded
 when dismissal was wired, after the first manual session left a filter panel with no way to
@@ -201,6 +236,16 @@ Escape is the grid's
 2026-09-24: this said DOM focus would be outside the root, so the gate would never see that
 Escape. MudBlazor keeps focus on its control, inside the popover, so the contents now report
 the popup, and while it is open the gate leaves a descendant's Escape to it.)*)*
+
+*(Refined 2026-10-01, building
+[ADR-0070](./0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md).)* **A held Escape is
+one press.** The press peels its one layer, and the browser's repeats of it dismiss nothing more. A
+held key's repeats used to peel a layer each: holding Escape closed a Formula Entry's list and then
+cancelled the edit under it, losing what was typed, and closing ExPivot's details dialog with
+Escape handed the report the keyboard only for a repeat to release it again. *(With the rewrite
+above, which met this note on 2026-10-02:)* a held Escape with nothing left to dismiss releases Tab
+with its press, and its repeats leave the release standing. They are the same press, not the other
+key that ends a release, so the gate does not count them.
 
 *(The Interactive layer arrived with
 [ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md), and
@@ -263,6 +308,9 @@ than an oversight: everywhere else, writing `scrollTop` means "make the Focus vi
 and the bottom the scroll clamps and the relative position cannot be held, so the transition
 degrades to exactly a reveal there — the Focus is still visible, which is the invariant that
 actually matters.
+
+Shift+PageUp / Shift+PageDown move the Extent by N and the Viewport with it; the Focus stays and
+may be left off screen (ADR-0052).
 
 The transitions are named **`MoveByViewport` / `ExtendByViewport`**, and deliberately not "page":
 `CONTEXT.md` puts *page* on the `_Avoid_` list under **Window**, and
@@ -330,16 +378,17 @@ handlers ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s economy).
   ArrowDown would move the selection under a gesture aimed at the desktop. Which platform it
   is can only be answered by the browser, so it is asked once at attach and passed in — the
   keyboard and the mouse read the same answer, or Ctrl+click and Ctrl+A would disagree about
-  which modifier adds a range.)* And **a toggle-off does
-  not begin a drag**: it leaves Anchor and Focus detached, so dragging on from there would append
-  a range nobody asked for. A drag is not a transition of its own — mouse down is `Click` and the
+  which modifier adds a range.)* And **a take-out does
+  not begin a drag**: the Focus it leaves is not the cell the press pointed at, and dragging on
+  would redraw a range from there. A drag is not a transition of its own — mouse down is `Click` and the
   moves are `ExtendTo`, as `GridSelection` says.
 - **All of this rides on the capture-phase key handling in
   [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md).** Outside editing, the arrows,
   Enter and Tab belong to the core. While editing, only the arrows change hands according to
   Overwrite / Caret; Enter and Tab are always the core's (commit, then move by these rules).
 - **The Focus must always be visible.** If cycling or Ctrl+arrow takes it out of the Viewport, the
-  grid scrolls to it. *(Refined once the keyboard existed: "visible" means inside what the
+  grid scrolls to it. While a range is extended the grid keeps the **Extent** in view instead,
+  and the Focus may be left off screen, as in Excel; Ctrl+Backspace brings it back (ADR-0052). *(Refined once the keyboard existed: "visible" means inside what the
   **scrollbars left readable**, not inside the box the Consumer declared. Where the platform draws
   classic scrollbars they take about 15px out of that box, and the first implementation
   right-aligned the Focus against the declared edge — putting 15px of it behind the bar on Windows
@@ -360,10 +409,82 @@ handlers ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)'s economy).
   ([ADR-0001](./0001-consumer-pushes-the-window-grid-does-not-fetch.md)). A range taller than the
   Window will move the Focus onto rows that have not been fetched. The Focus cell is a Placeholder
   meanwhile, so **editing does not start until the data arrives**.
-- **A change of the Row Sequence Version discards the Anchor and Focus too** (ADR-0011 drops
+- **A change of the Row Sequence Version discards the Focus and Extent too** (ADR-0011 drops
   the whole selection; a change that leaves the visible sequence identical keeps it —
   [ADR-0023](./0023-filter-and-sort-semantics-of-the-reference-implementation.md)).
 - **With disjoint ranges, cycling visits them in creation order.** Excel also cycles through all
   ranges, but the exact ordering was not verified. Check against Excel during implementation.
 - **Excel's detail where Enter after a run of Tabs returns to the starting column is not
   adopted.** The implementation cost outweighs the benefit. Add it if it turns out to be wanted.
+
+## Added later: what a Consumer may declare instead *(2026-09-27)*
+
+[ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md) lets a Consumer take Excel's behaviour in
+two places where this ADR chose otherwise, and nothing changes for a Consumer who does not ask:
+**a header click that selects the column** (with Row Headings beside the rows), and **an edge
+answer for Ctrl+arrow**, so it stops where the data ends rather than at the grid's edge.
+[ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md) adds **Point
+mode**, in which the arrow keys point at cells for a Formula instead of committing. It applies
+only while the Consumer's predicate says the caret is at a place where a Reference can go.
+Everything above stands for a display grid. ExSheet is the Consumer that makes these declarations.
+
+*(2026-09-27: [ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)
+reversed this ADR's Focus and Anchor; the text above has been rewritten to it.)*
+
+## Added after the fifth Windows run: a reveal paints where it is going *(2026-09-29, decided with the user)*
+
+**What happened.** On the Server host, a reveal that jumped far showed a Viewport with no rows for
+one round trip. Ctrl+↓ to a row past the Window is one such jump. The blank lasted about 50–100 ms at
+no added latency, and about 220 ms at 60 ms added. For the same time the status line said
+"1 cells selected (outside the visible range)".
+
+**Why.** The reveal rendered the Focus move first and wrote the scroll offset afterwards. The
+slice of rows then followed the browser's scroll event, as the paragraphs above describe. Nothing
+was lost, but for one round trip the grid showed neither the rows it had left nor the rows it was
+going to. The status line also judged "outside" against where the scroller had been, although this
+ADR already says a reveal is judged against where the scroller is going. The DC-13 investigation
+found it (`verification/2026-09-29-windows-5/results.md`).
+
+**The decision:** the render that writes a reveal's scroll offset also paints the slice at that
+offset. That slice holds the rows the Consumer has, and Placeholders for the rows it does not
+(ADR-0004, ADR-0001), and the Range Request goes out as it always did. The status line and
+anything else that asks "is the Focus in view" read the offset the scroller is going to. The
+browser's scroll event still updates the mirrored offsets. When it arrives it confirms the slice
+already painted, so it re-renders nothing.
+
+This is not the one-round-trip blank that ADR-0028 accepts for a window drag and ADR-0045 for the
+first frame after a resize. In those, the size itself is news from the browser. Here, the grid
+chose the offset and knows it.
+
+*(Implemented 2026-09-29.)* The render that paints the target slice sends the scroll write as well.
+On Blazor Server the write and the render's batch still travel as two messages, so the write is held
+in the browser until the root carries the render's reveal number (ADR-0021, the scroll-offset
+entry). Without the hold, about half the far reveals at a 150 ms round trip painted one empty frame
+between the two messages.
+
+## Added later: a drag and Ctrl+click on the header *(2026-09-29, decided with the user)*
+
+ADR-0050 gave Headings Excel's drag and Ctrl+click (item 1, 2026-09-29), and **a display grid takes
+both on its column header too**. Shift+click already made the header the mouse route to whole
+columns; the drag and Ctrl+click finish that route. The plain click still sorts, so the header must
+tell a click from the start of a drag, and here it differs from a Heading:
+
+- **A press on a header selects nothing by itself.** Released on the same column, with no other
+  column's header crossed, it is a click and sorts, as above. **The drag begins when the pointer
+  reaches another column** — its header, or its cells below — and from then on it is a Heading drag
+  as ADR-0050 describes, from the pressed column to the pointer's. **A press that became a drag
+  never sorts**, even if it is released back over the column it started on. The click a browser
+  fires on the common ancestor after a press and a release on different headers is therefore not a
+  sort either.
+- **Ctrl+click on a header adds or takes out the whole column and does not sort**; Ctrl+drag adds
+  whole columns. The modifier had no meaning on a header before: it was ignored and the click
+  sorted. Multi-column sorting is still never a header click (above).
+- Selecting a column this way is positional, so an unsortable column (an Action Column) is selected
+  like any other, as Shift+click already does.
+- **Where the Consumer wires a column reorder (`OnColumnOrderChanged`), a header drag stays the
+  reorder** [ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)
+  gave it, a Ctrl+drag included. There Shift+click and Ctrl+click still select, and whole columns
+  are selected by those. *(Decided with the user the same day, when the implementation met the
+  reorder: the two readings of a header drag collided, and the one a Consumer asked for by wiring it
+  wins. Google Sheets' way, where a drag on a column already selected moves it and any other drag
+  selects, was not taken: it would change the reorder gesture every existing Consumer has.)*

@@ -1,0 +1,60 @@
+{
+  "area": "max",
+  "about": "MAX (ADR-0047).",
+  "cases": [
+    {
+      "id": "MAX-001",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MAX(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "MAX-002",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MAX(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "MAX-003",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MAX(TRUE,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "MAX-004",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MAX(-3,-7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -3}
+    },
+    {
+      "id": "MAX-005",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MAX(\"abc\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "MAX-006",
+      "source": "observed",
+      "description": "MIN and MAX: no numbers gives 0; typed booleans count; untranslatable text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MAX(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

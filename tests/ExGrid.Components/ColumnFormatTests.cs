@@ -64,7 +64,7 @@ public class ColumnFormatTests : GridTestContext
         var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
 
         Assert.Equal("2026-01-05\t100.50\r\n", payload.Text);
-        Assert.Equal("<table><tr><td>2026-01-05T00:00:00</td><td>100.5</td></tr></table>", payload.Html);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>2026-01-05T00:00:00</td><td>100.5</td></tr></table>", payload.Html);
     }
 
     [Fact] // ADR-0009: the value list offers the values in the column's format

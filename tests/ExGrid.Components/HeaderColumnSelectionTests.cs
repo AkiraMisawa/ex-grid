@@ -26,7 +26,7 @@ public class HeaderColumnSelectionTests : GridTestContext
             .Add(g => g.SelectionChanged, onSelection)
             .Add(g => g.OnSortChanged, onSort));
 
-    [Fact] // ADR-0012 / SR-2a: Shift+click on a header selects whole columns from the Anchor's, and does not sort
+    [Fact] // ADR-0012/0052 / SR-2a: Shift+click on a header selects whole columns from the Focus's, and does not sort
     public async Task Shift_click_on_a_header_selects_whole_columns_and_does_not_sort()
     {
         GridSelection? selection = null;
@@ -41,7 +41,7 @@ public class HeaderColumnSelectionTests : GridTestContext
         Assert.Null(sorted);
         Assert.NotNull(selection);
         Assert.Equal([new SelectionRange(0, 1, 50, 3)], selection.Ranges);
-        Assert.Equal(new CellPosition(2, 1), selection.Anchor);
+        Assert.Equal(new CellPosition(2, 1), selection.Focus);
     }
 
     [Fact] // ADR-0012 / SR-1: the plain click still sorts and leaves the selection alone

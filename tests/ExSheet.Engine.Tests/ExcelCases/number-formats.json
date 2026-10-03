@@ -1,0 +1,716 @@
+{
+  "area": "number-formats",
+  "about": "Number format codes as Excel renders them, read back as Range.Text (ADR-0016, ADR-0046, ADR-0047). A Value its format cannot show is ####.",
+  "cases": [
+    {
+      "id": "FMT-001",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "1234.567"},
+      "formats": {"A1": "0.00"},
+      "check": "A1",
+      "expect": {"text": "1234.57"}
+    },
+    {
+      "id": "FMT-002",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "1234.567"},
+      "formats": {"A1": "#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "1,234.57"}
+    },
+    {
+      "id": "FMT-003",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "1234567"},
+      "formats": {"A1": "#,##0"},
+      "check": "A1",
+      "expect": {"text": "1,234,567"}
+    },
+    {
+      "id": "FMT-004",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "-1234.5"},
+      "formats": {"A1": "#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "-1,234.50"}
+    },
+    {
+      "id": "FMT-005",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "0.256"},
+      "formats": {"A1": "0%"},
+      "check": "A1",
+      "expect": {"text": "26%"}
+    },
+    {
+      "id": "FMT-006",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "0.256"},
+      "formats": {"A1": "0.0%"},
+      "check": "A1",
+      "expect": {"text": "25.6%"}
+    },
+    {
+      "id": "FMT-007",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "5"},
+      "formats": {"A1": "000"},
+      "check": "A1",
+      "expect": {"text": "005"}
+    },
+    {
+      "id": "FMT-008",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "0.5"},
+      "formats": {"A1": "#.##"},
+      "check": "A1",
+      "expect": {"text": ".5"}
+    },
+    {
+      "id": "FMT-009",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "1.5"},
+      "formats": {"A1": "0.###"},
+      "check": "A1",
+      "expect": {"text": "1.5"}
+    },
+    {
+      "id": "FMT-010",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "1.5"},
+      "formats": {"A1": "0.000"},
+      "check": "A1",
+      "expect": {"text": "1.500"}
+    },
+    {
+      "id": "FMT-011",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "1234567"},
+      "formats": {"A1": "#,##0,"},
+      "check": "A1",
+      "expect": {"text": "1,235"}
+    },
+    {
+      "id": "FMT-012",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "1234567890"},
+      "formats": {"A1": "0.0,,"},
+      "check": "A1",
+      "expect": {"text": "1234.6"}
+    },
+    {
+      "id": "FMT-013",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "12345"},
+      "formats": {"A1": "0.00E+00"},
+      "check": "A1",
+      "expect": {"text": "1.23E+04"}
+    },
+    {
+      "id": "FMT-014",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "0.000123"},
+      "formats": {"A1": "0.00E+00"},
+      "check": "A1",
+      "expect": {"text": "1.23E-04"}
+    },
+    {
+      "id": "FMT-015",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "0.5"},
+      "formats": {"A1": "0"},
+      "check": "A1",
+      "expect": {"text": "1"}
+    },
+    {
+      "id": "FMT-016",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "2.5"},
+      "formats": {"A1": "0"},
+      "check": "A1",
+      "expect": {"text": "3"}
+    },
+    {
+      "id": "FMT-017",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "-2.5"},
+      "formats": {"A1": "0"},
+      "check": "A1",
+      "expect": {"text": "-3"}
+    },
+    {
+      "id": "FMT-018",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "123"},
+      "formats": {"A1": "0.00\" kg\""},
+      "check": "A1",
+      "expect": {"text": "123.00 kg"}
+    },
+    {
+      "id": "FMT-019",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "5"},
+      "formats": {"A1": "\\$0.00"},
+      "check": "A1",
+      "expect": {"text": "$5.00"}
+    },
+    {
+      "id": "FMT-020",
+      "source": "observed",
+      "description": "Number, percent and thousands codes render as Excel's",
+      "cells": {"A1": "-5"},
+      "formats": {"A1": "$#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "-$5.00"}
+    },
+    {
+      "id": "FMT-021",
+      "source": "observed",
+      "description": "Sections are positive; negative; zero; text",
+      "cells": {"A1": "5"},
+      "formats": {"A1": "0.00;(0.00)"},
+      "check": "A1",
+      "expect": {"text": "5.00"}
+    },
+    {
+      "id": "FMT-022",
+      "source": "observed",
+      "description": "Sections are positive; negative; zero; text",
+      "cells": {"A1": "-5"},
+      "formats": {"A1": "0.00;(0.00)"},
+      "check": "A1",
+      "expect": {"text": "(5.00)"}
+    },
+    {
+      "id": "FMT-023",
+      "source": "observed",
+      "description": "Sections are positive; negative; zero; text",
+      "cells": {"A1": "0"},
+      "formats": {"A1": "0;-0;\"zero\""},
+      "check": "A1",
+      "expect": {"text": "zero"}
+    },
+    {
+      "id": "FMT-024",
+      "source": "observed",
+      "description": "Sections are positive; negative; zero; text",
+      "cells": {"A1": "-3"},
+      "formats": {"A1": "0;-0;\"zero\""},
+      "check": "A1",
+      "expect": {"text": "-3"}
+    },
+    {
+      "id": "FMT-025",
+      "source": "observed",
+      "description": "Sections are positive; negative; zero; text",
+      "cells": {"A1": "0"},
+      "formats": {"A1": "0.00;(0.00)"},
+      "check": "A1",
+      "expect": {"text": "0.00"}
+    },
+    {
+      "id": "FMT-026",
+      "source": "observed",
+      "description": "Text shows as it is, or through the text section's @",
+      "cells": {"A1": "abc"},
+      "formats": {"A1": "0.00"},
+      "check": "A1",
+      "expect": {"text": "abc"}
+    },
+    {
+      "id": "FMT-027",
+      "source": "observed",
+      "description": "Text shows as it is, or through the text section's @",
+      "cells": {"A1": "abc"},
+      "formats": {"A1": "@"},
+      "check": "A1",
+      "expect": {"text": "abc"}
+    },
+    {
+      "id": "FMT-028",
+      "source": "observed",
+      "description": "Text shows as it is, or through the text section's @",
+      "cells": {"A1": "x"},
+      "formats": {"A1": "0;0;0;\"[\"@\"]\""},
+      "check": "A1",
+      "expect": {"text": "[x]"}
+    },
+    {
+      "id": "FMT-029",
+      "source": "observed",
+      "description": "The culture's separators, over the invariant code",
+      "culture": "de-DE",
+      "cells": {"A1": "=1234.5"},
+      "formats": {"A1": "#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "1.234,50"}
+    },
+    {
+      "id": "FMT-030",
+      "source": "observed",
+      "description": "The culture's separators, over the invariant code",
+      "culture": "ja-JP",
+      "cells": {"A1": "=1234.5"},
+      "formats": {"A1": "#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "1,234.50"}
+    },
+    {
+      "id": "FMT-031",
+      "source": "observed",
+      "description": "The culture's separators, over the invariant code",
+      "cells": {"A1": "1234.5"},
+      "formats": {"A1": "#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "1,234.50"}
+    },
+    {
+      "id": "FMT-032",
+      "source": "observed",
+      "description": "General shows at most 15 significant digits",
+      "cells": {"A1": "1234.5"},
+      "formats": {"A1": "General"},
+      "check": "A1",
+      "expect": {"text": "1234.5"}
+    },
+    {
+      "id": "FMT-033",
+      "source": "observed",
+      "description": "General in a wide column shows at most eleven characters, rounded: not the fifteen digits the Cell Editor shows (the eleven is not documented)",
+      "cells": {"A1": "=1/3"},
+      "formats": {"A1": "General"},
+      "check": "A1",
+      "expect": {"text": "0.333333333"}
+    },
+    {
+      "id": "FMT-034",
+      "source": "observed",
+      "description": "General shows at most 15 significant digits",
+      "cells": {"A1": "=0.1+0.2"},
+      "formats": {"A1": "General"},
+      "check": "A1",
+      "expect": {"text": "0.3"}
+    },
+    {
+      "id": "FMT-035",
+      "source": "observed",
+      "description": "General shows at most 15 significant digits",
+      "cells": {"A1": "-42"},
+      "formats": {"A1": "General"},
+      "check": "A1",
+      "expect": {"text": "-42"}
+    },
+    {
+      "id": "FMT-036",
+      "source": "observed",
+      "description": "General writes twelve or more digits in scientific notation, even in a wide column (documented); the six significant digits are not",
+      "cells": {"A1": "123456789012345"},
+      "formats": {"A1": "General"},
+      "check": "A1",
+      "expect": {"text": "1.23457E+14"}
+    },
+    {
+      "id": "FMT-037",
+      "source": "observed",
+      "description": "Past fifteen significant digits a number shows zeros",
+      "cells": {"A1": "1234567890123456789"},
+      "formats": {"A1": "0"},
+      "check": "A1",
+      "expect": {"text": "1234567890123450000"}
+    },
+    {
+      "id": "FMT-038",
+      "source": "observed",
+      "description": "General in a wide column rounds 2/3 to eleven characters (the eleven is not documented)",
+      "cells": {"A1": "=2/3"},
+      "formats": {"A1": "General"},
+      "check": "A1",
+      "expect": {"text": "0.666666667"}
+    },
+    {
+      "id": "FMT-039",
+      "source": "observed",
+      "description": "General uses the culture's decimal separator",
+      "culture": "de-DE",
+      "cells": {"A1": "=1.5"},
+      "formats": {"A1": "General"},
+      "check": "A1",
+      "expect": {"text": "1,5"}
+    },
+    {
+      "id": "FMT-040",
+      "source": "observed",
+      "description": "Date serials match Excel's 1900 system around its 29 February 1900",
+      "cells": {"A1": "1"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "1900-01-01"}
+    },
+    {
+      "id": "FMT-041",
+      "source": "observed",
+      "description": "Date serials match Excel's 1900 system around its 29 February 1900",
+      "cells": {"A1": "59"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "1900-02-28"}
+    },
+    {
+      "id": "FMT-042",
+      "source": "observed",
+      "description": "Date serials match Excel's 1900 system around its 29 February 1900",
+      "cells": {"A1": "60"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "1900-02-29"}
+    },
+    {
+      "id": "FMT-043",
+      "source": "observed",
+      "description": "Date serials match Excel's 1900 system around its 29 February 1900",
+      "cells": {"A1": "61"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "1900-03-01"}
+    },
+    {
+      "id": "FMT-044",
+      "source": "observed",
+      "description": "Date serials match Excel's 1900 system around its 29 February 1900",
+      "cells": {"A1": "45292"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "2024-01-01"}
+    },
+    {
+      "id": "FMT-045",
+      "source": "observed",
+      "description": "Date serials match Excel's 1900 system around its 29 February 1900",
+      "cells": {"A1": "2958465"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "9999-12-31"}
+    },
+    {
+      "id": "FMT-046",
+      "source": "observed",
+      "description": "Serial 0 is 0 January 1900, as Excel writes it",
+      "cells": {"A1": "0"},
+      "formats": {"A1": "m/d/yyyy"},
+      "check": "A1",
+      "expect": {"text": "1/0/1900"}
+    },
+    {
+      "id": "FMT-047",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "45292"},
+      "formats": {"A1": "mmm d, yyyy"},
+      "check": "A1",
+      "expect": {"text": "Jan 1, 2024"}
+    },
+    {
+      "id": "FMT-048",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "45292"},
+      "formats": {"A1": "mmmm"},
+      "check": "A1",
+      "expect": {"text": "January"}
+    },
+    {
+      "id": "FMT-049",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "45292"},
+      "formats": {"A1": "dddd"},
+      "check": "A1",
+      "expect": {"text": "Monday"}
+    },
+    {
+      "id": "FMT-050",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "45292"},
+      "formats": {"A1": "ddd dd/mm/yy"},
+      "check": "A1",
+      "expect": {"text": "Mon 01/01/24"}
+    },
+    {
+      "id": "FMT-051",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US (Excel counts 1 January 1900 as a Sunday)",
+      "cells": {"A1": "1"},
+      "formats": {"A1": "dddd"},
+      "check": "A1",
+      "expect": {"text": "Sunday"}
+    },
+    {
+      "id": "FMT-052",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "45292.5"},
+      "formats": {"A1": "yyyy-mm-dd hh:mm:ss"},
+      "check": "A1",
+      "expect": {"text": "2024-01-01 12:00:00"}
+    },
+    {
+      "id": "FMT-053",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "0.5"},
+      "formats": {"A1": "h:mm"},
+      "check": "A1",
+      "expect": {"text": "12:00"}
+    },
+    {
+      "id": "FMT-054",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "0.75"},
+      "formats": {"A1": "h:mm AM/PM"},
+      "check": "A1",
+      "expect": {"text": "6:00 PM"}
+    },
+    {
+      "id": "FMT-055",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "0"},
+      "formats": {"A1": "h:mm AM/PM"},
+      "check": "A1",
+      "expect": {"text": "12:00 AM"}
+    },
+    {
+      "id": "FMT-056",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "0.5"},
+      "formats": {"A1": "h:mm AM/PM"},
+      "check": "A1",
+      "expect": {"text": "12:00 PM"}
+    },
+    {
+      "id": "FMT-057",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "=0.25+5/1440"},
+      "formats": {"A1": "hh:mm"},
+      "check": "A1",
+      "expect": {"text": "06:05"}
+    },
+    {
+      "id": "FMT-058",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "45292"},
+      "formats": {"A1": "mm/dd"},
+      "check": "A1",
+      "expect": {"text": "01/01"}
+    },
+    {
+      "id": "FMT-059",
+      "source": "observed",
+      "description": "Date and time codes render as Excel's under en-US",
+      "cells": {"A1": "=0.25+5/1440+7/86400"},
+      "formats": {"A1": "m:ss"},
+      "check": "A1",
+      "expect": {"text": "5:07"}
+    },
+    {
+      "id": "FMT-060",
+      "source": "observed",
+      "description": "Month names are the culture's",
+      "culture": "de-DE",
+      "cells": {"A1": "=45292"},
+      "formats": {"A1": "mmmm"},
+      "check": "A1",
+      "expect": {"text": "Januar"}
+    },
+    {
+      "id": "FMT-061",
+      "source": "observed",
+      "description": "A date that cannot exist cannot be shown, and shows ####",
+      "cells": {"A1": "-1"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "####"}
+    },
+    {
+      "id": "FMT-062",
+      "source": "observed",
+      "description": "A date that cannot exist cannot be shown, and shows ####",
+      "cells": {"A1": "2958466"},
+      "formats": {"A1": "yyyy-mm-dd"},
+      "check": "A1",
+      "expect": {"text": "####"}
+    },
+    {
+      "id": "FMT-063",
+      "source": "observed",
+      "description": "Ticket 19 row 31: a negative number that rounds to zero shows no minus sign",
+      "ticket19Row": 31,
+      "cells": {"A1": "-0.001"},
+      "formats": {"A1": "0.00"},
+      "check": "A1",
+      "expect": {"text": "0.00"}
+    },
+    {
+      "id": "FMT-064",
+      "source": "observed",
+      "description": "Ticket 19 row 32: a time that rounds into the next day shows 0:00:00",
+      "ticket19Row": 32,
+      "cells": {"A1": "0.99999999"},
+      "formats": {"A1": "h:mm:ss"},
+      "check": "A1",
+      "expect": {"text": "0:00:00"}
+    },
+    {
+      "id": "FMT-065",
+      "source": "observed",
+      "description": "Ticket 19 row 33: am/pm written in lower case is rewritten AM/PM in the code, and shows in upper case",
+      "ticket19Row": 33,
+      "cells": {"A1": "0.75"},
+      "formats": {"A1": "h:mm am/pm"},
+      "check": "A1",
+      "expect": {"text": "6:00 PM", "numberFormat": "h:mm AM/PM"}
+    },
+    {
+      "id": "FMT-066",
+      "source": "observed",
+      "description": "Ticket 19 row 34: _) leaves the width of a ), one space",
+      "ticket19Row": 34,
+      "cells": {"A1": "5"},
+      "formats": {"A1": "_)0"},
+      "check": "A1",
+      "expect": {"text": " 5"}
+    },
+    {
+      "id": "FMT-067",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negative number that rounds to zero under a format with a negative section still takes that section",
+      "cells": {"A1": "-0.001"},
+      "formats": {"A1": "0.00;(0.00)"},
+      "check": "A1",
+      "expect": {"text": "(0.00)"}
+    },
+    {
+      "id": "FMT-068",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negative percentage that rounds to zero shows no minus sign",
+      "cells": {"A1": "-0.00001"},
+      "formats": {"A1": "0.0%"},
+      "check": "A1",
+      "expect": {"text": "0.0%"}
+    },
+    {
+      "id": "FMT-069",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negative number that rounds to zero under #,##0 shows no minus sign",
+      "cells": {"A1": "-0.4"},
+      "formats": {"A1": "#,##0"},
+      "check": "A1",
+      "expect": {"text": "0"}
+    },
+    {
+      "id": "FMT-070",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: AM/PM in mixed case is rewritten AM/PM",
+      "cells": {"A1": "0.25"},
+      "formats": {"A1": "h:mm Am/Pm"},
+      "check": "A1",
+      "expect": {"text": "6:00 AM", "numberFormat": "h:mm AM/PM"}
+    },
+    {
+      "id": "FMT-071",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: A/P keeps the case it is written in",
+      "cells": {"A1": "0.75"},
+      "formats": {"A1": "h:mm a/p"},
+      "check": "A1",
+      "expect": {"text": "6:00 p", "numberFormat": "h:mm a/p"}
+    },
+    {
+      "id": "FMT-072",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: am/pm inside quotes is literal text and is not rewritten",
+      "cells": {"A1": "0.75"},
+      "formats": {"A1": "h:mm \"am/pm\""},
+      "check": "A1",
+      "expect": {"text": "18:00 am/pm", "numberFormat": "h:mm \"am/pm\""}
+    },
+    {
+      "id": "FMT-073",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a colour section is kept in the code; a negative shows in parentheses (the colour itself is not painted, ADR-0047)",
+      "cells": {"A1": "-5"},
+      "formats": {"A1": "$#,##0_);[Red]($#,##0)"},
+      "check": "A1",
+      "expect": {"text": "($5)", "numberFormat": "$#,##0_);[Red]($#,##0)"}
+    },
+    {
+      "id": "FMT-074",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a colour on the first section does not change the digits shown",
+      "cells": {"A1": "1234.567"},
+      "formats": {"A1": "[Blue]#,##0.00"},
+      "check": "A1",
+      "expect": {"text": "1,234.57", "numberFormat": "[Blue]#,##0.00"}
+    },
+    {
+      "id": "FMT-075",
+      "source": "observed",
+      "description": "A numbered colour written with a space ([Color 10]) is refused: \"Unable to set the NumberFormat property of the Range class\" (verification/2026-09-27-windows-excel-2)",
+      "cells": {"A1": "-3"},
+      "formats": {"A1": "0;[Color 10]-0"},
+      "check": "A1",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "FMT-076",
+      "source": "observed",
+      "description": "A numbered colour in the second section ([Color10]) is refused: \"Unable to set the NumberFormat property of the Range class\" (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "-3"},
+      "formats": {"A1": "0;[Color10]-0"},
+      "check": "A1",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "FMT-077",
+      "source": "observed",
+      "description": "A numbered colour in lower case ([color3]) is refused, as FMT-075 is (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "3"},
+      "formats": {"A1": "[color3]0"},
+      "check": "A1",
+      "expect": {"refusedEntry": true}
+    },
+    {
+      "id": "FMT-078",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a numbered colour in the first section ([Color3]) is refused, as ADR-0047's third run refuses [Color n] in any section",
+      "cells": {"A1": "3"},
+      "formats": {"A1": "[Color3]0"},
+      "check": "A1",
+      "expect": {"refusedEntry": true}
+    }
+  ]
+}

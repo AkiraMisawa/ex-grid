@@ -34,7 +34,7 @@ public static class GridSource
     /// <param name="marks">What the source needs from the Consumer to keep Row Marks — a
     /// row's key, and the server's answers about snapshots and counts (ADR-0043). Null
     /// keeps none, and a Mark Column bound to this source is refused by name.</param>
-    /// <param name="find">Answers a Find step (ADR-0047) against the result the handed Filter
+    /// <param name="find">Answers a Find step (ADR-0055) against the result the handed Filter
     /// and Sorts produce — the ones in force — with the next matching position, as
     /// <see cref="Finding.GridFind.Step{TRow}"/> would over that result. Null reports that
     /// this source cannot search, and Ctrl+F is refused.</param>

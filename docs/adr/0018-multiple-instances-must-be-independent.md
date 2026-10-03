@@ -29,6 +29,10 @@ keystroke.**
 
 **Make the root focusable with `tabindex` and attach the listener there.** Which grid is active is
 then answered by the browser's focus.
+*(Refined 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md).)* On a grid that edits, DOM focus with no edit open is on the
+grid's own Keyboard Field, inside the root, and the field is the tab stop. The listener stays on the
+root and hears the field's keys first. Which grid is active is answered by
+`root.contains(document.activeElement)`. Each grid has its own field; nothing is shared.
 
 Ctrl+C ([ADR-0005](./0005-copy-refuses-rather-than-truncates.md)), Ctrl+A
 ([ADR-0011](./0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)) and the
@@ -109,6 +113,79 @@ Rejected: **the grid checking every `IGridSource`** — it would refuse the one 
 correct, a source built to be shared. And **documentation only**, as the Fluxor case below is
 handled — the Fluxor case shows itself on one screen; this one shows itself as another user's
 data changing, which nobody present can trace.
+
+## 6. An open edit stands when the keyboard leaves the grid *(decided with the user, 2026-09-29)*
+
+Found on ExSheet's demo page: `=` typed into a cell, then a click on the positions grid beside it.
+The positions grid took DOM focus, as it should. The Sheet's edit stayed open with `=` in it, and
+nothing could reach it again. Escape went to the positions grid. A click back on the Sheet's rows
+pointed (`=B2`) while the keyboard stayed with the positions grid, so the next Escape went there
+too.
+
+- **Nothing is committed or discarded because DOM focus left the root**, whether it went to
+  another grid, to a control of the Consumer's, or to nothing. The edit waits, as Excel's does when
+  the user switches to another window and comes back.
+  - Committing on leaving was rejected. A Formula half typed (`=`, `=SUM(`) is refused by its
+    column's verdict ([ADR-0034](./0034-validation-is-a-consumer-verdict-enforced-only-at-the-editor.md))
+    and would stay open anyway, so leaving would commit some texts and not others. On a Server
+    circuit the commit would also race the click that took the focus, such as a Consumer's Undo
+    button.
+  - Discarding on leaving was rejected. A stray click would throw a long Formula away without a
+    word.
+- **A key belongs to the grid that has the keyboard** (section 1). Escape pressed in the other grid
+  is that grid's, and does not cancel this one's edit. Two grids may each hold an open edit.
+- **A press on the grid's own rows or headings brings the keyboard back first, and then means
+  what it would have meant.** Where pointing is declared, a press on the rows keeps DOM focus in
+  the editor ([ADR-0051](./0051-formula-entry-completion-point-mode-and-the-formula-bar.md)), and
+  that is what left the keyboard in the other grid. Now the capture-phase `mousedown` on the root
+  sees that an edit stands here while DOM focus is outside the root, and puts the keyboard back into
+  the editor surface that last held it before the press is handled. The press then points, or
+  commits and moves, exactly as if the keyboard had never left, and the hand-back after a commit
+  finds the keyboard inside the root.
+  [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md) records the line of script.
+  - Handing the keyboard back from C# after the press was rejected. On a circuit it lands a round
+    trip later, and the keys typed in between would go to the grid the user had just left.
+- A click into the editor's own text, the Formula Bar or the Name Box already brought the keyboard
+  back, and is unchanged.
+- **An edit whose keyboard is elsewhere is told apart** *(decided with the user the same day)*.
+  While DOM focus is outside the grid's root, the Cell Editor's outline is drawn 1px wide instead of
+  its full width, and it is drawn at full width again when the keyboard returns. The consequence
+  below ("distinguish the focused state visually") asks for this once two grids can each hold an
+  open edit. The stylesheet does it with `:focus-within` on the root. The colour stays
+  `--ex-editor-outline`'s, and no script is involved.
+- **A press back within one round trip of the key that opens the edit is not brought back**
+  *(accepted with the user the same day)*. Such a press is held behind that key (ADR-0021's
+  `mousedown` note of 2026-09-27), and a held press suppresses its default, so DOM focus stays
+  where it was and the keys typed next go there. It takes a key, a press elsewhere and a press back,
+  all inside one round trip, and only on a circuit. It is recorded here rather than built around.
+- **An edit that opens takes the keyboard only while the keyboard is still this grid's**
+  *(decided with the user, 2026-09-30)*. The editor surface is focused after the render that paints
+  it, a round trip later on a circuit. If the user has meanwhile pressed another grid or a control
+  on the page, the edit does not take the keyboard back from there. It is left standing, as above,
+  and a press on the rows brings the keyboard to it. Keys typed before the keyboard left are still
+  this edit's, and go into it in order. [ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md)
+  records the condition, which is read in script, and why a Chrome's editor asks the core for its
+  focus rather than taking it.
+  - Found by CI, not by a user: ED-26's test on `/sheets` failed once on the Server host, and the
+    same race failed 9 runs in 40 on the base with 40 ms injected.
+
+## 7. A Pointing Scope joins only what the Consumer put in it *(decided with the user, 2026-09-29 and 2026-09-30)*
+
+[ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md) lets a Formula point at
+another grid on the page. At a press, that grid keeps DOM focus off itself and hands the press to
+the Sheet that points. That is one instance acting on another's behalf, and it is not the coupling
+this ADR rules out:
+
+- **The Consumer declares it**, naming each Sheet and grid in a Pointing Scope. Nothing on a page is
+  joined implicitly, and a grid in no Scope is untouched.
+- **The key capture stays on each root** (section 1). The keyboard stays with the Sheet that points.
+  The grid pointed at receives no key.
+- **The script shares no state between instances** (section 3). A grid that is pointed at learns from
+  its own render which root to tell of a press, and it tells that root by one DOM event
+  ([ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md), note of 2026-09-30).
+- **When the keyboard leaves the Sheet that points, the Scope stops pointing**, and section 6 applies
+  unchanged. A registered grid with an open edit of its own is never pointed at, so a press on it
+  brings the keyboard to its edit, as section 6 says.
 
 ## Consequences
 

@@ -1,0 +1,11 @@
+
+Running 6 tests using 1 worker
+
+  ok 1 [chrome] › navigation.spec.mjs:33:1 › RI-1: the index at / lists every routed page, once (662ms)
+  ok 2 [chrome] › navigation.spec.mjs:47:1 › RI-2: the Row Identity demo that was at / is at /identity (799ms)
+  ok 3 [chrome] › navigation.spec.mjs:54:1 › RI-3: every page opens from the index, names itself, and leads back to it (clean console) (11.5s)
+  ok 4 [msedge] › navigation.spec.mjs:33:1 › RI-1: the index at / lists every routed page, once (825ms)
+  ok 5 [msedge] › navigation.spec.mjs:47:1 › RI-2: the Row Identity demo that was at / is at /identity (828ms)
+  ok 6 [msedge] › navigation.spec.mjs:54:1 › RI-3: every page opens from the index, names itself, and leads back to it (clean console) (12.0s)
+
+  6 passed (28.3s)

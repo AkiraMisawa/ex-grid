@@ -71,6 +71,91 @@ public class MudGridChromeTests : MudTestContext
         Assert.Equal("Book", committed.Column);
     }
 
+    [Fact] // ADR-0051/0030 / DC-22: under this Chrome too, the Formula Bar and the editor show one text, and one commit
+    public async Task The_formula_bar_and_the_chrome_editor_agree()
+    {
+        var intents = new List<GridEditIntent<Trade>>();
+        var cut = Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 400)
+            .Add(g => g.Chrome, MudGridChrome.Default)
+            .Add(g => g.ShowFormulaBar, true)
+            .Add(g => g.OnEdit, intents.Add));
+        await ClickCellAsync(cut, 50, 30);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("x", false, false, false, false, false));
+
+        await cut.Find("input.mud-ex-editor").InputAsync(new ChangeEventArgs { Value = "xyz" });
+        Assert.Equal("xyz", cut.Find(".ex-formula-bar-text input.mud-ex-formula-bar-text").GetAttribute("value"));
+
+        await cut.Find(".ex-formula-bar-text input.mud-ex-formula-bar-text").FocusAsync(new FocusEventArgs());
+        await cut.Find(".ex-formula-bar-text input.mud-ex-formula-bar-text").InputAsync(new ChangeEventArgs { Value = "xyzw" });
+        Assert.Equal("xyzw", cut.Find("input.mud-ex-editor").GetAttribute("value"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("Enter", false, false, false, false, false, fromDescendant: true));
+        Assert.Equal("xyzw", Assert.Single(intents).Value);
+    }
+
+    private IRenderedComponent<ExGrid<Trade>> RenderBarGrid(MudGridChrome chrome, Action<string>? onNameBox = null)
+        => Render<ExGrid<Trade>>(ps =>
+        {
+            ps.Add(g => g.Window, Rows(5))
+              .Add(g => g.TotalCount, 5)
+              .Add(g => g.Columns, Columns())
+              .Add(g => g.RowHeight, 20d)
+              .Add(g => g.ViewportHeight, 200)
+              .Add(g => g.ViewportWidth, 400)
+              .Add(g => g.Chrome, chrome)
+              .Add(g => g.ShowFormulaBar, true)
+              .Add(g => g.NameBoxLabel, cell => FormattableString.Invariant($"R{cell.Row + 1}C{cell.Column + 1}"));
+            if (onNameBox is not null)
+                ps.Add(g => g.OnNameBoxEntered, onNameBox);
+        });
+
+    [Fact] // ADR-0051/0030: the Formula Bar's two fields are this Chrome's bare inputs in the core's boxes, named in its words
+    public async Task The_formula_bar_fields_are_bare_inputs_in_the_cores_boxes()
+    {
+        var chrome = new MudGridChrome { Label = id => id == MudExGridWords.NameBox ? "Cell reference" : null };
+        var cut = RenderBarGrid(chrome);
+        await ClickCellAsync(cut, 50, 30);                       // Book, row 1
+
+        var nameBox = cut.Find(".ex-formula-bar .ex-name-box-form > div.ex-name-box > input.mud-ex-name-box");
+        Assert.Equal("R2C1", nameBox.GetAttribute("value"));
+        Assert.Equal("Cell reference", nameBox.GetAttribute("aria-label"));
+        var bar = cut.Find(".ex-formula-bar > div.ex-editor.ex-formula-bar-text > input.mud-ex-formula-bar-text");
+        Assert.Equal("Formula Bar", bar.GetAttribute("aria-label"));
+        Assert.Empty(cut.FindAll("input.ex-name-box"));
+        Assert.Null(cut.Find(".ex-formula-bar").QuerySelector(".mud-textfield"));
+    }
+
+    [Fact] // ADR-0051 / ADR-0050 item 4: typed into this Chrome's Name Box, Enter hands the text to the Consumer
+    public async Task The_name_box_hands_what_was_typed_on_enter()
+    {
+        string? entered = null;
+        var cut = RenderBarGrid(MudGridChrome.Default, text => entered = text);
+        await ClickCellAsync(cut, 50, 30);
+
+        await cut.Find("input.mud-ex-name-box").FocusAsync(new FocusEventArgs());
+        await cut.Find("input.mud-ex-name-box").InputAsync(new ChangeEventArgs { Value = "R4C1" });
+        await cut.Find(".ex-name-box-form").SubmitAsync();
+
+        Assert.Equal("R4C1", entered);
+    }
+
+    [Fact] // ADR-0051/0035: this Chrome's bar is read-only where the Focus cell does not edit
+    public async Task The_bar_is_read_only_where_the_focus_cell_does_not_edit()
+    {
+        var cut = RenderBarGrid(MudGridChrome.Default);
+        await ClickCellAsync(cut, 50, 30);                       // Book edits
+        Assert.False(cut.Find("input.mud-ex-formula-bar-text").HasAttribute("readonly"));
+
+        await ClickCellAsync(cut, 150, 30);                      // Amount does not
+        Assert.True(cut.Find("input.mud-ex-formula-bar-text").HasAttribute("readonly"));
+    }
+
     [Fact] // ADR-0010/0030: the loading bar is a MudProgressLinear in the Chrome's colour, only while loading
     public void The_loading_bar_shows_only_while_loading()
     {
@@ -106,6 +191,76 @@ public class MudGridChromeTests : MudTestContext
         Assert.DoesNotContain("mud-ex-editor-error", clean.Find("input.mud-ex-editor").ClassName);
     }
 
+    [Fact] // ADR-0051/0010/0030, DC-34, ED-28: a request of zero asks nothing — an edit the Formula Bar opened keeps the keyboard in the bar; each request is answered through the core's focus function
+    public void The_editor_takes_the_keyboard_only_for_a_request_it_has_not_answered()
+    {
+        // Asked of the core, never taken with the control's own FocusAsync: the core grants it only
+        // while the keyboard is still this grid's (ADR-0010, ADR-0021's note of 2026-09-30).
+        var asked = 0;
+        int FocusCalls() => asked;
+        CellEditorContext Editor(int request) => new(
+            "Book", ColumnType.Text, "x", CellEditMode.Caret, null, _ => { }, () => { }, () => { }, FocusRequest: request,
+            TakeFocus: () =>
+            {
+                asked++;
+                return Task.CompletedTask;
+            });
+
+        // Mounted by an edit the Formula Bar opened: asked nothing, it takes nothing.
+        var editor = Render<MudCellEditor>(ps => ps.Add(c => c.Context, Editor(0)));
+        Assert.Equal(0, FocusCalls());
+
+        // Asked: once. Rendered again with the request it has answered: nothing more.
+        editor.Render(ps => ps.Add(c => c.Context, Editor(4)));
+        Assert.Equal(1, FocusCalls());
+        editor.Render(ps => ps.Add(c => c.Context, Editor(4)));
+        Assert.Equal(1, FocusCalls());
+        editor.Render(ps => ps.Add(c => c.Context, Editor(5)));
+        Assert.Equal(2, FocusCalls());
+
+        // Mounted by an edit that asked: at once.
+        Render<MudCellEditor>(ps => ps.Add(c => c.Context, Editor(6)));
+        Assert.Equal(3, FocusCalls());
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
+    }
+
+    [Fact] // ADR-0051/0010/0030, ED-28: the bar's control answers a new request through the core's focus function, never its own FocusAsync
+    public void The_bar_takes_the_keyboard_through_the_cores_function()
+    {
+        var asked = 0;
+        FormulaBarTextContext Bar(int request) => new(
+            "=A1", false, () => Task.CompletedTask, _ => { }, request,
+            TakeFocus: () =>
+            {
+                asked++;
+                return Task.CompletedTask;
+            });
+
+        // The bar stands before anything asks for it: the number it is painted with asks nothing.
+        var bar = Render<MudFormulaBarText>(ps => ps.Add(c => c.Context, Bar(2)).Add(c => c.Label, "Formula Bar"));
+        Assert.Equal(0, asked);
+
+        bar.Render(ps => ps.Add(c => c.Context, Bar(3)));
+        Assert.Equal(1, asked);
+        bar.Render(ps => ps.Add(c => c.Context, Bar(3)));
+        Assert.Equal(1, asked);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
+    }
+
+    [Fact] // ADR-0021 (note of 2026-09-30) / ADR-0010, ED-28: under this Chrome an opening edit's control is focused by the grid's module, which grants it only while the keyboard is this grid's
+    public async Task Under_this_chrome_an_opening_edit_asks_the_grids_module_for_its_control()
+    {
+        var handle = JSInterop.SetupModule("./_content/ExGrid/ex-grid.js").SetupModule("attach", _ => true);
+        var cut = RenderGrid(MudGridChrome.Default);
+        await ClickCellAsync(cut, 50, 30);
+
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("x", false, false, false, false, false));
+
+        var asked = Assert.Single(handle.Invocations["focusEditor"]);
+        Assert.Equal(false, asked.Arguments[0]);
+        Assert.DoesNotContain(JSInterop.Invocations, i => i.Identifier == "Blazor._internal.domWrapper.focus");
+    }
+
     [Fact] // ADR-0028/0030: Material's dense is Compact, never Excel
     public void Dense_is_compact_not_excel()
     {
@@ -113,5 +268,45 @@ public class MudGridChromeTests : MudTestContext
         Assert.Equal(GridDensity.Standard, MudExGridPresentation.DensityFor(dense: false));
         Assert.Same(MudExGridPresentation.For(true, true), MudExGridPresentation.For(true, true));
         Assert.NotSame(MudExGridPresentation.For(true, true), MudExGridPresentation.For(true, false));
+    }
+
+    private static ValueTask<EditorCompletion?> Complete(string text, int caret)
+        => ValueTask.FromResult<EditorCompletion?>(text == "=SU" && caret == 3
+            ? new EditorCompletion(
+                [new CompletionCandidate("SUM", 1, 2, "SUM("), new CompletionCandidate("SUMIF", 1, 2, "SUMIF(")],
+                new EditorHint("SUM(number1, [number2], …)", 4, 7))
+            : null);
+
+    [Fact] // ADR-0051/0030 / DC-17: under this Chrome the list is a Material list in the core's box, and a press accepts
+    public async Task The_completion_list_is_a_material_list_in_the_cores_box()
+    {
+        var cut = Render<ExGrid<Trade>>(ps => ps
+            .Add(g => g.Window, Rows(5))
+            .Add(g => g.TotalCount, 5)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, 400)
+            .Add(g => g.Chrome, MudGridChrome.Default)
+            .Add(g => g.CompleteEditorText, Complete));
+        await ClickCellAsync(cut, 50, 30);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("=", false, false, false, false, false));
+
+        await cut.Find("input.mud-ex-editor").InputAsync(new ChangeEventArgs { Value = "=SU" });
+        // The grid's listener reports the caret with the input, from the Chrome's control as from
+        // the core's (ADR-0051's second round).
+        await cut.InvokeAsync(() => cut.Instance.OnEditorCaretAsync("=SU", 3));
+
+        var items = cut.FindAll(".ex-grid > .ex-completion .mud-ex-completion-list .mud-ex-completion-item");
+        Assert.Equal(["SUM", "SUMIF"], items.Select(item => item.TextContent.Trim()));
+        Assert.Contains("mud-selected-item", items[0].ClassName);
+        Assert.Equal("number1", cut.Find(".ex-completion .mud-ex-completion-hint strong").TextContent);
+
+        // ↓ is the core's: the Chrome is repainted with the choice it makes.
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, false, false, false, false));
+        Assert.Contains("mud-selected-item", cut.FindAll(".mud-ex-completion-item")[1].ClassName);
+
+        await cut.FindAll(".mud-ex-completion-item")[1].MouseDownAsync(new MouseEventArgs { Button = 0 });
+        cut.WaitForAssertion(() => Assert.Equal("=SUMIF(", cut.Find("input.mud-ex-editor").GetAttribute("value")));
     }
 }

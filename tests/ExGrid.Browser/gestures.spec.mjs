@@ -1,4 +1,5 @@
 import { test, expect, alterPage, record } from './fixtures.mjs';
+import { activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The drag gestures with a real mouse (ADR-0011/0016/0032), the large-paste and
 // off-screen-paste rules (ADR-0014/0015) with the paste's own number (PST-6), and the
@@ -95,13 +96,18 @@ test('pasting onto an off-screen selection works, and the indicator showed first
     await grid(page).locator('.ex-scroller').evaluate((el) => { el.scrollTop = 6000; });
     await expect(page.locator('.ex-status')).toContainText('outside the visible range');
 
-    await page.evaluate(() => navigator.clipboard.writeText('offscreen'));
+    // One cell copied as a table, which fills the range (a plain-text value would go into one
+    // cell alone: ADR-0014, amended 2026-09-29).
+    await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob(['<table><tr><td>offscreen</td></tr></table>'], { type: 'text/html' }),
+        'text/plain': new Blob(['offscreen\r\n'], { type: 'text/plain' }),
+    })]));
     await page.keyboard.press('ControlOrMeta+V');
 
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
 });
 
-test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', async ({ page, context }, testInfo) => {
+test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded, ADR-0052)', async ({ page, context }, testInfo) => {
     test.setTimeout(120000);
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await open(page);
@@ -122,10 +128,11 @@ test('a ~10MB paste parses without freezing the grid (PST-5, PST-6 recorded)', a
 
     // The grid answers a key within 500ms of the paste completing (PST-5).
     const keyBefore = Date.now();
-    await page.keyboard.press('ArrowUp'); // the Focus sits on the last row after Ctrl+Shift+Down
+    // Ctrl+Shift+Down moved the Extent; the Focus stayed on row 0 (ADR-0052), so Down lands on row 1.
+    await page.keyboard.press('ArrowDown');
     await expect
-        .poll(async () => grid(page).getAttribute('aria-activedescendant'), { timeout: 500 })
-        .toMatch(/r398c1$/);
+        .poll(async () => activeDescendant(grid(page)), { timeout: 500 })
+        .toMatch(/r1c1$/);
     const keyMs = Date.now() - keyBefore;
 
     record(testInfo.project.name, {
@@ -138,7 +145,7 @@ test('the focus outline holds 3:1 against the cell ground under the default them
     await grid(page).locator("[id$='r1c1']").click({ force: true });
     // The Focus outline is painted by the render the click asked for — a round trip away
     // on the Server host.
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
+    await expectActiveDescendant(grid(page), /r1c1$/);
 
     const contrast = await page.evaluate(() => {
         const focus = [...document.querySelectorAll('.ex-focus')]
@@ -164,7 +171,7 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
 
     const gutterBefore = await grid(page).locator('.ex-scroller')
         .evaluate((el) => el.offsetWidth - el.clientWidth);
-    // On body, which outlives the page: alterPage takes the tokens off as the test ends (ADR-0048).
+    // On body, which outlives the page: alterPage takes the tokens off as the test ends (ADR-0056).
     await alterPage(page, () => {
         document.body.style.setProperty('--ex-scrollbar-width', '8px');
         document.body.style.setProperty('--ex-scrollbar-color', 'rgba(120,120,120,0.6)');
@@ -197,8 +204,8 @@ test('narrowing the scrollbar by token changes the gutter and the geometry follo
 test('a composing IME keydown is never taken (ED-11, the listener guard)', async ({ page }) => {
     await open(page);
     await grid(page).locator("[id$='r0c1']").click({ force: true });
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
-    const before = await grid(page).getAttribute('aria-activedescendant');
+    await expectActiveDescendant(grid(page), /r0c1$/);
+    const before = await activeDescendant(grid(page));
 
     // A synthetic composing keydown: the capture listener must let it pass — taking
     // Enter or an arrow mid-composition breaks typing in any language that needs one.
@@ -217,5 +224,5 @@ test('a composing IME keydown is never taken (ED-11, the listener guard)', async
     });
     expect(results).toEqual({ composingEnter: false, composingArrow: false, keyCode229: false });
     // And the Focus did not move under the half-finished word.
-    expect(await grid(page).getAttribute('aria-activedescendant')).toBe(before);
+    expect(await activeDescendant(grid(page))).toBe(before);
 });

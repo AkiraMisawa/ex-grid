@@ -5,30 +5,49 @@
    error colour while a Reject stands (ADR-0034). A MudTextField with its label,
    helper text and 48px of comfort would not fit a 28px cell and is the wrong control
    here. *@
+@* The coloured text the core draws, where it draws any (ADR-0057): immediately before the
+   input, which has no padding and no background of its own, so the core's layer shows through
+   it while the core's listener says it may. *@
+@Context.ReferenceText
 <input class="@(Context.Error is null ? "mud-ex-editor" : "mud-ex-editor mud-ex-editor-error")"
-       value="@Context.InitialText" @oninput="OnInput" @ref="_input"
+       @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput"
        aria-label="@Context.Column"
        aria-invalid="@(Context.Error is null ? null : "true")"
        aria-describedby="@Context.MessageId" />
 
 @code {
-    private ElementReference _input;
-    private int _focusedRequest = -1;
+    private int _focusedRequest;
     private bool _needsFocus;
 
     /// <summary>The core's contract for the editor (ADR-0010): the text to start from, where
     /// typed text goes, the standing Reject's message (ADR-0034) and the focus request.</summary>
     [Parameter, EditorRequired] public CellEditorContext Context { get; set; } = default!;
 
-    private void OnInput(ChangeEventArgs e) => Context.TextChanged(e.Value?.ToString() ?? "");
+    // Bound, not value= beside @oninput: the renderer then takes what the browser reports as
+    // what the control shows, and what it renders follows the typing, never an echo of it a
+    // round trip old (SRV-5, ED-22).
+    private readonly FieldText _text = new();
+
+    private void OnInput(string? text)
+    {
+        _text.Typed(text ?? "");
+        Context.TextChanged(_text.Shown);
+    }
 
     protected override void OnParametersSet()
     {
+        _text.Told(Context.InitialText);
         // The core asks for focus on opening, on F2, and after a Reject that a
         // click-away had moved focus off the control (ADR-0034); each request is a new
-        // number, and the control focuses itself for each (ADR-0010/0030).
-        if (Context.FocusRequest != _focusedRequest)
+        // number, and the control answers each once it is painted (ADR-0010/0030). Zero asks
+        // nothing: an edit the Formula Bar opened leaves the keyboard in the bar (ADR-0051).
+        if (Context.FocusRequest != 0 && Context.FocusRequest != _focusedRequest)
             _needsFocus = true;
+        // A request back to zero is withdrawn: the user pressed into the Formula Bar before the
+        // render that asked had landed — on a circuit, a round trip — and the keyboard is the
+        // bar's now (ADR-0051).
+        else if (Context.FocusRequest == 0)
+            _needsFocus = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -37,13 +56,11 @@
             return;
         _needsFocus = false;
         _focusedRequest = Context.FocusRequest;
-        try
-        {
-            // Blazor's own FocusAsync — focus stays out of JavaScript (ADR-0021).
-            await _input.FocusAsync();
-        }
-        catch (Exception ex) when (ex is Microsoft.JSInterop.JSException or Microsoft.JSInterop.JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
-        {
-        }
+        // The core's focus function, not the control's own FocusAsync: the core finds this control
+        // in its box and focuses it only while the keyboard is still this grid's. Focused here, a
+        // round trip after the render that asked, it took the keyboard back from another grid the
+        // user had pressed in between (ADR-0010, ADR-0021's note of 2026-09-30).
+        if (Context.TakeFocus is { } takeFocus)
+            await takeFocus();
     }
 }

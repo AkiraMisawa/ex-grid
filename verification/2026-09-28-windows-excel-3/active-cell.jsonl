@@ -1,0 +1,160 @@
+{"case":"0","step":"settings","method":"COM and SystemParametersInfo","moveAfterReturn":true,"moveAfterReturnDirection":-4121,"zoom":100,"wheelScrollLines":3,"excel":"16.0 (build 20326)"}
+{"case":"5","step":"settings","method":"COM and SystemParametersInfo","zoomBefore":100,"zoom":100,"wheelScrollLines":3}
+{"case":"5","step":"empty sheet at 100%, A1","method":"COM","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"one wheel notch down","method":"mouse wheel","selection":"A1","activeCell":"A1","scrollRow":4,"scrollColumn":1,"visible":"A4:AN61","shot":"shots/B5-one-wheel-notch-down.png"}
+{"case":"5","step":"one wheel notch up","method":"mouse wheel","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"three notches down","method":"mouse wheel","selection":"A1","activeCell":"A1","scrollRow":10,"scrollColumn":1,"visible":"A10:AN67","shot":null}
+{"case":"5","step":"the vertical scroll bar","method":"UI Automation","name":"","rect":"3812,324 26x1686","parts":"Line down|: 3812,1984 26x26; Page up|: ∞,∞ -∞x-∞; |: 3812,350 26x1606; Page down|: 3812,1956 26x28; Line up|: 3812,324 26x26"}
+{"case":"5","step":"before the arrow","method":"COM","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"one click on the down arrow","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":2,"scrollColumn":1,"visible":"A2:AN59","shot":"shots/B5-one-click-on-the-down-arrow.png"}
+{"case":"5","step":"a second click on the down arrow","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":3,"scrollColumn":1,"visible":"A3:AN60","shot":null}
+{"case":"5","step":"before the track","method":"COM","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"one click on the track below the thumb","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B5-one-click-on-the-track-below-the-thumb.png"}
+{"case":"5","step":"a second click on the track","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"settings","method":"COM and SystemParametersInfo","zoomBefore":100,"zoom":100,"wheelScrollLines":3}
+{"case":"5","step":"empty sheet at 100%, A1","method":"COM","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"one wheel notch down","method":"mouse wheel","selection":"A1","activeCell":"A1","scrollRow":4,"scrollColumn":1,"visible":"A4:AN61","shot":"shots/B5-one-wheel-notch-down.png"}
+{"case":"5","step":"one wheel notch up","method":"mouse wheel","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"three notches down","method":"mouse wheel","selection":"A1","activeCell":"A1","scrollRow":10,"scrollColumn":1,"visible":"A10:AN67","shot":null}
+{"case":"5","step":"the vertical scroll bar","method":"UI Automation","name":"","rect":"3812,324 26x1686","parts":"Line down|: 3812,1984 26x26; Page up|: ∞,∞ -∞x-∞; |: 3812,350 26x1606; Page down|: 3812,1956 26x28; Line up|: 3812,324 26x26"}
+{"case":"5","step":"points clicked","method":"screen pixels","x":3825,"arrowY":1997,"trackY":1970}
+{"case":"5","step":"before the arrow","method":"COM","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"one click on the down arrow","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":2,"scrollColumn":1,"visible":"A2:AN59","shot":"shots/B5-one-click-on-the-down-arrow.png"}
+{"case":"5","step":"a second click on the down arrow","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":3,"scrollColumn":1,"visible":"A3:AN60","shot":null}
+{"case":"5","step":"before the track","method":"COM","selection":"A1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"5","step":"one click on the track below the thumb","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":58,"scrollColumn":1,"visible":"A58:AN115","shot":"shots/B5-one-click-on-the-track-below-the-thumb.png"}
+{"case":"5","step":"a second click on the track","method":"mouse","selection":"A1","activeCell":"A1","scrollRow":115,"scrollColumn":1,"visible":"A115:AN172","shot":null}
+{"case":"1","step":"A1:B2, then Ctrl+drag D4:E5","method":"mouse","selection":"A1:B2,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B1-A1-B2-then-Ctrl-drag-D4-E5.png"}
+{"case":"1","step":"Enter x1","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"1","step":"Enter x2","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"1","step":"Enter x3","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"1","step":"Enter x4","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"1","step":"back in A1:B2","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B1-back-in-A1-B2.png"}
+{"case":"1","step":"then Shift+Down","method":"keys","selection":"A1:B3,D4:E5","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B1-then-Shift-Down.png"}
+{"case":"1","step":"then Shift+Right","method":"keys","selection":"A1:C3,D4:E5","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B1-then-Shift-Right.png"}
+{"case":"1","step":"back in A1:B2, one Enter more","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"1","step":"then Shift+Down (from the second cell)","method":"keys","selection":"A2:B2,D4:E5","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B1-then-Shift-Down-from-the-second-cell.png"}
+{"case":"2","step":"A1:B2 then D4:E5: made","method":"mouse","selection":"A1:B2,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B2-A1-B2-then-D4-E5-made.png"}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x1","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x2","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x3","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x4","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x5","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x6","method":"keys","selection":"A1:B2,D4:E5","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x7","method":"keys","selection":"A1:B2,D4:E5","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x8","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x9","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: Enter x10","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x1","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x2","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x3","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x4","method":"keys","selection":"A1:B2,D4:E5","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x5","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x6","method":"keys","selection":"A1:B2,D4:E5","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x7","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x8","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x9","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Tab x10","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Shift+Enter x1","method":"keys","selection":"A1:B2,D4:E5","activeCell":"E4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Shift+Enter x2","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"A1:B2 then D4:E5: then Shift+Enter x3","method":"keys","selection":"A1:B2,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: made","method":"mouse","selection":"D4:E5,A1:B2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B2-D4-E5-then-A1-B2-made.png"}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x1","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x2","method":"keys","selection":"D4:E5,A1:B2","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x3","method":"keys","selection":"D4:E5,A1:B2","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x4","method":"keys","selection":"D4:E5,A1:B2","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x5","method":"keys","selection":"D4:E5,A1:B2","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x6","method":"keys","selection":"D4:E5,A1:B2","activeCell":"E4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x7","method":"keys","selection":"D4:E5,A1:B2","activeCell":"E5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x8","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x9","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: Enter x10","method":"keys","selection":"D4:E5,A1:B2","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x1","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x2","method":"keys","selection":"D4:E5,A1:B2","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x3","method":"keys","selection":"D4:E5,A1:B2","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x4","method":"keys","selection":"D4:E5,A1:B2","activeCell":"E4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x5","method":"keys","selection":"D4:E5,A1:B2","activeCell":"D5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x6","method":"keys","selection":"D4:E5,A1:B2","activeCell":"E5","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x7","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x8","method":"keys","selection":"D4:E5,A1:B2","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x9","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Tab x10","method":"keys","selection":"D4:E5,A1:B2","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Shift+Enter x1","method":"keys","selection":"D4:E5,A1:B2","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Shift+Enter x2","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"2","step":"D4:E5 then A1:B2: then Shift+Enter x3","method":"keys","selection":"D4:E5,A1:B2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"3","step":"A1:C3, Enter x4 (active B2)","method":"keys","selection":"A1:C3","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"3","step":"A1:C3 active B2, Ctrl+click B2","method":"mouse","selection":"A3:C3,C2,A2,A1:C1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-B2-Ctrl-click-B2.png"}
+{"case":"3","step":"A1:C3 active B2, Ctrl+click B2, then Shift+Down","method":"keys","selection":"A3:C3,C2,A2,A1:C2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-B2-Ctrl-click-B2-then-Shift-Down.png"}
+{"case":"3","step":"A1:C3, Shift+Enter (active C3)","method":"keys","selection":"A1:C3","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"3","step":"A1:C3 active C3, Ctrl+click C3","method":"mouse","selection":"A3:B3,A1:C2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-C3-Ctrl-click-C3.png"}
+{"case":"3","step":"A1:C3 active C3, Ctrl+click C3, then Shift+Down","method":"keys","selection":"A3:B3,A1:C3","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-C3-Ctrl-click-C3-then-Shift-Down.png"}
+{"case":"3","step":"A1:C3, Enter x6 (active C1)","method":"keys","selection":"A1:C3","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"3","step":"A1:C3 active C1, Ctrl+click C1","method":"mouse","selection":"A2:C3,A1:B1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-C1-Ctrl-click-C1.png"}
+{"case":"3","step":"A1:C3 active C1, Ctrl+click C1, then Shift+Down","method":"keys","selection":"A2:C3,A1:B2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-C1-Ctrl-click-C1-then-Shift-Down.png"}
+{"case":"3","step":"A1:C3, Enter x2 (active A3)","method":"keys","selection":"A1:C3","activeCell":"A3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"3","step":"A1:C3 active A3, Ctrl+click A3","method":"mouse","selection":"B3:C3,A1:C2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-A3-Ctrl-click-A3.png"}
+{"case":"3","step":"A1:C3 active A3, Ctrl+click A3, then Shift+Down","method":"keys","selection":"B3:C3,A1:C3","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-C3-active-A3-Ctrl-click-A3-then-Shift-Down.png"}
+{"case":"3","step":"A1:B2 and D4:E5 (active D4), Ctrl+click A1","method":"mouse","selection":"A2:B2,B1,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-B2-and-D4-E5-active-D4-Ctrl-click-A1.png"}
+{"case":"3","step":"A1:B2 and D4:E5, Ctrl+click A1, then Shift+Down","method":"keys","selection":"A2:B2,B1,D4:E6","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-B2-and-D4-E5-Ctrl-click-A1-then-Shift-Down.png"}
+{"case":"3","step":"A1:B2 and D4:E5 (active D4), Ctrl+click B2","method":"mouse","selection":"A2,A1:B1,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-B2-and-D4-E5-active-D4-Ctrl-click-B2.png"}
+{"case":"3","step":"A1:B2 and D4:E5, Ctrl+click B2, then Shift+Down","method":"keys","selection":"A2,A1:B1,D4:E6","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-A1-B2-and-D4-E5-Ctrl-click-B2-then-Shift-Down.png"}
+{"case":"3","step":"A1:B2 and D4:E5, Enter back into A1:B2","method":"keys","selection":"A1:B2,D4:E5","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"3","step":"then Ctrl+click E5","method":"mouse","selection":"A1:B2,D5,D4:E4","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-then-Ctrl-click-E5.png"}
+{"case":"3","step":"then Ctrl+click E5, then Shift+Down","method":"keys","selection":"A1:B2,D5,D4:E5","activeCell":"D4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B3-then-Ctrl-click-E5-then-Shift-Down.png"}
+{"case":"4","step":"keyboard","method":"WM_INPUTLANGCHANGEREQUEST","layout":"0x08090809"}
+{"case":"4","step":"C3, Ctrl+Space","method":"keys","selection":"C:C","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-C3-Ctrl-Space.png"}
+{"case":"4","step":"C3, Ctrl+Space, then Shift+Down","method":"keys","selection":"C:C","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-C3-Ctrl-Space-then-Shift-Down.png"}
+{"case":"4","step":"then Shift+Right","method":"keys","selection":"C:D","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-then-Shift-Right.png"}
+{"case":"4","step":"C3, Ctrl+Space, then Shift+Right alone","method":"keys","selection":"C:D","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-C3-Ctrl-Space-then-Shift-Right-alone.png"}
+{"case":"4","step":"keyboard","method":"WM_INPUTLANGCHANGEREQUEST","layout":"0x08090809"}
+{"case":"4","step":"A1:C3, Enter x1 (active A2)","method":"keys","selection":"A1:C3","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active A2: Ctrl+. x1","method":"keys","selection":"A1:C3","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active A2: Ctrl+. x2","method":"keys","selection":"A1:C3","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active A2: Ctrl+. x3","method":"keys","selection":"A1:C3","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active A2: Ctrl+. x4","method":"keys","selection":"A1:C3","activeCell":"A3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active A2: Ctrl+. x5","method":"keys","selection":"A1:C3","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3, Enter x4 (active B2)","method":"keys","selection":"A1:C3","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active B2: Ctrl+. x1","method":"keys","selection":"A1:C3","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active B2: Ctrl+. x2","method":"keys","selection":"A1:C3","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active B2: Ctrl+. x3","method":"keys","selection":"A1:C3","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active B2: Ctrl+. x4","method":"keys","selection":"A1:C3","activeCell":"A3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3 active B2: Ctrl+. x5","method":"keys","selection":"A1:C3","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3, Ctrl+click B2 (take-out)","method":"mouse","selection":"A3:C3,C2,A2,A1:C1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-A1-C3-Ctrl-click-B2-take-out.png"}
+{"case":"4","step":"A1:C3 take-out B2, the areas in order","method":"COM","areas":"A3:C3 C2 A2 A1:C1"}
+{"case":"4","step":"take-out B2, then Enter x1","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x2","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x3","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"A3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x4","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"B3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x5","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x6","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"C2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x7","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x8","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x9","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out B2, then Enter x10","method":"keys","selection":"A3:C3,C2,A2,A1:C1","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3, Ctrl+click C3 (take-out)","method":"mouse","selection":"A3:B3,A1:C2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-A1-C3-Ctrl-click-C3-take-out.png"}
+{"case":"4","step":"A1:C3 take-out C3, the areas in order","method":"COM","areas":"A3:B3 A1:C2"}
+{"case":"4","step":"take-out C3, then Enter x1","method":"keys","selection":"A3:B3,A1:C2","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x2","method":"keys","selection":"A3:B3,A1:C2","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x3","method":"keys","selection":"A3:B3,A1:C2","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x4","method":"keys","selection":"A3:B3,A1:C2","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x5","method":"keys","selection":"A3:B3,A1:C2","activeCell":"C2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x6","method":"keys","selection":"A3:B3,A1:C2","activeCell":"A3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x7","method":"keys","selection":"A3:B3,A1:C2","activeCell":"B3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x8","method":"keys","selection":"A3:B3,A1:C2","activeCell":"A1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x9","method":"keys","selection":"A3:B3,A1:C2","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out C3, then Enter x10","method":"keys","selection":"A3:B3,A1:C2","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"A1:C3, Ctrl+click A1 (take-out)","method":"mouse","selection":"A2:C3,B1:C1","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-A1-C3-Ctrl-click-A1-take-out.png"}
+{"case":"4","step":"A1:C3 take-out A1, the areas in order","method":"COM","areas":"A2:C3 B1:C1"}
+{"case":"4","step":"take-out A1, then Enter x1","method":"keys","selection":"A2:C3,B1:C1","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x2","method":"keys","selection":"A2:C3,B1:C1","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x3","method":"keys","selection":"A2:C3,B1:C1","activeCell":"A3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x4","method":"keys","selection":"A2:C3,B1:C1","activeCell":"B2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x5","method":"keys","selection":"A2:C3,B1:C1","activeCell":"B3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x6","method":"keys","selection":"A2:C3,B1:C1","activeCell":"C2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x7","method":"keys","selection":"A2:C3,B1:C1","activeCell":"C3","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x8","method":"keys","selection":"A2:C3,B1:C1","activeCell":"B1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x9","method":"keys","selection":"A2:C3,B1:C1","activeCell":"C1","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"take-out A1, then Enter x10","method":"keys","selection":"A2:C3,B1:C1","activeCell":"A2","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":null}
+{"case":"4","step":"B4:B2 from B4","method":"mouse","selection":"B2:B4","activeCell":"B4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-B4-B2-from-B4.png"}
+{"case":"4","step":"B4:B2 from B4, filled by the handle to B6","method":"mouse","selection":"B2:B6","activeCell":"B4","scrollRow":1,"scrollColumn":1,"visible":"A1:AN58","shot":"shots/B4-B4-B2-from-B4-filled-by-the-handle-to-B6.png"}
+{"case":"4","step":"after the fill, B2:B6","method":"COM","cells":"B2=1 B3=2 B4=3 B5=4 B6=5"}

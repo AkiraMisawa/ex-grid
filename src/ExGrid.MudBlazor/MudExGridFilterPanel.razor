@@ -111,15 +111,25 @@
     private sealed class OperandState
     {
         public string? Text;
-        public decimal? Number;
+        // A number is typed as text and read by FilterPanelChoices, as the built-in panel reads
+        // it, in the culture the field shows it in (ticket 96).
+        public string? NumberText;
         public DateTime? Date;
         public bool? Flag;
 
         // The field that edits it, whichever the column's type draws: what E focuses where
         // no value list stands (ADR-0044).
         public MudTextField<string>? TextField;
-        public MudNumericField<decimal?>? NumberField;
+        public MudTextField<string>? NumberField;
         public MudDatePicker? DateField;
+        public MudTextField<string>? MomentField;
+
+        // A date typed into the picker is read by FilterPanelChoices, as the built-in panel reads
+        // it (ticket 97): the text last typed, and the converter the picker reads it through,
+        // made once so that a render hands the picker the same instance. A DateTimeOffset
+        // column's text field edits the same text (ticket 98).
+        public string? DateText;
+        public OperandDateConverter? DateConverter;
         public MudSelect<bool?>? FlagField;
     }
 
@@ -169,18 +179,23 @@
             ? Mud(key)
             : Own(MudExGridWords.OwnIdForOperator(op));
 
-    /// <summary>A value as the column's cells show it; Blank in the Chrome's own words.</summary>
+    /// <summary>A value as the column's cells show it — its Format, or a date's ISO form
+    /// (ADR-0006) — and Blank in the Chrome's own words.</summary>
     private string TextOf(object? value)
-        => value is null
-            ? Own(MudExGridWords.BlankValue)
-            : Context.Format is { } format ? format(value) : Convert.ToString(value, CultureInfo.CurrentCulture) ?? "";
+        => value is null ? Own(MudExGridWords.BlankValue) : FilterPanelChoices.ValueText(value, Context.Format);
 
     /// <summary>A condition's operand, typed as the column's values are (ADR-0023);
     /// null while none is given.</summary>
     private object? OperandOf(OperandState state) => Context.Type switch
     {
-        ColumnType.Number => state.Number,
-        ColumnType.Date => state.Date,
+        ColumnType.Number => NumberReading(state).Value,
+        ColumnType.Date => Context.DateType switch
+        {
+            // Read from its text: a calendar has no offset to give (ADR-0023, section of 2026-10-02).
+            DateType.DateTimeOffset => DateReading(state).Value,
+            DateType.DateOnly => state.Date is { } day ? DateOnly.FromDateTime(day) : null,
+            _ => state.Date,
+        },
         ColumnType.Boolean => state.Flag,
         _ => string.IsNullOrEmpty(state.Text) ? null : state.Text,
     };
@@ -198,10 +213,20 @@
     /// <summary>A condition's value field, of the column's type, over the state it edits.</summary>
     private RenderFragment OperandField(OperandState state) => Context.Type switch
     {
-        ColumnType.Number => @<MudNumericField @ref="state.NumberField" T="decimal?" Value="state.Number" ValueChanged="@(v => state.Number = v)" Immediate="true" HideSpinButtons="true"
-                                               Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                               Culture="CultureInfo.InvariantCulture" Class="mud-ex-grid-filter-operand" />,
-        ColumnType.Date => @<MudDatePicker @ref="state.DateField" Date="state.Date" DateChanged="@(v => state.Date = v)" Editable="true"
+        ColumnType.Number => @<MudTextField @ref="state.NumberField" T="string" Value="state.NumberText" ValueChanged="@(v => state.NumberText = v)" Immediate="true"
+                                            Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                            Error="@NumberReading(state).IsRefused" ErrorText="@NumberRefusal(state)"
+                                            Class="mud-ex-grid-filter-operand" />,
+        // A day picked from a calendar has no offset, which a DateTimeOffset column refuses, so
+        // that column's operand is typed (ADR-0023, section of 2026-10-02).
+        ColumnType.Date when Context.DateType == DateType.DateTimeOffset
+            => @<MudTextField @ref="state.MomentField" T="string" Value="state.DateText" ValueChanged="@(v => state.DateText = v)" Immediate="true"
+                              Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
+                              Error="@DateReading(state).IsRefused" ErrorText="@DateRefusal(state)"
+                              Class="mud-ex-grid-filter-operand" />,
+        ColumnType.Date => @<MudDatePicker @ref="state.DateField" @attributes="DateOf(state)" DateChanged="@(v => state.Date = v)" Editable="true"
+                                           Converter="@(state.DateConverter ??= new OperandDateConverter(state, DateReading))" DateFormat="yyyy-MM-dd"
+                                           Error="@DateReading(state).IsRefused" ErrorText="@DateRefusal(state)"
                                            PickerOpened="() => ReportPopup(true)" PickerClosed="() => ReportPopup(false)"
                                            Label="@Mud("MudDataGrid_Value")" Variant="Variant.Outlined" Margin="Margin.Dense"
                                            Class="mud-ex-grid-filter-operand" />,
@@ -218,11 +243,104 @@
                             Class="mud-ex-grid-filter-operand" />,
     };
 
-    /// <summary>Apply is unavailable until the operator's value is given (WR-2); a value
-    /// list can always be applied.</summary>
+    /// <summary>
+    /// The date field's text, read and written as the built-in panel's is (ADR-0023, ticket 97):
+    /// a date shows in its ISO form, which reads back as itself, and typed text is read by
+    /// <see cref="FilterPanelChoices.ReadOperand"/> in the current culture — ticket 94's ISO forms
+    /// exactly, anything else in the culture alone. A refused text is no date, and the field shows
+    /// why. MudBlazor's own reading was the invariant culture's, under which <c>05/01/2026</c> is
+    /// 1 May whatever the user's culture. The picker needs a <c>DateFormat</c> beside the
+    /// converter: without one it writes a date in the culture's short form, never asking the
+    /// converter. A date is read as the column's declared date type (ticket 98), and a
+    /// <see cref="DateOnly"/> stands in the picker as its midnight.
+    /// </summary>
+    private sealed class OperandDateConverter(OperandState state, Func<OperandState, OperandReading> read) : IReversibleConverter<DateTime?, string>
+    {
+        // The day alone at midnight, the day and time otherwise: both ISO forms read back exactly.
+        public string Convert(DateTime? value) => value switch
+        {
+            null => "",
+            { TimeOfDay.Ticks: 0 } day => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            { } date => FilterPanelChoices.OperandText(date, CultureInfo.CurrentCulture),
+        };
+
+        public DateTime? ConvertBack(string value)
+        {
+            state.DateText = value;
+            return read(state).Value switch
+            {
+                DateTime date => date,
+                DateOnly day => day.ToDateTime(TimeOnly.MinValue),
+                _ => null,
+            };
+        }
+    }
+
+    /// <summary>
+    /// The picker's date, given only while the condition has one. MudDatePicker's Date is a
+    /// setter, run on every render of the panel. A date set again within 100 ms of the last is
+    /// ignored, but a null one set later, after a refused text, clears the text and revalidates
+    /// the field, which writes its Error back to false over the panel's own: the refusal
+    /// vanished while Apply stayed unavailable (ADR-0023, principle 1). Not given, a parameter
+    /// keeps its value, and the picker its text and its error.
+    /// </summary>
+    private static IReadOnlyDictionary<string, object> DateOf(OperandState state)
+        => state.Date is { } date ? new Dictionary<string, object> { [nameof(MudDatePicker.Date)] = date } : NoDate;
+
+    private static readonly IReadOnlyDictionary<string, object> NoDate = new Dictionary<string, object>();
+
+    /// <summary>A condition's date as FilterPanelChoices reads the text last typed into the picker;
+    /// nothing typed reads as no refusal.</summary>
+    private OperandReading DateReading(OperandState state)
+        => FilterPanelChoices.ReadOperand(ColumnType.Date, state.DateText ?? "", CultureInfo.CurrentCulture, Context.DateType);
+
+    /// <summary>Why a condition's date is refused: the Chrome's word for it where it has one, and
+    /// otherwise what was typed and why, in the core's English. Null where it reads.</summary>
+    private string? DateRefusal(OperandState state)
+    {
+        var reading = DateReading(state);
+        if (!reading.IsRefused)
+            return null;
+        var id = reading.Refusal switch
+        {
+            OperandRefusal.ReadsTwoWays => MudExGridWords.OperandReadsTwoWays,
+            OperandRefusal.NotTheColumnsDateForm => MudExGridWords.OperandNotTheColumnsDateForm,
+            _ => MudExGridWords.OperandNotReadable,
+        };
+        return Chrome.Label?.Invoke(id)
+            ?? FilterPanelChoices.RefusalText(reading, state.DateText ?? "", CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>A condition's number as FilterPanelChoices reads it, in the current culture —
+    /// the reading the built-in panel takes (ADR-0023; ticket 96).</summary>
+    private static OperandReading NumberReading(OperandState state)
+        => FilterPanelChoices.ReadOperand(ColumnType.Number, state.NumberText ?? "", CultureInfo.CurrentCulture);
+
+    /// <summary>Why a condition's number is refused: the Chrome's word for it where it has one,
+    /// and otherwise what was typed and why, in the core's English. Null where it reads.</summary>
+    private string? NumberRefusal(OperandState state)
+    {
+        var reading = NumberReading(state);
+        if (!reading.IsRefused)
+            return null;
+        var id = reading.Refusal == OperandRefusal.ReadsTwoWays ? MudExGridWords.OperandReadsTwoWays : MudExGridWords.OperandNotReadable;
+        return Chrome.Label?.Invoke(id)
+            ?? FilterPanelChoices.RefusalText(reading, state.NumberText ?? "", CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>Apply is unavailable until the operator's value is given (WR-2), and, over a
+    /// value list, while its answer keeps nothing — nothing ticked among the values shown
+    /// (FilterPanelChoices.CanApply, ticket 76).</summary>
     private bool CanApply
         => !_awaiting
-           && (_chosen is not null || !FilterPanelChoices.TakesOperand(_operator) || Operand is not null);
+           && (_chosen is not null && _domain is { IsTooMany: false } domain
+               ? FilterPanelChoices.CanApply(ValueListAnswer(domain, _chosen))
+               : !FilterPanelChoices.TakesOperand(_operator) || Operand is not null);
+
+    /// <summary>The value list's answer, by FilterPanelChoices' rules: the checked values,
+    /// among a search's matches while one stands.</summary>
+    private FilterSpec? ValueListAnswer(DistinctValues domain, HashSet<object?> chosen)
+        => FilterPanelChoices.FromValueList(domain, chosen, TextOf, _searchText ?? "", _addToCurrent, Context.Current);
 
     protected override void OnParametersSet()
     {
@@ -271,11 +389,17 @@
     {
         switch (operand)
         {
-            case decimal number:
-                state.Number = number;
+            case decimal or double or float or int or long:
+                state.NumberText = FilterPanelChoices.OperandText(operand, CultureInfo.CurrentCulture);
                 break;
             case DateTime date:
                 state.Date = date;
+                break;
+            case DateOnly day:
+                state.Date = day.ToDateTime(TimeOnly.MinValue);
+                break;
+            case DateTimeOffset moment:
+                state.DateText = FilterPanelChoices.OperandText(moment, CultureInfo.CurrentCulture);
                 break;
             case bool flag:
                 state.Flag = flag;
@@ -309,7 +433,7 @@
         if (!CanApply)
             return;
         Context.Apply(_chosen is not null && _domain is { IsTooMany: false } domain
-            ? FilterPanelChoices.FromValueList(domain, _chosen, TextOf, _searchText ?? "", _addToCurrent, Context.Current)
+            ? ValueListAnswer(domain, _chosen)
             : FilterPanelChoices.FromConditions(
                 _operator, Operand, _combinator, _secondOperator,
                 _secondOperator is { } second && FilterPanelChoices.TakesOperand(second) ? OperandOf(_second) : null));
@@ -342,7 +466,7 @@
         => _chosen is not null || !FilterPanelChoices.TakesOperand(_operator)
             ? FocusFirstAsync()
             : FocusQuietlyAsync(_first.TextField?.FocusAsync() ?? _first.NumberField?.FocusAsync()
-                ?? _first.DateField?.FocusAsync() ?? _first.FlagField?.FocusAsync());
+                ?? _first.DateField?.FocusAsync() ?? _first.MomentField?.FocusAsync() ?? _first.FlagField?.FocusAsync());
 
     private Task FocusLastAsync() => FocusQuietlyAsync(_cancel?.FocusAsync());
 

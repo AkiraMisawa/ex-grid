@@ -1,0 +1,66 @@
+@* What a page run under ExGrid.MudBlazor's Chrome (DemoChrome) needs for MudBlazor's own controls
+   to render: its stylesheet, and its theme, popover and dialog providers. A page that stands its
+   grids on the Wrapper's paper also takes the Wrapper's stylesheet, which maps the grid's Visual
+   Tokens onto the palette (ADR-0030), and the font the paper's widths were measured for. A page of
+   Sheets takes ExSheet.MudBlazor's stylesheet, which lays out Format Cells' dialog (ADR-0071). Under
+   the core's Chrome nothing here renders, and the page is what it always was. A page that needs a
+   stylesheet of its own under either Chrome hands it in through Head. *@
+@* A page asked for the dark scheme (DemoChrome.IsDark) declares it for the whole document, as a host
+   page in dark mode does: the core's defaults on system colours follow it (ADR-0027), and MudBlazor
+   paints its dark palette. One HeadContent, because a page shows only the last one rendered. *@
+@using global::MudBlazor
+
+@if (DemoChrome.IsMud(Name) || Dark || Head is not null)
+{
+    <HeadContent>
+        @if (Dark)
+        {
+            <style>:root { color-scheme: dark; }</style>
+        }
+        @if (DemoChrome.IsMud(Name))
+        {
+            @if (Paper)
+            {
+                <link href="_content/ExGrid.DemoPages/fonts/roboto/roboto.css" rel="stylesheet" />
+            }
+            <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+            @if (Paper)
+            {
+                <link href="_content/ExGrid.MudBlazor/mud-ex-grid.css" rel="stylesheet" />
+            }
+            @if (Sheet)
+            {
+                <link href="_content/ExSheet.MudBlazor/mud-ex-sheet.css" rel="stylesheet" />
+            }
+        }
+        @Head
+    </HeadContent>
+}
+@if (DemoChrome.IsMud(Name))
+{
+    <MudThemeProvider IsDarkMode="Dark" />
+    <MudPopoverProvider />
+    <MudDialogProvider />
+}
+
+@code {
+    /// <summary>The page's <c>?chrome=</c> value.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Whether the page stands its grids on the Wrapper's paper under the Wrapper's
+    /// Chrome.</summary>
+    [Parameter] public bool Paper { get; set; }
+
+    /// <summary>Whether the page shows Sheets, whose Format Cells is ExSheet.MudBlazor's dialog
+    /// under the Wrapper's Chrome.</summary>
+    [Parameter] public bool Sheet { get; set; }
+
+    /// <summary>Whether the page is shown in the dark scheme: as its <c>?scheme=</c> asks
+    /// (<see cref="DemoChrome.IsDark"/>), or as a switch of its own says (<c>/pivot</c>'s).</summary>
+    [Parameter] public bool Dark { get; set; }
+
+    /// <summary>What else the page puts in the head, under either Chrome — a package's own
+    /// stylesheet. Here rather than in a HeadContent of the page's: only the last HeadContent
+    /// rendered reaches the head, and this component's renders after the page's.</summary>
+    [Parameter] public RenderFragment? Head { get; set; }
+}

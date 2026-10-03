@@ -1,0 +1,53 @@
+{
+  "chrome": {
+    "a test whose console reports an error hands no page on (ADR-0056)": {
+      "at": "2026-09-29T17:29:55.150Z",
+      "errors": [
+        {
+          "text": "harness.spec: an error on purpose",
+          "url": ""
+        }
+      ],
+      "warnings": [],
+      "pageErrors": []
+    },
+    "in a parent with no height › nothing is painted and the grid names the parent (VZ-12b, ADR-0028)": {
+      "at": "2026-09-29T17:34:17.657Z",
+      "errors": [],
+      "warnings": [
+        {
+          "text": "warn: ExGrid.Components.ExGrid[0]\n      ExGrid: ViewportHeight is Stretch, but the grid's parent gives it no height, so it is only as tall as its header and no row can be painted. Give the parent a definite height: pixels, a percentage of something definite, a grid track, or a flex item with min-height: 0 (ADR-0028).",
+          "url": "http://localhost:5299/_framework/dotnet.runtime.2zl32tp6ah.js",
+          "exgrid": true
+        }
+      ],
+      "pageErrors": []
+    }
+  },
+  "msedge": {
+    "a test whose console reports an error hands no page on (ADR-0056)": {
+      "at": "2026-09-29T17:38:18.742Z",
+      "errors": [
+        {
+          "text": "harness.spec: an error on purpose",
+          "url": ""
+        }
+      ],
+      "warnings": [],
+      "pageErrors": []
+    },
+    "in a parent with no height › nothing is painted and the grid names the parent (VZ-12b, ADR-0028)": {
+      "at": "2026-09-29T17:42:42.590Z",
+      "errors": [],
+      "warnings": [
+        {
+          "text": "warn: ExGrid.Components.ExGrid[0]\n      ExGrid: ViewportHeight is Stretch, but the grid's parent gives it no height, so it is only as tall as its header and no row can be painted. Give the parent a definite height: pixels, a percentage of something definite, a grid track, or a flex item with min-height: 0 (ADR-0028).",
+          "url": "http://localhost:5299/_framework/dotnet.runtime.2zl32tp6ah.js",
+          "exgrid": true
+        }
+      ],
+      "pageErrors": []
+    }
+  },
+  "chrome-150": {}
+}

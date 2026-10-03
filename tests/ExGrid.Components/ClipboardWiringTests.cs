@@ -56,7 +56,7 @@ public class ClipboardWiringTests : GridTestContext
 
         Assert.Equal("data", payload.Kind);
         Assert.Equal("Alpha\t100.5\r\n", payload.Text);
-        Assert.Equal("<table><tr><td>Alpha</td><td>100.5</td></tr></table>", payload.Html);
+        Assert.Equal("<table data-ex-grid=\"invariant\"><tr><td>Alpha</td><td>100.5</td></tr></table>", payload.Html);
     }
 
     [Fact] // ADR-0005 / CP-15: an empty selection refuses with its own reason; the clipboard is untouched
@@ -189,6 +189,8 @@ public class ClipboardWiringTests : GridTestContext
         Assert.Equal(2, intent.CellCount);
         Assert.Equal("x", intent.ValueFor(new CellPosition(0, 0)));
         Assert.Equal("y", intent.ValueFor(new CellPosition(1, 0)));
+        // From the clipboard, not a fill key (ADR-0050 item 5, 2026-09-28): no fill source.
+        Assert.Null(intent.FillSource);
     }
 
     [Fact] // ADR-0005 / CP-21: a paste arrives as streams and means exactly what the strings meant
@@ -266,7 +268,7 @@ public class ClipboardWiringTests : GridTestContext
         await ClickCellAsync(cut, 50, 10);
         await PressAsync(cut, " ", ctrl: true);                  // whole column, 100 rows
 
-        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("fill", null));
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("fill", "<table><tr><td>fill</td></tr></table>"));
 
         var intent = Assert.Single(intents);
         Assert.Equal(100, intent.CellCount);
@@ -289,6 +291,114 @@ public class ClipboardWiringTests : GridTestContext
 
         Assert.Empty(intents);
         Assert.Equal(PasteRefusalReason.SingleCellTarget, refused);
+    }
+
+    private static Task CtrlClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
+        => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, CtrlKey = true });
+
+    private static Task ShiftClickCellAsync(IRenderedComponent<ExGrid<TestRow>> cut, double x, double y)
+        => cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = x, OffsetY = y, ShiftKey = true });
+
+    [Fact] // ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone, and the Selection collapses to it
+    public async Task One_value_of_plain_text_over_a_range_goes_into_its_top_left_and_the_selection_collapses()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var changes = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => { selection = s; changes++; }));
+        await ClickCellAsync(cut, 150, 50);                      // Amount, row 2
+        await ShiftClickCellAsync(cut, 50, 30);                  // Book, row 1: B2:C3 drawn from its bottom-right
+        var before = changes;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("=A1", null));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([new SelectionRange(1, 0, 1, 1)], intent.Plan.Targets);
+        Assert.Equal(1, intent.CellCount);
+        Assert.Equal("=A1", intent.ValueFor(new CellPosition(1, 0)));
+        // Reported as every Selection change is, once.
+        Assert.Equal(before + 1, changes);
+        Assert.Equal([new SelectionRange(1, 0, 1, 1)], selection!.Ranges);
+        Assert.Equal(new CellPosition(1, 0), selection.Focus);
+    }
+
+    [Fact] // ADR-0033 / ADR-0014 (amended 2026-09-29): the paste's collapse to one cell leaves no sentence naming the range
+    public async Task One_value_of_plain_text_over_a_range_leaves_the_live_region_naming_no_range()
+    {
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent _) => { }));
+        await ClickCellAsync(cut, 150, 50);
+        await ShiftClickCellAsync(cut, 50, 30);
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+        Assert.Contains("2 rows by 2 columns selected", cut.Find(".ex-announce").TextContent);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("=A1", null));
+        await cut.InvokeAsync(() => Clock.Advance(TimeSpan.FromMilliseconds(200)));
+
+        // A 1×1 Selection is not announced, and the range it replaced is no longer true.
+        Assert.Equal("", cut.Find(".ex-announce").TextContent);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): with several ranges, the value goes into the top-left of the range made last
+    public async Task One_value_of_plain_text_over_several_ranges_goes_into_the_range_made_last()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 70);                       // Book, row 3 — made first
+        await CtrlClickCellAsync(cut, 150, 30);                  // Amount, row 1 — made last
+        await ShiftClickCellAsync(cut, 150, 50);                 // extended to Amount, row 2
+        await CtrlClickCellAsync(cut, 50, 10);                   // Book, row 0 — made last now
+
+        // Enter cycles the Focus back into the first range; the range made last does not change.
+        await PressAsync(cut, "Enter");
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x\r\n", null));
+
+        Assert.Equal([new SelectionRange(0, 0, 1, 1)], Assert.Single(intents).Plan.Targets);
+        Assert.Equal([new SelectionRange(0, 0, 1, 1)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): one value copied as a table — from the grid itself — still fills the whole range
+    public async Task One_value_copied_inside_the_grid_fills_the_whole_range()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);                       // Book, row 0
+        var copied = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+        await ClickCellAsync(cut, 50, 30);
+        await ShiftClickCellAsync(cut, 150, 50);                 // Book..Amount, rows 1..2
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync(copied.Text, copied.Html));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([new SelectionRange(1, 0, 2, 2)], intent.Plan.Targets);
+        Assert.Equal(4, intent.CellCount);
+        Assert.Equal("Alpha", intent.ValueFor(new CellPosition(2, 1)));
+        Assert.Equal([new SelectionRange(1, 0, 2, 2)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29) / ADR-0050 item 3: a refused plain-text value leaves the Selection where it was
+    public async Task A_refused_plain_text_value_leaves_the_range_selected()
+    {
+        GridSelection? selection = null;
+        var changes = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnPaste, (GridPasteIntent i) => i.Refuse())
+            .Add(g => g.SelectionChanged, (GridSelection s) => { selection = s; changes++; }));
+        await ClickCellAsync(cut, 50, 10);
+        await ShiftClickCellAsync(cut, 150, 30);
+        var before = changes;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("x", null));
+
+        Assert.Equal(before, changes);
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection!.Ranges);
     }
 
     [Fact] // ADR-0014: nothing tabular consults no rule and raises nothing
@@ -318,6 +428,40 @@ public class ClipboardWiringTests : GridTestContext
             "1,234.57", "<table><tr><td x:num=\"1234.56789\">1,234.57</td></tr></table>"));
 
         Assert.Equal("1234.56789", Assert.Single(intents).ValueFor(new CellPosition(0, 0)));
+    }
+
+    [Fact] // ADR-0050 item 10 / DC-33: the paste intent says where each field came from, through the tiling
+    public async Task A_paste_intent_marks_each_field_invariant_or_shown()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowDown", false, true, false, false, false));
+
+        // One row of two, tiled down three rows: an x:num and a shown text.
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync(
+            "1,234.50\t1,5\r\n", "<table><tr><td x:num=\"1234.5\">1,234.50</td><td x:num>1,5</td></tr></table>"));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([[PasteFieldOrigin.Invariant, PasteFieldOrigin.ShownText]], intent.Origins);
+        Assert.Equal(PasteFieldOrigin.Invariant, intent.OriginFor(new CellPosition(2, 0)));
+        Assert.Equal(PasteFieldOrigin.ShownText, intent.OriginFor(new CellPosition(2, 1)));
+    }
+
+    [Fact] // ADR-0050 item 10 / DC-33: a copy from this grid pastes back as invariant
+    public async Task The_grids_own_copy_pastes_back_as_invariant()
+    {
+        var intents = new List<GridPasteIntent>();
+        var cut = RenderGrid(ps => ps.Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i)));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync(payload.Text, payload.Html));
+
+        Assert.Equal([[PasteFieldOrigin.Invariant, PasteFieldOrigin.Invariant]], Assert.Single(intents).Origins);
     }
 
     [Fact] // ADR-0035 / CP-16: a target covering a non-editable column refuses, and raises no intent
@@ -361,5 +505,252 @@ public class ClipboardWiringTests : GridTestContext
         await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\n", null));
 
         Assert.Equal(2, Assert.Single(intents).CellCount);
+    }
+
+    [Fact] // ADR-0052 case 15 / DC-8: a spilled block running past the Viewport's bottom is selected, and nothing scrolls to show it
+    public async Task A_spilled_paste_selects_the_block_without_scrolling()
+    {
+        GridSelection? selection = null;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(20))
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20)
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent _) => { })
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 70);                       // Book, row 3 — the last row on screen
+        var writes = Js.ScrolledTo.Count;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\ne\tf\r\n", null));
+
+        Assert.Equal([new SelectionRange(3, 0, 3, 2)], selection!.Ranges);
+        Assert.Equal(new CellPosition(3, 0), selection.Focus);   // the block's first cell
+        Assert.Equal(writes, Js.ScrolledTo.Count);
+    }
+
+    [Fact] // ADR-0050 item 3 / DC-8: declared, a block onto one cell is one intent, and the block becomes the Selection
+    public async Task A_spilled_paste_raises_one_intent_and_selects_the_block()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);                       // Book, row 0 — a single cell
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        var intent = Assert.Single(intents);
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], intent.Plan.Targets);
+        Assert.Equal(4, intent.CellCount);
+        Assert.Equal("d", intent.ValueFor(new CellPosition(1, 1)));
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection!.Ranges);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
+        Assert.Equal(new CellPosition(1, 1), selection.Extent);
+        Assert.Equal(4, selection.CellCount);                    // the count on display is the count written
+    }
+
+    [Fact] // ADR-0050 item 3 / DC-38: a spilled paste the Consumer refuses leaves the Selection and the Focus where they were
+    public async Task A_spill_the_consumer_refuses_leaves_the_selection_where_it_was()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var changes = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, async (GridPasteIntent i) =>
+            {
+                intents.Add(i);
+                await Task.Yield();                              // a refusal reached asynchronously still counts
+                i.Refuse();
+            })
+            .Add(g => g.SelectionChanged, (GridSelection s) => { selection = s; changes++; }));
+        await ClickCellAsync(cut, 50, 10);                       // Book, row 0 — a single cell
+        var before = changes;
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.True(Assert.Single(intents).IsRefused);
+        Assert.Equal(before, changes);
+        Assert.Equal([new SelectionRange(0, 0, 1, 1)], selection!.Ranges);
+        Assert.Equal(new CellPosition(0, 0), selection.Extent);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
+    }
+
+    [Fact] // ADR-0050 item 3 / DC-8: a spilled paste the Consumer does not refuse still selects the block
+    public async Task A_spill_the_consumer_accepts_is_not_refused_and_selects_the_block()
+    {
+        var intents = new List<GridPasteIntent>();
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, async (GridPasteIntent i) => { intents.Add(i); await Task.Yield(); })
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.False(Assert.Single(intents).IsRefused);
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection!.Ranges);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
+    }
+
+    [Fact] // ADR-0050 item 3 / DC-10: a spill past the grid's last row is refused by name, and nothing moves
+    public async Task A_spill_past_the_last_row_is_refused_by_name()
+    {
+        var intents = new List<GridPasteIntent>();
+        PasteRefusalReason? refused = null;
+        GridSelection? selection = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r)
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 50);                       // Book, row 2 — the last row
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\r\nb\r\n", null));
+
+        Assert.Empty(intents);
+        Assert.Equal(PasteRefusalReason.SpillPastExtent, refused);
+        Assert.Equal([new SelectionRange(2, 0, 1, 1)], selection!.Ranges);
+    }
+
+    [Fact] // ADR-0050 item 3 / ADR-0035 / DC-10: Editable is judged on the spilled block before anything is raised
+    public async Task A_spill_covering_a_non_editable_column_is_refused()
+    {
+        var intents = new List<GridPasteIntent>();
+        PasteRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent i) => intents.Add(i))
+            .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => refused = r));
+        await ClickCellAsync(cut, 150, 10);                      // Amount, editable; the block reaches Locked
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\n", null));
+
+        Assert.Empty(intents);
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, refused);
+    }
+
+    [Fact] // ADR-0050 item 3 / ADR-0011: a spill whose handling moved the order places no stale block
+    public async Task A_spill_whose_intent_moved_the_order_does_not_place_the_block()
+    {
+        GridSelection? selection = null;
+        IRenderedComponent<ExGrid<TestRow>>? cut = null;
+        cut = RenderGrid(ps => ps
+            .Add(g => g.PasteMaySpill, true)
+            .Add(g => g.OnPaste, (GridPasteIntent _) =>
+                cut!.Render(p => p.Add(g => g.RowSequenceVersion, 1)))
+            .Add(g => g.SelectionChanged, (GridSelection s) => selection = s));
+        await ClickCellAsync(cut, 50, 10);
+
+        await cut.InvokeAsync(() => cut.Instance.OnPasteAsync("a\tb\r\nc\td\r\n", null));
+
+        Assert.NotEqual([new SelectionRange(0, 0, 2, 2)], selection?.Ranges ?? []);
+    }
+
+    [Fact] // ADR-0050 item 9 / DC-32: declared, the keyboard's synchronous copy asks the answer with the range and writes what it returns
+    public async Task A_copy_answer_is_asked_on_the_synchronous_route_and_written_as_given()
+    {
+        var requests = new List<GridCopyRequest>();
+        var cut = RenderGrid(ps => ps.Add(g => g.CopyAnswer, (GridCopyRequest r) =>
+        {
+            requests.Add(r);
+            return GridCopyAnswer.Write("mine\r\n", "<table><tr><td>mine</td></tr></table>");
+        }));
+        await ClickCellAsync(cut, 50, 10);
+        await cut.InvokeAsync(() => cut.Instance.OnKeyAsync("ArrowRight", false, true, false, false, false));
+
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+
+        Assert.Equal("data", payload.Kind);
+        Assert.Equal("mine\r\n", payload.Text);
+        Assert.Equal("<table><tr><td>mine</td></tr></table>", payload.Html);
+        var request = Assert.Single(requests);
+        Assert.Equal([new SelectionRange(0, 0, 1, 2)], request.Plan.Segments);
+        Assert.False(request.WithHeaders);
+    }
+
+    [Fact] // ADR-0050 item 9 / DC-32: the menu's asynchronous route asks it too, with the header request, and gathers no rows
+    public async Task A_copy_answer_is_asked_on_the_asynchronous_route()
+    {
+        var requests = new List<GridCopyRequest>();
+        var gathered = 0;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.TotalCount, 100)
+            .Add(g => g.OnCopyRowsNeeded, (RowRange _, CancellationToken _) =>
+            {
+                gathered++;
+                return Task.FromResult<IReadOnlyList<TestRow>>([]);
+            })
+            .Add(g => g.CopyAnswer, (GridCopyRequest r) =>
+            {
+                requests.Add(r);
+                return GridCopyAnswer.Write("t", "h");
+            }));
+        await ClickCellAsync(cut, 50, 10);
+        await PressAsync(cut, " ", ctrl: true);                  // whole column, rows 0..99, beyond the Window
+
+        var synchronous = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+        var assembled = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync(withHeaders: true));
+
+        // Answered in process on both routes: the synchronous one no longer has to defer.
+        Assert.Equal("data", synchronous.Kind);
+        Assert.NotNull(assembled);
+        Assert.Equal("data", assembled!.Kind);
+        Assert.Equal(("t", "h"), (assembled.Text, assembled.Html));
+        Assert.Equal(0, gathered);
+        Assert.Equal(2, requests.Count);
+        Assert.Equal([new SelectionRange(0, 0, 100, 1)], requests[1].Plan.Segments);
+        Assert.True(requests[1].WithHeaders);
+    }
+
+    [Fact] // ADR-0050 item 9 / DC-32: a refusal leaves the clipboard untouched, is raised by name, and says the Consumer's sentence
+    public async Task A_copy_answer_refusal_is_raised_and_announced_on_both_routes()
+    {
+        var refusals = new List<CopyRefusalReason>();
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnCopyRefused, (CopyRefusalReason r) => refusals.Add(r))
+            .Add(g => g.CopyAnswer, (GridCopyRequest _) => GridCopyAnswer.Refuse("The copy reaches cells still getting data.")));
+        await ClickCellAsync(cut, 50, 10);
+
+        var synchronous = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+        var assembled = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayloadAsync());
+
+        Assert.Equal("none", synchronous.Kind);
+        Assert.Null(assembled);
+        cut.WaitForAssertion(() =>
+            Assert.Equal([CopyRefusalReason.RefusedByConsumer, CopyRefusalReason.RefusedByConsumer], refusals));
+        cut.WaitForAssertion(() =>
+            Assert.Equal("The copy reaches cells still getting data.", cut.Find(".ex-announce").TextContent));
+    }
+
+    [Fact] // ADR-0050 item 9 / ADR-0005: the grid's own refusals come first — an empty selection never asks the Consumer
+    public async Task A_copy_the_rules_refuse_never_asks_the_answer()
+    {
+        var asked = 0;
+        CopyRefusalReason? refused = null;
+        var cut = RenderGrid(ps => ps
+            .Add(g => g.OnCopyRefused, (CopyRefusalReason r) => refused = r)
+            .Add(g => g.CopyAnswer, (GridCopyRequest _) =>
+            {
+                asked++;
+                return GridCopyAnswer.Write("t", "h");
+            }));
+
+        var payload = await cut.InvokeAsync(() => cut.Instance.BuildCopyPayload());
+
+        Assert.Equal("none", payload.Kind);
+        cut.WaitForAssertion(() => Assert.Equal(CopyRefusalReason.EmptySelection, refused));
+        Assert.Equal(0, asked);
+    }
+
+    [Fact] // ADR-0050 item 9: a refusal without a sentence is not an answer
+    public void A_copy_refusal_needs_a_sentence()
+    {
+        Assert.ThrowsAny<ArgumentException>(() => GridCopyAnswer.Refuse(" "));
     }
 }

@@ -1,0 +1,132 @@
+{
+  "area": "sum",
+  "about": "SUM (ADR-0047).",
+  "cases": [
+    {
+      "id": "SUM-001",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "SUM-002",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(1,2,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "SUM-003",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(\"3\",2,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "SUM-004",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SUM-005",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(A4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SUM-006",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SUM-007",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(A1:A2,10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 13}
+    },
+    {
+      "id": "SUM-008",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(A:A)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "SUM-009",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "SUM-010",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(\"abc\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SUM-011",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(1,#N/A)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "SUM-012",
+      "source": "observed",
+      "description": "SUM: only numbers count in a range; typed numbers, booleans and numeric text count; errors are the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(D1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "SUM-013",
+      "source": "observed",
+      "description": "Ticket 19 row 9: a missing argument is 0",
+      "ticket19Row": 9,
+      "cells": {"ZZ1000": "=SUM(1,,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "SUM-014",
+      "source": "observed",
+      "description": "Ticket 19 row 16: of two different errors in a range, the first in row-major order is the result",
+      "ticket19Row": 16,
+      "cells": {"A2": "#N/A", "A3": "#DIV/0!", "ZZ1000": "=SUM(A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    }
+  ]
+}

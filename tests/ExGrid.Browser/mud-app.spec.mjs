@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures.mjs';
+import { test, expect, circuitQuiet } from './fixtures.mjs';
 
 // The Wrapper verified against a Consumer (Definition of Done §23): /mud-app is an ordinary
 // MudBlazor application — MudLayout with an AppBar and a Drawer, MudTabs, a MudDialog, a
@@ -25,6 +25,32 @@ async function open(page) {
     // The Wrapper's stylesheet has landed when one of its tokens reaches a root.
     await expect.poll(async () => positions(page).evaluate((g) => getComputedStyle(g).getPropertyValue('--ex-editor-outline').trim()))
         .not.toBe('');
+    // MudBlazor's own stylesheet lays the page out — the AppBar, the Drawer, the main content
+    // beside it — and lands on its own time. The page's stylesheets are links in its head, put
+    // back by each visit to it on the shared document (ADR-0056), and the Wrapper's, the smaller,
+    // can land first. Taken before MudBlazor's landed, a point for a click lands where the cell no
+    // longer is: on CI (WebAssembly host, msedge, 2026-10-02) a press on Positions' r1c1 landed in
+    // the Drawer, and the grid took no Focus. So a test starts once every stylesheet of the page,
+    // and every font they ask for, has loaded, and the main content is at rest (mainAtRest).
+    await expect.poll(() => page.evaluate(() =>
+        [...document.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet !== null)
+            && document.fonts.status === 'loaded'),
+    { message: 'every stylesheet of the page, and every font they ask for, has loaded' }).toBe(true);
+    await mainAtRest(page);
+}
+
+// MudLayout mounts with the main content at the window's edge and then slides it over to an open
+// Drawer's (MudBlazor animates its margin). Measured or pressed during that slide, the grid is
+// further left and wider than it will be. Waited for until nothing animates the main content and,
+// with the Drawer open, it meets the Drawer's edge.
+async function mainAtRest(page) {
+    await expect.poll(() => page.evaluate(() => {
+        const main = document.querySelector('.mud-main-content');
+        const drawer = document.querySelector('#app-drawer');
+        return main.getAnimations().length === 0
+            && (!drawer.classList.contains('mud-drawer--open')
+                || Math.abs(main.getBoundingClientRect().left - drawer.getBoundingClientRect().right) < 0.5);
+    }), { message: 'the main content has come to rest beside the Drawer' }).toBe(true);
 }
 
 // Cells are pointer-events: none by design and the Viewport is the delegated target
@@ -165,6 +191,15 @@ test('WR-7: a grid in a tab that was hidden paints correctly once its tab is sho
 test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028)', async ({ page }) => {
     await open(page);
     await expect(page.locator('#drawer-status')).toHaveText('Drawer: open');
+    // The widths below are the baseline every later one is checked against, so they are taken
+    // once the open Drawer is where the screen shows it. MudLayout mounts with the main content
+    // at the window's edge and then slides it over to the Drawer's (MudBlazor animates its
+    // margin): measured during that slide, the grid is wider than it will be, and the width
+    // expected with the Drawer closed is too wide by as much (found on Windows, fourth run: 1214
+    // received against 1223.3 expected, the grid measured at 983.3 of the 974 it settles at).
+    // Whether the slide is over by the time the page is ready is only a matter of how long the
+    // page took to load — the file's first test pays for MudBlazor's stylesheet, a later one
+    // on the shared page does not (ADR-0056). open() waits for it (mainAtRest), for every test.
     const drawerWidth = (await page.locator('#app-drawer').boundingBox()).width;
     expect(drawerWidth).toBeGreaterThan(0);
 
@@ -209,7 +244,7 @@ test('WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (A
     }
 });
 
-test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018)', async ({ page }) => {
+test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018, ADR-0052)', async ({ page }) => {
     await open(page);
 
     // Each click is answered a round trip later on the Server host, so each is waited for.
@@ -231,9 +266,10 @@ test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018)', 
     const ordersFocus = await orders(page).getAttribute('aria-activedescendant');
     await clickCell(positions(page), 1, 1);
     await page.keyboard.press('ArrowDown');
-    // Shift+Arrow extends the selection by moving the Focus (ADR-0012).
+    // Shift+Arrow extends the selection by moving the Extent; the Focus stays (ADR-0052).
     await page.keyboard.press('Shift+ArrowRight');
-    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c2$/);
+    await expect(positions(page).locator('.ex-range')).not.toHaveCount(0);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r2c1$/);
     expect(await orders(page).getAttribute('aria-activedescendant')).toBe(ordersFocus);
 
     // Each paints its own Focus, and each root has its own id space.
@@ -255,7 +291,7 @@ test('WR-7: the two grids on the main area stay independent (DOM-4, ADR-0018)', 
     expect(leaks.heights).toEqual(['28px', '24px', '26px']);
 });
 
-test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039)", async ({ page }) => {
+test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039/0052)", async ({ page }) => {
     await open(page);
 
     // A selection in each grid, and a Focus.
@@ -309,8 +345,9 @@ test("WR-7: the toolbar's MudSelect and the grids never interfere (ADR-0018/0039
     // And the other direction: the grid takes its keyboard back and the select keeps
     // its value.
     await positions(page).focus();
+    // The arrow moves from the Focus, which the extension left on row 3, column 2 (ADR-0052).
     await page.keyboard.press('ArrowDown');
-    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r5c3$/);
+    await expect(positions(page)).toHaveAttribute('aria-activedescendant', /-r4c2$/);
     await expect(page.locator('#currency-status')).toHaveText('Reporting currency: JPY');
     expect(await orders(page).getAttribute('aria-activedescendant')).toBe(before.orders.active);
 });
@@ -368,6 +405,16 @@ test('WR-7: a grid in a MudDialog opens its popovers whole inside its box, and i
     await operator.click();
     const item = page.locator('.mud-popover-open .mud-list-item').first();
     await expect(item).toBeVisible();
+    // MudBlazor places an open popover from its own script, in a frame after the render that
+    // opened it: it writes where the list stands and how high it stacks. Until then the list has
+    // only MudBlazor's stylesheet, which stacks it under the dialog, and a reading taken as soon
+    // as it showed found its centre not on it (CI, Server host, msedge, 2026-10-02). So the
+    // reading waits for the host to have said all it will (ADR-0056), then for the placement.
+    await circuitQuiet();
+    await expect.poll(() => item.evaluate((el) => {
+        const list = el.closest('.mud-popover');
+        return list.style.top !== '' && list.style.zIndex !== '';
+    }), 'MudBlazor has placed the list').toBe(true);
     const onTop = await item.evaluate((el) => {
         const r = el.getBoundingClientRect();
         return el.contains(document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2));
@@ -456,12 +503,30 @@ test("WR-6: Striped paints the palette's table-stripe colour in both schemes, an
     expect(light.rowImage, 'a striped row paints the stripe').toContain(light.token);
     expect(await parity()).not.toContain(false);
 
-    // Mark the rows: an element a render re-created loses the mark.
-    const count = await positions(page).evaluate((root) => {
-        const rows = [...root.querySelectorAll('.ex-row')];
-        rows.forEach((row, i) => { row.dataset.probe = String(i); });
-        return rows.length;
+    // Mark the rows: an element a render re-created loses the mark. Each row is marked with
+    // its own index, and whether any of it is inside the scroller's client box — what the
+    // reader can see — is noted with it.
+    //
+    // The rows painted can still change for a reason of their own while this runs: the grid
+    // assumes no Scrollbar Gutter until the browser reports one (ADR-0013/0021), and until
+    // that report lands it paints one row more, wholly behind the horizontal scrollbar. On
+    // Server the report is a round trip, and in the fifth Windows run it landed between the
+    // marking and the reading 1 time in 10: row 9 was unmounted, rows 0..8 kept their marks.
+    // A row that leaves the DOM was not re-rendered; a row re-created in place is, and loses
+    // its mark. So each row is compared by its index, not the list by position.
+    const marked = await positions(page).evaluate((root) => {
+        const scroller = root.querySelector('.ex-scroller');
+        const top = scroller.getBoundingClientRect().top + scroller.clientTop;
+        const bottom = top + scroller.clientHeight;
+        return [...root.querySelectorAll('.ex-row')].map((row) => {
+            const index = row.getAttribute('aria-rowindex');
+            row.dataset.probe = index;
+            const box = row.getBoundingClientRect();
+            return { index, visible: box.bottom > top && box.top < bottom };
+        });
     });
+    const seen = marked.filter((row) => row.visible).map((row) => row.index);
+    expect(seen.length, 'rows are on screen to be marked').toBeGreaterThan(0);
     await page.locator('#theme-toggle').click();
     await expect(page.locator('#dark-status')).toHaveText('Dark: True');
 
@@ -469,6 +534,14 @@ test("WR-6: Striped paints the palette's table-stripe colour in both schemes, an
     expect(dark.token).toBe(dark.palette);
     expect(dark.token, 'the stripe recoloured with the scheme').not.toBe(light.token);
     expect(dark.rowImage).toContain(dark.token);
-    const probes = await positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')].map((row) => row.dataset.probe));
-    expect(probes).toEqual([...Array(count).keys()].map(String));
+    const after = await positions(page).evaluate((root) => [...root.querySelectorAll('.ex-row')]
+        .map((row) => ({ index: row.getAttribute('aria-rowindex'), probe: row.dataset.probe ?? null })));
+    const wasMarked = new Set(marked.map((row) => row.index));
+    // Every row that was in the DOM before the switch and is in it after is the same element.
+    expect(after.filter((row) => wasMarked.has(row.index) && row.probe !== row.index), 'rows the switch re-rendered')
+        .toEqual([]);
+    // And every row the reader saw is still there: the only row allowed to go is one the
+    // gutter hid.
+    const present = new Set(after.map((row) => row.index));
+    expect(seen.filter((index) => !present.has(index)), 'rows on screen that went away').toEqual([]);
 });

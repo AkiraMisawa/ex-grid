@@ -1,0 +1,93 @@
+
+Running 3 tests using 1 worker
+
+  x  1 [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (760ms)
+  x  2 [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (763ms)
+  x  3 [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) (772ms)
+
+
+  1) [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) 
+
+    Error: the hover band over a stripe
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "248,248,248,255"
+
+      123 |     await expect(page.locator('.ex-grid .ex-hover-row').first()).toBeVisible();
+      124 |     const [hovered] = await groundsOf(page, [[11, 3]]);
+    > 125 |     expect(hovered, 'the hover band over a stripe').not.toBe(before);
+          |                                                         ^
+      126 |
+      127 |     // …and so do the selection and the Focus band.
+      128 |     await cell(page, 13, 3).click({ force: true });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-5\tests\ExGrid.Browser\stripes.spec.mjs:125:57
+
+    Error Context: test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) 
+
+    Error: the hover band over a stripe
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "248,248,248,255"
+
+      123 |     await expect(page.locator('.ex-grid .ex-hover-row').first()).toBeVisible();
+      124 |     const [hovered] = await groundsOf(page, [[11, 3]]);
+    > 125 |     expect(hovered, 'the hover band over a stripe').not.toBe(before);
+          |                                                         ^
+      126 |
+      127 |     // …and so do the selection and the Focus band.
+      128 |     await cell(page, 13, 3).click({ force: true });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-5\tests\ExGrid.Browser\stripes.spec.mjs:125:57
+
+    Error Context: test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) 
+
+    Error: the hover band over a stripe
+
+    expect(received).not.toBe(expected) // Object.is equality
+
+    Expected: not "248,248,248,255"
+
+      123 |     await expect(page.locator('.ex-grid .ex-hover-row').first()).toBeVisible();
+      124 |     const [hovered] = await groundsOf(page, [[11, 3]]);
+    > 125 |     expect(hovered, 'the hover band over a stripe').not.toBe(before);
+          |                                                         ^
+      126 |
+      127 |     // …and so do the selection and the Focus band.
+      128 |     await cell(page, 13, 3).click({ force: true });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-29-5\tests\ExGrid.Browser\stripes.spec.mjs:125:57
+
+    Error Context: test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat2\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat2\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun-ux16-server-msedge\stripes-a-Cell-State-groun-ca1d8-aint-over-the-stripe-UX-16--msedge-repeat2\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) 
+    [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) 
+    [msedge] › stripes.spec.mjs:110:1 › a Cell State ground and the overlays paint over the stripe (UX-16) 

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>keys-verify-11</title>
+<style>
+  body { font: 16px system-ui, sans-serif; margin: 16px; background: #fff; color: #111; }
+  #target { width: 640px; height: 220px; border: 2px solid #444; padding: 8px; box-sizing: border-box; }
+  #target:focus { outline: 3px solid #0a64d8; }
+  #log { font: 13px Consolas, ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>keys</h1>
+<p>docs/specs/exsheet/verify-on-windows-11.md, Part B. Every key pressed with Ctrl in the box below has its
+default prevented and is listed here.</p>
+<div id="target" tabindex="0">Click here, then send the keys.</div>
+<ol id="log"></ol>
+<script>
+  // One capture-phase keydown listener on the focusable div. For every key with Ctrl: preventDefault(),
+  // and key, code, ctrlKey, shiftKey and altKey listed on the page (and kept in window.__keys).
+  const target = document.getElementById('target');
+  const log = document.getElementById('log');
+  window.__keys = [];
+  target.addEventListener('keydown', (e) => {
+    if (!e.ctrlKey) return;
+    e.preventDefault();
+    const entry = { key: e.key, code: e.code, ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey };
+    window.__keys.push(entry);
+    const li = document.createElement('li');
+    li.textContent = JSON.stringify(entry);
+    log.appendChild(li);
+  }, { capture: true });
+</script>
+</body>
+</html>

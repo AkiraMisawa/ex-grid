@@ -1,7 +1,7 @@
 namespace ExGrid.Finding;
 
 /// <summary>
-/// Why a Find step moved nothing (ADR-0047). A Refusal like any other: the grid holds no
+/// Why a Find step moved nothing (ADR-0055). A Refusal like any other: the grid holds no
 /// sentence for it, so Chrome words it — into a live region (ADR-0033).
 /// </summary>
 public enum FindRefusalReason
@@ -19,7 +19,7 @@ public enum FindRefusalReason
     OrderChanged,
 }
 
-/// <summary>What the last Find step came to, for the panel to show (ADR-0047).</summary>
+/// <summary>What the last Find step came to, for the panel to show (ADR-0055).</summary>
 public enum FindOutcome
 {
     /// <summary>No step has been answered since the panel opened.</summary>

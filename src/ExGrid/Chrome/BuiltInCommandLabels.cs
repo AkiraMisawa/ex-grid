@@ -1,7 +1,8 @@
 namespace ExGrid.Chrome;
 
 /// <summary>
-/// The built-in Chrome's wording for the commands the core defines (ADR-0036).
+/// The built-in Chrome's wording for the commands the core defines (ADR-0036), and for the
+/// accessible names of the core's own fields (<see cref="GridLabelIds"/>, ADR-0036/0051).
 ///
 /// These strings live in this assembly and belong to the <b>default Chrome</b>, not to the
 /// core's decisions: the core says which commands exist by <c>Id</c>, and what they are
@@ -29,6 +30,8 @@ public static class BuiltInCommandLabels
         GridCommandIds.SizeToFit => "Size to fit",
         GridCommandIds.Copy => "Copy",
         GridCommandIds.CopyWithHeaders => "Copy with headers",
+        GridLabelIds.NameBox => "Name Box",
+        GridLabelIds.FormulaBar => "Formula Bar",
         FindPanelLabelIds.Title => "Find",
         FindPanelLabelIds.Field => "Find what",
         FindPanelLabelIds.MatchCase => "Match case",

@@ -73,6 +73,12 @@ per cell.
   carries its own opaque background and a tint on the row alone would stop at the pinned
   block — the role would be visible everywhere except the column the group's name is in.
   Where a cell's own **Cell State** wants the same layer, the state wins (ADR-0006).
+  *(2026-10-01, ticket 85: painted on the cells, and on the row only where no cell covers it.)*
+  - Painted on both, a scrollable cell showed the tint twice and a pinned cell once. Read from
+    the screen, the difference was 236 against 245 in a group row.
+  - Each cell now paints the tint once, over whatever ground it has. The row paints it only past
+    the last column, and on a Placeholder.
+  - The reason above stands: a Pinned Column's ground is opaque.
 - **A Placeholder keeps its Kind.** The role comes from the delegate, not from the cells,
   so a group row skipped mid-fling still paints as a group row
   ([ADR-0004](./0004-cap-the-cells-touched-per-frame.md)).

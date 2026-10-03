@@ -116,7 +116,7 @@ public class MoveByViewportTests : GridTestContext
         Assert.Equal(FullyVisibleRows * RowHeightPx, Js.ScrolledTo[^1].Top);
     }
 
-    [Fact] // ADR-0012: Shift+PageDown extends — the Anchor stays, the range grows by N rows
+    [Fact] // ADR-0012/0052: Shift+PageDown extends — the Focus stays, the Extent moves by N rows
     public async Task Shift_pagedown_extends_the_selection_by_a_viewport()
     {
         GridSelection? last = null;
@@ -127,8 +127,10 @@ public class MoveByViewportTests : GridTestContext
 
         Assert.NotNull(last);
         Assert.Equal([new SelectionRange(0, 0, FullyVisibleRows + 1, 1)], last!.Ranges);
-        Assert.Equal(new CellPosition(0, 0), last.Anchor);
-        Assert.Equal(new CellPosition(FullyVisibleRows, 0), last.Focus);
+        Assert.Equal(new CellPosition(0, 0), last.Focus);
+        Assert.Equal(new CellPosition(FullyVisibleRows, 0), last.Extent);
+        // The Viewport moves a page with the Extent, leaving the Focus off screen (ADR-0052 case 11).
+        Assert.Equal(FullyVisibleRows * RowHeightPx, Js.ScrolledTo[^1].Top);
     }
 
     [Fact] // ADR-0012: on an empty selection the first press only places the Focus, without moving the Viewport

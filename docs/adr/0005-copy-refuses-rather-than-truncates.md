@@ -98,7 +98,10 @@ Rejected:
   `user-select: none` element — on the real Chrome. This was the assumption the whole event
   route stood on, and it was verified in a headed browser before the wiring was built, because
   a browser that only fired these events in editable contexts would have forced the hidden-
-  textarea trick every other grid library carries.
+  textarea trick every other grid library carries. *(Carried since 2026-10-02, for the IME rather
+  than for the clipboard: on a grid that edits, a text field of the grid's own holds the keyboard
+  while a cell is selected, so that an IME can start there ([ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md)). The events now fire on
+  that field, inside the root, and the route is unchanged.)*
 - **The event route needs a synchronous answer, and only WebAssembly has the channel.** The
   `copy` event cannot await; the payload is asked for through `invokeMethod`, which exists on
   WASM (the first Consumer's premise, [ADR-0017](./0017-target-chromium-browsers-only.md)) and
@@ -266,6 +269,14 @@ is WebAssembly's. So on a Server host every copy, however small, takes the async
 and CP-6's "the `copy` event route" is a WebAssembly criterion; what it protects — no
 permission prompt on an everyday copy — is asserted on Server instead (§24 of the
 [Definition of Done](../definition-of-done.md)).
+
+*(Added 2026-10-02, with [ADR-0010](./0010-chrome-seams-column-menu-editor-loading.md)'s note of
+the day.)* **A Ctrl+C pressed while the grid is still answering a key or a press before it takes
+the asynchronous route too, on every host.** Its write is started in its `copy` event, the only
+moment the browser lets it start, and its payload is built at its turn, from the Selection the
+keys and presses before it leave. Before this, such a copy was lost, and the clipboard kept what
+it held: the silent outcome this ADR refuses. A Ctrl+V pressed then has its data read in its
+`paste` event and is pasted at its turn (ADR-0014).
 
 ## Consequences
 

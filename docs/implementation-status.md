@@ -305,11 +305,11 @@ it has met `chrome` or `msedge`.
 **2026-09-27, Excel's editing keys and Find.** A comparison against Excel, grilled with the user,
 found four gaps and one defect. **The defect:** ADR-0007 said the grid forwards Ctrl+Z, and
 nothing did. **The gaps:** Delete, Backspace, Ctrl+D / Ctrl+R and Ctrl+F. Decided as ADR-0007's
-forwarding section, ADR-0046 (Delete raises a Clear Intent, never a paste of empty text), the
-ADR-0035 additions for the fill keys and Backspace, ADR-0047 (Find is asked of the Consumer, and
+forwarding section, ADR-0054 (Delete raises a Clear Intent, never a paste of empty text), the
+ADR-0035 additions for the fill keys and Backspace, ADR-0055 (Find is asked of the Consumer, and
 the grid takes Ctrl+F even where nothing can search) and ADR-0028's rename of `ViewportSize.Fill`
 to `Stretch`, which frees Fill for Excel's gesture. Built, with the criteria each ADR added
-(KB-37, ED-23..25, CP-24/25, FD-1..9):
+(KB-39 — KB-37 on `main`, ED-23..25, CP-24/25, FD-1..9):
 
 - `OnUndo` / `OnRedo`, each key taken from the page only while someone listens — the key gate
   is now told a per-grid set (`GridKeys.TakenFor`) and re-told when it changes.
@@ -328,7 +328,7 @@ and Microsoft Edge installed from their vendors' packages**, headed under Xvfb. 
 Server. Neither discharges the Windows or real-IME runs.
 
 **A max-depth review of this drop found open items; all are fixed.** Three needed a decision,
-recorded in ADR-0047's "Settled in review" section: Ctrl+F inside the grid's own popovers is the
+recorded in ADR-0055's "Settled in review" section: Ctrl+F inside the grid's own popovers is the
 grid's (in the find field it selects the text), `OnFind` beside a bound Source is refused by name,
 and an answer outside the request throws rather than being reworded as a reorder. The rest:
 `ColumnInfo` now carries the column's `Format` and answers the displayed text itself, so a rebuilt
@@ -356,7 +356,7 @@ and 9.0 on the Server host, and the first was the wall clock of every push. Meas
 was the app booting: every test had a new browser context, so every test loaded the page and
 started the .NET runtime — 1.65 s of about 2.3. A shared context's warm cache, a Release build and
 a trimmed publish did not remove it; not booting did (0.05 s for an in-app navigation). Decided
-with the user as ADR-0048 and an amendment to ADR-0041, after comparing AG Grid's suite, which
+with the user as ADR-0056 and an amendment to ADR-0041, after comparing AG Grid's suite, which
 isolates by file and creates and destroys its grids per test:
 
 - **A spec file boots the app once, and every test mounts its page afresh** by an in-app
@@ -420,7 +420,7 @@ Chrome and Edge; CI's first run of the split jobs is.
 | 0020 | Action and Template Columns | both layers |
 | 0022 | `net10.0`, single-target (rewritten from `net8.0` on 2026-09-25) | the project file |
 | 0025 | `FetchingGridSource` (+ copy rows, + distinct values delegate); `InMemoryGridSource.ReplaceRow` — the in-memory Consumer's apply (deliberately *not* ADR-0007's Overlay application; recorded there) | `GridSourceFetchTests`, `ReplaceRowTests` |
-| 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Fill`**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
+| 0027 / 0028 / 0029 | **`GridMetrics`, `GridDensity`, `ViewportSize.Stretch` (was `Fill`)**, inline Geometry Tokens, the token vocabulary, the forced-colors block | `GridMetricsTests`, `GridMetricsWiringTests` |
 | 0031 | `dir="ltr"` on the root | `GridRenderingTests` |
 | 0032 | **Header Groups** — rectangles, refusals, the band, group/leaf drag units | `HeaderGroupTests`, `HeaderGroupRenderingTests` |
 | 0033 | **ARIA** — the root surface, absolute indices, `aria-activedescendant`, the live region; **the scroller kept out of the tab sequence**, with focus that reaches it handed to the root, and a key typed on it before then read as the root's (2026-09-26) | `AccessibilityTests`, `features.spec.mjs` (A11Y-17), `circuit.spec.mjs` (ED-22 on the Server host) |
@@ -716,3 +716,118 @@ header-click sort cycle (recorded in ADR-0012). Still reserved, triggers unfired
 fill handle, `--ex-selection-outline`, ExSheet's shape, the column band. *(Since then:
 right-click was settled by the Context Menu, ADR-0036; the Wrapper seam order by the
 package's start and ADR-0039, 2026-09-24.)*
+
+## ExPivot and the family's data (2026-10-01)
+
+*(Built on `claude/expivot-mudblazor-wrapper-j25225`. Decided with the user in the ExPivot
+grilling, Q1 to Q63: [ADR-0059](adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)
+to [ADR-0069](adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md). §29 and §30 of the
+Definition of Done judge ExPivot and the data packages, and never gate ExGrid. §26's DC-63 to DC-66
+are the core changes, and those do gate it.)*
+
+**What exists.**
+
+- **`ExGrid.Data`, the Snapshot** (ADR-0064):
+  - six kinds, with a Blank in each; text as a dictionary in first-appearance order; Decimal as
+    scaled 64-bit integers per segment;
+  - built from objects through typed accessors, from a CSV under a declared Schema or a suggested
+    one the user confirms, from a `DbDataReader`, and from columns;
+  - loaded in slices, with progress and cancellation;
+  - Change Batches by a Record Key, which share every segment they do not touch.
+- **`ExGrid.Data.Arrow`** (ADR-0065): Arrow's IPC stream and file read into a Snapshot, and a
+  Snapshot written as an uncompressed stream. Codecs are used only when handed in. Its type table
+  covers what `pyarrow`, Polars and DuckDB write.
+- **`ExPivot.Engine` over the Snapshot** (ADR-0060, ADR-0066, ADR-0067):
+  - Leaf Aggregates, with exact sums held as 128-bit integers;
+  - the Pivot Source: `PivotSource.From`, `PivotSource.Fetch`, `PivotJson` and Source Versions;
+  - the Order Key and the date parts;
+  - Change Batches folded live, each leaf held to a fresh aggregation to the last bit.
+- **`ExPivot`**:
+  - asking the source, with generations, cancellation and discarded answers; the caps;
+  - Defer Layout Update; the toolbar and the Layout menu;
+  - Show Details in a tab, in a dialog, or handed to the Consumer;
+  - Excel's Japanese words;
+  - live gathering, the Change Highlight and the Stale Report.
+- **`ExPivot.MudBlazor`** draws every surface, including the toolbar, the Details tabs (in
+  `MudTabs`) and the dialog's content.
+- **ExGrid's Change Highlight** (ADR-0068, DC-64 to DC-66).
+- **The demo API server, `samples/ExGrid.DemoApi`** (ADR-0069): SQLite holding money as integer
+  cents, the trades as Arrow, a Pivot Source answered in SQL, and live changes said over SignalR.
+- **The six pages:** `/pivot`, `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` and
+  `/grid-live`. Each shows the code it runs, read from its own source.
+
+```sh
+dotnet test ExGrid.slnx                 # 5,384 pass, 0 failed; 8 skipped: the explicit measurements and ST-1's 10⁶ case
+                                        # ExGrid 838 + 1,095, ExGrid.MudBlazor 91, ExSheet 1,969 + 290,
+                                        # ExGrid.Data 248, ExGrid.Data.Arrow 182, ExPivot.Engine 304,
+                                        # ExPivot 178, ExPivot.MudBlazor 53, the demo API server 136
+tests/ExGrid.PackageSmoke/check.sh      # passed: the data packages and ExPivot's in .pivot-feed, none in .feed
+npx playwright test pivot.spec.mjs pivot-csv.spec.mjs pivot-db.spec.mjs pivot-live.spec.mjs \
+    pivot-risk.spec.mjs grid-live.spec.mjs navigation.spec.mjs   # 80 pass on each host
+```
+
+**Layer 3 ran here in part, targeted.** It ran on Linux, headed under xvfb, against the container's
+Chromium, because neither Chrome nor Edge is installed here. The specs of the six pages and
+navigation pass on both hosts, under both pivot Chromes, with a clean console. CI's full run has not
+seen this branch: it runs on `main` and on pull requests.
+
+**Measured, never gated** (`verification/2026-10-01-linux-measure`, a 4-vCPU container; PV-21 and
+DA-17). Over a million trades in a published WebAssembly build:
+
+| Met | Missed |
+|---|---|
+| A collapse, a sort or a form, laid out from the answer held: 28–32 ms | A CSV of a million rows: 14.6 s against 4 s (955 ms on CoreCLR, against about 0.4 s); 4.0 s and 491 ms once made faster, below |
+| 1,000 changes on screen: 43 ms | The page blocked for at most 50 ms: a gesture's worst is about 0.2 s, and a question near the cap held the page for 1.9 s (137 ms once sliced, below) |
+| A new question for a 50-leaf report: a median of 159–229 ms | A new question near the 200,000-leaf cap: 2.7 s |
+
+**Since then, decided with the user and built** (2026-10-01):
+
+- **The cap stays 200,000, and the work after an answer is sliced** (ADR-0066, PV-40, ticket 22).
+  Near the cap the longest task fell from 1.65 s to 137 ms, and the answer took 2.79 s rather
+  than 2.59, measured back to back (`verification/2026-10-01-linux-measure-sliced`). What remains
+  over 50 ms is the browser runtime's full collections, about 70 ms inside a slice, and the turn
+  that puts the report on screen.
+- **A Consumer gives a grid the keyboard back, and hears an Escape that leaves it**
+  ([ADR-0070](adr/0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md), DC-61,
+  DC-62, PV-39, ticket 21). Show Details' dialog closes on Escape, and the report takes the
+  keyboard back however it closes. Building it found that a held Escape peeled a layer per
+  repeat, cancelling a half-typed formula under its closing list. A held Escape is now one
+  press in every grid (ADR-0012, KB-44).
+- **A press into a details view's records keeps the keyboard there** (2026-10-02 and 2026-10-03:
+  ADR-0070, "Handed on, not taken"; ADR-0021's sixth decision about focus made in script; ADR-0033's
+  note of 2026-10-03; DC-61, A11Y-20, PV-41, ticket 21). Two races on the Server host, told apart by
+  a probe with no latency injected. A press made as soon as the dialog showed lost the keyboard to
+  Close's late focus in 2 runs of 6. A press made before the records' root was a tab stop left the
+  keyboard on their scroller for good; that was the test failure seen, in 1 run of 3. ExGrid's
+  `HandKeyboardToAsync` now hands the keyboard on only while DOM focus is still inside the grid or
+  on nothing, and ExPivot's dialog Close and details tabs take it that way under both Chromes. The
+  scroller's hand-off to the root is owed until a render has made the root a tab stop, in every
+  grid.
+- **The CSV read is faster** (ExGrid.Data's ticket 07, `verification/2026-10-01-linux-measure-csv`;
+  ADR-0064, refined). A million rows read in 4.0 s in a published WebAssembly build, from 12.9 s,
+  and in 491 ms on CoreCLR, from 692, both on the same machine. Every rule of the read and every
+  refusal is unchanged. The work found and fixed a crash: a Blank early in a numeric, date or
+  Boolean column that later outgrew its first room. Slices now yield with `Task.Yield()` in a
+  browser too, which paints a frame a slice at a ninth of a 1 ms delay's cost.
+
+DA-17: a million records built from objects in 426 ms on CoreCLR and 3.8 s in the browser; read
+from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
+
+**Found by building the pages, and fixed.**
+
+- **A new `Source` and a new `Layout`, handed in by one render, were refused**: the new source was
+  checked against the layout on screen. On the Server host this killed the circuit when `/pivot-csv`
+  read a second file.
+- **A details tab's records read under the report's headings**, because the report's sticky header
+  painted over them.
+- **A report's exact values took the scale a source wrote them at**, so a SQL source's `75.60` and
+  the bundled source's `75.6` copied differently.
+- **Live changes spread over a million trades almost never reached `/grid-live`'s rows.**
+
+**Not done.**
+
+- **Near the cap, PV-21's 50 ms is still missed**, by the browser runtime's collections inside a
+  slice. Fewer allocations in the pass and the cube would shorten them; that is not a ticket yet.
+- **Excel's behaviour was read, not observed.** Every reading is listed in
+  `docs/specs/expivot/excel-behaviours.md`, for a run beside Excel on Windows (ticket 07).
+- **Edge, Windows and a real IME have run none of it.**

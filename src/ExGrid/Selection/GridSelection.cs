@@ -1,60 +1,73 @@
 namespace ExGrid.Selection;
 
 /// <summary>
-/// The selection: a list of rectangles in position space plus one Anchor (the fixed end
-/// of range extension) and one Focus (the moving end, where keyboard operations start)
-/// (ADR-0011 / 0012). Immutable — every gesture is a pure transition returning a new
-/// value, and each takes the current <see cref="GridExtent"/> because the model never
-/// holds data-dependent bounds.
+/// The selection: a list of rectangles in position space, one Focus — Excel's active cell,
+/// which typing enters and the Name Box names — and the range that holds it
+/// (ADR-0011 / 0012 / 0052). Immutable — every gesture is a pure transition returning a new
+/// value, and each takes the current <see cref="GridExtent"/> because the model never holds
+/// data-dependent bounds.
 ///
-/// Which range the Anchor and Focus belong to is <em>stored</em>, never re-derived from
-/// geometry: ranges can overlap, and a Ctrl+click toggle-off leaves both standing
-/// detached on the deselected cell, outside every range. Inferring membership from
-/// coordinates picks an arbitrary range in exactly those states.
+/// <para>Extending a range moves its <see cref="Extent"/>, the end opposite the Focus; the
+/// Focus stays where it is (ADR-0052). The Extent is kept with the Focus's range and follows
+/// from where the Focus stands in it: on each axis, the edge opposite the Focus's edge, or,
+/// where the Focus is on neither edge — Enter or Tab walked it inside — the Focus's own row
+/// or column, and an extension along that axis changes nothing, as in Excel.</para>
 ///
-/// Dropping the selection is the holder's act: when the Row Sequence Version (or the
+/// <para>Which range holds the Focus is <em>stored</em>, never re-derived from geometry:
+/// ranges can overlap, and inferring membership from coordinates picks an arbitrary one of
+/// them. The Focus is always inside the range it names (ADR-0052 withdrew ADR-0012's
+/// detached state).</para>
+///
+/// <para>Dropping the selection is the holder's act: when the Row Sequence Version (or the
 /// visible-column set) changes, the holder assigns <see cref="Empty"/> (ADR-0011). A
-/// transition applied to a state that no longer fits the extent throws — that is a
-/// missed drop, and positions would quietly point at different cells.
+/// transition applied to a state that no longer fits the extent throws — that is a missed
+/// drop, and positions would quietly point at different cells.</para>
 ///
-/// Mouse drag is not a distinct transition: the holder maps mousedown to
-/// <see cref="Click"/> and mousemove to <see cref="ExtendTo"/>. Do not invent a third
-/// path in the binding layer.
+/// <para>Mouse drag is not a distinct transition: the holder maps mousedown to
+/// <see cref="Click"/> and mousemove to <see cref="ExtendTo"/>. Do not invent a third path
+/// in the binding layer. A drag across Headings maps them the same way onto the whole-column
+/// and whole-row transitions: the press to <see cref="SelectColumn"/>, <see cref="ExtendToColumn"/>
+/// or <see cref="ToggleColumn"/> (and their row forms), each move to <see cref="ExtendToColumn"/>
+/// or <see cref="ExtendToRow"/> (ADR-0050, item 1).</para>
 /// </summary>
 public sealed record GridSelection
 {
-    /// <summary>Nothing selected: no range, and no Anchor or Focus. What a holder assigns
+    /// <summary>Nothing selected: no range, and no Focus or Extent. What a holder assigns
     /// when the Row Sequence Version or the visible-column set changes (ADR-0011).</summary>
-    public static GridSelection Empty { get; } = new([], default, default, anchorDetached: false, focusRangeIndex: null);
+    public static GridSelection Empty { get; } = new([], default, focusRangeIndex: 0);
 
-    private readonly CellPosition _anchor;
     private readonly CellPosition _focus;
 
-    /// <summary>True only after a Ctrl+click toggle-off: the Anchor stands on the
-    /// deselected cell, outside every range. Otherwise the Anchor is in the last range.</summary>
-    private readonly bool _anchorDetached;
+    /// <summary>Index of the range holding the Focus. Meaningless on Empty.</summary>
+    private readonly int _focusRangeIndex;
 
-    /// <summary>Index of the range holding the Focus; null when the Focus is detached
-    /// (right after a toggle-off). Cycling moves it between ranges (ADR-0012).</summary>
-    private readonly int? _focusRangeIndex;
+    /// <summary>
+    /// For each range, which range the user made it as — a number that rises with creation
+    /// order. The fragments a take-out leaves share the number of the range they were cut
+    /// from, which is what "the range made last" means after a take-out (ADR-0052, "What the
+    /// third run settled"). Never exposed: the ranges themselves stay the public shape.
+    /// </summary>
+    private readonly int[] _origins;
 
     private GridSelection(
-        IReadOnlyList<SelectionRange> ranges,
-        CellPosition anchor,
-        CellPosition focus,
-        bool anchorDetached,
-        int? focusRangeIndex)
+        IReadOnlyList<SelectionRange> ranges, CellPosition focus, int focusRangeIndex, int[]? origins = null)
     {
-        if (ranges.Count > 0)
+        if (ranges.Count > 0
+            && (focusRangeIndex < 0 || focusRangeIndex >= ranges.Count || !ranges[focusRangeIndex].Contains(focus)))
         {
-            if (!anchorDetached && !ranges[^1].Contains(anchor))
-                throw new InvalidOperationException("Internal: an attached Anchor must lie in the last range (ADR-0012).");
-            if (focusRangeIndex is int index && (index < 0 || index >= ranges.Count || !ranges[index].Contains(focus)))
-                throw new InvalidOperationException("Internal: the Focus range index must name a range containing the Focus (ADR-0012).");
+            throw new InvalidOperationException("Internal: the Focus range index must name a range containing the Focus (ADR-0052).");
         }
+        origins ??= ranges.Count switch
+        {
+            0 => [],
+            1 => [0],
+            _ => throw new InvalidOperationException("Internal: several ranges need their origins (ADR-0052)."),
+        };
+        if (origins.Length != ranges.Count)
+            throw new InvalidOperationException("Internal: every range has one origin (ADR-0052).");
 
         // Stored behind a read-only wrapper so no caller can cast Ranges back to the
-        // array and mutate a rectangle in place, past the invariant checks above (the
+        // array and mutate a rectangle in place, past the invariant check above (the
         // FilterOperators pattern).
         Ranges = ranges switch
         {
@@ -62,35 +75,76 @@ public sealed record GridSelection
             List<SelectionRange> list => list.AsReadOnly(),
             _ => ranges,
         };
-        _anchor = anchor;
         _focus = focus;
-        _anchorDetached = anchorDetached;
         _focusRangeIndex = focusRangeIndex;
+        _origins = origins;
     }
 
     /// <summary>
     /// The rectangles in creation order — which is also the Enter/Tab cycling order
-    /// (ADR-0012) and the one-overlay-per-range painting order (ADR-0008).
+    /// (ADR-0012) and the one-overlay-per-range painting order (ADR-0008). A take-out puts a
+    /// range's fragments where the range stood, bottom to top, which is the order Excel's
+    /// <c>Selection.Address</c> lists them in (ADR-0052, "What the third run settled").
     /// </summary>
     public IReadOnlyList<SelectionRange> Ranges { get; }
 
-    /// <summary>Whether nothing is selected. <see cref="Anchor"/> and <see cref="Focus"/>
-    /// throw then.</summary>
+    /// <summary>Whether nothing is selected. <see cref="Focus"/>, <see cref="Extent"/> and
+    /// <see cref="FocusRange"/> throw then.</summary>
     public bool IsEmpty => Ranges.Count == 0;
 
     /// <summary>
-    /// The fixed end of range extension (ADR-0012). Always inside the last range, except
-    /// right after a Ctrl+click toggle-off, when Anchor and Focus stand detached on the
-    /// deselected cell outside every range.
+    /// Excel's active cell (ADR-0052): the one cell typing enters, the Cell Editor opens on,
+    /// the Name Box names and <c>aria-activedescendant</c> points at. It stays where it is
+    /// while a range is extended — that end is the <see cref="Extent"/> — and Enter / Tab
+    /// cycling moves it inside the Selection without changing the Selection. Always inside
+    /// <see cref="FocusRange"/>.
     /// </summary>
-    public CellPosition Anchor => IsEmpty
-        ? throw new InvalidOperationException("An empty selection has no Anchor. Establish one with Click first (ADR-0012).")
-        : _anchor;
-
-    /// <summary>The one cell keyboard operations start from (ADR-0012).</summary>
     public CellPosition Focus => IsEmpty
         ? throw new InvalidOperationException("An empty selection has no Focus. Establish one with Click first (ADR-0012).")
         : _focus;
+
+    /// <summary>
+    /// The end of <see cref="FocusRange"/> that moves when it is extended — by Shift+arrow,
+    /// Shift+click, Ctrl+Shift+arrow or a drag — and that the holder keeps in view while
+    /// extending (ADR-0052). On each axis it is the edge opposite the Focus; where the Focus
+    /// is on neither edge of that axis it is the Focus's own row or column, and an
+    /// extension along that axis changes nothing.
+    /// </summary>
+    public CellPosition Extent => IsEmpty
+        ? throw new InvalidOperationException("An empty selection has no Extent. Establish one with Click first (ADR-0052).")
+        : ExtentOf(Ranges[_focusRangeIndex], _focus);
+
+    /// <summary>The range holding the <see cref="Focus"/> — the one an extension, Ctrl+Space,
+    /// Shift+Space and Ctrl+. act on (ADR-0052).</summary>
+    public SelectionRange FocusRange => IsEmpty
+        ? throw new InvalidOperationException("An empty selection has no Focus range. Establish one with Click first (ADR-0052).")
+        : Ranges[_focusRangeIndex];
+
+    /// <summary>
+    /// The top-left cell of the range made last — where one value of plain text is pasted
+    /// alone over a Selection of more than one cell (ADR-0014, amended 2026-09-29). When a
+    /// take-out has cut that range into fragments, it is the first cell, by rows, of the
+    /// fragments, as a take-out's own Focus is (ADR-0052). Throws on Empty.
+    /// </summary>
+    internal CellPosition TopLeftOfRangeMadeLast
+    {
+        get
+        {
+            if (IsEmpty)
+                throw new InvalidOperationException("An empty selection has no range made last (ADR-0052).");
+            var last = _origins.Max();
+            CellPosition? first = null;
+            for (var i = 0; i < Ranges.Count; i++)
+            {
+                if (_origins[i] != last)
+                    continue;
+                var corner = new CellPosition(Ranges[i].TopRow, Ranges[i].LeftColumn);
+                if (first is not { } seen || corner.Row < seen.Row || (corner.Row == seen.Row && corner.Column < seen.Column))
+                    first = corner;
+            }
+            return first!.Value;
+        }
+    }
 
     /// <summary>
     /// The selected-cell count for the status display — the sum of rectangle areas, so it
@@ -108,8 +162,7 @@ public sealed record GridSelection
         }
     }
 
-    /// <summary>Whether the cell lies in any range. A detached Anchor and Focus stand on a
-    /// cell this answers false for (ADR-0012).</summary>
+    /// <summary>Whether the cell lies in any range.</summary>
     public bool Contains(CellPosition cell)
     {
         foreach (var range in Ranges)
@@ -118,7 +171,7 @@ public sealed record GridSelection
         return false;
     }
 
-    /// <summary>Click: Anchor = Focus = the cell; the selection collapses to it (ADR-0012).</summary>
+    /// <summary>Click: the Focus is the cell and the selection collapses to it (ADR-0012).</summary>
     public GridSelection Click(CellPosition cell, GridExtent extent)
     {
         if (IsDegenerate(extent))
@@ -128,10 +181,11 @@ public sealed record GridSelection
     }
 
     /// <summary>
-    /// Shift+click: the Anchor stays, the Focus moves to the cell and the Anchor's range
-    /// is redrawn between them (ADR-0012) — the target is the cell the user pointed at,
-    /// so the Anchor is kept even when cycling had parked the Focus elsewhere. From a
-    /// detached Anchor this starts a new range; from Empty it behaves as a plain click.
+    /// Shift+click, and each move of a drag: the Focus stays, and the range holding it is
+    /// redrawn from the Focus to the cell, which becomes its Extent (ADR-0052). The target is
+    /// the absolute cell the user pointed at, so the range is redrawn even where Enter or Tab
+    /// had walked the Focus inside it. The other ranges stand. From Empty it behaves as a
+    /// plain click.
     /// </summary>
     public GridSelection ExtendTo(CellPosition cell, GridExtent extent)
     {
@@ -142,17 +196,17 @@ public sealed record GridSelection
             return Collapse(cell);
         RequireFits(extent);
 
-        var redrawn = SelectionRange.FromCorners(_anchor, cell);
-        var ranges = _anchorDetached ? Append(Ranges, redrawn) : ReplaceLast(Ranges, redrawn);
-        return new(ranges, _anchor, cell, anchorDetached: false, ranges.Length - 1);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, SelectionRange.FromCorners(_focus, cell)), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>
-    /// Ctrl+click (ADR-0012). On an unselected cell: adds a new 1×1 range and moves
-    /// Anchor and Focus into it. On a selected cell: toggles it off — the cell is
-    /// subtracted from every range containing it (a rectangle splits into at most four),
-    /// and Anchor and Focus stand detached on the deselected cell. Toggling off the last
-    /// cell yields <see cref="Empty"/>.
+    /// Ctrl+click (ADR-0012 / 0052). On an unselected cell: adds a new 1×1 range holding the
+    /// Focus, the range made last. On a selected cell: takes it out — the cell is subtracted
+    /// from every range containing it, each rectangle giving way, in place, to its fragments
+    /// listed bottom to top as Excel lists them (<see cref="SelectionRange.Subtract(CellPosition)"/>) — and
+    /// the Focus goes to the first remaining cell, by rows, of the range made last, wherever
+    /// Enter or Tab had moved it (ADR-0052, "What the third run settled"). The only selected
+    /// cell cannot be taken out: the selection is returned unchanged.
     /// </summary>
     public GridSelection ToggleRange(CellPosition cell, GridExtent extent)
     {
@@ -163,47 +217,222 @@ public sealed record GridSelection
             return Collapse(cell);
         RequireFits(extent);
 
-        if (!Contains(cell))
-        {
-            var appended = Append(Ranges, new SelectionRange(cell.Row, cell.Column, 1, 1));
-            return new(appended, cell, cell, anchorDetached: false, appended.Length - 1);
-        }
-
-        var remaining = new List<SelectionRange>();
-        foreach (var range in Ranges)
-        {
-            if (range.Contains(cell))
-                remaining.AddRange(range.Subtract(cell));
-            else
-                remaining.Add(range);
-        }
-        return remaining.Count == 0
-            ? Empty
-            : new(remaining, cell, cell, anchorDetached: true, focusRangeIndex: null);
+        return Contains(cell)
+            ? TakeOut(new SelectionRange(cell.Row, cell.Column, 1, 1))
+            : Add(new SelectionRange(cell.Row, cell.Column, 1, 1), cell);
     }
 
-    /// <summary>Arrow: collapses the selection to one cell and moves, clamped at the grid
-    /// edge (ADR-0012). A no-op on Empty — there is no Focus to start from.</summary>
+    /// <summary>
+    /// Ctrl+click on a Column Heading, or on a plain grid's column header (ADR-0050, item 1, and
+    /// ADR-0012, 2026-09-29). On a column not wholly selected: adds the whole column as a new
+    /// range, the range made last, with the Focus on <paramref name="focusRow"/> of it — the
+    /// holder passes its first visible row. On a column wholly selected, whichever ranges hold its
+    /// cells: takes it out of every range, and the Focus follows the take-out rule of
+    /// <see cref="ToggleRange"/>. A take-out that would leave nothing selected changes nothing, as
+    /// the only selected cell cannot be taken out (ADR-0052). From Empty, the column alone.
+    /// Ctrl+drag is this followed by <see cref="ExtendToColumn"/>.
+    /// </summary>
+    public GridSelection ToggleColumn(int column, GridExtent extent, int focusRow)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (column < 0 || column >= extent.ColumnCount)
+            throw new ArgumentOutOfRangeException(nameof(column), column,
+                $"Outside the grid ({extent.ColumnCount} columns).");
+        if (IsEmpty)
+            return SelectColumn(column, extent, focusRow);
+        RequireFits(extent);
+
+        var whole = new SelectionRange(0, column, extent.RowCount, 1);
+        return CoversColumn(column, extent)
+            ? TakeOut(whole)
+            : Add(whole, new CellPosition(Math.Clamp(focusRow, 0, extent.RowCount - 1), column));
+    }
+
+    /// <summary>
+    /// Ctrl+click on a Row Heading (ADR-0050, item 1, 2026-09-29): <see cref="ToggleColumn"/> on
+    /// the other axis, with the Focus on <paramref name="focusColumn"/> of an added row — the
+    /// holder passes its first visible column.
+    /// </summary>
+    public GridSelection ToggleRow(int row, GridExtent extent, int focusColumn)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (row < 0 || row >= extent.RowCount)
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Outside the grid ({extent.RowCount} rows).");
+        if (IsEmpty)
+            return SelectRow(row, extent, focusColumn);
+        RequireFits(extent);
+
+        var whole = new SelectionRange(row, 0, 1, extent.ColumnCount);
+        return CoversRow(row, extent)
+            ? TakeOut(whole)
+            : Add(whole, new CellPosition(row, Math.Clamp(focusColumn, 0, extent.ColumnCount - 1)));
+    }
+
+    /// <summary>Whether every cell of <paramref name="column"/> is selected, whichever ranges hold
+    /// them — the column is wholly selected, and a Ctrl+click on its Heading takes it out
+    /// (ADR-0050, item 1).</summary>
+    public bool CoversColumn(int column, GridExtent extent)
+        => CoversLine(extent.RowCount, range => range.LeftColumn <= column && column <= range.RightColumn,
+            range => (range.TopRow, range.BottomRow));
+
+    /// <summary>Whether every cell of <paramref name="row"/> is selected, whichever ranges hold
+    /// them (ADR-0050, item 1).</summary>
+    public bool CoversRow(int row, GridExtent extent)
+        => CoversLine(extent.ColumnCount, range => range.TopRow <= row && row <= range.BottomRow,
+            range => (range.LeftColumn, range.RightColumn));
+
+    /// <summary>Whether the ranges <paramref name="crossing"/> the line cover every position of
+    /// it, <paramref name="length"/> long, between them.</summary>
+    private bool CoversLine(int length, Func<SelectionRange, bool> crossing, Func<SelectionRange, (int First, int Last)> span)
+    {
+        if (IsEmpty || length <= 0)
+            return false;
+        var spans = new List<(int First, int Last)>();
+        foreach (var range in Ranges)
+        {
+            if (crossing(range))
+                spans.Add(span(range));
+        }
+        spans.Sort();
+        var covered = 0;
+        foreach (var (first, last) in spans)
+        {
+            if (first > covered)
+                return false;
+            covered = Math.Max(covered, last + 1);
+        }
+        return covered >= length;
+    }
+
+    /// <summary>Adds <paramref name="range"/> as the range made last, holding the Focus on
+    /// <paramref name="focus"/> (ADR-0012).</summary>
+    private GridSelection Add(SelectionRange range, CellPosition focus)
+    {
+        var appended = Append(Ranges, range);
+        var origins = new int[_origins.Length + 1];
+        _origins.CopyTo(origins, 0);
+        origins[^1] = _origins[^1] + 1;
+        return new(appended, focus, appended.Length - 1, origins);
+    }
+
+    /// <summary>
+    /// Takes <paramref name="area"/> out of every range, each giving way in place to its
+    /// fragments (<see cref="SelectionRange.SubtractArea"/>), and puts the Focus on the
+    /// first remaining cell, by rows, of the range made last (ADR-0052, "What the third run
+    /// settled"). Nothing left means nothing changes: the Selection is never taken out whole.
+    /// </summary>
+    private GridSelection TakeOut(SelectionRange area)
+    {
+        var remaining = new List<SelectionRange>();
+        var cameFrom = new List<int>();
+        for (var i = 0; i < Ranges.Count; i++)
+        {
+            foreach (var piece in Ranges[i].SubtractArea(area))
+            {
+                remaining.Add(piece);
+                cameFrom.Add(_origins[i]);
+            }
+        }
+        if (remaining.Count == 0)
+            return this;
+
+        // The range made last is the one with the highest origin still holding a cell. When
+        // the take-out emptied it — a 1×1 range made last, clicked again — the latest range
+        // still standing takes its place (not observed in Excel; the nearest reading).
+        var last = cameFrom[^1];
+        var focusIndex = -1;
+        for (var j = 0; j < remaining.Count; j++)
+        {
+            if (cameFrom[j] != last)
+                continue;
+            var first = new CellPosition(remaining[j].TopRow, remaining[j].LeftColumn);
+            if (focusIndex < 0 || IsBefore(first, remaining[focusIndex]))
+                focusIndex = j;
+        }
+        var focusRange = remaining[focusIndex];
+        return new(remaining, new(focusRange.TopRow, focusRange.LeftColumn), focusIndex, [.. cameFrom]);
+
+        // By rows: the earlier row, then the earlier column.
+        static bool IsBefore(CellPosition cell, SelectionRange than)
+            => cell.Row < than.TopRow || (cell.Row == than.TopRow && cell.Column < than.LeftColumn);
+    }
+
+    /// <summary>Arrow: collapses the selection to one cell and moves from the Focus, clamped
+    /// at the grid edge (ADR-0012). A no-op on Empty — there is no Focus to start from.</summary>
     public GridSelection Move(GridDirection direction, GridExtent extent)
         => MoveFocusTo(extent, focus => Step(focus, direction, extent));
 
-    /// <summary>Shift+arrow: the Focus moves one step and the Anchor's range grows or
-    /// shrinks — shrinking back through the Anchor flips it (ADR-0012). When the Focus is
-    /// not in the Anchor's range, re-anchors at the Focus and starts a new range. A range
-    /// spanning every row stays so under ← / →, and one spanning every column under
-    /// ↑ / ↓ (ADR-0012, 2026-09-25).</summary>
+    /// <summary>Shift+arrow: the Extent moves one step and the Focus stays, so the range holding
+    /// the Focus grows or shrinks — shrinking back through the Focus flips it (ADR-0052). Where
+    /// the Focus is on neither edge of the axis, the key changes nothing. The other axis keeps
+    /// its span, so whole columns stay whole under ← / → and whole rows under ↑ / ↓
+    /// (ADR-0012, 2026-09-25).</summary>
     public GridSelection Extend(GridDirection direction, GridExtent extent)
-        => ExtendFocusTo(extent, IsHorizontal(direction), focus => Step(focus, direction, extent));
+        => ExtendAlong(extent, IsHorizontal(direction), from => Step(from, direction, extent));
 
     /// <summary>Ctrl+arrow: collapses and jumps to the last / first row or column — not
     /// Excel's block edge, which the grid cannot find without the data (ADR-0011).</summary>
     public GridSelection MoveToEdge(GridDirection direction, GridExtent extent)
         => MoveFocusTo(extent, focus => EdgeOf(focus, direction, extent));
 
-    /// <summary>Shift+Ctrl+arrow: extends the range to the edge (ADR-0012). From the
+    /// <summary>Shift+Ctrl+arrow: the Extent runs to the edge (ADR-0012 / 0052). From the
     /// first row, Ctrl+Shift+Down is effectively a whole-column selection.</summary>
     public GridSelection ExtendToEdge(GridDirection direction, GridExtent extent)
-        => ExtendFocusTo(extent, IsHorizontal(direction), focus => EdgeOf(focus, direction, extent));
+        => ExtendAlong(extent, IsHorizontal(direction), from => EdgeOf(from, direction, extent));
+
+    /// <summary>Ctrl+arrow with the Consumer's edge answer (ADR-0050, item 2): collapses and
+    /// moves the Focus to the cell <paramref name="edge"/> names for the Focus and the
+    /// direction — where the data ends, which only the Consumer can know. Null is
+    /// <see cref="MoveToEdge(GridDirection, GridExtent)"/>: the grid's edge (ADR-0012). An
+    /// answer off the Focus's line, behind it, or outside the grid is refused by name
+    /// rather than followed.</summary>
+    public GridSelection MoveToEdge(
+        GridDirection direction, GridExtent extent, Func<CellPosition, GridDirection, CellPosition>? edge)
+        => edge is null
+            ? MoveToEdge(direction, extent)
+            : MoveFocusTo(extent, focus => Answered(edge, focus, direction, extent));
+
+    /// <summary>Ctrl+Shift+arrow with the Consumer's edge answer (ADR-0050, item 2): the
+    /// Extent runs to the cell <paramref name="edge"/> names for the Extent, as
+    /// <see cref="ExtendToEdge(GridDirection, GridExtent)"/> runs it to the grid's edge —
+    /// the moving end is asked, so a second press goes on from where the first stopped
+    /// (ADR-0052). Whole columns and whole rows stay whole the same way. Null is the grid's
+    /// edge.</summary>
+    public GridSelection ExtendToEdge(
+        GridDirection direction, GridExtent extent, Func<CellPosition, GridDirection, CellPosition>? edge)
+        => edge is null
+            ? ExtendToEdge(direction, extent)
+            : ExtendAlong(extent, IsHorizontal(direction), from => Answered(edge, from, direction, extent));
+
+    /// <summary>The Consumer's edge answer, checked: on the asked cell's own row or column,
+    /// not behind it, inside the grid. Anything else would move the selection somewhere the
+    /// key never pointed, which is worse than refusing (the spine's first rule).</summary>
+    private static CellPosition Answered(
+        Func<CellPosition, GridDirection, CellPosition> edge, CellPosition from, GridDirection direction, GridExtent extent)
+    {
+        var answer = edge(from, direction);
+        var inside = answer.Row >= 0 && answer.Row < extent.RowCount
+            && answer.Column >= 0 && answer.Column < extent.ColumnCount;
+        var onLine = direction switch
+        {
+            GridDirection.Up => answer.Column == from.Column && answer.Row <= from.Row,
+            GridDirection.Down => answer.Column == from.Column && answer.Row >= from.Row,
+            GridDirection.Left => answer.Row == from.Row && answer.Column <= from.Column,
+            GridDirection.Right => answer.Row == from.Row && answer.Column >= from.Column,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null),
+        };
+        if (!inside || !onLine)
+        {
+            throw new InvalidOperationException(
+                $"The edge answer for {direction} from {from} was {answer}, which is " +
+                (inside ? "not on that cell's line in that direction" : $"outside the grid ({extent.RowCount} rows × {extent.ColumnCount} columns)") +
+                ". Ctrl+arrow moves along one line only; answer a cell on it, or the cell asked about itself (ADR-0050).");
+        }
+        return answer;
+    }
 
     /// <summary>PageUp / PageDown (ADR-0012): collapse and move the Focus by one
     /// Viewport of rows. How many rows that is is view geometry the model never holds,
@@ -211,15 +440,15 @@ public sealed record GridSelection
     public GridSelection MoveByViewport(int rowDelta, GridExtent extent)
         => MoveFocusTo(extent, focus => StepRows(focus, rowDelta, extent));
 
-    /// <summary>Shift+PageUp / Shift+PageDown (ADR-0012): the Focus moves by one
-    /// Viewport of rows and the Anchor's range is redrawn between them.</summary>
+    /// <summary>Shift+PageUp / Shift+PageDown (ADR-0012 / 0052): the Extent moves by one
+    /// Viewport of rows and the Focus stays.</summary>
     public GridSelection ExtendByViewport(int rowDelta, GridExtent extent)
-        => ExtendFocusTo(extent, horizontal: false, focus => StepRows(focus, rowDelta, extent));
+        => ExtendAlong(extent, horizontal: false, from => StepRows(from, rowDelta, extent));
 
     /// <summary>
     /// Ctrl+A: every row after filtering across every visible column, as one rectangle —
-    /// expressible without holding the data (ADR-0011). Anchor and Focus stay where they
-    /// are; from Empty they land on (0, 0).
+    /// expressible without holding the data (ADR-0011). The Focus stays where it is
+    /// (ADR-0052, case 10); from Empty it lands on (0, 0).
     /// </summary>
     public GridSelection SelectAll(GridExtent extent)
     {
@@ -227,17 +456,17 @@ public sealed record GridSelection
             return Empty;
         var all = new SelectionRange(0, 0, extent.RowCount, extent.ColumnCount);
         if (IsEmpty)
-            return new([all], new(0, 0), new(0, 0), anchorDetached: false, focusRangeIndex: 0);
+            return new([all], new(0, 0), 0);
         RequireFits(extent);
-        return new([all], _anchor, _focus, anchorDetached: false, focusRangeIndex: 0);
+        return new([all], _focus, 0);
     }
 
     /// <summary>Ctrl+A under a pager (ADR-0015): every cell of the rows in context —
-    /// the page — as one range. Anchor and Focus stay exactly as <see cref="SelectAll(GridExtent)"/>
-    /// keeps them: a key that names a whole region needs no starting point and must not
-    /// move the active cell (ADR-0012). From Empty they land on the context's first
-    /// cell — as they do when they stand outside the context (the selection came from
-    /// another page), because a range must contain its own Focus.</summary>
+    /// the page — as one range. The Focus stays exactly as <see cref="SelectAll(GridExtent)"/>
+    /// keeps it: a key that names a whole region needs no starting point and must not
+    /// move the active cell (ADR-0012). From Empty it lands on the context's first cell —
+    /// as it does when it stands outside the context (the selection came from another
+    /// page), because a range must contain its own Focus.</summary>
     public GridSelection SelectAll(GridExtent extent, int firstRow, int rowCount)
     {
         if (IsDegenerate(extent))
@@ -245,35 +474,29 @@ public sealed record GridSelection
         var start = Math.Clamp(firstRow, 0, extent.RowCount - 1);
         var count = Math.Clamp(rowCount, 1, extent.RowCount - start);
         var context = new SelectionRange(start, 0, count, extent.ColumnCount);
-        if (IsEmpty || !context.Contains(_anchor) || !context.Contains(_focus))
-            return new([context], new(start, 0), new(start, 0), anchorDetached: false, focusRangeIndex: 0);
+        if (IsEmpty || !context.Contains(_focus))
+            return new([context], new(start, 0), 0);
         RequireFits(extent);
-        return new([context], _anchor, _focus, anchorDetached: false, focusRangeIndex: 0);
+        return new([context], _focus, 0);
     }
 
-    /// <summary>Ctrl+Space: the Anchor's range expands to every row, keeping its column
-    /// span (ADR-0012). From a detached Anchor, starts a new whole-column range at the
-    /// deselected cell. Anchor and Focus stay. A no-op on Empty.</summary>
+    /// <summary>Ctrl+Space: the range holding the Focus expands to every row, keeping its
+    /// column span (ADR-0012 / 0052). The Focus stays. A no-op on Empty.</summary>
     public GridSelection SelectWholeColumns(GridExtent extent)
-        => GrowAxis(extent,
-            last => new(0, last.LeftColumn, extent.RowCount, last.ColumnCount),
-            anchor => new(0, anchor.Column, extent.RowCount, 1));
+        => GrowFocusRange(extent, range => new(0, range.LeftColumn, extent.RowCount, range.ColumnCount));
 
-    /// <summary>Shift+Space: the Anchor's range expands to every visible column, keeping
-    /// its row span (ADR-0012). From a detached Anchor, starts a new whole-row range at
-    /// the deselected cell. Anchor and Focus stay. A no-op on Empty.</summary>
+    /// <summary>Shift+Space: the range holding the Focus expands to every visible column,
+    /// keeping its row span (ADR-0012 / 0052). The Focus stays. A no-op on Empty.</summary>
     public GridSelection SelectWholeRows(GridExtent extent)
-        => GrowAxis(extent,
-            last => new(last.TopRow, 0, last.RowCount, extent.ColumnCount),
-            anchor => new(anchor.Row, 0, 1, extent.ColumnCount));
+        => GrowFocusRange(extent, range => new(range.TopRow, 0, range.RowCount, extent.ColumnCount));
 
     /// <summary>
     /// Enter / Tab (ADR-0012): with a range selected, only the Focus moves — Enter
     /// column-major, Tab row-major, wrapping past the last cell to the next range in
     /// creation order and from the last range back to the first; <paramref name="backward"/>
     /// (Shift+) mirrors. With a single cell, Enter moves down and Tab moves right, the
-    /// selection follows, and the grid edge clamps. A detached Focus (after a toggle-off)
-    /// enters the first range's first cell, or the last range's last cell going backward.
+    /// selection follows, and the grid edge clamps. The <see cref="Extent"/> follows the
+    /// Focus to its new place in its range (ADR-0052).
     /// </summary>
     public GridSelection CycleFocus(CycleOrder order, bool backward, GridExtent extent)
     {
@@ -285,13 +508,6 @@ public sealed record GridSelection
             return Empty;
         RequireFits(extent);
 
-        if (_focusRangeIndex is not int index)
-        {
-            var target = backward ? Ranges.Count - 1 : 0;
-            var entered = Ranges[target];
-            return WithFocus(CellAt(entered, backward ? entered.CellCount - 1 : 0, order), target);
-        }
-
         if (Ranges is [{ CellCount: 1 }])
         {
             var direction = order == CycleOrder.ColumnMajor
@@ -299,39 +515,82 @@ public sealed record GridSelection
                 : (backward ? GridDirection.Left : GridDirection.Right);
             return Collapse(Step(_focus, direction, extent));
         }
-
-        var range = Ranges[index];
-        var next = OrdinalOf(_focus, range, order) + (backward ? -1 : 1);
-        if (next >= range.CellCount)
-        {
-            var following = (index + 1) % Ranges.Count;
-            return WithFocus(CellAt(Ranges[following], 0, order), following);
-        }
-        if (next < 0)
-        {
-            var preceding = (index - 1 + Ranges.Count) % Ranges.Count;
-            var entered = Ranges[preceding];
-            return WithFocus(CellAt(entered, entered.CellCount - 1, order), preceding);
-        }
-        return WithFocus(CellAt(range, next, order), index);
+        return StepInside(order, backward);
     }
 
     /// <summary>
-    /// Moves the Focus onto a cell inside the selection and leaves the ranges and the Anchor
-    /// where they are — what a Find step does when it searches the selection (ADR-0047): the
-    /// next step searches the same ranges. The range holding the cell becomes the Focus's; with
-    /// the cell in several, the latest-created one, where the Anchor lives. Throws when the cell
-    /// is selected nowhere: moving the Focus out of the selection is <see cref="Click"/>.
+    /// Ctrl+. (period): the Focus moves to the next corner of the range holding it,
+    /// clockwise — top-left, top-right, bottom-right, bottom-left — and the Selection does not
+    /// change (ADR-0052, case 8). A corner the range shares with another (a range one row or
+    /// one column deep) is passed over, so every press moves. From a cell on an edge but not
+    /// at a corner, the next corner clockwise along that edge; from inside the range, the
+    /// top-left. A single cell does not move.
+    /// </summary>
+    public GridSelection MoveFocusToNextCorner(GridExtent extent)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (IsEmpty)
+            return Empty;
+        RequireFits(extent);
+
+        var range = Ranges[_focusRangeIndex];
+        CellPosition[] corners =
+        [
+            new(range.TopRow, range.LeftColumn),
+            new(range.TopRow, range.RightColumn),
+            new(range.BottomRow, range.RightColumn),
+            new(range.BottomRow, range.LeftColumn),
+        ];
+        var at = Array.IndexOf(corners, _focus);
+        if (at < 0)
+        {
+            // Not at a corner: the corner that ends the edge the Focus is on, walking
+            // clockwise; from inside the range, the first corner.
+            var next = _focus.Row == range.TopRow ? corners[1]
+                : _focus.Column == range.RightColumn ? corners[2]
+                : _focus.Row == range.BottomRow ? corners[3]
+                : corners[0];
+            return new(Ranges, next, _focusRangeIndex, _origins);
+        }
+        for (var step = 1; step < corners.Length; step++)
+        {
+            var candidate = corners[(at + step) % corners.Length];
+            if (candidate != _focus)
+                return new(Ranges, candidate, _focusRangeIndex, _origins);
+        }
+        return this;
+    }
+
+    /// <summary>Shift+Backspace: the Selection collapses to the Focus (ADR-0052, case 7). A
+    /// no-op on Empty.</summary>
+    public GridSelection CollapseToFocus(GridExtent extent)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (IsEmpty)
+            return Empty;
+        RequireFits(extent);
+        return Collapse(_focus);
+    }
+
+    /// <summary>
+    /// Moves the Focus onto a cell inside the selection and leaves the ranges where they are —
+    /// what a Find step does when it searches the selection (ADR-0055): the next step searches
+    /// the same ranges. The range holding the cell becomes the <see cref="FocusRange"/>; with the
+    /// cell in several, the latest-created one. The <see cref="Extent"/> follows the Focus, as it
+    /// does after Enter / Tab cycling (ADR-0052). Throws when the cell is selected nowhere:
+    /// moving the Focus out of the selection is <see cref="Click"/>.
     /// </summary>
     public GridSelection FocusOn(CellPosition cell)
     {
         for (var i = Ranges.Count - 1; i >= 0; i--)
         {
             if (Ranges[i].Contains(cell))
-                return WithFocus(cell, i);
+                return new(Ranges, cell, i, _origins);
         }
         throw new ArgumentOutOfRangeException(nameof(cell), cell,
-            "The cell is not in the selection; moving the Focus out of it is Click (ADR-0047).");
+            "The cell is not in the selection; moving the Focus out of it is Click (ADR-0055).");
     }
 
     /// <summary>Structural equality: two selections built by identical gestures are equal —
@@ -351,12 +610,12 @@ public sealed record GridSelection
         }
         if (IsEmpty)
             return true;
-        return _anchor == other._anchor && _focus == other._focus
-            && _anchorDetached == other._anchorDetached && _focusRangeIndex == other._focusRangeIndex;
+        return _focus == other._focus && _focusRangeIndex == other._focusRangeIndex
+            && _origins.AsSpan().SequenceEqual(other._origins);
     }
 
-    /// <summary>Consistent with <see cref="Equals(GridSelection)"/>: the ranges, and Anchor
-    /// and Focus when not empty.</summary>
+    /// <summary>Consistent with <see cref="Equals(GridSelection)"/>: the ranges, and the
+    /// Focus, its range and which range each was made as when not empty.</summary>
     public override int GetHashCode()
     {
         var hash = new HashCode();
@@ -364,13 +623,23 @@ public sealed record GridSelection
             hash.Add(range);
         if (!IsEmpty)
         {
-            hash.Add(_anchor);
             hash.Add(_focus);
-            hash.Add(_anchorDetached);
             hash.Add(_focusRangeIndex);
+            foreach (var origin in _origins)
+                hash.Add(origin);
         }
         return hash.ToHashCode();
     }
+
+    /// <summary>
+    /// The Extent of <paramref name="range"/> for a Focus inside it (ADR-0052): on each axis
+    /// the edge opposite the Focus's edge, the Focus's own coordinate where the range is one
+    /// cell deep, and also where the Focus is on neither edge — the axis on which an
+    /// extension changes nothing.
+    /// </summary>
+    private static CellPosition ExtentOf(SelectionRange range, CellPosition focus) => new(
+        focus.Row == range.TopRow ? range.BottomRow : focus.Row == range.BottomRow ? range.TopRow : focus.Row,
+        focus.Column == range.LeftColumn ? range.RightColumn : focus.Column == range.RightColumn ? range.LeftColumn : focus.Column);
 
     private GridSelection MoveFocusTo(GridExtent extent, Func<CellPosition, CellPosition> destination)
     {
@@ -382,7 +651,14 @@ public sealed record GridSelection
         return Collapse(destination(_focus));
     }
 
-    private GridSelection ExtendFocusTo(
+    /// <summary>
+    /// A keyboard extension along one axis (ADR-0052): the Extent moves to
+    /// <paramref name="destination"/> of itself, and the range holding the Focus spans from
+    /// the Focus to it on that axis, keeping its span on the other — which is what keeps a
+    /// whole-column range whole under ← / → (ADR-0012, 2026-09-25). Where the Focus is on
+    /// neither edge of the axis, the key changes nothing (case 3).
+    /// </summary>
+    private GridSelection ExtendAlong(
         GridExtent extent, bool horizontal, Func<CellPosition, CellPosition> destination)
     {
         if (IsDegenerate(extent))
@@ -391,40 +667,28 @@ public sealed record GridSelection
             return Empty;
         RequireFits(extent);
 
-        var moved = destination(_focus);
-        if (!_anchorDetached && _focusRangeIndex == Ranges.Count - 1)
-        {
-            // Anchor and Focus share the last range: redraw it between them (ADR-0012).
-            // Anchor and Focus are two cells, so a range that spans a whole axis would
-            // collapse to their rows; a sideways move keeps every row, a vertical one
-            // every column — the axis the range already spans in full is kept.
-            var last = Ranges[^1];
-            var redrawn = SelectionRange.FromCorners(_anchor, moved);
-            if (horizontal && last.SpansEveryRow(extent))
-                redrawn = new SelectionRange(0, redrawn.LeftColumn, extent.RowCount, redrawn.ColumnCount);
-            else if (!horizontal && last.SpansEveryColumn(extent))
-                redrawn = new SelectionRange(redrawn.TopRow, 0, redrawn.RowCount, extent.ColumnCount);
-            var ranges = ReplaceLast(Ranges, redrawn);
-            return new(ranges, _anchor, moved, anchorDetached: false, ranges.Length - 1);
-        }
+        var range = Ranges[_focusRangeIndex];
+        var interior = horizontal
+            ? _focus.Column > range.LeftColumn && _focus.Column < range.RightColumn
+            : _focus.Row > range.TopRow && _focus.Row < range.BottomRow;
+        if (interior)
+            return this;
 
-        // The Anchor is detached, or cycling parked the Focus in another range. Re-anchor
-        // at the Focus and start a new range — redrawing the Anchor's range would bridge
-        // the two with one keystroke and select cells the user never touched (ADR-0012).
-        var appended = Append(Ranges, SelectionRange.FromCorners(_focus, moved));
-        return new(appended, _focus, moved, anchorDetached: false, appended.Length - 1);
+        var moved = destination(ExtentOf(range, _focus));
+        var redrawn = horizontal
+            ? new SelectionRange(range.TopRow, Math.Min(_focus.Column, moved.Column), range.RowCount, Math.Abs(moved.Column - _focus.Column) + 1)
+            : new SelectionRange(Math.Min(_focus.Row, moved.Row), range.LeftColumn, Math.Abs(moved.Row - _focus.Row) + 1, range.ColumnCount);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, redrawn), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>
-    /// Shift+click on a column header (ADR-0012, 2026-09-25): whole columns from the
-    /// Anchor's column to <paramref name="column"/>. The Anchor stays and the Focus moves
-    /// to the clicked column on the Anchor's row, as Shift+click on a cell moves it to the
-    /// cell. The Anchor's range is replaced, or from a detached Anchor a new one starts
-    /// from the Anchor's column, as <see cref="ExtendTo"/> does; the other ranges stand.
-    /// From Empty, the clicked column alone, anchored on <paramref name="anchorRowIfEmpty"/>
-    /// — the holder passes its first visible row, so the Viewport does not move (KB-9).
+    /// Shift+click on a column header (ADR-0012, 2026-09-25; ADR-0052): whole columns from the
+    /// Focus's column to <paramref name="column"/>, which is where the Extent goes. The Focus
+    /// stays, and its range is replaced; the other ranges stand. From Empty, the clicked
+    /// column alone, with the Focus on <paramref name="focusRowIfEmpty"/> — the holder passes
+    /// its first visible row, so the Viewport does not move (KB-9).
     /// </summary>
-    public GridSelection ExtendToColumn(int column, GridExtent extent, int anchorRowIfEmpty = 0)
+    public GridSelection ExtendToColumn(int column, GridExtent extent, int focusRowIfEmpty = 0)
     {
         if (IsDegenerate(extent))
             return Empty;
@@ -432,18 +696,94 @@ public sealed record GridSelection
             throw new ArgumentOutOfRangeException(nameof(column), column,
                 $"Outside the grid ({extent.ColumnCount} columns).");
         if (IsEmpty)
-        {
-            var anchor = new CellPosition(Math.Clamp(anchorRowIfEmpty, 0, extent.RowCount - 1), column);
-            return new([new SelectionRange(0, column, extent.RowCount, 1)], anchor, anchor,
-                anchorDetached: false, focusRangeIndex: 0);
-        }
+            return SelectColumn(column, extent, focusRowIfEmpty);
         RequireFits(extent);
 
-        var left = Math.Min(_anchor.Column, column);
-        var whole = new SelectionRange(0, left, extent.RowCount, Math.Abs(column - _anchor.Column) + 1);
-        var focus = new CellPosition(_anchor.Row, column);
-        var ranges = _anchorDetached ? Append(Ranges, whole) : ReplaceLast(Ranges, whole);
-        return new(ranges, _anchor, focus, anchorDetached: false, ranges.Length - 1);
+        var left = Math.Min(_focus.Column, column);
+        var whole = new SelectionRange(0, left, extent.RowCount, Math.Abs(column - _focus.Column) + 1);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, whole), _focus, _focusRangeIndex, _origins);
+    }
+
+    /// <summary>
+    /// A Consumer's placement (ADR-0050, item 4): <paramref name="range"/> becomes the one
+    /// range, with the Focus on <paramref name="focus"/> — what a click leaves, only over a
+    /// range the Consumer named. Every other range goes. A range reaching outside the grid,
+    /// or a Focus outside the range, is refused by name rather than clamped: the Consumer
+    /// named cells that are not there.
+    /// </summary>
+    public GridSelection Place(SelectionRange range, CellPosition focus, GridExtent extent)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (range.TopRow < 0 || range.LeftColumn < 0
+            || range.BottomRow >= extent.RowCount || range.RightColumn >= extent.ColumnCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(range), range,
+                $"Outside the grid ({extent.RowCount} rows × {extent.ColumnCount} columns) (ADR-0050).");
+        }
+        if (!range.Contains(focus))
+        {
+            throw new ArgumentOutOfRangeException(nameof(focus), focus,
+                "The Focus is placed inside the range it belongs to (ADR-0050/0052).");
+        }
+        return new([range], focus, 0);
+    }
+
+    /// <summary>
+    /// A plain click on a column header that a Consumer declared selects (ADR-0050, item
+    /// 1): the whole column, as one range, with the Focus on <paramref name="focusRow"/> of
+    /// it — the holder passes its first visible row, so the Viewport does not move for a
+    /// click on the header (KB-9's rule, as Shift+click already has it). Every other range
+    /// goes, as a plain click on a cell collapses.
+    /// </summary>
+    public GridSelection SelectColumn(int column, GridExtent extent, int focusRow)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (column < 0 || column >= extent.ColumnCount)
+            throw new ArgumentOutOfRangeException(nameof(column), column,
+                $"Outside the grid ({extent.ColumnCount} columns).");
+        var focus = new CellPosition(Math.Clamp(focusRow, 0, extent.RowCount - 1), column);
+        return new([new SelectionRange(0, column, extent.RowCount, 1)], focus, 0);
+    }
+
+    /// <summary>
+    /// A plain click on a Row Heading (ADR-0050, item 1): the whole row, every visible
+    /// column, as one range, with the Focus on <paramref name="focusColumn"/> of it — the
+    /// holder passes its first visible column. The Row Headings stand outside the column
+    /// index space, so nothing here names them.
+    /// </summary>
+    public GridSelection SelectRow(int row, GridExtent extent, int focusColumn)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (row < 0 || row >= extent.RowCount)
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Outside the grid ({extent.RowCount} rows).");
+        var focus = new CellPosition(row, Math.Clamp(focusColumn, 0, extent.ColumnCount - 1));
+        return new([new SelectionRange(row, 0, 1, extent.ColumnCount)], focus, 0);
+    }
+
+    /// <summary>
+    /// Shift+click on a Row Heading (ADR-0050 / 0052): whole rows from the Focus's row to
+    /// <paramref name="row"/> — <see cref="ExtendToColumn"/> on the other axis. The Focus
+    /// stays, and its range is replaced. From Empty, the clicked row alone, with the Focus on
+    /// <paramref name="focusColumnIfEmpty"/>.
+    /// </summary>
+    public GridSelection ExtendToRow(int row, GridExtent extent, int focusColumnIfEmpty = 0)
+    {
+        if (IsDegenerate(extent))
+            return Empty;
+        if (row < 0 || row >= extent.RowCount)
+            throw new ArgumentOutOfRangeException(nameof(row), row,
+                $"Outside the grid ({extent.RowCount} rows).");
+        if (IsEmpty)
+            return SelectRow(row, extent, focusColumnIfEmpty);
+        RequireFits(extent);
+
+        var top = Math.Min(_focus.Row, row);
+        var whole = new SelectionRange(top, 0, Math.Abs(row - _focus.Row) + 1, extent.ColumnCount);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, whole), _focus, _focusRangeIndex, _origins);
     }
 
     /// <summary>
@@ -469,38 +809,46 @@ public sealed record GridSelection
     private static bool IsHorizontal(GridDirection direction)
         => direction is GridDirection.Left or GridDirection.Right;
 
-    private GridSelection GrowAxis(
-        GridExtent extent,
-        Func<SelectionRange, SelectionRange> expandLast,
-        Func<CellPosition, SelectionRange> wholeOfAnchor)
+    private GridSelection GrowFocusRange(GridExtent extent, Func<SelectionRange, SelectionRange> expand)
     {
         if (IsDegenerate(extent))
             return Empty;
         if (IsEmpty)
             return Empty;
         RequireFits(extent);
-
-        if (_anchorDetached)
-        {
-            var appended = Append(Ranges, wholeOfAnchor(_anchor));
-            return new(appended, _anchor, _focus, anchorDetached: false, _focusRangeIndex ?? appended.Length - 1);
-        }
-        var ranges = ReplaceLast(Ranges, expandLast(Ranges[^1]));
-        return new(ranges, _anchor, _focus, anchorDetached: false, _focusRangeIndex);
+        return new(ReplaceAt(Ranges, _focusRangeIndex, expand(Ranges[_focusRangeIndex])), _focus, _focusRangeIndex, _origins);
     }
 
-    private GridSelection WithFocus(CellPosition focus, int rangeIndex)
-        => new(Ranges, _anchor, focus, _anchorDetached, rangeIndex);
+    /// <summary>One step of Enter / Tab inside the Selection: the next cell of the Focus's
+    /// range in <paramref name="order"/>, or on into the next range in creation order,
+    /// wrapping (ADR-0012). The selection is known not to be empty.</summary>
+    private GridSelection StepInside(CycleOrder order, bool backward)
+    {
+        var range = Ranges[_focusRangeIndex];
+        var next = OrdinalOf(_focus, range, order) + (backward ? -1 : 1);
+        if (next >= range.CellCount)
+        {
+            var following = (_focusRangeIndex + 1) % Ranges.Count;
+            return new(Ranges, CellAt(Ranges[following], 0, order), following, _origins);
+        }
+        if (next < 0)
+        {
+            var preceding = (_focusRangeIndex - 1 + Ranges.Count) % Ranges.Count;
+            var entered = Ranges[preceding];
+            return new(Ranges, CellAt(entered, entered.CellCount - 1, order), preceding, _origins);
+        }
+        return new(Ranges, CellAt(range, next, order), _focusRangeIndex, _origins);
+    }
 
     private static GridSelection Collapse(CellPosition cell)
-        => new([new SelectionRange(cell.Row, cell.Column, 1, 1)], cell, cell, anchorDetached: false, focusRangeIndex: 0);
+        => new([new SelectionRange(cell.Row, cell.Column, 1, 1)], cell, 0);
 
-    private static SelectionRange[] ReplaceLast(IReadOnlyList<SelectionRange> ranges, SelectionRange replacement)
+    private static SelectionRange[] ReplaceAt(IReadOnlyList<SelectionRange> ranges, int index, SelectionRange replacement)
     {
         var copy = new SelectionRange[ranges.Count];
         for (var i = 0; i < ranges.Count; i++)
             copy[i] = ranges[i];
-        copy[^1] = replacement;
+        copy[index] = replacement;
         return copy;
     }
 
@@ -532,11 +880,8 @@ public sealed record GridSelection
             if (range.BottomRow >= extent.RowCount || range.RightColumn >= extent.ColumnCount)
                 throw DropWasMissed(extent);
         }
-        if (_focus.Row >= extent.RowCount || _focus.Column >= extent.ColumnCount
-            || _anchor.Row >= extent.RowCount || _anchor.Column >= extent.ColumnCount)
-        {
+        if (_focus.Row >= extent.RowCount || _focus.Column >= extent.ColumnCount)
             throw DropWasMissed(extent);
-        }
     }
 
     private static InvalidOperationException DropWasMissed(GridExtent extent) => new(

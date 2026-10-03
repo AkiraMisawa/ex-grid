@@ -1,0 +1,210 @@
+# The scroll height is compressed above the browser's layout ceiling
+
+*(Decided with the user, 2026-09-27, after the second Windows run failed VZ-14, BIG-1, BIG-5, SH-2
+and DC-2/3/7 at 150% display scale, and the bisect put the start at the commit that made `/wide` a
+million rows — `verification/2026-09-27-windows-2/results.md`,
+`verification/2026-09-27-windows-bisect/results.md`. It amends
+[ADR-0013](./0013-fixed-row-height.md) and adds a sixth entry to
+[ADR-0021](./0021-javascript-is-allowlisted-not-minimised.md).)*
+
+## What was found
+
+ADR-0013 sets the scrollable height to rows × `RowHeight` and refuses a result whose height would
+exceed 2²⁵ px (VZ-8). The refusal assumed that one CSS pixel is one layout pixel. It is not.
+**Chromium clamps any layout length at just under 2²⁵ px counted in zoomed units**, so in CSS
+pixels the ceiling is 2²⁵ ÷ (display scale × page zoom). Measured on Linux Chrome 154, with the
+display scale forced on the command line:
+
+| Scale | Spacer asked | Laid out | 2²⁵ ÷ scale | Last reachable row at 28 px |
+|---|---|---|---|---|
+| 1 | 28,000,028 | as asked | 33,554,432 | all |
+| 1.25 | 28,000,028 | 26,843,542 | 26,843,545.6 | 958,697 |
+| 1.5 | 28,000,028 | 22,369,618 | 22,369,621.3 | 798,914 |
+| 2 | 28,000,028 | 16,777,214 | 16,777,216 | 599,185 |
+
+The clamp is silent. `scrollHeight` comes back short, the browser pins `scrollTop` at the clamped
+maximum, and the grid, which computes against the true height, paints rows that are not the ones
+it thinks it is showing. At 150% the last 200,000 rows of `/wide` cannot be reached, and ExSheet's
+1,048,576 rows already cannot at 125%. This is the quiet wrongness VZ-8 exists to refuse, let
+through by an assumption. Browser page zoom (Ctrl+Plus) clamps the same way.
+
+Two further facts shaped the decision:
+
+- **`devicePixelRatio` does not say where the ceiling is.** Playwright's emulated scale factor
+  raises `devicePixelRatio` without moving the clamp, and a real OS scale under an emulated
+  viewport reports 1.0 while clamping. That is why the Linux suite, which emulates, was green.
+- **Even at scale 1 the ceiling is 33,554,428, not 33,554,432.** VZ-8's guard was 4 px generous.
+
+## Decision
+
+**When the true height exceeds the ceiling, the scroll height is compressed. Below it, nothing
+changes.**
+
+- **The spacer is at most the ceiling, less a margin.** With H the true height, S the spacer's
+  height and V the readable height, the content offset for a scroll offset s is
+  `c(s) = s × k`, with `k = (H − V) / (S − V)`. Both ends are exact: s = 0 shows the first row, and
+  the largest s shows the last. Where H fits under the ceiling, S = H and k = 1, and every formula
+  in ADR-0013 is today's, bit for bit.
+- **Every consumer of vertical geometry goes through the one mapping**: the slice
+  (`first row = floor(c(s) / RowHeight)`), the placement of the painted rows, the selection
+  overlay, the Cell Editor and popovers, the pointer's row (hit-testing, the hover band, drag
+  autoscroll, the fill handle), and the reveal, which asks for `s = c* / k` and rounds towards
+  "the whole Focus is visible". Rows are painted from the offset the browser reports, never from
+  the one the grid asked for, because `scrollTop` is quantised to device pixels.
+- **An overlay rectangle is clipped to the painted rows.** A whole-column selection was painted
+  22,369,617 px tall at 150%, clamped like the spacer. Only its visible part was ever needed.
+- **The grid is told the ceiling.** A `ResizeObserver` watches a hidden element declared 2²⁵ px
+  tall inside a zero-size box. The size it reports **is** the current ceiling in CSS pixels, at
+  every scale and zoom measured, including the emulated cases where `devicePixelRatio` is wrong.
+  It reports once at attach and again only when the scale or the zoom changes. This is ADR-0021's
+  sixth entry, argued there. The grid is told something the browser already knows; it performs no
+  synchronous read on the path to a paint.
+- **VZ-8's refusal stays, at the scale-1 ceiling.** A result whose true height exceeds 33,554,428
+  CSS px is still refused by name, whatever the scale, so what is refused does not depend on the
+  machine. Compression therefore covers exactly the results that fit at 100%, and k never exceeds
+  the combined scale and zoom (1.5 at 150%, 5 at 500% zoom).
+
+## What this costs, accepted
+
+- **A wheel notch or a scrollbar arrow moves k times as far** while compressed: 1.25 for `/wide`
+  and 1.31 for a Sheet at 150%. Keyboard movement is exact, because the reveal computes through
+  the mapping.
+- **A reveal can be off by under one CSS pixel**, from rounding `s` to device pixels. The rounding
+  goes towards showing the whole Focus.
+- **On a Server circuit, a compressed grid re-renders on every scroll event**, because the rows'
+  placement depends on `s` even when the slice has not changed. Between the native scroll and the
+  answering render the rows drift by (k − 1) × Δs, which shows as a slight jitter at 50–150 ms
+  round trips. Each row still carries its own content, so nothing is ever shown against the wrong
+  row. Uncompressed, the Server cost is today's.
+- **The thumb stays proportional to the whole result.** That is the reason this option was chosen.
+
+## Considered options
+
+- **Refuse by scale.** Keep the geometry and refuse any result over the told ceiling. A sheet that
+  works would become a refusal when the user presses Ctrl+Plus, and ExSheet's extent at 28 px would
+  be refused from about 115%. Rejected as hostile.
+- **A fixed conservative ceiling, compressed always** (2²⁵ ÷ 8, with nothing told). Deterministic
+  and needs no JS, but k is about 7 at every scale, and a wheel notch jumps about 24 rows. Rejected.
+- **A rebased scroll window**: the spacer covers a bounded window of rows and re-centres near its
+  edges. Exact wheel steps, but the thumb no longer maps to the whole result, and each rebase is a
+  programmatic scroll that interrupts momentum and costs a round trip on Server. Rejected for
+  ExGrid. For ExSheet it resembles Excel, whose thumb spans the used range, and may return as a
+  Sheet's own extent later, independent of this decision.
+- **Lower the requirement**: a scale-independent cap near 300,000 rows with paging beyond. It gives
+  up BIG-1/5 and ExSheet's full extent. Rejected.
+
+## Consequences
+
+- ADR-0013 gains a note that its scroll height is the true height only below the ceiling.
+- ADR-0021's list has six entries.
+- `CONTEXT.md` gains **Layout Ceiling**.
+- The Definition of Done: VZ-8 and BIG-4 name 33,554,428; a new criterion holds the compressed
+  geometry; and VZ-14's note records that emulation misses the clamp. **The regression test launches
+  Chrome with `--force-device-scale-factor=1.5` and the viewport left to the window**, which runs
+  headed under xvfb on Linux, so CI can gate it. A test using Playwright's `deviceScaleFactor`
+  would pass without testing anything.
+
+## What the implementation settled *(2026-09-28)*
+
+- **The margin is 256 px, and k keeps 2 px of end slack**: `k = (H − V) / (S − V − 2)`. At 150%
+  Chrome held `scrollTop` one device pixel short of the maximum it was asked for, and at k = 1.25
+  that pixel cut 1.67 px off the last row. The slack absorbs it.
+- **An overlay rectangle entirely outside the painted rows is not emitted.** A Focus scrolled far
+  away has no outline element until its rows are painted. On Server the outline arrives with them.
+- **A change of the ceiling keeps the first visible row**, as a change of the row height does
+  (ADR-0028), and writes the new scroll offset to the browser. A told ceiling that compresses
+  nothing, before or after, renders nothing.
+- **The horizontal axis is not compressed.** Its guard follows the 33,554,428 constant, but no
+  column layout comes near the ceiling at any scale a person uses, so a width above a smaller told
+  ceiling is not handled. That is recorded, not solved.
+- **A layer-3 test sets a scroll offset through the mapping, never as rows × `RowHeight`**
+  *(2026-09-28, third Windows run)*. Five tests that did so passed on Linux and failed at the
+  display's real 150%, where `n × 28` shows row 1.31 n. They were test defects, and the scale-forcing
+  project now runs them.
+- **A layer-3 test reads a length from the style attribute, not through the CSSOM**, which rounds
+  it to six significant figures (`2.23694e+07px`).
+
+## Settled after the third Windows run *(2026-09-28, decided with the user)*
+
+- **The anchor gives way to a scroll the grid has not yet heard.** A re-anchor after a ceiling or
+  row-height change is written only if the browser's offset is still the one the anchor was taken
+  from; otherwise the grid paints the browser's offset. BIG-5 at 150% on the Server host scrolled to
+  the end while the first ceiling was still arriving, and the anchor wrote row 0 back over it.
+- **The first ceiling told is the initial measurement, not a change.** Nothing is re-anchored when
+  it arrives: the browser's offset at that moment is read through the new geometry, so a scroll to
+  the end made before the grid knew its ceiling stays at the end. Before this, the grid kept the row
+  it had read through the uncompressed geometry, and a scroll to the end landed near 80% of the
+  result. A later ceiling change (the scale or the zoom) still keeps the first visible row.
+  Considered and rejected: keeping the grid busy (ADR-0033) until the first report, which would need
+  a fallback for a grid in a hidden container, whose report never comes.
+
+## Measured on Windows *(2026-09-28, verification/2026-09-28-windows-3)*
+
+At the display's real 150%, one wheel notch on `/wide` moved 100 px, **4.47 rows** at the top and
+4.33 near the end, on both browsers and both hosts: 1.25 times the uncompressed 3.57, as predicted.
+Excel moves 3 rows a notch at 100% zoom, Windows' 3 lines. On the Server host the rows first moved
+by the uncompressed amount and the render caught up within one to three frames, **at most 0.62 rows
+at a 100 ms round trip**; no frame moved them against the scroll by more than 0.05 rows. Both are
+the costs accepted above, now measured, and nothing is changed for them.
+
+## Accepted after the fourth Windows run: two device pixels deep in the spacer *(2026-09-29, decided with the user)*
+
+**What happened.** The grid now draws its own 12px scrollbar (ADR-0029's third correction). After
+that change, the last row at 150% stood 1.33 CSS px (2 device px) below the readable bottom after
+Ctrl+End on /wide, and the Focus test in `scrollbar.spec.mjs` failed every time.
+
+**The grid's arithmetic is exact.** The row stack's offset puts the last row's bottom at 588 px, the
+readable height.
+
+**The browser moves it.** Chromium holds scroll offsets and positions deep in a scrolled element as
+32-bit floats in device pixels. Above 2^24 device px, which is the upper half of any compressed
+spacer, a float holds only every second device pixel. So at 150% the scroll offset 33,553,161 device
+px is held as 33,553,160, and the stack's offset 33,553,119 as 33,553,120. The rows land 2 device px
+low. Across the range the error reaches ±2 device px, near the end only. The earlier ~15px native bar
+passed only because its numbers happened to round the right way.
+
+**No arithmetic on the grid's side can remove it.** `scrollTop` itself is reported to two device
+pixels there. Ctrl+End and `scrollTop = scrollHeight` both report 22,368,774, yet they are painted
+2 device px apart. An offset split between a layout `top` and a small transform fixed one path and
+put the other 1.33 px above the bottom instead.
+
+**Two exact fixes were weighed and not taken:**
+
+- Keeping the compressed spacer under 2^24 device px. This doubles k (a wheel notch moves about 2.5
+  rows' worth instead of 1.25 at 150%).
+- A sticky row stack. On the Server host, this lets the rows stand still for a whole round trip
+  instead of the (k−1)·Δs accepted above.
+
+**The decision:** a placement error of up to two device pixels, where the scroll offset is past 2^24
+device pixels, is accepted. It is at most 1.33 CSS px at 150%, and 2 at 100%, in the vertical
+direction only. Only a compressed grid ever scrolls that deep, so an uncompressed grid still places
+every row exactly.
+
+**The assertion is loosened only there.** `scrollbar.spec.mjs` allows `2 / devicePixelRatio` more
+slack, and only when `scrollTop × devicePixelRatio ≥ 2^24`. Everywhere else, "flush" (ADR-0012)
+still means within the one pixel it always did.
+
+## The slice's offset lands on a whole device pixel *(2026-10-01, ticket 49)*
+
+A compressed grid places its slice with `translateY` at a fraction of a CSS pixel. At 150% that was
+often a fraction of a device pixel too, for example `translateY(19.249px)`. The viewport is
+composited (`will-change: transform`), so the browser resampled the whole slice there, and every
+line in it blurred: a Sheet's thin borders became two half-dark rows.
+- The offset is now rounded to the nearest device pixel in the stylesheet:
+  `translateY(round(nearest, Npx, var(--ex-dp, 1px)))`.
+- That moves the slice by at most half a device pixel. It is inside the placement error accepted
+  above, and the Selection, the Cell Editor and the overlays move with it, because they lie in the
+  slice.
+- Ticket 49's 150% border tests failed 18 of 29 without it and pass 29 of 29 with it. Ticket 47's
+  150% check had read only the top of a small grid, where the offset is 0.
+- *(Later the same day, CI.)* **The viewport is no longer composited on its own.** On CI's Linux
+  fonts, the Sheet sat at a fraction of a device pixel on the page. The composited `.ex-viewport`
+  (`will-change: transform`, there since the first virtualisation commit with no measurement behind
+  it) was rasterised at that offset, and dotted lines read [2,1,3,1].
+  - Painted with its parent, the slice snaps to device pixels as any box does. Its inline transform
+    still makes it the stacking context ADR-0008's selection layers need.
+  - The rounding above is still needed: without it, 17 of 26 lines fail at 150% once scrolled.
+  - Scrolling measured the same either way: medians of 16.7 against 16.7 ms on `/wide`, 23.5 against
+    23.5 ms on `/sheet` at 100%, and 24.4 against 24.6 ms at 150%. These were headless runs with a
+    scratch frame-interval script, alternated, so only the comparison counts.
+  - A test moves the Sheet 0.33 px across and down, and reads the lines at 100% and 150%.

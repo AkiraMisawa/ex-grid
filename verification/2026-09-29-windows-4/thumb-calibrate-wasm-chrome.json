@@ -1,0 +1,100 @@
+{
+  "channel": "chrome",
+  "base": "http://localhost:5299",
+  "browserVersion": "153.0.8010.54",
+  "tries": [
+    {
+      "offsetCss": 1,
+      "screen": [
+        1457,
+        589,
+        679
+      ],
+      "before": 0,
+      "after": 2362899.25,
+      "moved": 2362899.25,
+      "answer": "ok drag down=1590 t=1915"
+    },
+    {
+      "offsetCss": 3,
+      "screen": [
+        1457,
+        592,
+        682
+      ],
+      "before": 0,
+      "after": 2362899.25,
+      "moved": 2362899.25,
+      "answer": "ok drag down=3057 t=3386"
+    },
+    {
+      "offsetCss": 5,
+      "screen": [
+        1457,
+        595,
+        685
+      ],
+      "before": 0,
+      "after": 2362899.25,
+      "moved": 2362899.25,
+      "answer": "ok drag down=4523 t=4848"
+    },
+    {
+      "offsetCss": 8,
+      "screen": [
+        1457,
+        600,
+        690
+      ],
+      "before": 0,
+      "after": 2362899.25,
+      "moved": 2362899.25,
+      "answer": "ok drag down=5974 t=6299"
+    },
+    {
+      "offsetCss": 12,
+      "screen": [
+        1457,
+        606,
+        696
+      ],
+      "before": 0,
+      "after": 2362899.25,
+      "moved": 2362899.25,
+      "answer": "ok drag down=7423 t=7753"
+    },
+    {
+      "offsetCss": 16,
+      "screen": [
+        1457,
+        612,
+        702
+      ],
+      "before": 0,
+      "after": 2362899.25,
+      "moved": 2362899.25,
+      "answer": "ok drag down=8879 t=9206"
+    },
+    {
+      "offsetCss": 20,
+      "screen": [
+        1457,
+        618,
+        708
+      ],
+      "before": 0,
+      "after": 1534.6666259765625,
+      "moved": 1534.6666259765625,
+      "answer": "ok drag down=10332 t=10660"
+    }
+  ],
+  "box": {
+    "left": 32,
+    "top": 264.875,
+    "right": 932,
+    "bottom": 864.875,
+    "clientWidth": 885,
+    "clientHeight": 585,
+    "scrollHeight": 22369362
+  }
+}

@@ -50,6 +50,65 @@ test('the far corner is reachable and painted at 10⁶ rows (BIG-1)', async ({ p
     await expect(cell(page, 0, 0)).toBeVisible({ timeout: 15_000 });
 });
 
+// ADR-0053: a million rows of 28 px are 28,000,000 px, and at 150% Chrome lays out nothing
+// taller than 22,369,618 CSS px. Above the Layout Ceiling the spacer is compressed; below
+// it, it is the true height. Either way it must be laid out exactly as declared — a clamped
+// spacer is the silent failure — and the last row must end flush with the readable bottom.
+test('the spacer is laid out as declared under the Layout Ceiling, and the last row ends flush (VZ-15)', async ({ page }, testInfo) => {
+    const grid = await openWide(page);
+    const measure = () => page.evaluate(() => {
+        const root = document.querySelector('.ex-grid');
+        const spacer = root.querySelector('.ex-spacer');
+        return {
+            // Read from the attribute: the CSSOM serialises a length to six significant
+            // figures, so spacer.style.height says 2.23694e+07px for 22,369,362.
+            declared: Number(/height: ([\d.]+)px/.exec(spacer.getAttribute('style'))[1]),
+            laidOut: spacer.getBoundingClientRect().height,
+            ceiling: root.querySelector('.ex-ceiling-probe > div').getBoundingClientRect().height,
+            dpr: window.devicePixelRatio,
+        };
+    });
+    // The ceiling is told after attach; the spacer follows it within a render.
+    await expect.poll(async () => {
+        const { declared, ceiling } = await measure();
+        return declared <= ceiling;
+    }, { timeout: 10_000 }).toBe(true);
+    const measured = await measure();
+    testInfo.annotations.push({ type: 'measured', description: JSON.stringify(measured) });
+
+    expect(Math.abs(measured.laidOut - measured.declared), 'the spacer was clamped').toBeLessThanOrEqual(1);
+    if (testInfo.project.name === 'chrome-150') {
+        // What makes this project a test at all: the true height does not fit here.
+        expect(measured.ceiling, 'the display scale did not move the ceiling, so this proves nothing')
+            .toBeLessThan(ROWS * 28);
+        expect(measured.declared).toBeLessThan(ROWS * 28);
+    }
+
+    await page.evaluate(() => {
+        const scroller = document.querySelector('.ex-scroller');
+        scroller.scrollTop = scroller.scrollHeight;
+    });
+    await expectRowPainted(page, ROWS - 1);
+    const edges = await page.evaluate((last) => {
+        const scroller = document.querySelector('.ex-scroller');
+        const box = scroller.getBoundingClientRect();
+        const row = document.querySelector(`.ex-grid [id$='-r${last}c0']`).getBoundingClientRect();
+        return { readableBottom: box.top + scroller.clientTop + scroller.clientHeight, lastBottom: row.bottom };
+    }, ROWS - 1);
+    expect(Math.abs(edges.lastBottom - edges.readableBottom), JSON.stringify(edges)).toBeLessThanOrEqual(1);
+
+    // A selection of every row is painted as the visible part of one rectangle, never laid
+    // out a million rows tall — which the browser would have clamped like the spacer.
+    await cell(page, ROWS - 1, 0).click({ force: true });
+    await page.keyboard.press('ControlOrMeta+A');
+    await expect(grid.locator('.ex-selection .ex-range')).toHaveCount(1);
+    const heights = await page.evaluate(() => ({
+        range: document.querySelector('.ex-selection .ex-range').getBoundingClientRect().height,
+        scroller: document.querySelector('.ex-scroller').clientHeight,
+    }));
+    expect(heights.range, JSON.stringify(heights)).toBeLessThanOrEqual(heights.scroller + (3 * 28));
+});
+
 test('the element count is the same at 10³, 10⁵ and 10⁶ rows (VZ-1, BIG-2, DOM-1)', async ({ page }) => {
     const counts = {};
     for (const rows of [1_000, 100_000, ROWS]) {
@@ -79,6 +138,53 @@ test('the first and the last row paint their own data, there and back again (BIG
         const scroller = document.querySelector('.ex-scroller');
         scroller.scrollTop = scroller.scrollHeight;
     });
+    await expectRowPainted(page, ROWS - 1);
+});
+
+// ADR-0053 / ADR-0028: on a Server circuit the Layout Ceiling can be told after the grid stopped
+// being busy, and a scroll made in between is still on the wire when the ceiling arrives: an
+// anchor computed from row 0 was written over it and the grid went back to the top (BIG-5 on
+// chrome-150, 2 of 4 on Windows, verification/2026-09-28-windows-3). So the scroll is made here
+// in the very task in which the grid stops being busy, before the ceiling can have been heard.
+//
+// The first ceiling told is the initial measurement, not a change ("Settled after the third
+// Windows run"): nothing is anchored, and the browser's offset is read through the geometry it
+// gives. So whichever the grid heard first, the scroll to the end paints the last row. The
+// ceiling first (the usual order on a circuit): the scroll is read through the compressed
+// geometry. The scroll first (always on WebAssembly, where the offset is read within the frame):
+// the untold geometry showed row 798,894, and the first ceiling re-reads the same offset as the
+// end — it used to anchor on row 798,894 and stay there. At scale 1 nothing is compressed and
+// this is BIG-5's own case.
+test('a scroll to the end made as the grid becomes ready is not undone by the Layout Ceiling (BIG-5, ADR-0053)', async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+        let done = false;
+        // The circuit replaces the prerendered grid, so the ready one is found wherever it is.
+        new MutationObserver(() => {
+            const root = done ? null : document.querySelector('.ex-grid:not([aria-busy])');
+            if (!root) {
+                return;
+            }
+            done = true;
+            const scroller = root.querySelector('.ex-scroller');
+            const spacer = scroller.querySelector('.ex-spacer');
+            window.__spacerAtScroll = Number(/height: ([\d.]+)px/.exec(spacer.getAttribute('style'))[1]);
+            scroller.scrollTop = scroller.scrollHeight;
+        }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['aria-busy'] });
+    });
+    await page.goto('/wide');
+    await expect(page.locator('.ex-grid')).toHaveAttribute('aria-rowcount', String(ROWS));
+    const firstRow = async () => Number(await page.locator('.ex-grid .ex-viewport').getAttribute('data-ex-first-row'));
+
+    await expect.poll(firstRow, { timeout: 15_000 }).toBeGreaterThan(ROWS / 2);
+    await page.waitForTimeout(400); // past the settle delay, and past any anchor still on its way
+    const first = await firstRow();
+    // Recorded, since which the grid heard first is the browser's timing, not the test's.
+    testInfo.annotations.push({
+        type: 'measured',
+        description: JSON.stringify({ spacerAtScroll: await page.evaluate(() => window.__spacerAtScroll), first }),
+    });
+    expect(first, 'the scroll was undone').toBeGreaterThan(ROWS / 2);
+    // Compressed or not, on either host: the end is the end.
     await expectRowPainted(page, ROWS - 1);
 });
 
@@ -142,7 +248,11 @@ async function countGridInterop(page) {
         return { scriptId: module.scriptId, lineNumber: before.length - 1, columnNumber: before.at(-1).length };
     };
     const sites = [];
-    const handle = scriptSource.lastIndexOf('\n    return {');
+    // The handle is the object `attach` returns. Since ADR-0080 it is named first
+    // (`const handle = {`), because the Keyboard Field's composition end grants the editor's
+    // waiting request through it, and returned after; before, it was returned as written.
+    const named = scriptSource.lastIndexOf('\n    const handle = {');
+    const handle = named >= 0 ? named : scriptSource.lastIndexOf('\n    return {');
     for (const m of scriptSource.slice(handle).matchAll(/^ {8}(\w+): \([^)]*\) =>\s*/gm)) {
         sites.push({ name: `.NET→JS ${m[1]}`, index: handle + m.index + m[0].length });
     }

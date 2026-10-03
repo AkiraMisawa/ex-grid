@@ -100,7 +100,7 @@ public class GridKeyTests
         // The clipboard and the editor are not wired yet, and the browser's own must not
         // be swallowed by a grid that happens to have focus.
         // (Alt+↓ stood in this list until ADR-0039 claimed it for the column menu, and
-        // Ctrl+F until ADR-0047 claimed it for Find.)
+        // Ctrl+F until ADR-0055 claimed it for Find.)
         foreach (var action in new[]
         {
             Key("c", ctrl: true), Key("v", ctrl: true), Key("F2"), Key("p", ctrl: true),
@@ -235,7 +235,7 @@ public class GridKeyTests
         Assert.Contains("Control+Shift+Z", redoOnly);
     }
 
-    [Theory] // ADR-0035 / ADR-0046: the writing keys
+    [Theory] // ADR-0035 / ADR-0054: the writing keys
     [InlineData("Delete", false, GridKeyKind.Clear)]
     [InlineData("Backspace", false, GridKeyKind.ClearAndEdit)]
     [InlineData("d", true, GridKeyKind.FillDown)]
@@ -245,7 +245,7 @@ public class GridKeyTests
     public void The_writing_keys_resolve(string key, bool ctrl, GridKeyKind expected)
         => Assert.Equal(expected, Key(key, ctrl: ctrl).Kind);
 
-    [Fact] // ADR-0046 / ED-25: a display-only grid leaves the page Delete, Backspace, Ctrl+D and Ctrl+R
+    [Fact] // ADR-0054 / ED-25: a display-only grid leaves the page Delete, Backspace, Ctrl+D and Ctrl+R
     public void The_writing_keys_are_claimed_only_on_a_grid_that_edits()
     {
         string[] writing = ["Delete", "Backspace", "Control+d", "Control+D", "Control+r", "Control+R"];
@@ -259,7 +259,7 @@ public class GridKeyTests
         }
     }
 
-    [Fact] // ADR-0047 / FD-1: Ctrl+F is every grid's, wired or not
+    [Fact] // ADR-0055 / FD-1: Ctrl+F is every grid's, wired or not
     public void Find_is_claimed_on_every_grid()
     {
         Assert.Equal(GridKeyKind.Find, Key("f", ctrl: true).Kind);

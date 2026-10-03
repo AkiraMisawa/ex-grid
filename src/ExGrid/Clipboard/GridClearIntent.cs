@@ -3,7 +3,7 @@ using ExGrid.Selection;
 namespace ExGrid.Clipboard;
 
 /// <summary>
-/// The Clear Intent Delete raises (ADR-0046): these positions should hold <b>no value</b>.
+/// The Clear Intent Delete raises (ADR-0054): these positions should hold <b>no value</b>.
 /// It carries no value at all, which is what separates it from a paste of empty text — on
 /// an amount column "" is a parse failure or a zero, and a cleared cell is neither. The
 /// Consumer maps it onto its own notion of Blank, per column.

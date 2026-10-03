@@ -1,0 +1,16 @@
+{
+  "chrome": {
+    "the far corner is reachable and painted at 10⁶ rows (BIG-1)": {
+      "at": "2026-09-27T11:56:59.231Z",
+      "errors": [
+        {
+          "text": "Failed to load resource: net::ERR_NO_BUFFER_SPACE",
+          "url": "http://localhost:5298/_framework/blazor.web.hwaxidwiwj.js"
+        }
+      ],
+      "warnings": [],
+      "pageErrors": []
+    }
+  },
+  "msedge": {}
+}

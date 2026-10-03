@@ -4,7 +4,7 @@ import { BASE_URL, HOST_LOG, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
 
 // What every spec shares: the console capture that CON-1/2/3/6 are read from, the two
 // records a run writes — console.json and metrics.json — under one directory, and the app a
-// spec file boots once for all its tests (ADR-0048).
+// spec file boots once for all its tests (ADR-0056).
 
 // Where a run's records go. This path used to be the literal verification/2026-09-01,
 // so every layer-3 run on every machine overwrote that one dated record: a record whose
@@ -29,7 +29,7 @@ export const RECORD_DIR = (() => {
 
 // Several tests write each file and the read-modify-write below is not atomic. It is
 // safe only because playwright.config.mjs pins `workers: 1, fullyParallel: false` — one
-// of the reasons it does (ADR-0048). If that ever relaxes, this needs a lock, and the
+// of the reasons it does (ADR-0056). If that ever relaxes, this needs a lock, and the
 // symptom will be a key missing from a record.
 function update(file, change) {
     fs.mkdirSync(RECORD_DIR, { recursive: true });
@@ -83,9 +83,46 @@ export async function roundTrip() {
     return Number((await response.text()).trim().replace('rtt=', ''));
 }
 
+/**
+ * How long the wire between the browser and the Server host must stay still before
+ * circuitQuiet says the host has said all it will. Longer than the longest delay the grid
+ * renders after: 300 ms before an error message opens (PopoverDelay in ExGrid.razor), and
+ * 150 ms before Placeholders fill and an announcement is made (SettleDelay). A render a timer
+ * owes therefore lands inside the window and starts it again.
+ */
+export const CIRCUIT_QUIET_MS = 400;
+
+/**
+ * Returns once the browser and the Server host have stopped talking: nothing held in the
+ * latency proxy or unsent on a socket, in either direction, and nothing crossed for
+ * `quietFor` ms (latency-proxy.mjs). The browser acknowledges every render batch once it has
+ * applied it, so a quiet wire also means the last batch is in the DOM. Await it before reading
+ * what the host decides, where a fixed wait used to stand: a wait too short reads before the
+ * answer, and a read after one that happened to be long enough passes before a late answer
+ * could undo it. It knows nothing of a timer due after the window, nor of painting: a picture
+ * still waits for its frames. On WebAssembly, where there is no wire, it returns at once.
+ * Throws, saying what kept crossing, when the wire is not quiet within `timeout` ms.
+ * SignalR's keep-alive pings, 15 s apart, delay it by one window at most.
+ */
+export async function circuitQuiet({ quietFor = CIRCUIT_QUIET_MS, timeout = 10_000 } = {}) {
+    if (!SERVER) {
+        return;
+    }
+    const response = await fetch(`${LATENCY_CONTROL_URL}/quiet?for=${quietFor}&within=${timeout}`);
+    const answer = (await response.text()).trim();
+    if (!response.ok) {
+        throw new Error(`the circuit did not go quiet: ${answer}`);
+    }
+    // An older proxy answers any GET with its round trip, which would read as quiet at once.
+    if (!answer.startsWith('quiet for')) {
+        throw new Error(`the latency proxy at ${LATENCY_CONTROL_URL} does not know /quiet (it answered "${answer}"): `
+            + 'it was started from an older checkout, so stop it and run again');
+    }
+}
+
 // What the Server host logged while one test ran (CON-6): the file the host appends to, read
 // from where the last reading stopped, so a line written between two tests is the next test's,
-// as a console message is (ADR-0048). Answers the lines and where the reading stopped.
+// as a console message is (ADR-0056). Answers the lines and where the reading stopped.
 const hostLogSize = () => (fs.existsSync(HOST_LOG) ? fs.statSync(HOST_LOG).size : 0);
 function hostLogFrom(offset) {
     if (!SERVER || !fs.existsSync(HOST_LOG)) {
@@ -118,6 +155,13 @@ function hostLogFrom(offset) {
 async function ready(page) {
     await page.locator('#demo-interactive').waitFor({ state: 'attached' });
     await page.waitForFunction(() => !document.querySelector('.ex-grid[aria-busy]'));
+    // The HeadOutlet's first interactive render takes the head's static <title> and renders it as
+    // its own, behind its comment (Blazor's getAndRemoveExistingTitle), on both hosts — on the
+    // Server host a round trip after the page is interactive. Until it has, the head is not the
+    // one the app keeps: read then at boot, the document differed from the same document read
+    // after the file's first test (UX-2, CI on the Server host, 2026-10-02; ADR-0056).
+    await page.waitForFunction(() => [...document.head.getElementsByTagName('title')]
+        .every((title) => title.previousSibling instanceof Comment));
 }
 
 // A real navigation — goto or reload — that returns once the page is ready.
@@ -127,7 +171,7 @@ const thenReady = (page, navigate) => async (...args) => {
     return response;
 };
 
-// What a page said, kept for the verdict of the test it is charged to (ADR-0048).
+// What a page said, kept for the verdict of the test it is charged to (ADR-0056).
 const newSink = () => ({ messages: [], pageErrors: [] });
 
 // Every page a test drives is listened to from before its first navigation, so nothing the
@@ -194,12 +238,12 @@ function verdict({ messages, pageErrors }, hostLog, { expectedHostLog, expectedW
     expect.soft(unhandled, 'no unhandled exception reaches the host log (CON-6)').toEqual([]);
 }
 
-// What a test changed through alterPage, per page, undone as the test ends (ADR-0048).
+// What a test changed through alterPage, per page, undone as the test ends (ADR-0056).
 const undos = new WeakMap();
 
 /**
  * Changes the page outside the test's own grids — a global, a listener on window or document, the
- * head, body, <html> or #app — and has the harness put it back when the test ends (ADR-0048).
+ * head, body, <html> or #app — and has the harness put it back when the test ends (ADR-0056).
  * `change` runs in the page and returns the function that undoes what it did.
  */
 export async function alterPage(page, change, arg) {
@@ -227,7 +271,7 @@ async function undoAlterations(page) {
 // The natives a test is likely to stub to stand in for the browser, each read the way a caller
 // reads it — `document.hasFocus`, not `Document.prototype.hasFocus` — so a stub on the instance
 // counts as much as one on the prototype. Each must still be the one the app booted with when the
-// test ends; one replaced outside alterPage would reach every later test of the file (ADR-0048:
+// test ends; one replaced outside alterPage would reach every later test of the file (ADR-0056:
 // CP-23's stub did).
 const WATCHED_NATIVES = [
     'navigator.clipboard.read', 'navigator.clipboard.readText',
@@ -280,7 +324,7 @@ const nativesOf = (page) => page.evaluateHandle((paths) => {
     return new Map(paths.map((path) => [path, read(path)]));
 }, WATCHED_NATIVES);
 
-// The app a spec file boots once (ADR-0048), held by the worker from one test to the next: one
+// The app a spec file boots once (ADR-0056), held by the worker from one test to the next: one
 // browser context and page per spec file, booted at the index by the file's first navigation,
 // with what the document and the natives were there.
 class FileApp {
@@ -412,7 +456,7 @@ async function arriveAt(page, target) {
 /** The frames in which what a disposal left to later — a wait that outlived its grid — runs. */
 export const twoFrames = (page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
-// A test with a document of its own (ADR-0048): a context of its own, every navigation real.
+// A test with a document of its own (ADR-0056): a context of its own, every navigation real.
 async function ownPage(app, page, use, options, testInfo) {
     app.startHostLog();
     const sink = newSink();
@@ -523,7 +567,7 @@ async function sharedPage(app, context, viewport, use, options, testInfo) {
         expect.soft(leaks.some((leak) => pattern.test(leak)), `the harness named ${pattern}`).toBe(true);
     }
     expect.soft(leaks.filter((leak) => !options.expectedLeaks.some((pattern) => pattern.test(leak))),
-        'nothing left outside the test\'s own page (ADR-0048)').toEqual([]);
+        'nothing left outside the test\'s own page (ADR-0056)').toEqual([]);
     verdict(sink, app.hostLog(), options, testInfo);
     if (!handOn || leaks.length > 0 || testInfo.errors.length > errorsBefore) {
         await app.close();
@@ -554,7 +598,7 @@ export const test = base.extend({
         }
         await use(true);
     }, { scope: 'worker', auto: true, timeout: 330_000 }],
-    // The app a spec file boots once (ADR-0048), held by the worker from one test to the next.
+    // The app a spec file boots once (ADR-0056), held by the worker from one test to the next.
     app: [async ({ }, use) => {
         const app = new FileApp();
         await use(app);
@@ -573,13 +617,13 @@ export const test = base.extend({
     expectedWarnings: [[], { option: true }],
     // A change a test makes outside its own page without alterPage, provoked on purpose by the
     // harness's own tests (harness.spec.mjs) and named here: asserted to be reported, and not
-    // a failure (ADR-0048).
+    // a failure (ADR-0056).
     //
     // Each of these three lists is given one pattern at a time — /a|b/ for two things. Given to
     // test.use, a list whose second item is an object, and a RegExp is one, is read as
     // Playwright's own [value, options] pair, and the option becomes the first pattern alone.
     expectedLeaks: [[], { option: true }],
-    // A document of the test's own: a context of its own and every navigation real (ADR-0048).
+    // A document of the test's own: a context of its own and every navigation real (ADR-0056).
     freshDocument: [false, { option: true }],
     // The test's context is the file's app's, so what it grants reaches the page it drives; what it
     // granted is taken back as it ends, and what its `use` grants is granted again for the next.
@@ -644,3 +688,88 @@ export async function watchNextKey(page, key, { preventAfter = false } = {}) {
 }
 
 export const keySeenUntouched = (page) => page.evaluate(() => window.__keySeen);
+
+// Waits until a grid (its `.ex-grid` root) has been told its Layout Ceiling (ADR-0053): its spacer
+// is declared no taller than the browser lays its probe out. The ceiling is told after attach, by
+// a ResizeObserver, so it can arrive after the grid stopped being busy — ADR-0053 records it doing
+// so on a circuit, and rejected keeping the grid busy until it has. Until then the grid computes
+// through the scale-1 ceiling, which compresses nothing: at 150% the browser clamps the declared
+// 28,000,028 px spacer, and a reveal or a scroll aimed through that geometry lands where the grid
+// is not painting. CI hit exactly that on the first test of a shard, on both hosts: the spacer was
+// still 28,000,028 px when Ctrl+End was pressed. A test about what a grid does once it knows its
+// geometry waits here first. At scale 1 nothing is compressed and this returns at once. The
+// length is read from the style attribute, never the CSSOM, which rounds it (ADR-0053).
+export async function layoutCeilingTold(grid) {
+    await expect.poll(() => grid.evaluate((root) => {
+        const spacer = root.querySelector(':scope > .ex-scroller > .ex-spacer');
+        const declared = Number(/(?:^|[;\s])height:\s*([\d.]+)px/.exec(spacer.getAttribute('style') ?? '')?.[1]);
+        const ceiling = root.querySelector(':scope > .ex-ceiling-probe > div').getBoundingClientRect().height;
+        return declared <= ceiling;
+    }), { message: 'the grid was never told its Layout Ceiling (ADR-0053)', timeout: 10_000 }).toBe(true);
+}
+
+// Scrolls a grid (its `.ex-grid` root) so that `row`, 0-based among the rows its scrollbar spans,
+// is the top row of the readable area — through ADR-0053's mapping, never as row × row height.
+// Above the Layout Ceiling the spacer is compressed and a scroll offset s shows the content offset
+// c(s) = s × k, k = (H − V) / (S − V − 2): H the true height (aria-rowcount × row height), S the
+// rows' part of the spacer, V the readable height, the last two less the header band. At 150% a
+// Sheet's scrollTop of 99 × 28 showed row 130, not row 100 (verification/2026-09-28-windows-3).
+// S and the row height are read from the style attributes the grid writes, never through the
+// CSSOM, which rounds a length to six significant figures (ADR-0053). Below the ceiling k is 1 and
+// the offset is row × row height exactly.
+//
+// Compressed, the target is one pixel into the row rather than its top edge: V as the page reads
+// it (clientHeight, whole pixels) can differ from the grid's by a fraction of a pixel at a
+// fractional scale, which moved k by 3e-9 on /wide at 150% and c(s) by 0.04 px at row 500,000 —
+// enough to put row 499,999 first when aimed at the edge. And scrollTop is quantised to device
+// pixels, so the offset is rounded up and nudged while the browser holds it short. Returns the
+// offset the browser holds and k. The spacer read is the one the told ceiling gives, so this
+// waits for it (layoutCeilingTold): read before, k would come out 1 at 150%.
+//
+// And it returns once the grid has painted the row there. The browser scrolls the rows it has at
+// once; the grid paints the new slice when it is told of the scroll, over the circuit on the
+// Server host, and compressed it moves the rows then, by up to (1 − 1/k) of the content offset.
+// Until it has, a row stands where the old slice put it: a box read in that moment and a picture
+// taken after it were rows apart, and at 150% on the Server host the Sheet's lines read nothing
+// where they were (CI, 2026-10-01; locally behind an 80 ms round trip, 22 of 26 line tests).
+export async function scrollRowToTop(grid, row) {
+    await layoutCeilingTold(grid);
+    const scrolled = await grid.evaluate((root, row) => {
+        const px = (style, name) => {
+            const m = new RegExp(`(?:^|[;\\s])${name}:\\s*([\\d.]+)px`).exec(style ?? '');
+            if (!m) throw new Error(`no ${name} in the style attribute "${style}"`);
+            return Number(m[1]);
+        };
+        const scroller = root.querySelector(':scope > .ex-scroller');
+        const spacer = scroller.querySelector(':scope > .ex-spacer');
+        const header = spacer.querySelector(':scope > .ex-header');
+        const band = header ? header.getBoundingClientRect().height : 0;
+        const rowHeight = px(root.getAttribute('style'), '--ex-row-height');
+        const contentHeight = Number(root.getAttribute('aria-rowcount')) * rowHeight;
+        const scrollHeight = px(spacer.getAttribute('style'), 'height') - band;
+        const readable = scroller.clientHeight - band;
+        const k = contentHeight > scrollHeight ? (contentHeight - readable) / (scrollHeight - readable - 2) : 1;
+        const content = row * rowHeight + (k > 1 ? 1 : 0);
+        scroller.scrollTop = Math.ceil(content / k);
+        for (let i = 0; i < 4 && scroller.scrollTop * k < content; i++) {
+            scroller.scrollTop = Math.ceil(scroller.scrollTop) + 1;
+        }
+        return { scrollTop: scroller.scrollTop, k };
+    }, row);
+    // Where the row stands is no witness: scrolled to row 0 at 150% it moves 0.42 px, and the slice
+    // is rounded to a device pixel, a third of a pixel either way. The grid's own word is: the
+    // offset it wrote on the Viewport before rounding (ExGrid.razor, ViewportStyle), which with the
+    // row's place inside the Viewport is ADR-0053's r × h − c(s) + s for the offset it painted.
+    await expect.poll(() => grid.evaluate((root, { row, k }) => {
+        const scroller = root.querySelector(':scope > .ex-scroller');
+        const viewport = scroller.querySelector(':scope > .ex-spacer > .ex-viewport');
+        const painted = viewport?.querySelector(`.ex-row[aria-rowindex="${row + 1}"]`);
+        const written = /translateY\(round\(nearest,\s*(-?[\d.]+(?:[eE][-+]?\d+)?)px/.exec(viewport?.getAttribute('style') ?? '');
+        if (!painted || !written) return false;
+        const rowHeight = Number(/(?:^|[;\s])--ex-row-height:\s*([\d.]+)px/.exec(root.getAttribute('style'))[1]);
+        const inside = painted.getBoundingClientRect().top - viewport.getBoundingClientRect().top;
+        const s = scroller.scrollTop;
+        return Math.abs(Number(written[1]) + inside - (row * rowHeight - s * k + s)) < 0.1;
+    }, { row, k: scrolled.k }), { message: `the grid never painted row ${row} for the offset the browser holds (ADR-0053)`, timeout: 10_000 }).toBe(true);
+    return scrolled;
+}

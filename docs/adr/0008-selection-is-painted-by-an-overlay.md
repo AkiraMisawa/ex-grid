@@ -69,7 +69,8 @@ the concerns stay apart.
 - **Only geometric effects can be painted.** Rectangle fill, outline and fill handle: yes.
   "Invert the text colour of selected cells only": no.
 - **The fill is translucent.** `rgba`, so the cell text shows through. This is also what Excel
-  looks like.
+  looks like. *(Of the range, and not of the active cell, which Excel leaves untinted. Corrected
+  2026-09-29: see "Excel's look for the Focus and a single range" below.)*
 - **Disjoint multi-range selection means one overlay per range.** Operations with many ranges are
   rare, so this does not become a problem.
 - **The overlay lives in the same coordinate space as the rows.** Sharing the scroll translation
@@ -116,7 +117,9 @@ The gestures ADR-0012 names are wired; two things around them are deliberately n
 - **The fill handle is not painted.** This ADR names it as one of the three things an overlay
   draws, but what it does belongs with edits
   ([ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md)) and neither the gesture nor
-  the fill semantics are settled.
+  the fill semantics are settled. *(Settled 2026-09-27 by
+  [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md): the core paints the handle and owns
+  the drag, and raises a Fill Intent; the Consumer decides what a fill means.)*
 - **Right-click and double-click leave the selection alone.** A secondary click is ignored rather
   than guessed at: in Excel it moves the selection unless the cell is already inside it, and a
   context menu is a Chrome seam (ADR-0010) that has not been specified. Double-click starts editing
@@ -201,3 +204,88 @@ the Focus moves and the rows keep skipping (ADR-0003).
 
 Implemented as specified: `HighlightFocusRow` on the component, one rectangle per layer
 painted first so every range stays readable over it, and `--ex-focus-row-fill` as the colour.
+
+## Excel's look for the Focus and a single range *(decided with the user, 2026-09-29)*
+
+Seen on ExSheet's demo page, the active cell's outline was thinner on one side than on the other
+three, and a selected range had no outline of its own. Both are corrected here, for ExGrid as a
+whole, since the Focus is Excel's active cell everywhere
+([ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+
+- **The Focus outline is drawn inside its cell.** It was a 2px outline offset by −1px, so it
+  straddled the cell's edge. The outer pixel went beneath whatever is painted above the selection
+  layer: a Pinned Column beside the first scrollable column, the Headings beside column A
+  ([ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md)), and the header above row 1. Measured
+  in device pixels on 2026-09-29, those edges were 1px and the others 2px. Lifting the outline
+  above those layers is not an option: a cell scrolled beneath the pinned block has to go beneath
+  it, outline and all. So the whole width now lies inside the cell, as the pointing outline and the
+  chosen action already do, and nothing above the layer can cover part of it. The fill handle
+  stays centred on the outline's corner. The forced-colors outline of a range is drawn the same
+  way.
+  *(2026-10-01, decided with the user, ticket 49: outside where nothing covers it.)*
+  - Excel draws the Selection's outline on the gridline and one pixel outside the range, so it
+    covers a Border on all four outer edges (the eleventh Windows run, case 11). Drawn inside, ours
+    covered the bottom and right lines but left the top and left ones showing just outside it,
+    1 to 2 px from Excel's picture.
+  - So the outline lies as Excel's does, on the gridline and one pixel out, on every side.
+  - Only where something above the selection layer would cover that outer pixel does a side stay
+    inside, as above, so that its width stays equal (UX-18). That is beside the Headings, beside a
+    Pinned Column, and under the header.
+  - A range reaching column A, the pinned boundary or row 1 therefore has that side one pixel
+    further in than its others. Part C of the eleventh run compares that with Excel's picture.
+- **The Focus cell is not tinted, and a selection of one cell is not tinted at all.** The
+  Consequences above say "this is also what Excel looks like" of the translucent fill. That holds
+  for the range and not for the active cell: Excel leaves the active cell untinted inside a tinted
+  range, and tints nothing when one cell is selected. A range that holds the Focus is therefore
+  painted with a hole where the Focus is. **The hole is geometry**, resolved in C# with the
+  rectangle it belongs to and emitted inline
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)). The range stays one
+  element, so the argument above (cost per range, never per cell) is untouched. That the hole adds
+  nothing measurable to a drag is a claim, so it is measured before it is made.
+- **A selection of one range carries one outline, around the whole range**, in the Focus outline's
+  colour and width and drawn inside the range in the same way. The Focus inside it has no outline
+  of its own and is marked only by being untinted. A selection of one cell is the case where the
+  range and the Focus coincide, and it shows the Focus outline alone. *(Read, not observed: that
+  Excel draws no separate outline around the active cell inside a single range. It is on the next
+  Windows run's list.)*
+- **Several ranges are left as they are until Excel has been observed**: each range tinted with
+  no outline, the Focus's cell untinted (the hole above) and outlined. How Excel outlines a
+  selection made with Ctrl+click, and whether its active cell carries a border there, is on the
+  next Windows run's list, and this bullet is replaced by what it finds.
+- **The range outline has the token ADR-0029 reserved for it.** `--ex-selection-outline` was
+  reserved there as "the border Excel draws around the range's perimeter", and this is that border.
+  Its default is `--ex-focus-outline`, so a Theme or Wrapper that sets only the Focus outline's
+  colour gets both in that colour. *(Corrected the same day. This bullet first said the range
+  outline read `--ex-focus-outline` and that no token was added, overlooking the reservation.)*
+
+*(Settled while building, the same day.)*
+
+- **A range across the pinned boundary is drawn whole in both layers, each clipped to its own side.**
+  The earlier "two rectangles" bullet cut the range at the boundary. Cut that way, an outline drawn
+  inside each half would draw a line down the boundary. Drawn whole and clipped, each half shows
+  only its own side of one outline, so no seam shows, and C# never needs the outline's width.
+- **The hole clips the tint only.** It is applied to the range's tint, never to its box, so the
+  outline around a single range is never cut where the Focus is.
+- **Under forced colors, the Focus inside a single range takes its outline back.** Forced colors
+  discard the tint, and the missing tint is the only thing that marks that Focus. Without its
+  outline, the Focus would not be visible.
+- **The fill handle stays where it was**, centred on the range's corner, which is now the outline's
+  outer corner. Centring it on the outline's centre line would need the outline's width in C#.
+  That is a stylesheet value, and pairing it with a C# constant is the defect
+  [ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md) removes.
+- **The hole was measured before it was claimed.** Main-thread time per ten-render selecting drag
+  on `/sheet`, headless Chrome on an M4 Pro. With the hole switched off on the changed build, a drag
+  moved by 0.6 to 0.7 ms (Server 16.2 against 15.6, WebAssembly 33.3 against 32.6). That is inside
+  the 5 to 8 ms interquartile spread of the repeated before-and-after comparison. Style
+  recalculation rose by 0.1 to 0.5 ms per drag. Nothing attributable to the hole was measured. The
+  figures are medians whose per-drag rows were not kept. The script that writes the rows, and the
+  pending re-run on a quiet machine, are in `verification/2026-09-29-selection-hole/`.
+
+*(2026-10-02, [ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)'s
+"What was decided after Part C".)* **On a Sheet's Paper the Selection's shade multiplies with the cells
+beneath it**, so the lines inside a range stay as drawn, as Excel's do. It is still one overlay per range,
+and still never a class on a cell: the shade is the range's own layer, painted with `mix-blend-mode:
+multiply`, and the selection layer stops being a stacking context of its own there so that the blend
+reaches the cells. The outline and the Focus's are not blended. Over a Pinned Column the pinned layer
+is a stacking context above the pinned cells, so the shade cannot reach them, and there it lies over
+the lines as before. ExGrid's own selection is unchanged.

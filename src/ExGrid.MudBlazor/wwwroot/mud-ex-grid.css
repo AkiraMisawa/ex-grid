@@ -25,18 +25,17 @@
     --ex-column-rule-color: transparent;
     --ex-pinned-background: var(--mud-palette-surface);
     /* Selection from the palette's primary, translucent so the value reads through it
-       (ADR-0008). The Focus outline is the INK colour, not the primary: measured in the
-       browser suite, MudBlazor's dark primary (#776be7) against its dark surface
-       (#373740) is 2.83:1, under the 3:1 UX-9 requires — the same finding, one palette
-       over, that put CanvasText rather than Highlight on the core's default. The ink
-       contrasts with its own surface by construction in both schemes. */
+       (ADR-0008). The Focus outline, and everything else drawn with it — the pointing
+       outline, the fill handle, the chosen action, and a single range's outline, whose own
+       token defaults to it — is the primary too (ADR-0030, 2026-09-29); the dark scheme
+       raises it, below. */
     --ex-selection-fill: rgba(var(--mud-palette-primary-rgb), 0.18);
     --ex-focus-row-fill: rgba(var(--mud-palette-primary-rgb), 0.08);
     --ex-row-hover-background: var(--mud-palette-table-hover);
     /* Row Stripes, where Striped or the grid turns them on (ADR-0038): the palette's
        table-stripe colour, as MudBlazor's own tables paint it. */
     --ex-row-stripe-background: var(--mud-palette-table-striped);
-    --ex-focus-outline: var(--mud-palette-text-primary);
+    --ex-focus-outline: var(--mud-palette-primary);
     --ex-grid-focus-outline: 2px solid var(--mud-palette-primary);
     --ex-editor-background: var(--mud-palette-surface);
     --ex-editor-color: var(--mud-palette-text-primary);
@@ -44,6 +43,11 @@
     --ex-placeholder-background: var(--mud-palette-skeleton);
     --ex-resize-guide-color: var(--mud-palette-primary);
     --ex-drop-indicator-color: var(--mud-palette-primary);
+    /* The Size Tip (ADR-0052): the colours MudBlazor gives its own tooltips, which read in
+       both schemes; a tooltip draws no outline. */
+    --ex-size-tip-background: var(--mud-palette-gray-darker);
+    --ex-size-tip-color: var(--mud-palette-dark-text);
+    --ex-size-tip-outline: none;
     /* Tone (ADR-0006): a loss in the palette's error, a gain in its success. The
        Consumer's rule says which cell; the palette says which colour. */
     --ex-tone-negative-color: var(--mud-palette-error);
@@ -53,6 +57,12 @@
     --ex-state-modified-mark: var(--mud-palette-info);
     --ex-state-stale-color: var(--mud-palette-text-secondary);
     --ex-state-missing-background: var(--mud-palette-background-gray);
+    /* The Change Highlight (ADR-0068): one colour, whichever way the value moved. The palette's
+       warning, a highlighter's amber, which is none of the colours above: not the selection's
+       primary, the Modified mark's info, or the tones' success and error. Translucent, so the
+       value reads through it. At 0.25, over MudBlazor's default surfaces, the default text keeps
+       8.3:1 in the light scheme and 4.5:1 in the dark one; 0.3 fell to 4.2:1 there. */
+    --ex-change-highlight-background: rgba(var(--mud-palette-warning-rgb), 0.25);
     --ex-scrollbar-color: var(--mud-palette-gray-light);
 
     /* The surface itself. Inline-flex so the paper is as wide as its grids, and the
@@ -68,6 +78,24 @@
        would clip the grid's popovers, which UX-11 forbids — so the two never touch. */
     padding: var(--mud-default-borderradius, 4px);
     font-family: var(--mud-typography-default-family, Roboto, "Helvetica Neue", Arial, sans-serif);
+}
+/* The dark scheme's Focus outline (ADR-0030, 2026-09-29; UX-9): the primary with its lightness
+   raised just far enough to clear 3:1 against what it is drawn on, the hue and chroma kept.
+   Measured, MudBlazor's dark primary (#776be7) against its dark surface (#373740) is 2.83:1.
+   An OKLCH lightness of 0.64, painted, is 3.31:1 against the surface and 3.06:1 against the
+   Focus band's tint over it; 0.63 was 2.95:1 there. A primary already lighter than the floor
+   is left as it is, and the light scheme's is never touched.
+   The floor is set for MudBlazor's default dark palette: CSS cannot compare two colours'
+   luminance, so a Consumer's own is not recomputed. The range outline follows through
+   --ex-selection-outline, which defaults to this token.
+   MudBlazor says which scheme it paints only through the variable MudThemeProvider emits beside
+   the palette for its own inputs' color-scheme — no class, and no color-scheme on the page — so
+   the scheme is read from that variable, by a style query on the paper's parent, which inherits
+   it. */
+@container style(--mud-native-html-color-scheme: dark) {
+    .mud-ex-grid {
+        --ex-focus-outline: oklch(from var(--mud-palette-primary) max(l, 0.64) c h);
+    }
 }
 .mud-ex-grid.mud-ex-grid-square {
     border-radius: 0;
@@ -112,6 +140,53 @@
    same colour the core's message popover speaks in. Painted, not laid out. */
 .mud-ex-grid .ex-editor .mud-ex-editor.mud-ex-editor-error {
     box-shadow: inset 0 -2px 0 var(--mud-palette-error);
+}
+/* The Formula Bar's two fields (ADR-0051): bare inputs filling the boxes the core stands in
+   the bar — the boxes, their padding and their widths are the core's (.ex-name-box, and the
+   bar's .ex-editor); these are the controls inside them. The text field is the Cell Editor's
+   second surface and wears its underline while it takes typing. */
+.mud-ex-grid .ex-name-box .mud-ex-name-box,
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    font: inherit;
+    line-height: inherit;
+    background: transparent;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-editable:focus {
+    box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
+}
+/* The completion list and the argument hint (ADR-0051): the contents of the box the core
+   stands beneath the editor — its place, width and bound are the core's (.ex-completion).
+   A candidate is a row's height, from the core's token, so the list reads as the grid does. */
+.mud-ex-grid .ex-completion {
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    outline: none;
+    box-shadow: var(--mud-elevation-8);
+}
+.mud-ex-grid .mud-ex-completion-list { padding: 0; }
+.mud-ex-grid .mud-ex-completion-item {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    cursor: pointer;
+}
+.mud-ex-grid .mud-ex-completion-hint {
+    padding: 0 var(--ex-cell-padding-x, 8px);
+    line-height: var(--ex-row-height);
+    white-space: nowrap;
+    color: var(--mud-palette-text-secondary);
+    border-top: 1px solid var(--mud-palette-lines-default);
 }
 /* The loading bar, where the core places its loading seam (ADR-0010). */
 .mud-ex-grid .mud-ex-grid-loading {
@@ -161,7 +236,7 @@
     gap: 4px;
     flex-shrink: 0;
 }
-/* The find panel (ADR-0047): the filter panel's column, with no list to give way; its actions
+/* The find panel (ADR-0055): the filter panel's column, with no list to give way; its actions
    share the filter panel's rule above. The outcome line keeps its height when empty, so the
    panel does not jump when a step finds nothing. */
 .mud-ex-grid-find {

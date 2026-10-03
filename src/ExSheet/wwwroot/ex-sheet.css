@@ -1,0 +1,406 @@
+/* ExSheet's stylesheet, beside ExGrid's ex-grid.css.
+
+   The Paper and the Ink (ADR-0071; ADR-0027's note of 2026-09-30). The ground a Sheet's cells lie
+   on is Excel's white, and text whose Font colour is Automatic is Excel's black, in every colour
+   scheme: a colour a user recorded is document data, and on white Paper it reads as it did when it
+   was chosen. Both are Visual Tokens, --ex-sheet-paper and --ex-sheet-ink, with those defaults in
+   every scheme. A Consumer may set them; ExSheet and the MudBlazor packages never map them onto a
+   dark palette.
+
+   How the exception to ADR-0027 is made. Everywhere else the grid's defaults stay on system colours
+   and follow the page's scheme. ExSheet divides its grid by element, here and nowhere else:
+   - What lies on the Paper is painted from the two tokens: the rows' ground, the cells' text, the
+     ground a Pinned Column's cells stand on, the middle pixel of a double line with no Fill beneath
+     it (with one, the Fill's: the core's generated rules, ticket 99), the gridlines, and
+     the Cell Editor in its cell, unless the edited cell's own Fill and Font replace them (the
+     core's generated rules, ticket 88). Everything the grid draws over the rows — the Focus, the
+     Selection, Reference Outlines and the pointed shade, the fill handle, the Cell Editor and its
+     coloured text — stands in a light island (color-scheme: light), so whatever it takes from a
+     system colour or from light-dark() resolves as the light scheme resolves it.
+   - What frames the Paper is left alone, and follows the scheme: the Headings (the Row Headings
+     stand inside the rows, and keep their own ground and colour), the Name Box, the Formula Bar with
+     its coloured References, popovers, the Size Tip and the scrollbar.
+   A Wrapper's own token for something on the Paper stays the Wrapper's: under ExSheet.MudBlazor the
+   Focus is the palette's primary, as ExGrid.MudBlazor gives it. Forced-colors mode still wins over
+   all of it (ADR-0027). The rules carry the specificity of one class, so the core's rules for a Fill
+   and a line on a cell (ex-grid.css and the grid's generated stylesheet) win over them in any order.
+   They reach the grid's internal elements (ADR-0029), which ExSheet may do as the package that ships
+   beside ExGrid from this repository; the layer-3 test of the Paper under both schemes holds the two
+   in step. Nothing here is geometry: no rule sets a length the grid computes with.
+
+   The gridlines are Excel's, #e0e0e0 on white (the eleventh Windows run): the Ink mixed 12% into the
+   Paper, so a Consumer's Paper and Ink carry them along. Excel draws them on every row and column. */
+:where(.ex-sheet) .ex-row {
+    background-color: var(--ex-sheet-paper, #fff);
+    --ex-row-rule-color: color-mix(in srgb, var(--ex-sheet-ink, #000) 12%, var(--ex-sheet-paper, #fff));
+}
+:where(.ex-sheet) .ex-cell {
+    color: var(--ex-sheet-ink, #000);
+    --ex-background: var(--ex-sheet-paper, #fff);
+    --ex-pinned-background: var(--ex-sheet-paper, #fff);
+    --ex-column-rule-color: color-mix(in srgb, var(--ex-sheet-ink, #000) 12%, var(--ex-sheet-paper, #fff));
+}
+/* A Pinned Column's cell stands on a ground of its own, which covers the row's gridline beneath it:
+   it paints that gridline itself, unless its Fill covers it. It names the gridline in --ex-row-rule,
+   so that a cell that draws lines (.ex-lined in ex-grid.css, whose layers replace this one) paints
+   it beneath them, and beneath a neighbour's Fill over its edge (ticket 90). In whole device pixels,
+   as the row's rule is (--ex-rule-dp in ex-grid.css): one at 150%, as Excel's gridline is. */
+:where(.ex-sheet) .ex-pinned:where(:not([class*=" ex-fill-"])) {
+    --ex-row-rule: linear-gradient(to top, var(--ex-row-rule-color) 0 var(--ex-rule-dp, 1px), transparent var(--ex-rule-dp, 1px));
+    background-image: var(--ex-row-rule);
+}
+/* A row not yet painted shows its bar in the Ink, as it would on a light page. */
+:where(.ex-sheet) .ex-placeholder { --ex-placeholder-background: var(--ex-sheet-ink, #000); }
+:where(.ex-sheet) .ex-viewport > :not(.ex-row) {
+    color-scheme: light;
+    --ex-editor-background: var(--ex-sheet-paper, #fff);
+    --ex-editor-color: var(--ex-sheet-ink, #000);
+}
+
+/* The Selection on the Paper looks like Excel's (ADR-0071, "What was decided after Part C"; SH-49).
+   ExGrid's own selection is left as it is: these rules reach its overlay elements on a Sheet only,
+   at the specificity of two classes, so they win over the core's one-class rules in any order.
+
+   The outline — the Focus's, and the one a single range carries round its perimeter — is 2 device
+   pixels on the gridline and one outside it, with a white line of one device pixel inside it, as
+   Excel draws it. Excel's green where no Theme or Wrapper names the colour: a Wrapper's token wins,
+   so under ExSheet.MudBlazor the outline is the palette's primary. The white line is not drawn while
+   an edit is open, as Excel drops it (the fourteenth run, case 19). The fill handle is the outline's
+   colour, as Excel's is. */
+.ex-sheet .ex-viewport {
+    --ex-outline-width: calc(2 * var(--ex-dp, 1px));
+}
+.ex-sheet .ex-focus::after {
+    border-color: var(--ex-focus-outline, #217346);
+    box-shadow: inset 0 0 0 var(--ex-dp, 1px) var(--ex-sheet-selection-ring, #fff);
+}
+.ex-sheet .ex-range-single::after {
+    border-color: var(--ex-selection-outline, var(--ex-focus-outline, #217346));
+    box-shadow: inset 0 0 0 var(--ex-dp, 1px) var(--ex-sheet-selection-ring, #fff);
+}
+.ex-sheet .ex-editing .ex-focus::after,
+.ex-sheet .ex-editing .ex-range-single::after {
+    box-shadow: none;
+}
+.ex-sheet .ex-fill-handle { background: var(--ex-fill-handle-color, var(--ex-focus-outline, #217346)); }
+/* The shade multiplies with the cells beneath it rather than lying over them, so the lines inside a
+   range stay as drawn: a black line stays black, as Excel's do over its #C7C7C7, and a Fill darkens
+   as it does. For the blend to reach the cells nothing between the shade and the Viewport may be a
+   stacking context of its own (an isolated group blends with nothing), so on the Paper the
+   scrollable selection layer and the range give up their z-index and isolation, and the shade paints
+   first in its range, beneath the outline, by order alone. The layer still paints above the rows,
+   which are not positioned, and below the Pinned Columns (z-index 2) and the editor (3). The pinned
+   layer stays a stacking context above the pinned cells, so over a Pinned Column the shade still lies
+   over the lines (ADR-0071; owed). Under ExSheet.MudBlazor the shade is the primary mixed into white:
+   its translucent token, multiplied over white Paper. */
+.ex-sheet .ex-selection { z-index: auto; }
+.ex-sheet .ex-selection .ex-range { isolation: auto; }
+/* The shade is black at 22%: over white Paper that is Excel's #C7C7C7 (255 × 0.78 = 199), and over a
+   Pinned Column, where it cannot multiply, it stays translucent, so the value still reads through. */
+.ex-sheet .ex-selection .ex-range::before {
+    z-index: auto;
+    mix-blend-mode: multiply;
+    background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22));
+}
+.ex-sheet .ex-selection-pinned .ex-range::before { background: var(--ex-selection-fill, rgba(0, 0, 0, 0.22)); }
+@media (forced-colors: active) {
+    .ex-sheet .ex-focus::after, .ex-sheet .ex-range-single::after { box-shadow: none; }
+}
+
+/* The Row Headings' edge is Excel's #ABABAB over white (Part C): the core's grey at the alpha that
+   gives it, so on a dark page it still stands out from the dark ground. Only the core's own default
+   changes: a Theme's or a Wrapper's --ex-heading-rule-color, or its header rule, which the core falls
+   back to (ExGrid.MudBlazor's table lines), still wins. */
+.ex-sheet .ex-row-heading,
+.ex-sheet .ex-headings-corner {
+    box-shadow: inset calc(0px - var(--ex-rule-dp, 1px)) 0 var(--ex-heading-rule-color, var(--ex-header-rule-color, rgba(128, 128, 128, 0.66)));
+}
+
+/* Format Cells under the built-in Chrome (ADR-0071): the contents ExSheet shows in the grid's
+   popover frame (ADR-0050 item 16). It frames the Paper rather than lying on it, so it follows the
+   colour scheme as every popover does, through the grid's own Visual Tokens (ADR-0027/0063). Its
+   classes are implementation detail (ADR-0029): a Consumer restyles Format Cells by substituting
+   its Chrome, not by writing against these. No geometry here is arithmetic the grid reads: the
+   frame's place and bound arrive inline from the core (ADR-0040). */
+.ex-format-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 36em;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.ex-format-cells-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid GrayText;
+}
+.ex-popover .ex-format-cells-tab {
+    border: 1px solid transparent;
+    border-bottom: 0;
+    background: none;
+    color: inherit;
+    padding: 4px 10px;
+}
+.ex-popover .ex-format-cells-tab[aria-selected="true"] {
+    border-color: GrayText;
+    background: var(--ex-header-background, Canvas);
+    font-weight: 600;
+    margin-bottom: -1px;
+}
+.ex-format-cells-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 16em;
+}
+.ex-format-cells fieldset {
+    margin: 0;
+    padding: 4px 8px 6px;
+    border: 1px solid GrayText;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ex-format-cells-columns {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+.ex-format-cells-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.ex-format-cells-choice,
+.ex-format-cells-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ex-format-cells-field input[type="number"] { width: 5em; }
+.ex-format-cells-reason,
+.ex-format-cells-refusal:not(:empty) {
+    display: block;
+    font-size: 0.85em;
+}
+.ex-format-cells-reason {
+    margin-left: 1.6em;
+    color: GrayText;
+}
+.ex-format-cells-refusal { color: var(--ex-state-error-color, #b3261e); }
+.ex-format-cells-types {
+    max-height: 10em;
+    overflow-y: auto;
+}
+
+/* The palette (case 23): ten swatches across. Each is a radio button drawn as its colour, which is
+   written inline as the user's choice of document data, never a Visual Token (ADR-0071). */
+.ex-format-cells-palette {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ex-format-cells-swatches {
+    display: grid;
+    grid-template-columns: repeat(10, 16px);
+    gap: 3px;
+}
+.ex-format-cells-swatch {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    border: 1px solid GrayText;
+    cursor: pointer;
+}
+.ex-format-cells-swatch:checked {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+}
+.ex-format-cells-swatch:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+.ex-format-cells-hex { width: 7em; font-family: inherit; }
+
+/* The Border tab. */
+.ex-format-cells-line-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.ex-format-cells-presets,
+.ex-format-cells-edges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.ex-popover .ex-format-cells-edge[aria-pressed="true"] { font-weight: 600; }
+.ex-format-cells-preview { border: 1px solid GrayText; }
+
+/* The Sheet Toolbar under the built-in Chrome (ADR-0100). It frames the Paper, as the Formula Bar
+   does, so it follows the colour scheme through the grid's Visual Tokens. Its height and each Toolbar
+   Row's are written inline from C# (ADR-0028); nothing here sets a length the Sheet computes with,
+   and a row's content is fitted to the row and clipped. The pictures are inline SVG in currentColor.
+   A Toolbar Item's classes are implementation detail (ADR-0029): a Consumer restyles the items by
+   substituting its Chrome. */
+.ex-sheet-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    flex: none;
+    box-sizing: border-box;
+    overflow: hidden;
+    font-family: var(--ex-font-family, system-ui, sans-serif);
+    font-size: var(--ex-font-size, 14px);
+    background: var(--ex-header-background, Canvas);
+    color: var(--ex-color, CanvasText);
+    border: 1px solid var(--ex-column-rule-color, GrayText);
+    border-bottom: 0;
+    user-select: none;
+}
+.ex-sheet-toolbar:focus-visible {
+    outline: 2px solid var(--ex-focus-color, Highlight);
+    outline-offset: -2px;
+}
+.ex-sheet-toolbar-row {
+    flex: 0 0 100%;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+.ex-sheet-toolbar > :not(.ex-sheet-toolbar-row) { align-self: center; }
+.ex-sheet-toolbar-item {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: calc(var(--ex-sheet-toolbar-row-height, 28px) - 6px);
+    min-width: calc(var(--ex-sheet-toolbar-row-height, 28px) - 6px);
+    padding: 0 4px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.ex-sheet-toolbar-split { padding: 0; gap: 0; }
+.ex-sheet-toolbar-face,
+.ex-sheet-toolbar-arrow {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0 3px;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+.ex-sheet-toolbar-arrow { padding: 0 1px; }
+.ex-sheet-toolbar-item:hover:not(:disabled),
+.ex-sheet-toolbar-face:hover:not(:disabled),
+.ex-sheet-toolbar-arrow:hover:not(:disabled) {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.ex-sheet-toolbar-pressed,
+.ex-sheet-toolbar-item[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--ex-focus-color, Highlight) 20%, transparent);
+    border-color: color-mix(in srgb, var(--ex-focus-color, Highlight) 60%, transparent);
+}
+.ex-sheet-toolbar-active { outline: 2px solid var(--ex-focus-color, Highlight); outline-offset: -1px; }
+.ex-sheet-toolbar-item:disabled,
+.ex-sheet-toolbar-face:disabled,
+.ex-sheet-toolbar-arrow:disabled { color: GrayText; cursor: default; }
+.ex-sheet-toolbar-icon { width: 16px; height: 16px; flex: none; }
+.ex-sheet-toolbar-arrow .ex-sheet-toolbar-icon,
+.ex-sheet-toolbar-menu > .ex-sheet-toolbar-icon:last-of-type { width: 10px; height: 10px; }
+.ex-sheet-toolbar-menu { min-width: 7em; justify-content: space-between; }
+.ex-sheet-toolbar-text { white-space: nowrap; }
+.ex-sheet-toolbar-swatch {
+    display: block;
+    width: 14px;
+    height: 3px;
+    margin-top: 1px;
+    background-color: currentColor;
+}
+.ex-sheet-toolbar-separator {
+    align-self: stretch;
+    width: 1px;
+    margin: 4px 3px;
+    background: var(--ex-column-rule-color, GrayText);
+}
+.ex-sheet-keytip {
+    position: absolute;
+    left: 50%;
+    top: 55%;
+    transform: translate(-50%, 0);
+    padding: 0 3px;
+    font-size: 0.7em;
+    font-weight: 600;
+    line-height: 1.25;
+    border: 1px solid GrayText;
+    box-shadow: 0 1px 2px color-mix(in srgb, CanvasText 30%, transparent);
+    border-radius: 2px;
+    background: Canvas;
+    color: CanvasText;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* A Toolbar Item's choices, in the grid's popover frame: a list, and Excel's palette ten across,
+   each swatch drawn in its colour, written inline as document data (ADR-0071). */
+.ex-sheet-choices {
+    display: grid;
+    grid-template-columns: repeat(10, 18px);
+    gap: 3px;
+    min-width: 12em;
+}
+.ex-popover .ex-sheet-choice {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 3px 8px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.ex-popover .ex-sheet-choice[aria-checked="true"] { font-weight: 600; }
+.ex-popover .ex-sheet-choice[aria-disabled="true"] { color: GrayText; cursor: default; }
+.ex-popover .ex-sheet-choice:hover:not([aria-disabled="true"]),
+.ex-popover .ex-sheet-choice:focus-visible { background: color-mix(in srgb, currentColor 10%, transparent); }
+.ex-sheet-choice-reason { font-size: 0.85em; color: GrayText; max-width: 24em; white-space: normal; }
+.ex-popover .ex-sheet-swatch-choice {
+    width: 18px;
+    height: 18px;
+    padding: 1px;
+    border: 1px solid transparent;
+    background: none;
+    cursor: pointer;
+}
+.ex-popover .ex-sheet-swatch-choice[aria-checked="true"],
+.ex-popover .ex-sheet-swatch-choice:focus-visible { border-color: Highlight; outline: 1px solid Highlight; }
+.ex-sheet-swatch { display: block; width: 100%; height: 100%; border: 1px solid GrayText; box-sizing: border-box; }
+/* A Toolbar Row's KeyTip, as a ribbon tab's: at the row's start, over its first item. */
+.ex-sheet-toolbar-row,
+.ex-sheet-toolbar { position: relative; }
+.ex-sheet-keytip.ex-sheet-row-keytip {
+    left: 2px;
+    top: 50%;
+    bottom: auto;
+    transform: translate(0, -50%);
+    font-weight: 600;
+}

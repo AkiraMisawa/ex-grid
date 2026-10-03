@@ -11,7 +11,7 @@ using Xunit;
 namespace ExGrid.Components.Tests;
 
 /// <summary>
-/// Find (ADR-0047, FD-1..FD-8): the grid asks and moves the Focus; the Consumer searches.
+/// Find (ADR-0055, FD-1..FD-8): the grid asks and moves the Focus; the Consumer searches.
 /// 20px rows in a 120px Viewport, three 100px columns: Book (editable), Amount, AsOf.
 /// </summary>
 public class FindTests : GridTestContext
@@ -73,7 +73,7 @@ public class FindTests : GridTestContext
     private static Func<GridFindRequest, CancellationToken, Task<GridFindResult>> Answer(int row, string column)
         => (request, _) => Task.FromResult(GridFindResult.Found(row, column));
 
-    [Fact] // ADR-0047 / FD-2: nothing can search — Ctrl+F opens nothing and says so
+    [Fact] // ADR-0055 / FD-2: nothing can search — Ctrl+F opens nothing and says so
     public async Task Ctrl_f_with_nothing_to_search_is_refused()
     {
         var heard = new Heard();
@@ -85,7 +85,7 @@ public class FindTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-popover"));
     }
 
-    [Fact] // ADR-0047 / FD-1: Ctrl+F is claimed on every grid, wired or not
+    [Fact] // ADR-0055 / FD-1: Ctrl+F is claimed on every grid, wired or not
     public void The_gate_is_told_to_take_ctrl_f_on_every_grid()
     {
         RenderGrid(new Heard(), onFind: null);
@@ -94,7 +94,7 @@ public class FindTests : GridTestContext
         Assert.Contains("Control+F", Js.TakenAtAttach);
     }
 
-    [Fact] // ADR-0047 / FD-3: with a search wired, Ctrl+F opens the panel, which takes the keyboard
+    [Fact] // ADR-0055 / FD-3: with a search wired, Ctrl+F opens the panel, which takes the keyboard
     public async Task Ctrl_f_opens_the_find_panel()
     {
         var cut = RenderGrid(new Heard(), Answer(0, "Book"));
@@ -106,7 +106,7 @@ public class FindTests : GridTestContext
         Assert.Single(cut.FindAll("input.ex-find-field"));
     }
 
-    [Fact] // ADR-0047 / FD-4: a step asks with every field
+    [Fact] // ADR-0055 / FD-4: a step asks with every field
     public async Task A_step_asks_with_the_focus_the_columns_and_the_version()
     {
         var heard = new Heard();
@@ -130,7 +130,7 @@ public class FindTests : GridTestContext
         Assert.Equal(7, request.RowSequenceVersion);
     }
 
-    [Fact] // ADR-0047 / FD-5: a found cell becomes the Focus, and the selection collapses onto it
+    [Fact] // ADR-0055 / FD-5: a found cell becomes the Focus, and the selection collapses onto it
     public async Task A_found_cell_becomes_the_focus_and_is_revealed()
     {
         var heard = new Heard();
@@ -148,7 +148,7 @@ public class FindTests : GridTestContext
         Assert.Single(cut.FindAll(".ex-popover-find"));
     }
 
-    [Fact] // ADR-0047 / FD-4/FD-5: with more than one cell selected the step searches the selection, which stands
+    [Fact] // ADR-0055 / FD-4/FD-5: with more than one cell selected the step searches the selection, which stands
     public async Task A_step_over_a_range_searches_it_and_keeps_it()
     {
         var heard = new Heard();
@@ -164,7 +164,7 @@ public class FindTests : GridTestContext
         Assert.Equal(8, heard.Selection.CellCount);
     }
 
-    [Fact] // ADR-0047 / FD-6: not found is refused, and the panel says so
+    [Fact] // ADR-0055 / FD-6: not found is refused, and the panel says so
     public async Task Not_found_is_refused_and_shown()
     {
         var heard = new Heard();
@@ -178,7 +178,7 @@ public class FindTests : GridTestContext
         Assert.Equal("status", cut.Find(".ex-find-outcome").GetAttribute("role"));
     }
 
-    [Fact] // ADR-0047 / ADR-0011 / FD-6: an answer under a stale version moves nothing
+    [Fact] // ADR-0055 / ADR-0011 / FD-6: an answer under a stale version moves nothing
     public async Task An_answer_under_a_stale_version_moves_nothing()
     {
         var heard = new Heard();
@@ -199,7 +199,7 @@ public class FindTests : GridTestContext
         Assert.NotEqual(new CellPosition(5, 0), heard.Selection?.IsEmpty == false ? heard.Selection.Focus : default);
     }
 
-    [Fact] // ADR-0047 / FD-6: a step asked while one is out cancels it, and its answer is discarded
+    [Fact] // ADR-0055 / FD-6: a step asked while one is out cancels it, and its answer is discarded
     public async Task A_new_step_cancels_the_one_that_is_out()
     {
         var heard = new Heard();
@@ -220,7 +220,7 @@ public class FindTests : GridTestContext
         Assert.Equal(new CellPosition(4, 0), heard.Selection!.Focus);
     }
 
-    [Fact] // ADR-0047 / FD-8: Escape closes the panel, and the text survives a reopen
+    [Fact] // ADR-0055 / FD-8: Escape closes the panel, and the text survives a reopen
     public async Task Escape_closes_and_the_text_survives()
     {
         var cut = RenderGrid(new Heard(), Answer(0, "Book"));
@@ -234,7 +234,7 @@ public class FindTests : GridTestContext
         Assert.Equal("kept", cut.Find("input.ex-find-field").GetAttribute("value"));
     }
 
-    [Fact] // ADR-0047 / FD-3: a pointer-down elsewhere in the instance closes the panel
+    [Fact] // ADR-0055 / FD-3: a pointer-down elsewhere in the instance closes the panel
     public async Task A_press_on_the_rows_closes_the_panel()
     {
         var cut = RenderGrid(new Heard(), Answer(0, "Book"));
@@ -245,7 +245,7 @@ public class FindTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-popover-find"));
     }
 
-    [Fact] // ADR-0047 / FD-1: in the Cell Editor Ctrl+F is taken and does nothing
+    [Fact] // ADR-0055 / FD-1: in the Cell Editor Ctrl+F is taken and does nothing
     public async Task Ctrl_f_in_the_editor_does_nothing()
     {
         var heard = new Heard();
@@ -260,7 +260,7 @@ public class FindTests : GridTestContext
         Assert.Empty(heard.Refusals);
     }
 
-    [Fact] // ADR-0047 / FD-5: a bound Source that finds answers without OnFind
+    [Fact] // ADR-0055 / FD-5: a bound Source that finds answers without OnFind
     public async Task A_bound_in_memory_source_answers()
     {
         var heard = new Heard();
@@ -279,7 +279,7 @@ public class FindTests : GridTestContext
         Assert.Equal(new CellPosition(150, 0), heard.Selection!.Focus);
     }
 
-    [Fact] // ADR-0047 / FD-5: a match outside the Window is reached: the Focus lands on it and the grid scrolls there
+    [Fact] // ADR-0055 / FD-5: a match outside the Window is reached: the Focus lands on it and the grid scrolls there
     public async Task A_match_outside_the_window_is_scrolled_to()
     {
         var heard = new Heard();
@@ -301,7 +301,7 @@ public class FindTests : GridTestContext
         Assert.Contains(Js.ScrolledTo, offset => offset.Top > 4000 * 20 - 200);
     }
 
-    [Fact] // ADR-0047 / FD-10: OnFind beside a bound Source is two answers to one question, refused by name
+    [Fact] // ADR-0055 / FD-10: OnFind beside a bound Source is two answers to one question, refused by name
     public void On_find_beside_a_source_is_refused_by_name()
     {
         var failure = Assert.ThrowsAny<Exception>(() => Render<ExGrid<TestRow>>(ps => ps
@@ -313,7 +313,7 @@ public class FindTests : GridTestContext
         Assert.Contains("Source", failure.Message);
     }
 
-    [Theory] // ADR-0047 / FD-11: an answer outside the request is the Consumer's defect, named
+    [Theory] // ADR-0055 / FD-11: an answer outside the request is the Consumer's defect, named
     [InlineData(3, "Elsewhere")]
     [InlineData(500, "Book")]
     public async Task An_answer_outside_the_request_throws_naming_it(int row, string column)
@@ -328,7 +328,7 @@ public class FindTests : GridTestContext
         Assert.Contains("outside the request", failure.Message);
     }
 
-    [Fact] // ADR-0047 / FD-11: a requested column that left the grid while the step was out is OrderChanged
+    [Fact] // ADR-0055 / FD-11: a requested column that left the grid while the step was out is OrderChanged
     public async Task A_column_that_left_while_the_step_was_out_is_order_changed()
     {
         var heard = new Heard();
@@ -345,7 +345,7 @@ public class FindTests : GridTestContext
         Assert.Equal([FindRefusalReason.OrderChanged], heard.Refusals);
     }
 
-    [Fact] // ADR-0047 / FD-8: the panel stays inside the grid's box — anchored at its right edge, bounded below
+    [Fact] // ADR-0055 / FD-8: the panel stays inside the grid's box — anchored at its right edge, bounded below
     public async Task The_panel_is_placed_inside_the_grids_box()
     {
         var cut = RenderGrid(new Heard(), Answer(0, "Book"));
@@ -358,7 +358,7 @@ public class FindTests : GridTestContext
         Assert.Contains("max-height:", style);
     }
 
-    [Fact] // ADR-0047 / FD-1 / FD-8: Ctrl+F from inside another popover closes it and opens the one find panel
+    [Fact] // ADR-0055 / FD-1 / FD-8: Ctrl+F from inside another popover closes it and opens the one find panel
     public async Task Ctrl_f_from_a_column_menu_opens_the_find_panel_in_its_place()
     {
         var cut = RenderGrid(new Heard(), Answer(0, "Book"));
@@ -374,7 +374,7 @@ public class FindTests : GridTestContext
         Assert.Single(cut.FindAll(".ex-popover-find"));
     }
 
-    [Fact] // ADR-0047 / ADR-0001: OnFind passed alone is a callback, not data — neither Window nor Source is refused
+    [Fact] // ADR-0055 / ADR-0001: OnFind passed alone is a callback, not data — neither Window nor Source is refused
     public void On_find_alone_is_not_a_window()
     {
         var failure = Assert.ThrowsAny<Exception>(() => Render<ExGrid<TestRow>>(ps => ps
@@ -384,7 +384,7 @@ public class FindTests : GridTestContext
         Assert.Contains("Neither Window nor Source", failure.Message);
     }
 
-    [Fact] // ADR-0047 / FD-1: Ctrl+F from inside the Context Menu closes it and opens the find panel
+    [Fact] // ADR-0055 / FD-1: Ctrl+F from inside the Context Menu closes it and opens the find panel
     public async Task Ctrl_f_from_the_context_menu_opens_the_find_panel_in_its_place()
     {
         var cut = RenderGrid(new Heard(), Answer(0, "Book"));

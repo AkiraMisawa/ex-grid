@@ -1,0 +1,8 @@
+
+Running 3 tests using 1 worker
+
+  ok 1 [msedge] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (1.7s)
+  ok 2 [msedge] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (1.7s)
+  ok 3 [msedge] › mud-app.spec.mjs:165:1 › WR-7: a Drawer toggle resizes the Stretch grid and its geometry follows (ADR-0028) (1.9s)
+
+  3 passed (8.8s)

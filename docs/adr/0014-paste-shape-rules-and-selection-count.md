@@ -88,8 +88,43 @@ so one Ctrl+Z, ADR-0007).
   It is the first that is a declaration ("may not") rather than a shape ("cannot"), so it is
   checked *before* the shape rules, whose "reselect a target of the same shape" advice would
   otherwise send the user after something that can never succeed.
+- *(Added later, by [ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md):)* **A Consumer
+  that holds every cell may declare that a paste may spill.** "Range → one cell" then writes the
+  block from that cell, and the pasted block becomes the Selection, so the count on display is the
+  count written. This is ExSheet's case; a display grid keeps this ADR's refusal unchanged, and so
+  does every other shape rule.
 - *(Added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md):)* **The count display gains a line for Row Marks**, and it
   says aloud how many lie outside the current filter — `120 marked (70 outside the current
   filter)`. The marks are counted by the Consumer, which holds them; displaying is Chrome's, as
   above. Space over a selection in the Mark Column is a positional intent in the same way a bulk
   paste is.
+
+## Amended: one value of plain text goes into one cell alone *(2026-09-29, decided with the user)*
+
+The fourth Windows run asked Excel for the case this table did not separate
+(`verification/2026-09-29-windows-excel-4/active-cell.md`, item 3). The text `=A1` was copied from
+Notepad, so the clipboard held plain text only, and nothing of Excel's. It was pasted over B2:C3.
+**Excel put it into B2 alone, and the Selection became B2.**
+
+A single cell copied from Excel still fills the whole range, and so does a single cell copied from
+the grid. What differs is the clipboard: a copy from a spreadsheet carries a table (`text/html`),
+and text from anywhere else does not.
+
+**The decision:** the 1×1 row of the table above is split by what the clipboard carries.
+
+| | Excel | Adopted |
+|---|---|---|
+| **1×1 → range, from a table** (the clipboard carries a one-cell table in `text/html`: a copy from the grid, from ExSheet or from Excel) | the whole range fills with that value | **yes**, unchanged |
+| **1×1 → range, plain text only** (no `text/html` table, e.g. from a text editor) | the value goes into one cell alone, and the Selection becomes that cell | **yes**: into the range's top-left cell alone, and the Selection collapses to it |
+
+The value goes into the top-left cell, where every other paste anchors. With several ranges
+selected, it is the top-left of the range made last. In the fourth run, the active cell and the
+top-left were both B2, so that observation did not say which. The equality run settled it: pasted
+from C3 over B2:C3, Excel wrote B2, the top-left
+(`verification/2026-09-29-windows-excel-equality/results.md`).
+
+Nothing here writes outside the Selection, so the premise above still holds.
+
+The shape of plain text larger than 1×1 is unchanged, and so is every other row.
+
+Ctrl+Enter is typed, not pasted (ADR-0050), and it still fills the whole Selection.

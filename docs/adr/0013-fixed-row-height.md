@@ -119,6 +119,10 @@ about what expands.
   longer. `ViewportGeometry` knows only about rows and cannot see this, so **the component checks
   the spacer's real height itself**: recording the edge in prose and letting the browser clamp the
   last row away in silence is the failure this ceiling exists to refuse.)*
+  *(2026-09-27: the budget is 2²⁵ px in **zoomed** units, so above 100% display scale or page zoom
+  it is smaller in CSS pixels, and the guard let a clamped height through. Above that Layout
+  Ceiling the scroll height is now compressed, and the guard is 33,554,428 —
+  [ADR-0053](./0053-the-scroll-height-is-compressed-above-the-browsers-layout-ceiling.md).)*
 - **`ViewportHeight` and `ViewportWidth` are the element's outer size, and the browser tells the
   grid what its scrollbars take out of it** *(refined while implementing selection; the second
   half rewritten once the keyboard existed — see below)*. Where the platform draws classic

@@ -4,6 +4,7 @@
 @using global::ExGrid.Columns
 @using global::ExGrid.Selection
 @using Microsoft.AspNetCore.Components.Rendering
+@implements IDisposable
 
 @*
     The memoisation boundary sits at the row; cells are plain markup (ADR-0003).
@@ -27,8 +28,16 @@
    among siblings is wrong in exactly the way virtualisation makes it — aria-rowindex
    states the 1-based absolute one. aria-busy while a Placeholder: values that have
    not arrived must not be read out as though they had (ADR-0004). *@
+@{ _paintingHighlightEnd = null; }
 <div class="@RowClasses.For(RowKind?.Invoke(Row) ?? default, Placeholder, Stripe)"
      role="row" aria-rowindex="@(RowIndex + 1)" aria-busy="@(Placeholder ? "true" : null)">
+    @if (HeadingStyle is not null)
+    {
+        @* The Row Heading (ADR-0050): first in the flow and held at the left edge, so every
+           column after it starts where the geometry's lead band ends. Paint only: the
+           Viewport's delegated press reads the offsets, as it does for every cell. *@
+        <div class="ex-row-heading" style="@HeadingStyle" aria-hidden="true">@Heading</div>
+    }
     @for (var i = 0; i < Styles.Geometry.PinnedCount; i++)
     {
         var column = Columns[i];
@@ -40,6 +49,10 @@
                bubbled event — and left to carry on it would reach the Viewport handler
                with offsets measured from a button, which would move the selection to
                whichever cell that arithmetic happened to name.
+
+               dblclick stops here too (ADR-0063): its offsets are the control's as well, and
+               carried on they would name another cell for OnCellDoubleClick — or open the
+               editor of an Editable cell nobody double-clicked.
 
                mouseup is deliberately NOT stopped: it carries no position into the
                Viewport's handler, which only ends the drag. Swallowed here, a drag
@@ -53,19 +66,23 @@
                P5's scope). *@
             <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: true, StateOf(column), column.Align)" style="@Styles.PinnedCell(i)"
                  role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                 @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
+                 @onmousedown:stopPropagation @onmousemove:stopPropagation @ondblclick:stopPropagation>@CellContent(column, i)</div>
         }
         else
         {
-            var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+            var type = column.TypeAt(Row, CellType);
+            var numeric = OverflowRules.HashesWhenOverflowing(type);
             var value = column.Value(Row);
             var text = column.Info.TextFor(value);
-            var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
-            @* aria-label only when hashed: the accessible name of a #### cell is the
-               real value (ADR-0016/0033), and on every other cell the text names itself. *@
-            <div class="@CellClasses.For(numeric, pinned: true, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.PinnedCell(i)"
+            var decision = Paint(column, i, type, text);
+            var cellClass = CellClasses.For(numeric, pinned: true, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value), Changed(column));
+            @* aria-label only when what is painted is not the value's text: the accessible
+               name of a #### cell, or of a cell whose painted text the Consumer supplied, is
+               the real value (ADR-0016/0033/0050), and on every other cell the text names
+               itself. *@
+            <div class="@(Appearance?.ClassOf(i, cellClass) ?? cellClass)" style="@Styles.PinnedCell(i)"
                  role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                 aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
+                 aria-label="@AccessibleName(decision, text)">@if (decision.IsHashed) {<span class="ex-hashes">@decision.DisplayText</span>} else {@decision.DisplayText}</div>
         }
     }
     @if (!Placeholder && Scrollable is { } scrollable)
@@ -81,21 +98,24 @@
             {
                 <div class="@CellClasses.For(OverflowRules.HashesWhenOverflowing(column.Type), pinned: false, StateOf(column), column.Align)" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                     @onmousedown:stopPropagation @onmousemove:stopPropagation>@CellContent(column, i)</div>
+                     @onmousedown:stopPropagation @onmousemove:stopPropagation @ondblclick:stopPropagation>@CellContent(column, i)</div>
             }
             else
             {
-                var numeric = OverflowRules.HashesWhenOverflowing(column.Type);
+                var type = column.TypeAt(Row, CellType);
+                var numeric = OverflowRules.HashesWhenOverflowing(type);
                 var value = column.Value(Row);
                 var text = column.Info.TextFor(value);
-                var decision = OverflowRules.Decide(column.Type, text, Styles.Geometry.WidthPxOf(i), Metrics);
-                <div class="@CellClasses.For(numeric, pinned: false, StateOf(column), column.Align, ToneOf(column, value))" style="@Styles.Cell(i)"
+                var decision = Paint(column, i, type, text);
+                var cellClass = CellClasses.For(numeric, pinned: false, StateOf(column), column.AlignAt(Row, CellAlign), ToneOf(column, value), Changed(column));
+                <div class="@(Appearance?.ClassOf(i, cellClass) ?? cellClass)" style="@Styles.Cell(i)"
                      role="gridcell" id="@CellId(i)" aria-colindex="@CellIds.ColumnIndex(i)"
-                     aria-label="@(decision.IsHashed ? text : null)">@decision.DisplayText</div>
+                     aria-label="@AccessibleName(decision, text)">@if (decision.IsHashed) {<span class="ex-hashes">@decision.DisplayText</span>} else {@decision.DisplayText}</div>
             }
         }
     }
 </div>
+@{ RecordHighlights(); }
 
 @code {
     /// <summary>The row to paint. Its identity is the change signal: a new instance
@@ -153,6 +173,51 @@
     [Parameter] public CellStateOf<TRow>? CellState { get; set; }
 
     /// <summary>
+    /// The per-cell kind (ADR-0050, item 6), or null for the column's. Asked once per
+    /// painted value cell; its identity is the change signal, exactly as it is for
+    /// <see cref="CellState"/> (ADR-0003/0006).
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, ColumnType>? CellType { get; set; }
+
+    /// <summary>
+    /// The per-cell alignment (ADR-0050, item 7), or null for the column's. Asked once per
+    /// painted value cell; its identity is the change signal, exactly as it is for
+    /// <see cref="CellType"/> (ADR-0003/0006).
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, CellAlign>? CellAlign { get; set; }
+
+    /// <summary>
+    /// The Consumer's painted text (ADR-0050, item 11), or null for the value's own. Asked
+    /// once per painted value cell with the column's content width; its identity is the
+    /// change signal, exactly as it is for <see cref="CellType"/> (ADR-0003/0006).
+    /// </summary>
+    [Parameter] public PaintedTextOf<TRow>? PaintedText { get; set; }
+
+    /// <summary>
+    /// When a cell's shown value last changed, for the Change Highlight (ADR-0068), or null
+    /// for none. Asked once per painted value cell; its identity is the change signal,
+    /// exactly as it is for <see cref="CellState"/> (ADR-0003/0006).
+    /// </summary>
+    [Parameter] public CellChangeOf<TRow>? CellChangedAt { get; set; }
+
+    /// <summary>How long a Change Highlight lasts after the change time
+    /// (ADR-0068). A value, compared by content while the declaration is made.</summary>
+    [Parameter] public TimeSpan ChangeHighlightDuration { get; set; }
+
+    /// <summary>
+    /// The grid's time for this render, read once by the grid for every row, and
+    /// <c>default</c> while nothing is declared (ADR-0068). It is not itself a reason to
+    /// render: a row renders for it only once its earliest mark has ended by it, so a row
+    /// whose marks still stand — or that has none — skips.
+    /// </summary>
+    [Parameter] public DateTimeOffset ChangeHighlightNow { get; set; }
+
+    /// <summary>Where this row reports the earliest end among the marks it painted, and null
+    /// once it paints none or leaves (ADR-0068). Held by the grid for its whole life; a
+    /// channel, not something the row paints from, so it is no reason to render.</summary>
+    [Parameter] public Action<object, DateTimeOffset?>? ChangeHighlightPainted { get; set; }
+
+    /// <summary>
     /// What role each row plays (ADR-0024). Passed down as the delegate and invoked here,
     /// not invoked by the parent and passed as a value: the delegate's identity is the
     /// change signal, exactly as it is for <see cref="CellState"/>, and a role that could
@@ -185,6 +250,23 @@
     /// the reason <see cref="OnAction"/> is (ADR-0003).</summary>
     [Parameter] public Func<TRow, bool, Task>? OnMark { get; set; }
 
+    /// <summary>This row's Row Heading label (ADR-0050), or null. A value, compared by
+    /// content, so only a row whose label moved re-renders.</summary>
+    [Parameter] public string? Heading { get; set; }
+
+    /// <summary>
+    /// What this row paints of its cells' Font, Fill and Borders (ADR-0050, item 15), or null
+    /// for none. Resolved by the grid outside this render, from this row and the rows either
+    /// side of it, and replaced only when what it paints changed: compared by reference, as a
+    /// row instance is (ADR-0003).
+    /// </summary>
+    [Parameter] public RowAppearance? Appearance { get; set; }
+
+    /// <summary>The Row Headings' inline width, or null while there is no band
+    /// (ADR-0050/0028). One string for every row, rebuilt by the grid only when the width
+    /// moves.</summary>
+    [Parameter] public string? HeadingStyle { get; set; }
+
     private TRow? _renderedRow;
     private IReadOnlyList<GridColumn<TRow>>? _renderedColumns;
     private ColumnStyles? _renderedStyles;
@@ -192,6 +274,11 @@
     private bool _renderedPlaceholder;
     private CellTextMetrics _renderedMetrics;
     private CellStateOf<TRow>? _renderedCellState;
+    private Func<TRow, GridColumn<TRow>, ColumnType>? _renderedCellType;
+    private Func<TRow, GridColumn<TRow>, CellAlign>? _renderedCellAlign;
+    private PaintedTextOf<TRow>? _renderedPaintedText;
+    private CellChangeOf<TRow>? _renderedCellChangedAt;
+    private TimeSpan _renderedChangeHighlightDuration;
     private Func<TRow, RowKind>? _renderedRowKind;
     private Func<GridActionEventArgs<TRow>, Task>? _renderedOnAction;
     private int _renderedRowIndex;
@@ -199,6 +286,9 @@
     private CellEngagement _renderedEngagement = CellEngagement.None;
     private bool _renderedMarked;
     private Func<TRow, bool, Task>? _renderedOnMark;
+    private string? _renderedHeading;
+    private string? _renderedHeadingStyle;
+    private RowAppearance? _renderedAppearance;
 
     protected override void OnInitialized()
     {
@@ -215,6 +305,8 @@
         // rewrites a row in place gets no repaint — it hands over a new instance. The
         // two additions here are values, so they compare by content: scrolling sideways
         // genuinely changes what a row paints, and no memoisation should hide that.
+        // Time passing is a reason only for a row whose earliest Change Highlight has
+        // ended by the grid's time for this render (ADR-0068); every other row skips it.
         if (ReferenceEquals(_renderedRow, Row)
             && ReferenceEquals(_renderedColumns, Columns)
             && ReferenceEquals(_renderedStyles, Styles)
@@ -222,13 +314,22 @@
             && _renderedPlaceholder == Placeholder
             && _renderedMetrics == Metrics
             && ReferenceEquals(_renderedCellState, CellState)
+            && ReferenceEquals(_renderedCellType, CellType)
+            && ReferenceEquals(_renderedCellAlign, CellAlign)
+            && ReferenceEquals(_renderedPaintedText, PaintedText)
+            && ReferenceEquals(_renderedCellChangedAt, CellChangedAt)
+            && (CellChangedAt is null || _renderedChangeHighlightDuration == ChangeHighlightDuration)
+            && !HighlightEnded()
             && ReferenceEquals(_renderedRowKind, RowKind)
             && ReferenceEquals(_renderedOnAction, OnAction)
             && _renderedRowIndex == RowIndex
             && _renderedStripe == Stripe
             && _renderedEngagement == Engagement
             && _renderedMarked == Marked
-            && ReferenceEquals(_renderedOnMark, OnMark))
+            && ReferenceEquals(_renderedOnMark, OnMark)
+            && string.Equals(_renderedHeading, Heading, StringComparison.Ordinal)
+            && ReferenceEquals(_renderedHeadingStyle, HeadingStyle)
+            && ReferenceEquals(_renderedAppearance, Appearance))
         {
             return false;
         }
@@ -246,6 +347,11 @@
         _renderedPlaceholder = Placeholder;
         _renderedMetrics = Metrics;
         _renderedCellState = CellState;
+        _renderedCellType = CellType;
+        _renderedCellAlign = CellAlign;
+        _renderedPaintedText = PaintedText;
+        _renderedCellChangedAt = CellChangedAt;
+        _renderedChangeHighlightDuration = ChangeHighlightDuration;
         _renderedRowKind = RowKind;
         _renderedOnAction = OnAction;
         _renderedRowIndex = RowIndex;
@@ -253,6 +359,9 @@
         _renderedEngagement = Engagement;
         _renderedMarked = Marked;
         _renderedOnMark = OnMark;
+        _renderedHeading = Heading;
+        _renderedHeadingStyle = HeadingStyle;
+        _renderedAppearance = Appearance;
     }
 
     // Each cell's id, composed the first time the cell is painted in this row and kept
@@ -444,14 +553,94 @@
     /// mid-fling would be the landmark lying about itself (ADR-0004).</summary>
     private Cells.CellState StateOf(GridColumn<TRow> column) => CellState?.Invoke(Row, column) ?? default;
 
+    // The Change Highlight (ADR-0068): the earliest end among the marks this row painted in
+    // its last render, or null while it painted none, and the same end being gathered while a
+    // render is under way. Kept so that ShouldRender can tell a mark that has ended without
+    // asking the Consumer again, and told to the grid, whose one timer waits for the earliest
+    // end of every row.
+    private DateTimeOffset? _highlightEnd;
+    private DateTimeOffset? _paintingHighlightEnd;
+
+    /// <summary>Whether a mark this row painted has ended by the grid's time for this render:
+    /// the one reason the passing of time gives a row to render (ADR-0068).</summary>
+    private bool HighlightEnded() => _highlightEnd is { } end && ChangeHighlightNow >= end;
+
+    /// <summary>
+    /// Whether a value cell wears the Change Highlight now: one question to the Consumer per
+    /// painted value cell, including the Pinned Columns of a Placeholder row, which paint their
+    /// real values, and none without the declaration (ADR-0068, DC-1). A mark this cell shows
+    /// joins the row's earliest end. Keyed by the row and the column this render paints, never
+    /// by the element: a recycled element asks again for the row it now paints (DC-65).
+    /// </summary>
+    private bool Changed(GridColumn<TRow> column)
+    {
+        if (CellChangedAt is not { } changedAt
+            || ChangeHighlightRules.ShowingUntil(changedAt(Row, column), ChangeHighlightDuration, ChangeHighlightNow) is not { } end)
+        {
+            return false;
+        }
+        if (_paintingHighlightEnd is not { } earliest || end < earliest)
+            _paintingHighlightEnd = end;
+        return true;
+    }
+
+    /// <summary>Keeps the earliest end this render painted, and tells the grid when it moved
+    /// — a render that painted what the last one did tells it nothing.</summary>
+    private void RecordHighlights()
+    {
+        var end = _paintingHighlightEnd;
+        _paintingHighlightEnd = null;
+        if (end == _highlightEnd)
+            return;
+        _highlightEnd = end;
+        ChangeHighlightPainted?.Invoke(this, end);
+    }
+
+    /// <summary>A row leaving the DOM takes its marks with it, so the grid's timer no longer
+    /// waits for them (ADR-0068).</summary>
+    public void Dispose()
+    {
+        if (_highlightEnd is null)
+            return;
+        _highlightEnd = null;
+        ChangeHighlightPainted?.Invoke(this, null);
+    }
+
     /// <summary>The one string a cell paints, measures and decides overflow on — count
     /// and render must see the same text — and the one copy, the value list and the
     /// editor show for the value (ADR-0005/0006): the column's Format where it declares
-    /// one, the bare ToString where it does not. Null is a Blank and paints empty
+    /// one, and where it does not a date's or a time's ISO form by type, or the value's own
+    /// ToString (ADR-0006, note of 2026-10-01). Null is a Blank and paints empty
     /// (ADR-0023).</summary>
     internal static string CellText(GridColumn<TRow> column, TRow row)
         => column.Info.TextOf(row);
 
+    /// <summary>
+    /// What one value cell paints: the Consumer's painted text where it supplies one
+    /// (ADR-0050, item 11), the value's text where it does not — and in either case the
+    /// <c>####</c> rule decides on what would be painted, so a Number or Date that does
+    /// not fit is never shown cut (ADR-0016). A bold cell is judged by the bold widths,
+    /// and its painted text is fitted with them (ADR-0050, item 15).
+    /// </summary>
+    private OverflowDecision Paint(GridColumn<TRow> column, int index, ColumnType type, string text)
+    {
+        // The declared width, not the one painted on Device Pixels (ADR-0090): an Auto column is
+        // exactly as wide as its widest estimate, and rounding it by under a Device Pixel must not
+        // turn the value it grew for into ####. The estimate is a bound charged at the widest glyph
+        // of each class, which leaves more than that pixel to spare.
+        var widthPx = Styles.Geometry.DeclaredWidthPxOf(index);
+        var metrics = Appearance?.IsBold(index) == true ? Metrics.Bold : Metrics;
+        var painted = PaintedText?.Invoke(Row, column, metrics.ContentWidthPx(widthPx), metrics) ?? text;
+        return OverflowRules.Decide(type, painted, widthPx, metrics);
+    }
+
+    /// <summary>The cell's aria-label: the value's own text wherever the cell paints
+    /// something else — <c>####</c>, or a painted text that differs from it
+    /// (ADR-0016/0033/0050) — and nothing where the text names itself.</summary>
+    private static string? AccessibleName(OverflowDecision decision, string text)
+        => decision.IsHashed || !string.Equals(decision.DisplayText, text, StringComparison.Ordinal)
+            ? text
+            : null;
 
     /// <summary>The column's tone for a value (ADR-0006): None without a rule, None for a
     /// null — a Blank has no sign and the rule is never asked about it.</summary>

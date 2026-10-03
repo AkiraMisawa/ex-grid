@@ -10,8 +10,8 @@ namespace ExGrid.Tests;
 /// </summary>
 public class GridPresentationDefaultsTests
 {
-    // Roboto at 14px, 600 weight, measured in Chrome (see ExGrid.MudBlazor): declared
-    // a shade over the measurement, the safe direction (ADR-0016).
+    // A Wrapper's widths at 14px: Roboto's as ExGrid.MudBlazor first declared them. Its
+    // current widths are MudExGridPresentation's; these tests need only these numbers.
     private static readonly GridPresentationDefaults Roboto = new(10.4, 8.0, 4.95, 14);
 
     [Fact] // ADR-0030: the defaults' widths replace the preset's, the preset keeps its padding
@@ -52,7 +52,7 @@ public class GridPresentationDefaultsTests
     {
         var metrics = GridMetrics.Resolve(GridDensity.Compact);
 
-        Assert.Equal(9.742, metrics.DigitWidthPx);
+        Assert.Equal(9.75, metrics.DigitWidthPx);
     }
 
     [Fact] // ADR-0016 (2026-09-25): full-width is an em, so a Wrapper's metrics charge it at the resolved font size
@@ -71,6 +71,37 @@ public class GridPresentationDefaultsTests
     public void A_bad_measurement_is_refused_at_construction(double wide, double digit, double narrow, double font)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new GridPresentationDefaults(wide, digit, narrow, font));
+    }
+
+    [Fact] // ADR-0016 / ticket 83: the other class travels with the widths and is scaled as they are
+    public void The_other_class_is_carried_and_scaled()
+    {
+        var measured = new GridPresentationDefaults(10.4, 8.3, 5.8, 14, 10.4, 8.34, 5.25, 12.44, 12.28);
+
+        var at14 = GridMetrics.Resolve(GridDensity.Compact, defaults: measured).CellMetrics;
+        var at12 = GridMetrics.Resolve(GridDensity.Excel, defaults: measured).CellMetrics;
+
+        Assert.Equal(12.44, at14.OtherWidthPx);
+        Assert.Equal(12.28, at14.BoldOtherWidthPx);
+        Assert.Equal(12.44 * 12 / 14, at12.OtherWidthPx, precision: 9);
+        Assert.Equal(12.28 * 12 / 14, at12.BoldOtherWidthPx, precision: 9);
+    }
+
+    [Fact] // ADR-0016 / ticket 83: defaults without the other class charge it twice the digit, erring early
+    public void Defaults_without_the_other_class_derive_it_by_the_allowance()
+    {
+        var metrics = GridMetrics.Resolve(GridDensity.Compact, defaults: Roboto).CellMetrics;
+
+        Assert.Equal(8.0 * CellTextMetrics.OtherWidthAllowance, Roboto.OtherWidthPx);
+        Assert.Equal(8.0 * CellTextMetrics.OtherWidthAllowance, metrics.OtherWidthPx, precision: 9);
+        Assert.Equal(Roboto.BoldDigitWidthPx * CellTextMetrics.OtherWidthAllowance, metrics.BoldOtherWidthPx, precision: 9);
+    }
+
+    [Fact] // ADR-0016: an other width narrower than its digit fails where it was written
+    public void An_other_width_below_the_digit_is_refused_at_construction()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GridPresentationDefaults(10.4, 8.3, 5.8, 14, 10.4, 8.34, 5.25, 8.0, 12.28));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new GridPresentationDefaults(10.4, 8.3, 5.8, 14, 10.4, 8.34, 5.25, 12.44, 8.0));
     }
 
     [Fact] // ADR-0030: the Density it carries is optional and read by the component, not here

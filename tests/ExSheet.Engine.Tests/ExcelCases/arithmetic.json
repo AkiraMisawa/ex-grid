@@ -1,0 +1,1234 @@
+{
+  "area": "arithmetic",
+  "about": "Excel's operators: precedence, concatenation, comparison, coercion, and IEEE doubles with Excel's observed adjustments (a final near-cancelling sum is 0, numbers compare at Excel's precision, text is collated) (ADR-0047).",
+  "cases": [
+    {
+      "id": "ARITH-001",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=-2^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "ARITH-002",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2^3^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 64}
+    },
+    {
+      "id": "ARITH-003",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2^-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5}
+    },
+    {
+      "id": "ARITH-004",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2*3^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 18}
+    },
+    {
+      "id": "ARITH-005",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=50%"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5}
+    },
+    {
+      "id": "ARITH-006",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=10+50%"},
+      "check": "ZZ1000",
+      "expect": {"value2": 10.5, "text": "1050.0%", "numberFormat": "0.0%"},
+      "oracleSkip": "Through COM (Formula2) the result is General; typed with real keys Excel formats =10+50% as 0.0% (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "ARITH-007",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=2^200%"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "ARITH-008",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=-50%"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.5}
+    },
+    {
+      "id": "ARITH-009",
+      "source": "observed",
+      "description": "Excel's precedence: negation, %, ^, * /, + -, &, comparison (negation binds before ^; ^ is left-associative)",
+      "cells": {"ZZ1000": "=1+2*3^2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 19}
+    },
+    {
+      "id": "ARITH-010",
+      "source": "observed",
+      "description": "Comparison binds loosest, & below + -",
+      "cells": {"ZZ1000": "=1+1=2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-011",
+      "source": "observed",
+      "description": "Comparison binds loosest, & below + -",
+      "cells": {"ZZ1000": "=1&2=\"12\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-012",
+      "source": "observed",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=\"a\"&\"b\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "ab"}
+    },
+    {
+      "id": "ARITH-013",
+      "source": "observed",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=\"a\"&1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a2"}
+    },
+    {
+      "id": "ARITH-014",
+      "source": "observed",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=1&2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "12"}
+    },
+    {
+      "id": "ARITH-015",
+      "source": "observed",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=1.5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1.5"}
+    },
+    {
+      "id": "ARITH-016",
+      "source": "observed",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=TRUE&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "TRUE"}
+    },
+    {
+      "id": "ARITH-017",
+      "source": "observed",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=A1&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "ARITH-018",
+      "source": "observed",
+      "description": "& joins text: a number is written as General, a boolean as TRUE or FALSE, a blank as nothing",
+      "cells": {"ZZ1000": "=1/4&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.25"}
+    },
+    {
+      "id": "ARITH-019",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-020",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1<2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-021",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=2<=2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-022",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=3>=4"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-023",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1<>1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-024",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"a\"=\"A\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-025",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"apple\"<\"Banana\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-026",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"abc\"<\"abd\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-027",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=1=\"1\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-028",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-029",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE>FALSE"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-030",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE>1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-031",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=\"a\">1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-032",
+      "source": "observed",
+      "description": "Comparisons: numbers before text before booleans, text without regard to case",
+      "cells": {"ZZ1000": "=TRUE>\"a\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-033",
+      "source": "observed",
+      "description": "A blank equals 0 against a number",
+      "cells": {"ZZ1000": "=A1=0"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-034",
+      "source": "observed",
+      "description": "A blank equals \"\" against text",
+      "cells": {"ZZ1000": "=A1=\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-035",
+      "source": "observed",
+      "description": "A blank equals FALSE against a boolean",
+      "cells": {"ZZ1000": "=A1=FALSE"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-036",
+      "source": "observed",
+      "description": "Two blanks are equal",
+      "cells": {"ZZ1000": "=A1=A2"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-037",
+      "source": "observed",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=\"2\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ARITH-038",
+      "source": "observed",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=-\"2\""},
+      "check": "ZZ1000",
+      "expect": {"value2": -2}
+    },
+    {
+      "id": "ARITH-039",
+      "source": "observed",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=\"abc\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-040",
+      "source": "observed",
+      "description": "Text that reads as a number is that number in arithmetic; other text is #VALUE!",
+      "cells": {"ZZ1000": "=-\"abc\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-041",
+      "source": "observed",
+      "description": "^ refuses what has no real answer",
+      "cells": {"ZZ1000": "=0^0"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ARITH-042",
+      "source": "observed",
+      "description": "^ refuses what has no real answer",
+      "cells": {"ZZ1000": "=0^-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-043",
+      "source": "observed",
+      "description": "^ takes the real root of a negative number when the exponent is the reciprocal of an odd integer, computed as Excel does (-2 shown, -1.9999999999999998 held)",
+      "cells": {"ZZ1000": "=(-8)^(1/3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1.9999999999999998}
+    },
+    {
+      "id": "ARITH-044",
+      "source": "observed",
+      "description": "^ refuses what has no real answer",
+      "cells": {"ZZ1000": "=10^400"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ARITH-045",
+      "source": "observed",
+      "description": "Typing 2, 3 and =A1+B1 shows 5",
+      "cells": {"A1": "2", "B1": "3", "C1": "=A1+B1"},
+      "check": "C1",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "ARITH-046",
+      "source": "observed",
+      "description": "A typed constant is its Value",
+      "cells": {"A1": "2", "B1": "3", "C1": "=A1+B1"},
+      "check": "A1",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-047",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=1+2*3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "ARITH-048",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=(1+2)*3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 9}
+    },
+    {
+      "id": "ARITH-049",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=10-4-3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ARITH-050",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=12/4/3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-051",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=-A1+B1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-052",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=A1*B1-A1/B1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.333333333333333}
+    },
+    {
+      "id": "ARITH-053",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=--A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-054",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=+A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-055",
+      "source": "observed",
+      "description": "+ - * / over numbers and single-cell References (A1 2, B1 3), with Excel's precedence",
+      "cells": {"A1": "2", "B1": "3", "ZZ1000": "=1.5*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ARITH-056",
+      "source": "observed",
+      "description": "A blank cell is 0, and a Formula reading one shows 0",
+      "cells": {"ZZ1000": "=A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-057",
+      "source": "observed",
+      "description": "A blank cell is 0 in arithmetic",
+      "cells": {"ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-058",
+      "source": "observed",
+      "description": "A division by zero is #DIV/0!",
+      "cells": {"A1": "0", "ZZ1000": "=1/0"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-059",
+      "source": "observed",
+      "description": "A division by a cell holding 0 is #DIV/0!",
+      "cells": {"A1": "0", "ZZ1000": "=1/A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-060",
+      "source": "observed",
+      "description": "A division by a blank cell is #DIV/0!",
+      "cells": {"A1": "0", "ZZ1000": "=1/B1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "ARITH-061",
+      "source": "observed",
+      "description": "Text that is not a number is #VALUE! in arithmetic",
+      "cells": {"A1": "Tokyo", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-062",
+      "source": "observed",
+      "description": "TRUE is 1 in arithmetic",
+      "cells": {"A1": "TRUE", "A2": "FALSE", "ZZ1000": "=A1+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "ARITH-063",
+      "source": "observed",
+      "description": "FALSE is 0 in arithmetic",
+      "cells": {"A1": "TRUE", "A2": "FALSE", "ZZ1000": "=A2+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "ARITH-064",
+      "source": "observed",
+      "description": "A result that is not a finite double is #NUM!",
+      "cells": {"A1": "1E+300", "ZZ1000": "=A1*A1"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!", "numberFormat": "0.00E+00"},
+      "oracleSkip": "Through COM the result is General; typed with real keys Excel formats =A1*A1 over a cell typed 1E+300 as 0.00E+00 (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "ARITH-065",
+      "source": "observed",
+      "description": "Doubles as in Excel, not decimals: 0.1+0.2 is 0.30000000000000004, not 0.3",
+      "cells": {"ZZ1000": "=0.1+0.2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.30000000000000004}
+    },
+    {
+      "id": "ARITH-066",
+      "source": "observed",
+      "description": "Ticket 19 row 1: a final subtraction that nearly cancels is 0",
+      "ticket19Row": 1,
+      "cells": {"ZZ1000": "=0.1+0.2-0.3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-067",
+      "source": "observed",
+      "description": "Ticket 19 row 2: a final subtraction that nearly cancels is 0",
+      "ticket19Row": 2,
+      "cells": {"ZZ1000": "=0.5-0.4-0.1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-068",
+      "source": "observed",
+      "description": "Ticket 19 row 3: the same subtraction, not the final operation, is left as IEEE arithmetic gives it",
+      "ticket19Row": 3,
+      "cells": {"ZZ1000": "=1*(0.5-0.4-0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -2.7755575615628914e-17}
+    },
+    {
+      "id": "ARITH-069",
+      "source": "observed",
+      "description": "Ticket 19 row 4: numbers are compared at Excel's precision, so a sum that is not exactly 0.3 equals 0.3",
+      "ticket19Row": 4,
+      "cells": {"ZZ1000": "=0.1+0.2=0.3"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-070",
+      "source": "observed",
+      "description": "Ticket 19 row 5: which error wins when text meets a division by zero",
+      "ticket19Row": 5,
+      "cells": {"ZZ1000": "=\"a\"+1/0"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "ARITH-071",
+      "source": "observed",
+      "description": "Ticket 19 row 6: punctuation sorts before letters",
+      "ticket19Row": 6,
+      "cells": {"ZZ1000": "=\"!\"<\"a\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-072",
+      "source": "observed",
+      "description": "Ticket 19 row 6: text is collated, not compared by code point: an accented letter sorts beside its base letter",
+      "ticket19Row": 6,
+      "cells": {"ZZ1000": "=\"é\">\"z\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-073",
+      "source": "observed",
+      "description": "Ticket 19 row 7: a number is written into text in full where General would go scientific (1E+15)",
+      "ticket19Row": 7,
+      "cells": {"ZZ1000": "=1E15&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1000000000000000"}
+    },
+    {
+      "id": "ARITH-074",
+      "source": "observed",
+      "description": "Ticket 19 row 7: a small number is written into text in full (1E-05)",
+      "ticket19Row": 7,
+      "cells": {"ZZ1000": "=1E-5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.00001"}
+    },
+    {
+      "id": "ARITH-075",
+      "source": "observed",
+      "description": "Ticket 19 row 7: a constant past 15 digits keeps 15, the rest zeros, and is written into text in full",
+      "ticket19Row": 7,
+      "cells": {"ZZ1000": "=123456789012345678&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "123456789012345000"}
+    },
+    {
+      "id": "ARITH-076",
+      "source": "observed",
+      "description": "Parentheses around the final subtraction make it no longer the final operation: it is left alone (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=(0.1+0.2-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.551115123125783E-17}
+    },
+    {
+      "id": "ARITH-077",
+      "source": "observed",
+      "description": "SUM's total nearly cancelling is 0, as a final addition's is (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=SUM(0.1,0.2,-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-078",
+      "source": "observed",
+      "description": "A final subtraction 14 units in the last place apart (3.1E-15 of each operand) is not set to 0: the threshold is narrower than 2^-48 (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=1+3E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.1086244689504383E-15}
+    },
+    {
+      "id": "ARITH-079",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a final subtraction whose operands differ by more than 2^-48 of each is kept (a 15-digit rule would give 0)",
+      "cells": {"ZZ1000": "=1+4E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.9968028886505635E-15}
+    },
+    {
+      "id": "ARITH-080",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a final subtraction whose operands differ at 15 digits is kept",
+      "cells": {"ZZ1000": "=10.1-10-0.1"},
+      "check": "ZZ1000",
+      "expect": {"value2": -3.608224830031759E-16}
+    },
+    {
+      "id": "ARITH-081",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: numbers closer than 2^-48 of each are equal",
+      "cells": {"ZZ1000": "=1+3E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-082",
+      "source": "observed",
+      "description": "A comparison treats numbers 18 units in the last place apart (4E-15 of each) as equal: wider than the final operation's threshold (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=1+4E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-083",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: an unaccented letter sorts before the same letter accented",
+      "cells": {"ZZ1000": "=\"e\"<\"é\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-084",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: an accented letter is not equal to its base letter",
+      "cells": {"ZZ1000": "=\"e\"=\"é\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-085",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: punctuation sorts before letters, whatever its code point",
+      "cells": {"ZZ1000": "=\"_\"<\"a\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-086",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: digits sort before letters",
+      "cells": {"ZZ1000": "=\"9\"<\"a\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-087",
+      "source": "observed",
+      "description": "A hyphen is ignored when text is compared, as Windows' word sort does: co-op does not sort before coop (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=\"co-op\"<\"coop\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-088",
+      "source": "observed",
+      "description": "ß sorts as ss, not after z (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=\"ß\">\"z\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-089",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a number up to 1E+19 is written into text in full",
+      "cells": {"ZZ1000": "=1E19&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "10000000000000000000"}
+    },
+    {
+      "id": "ARITH-090",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: from 1E+20 a number is written into text in scientific notation",
+      "cells": {"ZZ1000": "=1E20&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1E+20"}
+    },
+    {
+      "id": "ARITH-091",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a number down to 1E-9 is written into text in full",
+      "cells": {"ZZ1000": "=1E-9&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.000000001"}
+    },
+    {
+      "id": "ARITH-092",
+      "source": "observed",
+      "description": "1E-10 is written into text in full (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=1E-10&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.0000000001"}
+    },
+    {
+      "id": "ARITH-093",
+      "source": "observed",
+      "description": "A number whose full form would take more than 20 characters is written into text in scientific notation, in General's spelling (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=1.23456789012345E-5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1.23456789012345E-05"}
+    },
+    {
+      "id": "ARITH-094",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a sum is written into text at 15 significant digits",
+      "cells": {"ZZ1000": "=(0.1+0.2)&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.3"}
+    },
+    {
+      "id": "ARITH-095",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negative base with another fractional exponent has no real answer",
+      "cells": {"ZZ1000": "=(-8)^(2/3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ARITH-096",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a cube root of a negative number",
+      "cells": {"ZZ1000": "=(-27)^(1/3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -3, "digits": 12}
+    },
+    {
+      "id": "ARITH-097",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a fifth root of a negative number",
+      "cells": {"ZZ1000": "=(-32)^0.2"},
+      "check": "ZZ1000",
+      "expect": {"value2": -2, "digits": 12}
+    },
+    {
+      "id": "ARITH-098",
+      "source": "observed",
+      "description": "^ is the double power e^(b ln a), not the correctly rounded one: 8^(1/3) is 1.9999999999999998 (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=8^(1/3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.9999999999999998}
+    },
+    {
+      "id": "ARITH-099",
+      "source": "observed",
+      "description": "A final subtraction 1 unit in the last place apart is 0 (below the threshold, 2^-49 of each operand) (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+2E-16-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-100",
+      "source": "observed",
+      "description": "A final subtraction 2 units in the last place of 1 apart is 0: Excel's threshold is wider than 2^-51 (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+5E-16-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-101",
+      "source": "observed",
+      "description": "A final subtraction 5 units in the last place of 1 apart (1.11E-15 of each) is 0 (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+1E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-102",
+      "source": "observed",
+      "description": "A final subtraction 9 units in the last place of 1 apart (1.998E-15 of each) is not 0: with ARITH-101, this brackets the threshold, 2^-49 (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+2E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.9984014443252818E-15}
+    },
+    {
+      "id": "ARITH-103",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 11 units in the last place of 1 apart is not 0",
+      "cells": {"ZZ1000": "=1+2.5E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.4424906541753444E-15}
+    },
+    {
+      "id": "ARITH-104",
+      "source": "observed",
+      "description": "A final subtraction 8.3E-16 of each operand apart is 0 (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1.1-1-0.1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-105",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a final subtraction 2.8E-16 of each operand apart is 0, as ARITH-067's is",
+      "cells": {"ZZ1000": "=0.3-0.2-0.1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-106",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: numbers 5 units in the last place apart compare equal",
+      "cells": {"ZZ1000": "=1+1E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-107",
+      "source": "observed",
+      "description": "Numbers 23 units in the last place apart (5E-15) do not compare equal (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+5E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-108",
+      "source": "observed",
+      "description": "Numbers 27 units in the last place apart do not compare equal (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+6E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-109",
+      "source": "observed",
+      "description": "Numbers 32 units in the last place of 1 apart are not equal (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+7E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-110",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: numbers 36 units in the last place apart are not equal",
+      "cells": {"ZZ1000": "=1+8E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-111",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: numbers 41 units in the last place apart are not equal",
+      "cells": {"ZZ1000": "=1+9E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-112",
+      "source": "observed",
+      "description": "<> agrees with =: numbers 23 units in the last place apart are unequal (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=1+5E-15<>1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-113",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: SUM's last addition nearly cancelling is 0 whatever order the arguments come in",
+      "cells": {"ZZ1000": "=SUM(0.3,-0.1,-0.2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-114",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: SUM cancels inside another operation too: it is SUM's own last addition, not the Formula's",
+      "cells": {"ZZ1000": "=1*SUM(0.1,0.2,-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-115",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: SUM over cells cancels as SUM over constants does",
+      "cells": {"A1": "0.1", "A2": "0.2", "A3": "-0.3", "ZZ1000": "=SUM(A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-116",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: SUM's last addition 14 units in the last place apart is not 0, as ARITH-078's is not",
+      "cells": {"ZZ1000": "=SUM(1,3E-15,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.1086244689504383E-15}
+    },
+    {
+      "id": "ARITH-117",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: two pairs of parentheses leave the final subtraction alone, as one pair does",
+      "cells": {"ZZ1000": "=((0.1+0.2-0.3))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.551115123125783E-17}
+    },
+    {
+      "id": "ARITH-118",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a subtraction outside the parentheses is the final operation, and is 0",
+      "cells": {"ZZ1000": "=(0.1+0.2)-0.3"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-119",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: an addition whose right side is in parentheses is still the final operation, and is 0",
+      "cells": {"ZZ1000": "=0.1+(0.2-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-120",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negation around the parentheses is the final operation, so the subtraction inside is left alone",
+      "cells": {"ZZ1000": "=-(0.1+0.2-0.3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -5.551115123125783E-17}
+    },
+    {
+      "id": "ARITH-121",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: adding 0 last makes the addition of 0 the final operation, and the near-cancelling subtraction before it is left alone",
+      "cells": {"ZZ1000": "=0.1+0.2-0.3+0"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.551115123125783E-17}
+    },
+    {
+      "id": "ARITH-122",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: text that differs only by a hyphen is not equal",
+      "cells": {"ZZ1000": "=\"co-op\"=\"coop\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-123",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: text that differs only by a hyphen sorts the hyphenated one after",
+      "cells": {"ZZ1000": "=\"co-op\">\"coop\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-124",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a hyphen is passed over: co-p compares as cop, after coo",
+      "cells": {"ZZ1000": "=\"co-p\"<\"coo\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-125",
+      "source": "observed",
+      "description": "An apostrophe is passed over as a hyphen is: it's does not sort before its (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=\"it's\"<\"its\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-126",
+      "source": "observed",
+      "description": "ß equals ss under =, not only in ordering (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=\"ß\"=\"ss\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-127",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: ß sorts as ss: after sr",
+      "cells": {"ZZ1000": "=\"ß\">\"sr\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-128",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: ß sorts as ss: before st",
+      "cells": {"ZZ1000": "=\"ß\"<\"st\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-129",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a number whose full form takes 20 characters is written into text in full",
+      "cells": {"ZZ1000": "=1.2345678901234E-5&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.000012345678901234"}
+    },
+    {
+      "id": "ARITH-130",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: 1E-18, whose full form takes 20 characters, is written into text in full",
+      "cells": {"ZZ1000": "=1E-18&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.000000000000000001"}
+    },
+    {
+      "id": "ARITH-131",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: 1E-19, whose full form would take 21 characters, is written into text in scientific notation",
+      "cells": {"ZZ1000": "=1E-19&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "1E-19"}
+    },
+    {
+      "id": "ARITH-132",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a minus sign does not count toward the 20 characters",
+      "cells": {"ZZ1000": "=-1E19&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "-10000000000000000000"}
+    },
+    {
+      "id": "ARITH-133",
+      "source": "observed",
+      "description": "2^0.5 is the square root correctly rounded, 1.4142135623730951, not e^(0.5 ln 2) (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=2^0.5"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.4142135623730951}
+    },
+    {
+      "id": "ARITH-134",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: 27^(1/3) is e^(ln 27 / 3), one unit in the last place below 3",
+      "cells": {"ZZ1000": "=27^(1/3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.9999999999999996}
+    },
+    {
+      "id": "ARITH-135",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: an integer exponent is exact",
+      "cells": {"ZZ1000": "=10^15"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1000000000000000}
+    },
+    {
+      "id": "ARITH-136",
+      "source": "observed",
+      "description": "1+4.2E-15 and 1 compare equal: both read 1.00000000000000 at 15 significant digits (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=1+4.2E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-137",
+      "source": "observed",
+      "description": "1+4.4E-15 and 1 compare equal: both read 1.00000000000000 at 15 significant digits (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=1+4.4E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-138",
+      "source": "observed",
+      "description": "1+4.6E-15 and 1 compare equal: both read 1.00000000000000 at 15 significant digits (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=1+4.6E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-139",
+      "source": "observed",
+      "description": "1+4.8E-15 (1.0000000000000049) and 1 compare equal: both read 1.00000000000000 at 15 significant digits (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=1+4.8E-15=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-140",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 6 units in the last place of 1 apart (1.3E-15) is 0: below 2^-49",
+      "cells": {"ZZ1000": "=1+1.3E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-141",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 7 units in the last place of 1 apart (1.6E-15) is 0: below 2^-49",
+      "cells": {"ZZ1000": "=1+1.6E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ARITH-142",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): a final subtraction 8 units in the last place of 1 apart (1.8E-15, 2^-49 exactly) is not 0: the threshold is strict",
+      "cells": {"ZZ1000": "=1+1.8E-15-1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.7763568394002505e-15}
+    },
+    {
+      "id": "ARITH-143",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): an exponent of 0.5 is the square root correctly rounded, as ARITH-133's is, where e^(0.5 ln 3) would be 1.7320508075688774",
+      "cells": {"ZZ1000": "=3^0.5"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.7320508075688772}
+    },
+    {
+      "id": "ARITH-144",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): text that differs only by an apostrophe sorts the one with it after, as a hyphen does (ARITH-123)",
+      "cells": {"ZZ1000": "=\"it's\">\"its\""},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-145",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked (the next Windows run): ß is not before ss: the two are equal (ARITH-126), with no accent between them",
+      "cells": {"ZZ1000": "=\"ß\"<\"ss\""},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-146",
+      "source": "observed",
+      "description": "9+3E-14 and 9 are not equal: 9.00000000000003 against 9.00000000000000 at 15 significant digits, though only 3.3E-15 of each apart (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=9+3E-14=9"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-147",
+      "source": "observed",
+      "description": "1+4E-15 and 1+6E-15 are not equal: 1.00000000000000 against 1.00000000000001 at 15 significant digits, though 9 units in the last place apart (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=1+4E-15=1+6E-15"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-148",
+      "source": "observed",
+      "description": "1000+3.6E-12 and 1000 compare equal: both read 1000.00000000000 at 15 significant digits (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=1000+3.6E-12=1000"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-149",
+      "source": "observed",
+      "description": "9+5E-15 (9.0000000000000053) and 9 are not equal: 9.00000000000001 against 9.00000000000000 at 15 significant digits (ADR-0047, the equality run)",
+      "cells": {"ZZ1000": "=9+5E-15=9"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-150",
+      "source": "observed",
+      "description": "1+4.4E-15 is not greater than 1: the two are equal at 15 significant digits, and every comparison operator reads through that (ADR-0047, observed in the fifth Windows run)",
+      "cells": {"ZZ1000": "=1+4.4E-15>1"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ARITH-151",
+      "source": "observed",
+      "description": "9+3E-14 is greater than 9: 9.00000000000003 against 9.00000000000000 at 15 significant digits (ADR-0047, observed in the fifth Windows run)",
+      "cells": {"ZZ1000": "=9+3E-14>9"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ARITH-152",
+      "source": "observed",
+      "description": "1+4.8E-15 is less than or equal to 1: equal at 15 significant digits (ADR-0047, observed in the fifth Windows run)",
+      "cells": {"ZZ1000": "=1+4.8E-15<=1"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    }
+  ]
+}

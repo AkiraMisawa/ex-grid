@@ -39,7 +39,7 @@ nothing `main` did not, and a second integration branch would only fall behind.)
   reason was the time: the WebAssembly job took 24.3 minutes, Chrome and then Edge on one worker,
   and it was the wall clock of every push. A shard boundary is a file boundary, so nothing the
   suite shares within a run — the OS clipboard, the records, a spec file's booted app
-  ([ADR-0048](./0048-layer-three-boots-once-per-spec-file.md)) — is split between runners.)*
+  ([ADR-0056](./0056-layer-three-boots-once-per-spec-file.md)) — is split between runners.)*
   - The **observational** specs still only record: each asserts that it measured something and
     never gates on the number (ADR-0026, "performance never gates").
   - The records a run writes — `console.json`, `metrics.json` — and any failure's trace are

@@ -1,0 +1,36 @@
+@* The built-in Pivot Toolbar above the report (ADR-0061): the report filter band on its left, and
+   on its right, in this order, Layout ▾, Refresh when the source can be refreshed, and the Field
+   List's toggle. Layout ▾'s wrapper is positioned, so the menu opens under it, over the report, at
+   its right edge. Under the Pivot Toolbar, what the report could not do with the last change
+   is said. *@
+<div class="ex-pivot-toolbar">
+    <div class="ex-pivot-toolbar-start">@Context.ReportFilters</div>
+    <div class="ex-pivot-toolbar-end">
+        <span class="ex-pivot-toolbar-anchor">
+            <PivotFocusButton Class="ex-pivot-toolbar-button ex-pivot-layout-button" OnClick="Context.LayoutMenu.Open"
+                              FocusRequest="Context.LayoutMenu.FocusRequest" aria-haspopup="menu"
+                              aria-expanded="@(Context.LayoutMenu.IsOpen ? "true" : "false")">
+                <span>@Context.LayoutMenu.Label</span>
+                <span class="ex-pivot-entry-arrow" aria-hidden="true">▾</span>
+            </PivotFocusButton>
+            @Context.LayoutMenu.Popup
+        </span>
+        @if (Context.Refresh is { } refresh)
+        {
+            <button type="button" class="ex-pivot-toolbar-button ex-pivot-refresh-button" disabled="@(!refresh.Enabled)"
+                    @onclick="refresh.Invoke">@refresh.Label</button>
+        }
+        <button type="button" class="ex-pivot-toolbar-button ex-pivot-field-list-toggle"
+                aria-pressed="@(Context.FieldList.Checked == true ? "true" : "false")"
+                @onclick="Context.FieldList.Invoke">@Context.FieldList.Label</button>
+    </div>
+</div>
+@if (Context.Refusal is { } refusal)
+{
+    <div class="ex-pivot-refusal-notice" role="alert">@refusal</div>
+}
+
+@code {
+    /// <summary>What to draw and whom to call back (ADR-0061).</summary>
+    [Parameter, EditorRequired] public PivotToolbarContext Context { get; set; } = default!;
+}

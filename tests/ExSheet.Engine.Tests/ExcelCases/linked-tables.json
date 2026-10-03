@@ -1,0 +1,226 @@
+{
+  "area": "linked-tables",
+  "about": "Linked Tables read by structured reference and by key (ADR-0049). Excel's side is a ListObject the oracle builds with the same name, columns and rows; a table still waiting for its data has no Excel counterpart.",
+  "cases": [
+    {
+      "id": "TABLE-001",
+      "source": "observed",
+      "description": "SUM over a column and XLOOKUP by key read the snapshot",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+      "cells": {"A1": "=SUM(Positions[PV])"},
+      "check": "A1",
+      "expect": {"value2": 300.5}
+    },
+    {
+      "id": "TABLE-002",
+      "source": "observed",
+      "description": "SUM over a column and XLOOKUP by key read the snapshot",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+      "cells": {"A1": "=XLOOKUP(\"R-4471\", Positions[Id], Positions[PV])"},
+      "check": "A1",
+      "expect": {"value2": 250.5}
+    },
+    {
+      "id": "TABLE-003",
+      "source": "observed",
+      "description": "SUM over a column and XLOOKUP by key read the snapshot",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+      "cells": {"A1": "=XLOOKUP(\"R-9999\", Positions[Id], Positions[PV], \"none\")"},
+      "check": "A1",
+      "expect": {"value2": "none"}
+    },
+    {
+      "id": "TABLE-004",
+      "source": "observed",
+      "description": "SUM over a column and XLOOKUP by key read the snapshot",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+      "cells": {"A1": "=XLOOKUP(\"R-9999\", Positions[Id], Positions[Desk])"},
+      "check": "A1",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "TABLE-005",
+      "source": "documented",
+      "description": "Before the first snapshot every reader waits, and IFERROR and ISERROR do not catch it (A1)",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": null}},
+      "cells": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\", Positions[Id], Positions[PV]), 0)", "A3": "=ISERROR(Positions[PV])", "A4": "=IF(TRUE, 1, COUNTA(Positions[Id]))", "B1": "=A1*2", "B2": "=IFERROR(A2, 0)"},
+      "check": "A1",
+      "expect": {"value2": "#GETTING_DATA"},
+      "engineDiffersByDecision": "ADR-0049: #GETTING_DATA while a Linked Table's data has not arrived, and IFERROR/ISERROR do not catch it",
+      "oracleSkip": "Excel has no Linked Table waiting for its data; nothing to ask"
+    },
+    {
+      "id": "TABLE-006",
+      "source": "documented",
+      "description": "Before the first snapshot every reader waits, and IFERROR and ISERROR do not catch it (A2)",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": null}},
+      "cells": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\", Positions[Id], Positions[PV]), 0)", "A3": "=ISERROR(Positions[PV])", "A4": "=IF(TRUE, 1, COUNTA(Positions[Id]))", "B1": "=A1*2", "B2": "=IFERROR(A2, 0)"},
+      "check": "A2",
+      "expect": {"value2": "#GETTING_DATA"},
+      "engineDiffersByDecision": "ADR-0049: #GETTING_DATA while a Linked Table's data has not arrived, and IFERROR/ISERROR do not catch it",
+      "oracleSkip": "Excel has no Linked Table waiting for its data; nothing to ask"
+    },
+    {
+      "id": "TABLE-007",
+      "source": "documented",
+      "description": "Before the first snapshot every reader waits, and IFERROR and ISERROR do not catch it (A3)",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": null}},
+      "cells": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\", Positions[Id], Positions[PV]), 0)", "A3": "=ISERROR(Positions[PV])", "A4": "=IF(TRUE, 1, COUNTA(Positions[Id]))", "B1": "=A1*2", "B2": "=IFERROR(A2, 0)"},
+      "check": "A3",
+      "expect": {"value2": "#GETTING_DATA"},
+      "engineDiffersByDecision": "ADR-0049: #GETTING_DATA while a Linked Table's data has not arrived, and IFERROR/ISERROR do not catch it",
+      "oracleSkip": "Excel has no Linked Table waiting for its data; nothing to ask"
+    },
+    {
+      "id": "TABLE-008",
+      "source": "documented",
+      "description": "Before the first snapshot every reader waits, and IFERROR and ISERROR do not catch it (A4)",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": null}},
+      "cells": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\", Positions[Id], Positions[PV]), 0)", "A3": "=ISERROR(Positions[PV])", "A4": "=IF(TRUE, 1, COUNTA(Positions[Id]))", "B1": "=A1*2", "B2": "=IFERROR(A2, 0)"},
+      "check": "A4",
+      "expect": {"value2": "#GETTING_DATA"},
+      "engineDiffersByDecision": "ADR-0049: #GETTING_DATA while a Linked Table's data has not arrived, and IFERROR/ISERROR do not catch it",
+      "oracleSkip": "Excel has no Linked Table waiting for its data; nothing to ask"
+    },
+    {
+      "id": "TABLE-009",
+      "source": "documented",
+      "description": "Before the first snapshot every reader waits, and IFERROR and ISERROR do not catch it (B1)",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": null}},
+      "cells": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\", Positions[Id], Positions[PV]), 0)", "A3": "=ISERROR(Positions[PV])", "A4": "=IF(TRUE, 1, COUNTA(Positions[Id]))", "B1": "=A1*2", "B2": "=IFERROR(A2, 0)"},
+      "check": "B1",
+      "expect": {"value2": "#GETTING_DATA"},
+      "engineDiffersByDecision": "ADR-0049: #GETTING_DATA while a Linked Table's data has not arrived, and IFERROR/ISERROR do not catch it",
+      "oracleSkip": "Excel has no Linked Table waiting for its data; nothing to ask"
+    },
+    {
+      "id": "TABLE-010",
+      "source": "documented",
+      "description": "Before the first snapshot every reader waits, and IFERROR and ISERROR do not catch it (B2)",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": null}},
+      "cells": {"A1": "=SUM(Positions[PV])", "A2": "=IFERROR(XLOOKUP(\"R-4471\", Positions[Id], Positions[PV]), 0)", "A3": "=ISERROR(Positions[PV])", "A4": "=IF(TRUE, 1, COUNTA(Positions[Id]))", "B1": "=A1*2", "B2": "=IFERROR(A2, 0)"},
+      "check": "B2",
+      "expect": {"value2": "#GETTING_DATA"},
+      "engineDiffersByDecision": "ADR-0049: #GETTING_DATA while a Linked Table's data has not arrived, and IFERROR/ISERROR do not catch it",
+      "oracleSkip": "Excel has no Linked Table waiting for its data; nothing to ask"
+    },
+    {
+      "id": "TABLE-011",
+      "source": "documented",
+      "description": "A column the table does not have is #REF!",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+      "cells": {"A1": "=SUM(Positions[Delta])"},
+      "check": "A1",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "TABLE-012",
+      "source": "observed",
+      "description": "Table and column names match without regard to case",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}},
+      "cells": {"A1": "=SUM(positions[pv])"},
+      "check": "A1",
+      "expect": {"value2": 300.5}
+    },
+    {
+      "id": "TABLE-013",
+      "source": "documented",
+      "description": "A structured reference to a Linked Table that was never declared is #NAME?",
+      "cells": {"ZZ1000": "=Positions[PV]"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NAME?"}
+    },
+    {
+      "id": "TABLE-014",
+      "source": "observed",
+      "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
+      "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
+      "cells": {"ZZ1000": "=SUM(Mixed[V])"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "TABLE-015",
+      "source": "observed",
+      "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
+      "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
+      "cells": {"ZZ1000": "=AVERAGE(Mixed[V])"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.5}
+    },
+    {
+      "id": "TABLE-016",
+      "source": "observed",
+      "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
+      "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
+      "cells": {"ZZ1000": "=COUNT(Mixed[V])"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "TABLE-017",
+      "source": "observed",
+      "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
+      "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
+      "cells": {"ZZ1000": "=COUNTA(Mixed[V])"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "TABLE-018",
+      "source": "observed",
+      "description": "A table's column is a range to the functions: text and blanks in it are skipped by SUM and counted by COUNTA (V: 1, \"2\", blank, TRUE, 4)",
+      "tables": {"Mixed": {"columns": ["V"], "rows": [[1], ["2"], [null], [true], [4]]}},
+      "cells": {"ZZ1000": "=MAX(Mixed[V])"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "TABLE-019",
+      "source": "observed",
+      "description": "An Error Value in a table's column propagates through the aggregates",
+      "tables": {"E": {"columns": ["V"], "rows": [[1], ["#N/A"]]}},
+      "cells": {"ZZ1000": "=SUM(E[V])"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "TABLE-020",
+      "source": "observed",
+      "description": "IFERROR catches an Error Value from a table's column",
+      "tables": {"E": {"columns": ["V"], "rows": [[1], ["#N/A"]]}},
+      "cells": {"ZZ1000": "=IFERROR(SUM(E[V]), 1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "TABLE-021",
+      "source": "observed",
+      "description": "A column of more than one row used as one Value is #VALUE! (no implicit intersection)",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}, "One": {"columns": ["V"], "rows": [[21]]}},
+      "cells": {"ZZ1000": "=Positions[PV]*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": 200}
+    },
+    {
+      "id": "TABLE-022",
+      "source": "observed",
+      "description": "A one-row column used as one Value reads as its Value",
+      "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}, "One": {"columns": ["V"], "rows": [[21]]}},
+      "cells": {"ZZ1000": "=One[V]*2"},
+      "check": "ZZ1000",
+      "expect": {"value2": 42}
+    },
+    {
+      "id": "TABLE-023",
+      "source": "observed",
+      "description": "A column typed in double brackets reads the same, and is written back in single brackets",
+      "tables": {"Trades": {"columns": ["Unit Price", "Qty"], "rows": [[2.5, 4]]}},
+      "cells": {"A1": "=SUM(Trades[[Unit Price]])*SUM(Trades[Qty])"},
+      "check": "A1",
+      "expect": {"value2": 10, "formula": "=SUM(Trades[Unit Price])*SUM(Trades[Qty])"}
+    }
+  ]
+}

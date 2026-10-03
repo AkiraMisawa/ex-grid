@@ -23,6 +23,7 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 | `ex-pinned` | a Pinned Column's cell, body or header |
 | `ex-state-stale / -missing / -error / -modified` | Cell State ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | `ex-tone-positive / -negative` | the Column's tone rule's answer about the value — a gain, a loss ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)); a meaning, never a colour, and `None` adds nothing |
+| `ex-changed` | a Change Highlight: the Consumer said the cell's shown value changed less than `ChangeHighlightDuration` ago; added and removed in one step, never transitioned *(added later, by [ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md))* |
 | `ex-range`, `ex-focus` | a selection rectangle and the Focus outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md)) |
 | `ex-action`, `ex-interactive` | the grid's own action button; a Consumer's control that takes its own pointer events ([ADR-0020](./0020-action-and-template-columns.md)) |
 | `ex-action-chosen` | the one action Space will fire, while a cell with several actions is Interactive — on that button alone, and only then ([ADR-0037](./0037-entering-a-cell-never-reaches-into-content-the-core-did-not-render.md)) |
@@ -95,7 +96,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Rules | `--ex-row-rule-color`, `--ex-column-rule-color`, `--ex-rule-width` — painted as gradients/inset shadows, **never borders** ([ADR-0028](./0028-geometry-is-resolved-once-density-is-only-a-preset.md)) |
 | Hover | `--ex-row-hover-background` *(unimplementable as stated — see the correction below)* |
 | Pinned | `--ex-pinned-background` *(exists)* |
-| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(reserved — the border Excel draws around the range's perimeter; decided with the selection paint polish)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
+| Selection | `--ex-selection-fill` *(exists)*, `--ex-focus-row-fill` *(the Focus band, [ADR-0008](./0008-selection-is-painted-by-an-overlay.md))*, `--ex-selection-outline` *(the border Excel draws around the range's perimeter, reserved here and taken up by [ADR-0008](./0008-selection-is-painted-by-an-overlay.md) on 2026-09-29; it defaults to `--ex-focus-outline`)*, `--ex-focus-outline` *(exists)*, `--ex-grid-focus-outline` *(exists)* |
 | Cell State | the six `--ex-state-*` *(exist)* |
 | Tone | `--ex-tone-positive-color`, `--ex-tone-negative-color` — default `inherit`, so a declared tone paints nothing until a theme says what colour it is ([ADR-0006](./0006-grid-owns-a-generic-cell-state-vocabulary.md)) |
 | Row Kind | the four `--ex-row-group/total-*` *(exist)* |
@@ -105,6 +106,7 @@ kept with their names and defaults; the vocabulary this ADR fixes is:
 | Column gestures | `--ex-resize-guide-color`, `--ex-drop-indicator-color` — the guide and the indicator are painted, not laid out, so neither is metrics-bearing (ADR-0011/0016) |
 | Scrollbar | `--ex-scrollbar-width`, `--ex-scrollbar-color` |
 | Row Mark | `--ex-mark-background`, `--ex-mark-border-color`, `--ex-mark-checked-background`, `--ex-mark-checked-color` — the box sizes in `em` from the font-size token, so it carries no length of its own *(added later, by [ADR-0043](./0043-row-marks-belong-to-identity-and-are-held-by-the-consumer.md))* |
+| Change Highlight | `--ex-change-highlight-background` — default a 40% tint of the system colour `Mark` (`Mark` itself stays yellow on a dark page whose text is light), painted on a cell with the class `ex-changed` while its mark lasts, never transitioned (P8) *(added later, by [ADR-0068](./0068-change-highlight-is-asked-of-the-consumer-and-painted-without-animation.md))* |
 
 Defaults stay on system colours (`Canvas`, `Highlight`, `currentColor`) so the bare grid follows
 the host's colour scheme and forced-colors settings (ADR-0027). `--ex-font-family` and
@@ -181,7 +183,8 @@ transition animates from another row's value. The tokens above set colours, not 
   in advance, with the geometry half needing nothing because the editor's box is the cell's
   (ADR-0028). `--ex-selection-outline` remains reserved, settled with the selection paint
   polish; the Focus band half of that polish has landed (`--ex-focus-row-fill`,
-  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)).
+  [ADR-0008](./0008-selection-is-painted-by-an-overlay.md)). *(The other half landed 2026-09-29:
+  `--ex-selection-outline` is the outline of a single range, ADR-0008.)*
 
 ## A correction found in implementation: the hover token could not work as declared — and how it now does
 
@@ -223,3 +226,130 @@ earlier claim that a stylesheet "cannot displace" a token-fed property was stron
 permits. The contract is stated precisely now: **the supported override routes cannot move
 geometry; a stylesheet that reaches for the unsupported ones is writing outside the contract,
 and what breaks is on it.** The browser suite pins the supported routes.
+
+## Added by ADR-0050 and ADR-0051 *(2026-09-27, decided with the user)*
+
+The declarations ExSheet asks of the core paint new things, and each one enters this list here,
+not quietly in the stylesheet. Each is painted only when a Consumer makes the declaration.
+
+- **Stable classes:**
+  - `ex-row-heading`: a Row Heading cell.
+  - `ex-headings-corner`: the corner where the two Headings meet.
+  - `ex-formula-bar`: the Formula Bar band.
+  - `ex-name-box`: its Name Box.
+  - `ex-fill-handle`: the fill handle.
+- **Internal classes**, which may change without notice:
+  - `ex-formula-bar-text`: the core's box around the bar's text surface. It carries `ex-editor`,
+    so the key listener treats it as the editor.
+  - `ex-name-box-form`: the form whose submission is Enter.
+  - `ex-fill-target`: the outline painted during a fill drag.
+  - `ex-completion`, `ex-completion-list`, `ex-completion-item` and `ex-completion-selected`: the
+    completion list, painted by the built-in Chrome.
+  - `ex-completion-hint`: the argument hint beneath the list.
+  - `ex-point`: the pointing outline (Point mode).
+  - `ex-range-single`: the one range of a Selection that has only one, which carries the range
+    outline ([ADR-0008](./0008-selection-is-painted-by-an-overlay.md), 2026-09-29). The custom
+    property `--ex-range-hole`, written inline on a range and never on the root, carries the hole
+    where the Focus is. It is geometry, not a Visual Token.
+
+  These reuse existing tokens (`--ex-selection-fill`, `--ex-focus-outline` and
+  `--ex-grid-focus-outline`) and add none. `ex-range-single` reads `--ex-selection-outline`, the
+  token reserved above for it.
+- **Visual Tokens:**
+  - `--ex-heading-background`, `--ex-heading-color` and `--ex-heading-rule-color`, for both
+    Headings.
+  - `--ex-formula-bar-background` and `--ex-formula-bar-color`.
+  - `--ex-fill-handle-color` and `--ex-fill-outline`.
+
+  Each is a colour or an outline that the theme sets. None is a C# parameter
+  ([ADR-0027](./0027-appearance-travels-in-css-geometry-travels-in-csharp.md)).
+- **Geometry** (the Row Headings' width, the Formula Bar's height and the fill handle's size) is
+  resolved in C# with the Grid Metrics and emitted inline, as every other piece of geometry is.
+
+## A third correction: the grid always draws its own scrollbar *(2026-09-29, decided with the user)*
+
+The scrollbar tokens were applied through `::-webkit-scrollbar`, with an empty fallback, on the
+belief that an unset token left both declarations invalid and the native bar untouched. It did not.
+In Chrome and Edge, any rule that matches `::-webkit-scrollbar` turns the element's bar into a
+custom one, whatever its declarations resolve to, and a custom bar paints no native part. The
+gutter kept its width and the thumb still worked, but nothing was painted in it. The fourth Windows
+run found it (`verification/2026-09-29-windows-4/results.md`, "The grid's scrollbars are not
+painted"), and it reproduced on Linux. Every grid without a Wrapper colour had been showing an empty
+gutter; the MudBlazor Wrapper sets `--ex-scrollbar-color`, which is why its grids showed a thumb.
+
+Three ways were weighed:
+
+- **The standard `scrollbar-width` and `scrollbar-color`.** Unset, they leave the native bar
+  alone. But `scrollbar-width` takes only `auto`, `thin` or `none`, so the width token would stop
+  being a length.
+- **A stable class a Wrapper adds to opt in** to the custom bar. It is one more class in the stable
+  table.
+- **The grid always draws its own bar.** This was chosen.
+
+**The decision:** `--ex-scrollbar-width` and `--ex-scrollbar-color` keep their meaning, and each
+has a default: 12px, and `CanvasText` at 32% over transparent, which reads in both colour schemes.
+The track and the corner are transparent. The bar looks the same on every platform. That includes
+macOS, where the grid's bar now occupies layout instead of overlaying. The gutter is reported by
+the browser, as it always was, so the geometry follows (ADR-0021).
+
+Firefox has no `::-webkit-scrollbar`. There the colour token goes to `scrollbar-color`, and the
+width stays the browser's own.
+
+The painted thumb is asserted from the screen in `stripes.spec.mjs`.
+
+## Added by ADR-0052's Size Tip *(2026-09-29, decided with the user)*
+
+- **Stable class:** `ex-size-tip`, the Size Tip a drag across Headings shows while it covers more
+  than one column or row ([ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)).
+  It is stable for the reason `ex-drop-indicator` is: it marks the meaning of a gesture, not a
+  mechanism, and its box carries nothing the virtualisation depends on. It is placed from the
+  geometry in C# and emitted inline, and it is `aria-hidden`.
+- **Visual Tokens:** `--ex-size-tip-background`, `--ex-size-tip-color` and `--ex-size-tip-outline`.
+  Without a theme, they fall back to the system colours `Canvas` and `CanvasText`. `ExGrid.MudBlazor`
+  maps them onto the colours MudBlazor gives its tooltips.
+
+## Added by ADR-0057 *(2026-09-29, decided with the user)*
+
+Reference Outlines ([ADR-0057](./0057-references-are-outlined-in-colour-while-a-formula-is-edited.md))
+enter the list here. Each is painted only while a Consumer that declared the References function
+has a Formula open, or while a Consumer asks for columns to be outlined.
+
+- **Internal classes**, which may change without notice:
+  - `ex-reference-outline`: a Reference Outline in the selection overlay, with `ex-reference-1` to
+    `ex-reference-7` naming its colour (eight until the eighth Windows run observed Excel's seven). `ex-point` stays, now on the Reference Outline Point is
+    moving.
+  - `ex-reference-text`: the layer beneath an editor surface that draws the text with its References
+    coloured, with `ex-reference-text-line` its part that scrolls with the field, and
+    `ex-reference-text-cell` and `ex-reference-text-bar` the built-in Chrome's two placements of it.
+  - `ex-reference-text-shown`: the class on a field while its layer holds the field's value and the
+    edit is in that field, which makes the field's own text transparent. *(Named while building
+    ticket 29; this entry first gave the layer's name to the field's class too.)*
+  - `ex-reference-pointed`: the span of the Reference Point is writing, shown selected (ADR-0051,
+    2026-09-30).
+- **Visual Tokens:** `--ex-reference-1` to `--ex-reference-7`, one per place in the palette. Their
+  defaults are Excel's, as the eighth Windows run observed them (ADR-0057). Seven is the palette's
+  length and lives in C#: it is behaviour, because it decides which References share a colour. A Theme sets
+  the colours, never the length. `ExGrid.MudBlazor` leaves them at their defaults.
+  `--ex-reference-pointed-background` and `--ex-reference-pointed-color` paint the pointed
+  Reference's ground and text. Their defaults approximate Excel's `#c6c6c6` and the Reference's
+  colour darkened (2026-09-30).
+  *(Changed 2026-09-30, decided with the user after Part B of the eighth Windows run:)* the pointed
+  text's shade is one token per place in the palette, `--ex-reference-1-pointed` to
+  `--ex-reference-7-pointed`, so that each can be Excel's. All seven default to Excel's shades, the
+  last five as the tenth Windows run read them (ADR-0057); over a dark ground they keep the mix toward
+  white.
+  `--ex-reference-pointed-color`, which set one shade for all seven, is retired with it.
+
+## Added by ADR-0058 *(2026-09-30, decided with the user)*
+
+A grid in a Pointing Scope ([ADR-0058](./0058-a-formula-points-across-grids-through-a-pointing-scope.md))
+is painted in two more ways while a Sheet points at it.
+
+- **Internal classes**, which may change without notice:
+  - `ex-pointed-at`: joins the root while the grid is pointed at, and makes the pointer `cell` over
+    its rows and headers.
+  - `ex-point-dashes`: the dashed line over the cell, or down the column's body, that a press handed
+    on to a Sheet. It is drawn in the selection overlay and cut to the painted rows, as a Reference
+    Outline is.
+- **No new token.** The dashes take `--ex-focus-outline`, as ADR-0057's dashes over Point's outline
+  do. The column outlines are ADR-0057's own Reference Outlines.

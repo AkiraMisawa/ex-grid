@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0; newer runtimes load it as-is (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>The pivot engine of ExPivot: a Snapshot's columns aggregated under a serialisable Pivot Layout into a Pivot Report, with Excel's PivotTable semantics — Items, Hidden Items, Sum to Varp with money summed exactly, subtotals, grand totals, the three report forms and Show Values As — and the bundled Pivot Source, which folds live Change Batches in. No UI: a server computes the same report the screen shows.</Description>
+    <PackageTags>pivot;pivottable;excel;aggregation;report</PackageTags>
+  </PropertyGroup>
+
+  <!-- One reference, to the family's data package, and no package (ADR-0059/0064, PV-1): the
+       engine reads Snapshots, and runs wherever a report is needed, a server included. -->
+  <ItemGroup>
+    <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Layer 1 reaches the cell index's hash and the slices' row counter, which have no public
+         surface (ADR-0066). -->
+    <InternalsVisibleTo Include="ExPivot.Engine.Tests" />
+  </ItemGroup>
+
+  <!-- The engine depends on exactly the ExGrid.Data it was built with (PV-1), as ExPivot depends
+       on exactly its engine: a Snapshot's layout is that version's. -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

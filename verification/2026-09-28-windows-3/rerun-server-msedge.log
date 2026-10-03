@@ -1,0 +1,426 @@
+
+Running 12 tests using 1 worker
+
+  x   1 [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) (15.5s)
+  x   2 [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) (6.0s)
+  x   3 [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) (5.9s)
+  x   4 [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) (6.4s)
+  x   5 [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) (15.5s)
+  x   6 [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) (6.0s)
+  x   7 [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) (5.9s)
+  x   8 [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) (6.4s)
+  x   9 [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) (15.5s)
+  x  10 [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) (6.0s)
+  x  11 [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) (5.9s)
+  x  12 [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) (6.4s)
+
+
+  1) [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.ex-grid [id$=\'-r700000c1\']')
+    Expected: "700000"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r700000c1\']')
+
+
+      49 |     const far = 700_000;
+      50 |     await page.locator('.ex-grid .ex-scroller').evaluate((scroller, top) => { scroller.scrollTop = top; }, far * ROW_HEIGHT);
+    > 51 |     await expect(cell(page, far, 1)).toHaveText(String(far), { timeout: 15_000 });
+         |                                      ^
+      52 |     await expect(page.locator('.ex-grid .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
+      53 |
+      54 |     await expectEveryPaintedRowTicked(page, true);
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\marks.spec.mjs:51:38
+
+    Error Context: test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.ex-grid [id$=\'-r700000c1\']')
+    Expected: "700000"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r700000c1\']')
+
+
+      49 |     const far = 700_000;
+      50 |     await page.locator('.ex-grid .ex-scroller').evaluate((scroller, top) => { scroller.scrollTop = top; }, far * ROW_HEIGHT);
+    > 51 |     await expect(cell(page, far, 1)).toHaveText(String(far), { timeout: 15_000 });
+         |                                      ^
+      52 |     await expect(page.locator('.ex-grid .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
+      53 |
+      54 |     await expectEveryPaintedRowTicked(page, true);
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\marks.spec.mjs:51:38
+
+    Error Context: test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) 
+
+    Error: expect(locator).toHaveText(expected) failed
+
+    Locator: locator('.ex-grid [id$=\'-r700000c1\']')
+    Expected: "700000"
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toHaveText" with timeout 15000ms
+      - waiting for locator('.ex-grid [id$=\'-r700000c1\']')
+
+
+      49 |     const far = 700_000;
+      50 |     await page.locator('.ex-grid .ex-scroller').evaluate((scroller, top) => { scroller.scrollTop = top; }, far * ROW_HEIGHT);
+    > 51 |     await expect(cell(page, far, 1)).toHaveText(String(far), { timeout: 15_000 });
+         |                                      ^
+      52 |     await expect(page.locator('.ex-grid .ex-placeholder')).toHaveCount(0, { timeout: 15_000 });
+      53 |
+      54 |     await expectEveryPaintedRowTicked(page, true);
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\marks.spec.mjs:51:38
+
+    Error Context: test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge-repeat2\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge-repeat2\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\marks-after-mark-all-rows--6955a-far-away-paint-ticked-MK-6--msedge-repeat2\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      185 |     // Scrolled to row 100, Excel's Focus is D100: the top visible row, not row 1.
+      186 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 187 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      188 |     await header('D').click({ force: true });
+      189 |     await expectActive(page, 'D100');
+      190 | });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:187:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      214 |     await click(page, 'C3');
+      215 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 216 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      217 |     await sheet(page).locator('.ex-headings-corner').click({ force: true });
+      218 |     await expectSelection(page, 'A1', 'XFD1048576');
+      219 |     await expectActive(page, 'A100');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:216:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+
+
+      313 |     await expectSelection(page, 'E1', 'G3');
+      314 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 299 * 28; });
+    > 315 |     await expect(cell(page, 'E300')).toBeVisible();
+          |                                      ^
+      316 |     await page.keyboard.press('Control+Backspace');
+      317 |     await expectInView(page, 'E1');
+      318 |     await expectSelection(page, 'E1', 'G3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:315:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      185 |     // Scrolled to row 100, Excel's Focus is D100: the top visible row, not row 1.
+      186 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 187 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      188 |     await header('D').click({ force: true });
+      189 |     await expectActive(page, 'D100');
+      190 | });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:187:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      214 |     await click(page, 'C3');
+      215 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 216 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      217 |     await sheet(page).locator('.ex-headings-corner').click({ force: true });
+      218 |     await expectSelection(page, 'A1', 'XFD1048576');
+      219 |     await expectActive(page, 'A100');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:216:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+
+
+      313 |     await expectSelection(page, 'E1', 'G3');
+      314 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 299 * 28; });
+    > 315 |     await expect(cell(page, 'E300')).toBeVisible();
+          |                                      ^
+      316 |     await page.keyboard.press('Control+Backspace');
+      317 |     await expectInView(page, 'E1');
+      318 |     await expectSelection(page, 'E1', 'G3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:315:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge-repeat1\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge-repeat1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge-repeat1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      185 |     // Scrolled to row 100, Excel's Focus is D100: the top visible row, not row 1.
+      186 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 187 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      188 |     await header('D').click({ force: true });
+      189 |     await expectActive(page, 'D100');
+      190 | });
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:187:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge-repeat2\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge-repeat2\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-item-3-a-co-d2cc8-0050-§1-ADR-0052-ticket-06--msedge-repeat2\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r99c0\']')
+
+
+      214 |     await click(page, 'C3');
+      215 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 99 * 28; });
+    > 216 |     await expect(cell(page, 'A100')).toBeVisible();
+          |                                      ^
+      217 |     await sheet(page).locator('.ex-headings-corner').click({ force: true });
+      218 |     await expectSelection(page, 'A1', 'XFD1048576');
+      219 |     await expectActive(page, 'A100');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:216:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge-repeat2\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge-repeat2\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-item-5-the--89415-0050-§1-ADR-0052-ticket-06--msedge-repeat2\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 5000ms
+      - waiting for locator('.ex-grid').first().locator('[id$=\'-r299c4\']')
+
+
+      313 |     await expectSelection(page, 'E1', 'G3');
+      314 |     await sheet(page).locator('.ex-scroller').evaluate((s) => { s.scrollTop = 299 * 28; });
+    > 315 |     await expect(cell(page, 'E300')).toBeVisible();
+          |                                      ^
+      316 |     await page.keyboard.press('Control+Backspace');
+      317 |     await expectInView(page, 'E1');
+      318 |     await expectSelection(page, 'E1', 'G3');
+        at C:\Users\amisa\AppData\Local\exgrid-layer3\run-2026-09-28-3\tests\ExGrid.Browser\sheet-vs-excel.spec.mjs:315:38
+
+    Error Context: test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge-repeat2\error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge-repeat2\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results-rerun\sheet-vs-excel-active-cell-d0302-ckspace-collapses-ADR-0052--msedge-repeat2\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12 failed
+    [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) 
+    [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) 
+    [msedge] › marks.spec.mjs:42:1 › after "mark all", rows scrolled to far away paint ticked (MK-6) 
+    [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+    [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 
+    [msedge] › sheet-vs-excel.spec.mjs:171:1 › item 3: a column letter selects the column, Shift+click extends, the Focus on the top visible row (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:207:1 › item 5: the corner selects every cell, the Focus on the top-left visible cell (ADR-0050 §1, ADR-0052, ticket 06) 
+    [msedge] › sheet-vs-excel.spec.mjs:306:1 › active cell, cases 7 and 8: Ctrl+. walks the corners, Ctrl+Backspace scrolls back to the Focus, Shift+Backspace collapses (ADR-0052) 

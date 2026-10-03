@@ -481,12 +481,12 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         return _distinctValues(column, GridFilters.Without(Filter, column), cancellationToken);
     }
 
-    /// <summary>Whether a <c>find</c> delegate was given (ADR-0047).</summary>
+    /// <summary>Whether a <c>find</c> delegate was given (ADR-0055).</summary>
     public bool CanFind => _find is not null;
 
     /// <summary>
     /// A Find step, answered by the <c>find</c> delegate against the Filter and Sorts in force
-    /// (ADR-0047). The position it answers is in that order; the grid discards it if the order
+    /// (ADR-0055). The position it answers is in that order; the grid discards it if the order
     /// has moved since the request was read.
     /// </summary>
     public Task<Finding.GridFindResult> FindAsync(Finding.GridFindRequest request, CancellationToken cancellationToken)
@@ -494,7 +494,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         ArgumentNullException.ThrowIfNull(request);
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (_find is null)
-            throw new NotSupportedException("This source was given no find delegate: CanFind is false (ADR-0047).");
+            throw new NotSupportedException("This source was given no find delegate: CanFind is false (ADR-0055).");
         return _find(request, Filter, Sorts, cancellationToken);
     }
 

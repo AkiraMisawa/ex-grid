@@ -1,0 +1,482 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "mode": "enter",
+ "rtt": 0,
+ "started": "2026-09-30T17:49:51.282Z",
+ "cases": [
+  {
+   "case": "21 set-up (Enter 30 ms after the last key)",
+   "rep": 1,
+   "started": "2026-09-30T17:49:56.291Z",
+   "escapesBefore": 0,
+   "focusMs": 4,
+   "d10Before": "",
+   "afterEnter": {
+    "active": "div.ex-grid",
+    "editing": false,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D11",
+    "nameBox": "D11",
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "",
+      "drawn": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": []
+     }
+    },
+    "outlines": [],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 702.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D11 (1 in view)"
+     }
+    ],
+    "editorOutline": null,
+    "positions": [],
+    "completion": null,
+    "d10": "#VALUE!"
+   },
+   "pressedAt": [
+    765,
+    1223
+   ],
+   "afterPress": {
+    "active": "div.ex-grid",
+    "editing": false,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": null,
+    "bar": {
+     "value": "=A1+B1",
+     "selection": [
+      6,
+      6
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "",
+      "drawn": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": []
+     }
+    },
+    "outlines": [],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": null,
+    "positions": [],
+    "completion": null,
+    "d10": "#VALUE!"
+   },
+   "escapes": 0,
+   "focusAfterMs": 0,
+   "cleared": "held \"=A1+B1\" (\"#VALUE!\"), cleared with Delete"
+  },
+  {
+   "case": "21 set-up (Enter 30 ms after the last key)",
+   "rep": 2,
+   "started": "2026-09-30T17:49:59.926Z",
+   "escapesBefore": 0,
+   "focusMs": 0,
+   "d10Before": "",
+   "afterEnter": {
+    "active": "div.ex-grid",
+    "editing": false,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D11",
+    "nameBox": "D11",
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "",
+      "drawn": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": []
+     }
+    },
+    "outlines": [],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 702.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D11 (1 in view)"
+     }
+    ],
+    "editorOutline": null,
+    "positions": [],
+    "completion": null,
+    "d10": "#VALUE!"
+   },
+   "pressedAt": [
+    765,
+    1223
+   ],
+   "afterPress": {
+    "active": "div.ex-grid",
+    "editing": false,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": null,
+    "bar": {
+     "value": "=A1+B1",
+     "selection": [
+      6,
+      6
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "",
+      "drawn": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": []
+     }
+    },
+    "outlines": [],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": null,
+    "positions": [],
+    "completion": null,
+    "d10": "#VALUE!"
+   },
+   "escapes": 0,
+   "focusAfterMs": 0,
+   "cleared": "held \"=A1+B1\" (\"#VALUE!\"), cleared with Delete"
+  },
+  {
+   "case": "21 set-up (Enter 30 ms after the last key)",
+   "rep": 3,
+   "started": "2026-09-30T17:50:03.432Z",
+   "escapesBefore": 0,
+   "focusMs": 0,
+   "d10Before": "",
+   "afterEnter": {
+    "active": "div.ex-grid",
+    "editing": false,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D11",
+    "nameBox": "D11",
+    "cell": null,
+    "bar": {
+     "value": "",
+     "selection": [
+      0,
+      0
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "",
+      "drawn": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": []
+     }
+    },
+    "outlines": [],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 702.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D11 (1 in view)"
+     }
+    ],
+    "editorOutline": null,
+    "positions": [],
+    "completion": null,
+    "d10": "#VALUE!"
+   },
+   "pressedAt": [
+    765,
+    1223
+   ],
+   "afterPress": {
+    "active": "div.ex-grid",
+    "editing": false,
+    "view": {
+     "l": 32,
+     "t": 394.21,
+     "w": 708,
+     "h": 380
+    },
+    "focus": "D10",
+    "nameBox": "D10",
+    "cell": null,
+    "bar": {
+     "value": "=A1+B1",
+     "selection": [
+      6,
+      6
+     ],
+     "box": {
+      "l": 145.42,
+      "t": 366.21,
+      "w": 606.58,
+      "h": 28
+     },
+     "scrollLeft": 0,
+     "shown": false,
+     "fill": "#000000",
+     "color": "#000000",
+     "layer": {
+      "text": "",
+      "drawn": "",
+      "visibility": "hidden",
+      "box": {
+       "l": 145.42,
+       "t": 366.21,
+       "w": 606.58,
+       "h": 28
+      },
+      "lineScrollLeft": 0,
+      "spans": []
+     }
+    },
+    "outlines": [],
+    "points": [],
+    "focusOutline": [
+     {
+      "cls": "ex-focus",
+      "color": "#000000",
+      "outline": "solid 2px #000000 offset -2px",
+      "background": "#000000/0",
+      "box": {
+       "l": 413.19,
+       "t": 674.21,
+       "w": 99,
+       "h": 28
+      },
+      "cells": "D10 (1 in view)"
+     }
+    ],
+    "editorOutline": null,
+    "positions": [],
+    "completion": null,
+    "d10": "#VALUE!"
+   },
+   "escapes": 0,
+   "focusAfterMs": 0,
+   "cleared": "held \"=A1+B1\" (\"#VALUE!\"), cleared with Delete"
+  }
+ ],
+ "messages": [
+  {
+   "t": "2026-09-30T17:49:52.343Z",
+   "type": "info",
+   "text": "Debugging hotkey: Shift+Alt+D (when application has focus)"
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "keyboard": {
+  "before": "ok layout 0x08090809",
+  "set": "ok english was=0x08090809 now=0x08090809",
+  "after": "ok layout 0x08090809"
+ },
+ "page": {
+  "dpr": 1.5,
+  "inner": [
+   1586,
+   956
+  ],
+  "forcedColors": false,
+  "dark": false,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+ },
+ "calibration": {
+  "dpr": 1.5,
+  "tries": [
+   {
+    "px": 671,
+    "py": 371,
+    "client": {
+     "x": 400,
+     "y": 120
+    }
+   }
+  ]
+ },
+ "clip": {
+  "x": 28,
+  "y": 362,
+  "width": 1090,
+  "height": 429
+ },
+ "finished": "2026-09-30T17:50:06.941Z"
+}

@@ -1,0 +1,59 @@
+@* The Formula Bar's text field seam (ADR-0051/0030): a bare input filling the core's
+   ex-editor box in the bar — the Cell Editor's second surface, so it is painted as the Cell
+   Editor's content is, with Material's underline while it takes typing. The core owns the
+   box, the keys and the one uncommitted text; this paints the control, reports what is
+   typed, and answers each focus request through the core's focus function. The coloured
+   text the core draws goes immediately before it, as the Cell Editor's does (ADR-0057). *@
+@Context.ReferenceText
+<input class="@(Context.ReadOnly ? "mud-ex-formula-bar-text" : "mud-ex-formula-bar-text mud-ex-formula-bar-text-editable")"
+       @bind:get="_text.Shown" @bind:set="OnInput" @bind:event="oninput" readonly="@Context.ReadOnly" tabindex="-1" aria-label="@Label"
+       @onfocus="OnFocus" />
+
+@code {
+    private int? _focusedRequest;
+    private bool _needsFocus;
+
+    /// <summary>The core's contract for the bar's text field (ADR-0051): the text, whether it
+    /// takes typing, where a focus and what is typed go, and the focus request.</summary>
+    [Parameter, EditorRequired] public FormulaBarTextContext Context { get; set; } = default!;
+
+    /// <summary>The control's accessible name, in the Chrome's words (WR-3).</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+
+    private Task OnFocus() => Context.Focused();
+
+    // Bound, not value= beside @oninput: the renderer then takes what the browser reports as
+    // what the control shows, and what it renders follows the typing, never an echo of it a
+    // round trip old (SRV-5, ED-22).
+    private readonly FieldText _text = new();
+
+    private void OnInput(string? text)
+    {
+        _text.Typed(text ?? "");
+        Context.TextChanged(_text.Shown);
+    }
+
+    protected override void OnParametersSet()
+    {
+        _text.Told(Context.Text);
+        // Unlike the Cell Editor, the bar stands before anything asks for it: the first
+        // request is the first change from the number it was painted with.
+        if (_focusedRequest is null)
+            _focusedRequest = Context.FocusRequest;
+        else if (Context.FocusRequest != _focusedRequest)
+            _needsFocus = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_needsFocus)
+            return;
+        _needsFocus = false;
+        _focusedRequest = Context.FocusRequest;
+        // The core's focus function, as the Cell Editor's control answers its requests: the core
+        // focuses this control only while the keyboard is still this grid's (ADR-0010, ADR-0021's
+        // note of 2026-09-30).
+        if (Context.TakeFocus is { } takeFocus)
+            await takeFocus();
+    }
+}

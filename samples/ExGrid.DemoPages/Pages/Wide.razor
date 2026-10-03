@@ -47,7 +47,7 @@
 
 @code {
     /// <summary>The Definition of Done's large-data scenario (§12): a million rows. At
-    /// 28px that is 28,000,000px of scroll height, inside the browser's 2^25 (BIG-4).</summary>
+    /// 28px that is 28,000,000px of scroll height, inside the scale-1 Layout Ceiling of 33,554,428px (BIG-4, ADR-0053).</summary>
     private const int DefaultTotal = 1_000_000;
 
     /// <summary>The same page at another row count, for the criteria that compare one

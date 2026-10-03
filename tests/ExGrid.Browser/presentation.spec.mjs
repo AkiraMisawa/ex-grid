@@ -1,4 +1,6 @@
-import { test, expect, alterPage } from './fixtures.mjs';
+import { test, expect, alterPage, circuitQuiet } from './fixtures.mjs';
+import { painted, sameColour } from './pixels.mjs';
+import { expectActiveDescendant } from './keyboard.mjs';
 
 // The presentation contract, measured (ADR-0027/0028/0029/0031): tokens win where the
 // contract says they win, the painted geometry equals the declared geometry, nothing
@@ -21,7 +23,7 @@ test('geometry tokens are inline and read-only: an ancestor or stylesheet cannot
     expect(before).toBe('24px');
 
     // On body and in the head, which outlive the page: alterPage takes both off as the test
-    // ends (ADR-0048).
+    // ends (ADR-0056).
     await alterPage(page, () => {
         document.body.style.setProperty('--ex-row-height', '60px');
         // A stylesheet rule on the element the token lives on, as UX-2's
@@ -117,6 +119,90 @@ test('forced colors keep every Cell State and Row Kind tellable (UX-7, on /cells
     expect(new Set(values).size, JSON.stringify(states)).toBe(values.length);
 });
 
+// Tone and Cell State on /tones (ticket 84): the page's theme sets the tone tokens on an element
+// around the grid and leaves every Cell State at the grid's default. Rows: a gain 0, a loss 1, and
+// a flat value 2, which has no tone. Columns: Book 0 (pinned), then one per state, every cell in
+// it in that state.
+const TONED = { gain: 0, loss: 1, flat: 2 };
+const STATE_COLUMN = { normal: 1, stale: 2, error: 3, modified: 4 };
+
+const rgbOf = (css) => css.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+
+/** How far a painted pixel lies from every mix of a colour with the ground: 0 for anti-aliased
+ * text in that colour, whatever its coverage. */
+function offLine(pixel, ground, colour) {
+    const towards = colour.map((v, i) => v - ground[i]);
+    const from = pixel.map((v, i) => v - ground[i]);
+    const along = towards.reduce((sum, v) => sum + v * v, 0);
+    const coverage = Math.min(1, Math.max(0, from.reduce((sum, v, i) => sum + v * towards[i], 0) / along));
+    return Math.hypot(...from.map((v, i) => v - coverage * towards[i]));
+}
+
+/** A cell's ground, in its left padding, and its most inked pixels — the farthest from that
+ * ground — as painted, in device pixels. */
+async function inkOf(page, locator, count = 6) {
+    const box = await locator.boundingBox();
+    const region = await painted(page, box);
+    const ground = region.at(box.x + 2, box.y + box.height / 2);
+    const pixels = [];
+    for (let j = 0; j < Math.floor(box.height * region.scale); j++) {
+        for (let i = 0; i < Math.floor(box.width * region.scale); i++) {
+            pixels.push(region.at(box.x + (i + 0.5) / region.scale, box.y + (j + 0.5) / region.scale));
+        }
+    }
+    const distance = (pixel) => pixel.reduce((sum, v, i) => sum + Math.abs(v - ground[i]), 0);
+    return { ground, inked: pixels.sort((a, b) => distance(b) - distance(a)).slice(0, count) };
+}
+
+test('a toned Stale or Error cell paints in its state\'s colour under a theme that sets the tone tokens (ADR-0006, ADR-0029)', async ({ page }) => {
+    await page.goto('/tones');
+    const cellAt = (row, column) => page.locator(`.ex-grid [id$='r${row}c${column}']`);
+    await expect(cellAt(TONED.loss, STATE_COLUMN.error)).toHaveClass(/ex-tone-negative/);
+    await expect(cellAt(TONED.gain, STATE_COLUMN.error)).toHaveClass(/ex-tone-positive/);
+    await expect(cellAt(TONED.flat, STATE_COLUMN.error)).not.toHaveClass(/ex-tone-/);
+    await page.mouse.move(0, 0);
+    const colourOf = async (row, column) => rgbOf(await cellAt(row, column).evaluate((el) => getComputedStyle(el).color));
+
+    // The theme is in effect: an ordinary gain and loss paint the tone's colours, not the text's.
+    const text = await colourOf(TONED.flat, STATE_COLUMN.normal);
+    const tones = { gain: await colourOf(TONED.gain, STATE_COLUMN.normal), loss: await colourOf(TONED.loss, STATE_COLUMN.normal) };
+    expect(tones.gain, 'the theme paints a gain').not.toEqual(text);
+    expect(tones.loss, 'the theme paints a loss').not.toEqual(text);
+
+    for (const state of ['stale', 'error']) {
+        // The state's own colour, on the flat value, where no tone competes with it.
+        const own = await colourOf(TONED.flat, STATE_COLUMN[state]);
+        expect(own, `${state} paints a colour of its own`).not.toEqual(text);
+        for (const tone of ['gain', 'loss']) {
+            const toned = cellAt(TONED[tone], STATE_COLUMN[state]);
+            await expect(toned).toHaveClass(new RegExp(`ex-state-${state}`));
+            expect(await colourOf(TONED[tone], STATE_COLUMN[state]), `a ${state} ${tone}, as the cascade resolved it`).toEqual(own);
+            // And on the screen: its most inked pixels are the state's colour, not the tone's.
+            const { ground, inked } = await inkOf(page, toned);
+            for (const pixel of inked) {
+                expect(offLine(pixel, ground, own) < offLine(pixel, ground, tones[tone]),
+                    `a ${state} ${tone}: ${pixel} over ${ground} is the tone's ${tones[tone]}, not the state's ${own}`).toBe(true);
+            }
+        }
+    }
+    // The state's other marks stay with its colour: Stale's slant, Error's wavy underline.
+    await expect(cellAt(TONED.loss, STATE_COLUMN.stale)).toHaveCSS('font-style', 'italic');
+    await expect(cellAt(TONED.loss, STATE_COLUMN.error)).toHaveCSS('text-decoration-style', 'wavy');
+
+    // Modified paints no colour of its own but a mark in the cell's top right corner, which no tone
+    // touches: the same on a gain, a loss and a flat value, and absent from an ordinary cell.
+    const corner = async (row, column) => {
+        const box = await cellAt(row, column).boundingBox();
+        const region = await painted(page, box);
+        return region.at(box.x + box.width - 1.5, box.y + 1.5);
+    };
+    const mark = await corner(TONED.flat, STATE_COLUMN.modified);
+    expect(sameColour(mark, await corner(TONED.flat, STATE_COLUMN.normal), 8), 'Modified paints its mark').toBe(false);
+    for (const tone of ['gain', 'loss']) {
+        expect(sameColour(await corner(TONED[tone], STATE_COLUMN.modified), mark, 1), `a modified ${tone} keeps the mark`).toBe(true);
+    }
+});
+
 test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await open(page);
@@ -143,7 +229,7 @@ test('under a dark scheme the untouched grid stays readable (UX-8)', async ({ pa
 test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async ({ page }) => {
     await open(page);
     // The grid's parent is #app on WebAssembly and body on the Server host, neither of which
-    // leaving the page clears: alterPage puts the direction back as the test ends (ADR-0048).
+    // leaving the page clears: alterPage puts the direction back as the test ends (ADR-0056).
     await alterPage(page, () => {
         const parent = document.querySelector('.ex-grid').parentElement;
         const was = parent.getAttribute('dir');
@@ -154,7 +240,7 @@ test('inside an RTL ancestor the grid stays an LTR island (DIR-2/DIR-3)', async 
     // The overlay still lands on its cell to within a pixel.
     await grid(page).locator("[id$='r1c1']").click({ force: true });
     // On a Server circuit the Focus is painted a round trip after the click.
-    await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r1c1$/);
+    await expectActiveDescendant(grid(page), /r1c1$/);
     const alignment = await page.evaluate(() => {
         const g = document.querySelector('.ex-grid');
         const cell = g.querySelector("[id$='r1c1']");
@@ -220,13 +306,15 @@ test('the pointer leaving the grid stops the auto-scroll (SL-14/SL-15)', async (
     const g = grid(page);
     const box = await g.locator('.ex-scroller').boundingBox();
 
-    // Drag from a top cell into the bottom band and hold.
+    // Drag from a top cell into the bottom band and hold. The drag's move handler arrives with
+    // the render that answered the press (ADR-0008): on a circuit a move made before it is not
+    // heard, and a pointer then held still in the band scrolls nothing (CI, Server host, chrome,
+    // 2026-10-02). So the drag moves once the host has said all it will about the press.
     await page.mouse.move(box.x + 60, box.y + 60);
     await page.mouse.down();
+    await circuitQuiet();
     await page.mouse.move(box.x + 60, box.y + box.height - 6, { steps: 4 });
-    await page.waitForTimeout(400);
-    const whileHeld = await g.locator('.ex-scroller').evaluate((el) => el.scrollTop);
-    expect(whileHeld).toBeGreaterThan(0);
+    await expect.poll(() => g.locator('.ex-scroller').evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
 
     // Leave the grid with the button still down: the scroll stops where it was.
     await page.mouse.move(box.x + 60, box.y + box.height + 200, { steps: 4 });

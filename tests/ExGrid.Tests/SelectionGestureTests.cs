@@ -7,30 +7,30 @@ public class SelectionGestureTests
 {
     private static readonly GridExtent Grid = new(100, 26);
 
-    [Fact] // ADR-0012: click — Anchor = Focus = that cell; the selection collapses to one cell
-    public void Click_collapses_to_one_cell_with_anchor_and_focus_on_it()
+    [Fact] // ADR-0012/0052: click — the Focus is that cell, and so is the Extent; the selection collapses to it
+    public void Click_collapses_to_one_cell_with_focus_and_extent_on_it()
     {
         var selection = GridSelection.Empty.Click(new(5, 3), Grid);
 
         Assert.Equal([new SelectionRange(5, 3, 1, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(5, 3), selection.Anchor);
         Assert.Equal(new CellPosition(5, 3), selection.Focus);
+        Assert.Equal(new CellPosition(5, 3), selection.Extent);
     }
 
-    [Fact] // ADR-0012: shift+click — Anchor stays; Focus moves and the range is redrawn
-    public void Shift_click_keeps_the_anchor_and_redraws_the_range()
+    [Fact] // ADR-0052: shift+click — the Focus stays; the Extent moves to the clicked cell and the range is redrawn
+    public void Shift_click_keeps_the_focus_and_moves_the_extent()
     {
         var selection = GridSelection.Empty
             .Click(new(1, 1), Grid)
             .ExtendTo(new(3, 4), Grid);
 
         Assert.Equal([new SelectionRange(1, 1, 3, 4)], selection.Ranges);
-        Assert.Equal(new CellPosition(1, 1), selection.Anchor);
-        Assert.Equal(new CellPosition(3, 4), selection.Focus);
+        Assert.Equal(new CellPosition(1, 1), selection.Focus);
+        Assert.Equal(new CellPosition(3, 4), selection.Extent);
     }
 
-    [Fact] // ADR-0012: extending past the far side flips the range around the Anchor
-    public void Shift_click_on_the_far_side_flips_the_range_around_the_anchor()
+    [Fact] // ADR-0052: extending past the far side flips the range around the Focus
+    public void Shift_click_on_the_far_side_flips_the_range_around_the_focus()
     {
         var selection = GridSelection.Empty
             .Click(new(5, 5), Grid)
@@ -38,33 +38,50 @@ public class SelectionGestureTests
             .ExtendTo(new(3, 3), Grid);
 
         Assert.Equal([new SelectionRange(3, 3, 3, 3)], selection.Ranges);
-        Assert.Equal(new CellPosition(5, 5), selection.Anchor);
+        Assert.Equal(new CellPosition(5, 5), selection.Focus);
+        Assert.Equal(new CellPosition(3, 3), selection.Extent);
     }
 
-    [Fact] // ADR-0012: ctrl+click adds a new range and moves Anchor and Focus into it
-    public void Ctrl_click_adds_a_range_and_moves_anchor_and_focus()
+    [Fact] // ADR-0052 case 2: a drag's Focus is where the button went down, whichever way it moves — D5 → B2 leaves D5
+    public void A_drag_up_and_left_keeps_the_focus_where_it_began()
+    {
+        // Mouse down is Click and each move is ExtendTo (the holder's mapping).
+        var selection = GridSelection.Empty
+            .Click(new(4, 3), Grid)        // D5
+            .ExtendTo(new(3, 2), Grid)
+            .ExtendTo(new(1, 1), Grid);    // B2
+
+        Assert.Equal([new SelectionRange(1, 1, 4, 3)], selection.Ranges); // B2:D5
+        Assert.Equal(new CellPosition(4, 3), selection.Focus);           // D5
+        Assert.Equal(new CellPosition(1, 1), selection.Extent);
+    }
+
+    [Fact] // ADR-0012/0052: ctrl+click adds a new range holding the Focus
+    public void Ctrl_click_adds_a_range_holding_the_focus()
     {
         var selection = GridSelection.Empty
             .Click(new(1, 1), Grid)
             .ToggleRange(new(5, 5), Grid);
 
         Assert.Equal([new SelectionRange(1, 1, 1, 1), new SelectionRange(5, 5, 1, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(5, 5), selection.Anchor);
         Assert.Equal(new CellPosition(5, 5), selection.Focus);
+        Assert.Equal(new SelectionRange(5, 5, 1, 1), selection.FocusRange);
     }
 
-    [Fact] // ADR-0012: the most recently created range is the one that grows
-    public void Shift_arrow_after_ctrl_click_grows_only_the_newest_range()
+    [Fact] // ADR-0052 case 5: Ctrl+click D5 onto A1:B2, then Shift+Down gives A1:B2,D5:D6
+    public void Shift_arrow_after_ctrl_click_grows_the_range_holding_the_focus()
     {
         var selection = GridSelection.Empty
-            .Click(new(1, 1), Grid)
-            .ToggleRange(new(5, 5), Grid)
+            .Click(new(0, 0), Grid)
+            .ExtendTo(new(1, 1), Grid)      // A1:B2
+            .ToggleRange(new(4, 3), Grid)   // D5
             .Extend(GridDirection.Down, Grid);
 
-        Assert.Equal([new SelectionRange(1, 1, 1, 1), new SelectionRange(5, 5, 2, 1)], selection.Ranges);
+        Assert.Equal([new SelectionRange(0, 0, 2, 2), new SelectionRange(4, 3, 2, 1)], selection.Ranges);
+        Assert.Equal(new CellPosition(4, 3), selection.Focus);
     }
 
-    [Fact] // ADR-0011: Ctrl+A is one rectangle covering every row and every visible column
+    [Fact] // ADR-0011/0052: Ctrl+A is one rectangle covering every row and every visible column, and the Focus does not move
     public void Select_all_is_one_rectangle_over_the_whole_grid()
     {
         var selection = GridSelection.Empty
@@ -72,82 +89,120 @@ public class SelectionGestureTests
             .SelectAll(Grid);
 
         Assert.Equal([new SelectionRange(0, 0, 100, 26)], selection.Ranges);
-        Assert.Equal(new CellPosition(5, 5), selection.Anchor); // Anchor and Focus stay put
         Assert.Equal(new CellPosition(5, 5), selection.Focus);
     }
 
-    [Fact] // ADR-0011: Ctrl+A from an empty selection anchors at the origin
-    public void Select_all_from_empty_anchors_at_the_origin()
+    [Fact] // ADR-0011: Ctrl+A from an empty selection puts the Focus at the origin
+    public void Select_all_from_empty_puts_the_focus_at_the_origin()
     {
         var selection = GridSelection.Empty.SelectAll(Grid);
 
         Assert.Equal([new SelectionRange(0, 0, 100, 26)], selection.Ranges);
-        Assert.Equal(new CellPosition(0, 0), selection.Anchor);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
     }
 
-    [Fact] // ADR-0012: ctrl+click on a selected cell toggles it off in every range containing it
+    [Fact] // ADR-0012/0052 third run: ctrl+click on a selected cell takes it out of every containing range, each giving way in place to its fragments bottom to top; the Focus goes to the first remaining cell, by rows, of the range made last
     public void Toggle_off_subtracts_the_cell_from_every_containing_range()
     {
         var selection = GridSelection.Empty
             .Click(new(0, 0), Grid)
             .ExtendTo(new(2, 2), Grid)      // range 1: (0,0)-(2,2)
             .ToggleRange(new(4, 4), Grid)
-            .ExtendTo(new(1, 1), Grid)      // range 2: (1,1)-(4,4), overlapping range 1
-            .ToggleRange(new(1, 1), Grid);  // toggle a cell inside both
+            .ExtendTo(new(1, 1), Grid)      // range 2: (1,1)-(4,4), overlapping range 1; Focus (4,4)
+            .ToggleRange(new(1, 1), Grid);  // take out a cell inside both
 
         Assert.False(selection.Contains(new(1, 1)));
         Assert.Equal(
         [
-            new SelectionRange(0, 0, 1, 3), // range 1 minus (1,1)
-            new SelectionRange(2, 0, 1, 3),
-            new SelectionRange(1, 0, 1, 1),
-            new SelectionRange(1, 2, 1, 1),
-            new SelectionRange(2, 1, 3, 4), // range 2 minus its top-left corner
-            new SelectionRange(1, 2, 1, 3),
+            new SelectionRange(2, 0, 1, 3), // range 1 minus (1,1): below
+            new SelectionRange(1, 2, 1, 1), // right
+            new SelectionRange(1, 0, 1, 1), // left
+            new SelectionRange(0, 0, 1, 3), // above
+            new SelectionRange(2, 1, 3, 4), // range 2 minus its top-left corner: below
+            new SelectionRange(1, 2, 1, 3), // right
         ], selection.Ranges);
-        Assert.Equal(new CellPosition(1, 1), selection.Anchor); // detached on the deselected cell
-        Assert.Equal(new CellPosition(1, 1), selection.Focus);
+        Assert.Equal(new CellPosition(1, 2), selection.Focus); // range 2's first remaining cell by rows, not (4,4) where it was
+        Assert.Equal(new SelectionRange(1, 2, 1, 3), selection.FocusRange); // the fragment of range 2 holding it
     }
 
-    [Fact] // ADR-0012: shift+arrow from a detached Anchor starts a new range
-    public void Shift_arrow_after_a_toggle_off_starts_a_new_range()
+    [Fact] // ADR-0052 case 6: B2 out of A1:C3 (A1 active) keeps A1 active, and Shift+Down extends A1:C1 to A1:C2
+    public void Taking_out_a_cell_keeps_the_focus_and_its_fragment_extends()
     {
         var selection = GridSelection.Empty
-            .Click(new(2, 2), Grid)
-            .ExtendTo(new(4, 4), Grid)
-            .ToggleRange(new(3, 3), Grid)   // Anchor and Focus detach on (3,3)
-            .Extend(GridDirection.Right, Grid);
+            .Click(new(0, 0), Grid)
+            .ExtendTo(new(2, 2), Grid)      // A1:C3, A1 active
+            .ToggleRange(new(1, 1), Grid);  // B2
 
-        Assert.Equal(5, selection.Ranges.Count); // four fragments plus the new range
-        Assert.Equal(new SelectionRange(3, 3, 1, 2), selection.Ranges[^1]);
-        Assert.Equal(new CellPosition(3, 3), selection.Anchor);
-        Assert.Equal(new CellPosition(3, 4), selection.Focus);
+        Assert.Equal(4, selection.Ranges.Count);
+        Assert.False(selection.Contains(new(1, 1)));
+        Assert.Equal(new CellPosition(0, 0), selection.Focus);
+        Assert.Equal(new SelectionRange(0, 0, 1, 3), selection.FocusRange); // A1:C1
+
+        var extended = selection.Extend(GridDirection.Down, Grid);
+
+        Assert.Contains(new SelectionRange(0, 0, 2, 3), extended.Ranges); // A1:C2
+        Assert.Equal(4, extended.Ranges.Count);
+        Assert.Equal(new CellPosition(0, 0), extended.Focus);
     }
 
-    [Fact] // ADR-0012: toggling off the last cell leaves the empty selection
-    public void Toggling_off_the_last_cell_yields_empty()
+    [Fact] // ADR-0052 case 6 / third run: A1 out of A1:C3 moves the Focus to B1, the first remaining cell by rows, and Shift+Down extends B1:C1
+    public void Taking_out_the_focus_cell_moves_the_focus_to_the_first_remaining_cell_by_rows()
     {
         var selection = GridSelection.Empty
-            .Click(new(1, 1), Grid)
-            .ToggleRange(new(1, 1), Grid);
+            .Click(new(0, 0), Grid)
+            .ExtendTo(new(2, 2), Grid)      // A1:C3, A1 active
+            .ToggleRange(new(0, 0), Grid);  // A1
 
-        Assert.True(selection.IsEmpty);
+        Assert.Equal([new SelectionRange(1, 0, 2, 3), new SelectionRange(0, 1, 1, 2)], selection.Ranges); // A2:C3, B1:C1
+        Assert.Equal(new CellPosition(0, 1), selection.Focus); // B1
+        Assert.Equal(new SelectionRange(0, 1, 1, 2), selection.FocusRange);
+
+        var extended = selection.Extend(GridDirection.Down, Grid);
+
+        Assert.Equal([new SelectionRange(1, 0, 2, 3), new SelectionRange(0, 1, 2, 2)], extended.Ranges); // B1:C2
+        Assert.Equal(new CellPosition(0, 1), extended.Focus);
     }
 
-    [Fact] // ADR-0012: an empty selection has no Anchor or Focus — refuse rather than answer (0,0)
-    public void Empty_has_no_anchor_or_focus()
+    [Fact] // ADR-0052 third run (not observed in Excel): when the take-out empties the range made last, the latest range still standing takes its place
+    public void Taking_out_the_whole_range_made_last_moves_the_focus_to_the_latest_range_left()
     {
-        Assert.Throws<InvalidOperationException>(() => GridSelection.Empty.Anchor);
+        var selection = GridSelection.Empty
+            .Click(new(0, 0), Grid)
+            .ExtendTo(new(1, 1), Grid)      // A1:B2
+            .ToggleRange(new(5, 5), Grid)   // F6, then taken out again below
+            .ToggleRange(new(5, 5), Grid);
+
+        Assert.Equal([new SelectionRange(0, 0, 2, 2)], selection.Ranges);
+        Assert.Equal(new CellPosition(0, 0), selection.Focus); // A1:B2's first cell by rows
+    }
+
+    [Fact] // ADR-0052 case 6: the only selected cell cannot be taken out
+    public void The_only_selected_cell_cannot_be_taken_out()
+    {
+        var selection = GridSelection.Empty.Click(new(1, 1), Grid);
+
+        var toggled = selection.ToggleRange(new(1, 1), Grid);
+
+        Assert.Equal(selection, toggled);
+        Assert.Equal([new SelectionRange(1, 1, 1, 1)], toggled.Ranges);
+        Assert.Equal(new CellPosition(1, 1), toggled.Focus);
+    }
+
+    [Fact] // ADR-0012: an empty selection has no Focus or Extent — refuse rather than answer (0,0)
+    public void Empty_has_no_focus_or_extent()
+    {
         Assert.Throws<InvalidOperationException>(() => GridSelection.Empty.Focus);
+        Assert.Throws<InvalidOperationException>(() => GridSelection.Empty.Extent);
+        Assert.Throws<InvalidOperationException>(() => GridSelection.Empty.FocusRange);
     }
 
-    [Fact] // ADR-0012: shift+click with no selection behaves as a plain click — there is no Anchor
+    [Fact] // ADR-0012: shift+click with no selection behaves as a plain click — there is no Focus
     public void Shift_click_from_empty_behaves_as_a_click()
     {
         var selection = GridSelection.Empty.ExtendTo(new(2, 3), Grid);
 
         Assert.Equal([new SelectionRange(2, 3, 1, 1)], selection.Ranges);
-        Assert.Equal(new CellPosition(2, 3), selection.Anchor);
+        Assert.Equal(new CellPosition(2, 3), selection.Focus);
     }
 
     [Fact] // ADR-0012: ctrl+click with no selection selects the cell

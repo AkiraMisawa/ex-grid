@@ -1,4 +1,4 @@
-@* The find panel under MudBlazor (ADR-0047/0030): a MudTextField, the two options as
+@* The find panel under MudBlazor (ADR-0055/0030): a MudTextField, the two options as
    MudCheckBoxes and the two steps as MudButtons, inside the core's popover. The search, the
    Focus it moves and what closes the panel are the core's; this draws and calls back.
 
@@ -28,7 +28,7 @@
 </form>
 
 @code {
-    /// <summary>The core's contract for the panel (ADR-0047). The core keys its popover by the
+    /// <summary>The core's contract for the panel (ADR-0055). The core keys its popover by the
     /// opening, so each opening is a new instance of this component.</summary>
     [Parameter, EditorRequired] public FindContext Context { get; set; } = default!;
 

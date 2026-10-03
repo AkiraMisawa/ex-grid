@@ -21,7 +21,8 @@ public sealed record GridColumn<TRow>
     /// addresses it and <paramref name="value"/> extracts its value from a row; every
     /// other argument sets the property of the same name and may be left out: the header
     /// is then the name, the width Auto, the column not Editable, its filter
-    /// condition-only, both alignments Auto, and there is no verdict, Format or Tone.
+    /// condition-only, both alignments Auto, a Date column's values <see cref="ExGrid.DateType.DateTime"/>,
+    /// and there is no verdict, Format or Tone.
     /// </summary>
     public GridColumn(
         string name,
@@ -35,10 +36,11 @@ public sealed record GridColumn<TRow>
         CellAlign headerAlign = CellAlign.Auto,
         Func<TRow, string, EditVerdict>? validate = null,
         Func<object, string>? format = null,
-        Func<object, CellTone>? tone = null)
+        Func<object, CellTone>? tone = null,
+        DateType? dateType = null)
         : this(name, type, value, header, width, [], null, queryable: true,
             editable: editable, filterUi: filterUi, align: align, headerAlign: headerAlign,
-            validate: validate, format: format, tone: tone)
+            validate: validate, format: format, tone: tone, dateType: dateType)
     {
     }
 
@@ -58,7 +60,8 @@ public sealed record GridColumn<TRow>
         CellAlign headerAlign = CellAlign.Auto,
         Func<TRow, string, EditVerdict>? validate = null,
         Func<object, string>? format = null,
-        Func<object, CellTone>? tone = null)
+        Func<object, CellTone>? tone = null,
+        DateType? dateType = null)
     {
         if (align is not (CellAlign.Auto or CellAlign.Left or CellAlign.Center or CellAlign.Right))
             throw new ArgumentOutOfRangeException(nameof(align), align, null);
@@ -71,9 +74,19 @@ public sealed record GridColumn<TRow>
         // overflow rule throw for the same value much later, naming no origin.
         if (type is not (ColumnType.Text or ColumnType.Number or ColumnType.Date or ColumnType.Boolean))
             throw new ArgumentOutOfRangeException(nameof(type), type, $"Unknown ColumnType for column '{name}'.");
-        // The format travels with the slice, for a Source that finds (ADR-0047): the text it
+        // A date type on a column that is not Date would be a declaration that does nothing,
+        // and an undefined one would reach the engine unnamed (ADR-0023, section of 2026-10-02).
+        if (dateType is { } declaredDate)
+        {
+            if (declaredDate is not (DateType.DateTime or DateType.DateOnly or DateType.DateTimeOffset))
+                throw new ArgumentOutOfRangeException(nameof(dateType), declaredDate, $"Unknown DateType for column '{name}'.");
+            if (type != ColumnType.Date)
+                throw new ArgumentException(
+                    $"Column '{name}' ({type}) declares a date type; only a Date column holds dates (ADR-0023).", nameof(dateType));
+        }
+        // The format travels with the slice, for a Source that finds (ADR-0055): the text it
         // matches is the text the row paints, by the one rule ColumnInfo writes down.
-        Info = new ColumnInfo<TRow>(name, type, value, queryable, format);
+        Info = new ColumnInfo<TRow>(name, type, value, queryable, format, dateType ?? DateType.DateTime);
         Header = header ?? name;
         Width = width ?? new ColumnWidthSpec(ColumnWidth.Auto);
         // Refused here rather than in the spec, which is built before the column and cannot
@@ -157,10 +170,11 @@ public sealed record GridColumn<TRow>
         RenderFragment<TemplateCellContext<TRow>> template,
         string? header = null,
         ColumnWidthSpec? width = null,
-        Func<object, string>? format = null)
+        Func<object, string>? format = null,
+        DateType? dateType = null)
     {
         ArgumentNullException.ThrowIfNull(template);
-        return new GridColumn<TRow>(name, type, value, header, width, [], template, queryable: true, format: format);
+        return new GridColumn<TRow>(name, type, value, header, width, [], template, queryable: true, format: format, dateType: dateType);
     }
 
     /// <summary>
@@ -194,6 +208,52 @@ public sealed record GridColumn<TRow>
     /// compare, and whether a value too wide for the column becomes <c>####</c>
     /// (ADR-0016/0023).</summary>
     public ColumnType Type => Info.Type;
+
+    /// <summary>Which date type a Date column's values are — <see cref="ExGrid.DateType.DateTime"/>
+    /// unless declared. A cell of another date type is refused naming the column, and a typed
+    /// filter operand reads as this type or is refused (ADR-0023, section of 2026-10-02).</summary>
+    public DateType DateType => Info.DateType;
+
+    /// <summary>
+    /// One cell's kind (ADR-0050, item 6): the Consumer's per-cell answer where it supplies
+    /// one, this column's <see cref="Type"/> where it does not. It is what alignment, the
+    /// numeric class and the <c>####</c> decision follow (ADR-0016); sorting and filtering
+    /// never ask it — they stay on <see cref="Type"/>. An undefined answer is refused by
+    /// name rather than painted as some kind nobody declared.
+    /// </summary>
+    /// <param name="row">The row the cell is on.</param>
+    /// <param name="cellType">The Consumer's per-cell lookup, or null for none.</param>
+    public ColumnType TypeAt(TRow row, Func<TRow, GridColumn<TRow>, ColumnType>? cellType)
+    {
+        if (cellType is null)
+            return Type;
+        var type = cellType(row, this);
+        if (type is not (ColumnType.Text or ColumnType.Number or ColumnType.Date or ColumnType.Boolean))
+            throw new ArgumentOutOfRangeException(nameof(cellType), type,
+                $"The per-cell kind for a cell of column '{Name}' is not a ColumnType (ADR-0050).");
+        return type;
+    }
+
+    /// <summary>
+    /// One cell's alignment (ADR-0050, item 7): the Consumer's per-cell answer where it
+    /// supplies one other than <see cref="CellAlign.Auto"/>, this column's
+    /// <see cref="Align"/> where it does not. <see cref="CellAlign.Auto"/> then leaves the
+    /// kind's default to decide (ADR-0016), so the precedence is per cell, then column,
+    /// then kind. An undefined answer is refused by name rather than painted as some
+    /// alignment nobody declared.
+    /// </summary>
+    /// <param name="row">The row the cell is on.</param>
+    /// <param name="cellAlign">The Consumer's per-cell lookup, or null for none.</param>
+    public CellAlign AlignAt(TRow row, Func<TRow, GridColumn<TRow>, CellAlign>? cellAlign)
+    {
+        if (cellAlign is null)
+            return Align;
+        var align = cellAlign(row, this);
+        if (align is not (CellAlign.Auto or CellAlign.Left or CellAlign.Center or CellAlign.Right))
+            throw new ArgumentOutOfRangeException(nameof(cellAlign), align,
+                $"The per-cell alignment for a cell of column '{Name}' is not a CellAlign (ADR-0050).");
+        return align == CellAlign.Auto ? Align : align;
+    }
 
     /// <summary>How the value is extracted from a row — what Filter, Sort, copy and the
     /// painted text all read. Null is a Blank (ADR-0023).</summary>
@@ -239,7 +299,9 @@ public sealed record GridColumn<TRow>
 
     /// <summary>
     /// The column's display format (ADR-0006): the text a non-null value paints as, or
-    /// null for the value's own <c>ToString()</c>. A null value paints empty either way —
+    /// null for the value's own text — a date or a time in one ISO form by its type, in the
+    /// invariant culture (ADR-0006, note of 2026-10-01), anything else its own
+    /// <c>ToString()</c>. A null value paints empty either way —
     /// an absent value is a Cell State, not a format's business. This is the ONE text the
     /// grid shows for a value, so it is also what copy puts in <c>text/plain</c>, what the
     /// value list offers, what the Auto width estimates over and what the editor opens

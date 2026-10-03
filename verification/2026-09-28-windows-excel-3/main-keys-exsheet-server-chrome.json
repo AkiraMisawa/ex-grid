@@ -1,0 +1,313 @@
+{
+  "channel": "chrome",
+  "base": "http://localhost:6298",
+  "host": "server",
+  "cases": {
+    "1": {
+      "steps": [
+        {
+          "step": "B2:D4 selected",
+          "nameBox": "B2",
+          "selection": "3 rows by 3 columns selected, B 2 to D 4",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "12",
+          "cells": {
+            "B2": "12",
+            "C2": "0.5",
+            "D2": "6",
+            "B3": "7",
+            "C3": "0.75",
+            "D3": "5.25",
+            "B4": "20",
+            "C4": "0.2",
+            "D4": "4",
+            "B5": "39",
+            "D5": "15.25"
+          },
+          "shot": "shots/C-M1-B2-D4-selected-exsheet-server-chrome.png"
+        },
+        {
+          "step": "Delete",
+          "nameBox": "B2",
+          "selection": "3 rows by 3 columns selected, B 2 to D 4",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "",
+          "cells": {
+            "B2": "",
+            "C2": "",
+            "D2": "",
+            "B3": "",
+            "C3": "",
+            "D3": "",
+            "B4": "",
+            "C4": "",
+            "D4": "",
+            "B5": "0",
+            "D5": "0"
+          },
+          "shot": "shots/C-M1-Delete-exsheet-server-chrome.png"
+        },
+        {
+          "step": "then Ctrl+Z",
+          "nameBox": "B2",
+          "selection": "3 rows by 3 columns selected, B 2 to D 4",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "12",
+          "cells": {
+            "B2": "12",
+            "C2": "0.5",
+            "D2": "6",
+            "B3": "7",
+            "C3": "0.75",
+            "D3": "5.25",
+            "B4": "20",
+            "C4": "0.2",
+            "D4": "4",
+            "B5": "39",
+            "D5": "15.25"
+          },
+          "shot": "shots/C-M1-then-Ctrl-Z-exsheet-server-chrome.png"
+        }
+      ],
+      "ms": 2646
+    },
+    "2": {
+      "steps": [
+        {
+          "step": "B3 selected",
+          "nameBox": "B3",
+          "selection": "",
+          "activeDescendant": "r2c1",
+          "editor": null,
+          "bar": "7",
+          "cells": {
+            "B3": "7",
+            "B5": "39"
+          },
+          "shot": "shots/C-M2-B3-selected-exsheet-server-chrome.png"
+        },
+        {
+          "step": "Backspace, before Enter",
+          "nameBox": "B3",
+          "selection": "",
+          "activeDescendant": "r2c1",
+          "editor": "",
+          "bar": "",
+          "cells": {
+            "B3": "7",
+            "B5": "39"
+          },
+          "shot": "shots/C-M2-Backspace-before-Enter-exsheet-server-chrome.png"
+        },
+        {
+          "step": "then Enter",
+          "nameBox": "B4",
+          "selection": "",
+          "activeDescendant": "r3c1",
+          "editor": null,
+          "bar": "20",
+          "cells": {
+            "B3": "",
+            "B5": "32"
+          },
+          "shot": "shots/C-M2-then-Enter-exsheet-server-chrome.png"
+        }
+      ],
+      "ms": 2204
+    },
+    "3": {
+      "steps": [
+        {
+          "step": "B2:B5 selected, B2 =A2*2",
+          "nameBox": "B2",
+          "selection": "4 rows by 1 columns selected, B 2 to B 5",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "=A2*2",
+          "cells": {
+            "A2": "1",
+            "A3": "2",
+            "A4": "3",
+            "A5": "4",
+            "B2": "2",
+            "B3": "7",
+            "B4": "20",
+            "B5": "29"
+          },
+          "shot": "shots/C-M3-B2-B5-selected-exsheet-server-chrome.png"
+        },
+        {
+          "step": "Ctrl+D",
+          "nameBox": "B2",
+          "selection": "4 rows by 1 columns selected, B 2 to B 5",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "=A2*2",
+          "cells": {
+            "A2": "1",
+            "A3": "2",
+            "A4": "3",
+            "A5": "4",
+            "B2": "2",
+            "B3": "4",
+            "B4": "6",
+            "B5": "8"
+          },
+          "shot": "shots/C-M3-Ctrl-D-exsheet-server-chrome.png"
+        }
+      ],
+      "entries": {
+        "B2": "=A2*2",
+        "B3": "=A3*2",
+        "B4": "=A4*2",
+        "B5": "=A5*2"
+      },
+      "ms": 5290
+    },
+    "4": {
+      "steps": [
+        {
+          "step": "B2:E2 selected, B2 =B1+1",
+          "nameBox": "B2",
+          "selection": "1 rows by 4 columns selected, B 2 to E 2",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "=B1+1",
+          "cells": {
+            "B1": "10",
+            "C1": "20",
+            "D1": "30",
+            "E1": "40",
+            "B2": "11",
+            "C2": "0.5",
+            "D2": "5.5",
+            "E2": ""
+          },
+          "shot": "shots/C-M4-B2-E2-selected-exsheet-server-chrome.png"
+        },
+        {
+          "step": "Ctrl+R",
+          "nameBox": "B2",
+          "selection": "1 rows by 4 columns selected, B 2 to E 2",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "=B1+1",
+          "cells": {
+            "B1": "10",
+            "C1": "20",
+            "D1": "30",
+            "E1": "40",
+            "B2": "11",
+            "C2": "21",
+            "D2": "31",
+            "E2": "41"
+          },
+          "shot": "shots/C-M4-Ctrl-R-exsheet-server-chrome.png"
+        }
+      ],
+      "entries": {
+        "B2": "=B1+1",
+        "C2": "=C1+1",
+        "D2": "=D1+1",
+        "E2": "=E1+1"
+      },
+      "ms": 5294
+    },
+    "5": {
+      "steps": [
+        {
+          "step": "B2:C3 selected",
+          "nameBox": "B2",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "12",
+          "cells": {
+            "B2": "12",
+            "C2": "0.5",
+            "B3": "7",
+            "C3": "0.75"
+          },
+          "shot": "shots/C-M5-B2-C3-selected-exsheet-server-chrome.png"
+        },
+        {
+          "step": "typed =A1, Ctrl+Enter",
+          "nameBox": "B2",
+          "selection": "2 rows by 2 columns selected, B 2 to C 3",
+          "activeDescendant": "r1c1",
+          "editor": null,
+          "bar": "=A1",
+          "cells": {
+            "A1": "Item",
+            "B1": "Qty",
+            "A2": "Apples",
+            "B2": "Item",
+            "C2": "Item",
+            "B3": "Item",
+            "C3": "Item"
+          },
+          "shot": "shots/C-M5-Ctrl-Enter-exsheet-server-chrome.png"
+        }
+      ],
+      "entries": {
+        "B2": "=A1",
+        "C2": "=A1",
+        "B3": "=A1",
+        "C3": "=A1"
+      },
+      "ms": 3320
+    },
+    "6": {
+      "steps": [
+        {
+          "step": "A5000 holds needle; Ctrl+Home",
+          "nameBox": "A1",
+          "selection": "",
+          "activeDescendant": "r0c0",
+          "editor": null,
+          "bar": "Item",
+          "cells": {
+            "A1": "Item"
+          },
+          "a5000Painted": false,
+          "shot": "shots/C-M6-Ctrl-Home-exsheet-server-chrome.png"
+        },
+        {
+          "step": "Ctrl+F, needle, Enter",
+          "nameBox": "A5000",
+          "selection": "",
+          "activeDescendant": "r4999c0",
+          "editor": null,
+          "bar": "needle",
+          "cells": {
+            "A5000": "needle"
+          },
+          "panelVisible": true,
+          "panelText": "Match case\n Match entire cell contents\nFind previous\nFind next",
+          "panelField": "needle",
+          "a5000": "whole in the viewport",
+          "shot": "shots/C-M6-Ctrl-F-needle-Enter-exsheet-server-chrome.png"
+        },
+        {
+          "step": "then Escape",
+          "nameBox": "A5000",
+          "selection": "",
+          "activeDescendant": "r4999c0",
+          "editor": null,
+          "bar": "needle",
+          "cells": {
+            "A5000": "needle"
+          },
+          "panelVisible": false,
+          "a5000": "whole in the viewport",
+          "shot": "shots/C-M6-then-Escape-exsheet-server-chrome.png"
+        }
+      ],
+      "ms": 4505
+    }
+  },
+  "console": []
+}

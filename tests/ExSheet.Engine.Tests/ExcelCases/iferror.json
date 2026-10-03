@@ -1,0 +1,149 @@
+{
+  "area": "iferror",
+  "about": "IFERROR (ADR-0047). An empty cell as either argument gives an empty value: a Formula whose result it is shows 0, as Excel was observed to answer (Microsoft's documentation says \"\"), and joined to text it is \"\" (verification/2026-09-27-windows-excel-2).",
+  "cases": [
+    {
+      "id": "IFERROR-001",
+      "source": "observed",
+      "description": "IFERROR: an Error Value gives the fallback, anything else is the value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(1/0,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "IFERROR-002",
+      "source": "observed",
+      "description": "IFERROR: an Error Value gives the fallback, anything else is the value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(5,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "IFERROR-003",
+      "source": "observed",
+      "description": "IFERROR: an Error Value gives the fallback, anything else is the value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(#N/A,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "IFERROR-004",
+      "source": "observed",
+      "description": "IFERROR: an Error Value gives the fallback, anything else is the value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(\"abc\"+1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1}
+    },
+    {
+      "id": "IFERROR-005",
+      "source": "observed",
+      "description": "IFERROR: an Error Value gives the fallback, anything else is the value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(C2,\"bad\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "bad"}
+    },
+    {
+      "id": "IFERROR-006",
+      "source": "observed",
+      "description": "IFERROR: an Error Value gives the fallback, anything else is the value",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(A6,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "abc"}
+    },
+    {
+      "id": "IFERROR-007",
+      "source": "observed",
+      "description": "IFERROR: an empty cell as the value gives 0, not the \"\" Microsoft's documentation describes",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(A5,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "IFERROR-008",
+      "source": "observed",
+      "description": "IFERROR: an empty cell as the fallback gives 0, not the \"\" Microsoft's documentation describes",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(1/0,A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "IFERROR-009",
+      "source": "observed",
+      "description": "IFERROR does not turn the refusal of a range where one Value is wanted into a fallback",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFERROR(A1:A2,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills; IFERROR does not catch that refusal",
+      "excelExpect": {"value2": 1}
+    },
+    {
+      "id": "IFERROR-010",
+      "source": "observed",
+      "description": "IFERROR does not catch #CIRC!",
+      "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=IFERROR(A1,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: IFERROR and ISERROR do not catch #CIRC!, and a Formula whose text references a cycle member is #CIRC! whether or not the branch is taken",
+      "excelExpect": {"value2": 0}
+    },
+    {
+      "id": "IFERROR-011",
+      "source": "observed",
+      "description": "Ticket 19 row 10: a missing value_if_error gives 0",
+      "ticket19Row": 10,
+      "cells": {"ZZ1000": "=IFERROR(1/0,)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "IFERROR-012",
+      "source": "observed",
+      "description": "Ticket 19 row 15: an empty cell as the value gives 0",
+      "ticket19Row": 15,
+      "cells": {"ZZ1000": "=IFERROR(A1,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "IFERROR-013",
+      "source": "observed",
+      "description": "IFERROR over an empty cell gives an empty value, not 0: joined to text it is \"\" (verification/2026-09-27-windows-excel-2)",
+      "cells": {"ZZ1000": "=IFERROR(A1,\"x\")&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": ""}
+    },
+    {
+      "id": "IFERROR-014",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: an empty cell as the fallback is an empty value too: joined to text it is \"\"",
+      "cells": {"ZZ1000": "=IFERROR(1/0,A1)&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": ""}
+    },
+    {
+      "id": "IFERROR-015",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: the empty value IFERROR gives for an empty cell is 0 in arithmetic",
+      "cells": {"ZZ1000": "=IFERROR(A1,\"x\")+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "IFERROR-016",
+      "source": "observed",
+      "description": "A value_if_error left out is empty, not 0: joined to text it is \"\" (verification/2026-09-28-windows-excel-3)",
+      "cells": {"ZZ1000": "=IFERROR(1/0,)&\"\""},
+      "check": "ZZ1000",
+      "expect": {"value2": ""}
+    }
+  ]
+}

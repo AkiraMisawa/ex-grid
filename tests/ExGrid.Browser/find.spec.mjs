@@ -1,6 +1,7 @@
 import { test, expect, watchNextKey, keySeenUntouched } from './fixtures.mjs';
+import { expectKeyboardOn, activeDescendant } from './keyboard.mjs';
 
-// Find with real keys (ADR-0047): Ctrl+F on a focused grid opens the grid's own panel — never
+// Find with real keys (ADR-0055): Ctrl+F on a focused grid opens the grid's own panel — never
 // the browser's find bar, which sees only the painted rows — the keys typed straight after it
 // land in the field, Enter steps through every row including the unpainted ones, and Escape
 // hands the keyboard back. /features is bound to GridSource.From, the reference search. Run once
@@ -14,7 +15,7 @@ function grid(page) {
 }
 
 async function focusedCell(page) {
-    return grid(page).getAttribute('aria-activedescendant');
+    return activeDescendant(grid(page));
 }
 
 for (const chrome of ['builtin', 'mud']) {
@@ -25,7 +26,7 @@ for (const chrome of ['builtin', 'mud']) {
             await grid(page).locator("[id$='r0c0']").click({ force: true });
         });
 
-        test('Ctrl+F opens the grid\'s panel, the keys typed after it land in its field, and Enter steps (FD-1/FD-3/FD-5, ADR-0047)', async ({ page }) => {
+        test('Ctrl+F opens the grid\'s panel, the keys typed after it land in its field, and Enter steps (FD-1/FD-3/FD-5, ADR-0055)', async ({ page }) => {
             await watchNextKey(page, ['f', 'F']);
             // Typed together: the panel takes DOM focus a render later, and the letters are
             // held until it has (ADR-0010/0039).
@@ -49,7 +50,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(field).toBeFocused();
         });
 
-        test('a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0047/0010, ED-22)', async ({ page }) => {
+        test('a capital and a Shift+Enter typed straight after Ctrl+F keep their meaning (ADR-0055/0010, ED-22)', async ({ page }) => {
             // All of it before the panel can have taken DOM focus on a circuit: the keys are
             // held and handed to the field. A Shift pressed for the capital, and for the
             // Shift+Enter, is a keydown of its own and must not stop the replay there. Backward
@@ -62,7 +63,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toHaveValue('Novak');
         });
 
-        test('a match beyond the painted rows is reached and revealed (FD-5, ADR-0047)', async ({ page }) => {
+        test('a match beyond the painted rows is reached and revealed (FD-5, ADR-0055)', async ({ page }) => {
             // Row 350's notional: 1,000,000 + 350 × 12,345.67, shown without separators.
             await page.keyboard.press('ControlOrMeta+f');
             const field = grid(page).locator('.ex-popover-find input').first();
@@ -74,7 +75,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator("[id$='r350c2']")).toBeInViewport();
         });
 
-        test('with a range selected, Find searches it and the selection stands (FD-4/FD-5, ADR-0047)', async ({ page }) => {
+        test('with a range selected, Find searches it and the selection stands (FD-4/FD-5, ADR-0055)', async ({ page }) => {
             await grid(page).locator("[id$='r0c1']").click({ force: true });
             await grid(page).locator("[id$='r8c1']").click({ force: true, modifiers: ['Shift'] });
 
@@ -89,7 +90,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-range')).toHaveCount(1);
         });
 
-        test('nothing found is said, in a live region (FD-6, ADR-0047)', async ({ page }) => {
+        test('nothing found is said, in a live region (FD-6, ADR-0055)', async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
             await page.keyboard.type('no such trader');
@@ -100,7 +101,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.locator('#find-refused-status')).toContainText('NotFound');
         });
 
-        test('Ctrl+F in the find field selects its text, and the browser\'s find stays shut (FD-1, ADR-0047)', async ({ page }) => {
+        test('Ctrl+F in the find field selects its text, and the browser\'s find stays shut (FD-1, ADR-0055)', async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             const field = grid(page).locator('.ex-popover-find input').first();
             await expect(field).toBeFocused();
@@ -114,7 +115,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => field.evaluate((el) => [el.selectionStart, el.selectionEnd])).toEqual([0, 5]);
         });
 
-        test('Ctrl+F in a column\'s popover opens Find in its place (FD-1, ADR-0047)', async ({ page }) => {
+        test('Ctrl+F in a column\'s popover opens Find in its place (FD-1, ADR-0055)', async ({ page }) => {
             await page.keyboard.press('Alt+ArrowDown');
             const menu = grid(page).locator('.ex-popover [role=menu]').first();
             await expect(menu).toBeVisible();
@@ -127,7 +128,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
         });
 
-        test('Ctrl+F in the Context Menu, and in the filter\'s text field, opens Find in its place (FD-1, ADR-0047)', async ({ page }) => {
+        test('Ctrl+F in the Context Menu, and in the filter\'s text field, opens Find in its place (FD-1, ADR-0055)', async ({ page }) => {
             await page.keyboard.press('Shift+F10');
             await expect(grid(page).locator('.ex-popover[role=menu]')).toBeVisible();
             await page.keyboard.press('ControlOrMeta+f');
@@ -135,7 +136,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
             await page.keyboard.press('Escape');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect(grid(page)).toBeFocused();
+            await expectKeyboardOn(grid(page));
 
             // Book's filter is a value list with a search box: E puts the keyboard in it.
             await page.keyboard.press('Alt+ArrowDown');
@@ -150,7 +151,7 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
         });
 
-        test('a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0047)', async ({ page }) => {
+        test('a Ctrl+F typed straight after Alt+Down opens Find, and the letters after it land in its field (FD-1, ED-22, ADR-0055)', async ({ page }) => {
             // Typed together: on a circuit the column's popover takes DOM focus a round trip
             // later, so the Ctrl+F and the letters are held, and the Ctrl+F must reach the core
             // rather than the menu, which would take a letter as a command.
@@ -164,20 +165,20 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(grid(page).locator('.ex-popover')).toHaveCount(1);
         });
 
-        test('Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0047)', async ({ page }) => {
+        test('Escape closes the panel and hands the keyboard back to the grid (FD-3, ADR-0055)', async ({ page }) => {
             await page.keyboard.press('ControlOrMeta+f');
             await expect(grid(page).locator('.ex-popover-find input').first()).toBeFocused();
             await page.keyboard.press('Escape');
 
             await expect(grid(page).locator('.ex-popover-find')).toHaveCount(0);
-            await expect(grid(page)).toBeFocused();
+            await expectKeyboardOn(grid(page));
             await page.keyboard.press('ArrowDown');
             await expect.poll(() => focusedCell(page)).toMatch(/r1c0$/);
         });
     });
 }
 
-test('Tab stays inside the find panel (FD-8, ADR-0047/0039)', async ({ page }) => {
+test('Tab stays inside the find panel (FD-8, ADR-0055/0039)', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await grid(page).locator("[id$='r0c0']").click({ force: true });
@@ -192,7 +193,7 @@ test('Tab stays inside the find panel (FD-8, ADR-0047/0039)', async ({ page }) =
     }
 });
 
-test('the find panel stands inside the grid\'s box (FD-8, ADR-0047/0040)', async ({ page }) => {
+test('the find panel stands inside the grid\'s box (FD-8, ADR-0055/0040)', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await grid(page).locator("[id$='r0c0']").click({ force: true });
@@ -209,7 +210,7 @@ test('the find panel stands inside the grid\'s box (FD-8, ADR-0047/0040)', async
     await expect(page.locator('.ex-popover-find')).toHaveCount(1);
 });
 
-test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, ADR-0047)', async ({ page }) => {
+test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, ADR-0055)', async ({ page }) => {
     await page.goto('/cells');
     const cells = page.locator('.ex-grid').first();
     await expect(cells.locator('.ex-row').first()).toBeVisible();
@@ -224,7 +225,7 @@ test('a grid with nothing to search takes Ctrl+F and opens nothing (FD-1/FD-2, A
     await expect.poll(() => cells.getAttribute('aria-activedescendant')).toMatch(/r1c0$/);
 });
 
-test('in the Cell Editor Ctrl+F does nothing (FD-1, ADR-0047)', async ({ page }) => {
+test('in the Cell Editor Ctrl+F does nothing (FD-1, ADR-0055)', async ({ page }) => {
     await page.goto('/features');
     await expect(grid(page).locator('.ex-row').first()).toBeVisible();
     await grid(page).locator("[id$='r0c1']").click({ force: true });

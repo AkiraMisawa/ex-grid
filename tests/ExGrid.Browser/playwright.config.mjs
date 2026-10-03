@@ -1,6 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import fs from 'node:fs';
-import { BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
+import { API_URL, BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
 
 // The host is started on whatever port BASE_URL names, so two checkouts — one per
 // parallel agent — do not share a port: with reuseExistingServer a second runner on
@@ -23,7 +23,7 @@ if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
 // the dev server's side. On Server the circuit's log is this process's, and the host
 // also appends it to HOST_LOG so the fixture can read it per test (CON-6). A reused
 // host was started elsewhere and its output is wherever that was.
-const webServer = SERVER
+const hostServers = SERVER
     ? [
         {
             command: `dotnet run --project ../../samples/ExGrid.DemoHost.Server --urls ${HOST_URL}`,
@@ -43,14 +43,38 @@ const webServer = SERVER
             timeout: 180_000,
         },
     ]
-    : {
-        command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
-        url: `${BASE_URL}/wide`,
-        reuseExistingServer: true,
-        timeout: 180_000,
-        stdout: 'pipe',
-        stderr: 'pipe',
-    };
+    : [
+        {
+            command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
+            url: `${BASE_URL}/wide`,
+            reuseExistingServer: true,
+            timeout: 180_000,
+            stdout: 'pipe',
+            stderr: 'pipe',
+        },
+    ];
+
+// The demo API server (ADR-0069), beside either host: the pages on both call it over HTTP,
+// at their own port plus 3000 (hosting.mjs). Its first start for a count generates the
+// trades into a file outside the repository, which every later start reuses; the run asks
+// for 20,000, about a second's work, unless EXGRID_DEMO_TRADES asks for another count.
+// /api/status answers 503 until the trades are ready, so the run waits for the data, not
+// only for the port. A reused server keeps the count it was started with, so no test
+// assumes one. Stopped with SIGTERM rather than killed, so it deletes the copy of the trades
+// it served (a killed one's copy is removed by the next start).
+const apiServer = {
+    name: 'DemoApi',
+    command: `dotnet run --project ../../samples/ExGrid.DemoApi --urls ${API_URL}`,
+    url: `${API_URL}/api/status`,
+    env: { EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
+    reuseExistingServer: true,
+    timeout: 300_000,
+    gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },
+    stdout: 'pipe',
+    stderr: 'pipe',
+};
+
+const webServer = [...hostServers, apiServer];
 
 export default defineConfig({
     testDir: '.',
@@ -58,7 +82,7 @@ export default defineConfig({
     // (one per display, and these browsers are headed), the records fixtures.mjs
     // read-modify-writes, and on the Server host the latency proxy's round trip and the
     // host's log. Not the zoom, which this comment used to give: the device scale is
-    // emulated per page, and each worker has a browser of its own (ADR-0048). More at once
+    // emulated per page, and each worker has a browser of its own (ADR-0056). More at once
     // is done across machines — CI's shards (ADR-0041) — where none of it is shared, and a
     // shard is whole spec files, so a file's booted app is never split.
     workers: 1,
@@ -77,6 +101,28 @@ export default defineConfig({
     projects: [
         { name: 'chrome', use: { channel: 'chrome' } },
         { name: 'msedge', use: { channel: 'msedge' } },
+        // The Layout Ceiling at 150% (ADR-0053, VZ-15): Chrome with the display scale set
+        // the way the OS sets it, on the command line, and the viewport left to the window.
+        // Playwright's deviceScaleFactor does NOT reproduce this — it raises
+        // devicePixelRatio and leaves the clamp where it was, which is why the suite was
+        // green while a Windows desktop at 150% could not reach the last 200,000 rows of
+        // /wide. Only the tests the clamp broke run here: the far corner and both ends of a
+        // million rows, the Focus against the scrollbars, and the Sheet's extent. And every
+        // test that scrolls a compressed grid to a row (scrollRowToTop in fixtures.mjs): a
+        // scrollTop of rows × row height showed a later row here, which only a run at 150%
+        // could catch (verification/2026-09-28-windows-3). And a far reveal, which paints
+        // the slice at its target offset through that same compressed mapping (ADR-0012).
+        // And the Border lines (DC-59), whose pixels at 150% are Excel's case 9 at that zoom: a
+        // line's widths and dashes are device pixels, which only a real display scale lays out.
+        {
+            name: 'chrome-150',
+            grep: /BIG-1\b|BIG-5|VZ-15|never behind a scrollbar|VZ-14|SH-2:|SH-18\/DC-7|SH-18\/DC-2\/DC-3|MK-6|item 3:|item 5:|active cell, cases 7 and 8|far reveal|DC-59/,
+            use: {
+                channel: 'chrome',
+                viewport: null,
+                launchOptions: { args: ['--force-device-scale-factor=1.5', '--window-size=1280,800'] },
+            },
+        },
     ],
     use: {
         // Headed by default, which is not a preference. Measured on macOS 15 / Chrome:

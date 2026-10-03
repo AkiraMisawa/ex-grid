@@ -44,6 +44,91 @@ public class PasteRuleTests
         Assert.Equal(new SourceCell(0, 0), decision.Plan.SourceCellFor(new(5, 5)));
     }
 
+    [Fact] // ADR-0014 (amended 2026-09-29): one value of plain text over a range goes into its top-left alone
+    public void One_value_of_plain_text_over_a_range_targets_its_top_left_alone()
+    {
+        // Drawn from the bottom-right, so the Focus is not the top-left: the top-left is taken.
+        var target = GridSelection.Empty.Click(new(4, 5), Grid).ExtendTo(new(2, 2), Grid);
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(1, 1), Editable, plainTextOnly: true);
+
+        Assert.False(decision.IsRefused);
+        Assert.Equal([new SelectionRange(2, 2, 1, 1)], decision.Plan.Targets);
+        Assert.Equal(new PasteShape(1, 1), decision.Plan.Source);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): one value copied as a table still fills the whole range
+    public void One_value_from_a_table_still_fills_the_whole_range()
+    {
+        var target = GridSelection.Empty.Click(new(2, 2), Grid).ExtendTo(new(4, 5), Grid);
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(1, 1), Editable, plainTextOnly: false);
+
+        Assert.Equal(target.Ranges, decision.Plan.Targets);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): with several ranges, the top-left of the range made last — not of the Focus range
+    public void One_value_of_plain_text_over_several_ranges_targets_the_range_made_last()
+    {
+        var target = GridSelection.Empty
+            .Click(new(1, 1), Grid).ExtendTo(new(3, 3), Grid)
+            .ToggleRange(new(6, 6), Grid).ExtendTo(new(8, 7), Grid)
+            .ToggleRange(new(0, 9), Grid).ExtendTo(new(1, 9), Grid)
+            // Enter walks the Focus back through the ranges; the range made last stays the last.
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid)
+            .CycleFocus(CycleOrder.ColumnMajor, backward: false, Grid);
+        Assert.NotEqual(new SelectionRange(0, 9, 2, 1), target.FocusRange);
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(1, 1), Editable, plainTextOnly: true);
+
+        Assert.Equal([new SelectionRange(0, 9, 1, 1)], decision.Plan.Targets);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29) / ADR-0052: the range made last cut by a take-out anchors on its first cell by rows
+    public void One_value_of_plain_text_after_a_take_out_targets_the_first_cell_left_of_the_range_made_last()
+    {
+        var target = GridSelection.Empty
+            .Click(new(10, 0), Grid)
+            .ToggleRange(new(1, 1), Grid).ExtendTo(new(3, 3), Grid)
+            .ToggleRange(new(1, 1), Grid);                        // takes (1,1) out of the range made last
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(1, 1), Editable, plainTextOnly: true);
+
+        Assert.Equal([new SelectionRange(1, 2, 1, 1)], decision.Plan.Targets);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): one cell selected is the same paste either way
+    public void One_value_of_plain_text_onto_one_cell_targets_that_cell()
+    {
+        var target = GridSelection.Empty.Click(new(7, 3), Grid);
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(1, 1), Editable, plainTextOnly: true);
+
+        Assert.Equal([new SelectionRange(7, 3, 1, 1)], decision.Plan.Targets);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29): plain text of more than one cell keeps its shape rules
+    public void Plain_text_of_several_cells_tiles_as_before()
+    {
+        var target = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(5, 2), Grid); // 6×3
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(2, 3), Editable, plainTextOnly: true);
+
+        Assert.Equal(target.Ranges, decision.Plan.Targets);
+        Assert.Equal(PasteRefusalReason.ShapeMismatch,
+            ClipboardRules.PlanPaste(target, new PasteShape(4, 3), Editable, plainTextOnly: true).Reason);
+    }
+
+    [Fact] // ADR-0014 (amended 2026-09-29) / ADR-0035: the Editable gate still judges the whole Selection first
+    public void One_value_of_plain_text_over_a_range_with_a_locked_column_is_still_refused()
+    {
+        var target = GridSelection.Empty.Click(new(0, 0), Grid).ExtendTo(new(2, 2), Grid);
+
+        var decision = ClipboardRules.PlanPaste(target, new PasteShape(1, 1), EditableExcept(2), plainTextOnly: true);
+
+        Assert.Equal(PasteRefusalReason.TargetNotEditable, decision.Reason);
+    }
+
     [Fact] // ADR-0014: copy 2 rows, paste into 6 — repeats three times
     public void Two_rows_into_six_tile_three_times()
     {

@@ -13,7 +13,9 @@ ex-grid/                      ← one repository
 │   ├── ExGrid/               → NuGet: ExGrid            (no dependencies)
 │   ├── ExGrid.MudBlazor/     → NuGet: ExGrid.MudBlazor  (a Chrome implementation)
 │   ├── ExGrid.Fluxor/        → NuGet: ExGrid.Fluxor     (push interface ↔ store)
-│   └── ExSheet/              → NuGet: ExSheet           (future)
+│   ├── ExSheet/              → NuGet: ExSheet           (the component; ADR-0046)
+│   ├── ExSheet.Engine/       → NuGet: ExSheet.Engine    (the formula engine, no UI; ADR-0047)
+│   └── ExSheet.MudBlazor/    → NuGet: ExSheet.MudBlazor (ExSheet's Chrome on MudBlazor; ADR-0071)
 ├── tests/
 │   ├── ExGrid.Tests/         ← pure logic (xUnit)
 │   ├── ExGrid.Components/    ← component (bUnit)
@@ -47,6 +49,18 @@ page, one of which rots. Both hosts follow the reference rule above; nothing ref
 either. The browser layer chooses its host with `EXGRID_HOSTING`, and WebAssembly stays the
 default.)*
 
+*(Refined 2026-09-30, when ExPivot's grilling added a family-wide data layer and a server to the
+demo. **`src/` gains `ExGrid.Data`**, the Snapshot, with no dependency
+([ADR-0064](./0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md)). It also gains
+**`ExGrid.Data.Arrow`**, the Snapshot as Arrow, over the Apache Foundation's package
+([ADR-0065](./0065-a-snapshot-travels-as-apache-arrow.md)). Beside them are ExPivot's three packages
+([ADR-0059](./0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+**`samples/` gains `ExGrid.DemoApi`**, a Consumer's server that both hosts' pages call over HTTP
+([ADR-0069](./0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)). The reference rule
+holds for all of them. The data packages reference no product. ExPivot references the data packages
+and ExGrid, and nothing references ExPivot except its Wrapper. The demo server is referenced by
+nothing, and it references the packages as any application would.)*
+
 ## Reasons
 
 **Far more is shared than differs.** Early in the design, three options were left open — a shared
@@ -69,7 +83,13 @@ repository would mean **splitting or duplicating the glossary and the ADRs**, an
 release cadence, and nothing is forcing that. What would come first instead is the cost of
 publishing a package on every core change and making ExSheet follow it.
 
-## Is ExSheet a sibling of ExGrid, or a Consumer of it? — open
+## Is ExSheet a sibling of ExGrid, or a Consumer of it? — settled: a Consumer
+
+*(Settled 2026-09-27 by [ADR-0046](./0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md):
+**ExSheet is ExGrid's Consumer.** The friction below is answered there as well: rows and columns
+of a Sheet are places, so an insertion changes values and not order, and the Row Sequence Version
+does not move. What ExSheet does need from the core is five opt-in declarations,
+[ADR-0050](./0050-what-exsheet-asks-of-exgrids-core.md). The section is kept as it was written.)*
 
 [ADR-0007](./0007-edits-are-an-overlay-owned-by-the-consumer.md) established that the grid only
 reports an Edit Intent, and the Consumer owns the committed state and pushes back a Window with
@@ -108,3 +128,15 @@ may be too aggressive for a sheet.
   Nothing in `src/` knows that directory exists; the rule this bullet states is about what ships.)*
 - **The repository name stays `ex-grid`.** When ExSheet is actually built, whether an umbrella
   name is wanted can be reconsidered then. No single umbrella noun is invented now.
+
+## `ExSheet.MudBlazor` *(2026-09-30, decided with the user)*
+
+[ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md) gives ExSheet a
+Format Cells dialog with a MudBlazor Chrome. It lives in its own package, `ExSheet.MudBlazor`.
+- **What it references**: `ExSheet`, `ExGrid.MudBlazor` and MudBlazor.
+- **Why it is not in `ExGrid.MudBlazor`**: Cell Format is ExSheet's concept. Putting its Chrome in
+  `ExGrid.MudBlazor` would pull ExSheet into every ExGrid-only Consumer on MudBlazor.
+- **The reference direction stays one-way.** Nothing references `ExSheet.MudBlazor`, and
+  `ExGrid.MudBlazor` still references no ExSheet package.
+- **Release**: it stays outside the release while ExSheet does (Definition of Done §2). The package
+  smoke check packs it.

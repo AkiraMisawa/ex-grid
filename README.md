@@ -6,18 +6,33 @@
 
 An Excel-like grid component for Blazor.
 
-Two products share this repository and ship as separate packages
+Three products share this repository and ship as separate packages
 ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)):
 
 - **ExGrid** — display-oriented. Fully specified; this is what gets built first.
-- **ExSheet** — edit-oriented. Later.
+- **ExSheet** — edit-oriented. Being specified: decided in ADR-0046 to ADR-0051, specified in
+  `docs/specs/exsheet/`.
+- **ExPivot** — Excel's PivotTable, drawn by ExGrid, with a MudBlazor Wrapper
+  (`ExPivot.MudBlazor`). Decided in ADR-0059 to ADR-0070, specified in `docs/specs/expivot/`.
+  See it on the demo host's pages, one per use case, each showing the code it runs: `/pivot`
+  (add `?chrome=mud` for MudBlazor), `/pivot-csv`, `/pivot-db`, `/pivot-live` and `/pivot-risk`;
+  and ExGrid alone over live data on `/grid-live`.
+
+The family's immutable data, the **Snapshot**, is a package of its own, `ExGrid.Data`, with
+`ExGrid.Data.Arrow` beside it to carry a Snapshot as Apache Arrow
+([ADR-0064](docs/adr/0064-the-snapshot-is-the-familys-immutable-data-held-in-columns.md),
+[ADR-0065](docs/adr/0065-a-snapshot-travels-as-apache-arrow.md)); specified in
+`docs/specs/exgrid-data/`.
+
+ExSheet, ExPivot and the data packages are built alongside ExGrid and are not part of its
+release.
 
 **Current status: the specification is settled; implementation is underway** — the
 pure-logic core and the component layer exist, virtualised on both axes, with pinned
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (43 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (69 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Using the packages
@@ -83,6 +98,16 @@ The same pages run under Blazor Server from the second host, on <http://localhos
 nix develop -c dotnet run --project samples/ExGrid.DemoHost.Server
 ```
 
+The pages that read a database call the demo API server, which each page finds at its own
+port plus 3000: <http://localhost:8299> beside the WebAssembly host, 8298 beside the Server
+host ([ADR-0069](docs/adr/0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
+Its first start generates a million trades into a SQLite file outside the repository;
+`EXGRID_DEMO_TRADES` asks for another count:
+
+```sh
+nix develop -c dotnet run --project samples/ExGrid.DemoApi --urls http://localhost:8299
+```
+
 > **Nix gotcha:** flakes only see git-tracked files. `git add` any new file before
 > building (committing is not required), or the build will not see it.
 
@@ -111,11 +136,15 @@ your environment alone.
 | [`docs/adr/`](docs/adr/) | Architecture decision records — the specification and the reasons behind it |
 | [`src/ExGrid/`](src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
 | [`src/ExGrid.MudBlazor/`](src/ExGrid.MudBlazor/) | The ExGrid.MudBlazor package: the Wrapper for MudBlazor applications |
-| [`tests/`](tests/) | The gating test layers — `ExGrid.Tests` (xUnit), `ExGrid.Components` and `ExGrid.MudBlazor.Tests` (bUnit), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
+| [`src/ExSheet.Engine/`](src/ExSheet.Engine/), [`src/ExSheet/`](src/ExSheet/) | ExSheet: its Formula engine, and the Sheet ExGrid draws |
+| [`src/ExGrid.Data/`](src/ExGrid.Data/), [`src/ExGrid.Data.Arrow/`](src/ExGrid.Data.Arrow/) | The Snapshot, its loaders and Change Batches; and its Apache Arrow reader and writer |
+| [`src/ExPivot.Engine/`](src/ExPivot.Engine/), [`src/ExPivot/`](src/ExPivot/), [`src/ExPivot.MudBlazor/`](src/ExPivot.MudBlazor/) | ExPivot: the pivot engine and the Pivot Source, the component, and its MudBlazor Wrapper |
+| [`tests/`](tests/) | The gating test layers — xUnit for each package's logic (`ExGrid.Tests`, `ExSheet.Engine.Tests`, `ExPivot.Engine.Tests`, `ExGrid.Data.Tests`, `ExGrid.Data.Arrow.Tests`, and `ExGrid.DemoApi.Tests` for the demo server), bUnit for the components (`ExGrid.Components`, `ExGrid.MudBlazor.Tests`, `ExSheet.Components`, `ExPivot.Components`, `ExPivot.MudBlazor.Tests`), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
 | [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`) and the prerelease publish (`release.yml`) |
 | [`samples/ExGrid.DemoPages/`](samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
 | [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
 | [`samples/ExGrid.DemoHost.Server/`](samples/ExGrid.DemoHost.Server/) | The Blazor Server host for the same pages (`InteractiveServer`, prerendered). Not shipped |
+| [`samples/ExGrid.DemoApi/`](samples/ExGrid.DemoApi/) | The demo API server both hosts' pages call: SQLite, Arrow, a Pivot Source answered in SQL, and live changes over SignalR. A Consumer's server, not shipped |
 | [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
 | [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
 
@@ -125,9 +154,10 @@ The two rules that override convenience (details in [`AGENTS.md`](AGENTS.md)):
 
 1. **Everything committed to this repository is written in English** — documents, code,
    comments, commit messages, test names, UI strings.
-2. **JavaScript is allowlisted, not "minimised"** — five permitted uses (capture-phase
+2. **JavaScript is allowlisted, not "minimised"** — six permitted uses (capture-phase
    `keydown`, scroll offsets, the clipboard, a `ResizeObserver` reporting the Scrollbar
-   Gutter, and a pointer report for the hover band); anything else needs a new ADR
+   Gutter, a pointer report for the hover band, and a `ResizeObserver` reporting the Layout
+   Ceiling); anything else needs a new ADR
    ([ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md)).
 
 Before changing behaviour, read the relevant ADR — the reasons are written down, and
@@ -153,8 +183,9 @@ on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak
 10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
 assemblies only and is reported, never gated: each run's summary carries the table, and the
 badges above follow `main` (history in `history.csv` on the `badges` branch). Windows (VZ-14)
-and a real IME remain runs by hand. A fourth job packs both packages and publishes an
-application that takes them from the packed files alone
+and a real IME remain runs by hand. A fourth job packs the packages — ExGrid's two
+into the release feed, and ExSheet's, ExPivot's and the data packages into feeds of their own —
+and publishes an application that takes them from the packed files alone
 ([`tests/ExGrid.PackageSmoke`](tests/ExGrid.PackageSmoke/check.sh)).
 
 Test names carry the ADR number they enforce, so a failure says which decision was

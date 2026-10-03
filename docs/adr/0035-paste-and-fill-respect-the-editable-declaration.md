@@ -135,7 +135,7 @@ forbid a commit the grid has no objection to, turning a mis-sized selection into
 ## Ctrl+D, Ctrl+R and Backspace — added 2026-09-26
 
 *(Recorded after a comparison against Excel found the keys missing. Clear, Excel's Delete, is a
-decision of its own: [ADR-0046](./0046-delete-raises-a-clear-intent-not-a-paste-of-nothing.md).)*
+decision of its own: [ADR-0054](./0054-delete-raises-a-clear-intent-not-a-paste-of-nothing.md).)*
 
 **Ctrl+D fills down and Ctrl+R fills right, and each is a paste the grid assembles from the
 selection's own first row or column.** They raise the same `GridPasteIntent` Ctrl+Enter raises,

@@ -1,0 +1,581 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "part": "scroll",
+ "started": "2026-09-29T17:20:33.957Z",
+ "steps": [
+  {
+   "item": 1,
+   "page": "/wide",
+   "calibration": {
+    "dpr": 1.5,
+    "tries": [
+     {
+      "px": 671,
+      "py": 371,
+      "client": {
+       "x": 400,
+       "y": 120
+      }
+     }
+    ]
+   },
+   "atRest": {
+    "geometry": {
+     "left": 32,
+     "top": 264.875,
+     "right": 932,
+     "bottom": 864.875,
+     "border": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "clientWidth": 888,
+     "clientHeight": 588,
+     "scrollWidth": 9168,
+     "scrollHeight": 22369362,
+     "scrollTop": 0,
+     "scrollLeft": 0,
+     "verticalGutter": 12,
+     "horizontalGutter": 12,
+     "root": {
+      "left": 32,
+      "top": 264.875,
+      "right": 1538.666748046875,
+      "bottom": 864.875
+     },
+     "scrollbarWidthToken": null,
+     "scrollbarColorToken": null,
+     "pseudo": {
+      "barWidth": "12px",
+      "barBackground": "rgba(0, 0, 0, 0)",
+      "thumbBackground": "color(srgb 0 0 0 / 0.32)",
+      "thumbBorderRadius": "6px"
+     },
+     "scrollerBackground": "rgba(0, 0, 0, 0)"
+    },
+    "gutters": {
+     "vertical": {
+      "line": {
+       "x": 1460,
+       "from": 588,
+       "to": 1470
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 3
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 17
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 860
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 3,
+       "toPx": 22,
+       "fromCss": 2,
+       "toCss": 14.7,
+       "lengthCss": 12.7,
+       "trackCss": 588
+      }
+     },
+     "horizontal": {
+      "line": {
+       "y": 1479,
+       "from": 119,
+       "to": 1451
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 3
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 121
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 1206
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 3,
+       "toPx": 126,
+       "fromCss": 2,
+       "toCss": 84,
+       "lengthCss": 82,
+       "trackCss": 888
+      }
+     }
+    },
+    "shot": "shots/B-scroll-wide-at-rest-wasm-chrome.png"
+   },
+   "verticalDrag": {
+    "from": {
+     "css": [
+      926,
+      273.225
+     ],
+     "screen": [
+      1460,
+      600
+     ]
+    },
+    "to": {
+     "css": [
+      926,
+      423.225
+     ],
+     "screen": [
+      1460,
+      825
+     ]
+    },
+    "answer": "ok drag down=3293",
+    "scrollTopBefore": 0,
+    "scrollTopAfter": 5872781.5,
+    "seen": [
+     {
+      "t": 3018,
+      "type": "mousedown",
+      "key": null,
+      "ctrl": false,
+      "target": "div.ex-scroller"
+     },
+     {
+      "t": 3399,
+      "type": "mouseup",
+      "key": null,
+      "ctrl": false,
+      "target": "div.ex-scroller"
+     }
+    ],
+    "gutters": {
+     "vertical": {
+      "line": {
+       "x": 1460,
+       "from": 588,
+       "to": 1470
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 227
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 17
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 636
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 227,
+       "toPx": 246,
+       "fromCss": 151.3,
+       "toCss": 164,
+       "lengthCss": 12.7,
+       "trackCss": 588
+      }
+     },
+     "horizontal": {
+      "line": {
+       "y": 1479,
+       "from": 119,
+       "to": 1451
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 3
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 121
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 1206
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 3,
+       "toPx": 126,
+       "fromCss": 2,
+       "toCss": 84,
+       "lengthCss": 82,
+       "trackCss": 888
+      }
+     }
+    },
+    "shot": "shots/B-scroll-wide-after-vertical-drag-wasm-chrome.png"
+   },
+   "horizontalDrag": {
+    "from": {
+     "css": [
+      75,
+      858.875
+     ],
+     "screen": [
+      183,
+      1479
+     ]
+    },
+    "to": {
+     "css": [
+      225,
+      858.875
+     ],
+     "screen": [
+      408,
+      1479
+     ]
+    },
+    "answer": "ok drag down=4993",
+    "scrollLeftBefore": 0,
+    "scrollLeftAfter": 1548.6666259765625,
+    "seen": [
+     {
+      "t": 4717,
+      "type": "mousedown",
+      "key": null,
+      "ctrl": false,
+      "target": "div.ex-scroller"
+     },
+     {
+      "t": 5103,
+      "type": "mouseup",
+      "key": null,
+      "ctrl": false,
+      "target": "div.ex-scroller"
+     }
+    ],
+    "gutters": {
+     "vertical": {
+      "line": {
+       "x": 1460,
+       "from": 588,
+       "to": 1470
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 227
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 17
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 636
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 227,
+       "toPx": 246,
+       "fromCss": 151.3,
+       "toCss": 164,
+       "lengthCss": 12.7,
+       "trackCss": 588
+      }
+     },
+     "horizontal": {
+      "line": {
+       "y": 1479,
+       "from": 119,
+       "to": 1451
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 228
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 121
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 981
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 228,
+       "toPx": 351,
+       "fromCss": 152,
+       "toCss": 234,
+       "lengthCss": 82,
+       "trackCss": 888
+      }
+     }
+    },
+    "shot": "shots/B-scroll-wide-after-horizontal-drag-wasm-chrome.png"
+   }
+  },
+  {
+   "item": 1,
+   "page": "/features",
+   "calibration": {
+    "dpr": 1.5,
+    "tries": [
+     {
+      "px": 671,
+      "py": 371,
+      "client": {
+       "x": 400,
+       "y": 120
+      }
+     }
+    ]
+   },
+   "atRest": {
+    "geometry": {
+     "left": 32,
+     "top": 227.5416717529297,
+     "right": 752,
+     "bottom": 547.5416717529297,
+     "border": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "clientWidth": 708,
+     "clientHeight": 320,
+     "scrollWidth": 708,
+     "scrollHeight": 9656,
+     "scrollTop": 0,
+     "scrollLeft": 0,
+     "verticalGutter": 12,
+     "horizontalGutter": 0,
+     "root": {
+      "left": 32,
+      "top": 227.5416717529297,
+      "right": 1554,
+      "bottom": 547.5416717529297
+     },
+     "scrollbarWidthToken": null,
+     "scrollbarColorToken": null,
+     "pseudo": {
+      "barWidth": "12px",
+      "barBackground": "rgba(0, 0, 0, 0)",
+      "thumbBackground": "color(srgb 0 0 0 / 0.32)",
+      "thumbBorderRadius": "6px"
+     },
+     "scrollerBackground": "rgba(0, 0, 0, 0)"
+    },
+    "gutters": {
+     "vertical": {
+      "line": {
+       "x": 1190,
+       "from": 532,
+       "to": 1012
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 3
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 17
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 458
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 3,
+       "toPx": 22,
+       "fromCss": 2,
+       "toCss": 14.7,
+       "lengthCss": 12.7,
+       "trackCss": 320
+      }
+     }
+    },
+    "shot": "shots/B-scroll-features-at-rest-wasm-chrome.png"
+   },
+   "verticalDrag": {
+    "from": {
+     "css": [
+      746,
+      235.89167175292968
+     ],
+     "screen": [
+      1190,
+      544
+     ]
+    },
+    "to": {
+     "css": [
+      746,
+      385.8916717529297
+     ],
+     "screen": [
+      1190,
+      769
+     ]
+    },
+    "answer": "ok drag down=9510",
+    "scrollTopBefore": 0,
+    "scrollTopAfter": 4616.66650390625,
+    "seen": [
+     {
+      "t": 2811,
+      "type": "mousedown",
+      "key": null,
+      "ctrl": false,
+      "target": "div.ex-scroller"
+     },
+     {
+      "t": 3210,
+      "type": "mouseup",
+      "key": null,
+      "ctrl": false,
+      "target": "div.ex-scroller"
+     }
+    ],
+    "gutters": {
+     "vertical": {
+      "line": {
+       "x": 1190,
+       "from": 532,
+       "to": 1012
+      },
+      "runs": [
+       {
+        "c": "ffffff",
+        "n": 227
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "adadad",
+        "n": 17
+       },
+       {
+        "c": "afafaf",
+        "n": 1
+       },
+       {
+        "c": "ffffff",
+        "n": 234
+       }
+      ],
+      "thumb": {
+       "visible": true,
+       "track": "ffffff",
+       "colour": "adadad",
+       "fromPx": 227,
+       "toPx": 246,
+       "fromCss": 151.3,
+       "toCss": 164,
+       "lengthCss": 12.7,
+       "trackCss": 320
+      }
+     }
+    },
+    "shot": "shots/B-scroll-features-after-vertical-drag-wasm-chrome.png"
+   },
+   "horizontalDrag": {
+    "skipped": "no horizontal gutter"
+   }
+  }
+ ],
+ "browserVersion": "153.0.8010.54",
+ "console": [],
+ "ended": "2026-09-29T17:20:45.832Z"
+}

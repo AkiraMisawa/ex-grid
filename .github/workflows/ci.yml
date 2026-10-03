@@ -87,10 +87,11 @@ jobs:
           path: coverage/
           retention-days: 30
 
-  # Layer 3 in four parts: each browser, in two shards, on a runner of its own. The suite is
+  # Layer 3 in six parts: each project (both browsers, and chrome-150's Layout Ceiling
+  # selection, ADR-0053), in two shards, on a runner of its own. The suite is
   # the one playwright.config.mjs defines, unchanged; --project and --shard only choose which
   # files a runner takes, and a shard is a set of whole spec files, so what a run shares —
-  # the OS clipboard, the records, a spec file's booted app (ADR-0048) — is never split
+  # the OS clipboard, the records, a spec file's booted app (ADR-0056) — is never split
   # between runners (ADR-0041).
   browser:
     name: Layer 3 on ${{ matrix.project }}, shard ${{ matrix.shard }}/2 (Linux, headed)
@@ -99,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chrome, msedge]
+        project: [chrome, msedge, chrome-150]
         shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
@@ -127,12 +128,21 @@ jobs:
       - name: Build the DemoHost
         run: dotnet build samples/ExGrid.DemoHost
 
+      # The demo API server the pages call (ADR-0069), which the suite starts beside the host.
+      # Its first start on a fresh runner generates the 20,000 trades the suite asks for, which
+      # takes about a second, well inside the webServer's timeout.
+      - name: Build the demo API server
+        run: dotnet build samples/ExGrid.DemoApi
+
+      # The screen is larger than any window the suite opens, so the chrome-150 project
+      # (ADR-0053: Chrome at --force-device-scale-factor=1.5, its viewport left to the
+      # window) gets its 1280x800 window whole — 1920x1200 device pixels.
       - name: Layer 3, headed under xvfb
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
-          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"
+          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
           npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
 
       - name: Keep the run's records
@@ -169,7 +179,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chrome, msedge]
+        project: [chrome, msedge, chrome-150]
         shard: [1, 2]
     steps:
       - uses: actions/checkout@v7
@@ -196,13 +206,17 @@ jobs:
       - name: Build the Server host
         run: dotnet build samples/ExGrid.DemoHost.Server
 
+      # As beside the WebAssembly host: the suite starts it with 20,000 trades.
+      - name: Build the demo API server
+        run: dotnet build samples/ExGrid.DemoApi
+
       - name: Layer 3 against the Server host, headed under xvfb
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_HOSTING: server
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
-          xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24"
+          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
           npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
 
       - name: Keep the run's records
@@ -224,6 +238,97 @@ jobs:
     steps:
       - name: Every shard passed
         run: test "${{ needs.browser-server.result }}" = success
+
+  # The spec files a push to a pull request changes, each run three times over on each host and
+  # browser (tests/ExGrid.Browser/README.md, "Before a new or changed spec goes in"). A test that
+  # fails one time in a few fails here, on the branch that wrote it, rather than later on a
+  # branch that did not touch it. Only the files themselves: a change to a helper they import is
+  # the full run's to cover. retries stays 0 (ADR-0026), so a repeat that fails is a failure.
+  browser-repeat:
+    name: Changed specs, three times, against ${{ matrix.hosting }} on ${{ matrix.project }} (Linux, headed)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        hosting: [wasm, server]
+        project: [chrome, msedge]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # The spec files the pull request adds or changes against its base (its merge commit is
+      # HEAD here) that this push changed. A merge of the base brings the base's changes, which
+      # are not the pull request's and drop out. The push that opens the pull request, and one
+      # whose earlier head is not in the history, take all of the pull request's. Only what the
+      # push changed, so the job ends inside the full run's time: it first took every spec file
+      # the pull request changes, on every push, and on #42 that was 17 files and 1158 tests,
+      # longer than the full run (run 36952902974).
+      - name: The spec files this push changes
+        id: changed
+        env:
+          BASE: ${{ github.base_ref }}
+          BEFORE: ${{ github.event.action == 'synchronize' && github.event.before || '' }}
+          AFTER: ${{ github.event.pull_request.head.sha }}
+        run: |
+          in_pr=$(git diff --name-only --diff-filter=AMR "origin/${BASE}...HEAD" -- 'tests/ExGrid.Browser/*.spec.mjs')
+          if [ -n "${BEFORE}" ] && git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+            in_push=$(git diff --name-only "${BEFORE}" "${AFTER}" -- 'tests/ExGrid.Browser/*.spec.mjs')
+            changed=$(comm -12 <(printf '%s\n' "${in_pr}" | sort -u) <(printf '%s\n' "${in_push}" | sort -u))
+          else
+            changed=${in_pr}
+          fi
+          specs=$(printf '%s\n' "${changed}" | sed '/^$/d; s#^tests/ExGrid.Browser/##' | tr '\n' ' ')
+          echo "specs=${specs}" >> "$GITHUB_OUTPUT"
+          echo "Repeated: ${specs:-none}"
+
+      - uses: actions/setup-dotnet@v6
+        if: steps.changed.outputs.specs != ''
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v7
+        if: steps.changed.outputs.specs != ''
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/ExGrid.Browser/package-lock.json
+
+      - name: Install the suite
+        if: steps.changed.outputs.specs != ''
+        working-directory: tests/ExGrid.Browser
+        run: npm ci
+
+      - name: Build the host
+        if: steps.changed.outputs.specs != ''
+        run: dotnet build ${{ matrix.hosting == 'server' && 'samples/ExGrid.DemoHost.Server' || 'samples/ExGrid.DemoHost' }}
+
+      # As in the full run: the demo API server the suite starts beside the host (ADR-0069).
+      - name: Build the demo API server
+        if: steps.changed.outputs.specs != ''
+        run: dotnet build samples/ExGrid.DemoApi
+
+      - name: The changed specs, three times, headed under xvfb
+        if: steps.changed.outputs.specs != ''
+        working-directory: tests/ExGrid.Browser
+        env:
+          EXGRID_HOSTING: ${{ matrix.hosting }}
+        run: >
+          xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
+          npx playwright test ${{ steps.changed.outputs.specs }} --project=${{ matrix.project }} --repeat-each=3
+
+      - name: Keep the run's records
+        if: always() && steps.changed.outputs.specs != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: layer3-repeat-${{ matrix.hosting }}-${{ matrix.project }}
+          path: |
+            verification/
+            tests/ExGrid.Browser/test-results/
+          if-no-files-found: ignore
+          retention-days: 30
 
   package:
     name: Packages, taken as a Consumer takes them

@@ -1,0 +1,48 @@
+# 06: Headings: header click selects, Row Headings, and hiding them
+
+Status: done
+
+**What to build:** The first ADR-0050 declaration, in the core and wired by ExSheet. A header click selects the
+column. Row Headings are a pinned band beside the rows, outside the column index space, labelled by
+the Consumer: a click selects the row and Shift+click extends. The corner selects all. Either
+Heading can be hidden, and hiding the column header is also available to a plain ExGrid.
+
+**Blocked by:** 02
+
+- [x] Off by default: an existing ExGrid's header click still sorts (existing suites green)
+- [x] On: click, Shift+click and the corner select as stated; nothing sorts (ADR-0050)
+- [x] Row Headings are not in Selection, copy, Ctrl+A or the Enter/Tab cycle
+- [x] Either Heading hides; the Sheet still addresses `A1` (the hiding is done in the core; `A1` is ExSheet's, below)
+- [x] The band's width is resolved geometry, not a stylesheet literal (ADR-0027/0028)
+
+## Comments
+
+The core half, 2026-09-27. `ExGrid` gains four declarations, each off by default:
+`HeaderClickSelects` (a plain header click selects the column, Shift+click extends, nothing
+sorts), `RowHeadings` (`Func<int, string>`: the band's label for a row's absolute position),
+`RowHeadingWidth` (`double?`: explicit width, otherwise estimated from the Cell Metrics over
+the first and last rows' labels) and `HideHeader` (the header band goes, and the rows start at
+the Viewport's top). The Row Headings are a lead band in `ColumnGeometry` (`LeadWidthPx`,
+`IsInLead`), painted as the first sticky cell of each row and the corner of the header; no
+column index names them. `GridSelection` gains `SelectColumn`, `SelectRow` and `ExtendToRow`.
+No JavaScript was added (DC-15). Layer 1: `HeadingsSelectionTests`; layer 2: `HeadingsTests`.
+
+What remains:
+
+- ExSheet's wiring (column letters as headers, row numbers as labels) is the ExSheet stream's,
+  and "the Sheet still addresses `A1`" with a Heading hidden is checked there: the core never
+  addresses cells by name.
+- Layer 3 for DC-3 (the band held at the left edge while scrolling sideways, under both
+  Chromes and on a platform with classic scrollbars), and DC-25 (two grids, one declaring).
+- Dragging across Row Headings or column headers to select several is not built; Shift+click
+  is the route. *(Superseded 2026-09-29: ADR-0050, item 1, and ADR-0012 now decide the drag and
+  Ctrl+click; tickets 21 and 22 build them.)*
+
+2026-09-27, ExSheet's wiring: `HeaderClickSelects` is on, the column headers are the letters, and
+`RowHeadings` labels each row with its 1-based number (a held static delegate). `ShowRowHeadings`
+and `ShowColumnHeadings` hide either Heading (the latter through `HideHeader`); with either hidden,
+the Name Box still names the Focus `C3` (ADR-0050). Layer 2: `HeadingsWiringTests` (letters and
+numbers, a header click and Shift+click selecting columns, a Row Heading click and Shift+click
+selecting rows, each Heading hidden with the addresses kept, the Formula Bar hidden).
+
+2026-09-27, layer 3 (ticket 18), run locally under xvfb with Playwright's Chromium (build 1194; this machine has neither Google Chrome nor Edge, so the committed config's `chrome` and `msedge` projects are CI's to run), against the WebAssembly host and the Server host behind the latency proxy. `sheet.spec.mjs`: a column heading click selects the column (the range runs the column's whole height) and Shift+click extends, a Row Heading click selects the row and Shift+click extends, the corner selects all, and nothing sorts (DC-2/3); the Row Headings, the corner and the pinned column A hold the left edge while the Sheet scrolls sideways to 400,000 px, with classic scrollbars (DC-3). `declarations.spec.mjs`: the positions grid beside the Sheet, declaring nothing, paints no heading, bar or handle, keeps Ctrl+arrow to its edge and refuses a spill (DC-25); `sheets.spec.mjs`: two ExSheets stay apart, except the one late focus reclaim reported in ticket 18. Green on both hosts.

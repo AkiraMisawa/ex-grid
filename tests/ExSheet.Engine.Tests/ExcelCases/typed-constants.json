@@ -1,0 +1,473 @@
+{
+  "area": "typed-constants",
+  "about": "Constants typed into a cell, read under the Sheet's culture (ADR-0048), and the format a typed constant gives a General cell. Excel's side is typed through Range.FormulaLocal, so the machine's regional format must match the case's culture. Where FormulaLocal reads an entry differently from Excel's cell editor (a leading + or -), the keyboard is what a user types, so the case follows the keyboard and the oracle skips it.",
+  "cases": [
+    {
+      "id": "TYPED-001",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "1,234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5}
+    },
+    {
+      "id": "TYPED-002",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "1234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5}
+    },
+    {
+      "id": "TYPED-003",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "12,345,678"},
+      "check": "A1",
+      "expect": {"value2": 12345678}
+    },
+    {
+      "id": "TYPED-004",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "-7"},
+      "check": "A1",
+      "expect": {"value2": -7}
+    },
+    {
+      "id": "TYPED-005",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "(7)"},
+      "check": "A1",
+      "expect": {"value2": -7}
+    },
+    {
+      "id": "TYPED-006",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": "1E3"},
+      "check": "A1",
+      "expect": {"value2": 1000}
+    },
+    {
+      "id": "TYPED-007",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "cells": {"A1": ".5"},
+      "check": "A1",
+      "expect": {"value2": 0.5}
+    },
+    {
+      "id": "TYPED-008",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators, and thousands separators with decimals give #,##0.00",
+      "culture": "de-DE",
+      "cells": {"A1": "1.234,5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5, "text": "1.234,50", "numberFormat": "#,##0.00"}
+    },
+    {
+      "id": "TYPED-009",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators",
+      "culture": "de-DE",
+      "cells": {"A1": "1,5"},
+      "check": "A1",
+      "expect": {"value2": 1.5}
+    },
+    {
+      "id": "TYPED-010",
+      "source": "observed",
+      "description": "A typed number is read with the Sheet's culture's separators, and thousands separators with decimals give #,##0.00",
+      "culture": "ja-JP",
+      "cells": {"A1": "1,234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5, "text": "1,234.50", "numberFormat": "#,##0.00"}
+    },
+    {
+      "id": "TYPED-011",
+      "source": "observed",
+      "description": "Excel keeps 15 significant digits of what is typed; the rest become zeros",
+      "cells": {"A1": "1234567890123456789"},
+      "check": "A1",
+      "expect": {"value2": 1234567890123450000}
+    },
+    {
+      "id": "TYPED-012",
+      "source": "observed",
+      "description": "A typed percentage is the fraction, shown as a percentage",
+      "cells": {"A1": "50%"},
+      "check": "A1",
+      "expect": {"value2": 0.5, "text": "50%"}
+    },
+    {
+      "id": "TYPED-013",
+      "source": "observed",
+      "description": "Text typed with a leading apostrophe is text",
+      "cells": {"A1": "'123"},
+      "check": "A1",
+      "expect": {"value2": "123"}
+    },
+    {
+      "id": "TYPED-014",
+      "source": "observed",
+      "description": "Numeric text in arithmetic is read as a typed number would be, under the Sheet's culture",
+      "cells": {"ZZ1000": "=\"1,000\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1001}
+    },
+    {
+      "id": "TYPED-015",
+      "source": "observed",
+      "description": "Numeric text in arithmetic is read as a typed number would be, under the Sheet's culture",
+      "culture": "de-DE",
+      "cells": {"ZZ1000": "=\"1,5\"+1"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.5}
+    },
+    {
+      "id": "TYPED-016",
+      "source": "observed",
+      "description": "Ticket 19 row 8: a doubled percent sign is text",
+      "ticket19Row": 8,
+      "cells": {"A1": "200%%"},
+      "check": "A1",
+      "expect": {"value2": "200%%"}
+    },
+    {
+      "id": "TYPED-017",
+      "source": "observed",
+      "description": "Ticket 19 row 24: spaces around a number are dropped",
+      "ticket19Row": 24,
+      "cells": {"A1": " 12 "},
+      "check": "A1",
+      "expect": {"value2": 12}
+    },
+    {
+      "id": "TYPED-018",
+      "source": "observed",
+      "description": "Ticket 19 row 25: a comma not in thousands position makes text",
+      "ticket19Row": 25,
+      "cells": {"A1": "1,23"},
+      "check": "A1",
+      "expect": {"value2": "1,23"}
+    },
+    {
+      "id": "TYPED-019",
+      "source": "observed",
+      "description": "Ticket 19 row 26: a leading + before a Reference makes a Formula (here reading its own cell)",
+      "ticket19Row": 26,
+      "cells": {"A1": "+A1"},
+      "check": "A1",
+      "expect": {"formula": "=+A1"},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-020",
+      "source": "observed",
+      "description": "Ticket 19 row 26: a leading - before a Reference makes a Formula (here reading its own cell)",
+      "ticket19Row": 26,
+      "cells": {"A1": "-A1"},
+      "check": "A1",
+      "expect": {"formula": "=-A1"},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-021",
+      "source": "observed",
+      "description": "Ticket 19 row 27: a currency symbol. Excel reads $5 as 5 with the format $#,##0_);[Red]($#,##0), shown \"$5 \". The colour is kept in the code and not painted (ADR-0047)",
+      "ticket19Row": 27,
+      "cells": {"A1": "$5"},
+      "check": "A1",
+      "expect": {"value2": 5, "text": "$5 ", "numberFormat": "$#,##0_);[Red]($#,##0)"}
+    },
+    {
+      "id": "TYPED-022",
+      "source": "observed",
+      "description": "Ticket 19 row 27: a day and month name without a year is that day of the current year, shown d-mmm",
+      "ticket19Row": 27,
+      "cells": {"A1": "26-Sep"},
+      "check": "A1",
+      "expect": {"text": "26-Sep", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-023",
+      "source": "observed",
+      "description": "Ticket 19 row 28: WAHR under de-DE is text",
+      "ticket19Row": 28,
+      "culture": "de-DE",
+      "cells": {"A1": "WAHR"},
+      "check": "A1",
+      "expect": {"value2": "WAHR"}
+    },
+    {
+      "id": "TYPED-024",
+      "source": "observed",
+      "description": "Ticket 19 row 29: the format applied when 12.5% is typed",
+      "ticket19Row": 29,
+      "cells": {"A1": "12.5%"},
+      "check": "A1",
+      "expect": {"value2": 0.125, "text": "12.50%", "numberFormat": "0.00%"}
+    },
+    {
+      "id": "TYPED-025",
+      "source": "observed",
+      "description": "Ticket 19 row 29: a typed number with thousands separators gives the format #,##0",
+      "ticket19Row": 29,
+      "cells": {"A1": "1,234"},
+      "check": "A1",
+      "expect": {"value2": 1234, "text": "1,234", "numberFormat": "#,##0"}
+    },
+    {
+      "id": "TYPED-026",
+      "source": "observed",
+      "description": "Ticket 19 row 29: a typed number with an exponent gives the format 0.00E+00",
+      "ticket19Row": 29,
+      "cells": {"A1": "1E3"},
+      "check": "A1",
+      "expect": {"value2": 1000, "text": "1.00E+03", "numberFormat": "0.00E+00"}
+    },
+    {
+      "id": "TYPED-027",
+      "source": "observed",
+      "description": "Ticket 19 row 30: a date typed under ja-JP records Excel's built-in short date (m/d/yyyy in the invariant codes), which shows in the culture's short-date pattern; it is not recorded as the pattern yyyy/mm/dd",
+      "ticket19Row": 30,
+      "culture": "ja-JP",
+      "cells": {"A1": "2026/9/26"},
+      "check": "A1",
+      "expect": {"value2": 46291, "text": "2026/09/26", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "TYPED-028",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a leading + before a Reference to another cell makes a Formula that reads it",
+      "cells": {"A1": "5", "B1": "+A1"},
+      "check": "B1",
+      "expect": {"formula": "=+A1", "value2": 5},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-029",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a leading - before a Reference to another cell makes a Formula that negates it",
+      "cells": {"A1": "5", "B1": "-A1"},
+      "check": "B1",
+      "expect": {"formula": "=-A1", "value2": -5},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-030",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a leading - before arithmetic makes a Formula",
+      "cells": {"A1": "-1-2"},
+      "check": "A1",
+      "expect": {"formula": "=-1-2", "value2": -3},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-031",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a leading - before a name makes a Formula, which is #NAME?",
+      "cells": {"A1": "-abc"},
+      "check": "A1",
+      "expect": {"formula": "=-abc", "value2": "#NAME?"},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-032",
+      "source": "observed",
+      "description": "A leading - before text is read as a Formula, =- item one, with no dialog; the space between item and one is Excel's intersection of two names, so it is #NAME? (verification/2026-09-27-windows-excel-2, with real keys)",
+      "cells": {"A1": "- item one"},
+      "check": "A1",
+      "expect": {"value2": "#NAME?", "formula": "=- item one"},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-033",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a + alone is text",
+      "cells": {"A1": "+"},
+      "check": "A1",
+      "expect": {"value2": "+"}
+    },
+    {
+      "id": "TYPED-034",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a leading + before a number is the number",
+      "cells": {"A1": "+5"},
+      "check": "A1",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "TYPED-035",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a month and day number without a year is that day of the current year, shown d-mmm",
+      "cells": {"A1": "9/26"},
+      "check": "A1",
+      "expect": {"text": "26-Sep", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-036",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a month name and a day number is that day of the current year, shown d-mmm",
+      "cells": {"A1": "Sep 26"},
+      "check": "A1",
+      "expect": {"text": "26-Sep", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-037",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a day, a month name and a year is shown d-mmm-yy",
+      "cells": {"A1": "26-Sep-2026"},
+      "check": "A1",
+      "expect": {"value2": 46291, "text": "26-Sep-26", "numberFormat": "d-mmm-yy"}
+    },
+    {
+      "id": "TYPED-038",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a month name and a year is the first of that month, shown mmm-yy",
+      "cells": {"A1": "Sep 2026"},
+      "check": "A1",
+      "expect": {"value2": 46266, "text": "Sep-26", "numberFormat": "mmm-yy"}
+    },
+    {
+      "id": "TYPED-039",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a full month name is read as its abbreviation is",
+      "cells": {"A1": "26 September 2026"},
+      "check": "A1",
+      "expect": {"value2": 46291, "numberFormat": "d-mmm-yy"}
+    },
+    {
+      "id": "TYPED-040",
+      "source": "observed",
+      "description": "A month name in the culture's language: a date, whose built-in d-mmm shows as 26. Okt under de-DE (verification/2026-09-27-windows-excel-2)",
+      "culture": "de-DE",
+      "cells": {"A1": "26-Okt"},
+      "check": "A1",
+      "expect": {"text": "26. Okt", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-041",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: thousands separators and decimals give #,##0.00",
+      "cells": {"A1": "1,234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5, "text": "1,234.50", "numberFormat": "#,##0.00"}
+    },
+    {
+      "id": "TYPED-042",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a negative number with thousands separators gives #,##0",
+      "cells": {"A1": "-1,234"},
+      "check": "A1",
+      "expect": {"value2": -1234, "text": "-1,234", "numberFormat": "#,##0"}
+    },
+    {
+      "id": "TYPED-043",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: an exponent with decimals gives 0.00E+00",
+      "cells": {"A1": "1.2345E3"},
+      "check": "A1",
+      "expect": {"value2": 1234.5, "text": "1.23E+03", "numberFormat": "0.00E+00"}
+    },
+    {
+      "id": "TYPED-044",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a date and a time typed under de-DE record the built-in short date with a time, shown in the culture's pattern",
+      "culture": "de-DE",
+      "cells": {"A1": "26.9.2026 10:00"},
+      "check": "A1",
+      "expect": {"value2": 46291.416666666664, "digits": 9, "text": "26.09.2026 10:00", "numberFormat": "m/d/yyyy h:mm"}
+    },
+    {
+      "id": "TYPED-045",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a date typed under en-GB records the built-in short date, shown day first",
+      "culture": "en-GB",
+      "cells": {"A1": "26/9/2026"},
+      "check": "A1",
+      "expect": {"text": "26/09/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "TYPED-046",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a dollar amount with decimals takes the currency format with two decimals",
+      "cells": {"A1": "$1,234.5"},
+      "check": "A1",
+      "expect": {"value2": 1234.5, "text": "$1,234.50 ", "numberFormat": "$#,##0.00_);[Red]($#,##0.00)"}
+    },
+    {
+      "id": "TYPED-047",
+      "source": "observed",
+      "description": "A minus sign before the dollar sign is read as a negative dollar amount, with $5's format (verification/2026-09-27-windows-excel-2)",
+      "cells": {"A1": "-$5"},
+      "check": "A1",
+      "expect": {"value2": -5, "text": "($5)", "numberFormat": "$#,##0_);[Red]($#,##0)"}
+    },
+    {
+      "id": "TYPED-048",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a dollar amount under en-GB, whose currency is the pound, stays text",
+      "culture": "en-GB",
+      "cells": {"A1": "$5"},
+      "check": "A1",
+      "expect": {"value2": "$5"}
+    },
+    {
+      "id": "TYPED-049",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: a minus sign before the dollar sign with cents takes the format with cents",
+      "cells": {"A1": "-$5.50"},
+      "check": "A1",
+      "expect": {"value2": -5.5, "numberFormat": "$#,##0.00_);[Red]($#,##0.00)"}
+    },
+    {
+      "id": "TYPED-050",
+      "source": "observed",
+      "description": "Engine's answer, Excel to be asked: the built-in d-mmm shows a one-digit day with two digits under de-DE, as German Excel's TT. MMM",
+      "culture": "de-DE",
+      "cells": {"A1": "5-Okt"},
+      "check": "A1",
+      "expect": {"text": "05. Okt", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-051",
+      "source": "observed",
+      "description": "The built-in d-mmm shows in the culture's own form under en-GB: a one-digit day with two digits, 05-Oct (verification/2026-09-28-windows-excel-3)",
+      "culture": "en-GB",
+      "cells": {"A1": "5-Oct"},
+      "check": "A1",
+      "expect": {"text": "05-Oct", "numberFormat": "d-mmm"}
+    },
+    {
+      "id": "TYPED-052",
+      "source": "observed",
+      "description": "A minus sign after the dollar sign is read as a negative dollar amount, as -$5 is (TYPED-047) (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "$-5"},
+      "check": "A1",
+      "expect": {"value2": -5, "text": "($5)", "numberFormat": "$#,##0_);[Red]($#,##0)"}
+    },
+    {
+      "id": "TYPED-053",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a leading - before a name and a Reference is the Formula of their intersection, #NAME?",
+      "cells": {"A1": "-total B2"},
+      "check": "A1",
+      "expect": {"value2": "#NAME?", "formula": "=-total B2"},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys"
+    },
+    {
+      "id": "TYPED-054",
+      "source": "observed",
+      "description": "A leading - before two References with a space between them is a Formula using the intersection operator, which the engine does not implement: refused by name. Excel makes it the Formula =-B2 C2, #NULL! (verification/2026-09-28-windows-excel-3)",
+      "cells": {"A1": "-B2 C2"},
+      "check": "A1",
+      "expect": {"refusedEntry": true},
+      "oracleSkip": "COM's Range.FormulaLocal keeps this as text, but typed with real keys Excel makes it a Formula (verification/2026-09-27-windows-excel/behaviours.md); ask by keys",
+      "engineDiffersByDecision": "ADR-0047, third run: the intersection of References is refused by name, not taken as text",
+      "excelExpect": {"value2": "#NULL!", "formula": "=-B2 C2"}
+    }
+  ]
+}

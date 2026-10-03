@@ -1,3 +1,4 @@
+using AngleSharp.Dom;
 using Bunit;
 using ExGrid.Components.Tests.Support;
 using ExGrid.Rows;
@@ -101,5 +102,84 @@ public class RowKindTests : GridTestContext
         cut.Render(ps => ps
             .Add(g => g.Window, rows).Add(g => g.Columns, columns).Add(g => g.RowKind, KindOf("Beta")));
         Assert.Contains("Beta", cut.Find(".ex-row-total").TextContent);
+    }
+
+    private static string? Winning(IElement element, string property) => ShippedStylesheetTests.Winning(element, property);
+
+    /// <summary>The declarations of the unconditional rules that style an element's ::after.</summary>
+    private static List<(string Property, string Value)> AfterOf(IElement element)
+        => ShippedStylesheetTests.UnconditionalRules()
+            .Where(rule => rule.Selectors.Any(selector =>
+                selector.EndsWith("::after", StringComparison.Ordinal) && element.Matches(selector[..^"::after".Length])))
+            .SelectMany(rule => ShippedStylesheetTests.Declarations(rule.Body))
+            .ToList();
+
+    [Fact] // ADR-0024 / ADR-0038 / ticket 85: a group or total row's tint is painted once over every cell, pinned or scrollable, and on the row only where no cell is
+    public async Task A_group_or_total_rows_tint_is_painted_once_over_every_cell()
+    {
+        // Rows by position: a group, a total, a detail row, and so on, so the first screen holds a
+        // group row at a striped position (3) and an unstriped one (0). 20px rows in a 100px
+        // Viewport: a move of more than five rows is a fling (ADR-0004).
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(1000))
+            .Add(g => g.TotalCount, 1000)
+            .Add(g => g.Columns, TestRows.Columns())
+            .Add(g => g.RowHeight, 20)
+            .Add(g => g.ViewportHeight, 100)
+            .Add(g => g.PinnedColumnCount, 1)
+            .Add(g => g.StripeRows, true)
+            .Add(g => g.RowKind, (Func<TestRow, RowKind>)(row => ((int)row.Amount % 3) switch
+            {
+                0 => RowKind.Group,
+                1 => RowKind.Total,
+                _ => RowKind.Detail,
+            })));
+        var painted = cut.FindAll(".ex-viewport [role=row]");
+        Assert.Contains("ex-row-stripe", painted[3].ClassList);
+
+        foreach (var (index, token) in new[] { (0, "--ex-row-group-background"), (1, "--ex-row-total-rule-color"), (3, "--ex-row-group-background") })
+        {
+            var row = painted[index];
+            Assert.Contains(index == 1 ? "ex-row-total" : "ex-row-group", row.ClassList);
+            var tint = Winning(row, "--ex-tint");
+            Assert.Contains(token, tint);
+            // Nothing beneath the cells: a scrollable cell is transparent over the row, so a tint
+            // there too would paint it two tints deep, and a pinned cell, over its opaque ground, one.
+            Assert.Equal("none", Winning(row, "background-image"));
+
+            var cells = row.QuerySelectorAll(".ex-cell");
+            Assert.Contains(cells, cell => cell.ClassList.Contains("ex-pinned"));
+            Assert.Contains(cells, cell => !cell.ClassList.Contains("ex-pinned"));
+            foreach (var cell in cells)
+            {
+                // Each cell paints its row's tint once, over whatever ground it has: the role's
+                // tint, not the stripe's (UX-16).
+                Assert.Equal("var(--ex-tint)", Winning(cell, "background-image"));
+                Assert.Equal(tint, Winning(cell, "--ex-tint"));
+            }
+
+            // The row's own box past the last cell — the space beyond the last column — paints it
+            // once, from the one box that grows into it.
+            var after = AfterOf(row);
+            Assert.Contains(after, declared => declared.Property == "content");
+            Assert.Contains(after, declared => declared.Property == "flex" && declared.Value.StartsWith("1 ", StringComparison.Ordinal));
+            Assert.Contains(("background-image", "var(--ex-tint)"), after);
+        }
+        // A detail row is left as it was.
+        Assert.Null(Winning(painted[2], "--ex-tint"));
+        Assert.Empty(AfterOf(painted[2]));
+
+        // A Placeholder paints no scrollable cell, only its pinned ones and its bar: the row keeps
+        // the tint, beside cells that paint it over their opaque ground, and its ::after is the bar.
+        await ScrollToAsync(cut.Find(".ex-scroller"), 101 * 20);
+        var flung = cut.FindAll(".ex-placeholder.ex-row-group, .ex-placeholder.ex-row-total");
+        Assert.True(flung.Count >= 3, $"{flung.Count} group or total Placeholders");
+        foreach (var row in flung)
+        {
+            Assert.Equal("var(--ex-tint)", Winning(row, "background-image"));
+            Assert.Empty(row.QuerySelectorAll(".ex-cell:not(.ex-pinned)"));
+            Assert.All(row.QuerySelectorAll(".ex-cell"), cell => Assert.Equal("var(--ex-tint)", Winning(cell, "background-image")));
+            Assert.DoesNotContain(("background-image", "var(--ex-tint)"), AfterOf(row));
+        }
     }
 }

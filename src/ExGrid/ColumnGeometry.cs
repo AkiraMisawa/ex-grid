@@ -36,6 +36,32 @@ public sealed class ColumnGeometry
     // the rows would stop skipping, silently).
     private readonly double[] _widths;
 
+    // The widths as the columns declare them, before their edges were put on Device Pixels
+    // (ADR-0090): what the grid compares a new layout against, so a layout that did not move
+    // keeps this instance at any ratio (ADR-0003).
+    private readonly double[] _declared;
+
+    // The whole Device Pixels from the content's left edge to a declared position.
+    private static double DevicePixelsAt(double px, double ratio) => Math.Floor((px * ratio) + 0.5);
+
+    /// <summary>A length put on the nearest Device Pixel at <paramref name="devicePixelRatio"/>
+    /// (ADR-0090), or the length itself while the ratio is not told (null).</summary>
+    public static double OnDevicePixel(double px, double? devicePixelRatio)
+        => devicePixelRatio is { } ratio ? DevicePixelsAt(px, ratio) / ratio : px;
+
+    /// <summary>The Device Pixel ratio the edges were put on, or null while the browser has not
+    /// told it, when the edges are the declared ones (ADR-0090).</summary>
+    public double? DevicePixelRatio { get; }
+
+    /// <summary>The width this column declared, before its edges were put on Device Pixels
+    /// (ADR-0090). <see cref="WidthPxOf"/> is the width it is painted at.</summary>
+    public double DeclaredWidthPxOf(int columnIndex)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(columnIndex);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(columnIndex, Count);
+        return _declared[columnIndex];
+    }
+
     /// <summary>The arithmetic over <paramref name="widthsPx"/> — every column's resolved
     /// width, in display order (ADR-0016) — with the first <paramref name="pinnedCount"/>
     /// pinned, laid out in <paramref name="viewportWidthPx"/>. A total width past
@@ -43,7 +69,39 @@ public sealed class ColumnGeometry
     /// Pinned block that would leave the scrollable columns less than
     /// <see cref="MinScrollableBandPx"/> is suspended (ADR-0045).</summary>
     public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx)
+        : this(widthsPx, pinnedCount, viewportWidthPx, leadWidthPx: 0)
     {
+    }
+
+    /// <summary>The same arithmetic with a band of <paramref name="leadWidthPx"/> held
+    /// against the Viewport's left edge ahead of every column — the Row Headings
+    /// (ADR-0050). The band stands outside the column index space: it is covered the way
+    /// the Pinned Columns cover it, every column's offset starts after it, and no column
+    /// index ever names it. Zero is the geometry without the band, exactly.</summary>
+    public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx, double leadWidthPx)
+        : this(widthsPx, pinnedCount, viewportWidthPx, leadWidthPx, devicePixelRatio: null)
+    {
+    }
+
+    /// <summary>The same arithmetic with every column edge put on a Device Pixel
+    /// (ADR-0090): each edge is its declared position — the lead band's width plus the
+    /// declared widths before it — rounded to the nearest Device Pixel at
+    /// <paramref name="devicePixelRatio"/>, and a column's painted width is the distance to
+    /// the next edge. The positions are summed first and rounded after, so the total is the
+    /// declared total rounded once. Null is a ratio the browser has not told yet: the edges
+    /// are the declared ones, exactly.</summary>
+    public ColumnGeometry(IReadOnlyList<double> widthsPx, int pinnedCount, double viewportWidthPx, double leadWidthPx, double? devicePixelRatio)
+    {
+        if (devicePixelRatio is { } told && (!double.IsFinite(told) || told <= 0))
+        {
+            throw new ArgumentOutOfRangeException(nameof(devicePixelRatio), devicePixelRatio,
+                "A Device Pixel ratio is a finite, positive number (ADR-0090).");
+        }
+        if (!double.IsFinite(leadWidthPx) || leadWidthPx < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(leadWidthPx), leadWidthPx,
+                "The Row Headings' width is a finite, non-negative number of pixels (ADR-0050).");
+        }
         ArgumentNullException.ThrowIfNull(widthsPx);
         ArgumentOutOfRangeException.ThrowIfNegative(pinnedCount);
         if (pinnedCount > widthsPx.Count)
@@ -59,6 +117,15 @@ public sealed class ColumnGeometry
 
         _offsets = new double[widthsPx.Count + 1];
         _widths = new double[widthsPx.Count];
+        _declared = new double[widthsPx.Count];
+        // Each edge is counted in whole Device Pixels from the declared position: an edge is its
+        // count over the ratio and a width the difference of two counts, so neither carries the
+        // noise of a running sum, and two equal counts give the same width bit for bit (ADR-0090).
+        // Untold, the declared widths are painted, summed as before.
+        var ratio = devicePixelRatio ?? 0;
+        var declaredEdge = leadWidthPx;
+        var paintedEdge = devicePixelRatio is null ? 0 : DevicePixelsAt(declaredEdge, ratio);
+        _offsets[0] = devicePixelRatio is null ? leadWidthPx : paintedEdge / ratio;
         for (var i = 0; i < widthsPx.Count; i++)
         {
             var width = widthsPx[i];
@@ -67,8 +134,18 @@ public sealed class ColumnGeometry
                 throw new ArgumentOutOfRangeException(nameof(widthsPx), width,
                     $"Column {i} has a width of {width}px; a resolved width is finite and non-negative (ADR-0016).");
             }
-            _widths[i] = width;
-            _offsets[i + 1] = _offsets[i] + width;
+            _declared[i] = width;
+            if (devicePixelRatio is null)
+            {
+                _widths[i] = width;
+                _offsets[i + 1] = _offsets[i] + width;
+                continue;
+            }
+            declaredEdge += width;
+            var next = DevicePixelsAt(declaredEdge, ratio);
+            _widths[i] = (next - paintedEdge) / ratio;
+            _offsets[i + 1] = next / ratio;
+            paintedEdge = next;
         }
 
         if (_offsets[widthsPx.Count] > MaxScrollWidthPx)
@@ -80,6 +157,8 @@ public sealed class ColumnGeometry
         }
 
         Count = widthsPx.Count;
+        LeadWidthPx = _offsets[0];
+        DevicePixelRatio = devicePixelRatio;
         RequestedPinnedCount = pinnedCount;
         // A block covering the Viewport shows only pinned columns, pans nothing visible,
         // and leaves a Focus moved into a scrollable column underneath it — unseen, which
@@ -96,13 +175,30 @@ public sealed class ColumnGeometry
     public const double MinScrollableBandPx = ColumnWidthSpec.DefaultMinWidthPx;
 
     /// <summary>
-    /// The same 2^25 px ceiling the vertical axis hits
+    /// The same scale-1 Layout Ceiling the vertical axis is refused at
     /// (<see cref="ViewportGeometry.MaxScrollHeightPx"/>) — a browser clamps either axis
     /// silently, and content past the clamp cannot be reached with nothing to show for
     /// it. 100 columns at 100px is nowhere near this; a generated ladder is what gets
-    /// close, and the rule is not put on one axis only.
+    /// close, and the rule is not put on one axis only. Only the vertical axis is
+    /// compressed under a smaller ceiling at a higher scale or zoom (ADR-0053).
     /// </summary>
     public const double MaxScrollWidthPx = ViewportGeometry.MaxScrollHeightPx;
+
+    /// <summary>The band held against the Viewport's left edge ahead of every column —
+    /// the Row Headings (ADR-0050) — or zero. Column 0's offset is this, and the
+    /// <see cref="PinnedWidthPx"/> includes it, because it covers the edge the way a
+    /// Pinned Column does.</summary>
+    public double LeadWidthPx { get; }
+
+    /// <summary>Whether a pixel lies in the lead band, which stays at the Viewport's left
+    /// edge whatever the scroll offset (ADR-0050). Always false without one.</summary>
+    public bool IsInLead(double contentXPx, double scrollLeftPx)
+    {
+        if (LeadWidthPx <= 0 || !double.IsFinite(contentXPx) || !double.IsFinite(scrollLeftPx))
+            return false;
+        var viewportX = contentXPx - Math.Clamp(scrollLeftPx, 0, MaxScrollLeftPx);
+        return viewportX >= 0 && viewportX < LeadWidthPx;
+    }
 
     /// <summary>How many columns there are, pinned and scrollable alike.</summary>
     public int Count { get; }
@@ -143,8 +239,9 @@ public sealed class ColumnGeometry
         return _offsets[columnIndex];
     }
 
-    /// <summary>The width this column was built with, returned exactly — see
-    /// <c>_widths</c> for why it is not recovered from the offsets.</summary>
+    /// <summary>The width this column is painted at, returned exactly — see
+    /// <c>_widths</c> for why it is not recovered from the offsets. It is the width it was
+    /// built with until its edges are put on Device Pixels (ADR-0090).</summary>
     public double WidthPxOf(int columnIndex)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(columnIndex);
@@ -275,6 +372,14 @@ public sealed class ColumnGeometry
 
         var left = Math.Clamp(scrollLeftPx, 0, MaxScrollLeftPx);
         var viewportX = contentXPx - left;
+        // The lead band (ADR-0050) names no column, and what has scrolled underneath it is
+        // no more readable than what lies under a Pinned Column: a pixel there clamps to
+        // the first column standing clear of the band, as a drag past either edge does.
+        if (viewportX < LeadWidthPx)
+        {
+            viewportX = LeadWidthPx;
+            contentXPx = left + LeadWidthPx;
+        }
         // Everything pinned means there is no scrollable run to fall through to, and a
         // pixel past the pinned block — the Viewport is wider than the columns, so there
         // is empty space to the right of them — has to clamp to the last pinned column

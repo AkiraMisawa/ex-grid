@@ -1,0 +1,12 @@
+{
+ "channel": "chrome",
+ "base": "http://localhost:5299",
+ "label": "wasm",
+ "part": "copy",
+ "started": "2026-09-29T17:21:10.786Z",
+ "steps": [],
+ "browserVersion": "153.0.8010.54",
+ "error": "Error: clip: err Exception calling \"GetDataObject\" with \"0\" argument(s): \"Requested Clipboard operation did not succeed.\" t=8285\n    at file:///C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-09-29-5/tests/ExGrid.Browser/part-b-probe.mjs:43:89\n    at Interface.<anonymous> (file:///C:/Users/amisa/AppData/Local/exgrid-layer3/run-2026-09-29-5/tests/ExGrid.Browser/part-b-probe.mjs:39:61)\n    at Interface.emit (node:events:508:28)\n    at [_onLine] [as _onLine] (node:internal/readline/interface:465:12)\n    at [_normalWrite] [as _normalWrite] (node:internal/readline/interface:647:22)\n    at Socket.ondata (node:internal/readline/interface:263:23)\n    at Socket.emit (node:events:508:28)\n    at addChunk (node:internal/streams/readable:563:12)\n    at readableAddChunkPushByteMode (node:internal/streams/readable:514:3)\n    at Readable.push (node:internal/streams/readable:394:5)",
+ "console": [],
+ "ended": "2026-09-29T17:21:19.524Z"
+}

@@ -131,6 +131,19 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   what a screen reader then says is still owed a real one, like the wording below). Only a
   Template's control takes DOM focus, which it already did when clicked; leaving it by Escape
   puts both back.)*
+- **On a grid that edits, the tab stop and `aria-activedescendant` are the Keyboard Field's**
+  *(decided with the user, 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md))*. So that an IME can start on a selected cell, a
+  text field of the grid's own inside the root holds the keyboard. It is the one tab stop
+  (`tabindex="0"`, the root `-1`), because Shift+Tab from it would otherwise land on the root, which
+  passes focus back to it: a trap. And the element holding the keyboard carries
+  `aria-activedescendant`, with every rule above. The root keeps `role="grid"` and the rest of the
+  table. Chromium's resolution of the field's active descendant is checked over CDP; what a screen
+  reader says is still owed a real one. A display-only grid keeps both on its root. The header's ▾
+  buttons left the tab sequence on every grid the same day, as the action buttons did (ADR-0037), so
+  that a Tab into the grid reaches the cells first; Alt+↓ opens a column's popover by keyboard.
+  *(The sixteenth Windows run, 2026-10-02, tried Narrator: Tab into `/sheet` read "Enter Table, 1048576
+  by 16384, edit", and ↓ sent DOM focus to `body`, though the run's own way of recording the speech
+  may have caused that. Not settled; the real screen reader stays owed, as the user chose. ADR-0080.)*
 - **The scroller is not a tab stop either** *(found while implementing, 2026-09-26)*. Chrome makes
   a scroll container with no tabbable content a tab stop of its own once it overflows, so every
   overflowing display-only grid had a second stop inside it — `/wide` at any size, and `/cells`
@@ -147,6 +160,25 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   host, which copies straight after a click, found it. The
   keydown, copy and paste listeners now read an event on the grid's own scroller as one on
   the root. Those listeners change; no allowlisted use is added.
+  *(Found on the Server host, 2026-10-03, through ExPivot's details dialog.)* The hand-off needs a
+  root that can take focus, and the root is no tab stop until the render that follows the
+  listener's attach (A11Y-20). The rows can paint up to two round trips before that render: the
+  attach starts the Viewport's report, and the render waits for two more answers. A press on the
+  rows in between gave the scroller focus. The hand-off's request then found a root that could not
+  take it, did nothing, and was never made again. The keyboard stayed on the scroller. The keys
+  still reached the grid, which reads them as the root's, but `aria-activedescendant`, on the root,
+  was read by no one. A test of ExPivot's dialog that pressed into the records as soon as they were
+  painted failed in 1 run of 3, with no latency injected. A probe found one such press 14 ms before
+  the tab stop.
+  - **The hand-off is now owed.** Focus that arrives on the scroller before a render has made the
+    root a tab stop is handed to the root after that render. It goes under the hand-back's own
+    condition: DOM focus still inside this root, or on nothing. A press elsewhere in the meantime
+    therefore keeps the keyboard. Whichever comes first, the press or the attach, the keyboard ends
+    on the root. No script is added: the request is the hand-back the grid already makes.
+  - **Making the root a tab stop sooner was rejected.** It narrows the window and does not close it
+    (AGENTS.md, principle 6): a press can come before the attach itself, a module import away.
+  - **Before the attach, the hand-off is owed as well.** There is no listener then, so nothing was
+    asked; now the request waits for the render that makes the root a tab stop.
 - **Layer 3 owns the verification.** Counts and indices are assertable in bUnit, but "the Focus is
   reachable by one tab, and the announcement is made once per settled selection" is a real-browser
   question. It joins the list in [ADR-0026](./0026-layer-three-runs-on-playwright-against-the-installed-chrome.md).
@@ -165,3 +197,18 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   when it takes focus. The live region keeps its two writers.
 - **Whether the announcement should name the corner cells by column header or by index** is a
   wording question, settled against a real screen reader in layer 3 rather than in prose here.
+
+## Added after the fifth Windows run: a collapse to one cell empties the range sentence *(2026-09-29, decided with the user)*
+
+The live region kept its last range sentence when the Selection became a single cell. For example,
+it still read "2 rows by 2 columns selected, B 2 to C 3" after a click, an arrow key, or a plain-text
+paste had collapsed B2:C3 to B2. The fifth Windows run saw it after the paste
+(`verification/2026-09-29-windows-5/results.md`, Part B item 3). An existing layer-2 test had pinned
+it as intended.
+
+The region is where "what is selected" can be read at any moment. A sentence naming a range that is
+no longer selected is the plausible wrong answer this design refuses.
+
+**The decision:** when the Selection becomes one cell or none, the region is emptied if it holds a
+range sentence. Emptying a `role="status"` region is not read aloud. A relayed Reject or a copy
+refusal stays where it is. A Focus move that changes no Selection still writes nothing (A11Y-10).

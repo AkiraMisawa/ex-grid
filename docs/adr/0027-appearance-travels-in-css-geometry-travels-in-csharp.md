@@ -63,6 +63,10 @@ duty.
 stylesheet rule, every cascade layer and every inherited value, so a Wrapper that sets
 `--ex-row-height` on an ancestor — or in its own stylesheet — **loses**, and the grid keeps
 painting what its arithmetic believes. That is not politeness; it is the cascade.
+*(One kind of geometry is written on an overlay element instead: the hole a selected range leaves
+where the Focus is, `--ex-range-hole`, inline on that range, since it belongs to that one rectangle
+and not to the instance. It is inline all the same, so the same cascade protects it. Added
+2026-09-29 with [ADR-0008](./0008-selection-is-painted-by-an-overlay.md).)*
 
 **Visual tokens are only ever read, never written by C#.** `ex-grid.css` reads each one with a
 default (`var(--ex-selection-fill, rgba(60, 120, 216, 0.18))`), and custom properties inherit, so
@@ -182,3 +186,16 @@ root, the header or a popover are fine; inside `.ex-viewport` they are not.
   every row for `aria-rowindex`, so a stripe is one class derived from a parameter each row already
   re-renders on. The third still holds too — the Focus band answers *where am I*; a stripe is
   appearance, off unless a Consumer asks, and one asked.
+
+## A Sheet's Paper does not follow the colour scheme *(2026-09-30, decided with the user)*
+
+**The defaults above stay on CSS system colours, so an untouched grid follows the host into dark
+mode. A Sheet's Paper and Ink are the one deliberate exception.**
+- The tokens are `--ex-sheet-paper` and `--ex-sheet-ink`. Their default is Excel's white and black
+  in every scheme ([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).
+- **Why**: a Sheet's colours are document data a user recorded. On a ground that changes with the
+  scheme, some of them become unreadable.
+- **Excel does the same**: its cells stayed white under Office Theme "Black" (the tenth Windows run).
+- **They are still Visual Tokens.** A Consumer may set them.
+- **Forced-colors mode still wins**, as it does for every colour here.
+

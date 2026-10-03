@@ -1,0 +1,864 @@
+{
+ "channel": "msedge",
+ "base": "http://localhost:6298",
+ "label": "server",
+ "part": "copy",
+ "started": "2026-09-29T17:25:03.176Z",
+ "steps": [
+  {
+   "item": 2,
+   "end": "Enter",
+   "calibration": {
+    "dpr": 1.5,
+    "tries": [
+     {
+      "px": 677,
+      "py": 360,
+      "client": {
+       "x": 400,
+       "y": 120
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "step": "opened",
+     "nameBox": "",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": null,
+     "ranges": [],
+     "focus": null,
+     "announce": "",
+     "documentFocus": "body",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "click E1",
+     "nameBox": "E1",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "E1",
+     "ranges": [
+      "E1"
+     ],
+     "focus": "E1",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "typed 5",
+     "nameBox": "E1",
+     "formulaBar": "5",
+     "editor": "5",
+     "activeDescendant": "E1",
+     "ranges": [
+      "E1"
+     ],
+     "focus": "E1",
+     "announce": "",
+     "documentFocus": "input.ex-editor",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "pressed Enter",
+     "nameBox": "E2",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "E2",
+     "ranges": [
+      "E2"
+     ],
+     "focus": "E2",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "click B2",
+     "nameBox": "B2",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2"
+     ],
+     "focus": "B2",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "Ctrl+C",
+     "nameBox": "B2",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2"
+     ],
+     "focus": "B2",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     },
+     "sentinel": "SENTINEL-1790702708204",
+     "clipboard": {
+      "length": 4,
+      "formats": [
+       "HTML Format",
+       "UnicodeText",
+       "Chromium internal source RFH token",
+       "Chromium internal source URL",
+       "CanIncludeInClipboardHistory",
+       "CanUploadToCloudClipboard",
+       "Locale",
+       "Text",
+       "OEMText"
+      ],
+      "text": "12\r\n"
+     },
+     "clipboardChanged": true,
+     "seen": [
+      {
+       "t": 4295,
+       "type": "keydown",
+       "key": "Control",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 4297,
+       "type": "keydown",
+       "key": "c",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 4297,
+       "type": "copy",
+       "key": null,
+       "ctrl": null,
+       "target": "div.ex-grid"
+      }
+     ]
+    },
+    {
+     "step": "click F6",
+     "nameBox": "F6",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "F6",
+     "ranges": [
+      "F6"
+     ],
+     "focus": "F6",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "Ctrl+V",
+     "nameBox": "F6",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "F6",
+     "ranges": [
+      "F6"
+     ],
+     "focus": "F6",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": "12"
+     },
+     "seen": [
+      {
+       "t": 7679,
+       "type": "keydown",
+       "key": "Control",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 7681,
+       "type": "keydown",
+       "key": "v",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 7681,
+       "type": "paste",
+       "key": null,
+       "ctrl": null,
+       "target": "div.ex-grid"
+      }
+     ],
+     "shot": "shots/B-copy-after-Enter-server-msedge.png"
+    }
+   ],
+   "f6ShowsB2": true,
+   "b2": "12",
+   "f6": "12"
+  },
+  {
+   "item": 2,
+   "end": "Tab",
+   "calibration": {
+    "dpr": 1.5,
+    "tries": [
+     {
+      "px": 677,
+      "py": 360,
+      "client": {
+       "x": 400,
+       "y": 120
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "step": "opened",
+     "nameBox": "",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": null,
+     "ranges": [],
+     "focus": null,
+     "announce": "",
+     "documentFocus": "body",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "click E1",
+     "nameBox": "E1",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "E1",
+     "ranges": [
+      "E1"
+     ],
+     "focus": "E1",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "typed 5",
+     "nameBox": "E1",
+     "formulaBar": "5",
+     "editor": "5",
+     "activeDescendant": "E1",
+     "ranges": [
+      "E1"
+     ],
+     "focus": "E1",
+     "announce": "",
+     "documentFocus": "input.ex-editor",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "pressed Tab",
+     "nameBox": "F1",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "F1",
+     "ranges": [
+      "F1"
+     ],
+     "focus": "F1",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "click B2",
+     "nameBox": "B2",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2"
+     ],
+     "focus": "B2",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "Ctrl+C",
+     "nameBox": "B2",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2"
+     ],
+     "focus": "B2",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     },
+     "sentinel": "SENTINEL-1790702717382",
+     "clipboard": {
+      "length": 4,
+      "formats": [
+       "HTML Format",
+       "UnicodeText",
+       "Chromium internal source RFH token",
+       "Chromium internal source URL",
+       "CanIncludeInClipboardHistory",
+       "CanUploadToCloudClipboard",
+       "Locale",
+       "Text",
+       "OEMText"
+      ],
+      "text": "12\r\n"
+     },
+     "clipboardChanged": true,
+     "seen": [
+      {
+       "t": 4170,
+       "type": "keydown",
+       "key": "Control",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 4172,
+       "type": "keydown",
+       "key": "c",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 4172,
+       "type": "copy",
+       "key": null,
+       "ctrl": null,
+       "target": "div.ex-grid"
+      }
+     ]
+    },
+    {
+     "step": "click F6",
+     "nameBox": "F6",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "F6",
+     "ranges": [
+      "F6"
+     ],
+     "focus": "F6",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "Ctrl+V",
+     "nameBox": "F6",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "F6",
+     "ranges": [
+      "F6"
+     ],
+     "focus": "F6",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "5",
+      "F1": "",
+      "E2": "",
+      "F6": "12"
+     },
+     "seen": [
+      {
+       "t": 6394,
+       "type": "keydown",
+       "key": "Control",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 6397,
+       "type": "keydown",
+       "key": "v",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 6398,
+       "type": "paste",
+       "key": null,
+       "ctrl": null,
+       "target": "div.ex-grid"
+      }
+     ],
+     "shot": "shots/B-copy-after-Tab-server-msedge.png"
+    }
+   ],
+   "f6ShowsB2": true,
+   "b2": "12",
+   "f6": "12"
+  },
+  {
+   "item": 2,
+   "end": "Escape",
+   "calibration": {
+    "dpr": 1.5,
+    "tries": [
+     {
+      "px": 677,
+      "py": 360,
+      "client": {
+       "x": 400,
+       "y": 120
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "step": "opened",
+     "nameBox": "",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": null,
+     "ranges": [],
+     "focus": null,
+     "announce": "",
+     "documentFocus": "body",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "click E1",
+     "nameBox": "E1",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "E1",
+     "ranges": [
+      "E1"
+     ],
+     "focus": "E1",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "typed 5",
+     "nameBox": "E1",
+     "formulaBar": "5",
+     "editor": "5",
+     "activeDescendant": "E1",
+     "ranges": [
+      "E1"
+     ],
+     "focus": "E1",
+     "announce": "",
+     "documentFocus": "input.ex-editor",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "pressed Escape",
+     "nameBox": "E1",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "E1",
+     "ranges": [
+      "E1"
+     ],
+     "focus": "E1",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "click B2",
+     "nameBox": "B2",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2"
+     ],
+     "focus": "B2",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "Caret",
+      "rangeCount": 1,
+      "anchor": "DIV in div.ex-spacer"
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "Ctrl+C",
+     "nameBox": "B2",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "B2",
+     "ranges": [
+      "B2"
+     ],
+     "focus": "B2",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     },
+     "sentinel": "SENTINEL-1790702725438",
+     "clipboard": {
+      "length": 4,
+      "formats": [
+       "HTML Format",
+       "UnicodeText",
+       "Chromium internal source RFH token",
+       "Chromium internal source URL",
+       "CanIncludeInClipboardHistory",
+       "CanUploadToCloudClipboard",
+       "Locale",
+       "Text",
+       "OEMText"
+      ],
+      "text": "12\r\n"
+     },
+     "clipboardChanged": true,
+     "seen": [
+      {
+       "t": 4229,
+       "type": "keydown",
+       "key": "Control",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 4230,
+       "type": "keydown",
+       "key": "c",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 4230,
+       "type": "copy",
+       "key": null,
+       "ctrl": null,
+       "target": "div.ex-grid"
+      }
+     ]
+    },
+    {
+     "step": "click F6",
+     "nameBox": "F6",
+     "formulaBar": "",
+     "editor": null,
+     "activeDescendant": "F6",
+     "ranges": [
+      "F6"
+     ],
+     "focus": "F6",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": ""
+     }
+    },
+    {
+     "step": "Ctrl+V",
+     "nameBox": "F6",
+     "formulaBar": "12",
+     "editor": null,
+     "activeDescendant": "F6",
+     "ranges": [
+      "F6"
+     ],
+     "focus": "F6",
+     "announce": "",
+     "documentFocus": "div.ex-grid",
+     "documentSelection": {
+      "type": "None",
+      "rangeCount": 0,
+      "anchor": null
+     },
+     "shown": {
+      "B2": "12",
+      "E1": "",
+      "F1": "",
+      "E2": "",
+      "F6": "12"
+     },
+     "seen": [
+      {
+       "t": 7570,
+       "type": "keydown",
+       "key": "Control",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 7571,
+       "type": "keydown",
+       "key": "v",
+       "ctrl": true,
+       "target": "div.ex-grid"
+      },
+      {
+       "t": 7572,
+       "type": "paste",
+       "key": null,
+       "ctrl": null,
+       "target": "div.ex-grid"
+      }
+     ],
+     "shot": "shots/B-copy-after-Escape-server-msedge.png"
+    }
+   ],
+   "f6ShowsB2": true,
+   "b2": "12",
+   "f6": "12"
+  }
+ ],
+ "browserVersion": "154.0.4258.37",
+ "console": [],
+ "ended": "2026-09-29T17:25:30.315Z"
+}

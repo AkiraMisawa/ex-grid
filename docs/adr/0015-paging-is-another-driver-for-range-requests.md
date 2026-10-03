@@ -59,6 +59,12 @@ Rejected:
 **Shift+arrow and Shift+Ctrl+arrow turn the page and the selection continues.**
 [ADR-0012](./0012-anchor-focus-and-keyboard-navigation.md)'s "the Focus must always be visible"
 simply becomes "turn the page" under paging. Enter / Tab cycling behaves the same way.
+*(2026-09-29, decided with the user: a page turn is the pager's scroll, so it takes
+[ADR-0052](./0052-the-focus-is-excels-active-cell-and-the-extent-is-the-moving-end.md)'s rule that
+an axis the range spans end to end, after the move, is not scrolled for. Shift+→ over whole columns
+turns no page, and Ctrl+Shift+↓ from the first row, which selects the whole column, stays on the
+page it started on, as Excel's view stays at the top. A Shift+arrow that leaves the range short of
+the first or the last row still turns the page.)*
 
 This does not contradict the Ctrl+A decision above. **The principle is that a single operation
 does not silently vault past the visible context**, and Shift+arrow is deliberate extension one

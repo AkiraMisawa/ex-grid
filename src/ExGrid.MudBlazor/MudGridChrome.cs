@@ -12,7 +12,9 @@ namespace ExGrid.MudBlazor;
 /// a 28px cell — the loading bar, a <c>MudProgressLinear</c> where the core places its
 /// loading seam, and the column menu and Context Menu, <c>MudButton</c>s with a Material
 /// icon each, the filter panel — a value list or a condition form of MudBlazor's
-/// controls — and the find panel (ADR-0047), all inside the core's popover.
+/// controls — and the find panel (ADR-0055), all inside the core's popover; the Formula Bar's
+/// two fields, bare inputs in the core's boxes as the Cell Editor is, and the completion list
+/// with its argument hint (ADR-0051).
 ///
 /// <para>What goes inside a popover is the Wrapper's, and may open popups of its own —
 /// a select's options, a picker's calendar — which MudBlazor draws outside the instance
@@ -60,7 +62,7 @@ public sealed class MudGridChrome : IGridChrome
         };
     }
 
-    /// <summary>The find panel (ADR-0047): a <c>MudTextField</c>, the two options and the two
+    /// <summary>The find panel (ADR-0055): a <c>MudTextField</c>, the two options and the two
     /// steps, inside the core's popover.</summary>
     public RenderFragment? FindPanel(FindContext context)
     {
@@ -135,6 +137,53 @@ public sealed class MudGridChrome : IGridChrome
         {
             builder.OpenComponent<MudCellEditor>(0);
             builder.AddComponentParameter(1, nameof(MudCellEditor.Context), context);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The Formula Bar's Name Box (ADR-0051/0030): a bare input filling the box the
+    /// core stands in the bar, inside the core's form, named by
+    /// <see cref="MudExGridWords.NameBox"/>.</summary>
+    public RenderFragment? NameBox(NameBoxContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        var label = MudExGridWords.Own(this, MudExGridWords.NameBox);
+        return builder =>
+        {
+            builder.OpenComponent<MudNameBox>(0);
+            builder.AddComponentParameter(1, nameof(MudNameBox.Context), context);
+            builder.AddComponentParameter(2, nameof(MudNameBox.Label), label);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The Formula Bar's text field (ADR-0051/0030): the Cell Editor's second
+    /// surface, painted as the Cell Editor is — a bare input with Material's underline while
+    /// it takes typing — and focused for each request. Named by
+    /// <see cref="MudExGridWords.FormulaBar"/>.</summary>
+    public RenderFragment? FormulaBarText(FormulaBarTextContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        var label = MudExGridWords.Own(this, MudExGridWords.FormulaBar);
+        return builder =>
+        {
+            builder.OpenComponent<MudFormulaBarText>(0);
+            builder.AddComponentParameter(1, nameof(MudFormulaBarText.Context), context);
+            builder.AddComponentParameter(2, nameof(MudFormulaBarText.Label), label);
+            builder.CloseComponent();
+        };
+    }
+
+    /// <summary>The completion list and argument hint (ADR-0051/0030): the Consumer's candidates
+    /// as a Material list with the chosen one selected, and the hint beneath in the caption
+    /// type, inside the box the core stands beneath the editor.</summary>
+    public RenderFragment? EditorCompletion(EditorCompletionContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            builder.OpenComponent<MudEditorCompletion>(0);
+            builder.AddComponentParameter(1, nameof(MudEditorCompletion.Context), context);
             builder.CloseComponent();
         };
     }

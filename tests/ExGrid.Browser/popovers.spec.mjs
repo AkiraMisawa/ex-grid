@@ -1,4 +1,5 @@
 import { test, expect, alterPage, twoFrames } from './fixtures.mjs';
+import { expectKeyboardOn, keyboardCarrier, activeDescendant, expectActiveDescendant } from './keyboard.mjs';
 
 // The popovers' behaviour on /features, run once per Chrome (WR-5, FN-17): the built-in
 // Chrome and ExGrid.MudBlazor's (/features?chrome=mud) must give identical outcomes,
@@ -21,10 +22,10 @@ async function clickCell(page, row, column) {
     await grid(page).locator(`[id$='r${row}c${column}']`).click({ force: true });
 }
 
-// Where DOM focus is: inside which popover, on what — or on the root. A popover takes the
-// keyboard when it opens and gives it back when it closes (ADR-0039). A column's popover is
-// a dialog holding a menu (ADR-0044): on a command the role is the menu's, on the filter
-// the dialog's.
+// Where DOM focus is: inside which popover, on what — or back on the grid, its Keyboard Field
+// on this grid, which edits (expectKeyboardOn, ADR-0080). A popover takes the keyboard when it
+// opens and gives it back when it closes (ADR-0039). A column's popover is a dialog holding a
+// menu (ADR-0044): on a command the role is the menu's, on the filter the dialog's.
 async function activeIsInPopover(page) {
     return page.evaluate(() => {
         const active = document.activeElement;
@@ -34,10 +35,6 @@ async function activeIsInPopover(page) {
             ? { role: within.getAttribute('role'), tag: active.tagName, text: active.textContent }
             : null;
     });
-}
-
-async function activeIsRoot(page) {
-    return page.evaluate(() => document.activeElement === document.querySelector('.ex-grid'));
 }
 
 async function enabledMenuItems(page) {
@@ -91,6 +88,23 @@ const CONDITION = {
     },
 };
 
+// Each Chrome's own controls over a value list: "(Select All)" is a button with a checkbox's
+// role in the built-in panel and a tri-state MudCheckBox in the Wrapper's.
+const VALUE_LIST = {
+    builtin: {
+        selectAll: (popover) => popover.locator('.ex-select-all'),
+        ticked: (popover) => popover.locator('.ex-popover-list label input[type=checkbox]:checked'),
+        search: (popover) => popover.locator('input[type=search]'),
+        apply: (popover) => popover.locator('.ex-popover-actions button', { hasText: 'OK' }),
+    },
+    mud: {
+        selectAll: (popover) => popover.locator('.mud-ex-grid-filter-all input'),
+        ticked: (popover) => popover.locator('.mud-ex-grid-filter-value input:checked'),
+        search: (popover) => popover.locator('.mud-ex-grid-filter-search input'),
+        apply: (popover) => popover.locator('.mud-ex-grid-filter-apply'),
+    },
+};
+
 // The rows left after a Notional > 3,000,000 condition (the page's notionals run from
 // 1,000,000 up), applied by `apply`. The source re-answers after the panel closes, so the
 // count is waited for, not read at once.
@@ -101,7 +115,7 @@ async function rowCountAfterFilter(page, chrome, apply) {
     await CONDITION[chrome].operand(panel).fill('3000000');
     await apply(panel);
     await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-    await expect.poll(() => activeIsRoot(page)).toBe(true);
+    await expectKeyboardOn(grid(page));
     await expect.poll(() => grid(page).getAttribute('aria-rowcount'), 'the condition filters something out')
         .not.toBe(before);
     return grid(page).getAttribute('aria-rowcount');
@@ -118,7 +132,7 @@ for (const chrome of CHROMES) {
         test('a secondary click opens the grid\'s menu, not the browser\'s (CTX-1/CTX-5, ADR-0036)', async ({ page }) => {
             await clickCell(page, 0, 1);
             // On window, which outlives the page: alterPage takes the listener off as the test
-            // ends, if the secondary click never reached it (ADR-0048).
+            // ends, if the secondary click never reached it (ADR-0056).
             await alterPage(page, () => {
                 let listener;
                 window.__contextMenuPrevented = new Promise((resolve) => {
@@ -143,13 +157,13 @@ for (const chrome of CHROMES) {
 
         test('a secondary click outside the selection moves it first (CTX-1, ADR-0036)', async ({ page }) => {
             await clickCell(page, 0, 1);
-            const before = await grid(page).getAttribute('aria-activedescendant');
+            const before = await activeDescendant(grid(page));
 
             await grid(page).locator("[id$='r3c2']").click({ button: 'right', force: true });
 
             // What a command will act on is what the user can see.
-            await expect(grid(page)).not.toHaveAttribute('aria-activedescendant', before ?? '');
-            await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r3c2$/);
+            await expect(await keyboardCarrier(grid(page))).not.toHaveAttribute('aria-activedescendant', before ?? '');
+            await expectActiveDescendant(grid(page), /r3c2$/);
         });
 
         test('a Consumer command receives the clicked row and the selection (CTX-3, ADR-0036)', async ({ page }) => {
@@ -238,7 +252,7 @@ for (const chrome of CHROMES) {
             // Escape from inside closes it, and the keyboard is the grid's again.
             await page.keyboard.press('Escape');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
 
             // The Context Menu, by key.
             await clickCell(page, 1, 1);
@@ -248,7 +262,7 @@ for (const chrome of CHROMES) {
 
         test('a grid that goes while keys wait for its popover leaves nothing running (ADR-0010, CON-2)', async ({ page }) => {
             await clickCell(page, 0, 1);
-            await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r0c1$/);
+            await expectActiveDescendant(grid(page), /r0c1$/);
             // The popover opens and never takes DOM focus, so what Alt+↓ started keeps waiting
             // for it (ADR-0010) — as it does for a round trip on a circuit, or for the frame
             // after the popover took it. The grid goes in that wait.
@@ -268,9 +282,9 @@ for (const chrome of CHROMES) {
 
         test('however a popover closes, the keyboard is back on the grid and the arrows move the Focus (KB-32, ADR-0039)', async ({ page }) => {
             const focusAfterDown = async () => {
-                const before = await grid(page).getAttribute('aria-activedescendant');
+                const before = await activeDescendant(grid(page));
                 await page.keyboard.press('ArrowDown');
-                await expect.poll(() => grid(page).getAttribute('aria-activedescendant')).not.toBe(before);
+                await expect.poll(() => activeDescendant(grid(page))).not.toBe(before);
             };
 
             // A command run.
@@ -278,7 +292,7 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('Alt+ArrowDown');
             await grid(page).locator('.ex-popover button[role=menuitem]', { hasText: 'Sort ascending' }).click();
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
             await clickCell(page, 1, 0);
             await focusAfterDown();
 
@@ -286,7 +300,7 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('Alt+ArrowDown');
             await grid(page).locator('.ex-popover[role=dialog] button', { hasText: 'Cancel' }).click();
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
             await focusAfterDown();
 
             // The ▾ pressed again.
@@ -294,14 +308,14 @@ for (const chrome of CHROMES) {
             await button.click();
             await button.click();
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
 
             // Escape from inside a menu.
             await page.keyboard.press('Alt+ArrowDown');
             await expect.poll(() => activeIsInPopover(page)).toMatchObject({ role: 'menu' });
             await page.keyboard.press('Escape');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
             await focusAfterDown();
         });
 
@@ -344,7 +358,7 @@ for (const chrome of CHROMES) {
 
                 await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
                 await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(1);
-                await expect.poll(() => activeIsRoot(page)).toBe(true);
+                await expectKeyboardOn(grid(page));
             });
         }
 
@@ -379,7 +393,7 @@ for (const chrome of CHROMES) {
             await expect.poll(() => activeText(page)).toBe(items[0]);
             await page.keyboard.press('Tab');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
         });
 
         test('Tab and Shift+Tab wrap through both halves of the popover (KB-31, FL-12, ADR-0044)', async ({ page }) => {
@@ -422,7 +436,7 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('s');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
             await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending]')).toHaveCount(1);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
 
             // E goes to the search box, and a letter typed there is text — "elta" searches, and
             // neither its E nor anything after it is a letter of the commands. The sort
@@ -453,7 +467,7 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('c');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
             await expect.poll(() => grid(page).getAttribute('aria-rowcount')).toBe(all);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
         });
 
         test('on the value list the letters act too: E goes back to the search box, O sorts (FL-15, ADR-0044)', async ({ page }) => {
@@ -488,7 +502,7 @@ for (const chrome of CHROMES) {
             await page.keyboard.press('o');
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
             await expect(grid(page).locator('.ex-header-cell[aria-sort=descending]')).toHaveCount(1);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
         });
 
         test('where no value list stands, E goes to the condition\'s value, where a search is typed (FL-15, ADR-0044)', async ({ page }) => {
@@ -548,6 +562,39 @@ for (const chrome of CHROMES) {
             expect(byEnter).toBe(byOk);
         });
 
+        test('with nothing ticked the value filter is not applied: Apply shows it is unavailable, and neither Apply nor Enter applies it (ADR-0009/0023, WR-2, ticket 76)', async ({ page }) => {
+            const all = await grid(page).getAttribute('aria-rowcount');
+            const popover = grid(page).locator('.ex-popover');
+            const values = VALUE_LIST[chrome];
+            await clickCell(page, 1, 0);
+            await page.keyboard.press('Alt+ArrowDown');
+            await expect.poll(() => activeText(page)).toBe('Sort ascending');
+            await expect(grid(page).locator('.ex-popover-list, .mud-ex-grid-filter-values')).toBeVisible();
+
+            // "(Select All)" toggled from every value to none.
+            await values.selectAll(popover).click();
+            await expect(values.ticked(popover)).toHaveCount(0);
+
+            // Enter in the search box submits the form whatever Apply's state (ADR-0039); an In
+            // with no values is not a filter the engine takes (ADR-0023), so the panel stands.
+            // Absence cannot be waited for, so the submission is given time to land.
+            await values.search(popover).focus();
+            await page.keyboard.press('Enter');
+            await page.waitForTimeout(600);
+            await expect(popover).toHaveCount(1);
+            await expect(values.apply(popover)).toBeDisabled();
+            // A press on the unavailable Apply does nothing either.
+            await values.apply(popover).click({ force: true });
+            await page.waitForTimeout(600);
+            await expect(popover).toHaveCount(1);
+            expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+
+            // Escape closes it as a Cancel, and the rows are as they were.
+            await page.keyboard.press('Escape');
+            await expect(popover).toHaveCount(0);
+            expect(await grid(page).getAttribute('aria-rowcount')).toBe(all);
+        });
+
         test('a pointer-down elsewhere in the instance dismisses a popover and keeps its own meaning (KB-17, ADR-0010/0039)', async ({ page }) => {
             await clickCell(page, 1, 0);
             await page.keyboard.press('Alt+ArrowDown');
@@ -560,9 +607,9 @@ for (const chrome of CHROMES) {
             // The menu is gone without running anything, the press selected the cell it
             // landed on, and the keyboard is the grid's.
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r4c4$/);
+            await expectActiveDescendant(grid(page), /r4c4$/);
             await expect(grid(page).locator('.ex-header-cell[aria-sort=ascending]')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
         });
 
         test("a column's popover is a dialog holding a menu, both named by its header; the Context Menu a menu (A11Y-19, ADR-0039/0044)", async ({ page }) => {
@@ -621,14 +668,14 @@ test.describe('Inner Popups under the mud Chrome', () => {
         await expect(second(page)).toHaveAttribute('aria-activedescendant', /r2c1$/);
         const other = await second(page).getAttribute('aria-activedescendant');
         await openPanel(page, 2);
-        const focus = await grid(page).getAttribute('aria-activedescendant');
+        const focus = await activeDescendant(grid(page));
 
         await grid(page).getByRole('combobox', { name: 'Operator' }).click();
 
         await expect(openPopups(page).locator('.mud-list-item').first()).toBeVisible();
         expect(await grid(page).locator('.mud-popover-open').count(), 'drawn outside the root').toBe(0);
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        expect(await grid(page).getAttribute('aria-activedescendant')).toBe(focus);
+        expect(await activeDescendant(grid(page))).toBe(focus);
         expect(await second(page).getAttribute('aria-activedescendant')).toBe(other);
         expect(await second(page).locator('.ex-popover').count()).toBe(0);
     });
@@ -656,8 +703,8 @@ test.describe('Inner Popups under the mud Chrome', () => {
 
             await expect(openPopups(page)).toHaveCount(0);
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect(grid(page)).toHaveAttribute('aria-activedescendant', /r7c0$/);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectActiveDescendant(grid(page), /r7c0$/);
+            await expectKeyboardOn(grid(page));
         });
     }
 
@@ -686,7 +733,7 @@ test.describe('Inner Popups under the mud Chrome', () => {
             await page.keyboard.press('Escape');
 
             await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-            await expect.poll(() => activeIsRoot(page)).toBe(true);
+            await expectKeyboardOn(grid(page));
         });
     }
 
@@ -695,7 +742,7 @@ test.describe('Inner Popups under the mud Chrome', () => {
         await page.goto('/features?chrome=mud&modal=1');
         await expect(grid(page).locator('.ex-row').first()).toBeVisible();
         await openPanel(page, 2);
-        const focus = await grid(page).getAttribute('aria-activedescendant');
+        const focus = await activeDescendant(grid(page));
         await grid(page).getByRole('combobox', { name: 'Operator' }).click();
         await expect(openPopups(page).locator('.mud-list-item').first()).toBeVisible();
 
@@ -706,16 +753,16 @@ test.describe('Inner Popups under the mud Chrome', () => {
         // reached the grid — the panel stands and the Focus did not move.
         await expect(openPopups(page)).toHaveCount(0);
         await expect(grid(page).locator('.mud-ex-grid-filter')).toBeVisible();
-        expect(await grid(page).getAttribute('aria-activedescendant')).toBe(focus);
+        expect(await activeDescendant(grid(page))).toBe(focus);
 
         // The popup reported itself closed, so the next Escape is the grid's.
         await grid(page).getByRole('combobox', { name: 'Operator' }).focus();
         await page.keyboard.press('Escape');
         await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-        await expect.poll(() => activeIsRoot(page)).toBe(true);
+        await expectKeyboardOn(grid(page));
     });
 
-    test('choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the root (FN-21, KB-32)', async ({ page }) => {
+    test('choosing from an Inner Popup keeps the panel, and applying hands the keyboard back to the grid (FN-21, KB-32, ADR-0080)', async ({ page }) => {
         await openPanel(page, 2);
         await grid(page).getByRole('combobox', { name: 'Operator' }).click();
         await page.locator('.mud-popover-open .mud-list-item', { hasText: /^>$/ }).click();
@@ -726,6 +773,6 @@ test.describe('Inner Popups under the mud Chrome', () => {
         await grid(page).locator('.mud-ex-grid-filter-apply').click();
 
         await expect(grid(page).locator('.ex-popover')).toHaveCount(0);
-        await expect.poll(() => activeIsRoot(page)).toBe(true);
+        await expectKeyboardOn(grid(page));
     });
 });
