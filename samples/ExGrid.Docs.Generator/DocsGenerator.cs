@@ -67,7 +67,26 @@ public sealed class DocsGenerator : IIncrementalGenerator
             .Collect();
 
         context.RegisterSourceOutput(examples, (spc, all) => spc.AddSource("ExampleSources.g.cs", EmitExamples(all!)));
-        context.RegisterSourceOutput(docs, (spc, all) => spc.AddSource("ApiDocs.g.cs", EmitDocs(all)));
+        // Only what a Consumer can reach: the documentation files also describe internal members.
+        var publicDocs = docs.Combine(context.CompilationProvider).Select((pair, _) =>
+        {
+            var (files, compilation) = pair;
+            return files.Select(file => file.Where(entry => IsPublic(entry.Key, compilation)).ToImmutableArray()).ToImmutableArray();
+        });
+
+        context.RegisterSourceOutput(publicDocs, (spc, all) => spc.AddSource("ApiDocs.g.cs", EmitDocs(all)));
+    }
+
+    // Whether the member a documentation id names is visible outside its assembly.
+    private static bool IsPublic(string id, Compilation compilation)
+    {
+        var symbol = DocumentationCommentId.GetFirstSymbolForDeclarationId(id, compilation);
+        for (var s = symbol; s is not null and not INamespaceSymbol; s = s.ContainingSymbol)
+        {
+            if (s.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
+                return false;
+        }
+        return symbol is not null;
     }
 
     private sealed record Example(string Path, string Language, string Text, string Html);
