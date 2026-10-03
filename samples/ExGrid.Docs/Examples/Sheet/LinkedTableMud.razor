@@ -1,0 +1,82 @@
+@using ExGrid.Cells
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudStack Row="true" Wrap="Wrap.Wrap" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PostAccrualsAsync">Post accruals</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="PushRepeatedKeyAsync">Push a snapshot with a repeated code</MudButton>
+    <MudText Typo="Typo.body2">@_said</MudText>
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExGrid TRow="CostCentre" Source="_ledger" Columns="_columns" PointedAt="_pointedAt" Chrome="MudGridChrome.Default"
+            ViewportHeight="200" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+<MudExGridPaper Class="docs-stretch-paper mt-4" Elevation="0" Outlined="true">
+    <ExSheet @ref="_sheet" @bind-Document="_document" PointingScope="_scope" OnPointingRefused="Refused" Chrome="MudSheetChrome.Default"
+             ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private ExSheet? _sheet;
+    private SheetDocument _document = CostReport.Document();
+    private CostCentre[] _centres = CostCentre.Sample();
+    private InMemoryGridSource<CostCentre> _ledger = default!;
+    private string _said = "";
+
+    // Named as the table's columns, so the Sheet's outlines land on the grid's columns.
+    private readonly GridColumn<CostCentre>[] _columns =
+    [
+        new("Code", ColumnType.Text, c => c.Code),
+        new("Department", ColumnType.Text, c => c.Department),
+        new("Budget", ColumnType.Number, c => c.Budget, format: v => ((double)v).ToString("N0")),
+        new("Actual", ColumnType.Number, c => c.Actual, format: v => ((double)v).ToString("N0")),
+    ];
+
+    // The Sheet and the grid that shows the table: while a Formula is typed, a press on the grid
+    // writes what reads the pressed cell by its row's key.
+    private readonly PointingScope _scope = new();
+    private GridPointedAt<CostCentre>? _pointedAt;
+
+    protected override void OnInitialized()
+    {
+        _ledger = GridSource.From(_centres);
+        _pointedAt = _scope.RegisterGrid<CostCentre>(CostCentre.Table, c => c.ToRow());
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        // The document already declares the table; declaring it again changes nothing.
+        await _sheet!.DeclareLinkedTableAsync(CostCentre.Table, CostCentre.Columns, CostCentre.Key);
+        await _sheet.PushLinkedTableAsync(CostCentre.Table, _centres.Select(c => c.ToRow()));
+    }
+
+    // Every push is a whole snapshot; only the Formulas that read the table recalculate.
+    private async Task PostAccrualsAsync()
+    {
+        CostCentre[] posted = [.. _centres.Select(c => c with { Actual = Math.Round(c.Actual * 1.015) })];
+        for (var i = 0; i < posted.Length; i++) _ledger.ReplaceRow(_centres[i], posted[i]);
+        _centres = posted;
+        await _sheet!.PushLinkedTableAsync(CostCentre.Table, _centres.Select(c => c.ToRow()));
+        _said = "Accruals posted.";
+    }
+
+    // Refused: its readers wait again rather than show the last snapshot's numbers.
+    private async Task PushRepeatedKeyAsync()
+    {
+        try
+        {
+            await _sheet!.PushLinkedTableAsync(CostCentre.Table, [.. _centres.Select(c => c.ToRow()), _centres[0].ToRow()]);
+        }
+        catch (RepeatedKeyException refused)
+        {
+            _said = $"Refused: {refused.Key} appears twice in {refused.KeyColumn}. The report waits for the next snapshot.";
+        }
+    }
+
+    private void Refused(PointingRefusal refusal) => _said = refusal.Message;
+}

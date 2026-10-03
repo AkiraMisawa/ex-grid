@@ -1,0 +1,93 @@
+@page "/exsheet/linked-tables"
+@using ExGrid.Docs.Examples.Sheet
+
+<DocsPage Product="ExSheet" Title="Linked Tables"
+          Lead="Your application's own data, read by Formulas by key or by column in Excel's syntax. You push the rows; the Sheet never copies them into the document, and never shows numbers from data that has not arrived.">
+
+    <DocsSection Title="Declaring and pushing a table">
+        <p>
+            A <b>Linked Table</b> is data your application holds — positions, a ledger, prices — that a Formula reads
+            with Excel's structured references. Declare it with a name, its columns and, optionally, a key column; then
+            push its rows whole:
+        </p>
+        <pre class="docs-code"><code>await sheet.DeclareLinkedTableAsync("CostCentres", ["Code", "Department", "Budget", "Actual"], key: "Code");
+await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));</code></pre>
+        <p>A Formula then reads it by column, or one row by its key:</p>
+        <pre class="docs-code"><code>=SUM(CostCentres[Actual])
+=XLOOKUP("CC-2300", CostCentres[Code], CostCentres[Budget])</code></pre>
+        <ul>
+            <li>
+                <b>Until the first snapshot arrives</b>, a Formula reading the table shows <code>#GETTING_DATA</code>,
+                and <code>IFERROR</code> does not hide it: a fallback never stands in for data that has not arrived.
+            </li>
+            <li>
+                <b>Each push replaces the whole table</b> in one step, so no recalculation sees part of one snapshot and
+                part of another. Only the Formulas that read the table recalculate. A push is data arriving, not a
+                command: it is taken while an edit is open, and goes on no undo stack.
+            </li>
+            <li>
+                <b>The document records the declaration, never the rows.</b> A Sheet opened from a document already has
+                its tables declared, and their readers wait until you push again. Declare your tables at start-up
+                regardless; declaring the same table again changes nothing.
+            </li>
+            <li>A column the table does not have is <code>#REF!</code>; a table that is not declared is <code>#NAME?</code>.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Keys, and a snapshot that is refused">
+        <p>
+            The key names one of the columns, and a row is read by it. No key may appear twice in a snapshot, compared
+            as <code>XLOOKUP</code> compares — <code>cc-2300</code> and <code>CC-2300</code> are one key; blank keys are
+            not compared. A push in which a key repeats throws <code>RepeatedKeyException</code>, naming the table, the
+            key column and the key, and the table goes back to waiting: its readers show <code>#GETTING_DATA</code>,
+            never the last snapshot's numbers. A table whose rows are told apart by several columns needs a column that
+            joins them (<code>ACME|5Y</code>) as its key.
+        </p>
+        <DocsExample Builtin="typeof(LinkedTable)" Mud="typeof(LinkedTableMud)" CodeOpen="true"
+                     Files="@(["Examples/Sheet/CostCentre.cs", "Examples/Sheet/CostReport.cs"])">
+            The grid shows the ledger; the sheet below reads the same data as the Linked Table
+            <code>CostCentres</code>. "Post accruals" changes the data both show. A snapshot with a repeated code is
+            refused, and the report waits until the next good one.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Pointing at the grid that shows a table">
+        <p>
+            Put the Sheet and the grids that show your Linked Tables in a <code>PointingScope</code>. While a Formula is
+            typed, a press on one of those grids writes what reads the pressed cell by its row's key, or the pressed
+            column — never an address, so the Formula reads the same row after the grid is sorted. In the Example above,
+            select an empty cell of the sheet, type <code>=</code>, then click a figure in the grid's Actual column, or
+            its header:
+        </p>
+        <pre class="docs-code"><code>=XLOOKUP("CC-3100", CostCentres[Code], CostCentres[Actual])     a cell, in the row whose Code is CC-3100
+=SUM(CostCentres[Actual])                                         the column's header, inside SUM(</code></pre>
+        <ul>
+            <li>
+                Register each grid with the table it shows and how one of its rows becomes the table's row — the same
+                Values you push — and pass the <code>GridPointedAt</code> the Scope returns to the grid's
+                <code>PointedAt</code>. A grid column named differently from its table column is mapped in a third
+                argument; a grid column the table does not have needs nothing.
+            </li>
+            <li>
+                The grid is pointed at only while a Sheet of the Scope has the keyboard and an edit open with its caret
+                where a Reference can go. Otherwise it is an ordinary grid. After a press, the arrow keys move inside
+                the grid as Excel's do inside another workbook.
+            </li>
+            <li>
+                A press that cannot be written — several cells, a table without a key, a blank key, a row not yet
+                arrived — writes nothing, and <code>OnPointingRefused</code> tells you why. Show
+                <code>refusal.Message</code> where your page tells its user things.
+            </li>
+            <li>
+                While a Formula is edited, the table columns it reads are outlined in the registered grids, in the colours
+                their References wear on the Sheet. For a grid in no Scope, <code>OnLinkedColumnColoursChanged</code>
+                gives you the columns and colours to pass to the grid's <code>OutlinedColumns</code> yourself.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExSheet.PointingScope)" />
+        <ApiTable Type="typeof(global::ExSheet.Engine.LinkedTable)" />
+    </DocsSection>
+</DocsPage>

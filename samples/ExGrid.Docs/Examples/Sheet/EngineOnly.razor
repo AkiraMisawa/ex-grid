@@ -1,0 +1,43 @@
+@using ExSheet.Engine
+
+<table style="border-spacing: 16px 4px; margin-left: -16px">
+    <thead>
+        <tr><th>Cell</th><th>Entry</th><th>Value, as shown</th></tr>
+    </thead>
+    <tbody>
+        @foreach (var address in _sheet.EntryAddresses.Order())
+        {
+            <tr>
+                <td>@address</td>
+                <td><code>@_sheet.GetEntryText(address)</code></td>
+                <td>@_sheet.GetDisplay(address).Text</td>
+            </tr>
+        }
+    </tbody>
+</table>
+<p class="mt-3">Changing the rate to 4.5% recalculated @_recalculated.</p>
+
+@code {
+    private Sheet _sheet = default!;
+    private string _recalculated = "";
+
+    protected override void OnInitialized()
+    {
+        var sheet = new Sheet(CultureInfo.GetCultureInfo("en-US"));
+
+        // Interest on a deposit for 92 days, on an Actual/360 basis.
+        sheet.Enter(CellAddress.Parse("A1"), "2500000");
+        sheet.Enter(CellAddress.Parse("A2"), "4.25%");
+        sheet.Enter(CellAddress.Parse("A3"), "92");
+        sheet.Enter(CellAddress.Parse("A4"), "=ROUND(A1*A2*A3/360, 2)");
+        sheet.Enter(CellAddress.Parse("A5"), "=MEDIAN(A1:A3)");
+
+        // Only what the change reaches is recalculated.
+        var change = sheet.Enter(CellAddress.Parse("A2"), "4.5%");
+        _recalculated = string.Join(" and ", change.ValueChanges);
+
+        // A Sheet Document carries Entries; opening one computes its Values again.
+        var saved = sheet.ToDocument().ToJson();
+        _sheet = Sheet.Open(SheetDocument.FromJson(saved));
+    }
+}
