@@ -76,18 +76,23 @@ core's criteria with a real design system and adds the criteria only a real one 
 (added 2026-09-24). **Whether ExGrid may be said to run on Blazor Server is judged by §24**
 (added 2026-09-25): the core's criteria are the same on both hosts, and §24 says how they are
 run on the second one and adds the ones only a circuit can fail.
-**ExSheet's own criteria are §27** (added 2026-09-27). ExSheet is built alongside ExGrid but is
+**ExSheet's own criteria are §27** (added 2026-09-27). ExSheet is built alongside ExGrid and was
 **not part of the release** — decided with the user, 2026-09-27 — so §27 judges ExSheet and never
-gates ExGrid. **The declarations ExSheet asks of ExGrid's core are ExGrid code, and they do gate
+gates ExGrid. *(Changed 2026-10-03, decided with the user: ExSheet, ExPivot and the data packages
+**ship as prereleases with ExGrid**, at its version and from its tag
+([ADR-0042](adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+"Release" in this document still means a version without a suffix. §27, §29 and §30 still judge
+their own products and never gate ExGrid; which of them a stable version carries is decided at
+ExGrid's sign-off.)* **The declarations ExSheet asks of ExGrid's core are ExGrid code, and they do gate
 it**: they ship in the `ExGrid` package whether or not ExSheet ships, so §26 is part of "finished"
 like any other section (decided the same day; the alternatives — shipping them unverified because
 they are opt-in, or holding them off `main` — were refused).
 **ExPivot's own criteria are §29**, added 2026-09-30 with ADR-0059 to ADR-0063. The user decided
 those ADRs the same day, in a grilling that also added ADR-0064 to ADR-0069.
-- **Not in the release.** ExPivot, its engine and its MudBlazor Wrapper are built alongside ExGrid
-  and are **not part of the release**, as ExSheet is not. So are the family's data packages,
-  `ExGrid.Data` and `ExGrid.Data.Arrow`, whose own criteria are §30. §29 and §30 judge those
-  packages and never gate ExGrid.
+- **Not gating the release.** ExPivot, its engine and its MudBlazor Wrapper are built alongside
+  ExGrid, and so are the family's data packages, `ExGrid.Data` and `ExGrid.Data.Arrow`, whose own
+  criteria are §30. §29 and §30 judge those packages and never gate ExGrid. *(Since 2026-10-03
+  they ship as prereleases with ExGrid, as ExSheet does; above.)*
 - **In the release.** The declarations ExPivot asks of the core are ExGrid code, and gate it like
   the rest of §26: `OnCellDoubleClick` (DC-63), the Change Highlight (DC-64 to DC-66), and
   `ReturnKeyboardAsync()` and `HandKeyboardToAsync()` with `OnLeave` (DC-61, DC-62).
@@ -1167,7 +1172,7 @@ reading until a run settles it.
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
-| **PV-1** | MUST | `ExPivot.Engine` references `ExGrid.Data` exactly and no package. `ExPivot` references it and `ExGrid`, both exactly. `ExPivot.MudBlazor` references `ExPivot` and `ExGrid.MudBlazor` exactly, and MudBlazor from 9.0.0. Nothing references ExPivot but its Wrapper, the demo pages and the tests. None of the three is in the release feed (ADR-0059/0062/0064) | the package check (`tests/ExGrid.PackageSmoke/check.sh`) | as stated |
+| **PV-1** | MUST | `ExPivot.Engine` references `ExGrid.Data` exactly and no package. `ExPivot` references it and `ExGrid`, both exactly. `ExPivot.MudBlazor` references `ExPivot` and `ExGrid.MudBlazor` exactly, and MudBlazor from 9.0.0. Nothing references ExPivot but its Wrapper, the demo pages and the tests (ADR-0059/0062/0064) | the package check (`tests/ExGrid.PackageSmoke/check.sh`) | as stated |
 | **PV-2** | MUST | The report is one ExGrid, with the whole Pivot Report as its Window. The label columns are pinned Template Columns, and the column Items are Header Groups over the value columns. Group rows paint as Group and totals as Total. No column is Editable, and the header click selects. There is no column menu, sort or filter (ADR-0059) | Layer 2 | as stated |
 | **PV-3** | MUST | Items: text is told apart ignoring case and labelled by the first spelling to arrive among the records present; numbers by value, across Integer, Decimal and Double columns; dates by their clock value; a Blank as `(blank)`. They are ordered Number, Date, Text, Boolean, Error, Blank, with Blank last in either direction and a declared order first (ADR-0060) | Layer 1 | every clause a named test |
 | **PV-4** | MUST | The eleven Aggregations answer as Excel's, with blanks, text and errors among the records included. A total is aggregated from its records, never from the totals below it. Integer and Decimal columns are summed exactly. Only the parts the Value Fields ask for are accumulated (ADR-0060/0066) | Layer 1 | every row of each table |
@@ -1219,7 +1224,7 @@ then relies on move into the release.
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
-| **DA-1** | MUST | `ExGrid.Data` references no package and nothing of ours. `ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated range. Nothing references either but `ExPivot.Engine` (`ExGrid.Data` only), the demo and the tests. Neither is in the release feed (ADR-0064/0065) | the package check | as stated |
+| **DA-1** | MUST | `ExGrid.Data` references no package and nothing of ours. `ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated range. Nothing references either but `ExPivot.Engine` (`ExGrid.Data` only), the demo and the tests (ADR-0064/0065) | the package check | as stated |
 | **DA-2** | MUST | A Snapshot is immutable: no public member changes one. A Change Batch yields a new Snapshot, and the old one reads exactly as before (ADR-0064) | Layer 1 | as stated |
 | **DA-3** | MUST | The kinds hold their values as ADR-0064 says. Text is exact, with its dictionary in order of first appearance. Decimal is exact, and `1.5` and `1.50` read back alike. Double keeps non-finite values. Integer is 64-bit. Date is a clock value: a `DateTime`'s ticks with its `Kind` ignored, a `DateOnly`'s midnight, a `DateTimeOffset`'s clock without its offset. Boolean is true or false. A Blank is possible in every kind and differs from `""` and 0 (ADR-0064) | Layer 1 | every clause a named test |
 | **DA-4** | MUST | Built from objects with typed accessors, a Snapshot keeps the objects, by reference and in order, and boxes no value (ADR-0064) | Layer 1, with an allocation bound | as stated |

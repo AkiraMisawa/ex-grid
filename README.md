@@ -24,8 +24,7 @@ The family's immutable data, the **Snapshot**, is a package of its own, `ExGrid.
 [ADR-0065](docs/adr/0065-a-snapshot-travels-as-apache-arrow.md)); specified in
 `docs/specs/exgrid-data/`.
 
-ExSheet, ExPivot and the data packages are built alongside ExGrid and are not part of its
-release.
+ExSheet, ExPivot and the data packages ship with ExGrid, as prereleases at its version.
 
 **Current status: the specification is settled; implementation is underway** — the
 pure-logic core and the component layer exist, virtualised on both axes, with pinned
@@ -37,18 +36,29 @@ in [`docs/adr/`](docs/adr/) (69 decision records) and the domain glossary in
 
 ## Using the packages
 
-Prereleases of **ExGrid** and **ExGrid.MudBlazor** are published to NuGet from tags, at one
-shared `0.1.0-beta.N` version
-([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)):
+Prereleases of the whole family are published to NuGet from tags, at one shared
+`0.1.0-beta.N` version
+([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+Each package depends on exactly the versions of the others it was built with, so upgrade them
+together:
 
 ```sh
 dotnet add package ExGrid --prerelease
-dotnet add package ExGrid.MudBlazor --prerelease   # for a MudBlazor application
+dotnet add package ExGrid.MudBlazor --prerelease    # for a MudBlazor application
+dotnet add package ExSheet --prerelease             # the sheet; ExSheet.Engine alone computes on a server
+dotnet add package ExSheet.MudBlazor --prerelease
+dotnet add package ExPivot --prerelease             # the pivot table; ExPivot.Engine alone aggregates
+dotnet add package ExPivot.MudBlazor --prerelease
+dotnet add package ExGrid.Data.Arrow --prerelease   # a Snapshot as Apache Arrow
 ```
 
-Setup and a first grid are in each package's readme:
-[`src/ExGrid/README.md`](src/ExGrid/README.md) and
-[`src/ExGrid.MudBlazor/README.md`](src/ExGrid.MudBlazor/README.md). A beta has passed every
+Setup and a first page are in each package's readme:
+[`ExGrid`](src/ExGrid/README.md), [`ExGrid.MudBlazor`](src/ExGrid.MudBlazor/README.md),
+[`ExSheet`](src/ExSheet/README.md), [`ExSheet.Engine`](src/ExSheet.Engine/README.md),
+[`ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md), [`ExGrid.Data`](src/ExGrid.Data/README.md),
+[`ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md), [`ExPivot`](src/ExPivot/README.md),
+[`ExPivot.Engine`](src/ExPivot.Engine/README.md) and
+[`ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md). A beta has passed every
 test layer in CI. The Definition of Done's sign-off is what a stable version waits for.
 
 ## Building the repository
@@ -183,9 +193,8 @@ on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak
 10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
 assemblies only and is reported, never gated: each run's summary carries the table, and the
 badges above follow `main` (history in `history.csv` on the `badges` branch). Windows (VZ-14)
-and a real IME remain runs by hand. A fourth job packs the packages — ExGrid's two
-into the release feed, and ExSheet's, ExPivot's and the data packages into feeds of their own —
-and publishes an application that takes them from the packed files alone
+and a real IME remain runs by hand. A fourth job packs the family's ten packages
+into the release feed and publishes an application that takes them from the packed files alone
 ([`tests/ExGrid.PackageSmoke`](tests/ExGrid.PackageSmoke/check.sh)).
 
 Test names carry the ADR number they enforce, so a failure says which decision was

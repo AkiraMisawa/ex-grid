@@ -14,8 +14,8 @@ clipboard. The application persists the **Pivot Layout**.
 - A number that does not fit is `####`, never a shorter number; a copy carries the full-precision
   values; money is summed exactly.
 
-> **This is a prerelease (`0.x`).** ExPivot is built alongside ExGrid and is not part of its
-> release. The API may change between prereleases.
+> **This is a prerelease (`0.x`).** ExPivot ships with ExGrid, at the same version; upgrade them
+> together. The API may change between prereleases.
 
 ## Requirements
 

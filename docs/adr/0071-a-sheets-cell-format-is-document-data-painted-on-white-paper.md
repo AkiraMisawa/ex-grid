@@ -263,7 +263,7 @@ the public commands above.
 - Cell Format is ExSheet's concept. If its Chrome went into `ExGrid.MudBlazor`, every ExGrid-only
   Consumer on MudBlazor would pull in ExSheet.
 - The package stays outside the release, as ExSheet does (Definition of Done §2). The package smoke
-  check packs it.
+  check packs it. *(Since 2026-10-03 it ships as a prerelease with ExSheet and ExGrid; ADR-0042.)*
 
 ## How it is painted: measured first
 

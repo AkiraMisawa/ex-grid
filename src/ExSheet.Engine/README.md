@@ -18,8 +18,8 @@ Font, Fill and Borders — and the widths recorded on its columns. It holds Entr
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
 
-> **This is a prerelease (`0.x`).** ExSheet is built alongside ExGrid and is not part of its
-> release. The API may change between prereleases.
+> **This is a prerelease (`0.x`).** ExSheet ships with ExGrid, at the same version; upgrade them
+> together. The API may change between prereleases.
 
 ## Requirements
 

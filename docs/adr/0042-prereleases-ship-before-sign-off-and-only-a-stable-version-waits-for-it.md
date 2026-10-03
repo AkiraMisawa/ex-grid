@@ -30,6 +30,10 @@ release in the Definition of Done's sense, and waits for Step 7.**
   where two dependencies disagree — and is never left, unwarned, with a Wrapper running against
   a core it never met (the first principle: say so rather than be quietly wrong). `ExGrid.Fluxor` and
   `ExSheet` do not exist yet and ship nothing.
+  *(Widened 2026-10-03, decided with the user: **the whole family ships at that one version**, from
+  the same tag. ExSheet, ExPivot and the data packages had been built, packed and checked beside
+  ExGrid since 2026-09-27 and 2026-09-30, but kept out of the release (Definition of Done §2). The
+  user asked for them to ship. See "The family ships together" below.)*
 - **MIT.** The repository was public with no licence, which legally meant "all rights reserved".
   Nobody could have used a package. MIT is what the design systems a Wrapper sits on use, and
   asks only that the notice is kept. Each package states it as `PackageLicenseExpression`, and
@@ -60,6 +64,36 @@ release in the Definition of Done's sense, and waits for Step 7.**
   There is no long-lived key to leak or rotate. The job runs in a GitHub environment,
   `nuget`, so a required reviewer can be added in the repository's settings without touching
   the workflow.
+
+### The family ships together *(added 2026-10-03)*
+
+A tag publishes ten packages, all at its one version:
+
+| Product | Packages |
+|---|---|
+| ExGrid | `ExGrid`, `ExGrid.MudBlazor` |
+| ExSheet | `ExSheet.Engine`, `ExSheet`, `ExSheet.MudBlazor` |
+| The Snapshot | `ExGrid.Data`, `ExGrid.Data.Arrow` |
+| ExPivot | `ExPivot.Engine`, `ExPivot`, `ExPivot.MudBlazor` |
+
+- **One version, not one per product.** Every reference inside the family is exact (`[x]`), as the
+  Wrapper's on the core is above. ExSheet and ExPivot draw with ExGrid and depend on exactly the
+  ExGrid they were built and tested with. A version per product would let a Consumer combine an
+  ExSheet with an ExGrid it never met, which is what the exact range exists to refuse.
+- **What a beta promises does not change.** Every layer passed in CI on the commit, which runs every
+  product's tests. The release note names `docs/implementation-status.md`, which lists what each
+  product still owes.
+- **A stable version still waits.** The refusal of an unsuffixed version stays. When ExGrid is
+  signed off (Step 7), which of the other products a stable version carries is decided in the change
+  that rewrites this ADR, against §27, §29 and §30. Those sections judge their own products, and
+  still never gate ExGrid.
+- **The package check packs all ten into one feed**, `.feed`, and the release publishes it as it is.
+  Until 2026-10-03, ExSheet's and ExPivot's packages went into feeds of their own so that `.feed`
+  held only ExGrid's two. The check now fails if `.feed` holds anything but the ten and their
+  symbol packages.
+- **Trusted Publishing covers the new package IDs.** The nuget.org policy names this repository and
+  `release.yml`, not a package. The first push of each new ID creates it under the policy owner's
+  account.
 
 ### What a package must prove before it ships
 
