@@ -4,6 +4,7 @@
 [![NuGet](https://img.shields.io/nuget/vpre/ExGrid)](https://www.nuget.org/packages/ExGrid)
 [![Line coverage](https://github.com/AkiraMisawa/ex-grid/raw/badges/coverage-line.svg)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![Branch coverage](https://github.com/AkiraMisawa/ex-grid/raw/badges/coverage-branch.svg)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
+[![Docs](https://img.shields.io/badge/docs-live%20examples-1b6ac9)](https://akiramisawa.github.io/ex-grid/)
 
 **Excel-like grids for Blazor, built for reading money and risk numbers.**
 
@@ -11,9 +12,9 @@ A spreadsheet user's selection, keyboard and clipboard, virtualised on both axes
 keep the same DOM, and a grid that refuses rather than guesses: a number that does not fit shows
 `####`, never a shorter number, and a copy is never truncated.
 
-![ExPivot drawn by ExGrid: a rectangle of cells selected with the mouse and extended with the keyboard, a desk collapsed and expanded, and fields taken off and put back in the PivotTable Fields pane](docs/readme/expivot.gif)
+**[Documentation and live examples →](https://akiramisawa.github.io/ex-grid/)**
 
-<sub>The demo host's `/pivot-risk` page: a rate-delta report by tenor in ExPivot, drawn by ExGrid.</sub>
+[![A trade blotter in ExGrid: prices tick and the changed cells flash, a desk is chosen, and a rectangle of P&L is selected with the mouse and extended with the keyboard](docs/readme/blotter-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/blotter)
 
 One repository, three products, each a separate package:
 
@@ -42,6 +43,14 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 - **Replaceable Chrome** — menus, filter panel, Cell Editor and loading indicator are seams a
   design system fills; swapping them does not change behaviour
 
+
+<details>
+<summary>The same under MudBlazor</summary>
+
+[![The trade blotter, under MudBlazor's Chrome](docs/readme/blotter-mud.gif)](https://akiramisawa.github.io/ex-grid/showcase/blotter?chrome=mud)
+
+</details>
+
 ### ExSheet
 
 - Excel's extent, 1,048,576 rows by 16,384 columns, held sparsely
@@ -55,6 +64,16 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 - The **Sheet Document** is yours to keep: Entries, never Values, so a saved Sheet recomputes the
   same on a server as in the browser
 
+
+[![A budget sheet in ExSheet: a month's figure is typed and every total follows, a variance shows its Formula, a block is made bold and undone](docs/readme/budget-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/budget)
+
+<details>
+<summary>The same under MudBlazor</summary>
+
+[![The budget sheet, under MudBlazor's Chrome](docs/readme/budget-mud.gif)](https://akiramisawa.github.io/ex-grid/showcase/budget?chrome=mud)
+
+</details>
+
 ### ExPivot
 
 - Excel's PivotTable semantics: Sum to Varp, subtotals and grand totals, the Compact, Outline
@@ -64,6 +83,15 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 - Money summed exactly — never through a `double`
 - In-process data, CSV, a database, or a server answering with leaf aggregates; live data folded
   in as Change Batches
+
+[![A sales analysis in ExPivot: a region is collapsed and opened, and a field is added to the rows from the Fields pane and taken off again](docs/readme/sales-builtin.gif)](https://akiramisawa.github.io/ex-grid/showcase/sales)
+
+<details>
+<summary>The same under MudBlazor</summary>
+
+[![The sales analysis, under MudBlazor's Chrome](docs/readme/sales-mud.gif)](https://akiramisawa.github.io/ex-grid/showcase/sales?chrome=mud)
+
+</details>
 
 ## Quick start
 
@@ -111,25 +139,20 @@ verified under WebAssembly; every browser test also runs under Blazor Server.
 
 ## See it running
 
-Clone the repository and start the demo host (the .NET 10 SDK is all it needs; see
-[CONTRIBUTING](CONTRIBUTING.md) for Nix):
+Every component runs live on the **[Docs Site](https://akiramisawa.github.io/ex-grid/)**: each
+page has Examples you can drive with the mouse and the keyboard, the code each one runs, and the
+API. A switch at the top runs every Example under the built-in Chrome or MudBlazor's. The
+Showcases are whole applications:
+[a trade blotter](https://akiramisawa.github.io/ex-grid/showcase/blotter),
+[a budget sheet](https://akiramisawa.github.io/ex-grid/showcase/budget) and
+[a sales analysis](https://akiramisawa.github.io/ex-grid/showcase/sales).
+
+To run the site locally, clone the repository (the .NET 10 SDK is all it needs; see
+[CONTRIBUTING](CONTRIBUTING.md) for Nix) and open <http://localhost:5310>:
 
 ```sh
-dotnet run --project samples/ExGrid.DemoHost
+dotnet run --project samples/ExGrid.Docs --urls http://localhost:5310
 ```
-
-Then open <http://localhost:5299>. The index links every page; a few to start with:
-
-| Page | Shows |
-|---|---|
-| `/features` | ExGrid's selection, keyboard, clipboard and menus |
-| `/grid-live` | ExGrid over live data |
-| `/sheet` | ExSheet |
-| `/pivot` | ExPivot (add `?chrome=mud` for MudBlazor) |
-| `/pivot-csv`, `/pivot-db`, `/pivot-live`, `/pivot-risk` | ExPivot over a CSV, a database, live data and a risk report |
-
-`/grid-live`, `/pivot-db` and `/pivot-live` also need the demo API server; [CONTRIBUTING](CONTRIBUTING.md)
-says how to start it.
 
 ## Design
 

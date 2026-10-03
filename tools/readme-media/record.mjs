@@ -52,7 +52,10 @@ for (const scene of scenes) {
     const page = await context.newPage();
     const opened = Date.now();
     const problems = [];
-    page.on('console', m => { if (m.type() === 'error') problems.push(m.text()); });
+    // A failed load is judged by its response, which names it: GitHub Pages answers a deep link
+    // with 404.html and a 404 status, which is the site working, not a problem.
+    page.on('console', m => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) problems.push(m.text()); });
+    page.on('response', r => { if (r.status() >= 400 && !r.request().isNavigationRequest()) problems.push(`${r.status()} ${r.url()}`); });
     page.on('pageerror', e => problems.push(e.message));
 
     await page.goto(`${base}${scene.path}${chrome === 'mud' ? '?chrome=mud' : ''}`);
@@ -71,7 +74,7 @@ for (const scene of scenes) {
     const video = join(videoDir, readdirSync(videoDir)[0]);
     const gif = join(out, `${name}.gif`);
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-ss', String(start), '-i', video, '-t', String(end - start),
-      '-vf', 'fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle',
+      '-vf', 'fps=10,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle',
       gif]);
     rmSync(videoDir, { recursive: true, force: true });
     console.log(`${name}: ${(end - start).toFixed(1)} s -> ${gif}`);

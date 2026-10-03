@@ -26,4 +26,4 @@ node record.mjs --write                                  # also copy the GIFs in
 
 Set `CHROMIUM_PATH` to use an installed Chromium instead of Playwright's own.
 
-A recording is 1280×720, turned into a 960-pixel-wide GIF at 12 frames a second.
+A recording is 1280×720, turned into a 960-pixel-wide GIF at 10 frames a second.

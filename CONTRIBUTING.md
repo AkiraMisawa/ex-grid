@@ -98,11 +98,14 @@ your environment alone.
 | [`src/ExGrid.Data/`](src/ExGrid.Data/), [`src/ExGrid.Data.Arrow/`](src/ExGrid.Data.Arrow/) | The Snapshot, its loaders and Change Batches; and its Apache Arrow reader and writer |
 | [`src/ExPivot.Engine/`](src/ExPivot.Engine/), [`src/ExPivot/`](src/ExPivot/), [`src/ExPivot.MudBlazor/`](src/ExPivot.MudBlazor/) | ExPivot: the pivot engine and the Pivot Source, the component, and its MudBlazor Wrapper |
 | [`tests/`](tests/) | The gating test layers — xUnit for each package's logic (`ExGrid.Tests`, `ExSheet.Engine.Tests`, `ExPivot.Engine.Tests`, `ExGrid.Data.Tests`, `ExGrid.Data.Arrow.Tests`, and `ExGrid.DemoApi.Tests` for the demo server), bUnit for the components (`ExGrid.Components`, `ExGrid.MudBlazor.Tests`, `ExSheet.Components`, `ExSheet.MudBlazor.Tests`, `ExPivot.Components`, `ExPivot.MudBlazor.Tests`), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
-| [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`) and the prerelease publish (`release.yml`) |
+| [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`), the prerelease publish (`release.yml`) and the Docs Site's publish (`docs.yml`) |
 | [`samples/ExGrid.DemoPages/`](samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
 | [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
 | [`samples/ExGrid.DemoHost.Server/`](samples/ExGrid.DemoHost.Server/) | The Blazor Server host for the same pages (`InteractiveServer`, prerendered). Not shipped |
 | [`samples/ExGrid.DemoApi/`](samples/ExGrid.DemoApi/) | The demo API server both hosts' pages call: SQLite, Arrow, a Pivot Source answered in SQL, and live changes over SignalR. A Consumer's server, not shipped |
+| [`samples/ExGrid.Docs/`](samples/ExGrid.Docs/) | The Docs Site, published to GitHub Pages by `docs.yml` ([ADR-0110](docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)). A Consumer, not shipped, and not layer 3's fixture |
+| [`samples/ExGrid.Docs.Generator/`](samples/ExGrid.Docs.Generator/) | The Docs Site's build step: highlights each Example's source and reads the API documentation |
+| [`tools/readme-media/`](tools/readme-media/) | Records the README's GIFs from the Docs Site's Showcases (see its README) |
 | [`spikes/render-bench/`](spikes/render-bench/) | Disposable render-cost measurement harness (see its README) |
 | [`AGENTS.md`](AGENTS.md) | Working rules for AI agents; useful reading for humans too |
 
