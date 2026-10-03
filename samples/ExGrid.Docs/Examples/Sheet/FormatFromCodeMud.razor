@@ -1,0 +1,48 @@
+@using ExGrid.Selection
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2" Class="mb-3">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@_editing" OnClick="() => Set(new() { Bold = true })">Bold</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@_editing" OnClick="() => Set(new() { NumberFormat = NumberFormat.Parse(Thousands) })">Thousands</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@_editing" OnClick="() => Set(new() { NumberFormat = NumberFormat.Parse(Percent) })">Percent</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@_editing" OnClick="() => Set(new() { Fill = CellFill.Solid(CellColour.FromRgb(0xFFF2CC)) })">Highlight</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@_editing" OnClick="() => Set(new() { Borders = BorderChange.Outline(new BorderLine(BorderLineStyle.Medium)) })">Outline</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@_editing" OnClick="() => _sheet!.OpenFormatCellsAsync()">Format Cells…</MudButton>
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @ref="_sheet" @bind-Document="_document" @bind-Document:after="ReadFocus" EditingChanged="open => _editing = open"
+             SelectionChanged="OnSelectionChanged" Chrome="MudSheetChrome.Default" ViewportHeight="260" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+<MudText Typo="Typo.body2" Class="mt-3">Focus cell: @_focus</MudText>
+
+@code {
+    private const string Thousands = "#,##0;(#,##0)";
+    private const string Percent = "0.0%";
+
+    private ExSheet? _sheet;
+    private SheetDocument _document = QuarterlyPnl.Document();
+    private bool _editing;
+    private GridSelection _selection = GridSelection.Empty;
+    private string _focus = "";
+
+    // Each press sets only the parts it names, on every range of the Selection, as one undo step.
+    private async Task Set(CellFormatChange change) => await _sheet!.SetCellFormatAsync(change);
+
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        _selection = selection;
+        ReadFocus();
+    }
+
+    // What the Focus cell shows: from the cell, its row or its column.
+    private void ReadFocus()
+    {
+        if (_selection.IsEmpty) return;
+        var format = _sheet!.CellFormatAt(new CellAddress(_selection.Focus.Row, _selection.Focus.Column));
+        _focus = $"{format.NumberFormat.Code}{(format.Font.Bold ? ", bold" : "")}{(format.Fill.IsNone ? "" : ", filled")}";
+    }
+}

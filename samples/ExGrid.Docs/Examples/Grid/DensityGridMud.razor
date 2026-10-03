@@ -1,0 +1,35 @@
+@using System.Globalization
+
+@* The paper's Dense and Striped are MudBlazor's words for the grid's Compact density and Row Stripes. *@
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true" Dense="_dense" Striped="_stripes" Hover="true">
+    <ToolBarContent>
+        <MudSwitch T="bool" @bind-Value="_dense" Label="Dense" Color="Color.Primary" />
+        <MudSwitch T="bool" @bind-Value="_stripes" Label="Striped" Color="Color.Primary" />
+        <MudSwitch T="bool" @bind-Value="_focusRow" Label="Focus row" Color="Color.Primary" />
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Position" Source="_source" Columns="_columns" HighlightFocusRow="_focusRow" Chrome="_chrome"
+                ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+    private bool _dense;
+    private bool _stripes = true;
+    private bool _focusRow = true;
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Trader", ColumnType.Text, p => p.Trader),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", format: v => ((decimal)v).ToString("N2", Invariant)),
+    ];
+}

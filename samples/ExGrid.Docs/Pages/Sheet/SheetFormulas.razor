@@ -1,0 +1,119 @@
+@page "/exsheet/formulas"
+@using ExGrid.Docs.Examples.Sheet
+@using ExSheet.Engine
+
+<DocsPage Product="ExSheet" Title="Formulas"
+          Lead="Formulas in Excel's syntax, computed by a declared set of functions that each give Excel's answer. Outside that set, the Sheet says it cannot rather than guess.">
+
+    <DocsSection Title="Typing a Formula">
+        <p>
+            Text beginning with <code>=</code> is a Formula; anything else is a constant, read under the Sheet's
+            culture — <code>1,250.50</code>, <code>4.25%</code> or <code>9/26/2026</code> under en-US. A date or a
+            percentage typed as one gives a General cell that format, as in Excel. Formulas are written the same way
+            in every culture: <code>,</code> between arguments, <code>.</code> as the decimal separator, English
+            function names. The operators are Excel's: <code>+ - * / ^ &amp; %</code> and the comparisons
+            <code>= &lt;&gt; &lt; &lt;= &gt; &gt;=</code>.
+        </p>
+        <p>
+            Enter commits and Escape cancels. A Formula the Sheet cannot read is not committed: the edit stays open,
+            and the Sheet says what is wrong. Tokens are written in Excel's spelling, so <code>=sum(a1,2)</code> is
+            kept as <code>=SUM(A1,2)</code>. Recalculation reaches only what a change affects, and Values are
+            published only from a completed recalculation.
+        </p>
+        <DocsExample Builtin="typeof(Formulas)" Mud="typeof(FormulasMud)" Files="@(["Examples/Sheet/RegionalSales.cs"])">
+            Select a total to read its Formula in the Formula Bar, press F2 to edit it, change a quarter's figure and watch the totals, the
+            status and the lookup follow, or type another region into B7. Column E, from row 8, shows what the engine refuses.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Supported functions">
+        <p>
+            Each function gives Excel's result. A name outside this set is <code>#NAME?</code>, never an
+            approximation of what the function might have meant.
+        </p>
+        <MudSimpleTable Dense="true" Outlined="true" Class="mb-4">
+            <thead>
+                <tr><th>Function</th><th>Arguments</th><th>Returns</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var function in DeclaredFunction.All)
+                {
+                    <tr>
+                        <td><code>@function.Name</code></td>
+                        <td><code>@function.Arguments</code></td>
+                        <td>@function.Description</td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+        <p>Where the engine cannot give Excel's answer, it gives an Error Value instead of a different answer:</p>
+        <ul>
+            <li>
+                <b><code>#CIRC!</code></b> is shown by every cell of a circular reference and every Formula that reads
+                one, where Excel shows 0. <code>IFERROR</code> does not catch it.
+            </li>
+            <li>
+                <b>No spilled arrays.</b> A Formula whose result would be a range of several cells, or an operator
+                applied to one, is <code>#VALUE!</code>; so is an <code>XLOOKUP</code> whose return array is more than
+                one cell across.
+            </li>
+            <li>
+                <b><code>XLOOKUP</code>'s binary search</b> (<code>search_mode</code> 2 and -2) answers only over a
+                lookup array sorted as the mode says; otherwise it is <code>#VALUE!</code>.
+            </li>
+            <li>
+                <b><code>#GETTING_DATA</code></b>, a Linked Table's data still on its way, is not an error to
+                <code>IFERROR</code> and <code>ISERROR</code>: a fallback never stands in for data that has not
+                arrived. See <MudLink Href="exsheet/linked-tables">Linked Tables</MudLink>.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Completion, hints and pointing">
+        <p>While a Formula is typed, in a cell or in the Formula Bar, the Sheet helps as Excel does:</p>
+        <ul>
+            <li>
+                <b>Completion.</b> Once a letter is typed, matching function names — and the names of Linked Tables —
+                are listed; Tab accepts. After <code>Table[</code> the table's columns are listed. An argument that
+                takes one of a fixed list, such as <code>XLOOKUP</code>'s <code>match_mode</code>, lists its values
+                with Excel's texts, and Tab writes the value.
+            </li>
+            <li><b>The argument hint</b> shows the function's arguments, with the one the caret is in.</li>
+            <li>
+                <b>Pointing.</b> Wherever a Reference can go — after <code>=</code>, an operator, <code>(</code> or
+                <code>,</code> — the arrow keys and the mouse point at cells and write their Reference. Shift and an
+                arrow, or a drag, writes a range. F4 cycles the Reference at the caret through <code>$A$1</code>,
+                <code>A$1</code>, <code>$A1</code> and <code>A1</code>.
+            </li>
+            <li>
+                <b>Reference outlines.</b> Each Reference in the Formula being edited wears a colour, and the cells it
+                names are outlined on the Sheet in that colour.
+            </li>
+        </ul>
+        <p>
+            Try it in the sheet above: select an empty cell, type <code>=SU</code>, press Tab, then press ↑ to point
+            at a cell and Shift+↑ to make it a range.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The engine on its own">
+        <p>
+            <code>ExSheet.Engine</code> is the Formula engine with no UI and no dependency. Use it to compute a saved
+            Sheet Document on a server, to validate one, or to build a document in code — every Example on this site
+            builds its document with it. <code>Enter</code> reads text exactly as a user's typing is read;
+            <code>GetDisplay</code> gives what a cell shows, formatted under the Sheet's culture.
+        </p>
+        <DocsExample Builtin="typeof(EngineOnly)" CodeOpen="true" />
+        <p>
+            Every operation a user can perform is a <code>SheetEdit</code> — insert or delete rows and columns, set
+            a Cell Format, paste, fill — and <code>Sheet.Do(edit)</code> returns the one <code>SheetStep</code> that
+            undoes and redoes it. <code>Sheet.Check(edit)</code> says whether an edit would be refused, without doing
+            it. <code>GetDisplay(address, width)</code> gives what the cell shows in a column so many characters wide:
+            General rounds to fit, and any other format that does not fit is <code>####</code>.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExSheet.Engine.Sheet)" />
+    </DocsSection>
+</DocsPage>

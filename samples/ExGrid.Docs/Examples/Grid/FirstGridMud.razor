@@ -1,0 +1,24 @@
+@using ExGrid.Docs.Examples.Data
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true" Hover="true" Striped="true">
+    <ExGrid TRow="Trade" Source="_source" Columns="_columns" Chrome="_chrome"
+            ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+        new("Confirmed", ColumnType.Boolean, t => t.Confirmed),
+    ];
+}

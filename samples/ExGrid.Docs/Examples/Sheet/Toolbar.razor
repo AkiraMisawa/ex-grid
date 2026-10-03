@@ -1,0 +1,28 @@
+@using ExSheet
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<ExSheet @ref="_sheet" @bind-Document="_document" @bind-ShowToolbar="_toolbar"
+         ViewportHeight="360" ViewportWidth="ViewportSize.Stretch">
+    <ToolbarContent>
+        <DefaultToolbarRow />
+        <ToolbarRow Label="Review" KeyTip="R">
+            <ToolbarButton Text="Mark reviewed" KeyTip="M" OnClick="MarkReviewedAsync" />
+            <ToolbarButton Text="Flag for query" KeyTip="Q" OnClick="FlagAsync" />
+        </ToolbarRow>
+    </ToolbarContent>
+</ExSheet>
+
+@code {
+    private ExSheet? _sheet;
+    private SheetDocument _document = QuarterlyPnl.Document();
+
+    // Yours to keep: Ctrl+F1 hides and shows the toolbar through the binding.
+    private bool _toolbar = true;
+
+    private Task MarkReviewedAsync() =>
+        _sheet!.SetCellFormatAsync(new CellFormatChange { Fill = CellFill.Solid(CellColour.FromRgb(0xE2EFDA)) });
+
+    private Task FlagAsync() =>
+        _sheet!.SetCellFormatAsync(new CellFormatChange { Fill = CellFill.Solid(CellColour.FromRgb(0xFCE4D6)), Bold = true });
+}

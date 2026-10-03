@@ -1,0 +1,81 @@
+@page "/data/arrow"
+@using ExGrid.Docs.Examples.Snapshot
+@using ExGrid.Docs.Pages.Pivot
+
+
+<DocsPage Product="ExGrid.Data.Arrow" Title="Apache Arrow"
+          Lead="A Snapshot written as an Arrow IPC stream and read back: how a server sends one to a browser, and how what pyarrow, DuckDB or Polars produced is taken in as it is.">
+
+    <DocsSection Title="Writing and reading">
+        <p>
+            <code>SnapshotArrow.WriteAsync(snapshot, stream)</code> writes an uncompressed Arrow IPC stream: the rows in the
+            Snapshot's order, in record batches of 65,536 rows. Each kind gets its Arrow type, a Blank a null slot, and the
+            captions, the Record Key and the version travel in the metadata, so a Snapshot round-trips whole. HTTP's own
+            compression (gzip, Brotli) does the rest. On a server, the response body is the stream, with
+            <code>SnapshotArrow.StreamMediaType</code> as its content type.
+        </p>
+        <p>
+            <code>SnapshotArrow.ReadAsync</code> reads a stream or an Arrow file (<code>.arrow</code>, Feather 2) into the
+            Snapshot's own layout, record batch by record batch, in slices that yield between them, with progress and
+            cancellation. In a browser, fetch the payload whole and read the bytes
+            (<code>request.SetBrowserResponseStreamingEnabled(false)</code>, then <code>ReadAsByteArrayAsync</code>):
+            streaming the response costs far more than the read. Uncompressed buffers are read where they lie, without a
+            copy.
+        </p>
+        <DocsExample Builtin="typeof(ArrowRoundTrip)" Files="@(["Examples/Snapshot/SnapshotGrid.cs", "Examples/Pivot/Sales.cs"])">
+            The stream never leaves the page here: it is written to memory and read straight back.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="What crosses">
+        <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead>
+                <tr><th>Snapshot</th><th>Written as</th><th>Read from</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Text</td>
+                    <td><code>dictionary&lt;int32, utf8&gt;</code>, the Snapshot's own dictionary</td>
+                    <td><code>utf8</code>, <code>large_utf8</code>, <code>utf8_view</code>, or a dictionary of any of them</td>
+                </tr>
+                <tr>
+                    <td>Decimal</td>
+                    <td><code>decimal128(38, scale)</code> at the largest scale its values hold</td>
+                    <td><code>decimal32</code> to <code>decimal256</code>, within <code>decimal</code>'s range and 28 places</td>
+                </tr>
+                <tr><td>Double</td><td><code>float64</code></td><td><code>float64</code>, <code>float32</code>, as they came</td></tr>
+                <tr><td>Integer</td><td><code>int64</code></td><td><code>int8</code> to <code>int64</code>, <code>uint8</code> to <code>uint32</code>, <code>uint64</code> up to <code>long.MaxValue</code></td></tr>
+                <tr>
+                    <td>Date</td>
+                    <td><code>date32</code> when every value is a midnight, otherwise a <code>timestamp</code> without a time zone</td>
+                    <td><code>date32</code>, <code>date64</code>, <code>timestamp</code> without a time zone or in UTC, <code>time32</code>, <code>time64</code></td>
+                </tr>
+                <tr><td>Boolean</td><td><code>bool</code></td><td><code>bool</code></td></tr>
+                <tr><td>Blank</td><td>a null slot</td><td>a null slot, or a null dictionary entry or index</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <p>
+            Another producer's dictionary is taken under the Snapshot's rules: one entry per exact text, so
+            <code>amer</code> and <code>AMER</code> are two. The metadata keys are <code>exgrid.caption</code> on a field and
+            <code>exgrid.recordKey</code> and <code>exgrid.version</code> on the schema (<code>SnapshotArrowMetadata</code>);
+            a read honours them whoever wrote them.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="What is refused">
+        <p>
+            Anything a Snapshot cannot hold exactly is refused by name, and the read yields nothing:
+        </p>
+        <ul>
+            <li>A type outside the table names its column: lists, structs, maps, binary, durations, intervals, <code>float16</code>, and a <code>timestamp</code> in a time zone other than UTC, which only a time zone database could convert.</li>
+            <li>A value names its row and its column: a decimal beyond <code>decimal</code>'s range, a date outside 0001 to 9999, a nanosecond finer than the 100 ns a date holds.</li>
+            <li>A stream cut short is never read as fewer rows, and bytes that are not Arrow at all, or still compressed with gzip, are refused saying so.</li>
+            <li>A stream whose buffers are compressed (LZ4 frame or ZSTD, as pyarrow can write) is read when you pass <code>Apache.Arrow.Compression</code>'s <code>CompressionCodecFactory</code> as <code>codecs</code>, and refused without it, naming the codec.</li>
+        </ul>
+        <DocsExample Builtin="typeof(ArrowRefusals)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExGrid.Data.Arrow.SnapshotArrow)" />
+    </DocsSection>
+</DocsPage>

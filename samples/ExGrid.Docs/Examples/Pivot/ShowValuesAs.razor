@@ -1,0 +1,46 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<p>
+    <label>
+        Show the second Revenue as
+        <select @bind:get="Shown" @bind:set="ShowAs">
+            <option value="@PivotShowValuesAs.PercentOfGrandTotal">% of Grand Total</option>
+            <option value="@PivotShowValuesAs.PercentOfColumnTotal">% of Column Total</option>
+            <option value="@PivotShowValuesAs.PercentOfRowTotal">% of Row Total</option>
+            <option value="@PivotShowValuesAs.NoCalculation">No Calculation</option>
+        </select>
+    </label>
+</p>
+
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="340" />
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region")],
+        Columns = [new PivotFieldPlacement("Year")],
+        Values =
+        [
+            new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" },
+            new PivotValueField("Revenue", PivotAggregation.Sum)
+            {
+                Caption = "Share",
+                ShowValuesAs = PivotShowValuesAs.PercentOfColumnTotal,
+                NumberFormat = "0.0%",
+            },
+        ],
+    };
+
+    // The second Value Field, while the user has left it in Values.
+    private PivotShowValuesAs Shown => _layout.Values.ElementAtOrDefault(1)?.ShowValuesAs ?? PivotShowValuesAs.NoCalculation;
+
+    // The layout is immutable: the Value Field changed is a new one, in a new layout.
+    private void ShowAs(PivotShowValuesAs showAs)
+    {
+        if (_layout.Values.Count > 1)
+            _layout = _layout with { Values = [.. _layout.Values.Select((v, i) => i == 1 ? v with { ShowValuesAs = showAs } : v)] };
+    }
+}

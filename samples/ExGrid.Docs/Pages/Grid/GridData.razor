@@ -1,0 +1,105 @@
+@page "/exgrid/data"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Data sources"
+          Lead="The grid holds no data of its own. It paints a Window of rows and says when it needs others. Where the rows come from — a list, a server, a feed — and who sorts them is your application's choice.">
+
+    <DocsSection Title="Three ways to give the grid rows">
+        <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead><tr><th style="width: 28%">You have</th><th style="width: 30%">Use</th><th>Who sorts, filters and finds</th></tr></thead>
+            <tbody>
+                <tr><td>Every row, in memory</td><td><code>Source="GridSource.From(rows)"</code></td><td>The source, by the reference rules.</td></tr>
+                <tr><td>Rows on a server, a page at a time</td><td><code>Source="GridSource.Fetch(fetch)"</code></td><td>Your server, asked through <code>fetch</code>.</td></tr>
+                <tr><td>Your own loading and state</td><td><code>Window</code>, <code>WindowStart</code>, <code>TotalCount</code> and <code>OnRangeNeeded</code></td><td>You, answering the grid's notifications.</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <p>
+            A Source is a convenience over the third form, not a different grid: it drives the same parameters, and
+            the grid behaves the same either way. Pass a <code>Source</code> or a <code>Window</code>, never both —
+            the grid refuses the pair rather than pick one.
+        </p>
+        <p>
+            Two rules hold whatever you choose. <strong>A row repaints when its instance changes</strong>: replace
+            rows, never rewrite them in place. And keep the source and the column list in fields, so they are the
+            same objects on every render.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A server, a page at a time">
+        <p>
+            <code>GridSource.Fetch</code> takes a function that answers a <code>GridQuery</code> — a range of rows,
+            the sort and the filter in force — with a <code>GridPage</code>: those rows and how many there are in all.
+            The source fetches the first page itself, reads ahead either side of what the grid asked for
+            (<code>readAheadRows</code>), cancels a request a newer one has replaced, and discards an answer that
+            arrives after the question changed. Rows not yet loaded are painted as placeholders.
+        </p>
+        <p>
+            Your server should sort and filter exactly as <code>GridSource.From</code> does; the server here simply
+            runs the reference implementation, <code>GridQueryEngine.Apply</code>. Pass <code>distinctValues</code>
+            to fill the filter panel's value lists and <code>find</code> to answer <kbd>Ctrl</kbd>+<kbd>F</kbd>; without
+            <code>find</code>, the grid refuses to search rather than search only what it has painted. Subscribe to
+            <code>FetchFailed</code> to show a failure yourself; unobserved, it is rethrown.
+        </p>
+        <DocsExample Title="100,000 trades from a slow server" Builtin="typeof(FetchGrid)" Mud="typeof(FetchGridMud)"
+                     Files="@(["Examples/Grid/TradeServer.cs", "Examples/Data/Trade.cs"])">
+            The simulated server answers after 250&nbsp;ms. Drag the scrollbar a long way: only the range you land on
+            is fetched. Sort or filter, and the server answers that too.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Pushing a Window: a million rows">
+        <p>
+            When you hold the loading yourself, hand the grid the rows you have as <code>Window</code>, where they
+            start in the result as <code>WindowStart</code>, and how many rows the result has as
+            <code>TotalCount</code>. The scrollbar spans every row. When the Viewport moves past the Window, the grid
+            raises <code>OnRangeNeeded</code> and paints placeholders until you answer with a new Window.
+        </p>
+        <ul>
+            <li><strong>Read-ahead is yours</strong>: answer with more rows than were asked for.</li>
+            <li><strong>Discard stale answers</strong>: a request that a newer one overtook should not land.</li>
+            <li><strong>Set <code>IsLoading</code></strong> while an answer is on its way, or the grid shows a stale Window as if it were current.</li>
+            <li><strong>Load the first page yourself.</strong> The grid never asks for rows in a result it has been told is empty.</li>
+            <li><strong>Bump <code>RowSequenceVersion</code></strong> when the order of the rows changes, so a selection that would now cover other rows is dropped.</li>
+        </ul>
+        <p>
+            The DOM does not grow with the row count — a million rows paint the same few dozen elements as a hundred.
+        </p>
+        <DocsExample Title="A million rows, made on demand" Builtin="typeof(MillionRows)" Mud="typeof(MillionRowsMud)"
+                     Files="@(["Examples/Grid/MillionTrades.cs", "Examples/Data/Trade.cs"])">
+            Press <kbd>Ctrl</kbd>+<kbd>End</kbd>, or drag the scrollbar to the bottom.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Live updates and the Change Highlight">
+        <p>
+            A live feed is a stream of replaced rows: with <code>GridSource.From</code>, call
+            <code>ReplaceRow(old, new)</code> for each one. Only the replaced rows render again.
+        </p>
+        <p>
+            To show which cells just moved, answer <code>CellChangedAt</code>: asked for a row and a column, return
+            when that cell's value last changed, or <code>null</code>. The grid compares nothing itself — it keeps no
+            values between renders — so the answer comes from what you know, such as a feed naming the fields that
+            changed. Cells that changed within <code>ChangeHighlightDuration</code> (one second by default) are marked
+            in one colour, <code>--ex-change-highlight-background</code>, without animation, and the grid takes the mark
+            away itself. The mark belongs to the row and column, not to the element, so it stays with its row as you scroll.
+        </p>
+        <p>
+            Keep the delegate in a field. It is asked once per painted cell, so it should be a dictionary lookup. A
+            replaced row is asked again; to change answers for rows that were not replaced, hand over a new delegate.
+        </p>
+        <DocsExample Title="A live price board" Builtin="typeof(LiveQuotes)" Mud="typeof(LiveQuotesMud)"
+                     Files="@(["Examples/Grid/Quote.cs"])" />
+        <p>
+            For a blotter of tens of thousands of trades with ticking prices, pinned columns and Header Groups, open
+            the <a href="showcase/blotter" target="_blank">trade blotter showcase</a>.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(GridSource)" />
+        <ApiTable Type="typeof(FetchingGridSource<>)" />
+        <ApiTable Type="typeof(GridQuery)" />
+        <ApiTable Type="typeof(GridPage<>)" />
+        <ApiTable Type="typeof(IGridSource<>)" />
+    </DocsSection>
+</DocsPage>

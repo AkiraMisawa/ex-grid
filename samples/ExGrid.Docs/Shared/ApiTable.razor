@@ -1,0 +1,78 @@
+@using System.Reflection
+@using Microsoft.AspNetCore.Components
+
+@* A type's API (ADR-0110), read from the type itself and from the summaries the build took from
+   the shipped assemblies' XML documentation: a component's parameters and events, or a type's
+   properties, and its public methods. *@
+<div class="docs-api">
+    <MudText Typo="Typo.h6" HtmlTag="h3" Class="docs-api-title"><code>@ApiDocs.Display(Type)</code></MudText>
+    @foreach (var (heading, rows) in Groups())
+    {
+        @if (rows.Count > 0)
+        {
+            <MudText Typo="Typo.subtitle2" Class="docs-api-heading">@heading</MudText>
+            <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+                <thead>
+                    <tr><th class="docs-api-name">Name</th><th class="docs-api-type">Type</th><th>Description</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in rows)
+                    {
+                        <tr>
+                            <td class="docs-api-name"><code>@row.Name</code></td>
+                            <td class="docs-api-type"><code>@row.Type</code></td>
+                            <td><ApiSummary Html="@row.Summary" /></td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>The type: a component (<c>typeof(ExGrid&lt;&gt;)</c>) or any public type.</summary>
+    [Parameter, EditorRequired] public Type Type { get; set; } = default!;
+
+    private sealed record Row(string Name, string Type, string? Summary);
+
+    private Type Definition => Type.IsGenericType ? Type.GetGenericTypeDefinition() : Type;
+
+    private IEnumerable<(string, List<Row>)> Groups()
+    {
+        var nullability = new NullabilityInfoContext();
+        var properties = Definition.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.DeclaringType is { } d && d.Assembly == Definition.Assembly)
+            .OrderBy(p => p.Name, StringComparer.Ordinal)
+            .ToList();
+        if (typeof(IComponent).IsAssignableFrom(Definition))
+        {
+            var parameters = properties.Where(p => p.GetCustomAttribute<ParameterAttribute>() is not null).ToList();
+            bool IsEvent(PropertyInfo p) => p.PropertyType == typeof(EventCallback)
+                || p.PropertyType.IsGenericType && p.PropertyType.GetGenericTypeDefinition() == typeof(EventCallback<>);
+            yield return ("Parameters", parameters.Where(p => !IsEvent(p)).Select(p => PropertyRow(p, nullability)).ToList());
+            yield return ("Events", parameters.Where(IsEvent).Select(p => PropertyRow(p, nullability)).ToList());
+        }
+        else
+        {
+            yield return ("Properties", properties.Select(p => PropertyRow(p, nullability)).ToList());
+        }
+        var methods = Definition.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .Where(m => !m.IsSpecialName && m.GetBaseDefinition().DeclaringType == m.DeclaringType)
+            .Where(m => m.Name is not ("Dispose" or "DisposeAsync" or "Equals" or "GetHashCode" or "ToString" or "Deconstruct" or "<Clone>$" or "PrintMembers"))
+            .OrderBy(m => m.Name, StringComparer.Ordinal)
+            .Select(m => new Row(
+                m.Name + "(" + string.Join(", ", m.GetParameters().Select(p => ApiDocs.Display(p.ParameterType) + " " + p.Name)) + ")",
+                ApiDocs.Display(m.ReturnType),
+                ApiDocs.Summary(m)))
+            .ToList();
+        yield return ("Methods", methods);
+    }
+
+    private static Row PropertyRow(PropertyInfo property, NullabilityInfoContext nullability)
+    {
+        var nullable = !property.PropertyType.IsValueType
+            && nullability.Create(property).ReadState == NullabilityState.Nullable;
+        return new Row(property.Name, ApiDocs.Display(property.PropertyType, nullable), ApiDocs.Summary(property));
+    }
+}

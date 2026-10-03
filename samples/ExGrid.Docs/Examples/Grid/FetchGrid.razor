@@ -1,0 +1,43 @@
+@using ExGrid.Chrome
+@using ExGrid.Docs.Examples.Data
+@implements IDisposable
+
+<ExGrid TRow="Trade" Source="_source" Columns="Columns" PinnedColumnCount="1"
+        ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+
+<p style="margin: 12px 0 0; font-size: 14px">
+    @(_source.TotalCount?.ToString("N0")) trades on the server. It has answered @_server.Answered pages.
+</p>
+
+@code {
+    private static readonly GridColumn<Trade>[] Columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book, filterUi: FilterUiMode.Both),
+        new("Trader", ColumnType.Text, t => t.Trader, filterUi: FilterUiMode.ValueList),
+        new("Instrument", ColumnType.Text, t => t.Instrument, filterUi: FilterUiMode.Both),
+        new("Currency", ColumnType.Text, t => t.Currency, filterUi: FilterUiMode.ValueList),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+    ];
+
+    private readonly TradeServer _server = new([.. Columns.Select(c => c.Info)]);
+    private readonly FetchingGridSource<Trade> _source;
+
+    public FetchGrid()
+    {
+        // The source asks for one range at a time, reads ahead either side, and discards an
+        // answer that arrives after the question changed.
+        _source = GridSource.Fetch<Trade>(_server.PageAsync, readAheadRows: 60, distinctValues: _server.DistinctAsync);
+        _source.StateChanged += OnSourceChanged;
+    }
+
+    private void OnSourceChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        _source.Dispose();
+        _source.StateChanged -= OnSourceChanged;
+    }
+}

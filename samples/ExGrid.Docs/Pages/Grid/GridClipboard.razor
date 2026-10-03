@@ -1,0 +1,76 @@
+@page "/exgrid/clipboard"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Clipboard"
+          Lead="Copy and paste behave as a spreadsheet user expects, with Excel on the other end. Where the result would be quietly wrong, the grid refuses instead: a copy is never truncated, and a paste never writes outside the selection.">
+
+    <DocsSection Title="Copy">
+        <p>
+            Select cells and press <kbd>Ctrl</kbd>+<kbd>C</kbd>; the Context Menu (right-click, or
+            <kbd>Shift</kbd>+<kbd>F10</kbd>) also offers <em>Copy with headers</em>. Nothing needs wiring.
+        </p>
+        <ul>
+            <li>
+                <strong>Two formats go on the clipboard.</strong> The text each cell shows, its <code>format</code>
+                applied, as plain text; and the raw values as an HTML table, so Excel receives every digit of an
+                amount the grid displays rounded. A cell showing <code>####</code> copies its value, never the hashes.
+            </li>
+            <li>
+                <strong>Rows off screen are copied too.</strong> A selection larger than the rows the grid has painted
+                asks the source for the rest. When you push rows yourself, answer <code>OnCopyRowsNeeded</code>;
+                without it, such a copy is refused, not cut short.
+            </li>
+            <li>
+                <strong>Several ranges copy as one block</strong> when they line up — the same rows, or the same
+                columns — as in Excel.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Why a copy refuses rather than truncates">
+        <p>
+            The everyday use of a blotter is to select rows, paste them into Excel and total them there. If a copy
+            quietly kept only the first thousand rows, the total would be too small and nothing on screen would say
+            so. So past <code>CopyCellCap</code> — a million cells by default — the grid copies <strong>nothing</strong>,
+            leaves the clipboard as it was, and raises <code>OnCopyRefused</code> with the reason:
+            <code>TooLarge</code>, <code>MisalignedShape</code>, <code>EmptySelection</code>, and a few more. The
+            wording is yours. A selection of exactly the cap still copies.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Paste">
+        <p>
+            Paste into editable columns raises one <code>OnPaste</code> for the whole block: the target ranges and a
+            value for every target cell. As with an edit, the grid writes nothing — your application applies it by
+            replacing rows. Call <code>Refuse()</code> on the intent to decline it, and the selection stays put.
+            Only two of Excel's four shape rules are kept:
+        </p>
+        <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead><tr><th style="width: 40%">Copied → selected</th><th>What happens</th></tr></thead>
+            <tbody>
+                <tr><td>One cell → a range</td><td>The value fills every selected cell, across disjoint ranges too.</td></tr>
+                <tr><td>2 rows → 6 rows</td><td>The block repeats to fill the selection: a target of M×N accepts a block of m×n when m divides M and n divides N.</td></tr>
+                <tr><td>A block → one cell</td><td><strong>Refused</strong> (<code>SingleCellTarget</code>). Excel would spill past the selection, into rows that may not even be on screen. Select a range of the block's shape.</td></tr>
+                <tr><td>3 rows → 5 rows</td><td><strong>Refused</strong> (<code>ShapeMismatch</code>), as in Excel.</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <p>
+            A selection that covers a column which is not editable is refused first, as
+            <code>TargetNotEditable</code>, since no reselection of the same shape would help. A single value pasted
+            as plain text — not as a table — over a range lands in its top-left cell only. Numbers copied from Excel
+            arrive at full precision, and <code>Origins</code> tells you whether a field is invariant-culture text
+            from Excel's own data or text as it was shown.
+        </p>
+        <DocsExample Title="Copy out, paste in" Builtin="typeof(ClipboardGrid)" Mud="typeof(ClipboardGridMud)"
+                     Files="@(["Examples/Grid/Position.cs"])">
+            This grid's cap is set to 2,000 cells so the refusal is easy to see: press <kbd>Ctrl</kbd>+<kbd>A</kbd>,
+            then <kbd>Ctrl</kbd>+<kbd>C</kbd>. Then select a few rows and copy again. Quantity and Price take a paste;
+            the other columns refuse it.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(ExGrid.Clipboard.GridPasteIntent)" />
+        <ApiTable Type="typeof(ExGrid.Clipboard.PastePlan)" />
+    </DocsSection>
+</DocsPage>

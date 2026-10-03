@@ -1,0 +1,20 @@
+@implements IDisposable
+@inject DocsState State
+
+@* The site's one Chrome choice (ADR-0110): every Example runs under it, and its code follows. *@
+<MudToggleGroup T="bool" Value="State.Mud" ValueChanged="State.SetMud" Size="Size.Small" Outlined="true"
+                Delimiters="true" Color="Color.Primary" Class="@Class" aria-label="Chrome">
+    <MudToggleItem Value="false" Text="Built-in" />
+    <MudToggleItem Value="true" Text="MudBlazor" />
+</MudToggleGroup>
+
+@code {
+    /// <summary>Classes for the group.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnChanged;
+}

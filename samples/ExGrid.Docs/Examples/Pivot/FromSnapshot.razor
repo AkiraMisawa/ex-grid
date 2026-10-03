@@ -1,0 +1,33 @@
+@using ExGrid.Data
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="340" />
+
+@code {
+    // Any Snapshot will do: built here from objects, or read from a CSV, a database or an Arrow
+    // stream. The fields name its columns; a date part names the Date column it is a part of.
+    private readonly PivotSource _source = PivotSource.From(SalesSnapshot(),
+    [
+        new PivotField("Region", PivotFieldType.Text),
+        new PivotField("Category", PivotFieldType.Text),
+        PivotField.DatePartOf("Quarter", column: "Date", PivotDatePart.Quarter),
+        new PivotField("Units", PivotFieldType.Number),
+        new PivotField("Revenue", PivotFieldType.Number, format: "#,##0.00"),
+    ]);
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Category")],
+        Columns = [new PivotFieldPlacement("Quarter")],
+        Values = [new PivotValueField("Units", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    private static Snapshot SalesSnapshot() => new SnapshotBuilder<Sale>()
+        .Text("Region", s => s.Region)
+        .Text("Category", s => s.Category)
+        .Date("Date", s => s.Date)
+        .Integer("Units", s => s.Units)
+        .Decimal("Revenue", s => s.Revenue)
+        .Build(Sales.Sample());
+}

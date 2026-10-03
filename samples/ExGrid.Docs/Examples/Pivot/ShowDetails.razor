@@ -1,0 +1,28 @@
+@using ExPivot
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<p>
+    <label>
+        Open the records
+        <select @bind="_detailsView">
+            <option value="@PivotDetailsView.Tab">in a tab at the report's foot</option>
+            <option value="@PivotDetailsView.Dialog">in a dialog</option>
+        </select>
+    </label>
+</p>
+
+<ExPivot Source="_source" @bind-Layout="_layout" DetailsView="_detailsView" ViewportHeight="340" />
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    private PivotDetailsView _detailsView = PivotDetailsView.Tab;
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Category")],
+        Columns = [new PivotFieldPlacement("Channel")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+}

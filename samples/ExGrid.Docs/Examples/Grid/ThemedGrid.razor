@@ -1,0 +1,40 @@
+@using System.Globalization
+@using ExGrid.Cells
+
+@* A theme is Visual Tokens set on any element around the grid. light-dark() follows the page's colour scheme. *@
+<div style="
+    --ex-background: light-dark(#fbfcfe, #0f1620);
+    --ex-color: light-dark(#1d2733, #d8e1ea);
+    --ex-pinned-background: light-dark(#fbfcfe, #0f1620);
+    --ex-header-background: light-dark(#1f3a5f, #1a2a3d);
+    --ex-header-color: #f2f6fb;
+    --ex-row-rule-color: light-dark(#e3e8ef, #1f2b38);
+    --ex-row-stripe-background: light-dark(rgba(31, 58, 95, 0.05), rgba(120, 160, 210, 0.06));
+    --ex-selection-fill: rgba(47, 129, 247, 0.16);
+    --ex-focus-outline: 2px solid #2f81f7;
+    --ex-tone-positive-color: light-dark(#1a7f37, #4ac26b);
+    --ex-tone-negative-color: light-dark(#cf222e, #ff7b72);">
+    <ExGrid TRow="Position" Source="_source" Columns="_columns" CellState="_state" PinnedColumnCount="1"
+            StripeRows="true" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+</div>
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", format: v => ((decimal)v).ToString("N2", Invariant),
+            tone: v => (decimal)v switch { > 0 => CellTone.Positive, < 0 => CellTone.Negative, _ => CellTone.None }),
+    ];
+
+    // What the value alone cannot say: Credit prices are yesterday's close, so they are stale.
+    private readonly CellStateOf<Position> _state = (position, column) =>
+        column.Name is "Price" or "Pnl" && position.Desk == "Credit" ? CellState.Stale : CellState.Normal;
+}

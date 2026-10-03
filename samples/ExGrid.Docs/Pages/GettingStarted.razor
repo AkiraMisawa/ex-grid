@@ -1,0 +1,58 @@
+@page "/getting-started"
+
+<DocsPage Title="Installation"
+          Lead="Add the packages, link their stylesheets, and put a grid on a page. A MudBlazor application adds the Wrappers and nothing else changes.">
+
+    <DocsSection Title="Requirements">
+        <ul>
+            <li><b>.NET 10 or newer.</b> The packages target <code>net10.0</code> and load unchanged in newer applications.</li>
+            <li><b>Chrome or Edge.</b> They are the supported browsers. Safari and Firefox are out of scope.</li>
+            <li><b>An interactive render mode.</b> The grid handles keys, the pointer and the clipboard. It is verified under WebAssembly, and every browser test also runs under Blazor Server.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Install">
+        <p>
+            The whole family is published to nuget.org as prereleases, at one shared
+            <code>0.1.0-beta.N</code> version. Each package depends on exactly the versions of the others
+            it was built with, so upgrade them together. Add the products you use, and each one's
+            MudBlazor Wrapper in a MudBlazor application.
+        </p>
+        <CodeBlock Path="Examples/Setup/install.sh" />
+    </DocsSection>
+
+    <DocsSection Title="Link the stylesheets">
+        <p>
+            Each package brings one stylesheet. The grid loads its own script module, so there is no
+            script to add.
+        </p>
+        <CodeBlock Path="Examples/Setup/host-page.html" />
+    </DocsSection>
+
+    <DocsSection Title="A first grid">
+        <p>
+            Hand the grid a source and its columns, and keep both in fields: a new source or a new
+            column list on every render would render every row again.
+        </p>
+        <DocsExample Builtin="typeof(ExGrid.Docs.Examples.Grid.FirstGrid)" Mud="typeof(ExGrid.Docs.Examples.Grid.FirstGridMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="In a MudBlazor application">
+        <p>
+            Set MudBlazor up as usual: its services, its stylesheet and script, and the theme, popover
+            and dialog providers in your layout. Then link each package's stylesheet followed by its
+            Wrapper's.
+        </p>
+        <CodeBlock Path="Examples/Setup/Program.cs" />
+        <CodeBlock Path="Examples/Setup/MainLayout.razor" />
+        <CodeBlock Path="Examples/Setup/host-page-mud.html" />
+        <p>
+            Put the grid on a <code>MudExGridPaper</code> and give it <code>MudGridChrome</code>. The
+            paper brings MudBlazor's surface, palette and type, and follows the theme, dark mode
+            included. The Chrome fills the grid's menus, filter panel, find panel and Cell Editor with
+            MudBlazor's own controls. The grid's behaviour does not change: switch the site to
+            MudBlazor at the top and try the Example above again.
+        </p>
+    </DocsSection>
+</DocsPage>

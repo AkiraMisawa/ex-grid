@@ -1,0 +1,9 @@
+@* A file quoted on its own, outside an Example: a setup step, a host page's lines. *@
+<div class="docs-code-block">
+    <CodeView Sources="@([ExampleSources.Get(Path)])" />
+</div>
+
+@code {
+    /// <summary>The file, under <c>Examples/</c>: <c>Examples/Setup/install.sh</c>.</summary>
+    [Parameter, EditorRequired] public string Path { get; set; } = "";
+}

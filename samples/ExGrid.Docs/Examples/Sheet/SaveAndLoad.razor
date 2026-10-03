@@ -1,0 +1,41 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<div class="d-flex gap-2 mb-3">
+    <button type="button" @onclick="Save">Save</button>
+    <button type="button" disabled="@(_saved is null)" @onclick="Load">Load the saved copy</button>
+    <button type="button" @onclick="New">New sheet</button>
+    <span>@_said</span>
+</div>
+
+<ExSheet @bind-Document="_document" Culture="Culture" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private SheetDocument? _document = Expenses.Document();
+
+    // Where your application would write to a database or a file.
+    private string? _saved;
+    private string _said = "";
+
+    private void Save()
+    {
+        _saved = (_document ?? new Sheet(Culture).ToDocument()).ToJson();
+        _said = $"Saved {_saved.Length:N0} characters of JSON.";
+    }
+
+    // A different document replaces the Sheet and clears its undo stack.
+    private void Load()
+    {
+        _document = SheetDocument.FromJson(_saved!);
+        _said = "Loaded the saved copy.";
+    }
+
+    // Null is an empty Sheet in the Culture parameter.
+    private void New()
+    {
+        _document = null;
+        _said = "";
+    }
+}

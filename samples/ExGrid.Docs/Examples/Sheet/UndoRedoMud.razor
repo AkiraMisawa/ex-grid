@@ -1,0 +1,39 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Undo"
+               Disabled="@(_editing || _sheet?.CanUndo != true)" OnClick="() => Run(s => s.UndoAsync())">Undo</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Redo"
+               Disabled="@(_editing || _sheet?.CanRedo != true)" OnClick="() => Run(s => s.RedoAsync())">Redo</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small"
+               Disabled="@_editing" OnClick="() => Run(s => s.DoAsync(SheetEdit.InsertRows(row: 1)))">Insert a row above row 2</MudButton>
+    <MudText Typo="Typo.body2">@_refused</MudText>
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @ref="_sheet" @bind-Document="_document" EditingChanged="open => _editing = open"
+             Chrome="MudSheetChrome.Default" ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private ExSheet? _sheet;
+    private SheetDocument _document = Expenses.Document();
+    private bool _editing;
+    private string _refused = "";
+
+    // Your commands share the user's undo stack, and are refused while a cell is being edited.
+    private async Task Run(Func<ExSheet, Task> command)
+    {
+        try
+        {
+            await command(_sheet!);
+            _refused = "";
+        }
+        catch (SheetRefusedException refused)
+        {
+            _refused = refused.Message;
+        }
+    }
+}

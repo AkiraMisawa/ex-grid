@@ -1,0 +1,78 @@
+# The Docs Site (ADR-0110), published to GitHub Pages: from a v* tag, so the site describes the
+# version on nuget.org, and on demand, which publishes the branch it is run on and states its
+# commit. CI builds the site with the solution on every push; this workflow only publishes.
+name: Docs
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One publish at a time; a newer one waits rather than cancelling one already deploying.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  build:
+    name: Publish the site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: The version the site states
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish
+        run: >
+          dotnet publish samples/ExGrid.Docs/ExGrid.Docs.csproj -c Release -o publish
+          -p:DocsVersion=${{ steps.version.outputs.value }}
+
+      # GitHub Pages serves a project site under /<repository>/. A deep link has no file of its
+      # own, so 404.html is the app too; .nojekyll lets _framework/ through. The precompressed
+      # copies of index.html would be stale after the rewrite, and Pages does not serve them.
+      - name: Prepare for GitHub Pages
+        run: |
+          site=publish/wwwroot
+          sed -i 's#<base href="/" />#<base href="/${{ github.event.repository.name }}/" />#' "$site/index.html"
+          grep -q '<base href="/${{ github.event.repository.name }}/" />' "$site/index.html"
+          rm -f "$site/index.html.br" "$site/index.html.gz"
+          cp "$site/index.html" "$site/404.html"
+          touch "$site/.nojekyll"
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: publish/wwwroot
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

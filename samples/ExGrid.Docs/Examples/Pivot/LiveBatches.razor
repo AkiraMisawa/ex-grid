@@ -1,0 +1,51 @@
+@implements IDisposable
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<p>
+    <button @onclick="() => _paused = !_paused">@(_paused ? "Resume the changes" : "Pause the changes")</button>
+    <span>Snapshot version @_version</span>
+</p>
+
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="300" />
+
+@code {
+    private readonly Sale[] _sales = Sales.Sample();
+    private readonly Random _random = new(1);
+    private SnapshotPivotSource _source = default!;
+    private PeriodicTimer? _timer;
+    private bool _paused;
+    private long _version;
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Country")],
+        Columns = [new PivotFieldPlacement("Channel")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    protected override void OnInitialized()
+    {
+        // The Record Key (Sales.Fields' Id) is what a Change Batch finds a sale by.
+        _source = PivotSource.From(_sales, Sales.Fields);
+        _timer = new PeriodicTimer(TimeSpan.FromMilliseconds(400));
+        _ = AmendAsync(_timer);
+    }
+
+    // A few sales amended, as one Change Batch, every 400 ms. The source makes the next Snapshot,
+    // brings its answer up to date from what the batch removed and added, and raises Changed:
+    // ExPivot asks again, and marks every value whose text changed.
+    private async Task AmendAsync(PeriodicTimer timer)
+    {
+        while (await timer.WaitForNextTickAsync())
+        {
+            if (_paused)
+                continue;
+            var change = _source.Apply(Sales.Fields.Batch(changed: Sales.Amend(_sales, _random, count: 5)));
+            _version = change.After.Version;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

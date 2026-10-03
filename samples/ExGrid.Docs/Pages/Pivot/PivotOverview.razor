@@ -1,0 +1,84 @@
+@page "/expivot"
+@using ExGrid.Docs.Examples.Pivot
+
+
+<DocsPage Product="ExPivot" Title="Overview"
+          Lead="Excel's PivotTable for Blazor, drawn by ExGrid. Hand it your records and the fields they carry; your users build the report in the PivotTable Fields pane, and your application keeps the layout they made.">
+
+    <DocsSection Title="A first pivot">
+        <p>
+            Declare each field once with <code>PivotFields.Of&lt;T&gt;()</code>, hand ExPivot a source and
+            a layout, and bind the layout. Tick a field in the PivotTable Fields pane, drag it between
+            Filters, Columns, Rows and Values, or open its menu with the ▾ beside it. The report is one
+            ExGrid: drag across it, copy it into Excel, and press the <code>−</code> beside a region to
+            collapse it.
+        </p>
+        <DocsExample Builtin="typeof(FirstPivot)" Mud="typeof(FirstPivotMud)" Files="@(["Examples/Pivot/Sales.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="What ExPivot does, and what it leaves to you">
+        <ul>
+            <li>
+                <strong>It computes as Excel does.</strong> Items, subtotals and grand totals, the Compact,
+                Outline and Tabular forms, Hidden Items, sorting by label or by value, Show Values As and
+                Show Details follow Excel's PivotTable. The engine, <code>ExPivot.Engine</code>, has no UI,
+                so a server can answer the same questions by the same rules.
+            </li>
+            <li>
+                <strong>It refuses rather than guesses.</strong> A value too wide for its column is painted
+                <code>####</code>, never a shorter number. A copy carries the full-precision values, not the
+                painted ones. Money held as <code>decimal</code> is summed exactly. A layout whose report would
+                be too large to read is refused by name (<code>PivotCaps</code>), and the report on screen
+                stays.
+            </li>
+            <li>
+                <strong>Your application owns the layout.</strong> The <code>PivotLayout</code> is View State:
+                an immutable record that says which fields stand where, with their settings, and holds no
+                value. Bind it, store it as a user's setting with <code>PivotLayoutJson</code>, and hand it
+                back next time.
+            </li>
+            <li>
+                <strong>It never holds the page.</strong> The answer, its cube and the report's layout are
+                built in slices of about 30 ms, under a loading indication, with the report on screen kept
+                until the new one is ready. A newer change cancels the work for an older one.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Installation">
+        <p>
+            <code>dotnet add package ExPivot --prerelease</code>, then link <code>_content/ExGrid/ex-grid.css</code>
+            and <code>_content/ExPivot/ex-pivot.css</code> in your host page. For a MudBlazor application, add
+            <code>ExPivot.MudBlazor</code> as well, link its <code>mud-ex-pivot.css</code> and
+            <code>ExGrid.MudBlazor</code>'s <code>mud-ex-grid.css</code>, stand the pivot on a
+            <code>MudExGridPaper</code> and pass <code>PivotChrome="MudPivotChrome.Default"</code>. The
+            switch above each Example shows both: the behaviour is the same, only the drawing changes.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Saving the layout">
+        <p>
+            <code>PivotLayoutJson.Write</code> turns a layout into versioned JSON, and <code>Read</code> turns
+            it back, refusing a version it does not know. A layout naming a field the source no longer
+            offers is refused by name; call <code>PivotLayout.KeepingOnly</code> first when old saved views
+            are expected. Change the report below, save it, change it again, and restore it.
+        </p>
+        <DocsExample Builtin="typeof(SavedLayout)" Mud="typeof(SavedLayoutMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Showcase">
+        <p>
+            <a href="showcase/sales" target="_blank">The sales analysis</a> is ExPivot in a whole screen: 60,000 invented
+            sales by region and country across quarters, revenue with each market's share of its quarter through Show Values
+            As, the PivotTable Fields pane beside it, and a few saved views to switch between. Collapse a region, drag a field,
+            double-click a value for its records. Add <code>?chrome=mud</code> for MudBlazor's Chrome and
+            <code>?scheme=dark</code> for the dark scheme.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExPivot.Components.ExPivot)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotLayout)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotFields<>)" />
+    </DocsSection>
+</DocsPage>

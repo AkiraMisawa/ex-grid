@@ -1,0 +1,39 @@
+@inject DocsState State
+
+@* A Showcase's page (ADR-0110): it fills the window, carries no prose, and takes the Chrome and
+   the scheme from the address — ?chrome=mud, ?scheme=dark — so a recording asks for exactly the
+   picture it wants. *@
+<PageTitle>@Title — ExGrid showcase</PageTitle>
+<div class="@($"docs-showcase {(State.Mud ? "docs-showcase-mud" : "docs-showcase-builtin")}")">
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>The use case, for the window's title.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>The application.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary><c>mud</c> for MudBlazor's Chrome; absent or <c>builtin</c> for the built-in one.</summary>
+    [SupplyParameterFromQuery(Name = "chrome")] public string? Chrome { get; set; }
+
+    /// <summary><c>dark</c> for the dark scheme; absent or <c>light</c> for the light one.</summary>
+    [SupplyParameterFromQuery(Name = "scheme")] public string? Scheme { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        State.SetMud(Chrome switch
+        {
+            null or "builtin" => false,
+            "mud" => true,
+            _ => throw new ArgumentException($"Unknown chrome '{Chrome}': use ?chrome=builtin or ?chrome=mud."),
+        });
+        State.SetDark(Scheme switch
+        {
+            null or "light" => false,
+            "dark" => true,
+            _ => throw new ArgumentException($"Unknown scheme '{Scheme}': use ?scheme=light or ?scheme=dark."),
+        });
+    }
+}

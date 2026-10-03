@@ -1,0 +1,54 @@
+@using ExGrid.Docs.Examples.Data
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.subtitle2">
+            Holding rows @_windowStart.ToString("N0") to @((_windowStart + _window.Count - 1).ToString("N0")) of @MillionTrades.Count.ToString("N0")
+        </MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Trade" Window="_window" WindowStart="_windowStart" TotalCount="MillionTrades.Count"
+                IsLoading="_loading" OnRangeNeeded="OnRangeNeeded" Columns="Columns" Chrome="_chrome"
+                ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    // Rows either side of what the grid asked for, so ordinary scrolling does not ask again at once.
+    private const int ReadAhead = 50;
+
+    private static readonly GridColumn<Trade>[] Columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+    ];
+
+    // The grid cannot ask for rows in a result it has been told is empty, so the first page is ours to load.
+    private IReadOnlyList<Trade> _window = MillionTrades.Range(0, 100);
+    private int _windowStart;
+    private bool _loading;
+    private RowRange? _wanted;
+
+    private async Task OnRangeNeeded(RowRange range)
+    {
+        _wanted = range;
+        _loading = true;
+        await Task.Delay(150); // where a server call would go
+
+        // A newer request overtook this one while it waited: its answer would be stale.
+        if (_wanted != range)
+            return;
+        var start = Math.Max(0, range.Start - ReadAhead);
+        var end = Math.Min(MillionTrades.Count, range.Start + range.Count + ReadAhead);
+        _window = MillionTrades.Range(start, end - start);
+        _windowStart = start;
+        _loading = false;
+    }
+}

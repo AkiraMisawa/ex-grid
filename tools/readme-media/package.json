@@ -1,0 +1,13 @@
+{
+  "name": "exgrid-readme-media",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Records the README's GIFs from the Docs Site's Showcases (ADR-0110).",
+  "type": "module",
+  "scripts": {
+    "record": "node record.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

@@ -1,0 +1,33 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<div class="d-flex gap-2 mb-3">
+    <button type="button" disabled="@(_editing || _sheet?.CanUndo != true)" @onclick="() => Run(s => s.UndoAsync())">Undo</button>
+    <button type="button" disabled="@(_editing || _sheet?.CanRedo != true)" @onclick="() => Run(s => s.RedoAsync())">Redo</button>
+    <button type="button" disabled="@_editing" @onclick="() => Run(s => s.DoAsync(SheetEdit.InsertRows(row: 1)))">Insert a row above row 2</button>
+    <span>@_refused</span>
+</div>
+
+<ExSheet @ref="_sheet" @bind-Document="_document" EditingChanged="open => _editing = open"
+         ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private ExSheet? _sheet;
+    private SheetDocument _document = Expenses.Document();
+    private bool _editing;
+    private string _refused = "";
+
+    // Your commands share the user's undo stack, and are refused while a cell is being edited.
+    private async Task Run(Func<ExSheet, Task> command)
+    {
+        try
+        {
+            await command(_sheet!);
+            _refused = "";
+        }
+        catch (SheetRefusedException refused)
+        {
+            _refused = refused.Message;
+        }
+    }
+}

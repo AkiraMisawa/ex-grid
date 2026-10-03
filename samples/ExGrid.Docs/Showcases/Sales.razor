@@ -1,0 +1,265 @@
+@page "/showcase/sales"
+@layout BareLayout
+@inject DocsState State
+@using System.Globalization
+@using ExGrid.Docs.Examples.Pivot
+@using SalesData = ExGrid.Docs.Examples.Pivot.Sales
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
+
+<ShowcaseFrame Title="Sales analysis">
+    <style>
+        .sales-app {
+            --sales-bg: light-dark(#f4f6f9, #121418);
+            --sales-surface: light-dark(#ffffff, #1b1e24);
+            --sales-line: light-dark(#e1e5ea, #2c3038);
+            --sales-text: light-dark(#1d2330, #e4e7ec);
+            --sales-muted: light-dark(#667085, #98a2b3);
+            --sales-accent: light-dark(#2457c5, #7aa2f7);
+            --sales-up: light-dark(#127a4a, #5fd39a);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 100vh;
+            padding: 0 16px 16px;
+            box-sizing: border-box;
+            background: var(--sales-bg);
+            color: var(--sales-text);
+            font-family: Roboto, Helvetica, Arial, sans-serif;
+        }
+        .sales-builtin .sales-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            height: 52px;
+            margin: 0 -16px;
+            padding: 0 16px;
+            background: var(--sales-surface);
+            border-bottom: 1px solid var(--sales-line);
+        }
+        .sales-mark {
+            display: inline-grid;
+            place-items: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            background: var(--sales-accent);
+            color: light-dark(#fff, #10131a);
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .sales-name { font-weight: 600; font-size: 16px; }
+        .sales-crumb { color: var(--sales-muted); font-size: 13px; }
+        .sales-spacer { flex: 1; }
+        .sales-builtin .sales-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--sales-muted);
+        }
+        .sales-builtin .sales-control select,
+        .sales-builtin .sales-button {
+            font: inherit;
+            color: var(--sales-text);
+            background: var(--sales-surface);
+            border: 1px solid var(--sales-line);
+            border-radius: 6px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .sales-avatar {
+            display: inline-grid;
+            place-items: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: light-dark(#dfe7f7, #2a3550);
+            color: var(--sales-accent);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .sales-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+        .sales-kpi {
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: var(--sales-surface);
+            border: 1px solid var(--sales-line);
+        }
+        .sales-kpi-label { font-size: 12px; color: var(--sales-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .sales-kpi-value { font-size: 22px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+        .sales-kpi-note { font-size: 12px; color: var(--sales-up); }
+        .sales-report {
+            padding: 8px 10px 10px;
+            border-radius: 8px;
+            background: var(--sales-surface);
+            border: 1px solid var(--sales-line);
+        }
+        .sales-mud .sales-report { padding: 0; border: 0; background: none; }
+        .sales-mud .sales-kpi { border: 0; }
+    </style>
+
+    <div class="@($"sales-app {(State.Mud ? "sales-mud" : "sales-builtin")}")">
+        @if (State.Mud)
+        {
+            <MudPaper Square="true" Elevation="1" Class="d-flex align-center gap-4 px-4 mx-n4" Style="height: 56px">
+                <span class="sales-mark">M</span>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600">Meridian Analytics</MudText>
+                <MudText Typo="Typo.body2" Class="sales-crumb">Sales · Performance by market</MudText>
+                <MudSpacer />
+                <MudSelect T="string" Value="_view" ValueChanged="ShowView" Dense="true" Variant="Variant.Outlined"
+                           Margin="Margin.Dense" Label="View" Style="width: 220px">
+                    @foreach (var view in Views.Keys)
+                    {
+                        <MudSelectItem Value="view">@view</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTooltip Text="@(_showFieldList ? "Hide the field list" : "Show the field list")">
+                    <MudIconButton Icon="@Icons.Material.Outlined.ViewSidebar" OnClick="() => _showFieldList = !_showFieldList"
+                                   Color="@(_showFieldList ? Color.Primary : Color.Default)" aria-label="Field list" />
+                </MudTooltip>
+                <MudAvatar Size="Size.Small" Color="Color.Primary" Variant="Variant.Outlined">AK</MudAvatar>
+            </MudPaper>
+            <div class="sales-kpis">
+                @foreach (var kpi in _kpis)
+                {
+                    <MudPaper Elevation="1" Class="sales-kpi">
+                        <MudText Typo="Typo.caption" Class="sales-kpi-label">@kpi.Label</MudText>
+                        <MudText Typo="Typo.h5" Class="sales-kpi-value">@kpi.Value</MudText>
+                        <MudText Typo="Typo.caption" Class="sales-kpi-note">@kpi.Note</MudText>
+                    </MudPaper>
+                }
+            </div>
+            <MudExGridPaper Elevation="1" Hover="true" Class="sales-report">
+                <ExPivot Source="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList"
+                         PivotChrome="MudPivotChrome.Default" Culture="Culture"
+                         ViewportWidth="ReportWidth" ViewportHeight="ReportHeight" FieldListWidth="FieldListWidth" />
+            </MudExGridPaper>
+        }
+        else
+        {
+            <header class="sales-bar">
+                <span class="sales-mark">M</span>
+                <span class="sales-name">Meridian Analytics</span>
+                <span class="sales-crumb">Sales · Performance by market</span>
+                <span class="sales-spacer"></span>
+                <label class="sales-control">
+                    View
+                    <select @bind:get="_view" @bind:set="ShowView">
+                        @foreach (var view in Views.Keys)
+                        {
+                            <option value="@view">@view</option>
+                        }
+                    </select>
+                </label>
+                <button class="sales-button" @onclick="() => _showFieldList = !_showFieldList">
+                    @(_showFieldList ? "Hide field list" : "Show field list")
+                </button>
+                <span class="sales-avatar" aria-hidden="true">AK</span>
+            </header>
+            <div class="sales-kpis">
+                @foreach (var kpi in _kpis)
+                {
+                    <div class="sales-kpi">
+                        <div class="sales-kpi-label">@kpi.Label</div>
+                        <div class="sales-kpi-value">@kpi.Value</div>
+                        <div class="sales-kpi-note">@kpi.Note</div>
+                    </div>
+                }
+            </div>
+            <div class="sales-report">
+                <ExPivot Source="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList" Culture="Culture"
+                         ViewportWidth="ReportWidth" ViewportHeight="ReportHeight" FieldListWidth="FieldListWidth" />
+            </div>
+        }
+    </div>
+</ShowcaseFrame>
+
+@code {
+    private sealed record Kpi(string Label, string Value, string Note);
+
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    // The report takes the width the window leaves beside the Fields pane.
+    private const double FieldListWidth = 280;
+    private static readonly ViewportSize ReportWidth = ViewportSize.Stretch;
+    private static readonly ViewportSize ReportHeight = 468;
+
+    private static readonly Sale[] AllSales = SalesData.Sample(60_000);
+
+    // In thousands: the trailing comma of "#,##0," divides by 1,000, and the caption says so.
+    private static readonly PivotValueField Revenue = new("Revenue", PivotAggregation.Sum) { Caption = "Revenue $K", NumberFormat = "#,##0," };
+
+    private static readonly PivotValueField Share = new("Revenue", PivotAggregation.Sum)
+    {
+        Caption = "Share",
+        ShowValuesAs = PivotShowValuesAs.PercentOfColumnTotal,
+        NumberFormat = "0.0%",
+    };
+
+    // The saved views a user picks from: each is a Pivot Layout, as an application would store them.
+    private static readonly Dictionary<string, PivotLayout> Views = new()
+    {
+        ["Markets by quarter"] = new PivotLayout
+        {
+            Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Country")],
+            Columns =
+            [
+                new PivotFieldPlacement("Year") { Subtotals = false, ToggledItems = [PivotItemKey.Number(2025)] },
+                new PivotFieldPlacement("Quarter"),
+            ],
+            Values = [Revenue, Share],
+        },
+        ["Categories by channel"] = new PivotLayout
+        {
+            Rows = [new PivotFieldPlacement("Category"), new PivotFieldPlacement("Product") { Sort = new PivotSort(PivotSortDirection.Descending, ByValue: 0) }],
+            Columns = [new PivotFieldPlacement("Channel")],
+            Values = [Revenue, Share],
+        },
+        ["Profit by region"] = new PivotLayout
+        {
+            Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Channel")],
+            Columns = [new PivotFieldPlacement("Year")],
+            Values =
+            [
+                Revenue,
+                new PivotValueField("Profit", PivotAggregation.Sum) { Caption = "Profit $K", NumberFormat = "#,##0," },
+                new PivotValueField("Units", PivotAggregation.Sum) { Caption = "Units", NumberFormat = "#,##0" },
+            ],
+            Form = PivotReportForm.Outline,
+        },
+    };
+
+    private readonly PivotSource _source = PivotSource.From(AllSales, SalesData.Fields);
+    private readonly Kpi[] _kpis = MakeKpis();
+    private string _view = "Markets by quarter";
+    private PivotLayout _layout = Views["Markets by quarter"];
+    private bool _showFieldList = true;
+
+    private void ShowView(string? view)
+    {
+        if (view is null)
+            return;
+        _view = view;
+        _layout = Views[view];
+    }
+
+    private static Kpi[] MakeKpis()
+    {
+        decimal Revenue(int year) => AllSales.Where(s => s.Date.Year == year && s.Date.Month <= 9).Sum(s => s.Revenue);
+        var revenue = AllSales.Sum(s => s.Revenue);
+        var profit = AllSales.Sum(s => s.Profit);
+        var growth = Revenue(2026) / Revenue(2025) - 1;
+        return
+        [
+            new("Revenue", Money(revenue), $"{growth.ToString("+0.0%;-0.0%", Culture)} YTD vs 2025"),
+            new("Gross profit", Money(profit), "after cost of goods"),
+            new("Gross margin", (profit / revenue).ToString("0.0%", Culture), "profit ÷ revenue"),
+            new("Units sold", AllSales.Sum(s => (long)s.Units).ToString("N0", Culture), $"{AllSales.Length.ToString("N0", Culture)} order lines"),
+            new("Markets", AllSales.Select(s => s.Country).Distinct().Count().ToString(Culture), "in 4 regions"),
+        ];
+    }
+
+    private static string Money(decimal value) => "$" + (value / 1_000_000m).ToString("N1", Culture) + "M";
+}

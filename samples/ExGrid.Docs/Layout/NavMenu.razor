@@ -1,0 +1,11 @@
+<MudNavMenu Class="docs-nav" Rounded="true" Margin="Margin.Dense" Color="Color.Primary">
+    @foreach (var group in DocsNav.Groups)
+    {
+        <MudText Typo="Typo.overline" Class="docs-nav-heading">@group.Title</MudText>
+        @foreach (var link in group.Links)
+        {
+            <MudNavLink Href="@link.Href" Match="NavLinkMatch.All"
+                        Target="@(link.Href.StartsWith("showcase/") ? "_blank" : null)">@link.Title</MudNavLink>
+        }
+    }
+</MudNavMenu>

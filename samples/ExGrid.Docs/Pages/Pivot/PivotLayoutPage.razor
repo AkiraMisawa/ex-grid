@@ -1,0 +1,103 @@
+@page "/expivot/layout"
+@using ExGrid.Docs.Examples.Pivot
+
+
+<DocsPage Product="ExPivot" Title="Layout"
+          Lead="Which fields stand where, how the rows are set out, which Items are shown, collapsed or ordered: all of it is the Pivot Layout, which the user changes in the pane and your code can set directly.">
+
+    <DocsSection Title="The PivotTable Fields pane">
+        <p>
+            The pane beside the report is Excel's. Its top half lists the source's fields, its bottom half
+            the four Areas: <strong>Filters</strong>, <strong>Columns</strong>, <strong>Rows</strong> and
+            <strong>Values</strong>. The report below starts with nothing placed.
+        </p>
+        <ul>
+            <li>
+                <strong>Tick a field</strong> and it goes where Excel puts it: a number into Values, summed;
+                text, a date or a Boolean into Rows. Untick it to take it out of every Area.
+            </li>
+            <li>
+                <strong>Drag a field</strong> from the list into an Area, or an entry from one Area to another,
+                or within an Area to change its order. A field stands in only one of Filters, Rows and Columns:
+                dropped into another of them, it moves there with its settings. Dropped into Values, it becomes
+                one more Value Field, so Values may hold the same field twice. With two or more Value Fields,
+                a <strong>Σ Values</strong> entry appears, which moves between Columns and Rows.
+            </li>
+            <li>
+                <strong>Each placed entry has a menu</strong> (the ▾ beside it): move it up, down or to another
+                Area, remove it, and open <em>Field Settings…</em> (subtotals, Items' order) or
+                <em>Value Field Settings…</em> (the Aggregation, Show Values As, the number format and the
+                caption). A field in Filters shows above the report, where its drop-down picks the Items.
+            </li>
+            <li>
+                <strong>Defer Layout Update</strong>, at the pane's foot, holds the pane's changes until you
+                press Update, as Excel does for a slow source. The report is not asked meanwhile.
+            </li>
+            <li>
+                <strong>The Pivot Toolbar</strong> above the report holds the Filters band, the
+                <em>Layout ▾</em> menu and the pane's toggle. Bind <code>ShowFieldList</code> to remember
+                whether the user hid the pane.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(FieldsPane)" Mud="typeof(FieldsPaneMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Tick Country and Revenue, then drag Year from the list into Columns.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Report forms, subtotals and grand totals">
+        <p>
+            The <em>Layout ▾</em> menu on the Pivot Toolbar offers Excel's choices: Compact, Outline or Tabular
+            form, item labels repeated or not, subtotals at the top or the bottom of their group or none, and
+            the grand totals on or off for rows and columns. Each is a property of <code>PivotLayout</code>,
+            so your code can set them as well.
+        </p>
+        <ul>
+            <li><strong>Compact</strong>, Excel's default: one indented label column, a group row per outer Item.</li>
+            <li><strong>Outline</strong>: a label column per row field, still with a group row per outer Item.</li>
+            <li><strong>Tabular</strong>: a label column per row field and no group rows; subtotals always at the bottom.</li>
+            <li>
+                <code>GrandTotalRow</code> is the <em>Grand Total</em> row at the bottom (Excel's grand totals for
+                columns); <code>GrandTotalColumn</code> is the column at the right (grand totals for rows).
+                A field's own subtotals are switched in its Field Settings (<code>PivotFieldPlacement.Subtotals</code>).
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(ReportForms)" Mud="typeof(ReportFormsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Expand and collapse, Hidden Items, sorting">
+        <p>
+            Each field placed in Filters, Rows or Columns is a <code>PivotFieldPlacement</code> carrying its
+            own settings, which travel with it when it moves between those Areas.
+        </p>
+        <ul>
+            <li>
+                <strong>Expand and collapse.</strong> The <code>−</code> and <code>+</code> beside an outer Item
+                collapse it to one row carrying its totals; <em>Expand / Collapse Entire Field</em> in the
+                Context Menu does a whole field. A collapsed Item still counts in every total.
+            </li>
+            <li>
+                <strong>Hidden Items.</strong> The Items the user unticks in <em>Filter…</em> leave their records
+                out of the report, every total included, as in Excel. That is a filter, not a hidden row.
+            </li>
+            <li>
+                <strong>Sorting.</strong> A field's Items are ordered by label, A to Z, unless set otherwise:
+                by label descending, or by a Value Field's total (<code>PivotSort.ByValue</code>). The Context
+                Menu on a value offers <em>Sort Largest to Smallest</em> and <em>Smallest to Largest</em>.
+                <code>(blank)</code> is last either way. A text field may declare Excel's custom list
+                (<code>itemOrder</code>, as Channel does in <code>Sales.cs</code>) or an Order Key.
+            </li>
+        </ul>
+        <p>
+            ExPivot never sorts or filters the report grid itself: a header click selects the column, and the
+            grid's column menu is left out. Item order and Hidden Items belong to the layout.
+        </p>
+        <DocsExample Builtin="typeof(ItemsAndOrder)" Mud="typeof(ItemsAndOrderMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Regions collapsed except Europe, countries ordered by revenue, and Direct sales hidden.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotFieldPlacement)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotSort)" />
+    </DocsSection>
+</DocsPage>

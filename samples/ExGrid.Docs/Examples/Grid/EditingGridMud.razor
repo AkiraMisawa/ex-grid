@@ -1,0 +1,154 @@
+@using System.Globalization
+@using ExGrid.Cells
+@using ExGrid.Clipboard
+@using ExGrid.Columns
+@using ExGrid.Selection
+@using ExGrid.Validation
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudIconButton Icon="@Icons.Material.Filled.Undo" Size="Size.Small" Disabled="@(_undo.Count == 0)" OnClick="Undo" aria-label="Undo" />
+        <MudIconButton Icon="@Icons.Material.Filled.Redo" Size="Size.Small" Disabled="@(_redo.Count == 0)" OnClick="Redo" aria-label="Redo" />
+        <MudText Typo="Typo.body2" Class="ml-2">@_message</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Position" Source="_source" Columns="_columns" PinnedColumnCount="1" ShowFillHandle="true"
+                CellState="_rules.State" CellMessageOf="_rules.Message"
+                OnEdit="OnEdit" OnPaste="OnPaste" OnFill="OnFill" OnClear="OnClear" OnPasteRefused="OnPasteRefused"
+                OnUndo="Undo" OnRedo="Redo" Chrome="_chrome"
+                ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+    private readonly GridRuleset<Position> _rules = new();
+    private readonly GridColumn<Position>[] _columns;
+
+    // One step per gesture — an edit, a paste, a fill or a clear — so one Ctrl+Z undoes it.
+    private readonly Stack<List<(Position Before, Position After)>> _undo = new();
+    private readonly Stack<List<(Position Before, Position After)>> _redo = new();
+    private string _message = "Type into Trader, Quantity or Price.";
+
+    public EditingGridMud()
+    {
+        // Text that is not a number is rejected and the editor stays open; a number the desk
+        // would query is accepted and flagged.
+        _rules
+            .Column("Quantity", (_, text) => !int.TryParse(text, NumberStyles.Number, Invariant, out var quantity)
+                ? EditVerdict.Reject($"'{text}' is not a whole number")
+                : Math.Abs(quantity) > 100_000 ? EditVerdict.Flag("Over the desk's size limit of 100,000") : EditVerdict.Accept)
+            .Column("Price", (_, text) => !decimal.TryParse(text, NumberStyles.Number, Invariant, out var price)
+                ? EditVerdict.Reject($"'{text}' is not a price")
+                : price <= 0 ? EditVerdict.Flag("A price should be above zero") : EditVerdict.Accept);
+        _columns =
+        [
+            new("Id", ColumnType.Number, p => p.Id, width: Fixed(70), align: CellAlign.Left),
+            new("Instrument", ColumnType.Text, p => p.Instrument, width: Fixed(120)),
+            new("Trader", ColumnType.Text, p => p.Trader, width: Fixed(120), editable: true),
+            new("Quantity", ColumnType.Number, p => p.Quantity, width: Fixed(110), editable: true,
+                validate: _rules.ValidatorFor("Quantity"), format: v => ((int)v).ToString("N0", Invariant)),
+            new("Price", ColumnType.Number, p => p.Price, width: Fixed(100), editable: true,
+                validate: _rules.ValidatorFor("Price"), format: v => ((decimal)v).ToString("N2", Invariant)),
+            new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", width: Fixed(130), format: v => ((decimal)v).ToString("N2", Invariant)),
+        ];
+    }
+
+    private void OnEdit(GridEditIntent<Position> edit)
+        => Apply([(edit.Row, edit.Column, edit.Value)]);
+
+    // Ctrl+V, Ctrl+D, Ctrl+R and Ctrl+Enter all arrive here: one value per target cell.
+    private void OnPaste(GridPasteIntent paste)
+        => Apply(Cells(paste.Plan.Targets).Select(cell => (Row(cell), _columns[cell.Column].Name, paste.ValueFor(cell))).ToList());
+
+    // The fill handle repeats the source range into the target beside it.
+    private void OnFill(GridFillIntent fill)
+        => Apply(Cells([fill.Target]).Select(cell =>
+        {
+            var from = new CellPosition(
+                fill.Source.TopRow + Mod(cell.Row - fill.Source.TopRow, fill.Source.RowCount),
+                fill.Source.LeftColumn + Mod(cell.Column - fill.Source.LeftColumn, fill.Source.ColumnCount));
+            return (Row(cell), _columns[cell.Column].Name, _columns[from.Column].Info.TextOf(Row(from)));
+        }).ToList());
+
+    // Delete asks for no value at all. A trader can be blank; a quantity or a price cannot, so those are left alone.
+    private void OnClear(GridClearIntent clear)
+        => Apply(Cells(clear.Targets).Where(cell => _columns[cell.Column].Name == "Trader")
+            .Select(cell => (Row(cell), "Trader", "")).ToList());
+
+    private void OnPasteRefused(PasteRefusalReason reason) => _message = reason switch
+    {
+        PasteRefusalReason.TargetNotEditable => "Not pasted: the selection covers a column that cannot be edited.",
+        PasteRefusalReason.SingleCellTarget => "Not pasted: select a range the same shape as what you copied.",
+        PasteRefusalReason.ShapeMismatch => "Not pasted: the copied block does not divide into the selection.",
+        _ => $"Not pasted: {reason}.",
+    };
+
+    // Every cell is resolved to its row before anything is written: writing first could reorder the rows.
+    private void Apply(IReadOnlyList<(Position Row, string Column, string Text)> cells)
+    {
+        var latest = new Dictionary<Position, Position>(ReferenceEqualityComparer.Instance);
+        var step = new List<(Position, Position)>();
+        foreach (var (row, column, text) in cells)
+        {
+            var current = latest.GetValueOrDefault(row, row);
+            if (Edited(current, column, text) is { } replacement)
+            {
+                step.Add((current, replacement));
+                latest[row] = replacement;
+            }
+        }
+        foreach (var (before, after) in step)
+            _source.ReplaceRow(before, after);
+        if (step.Count > 0)
+        {
+            _undo.Push(step);
+            _redo.Clear();
+        }
+        _rules.Evaluate(_source.Window, _columns);
+        _message = $"{step.Count} cell(s) written.";
+    }
+
+    // A new instance with one value changed: the new instance is what repaints the row.
+    private static Position? Edited(Position row, string column, string text) => column switch
+    {
+        "Trader" => row with { Trader = text },
+        "Quantity" when int.TryParse(text, NumberStyles.Number, Invariant, out var quantity) => row with { Quantity = quantity },
+        "Price" when decimal.TryParse(text, NumberStyles.Number, Invariant, out var price) => row with { Price = price },
+        _ => null,
+    };
+
+    private void Undo() => Replay(_undo, _redo, "Undone");
+
+    private void Redo() => Replay(_redo, _undo, "Redone");
+
+    private void Replay(Stack<List<(Position Before, Position After)>> from, Stack<List<(Position Before, Position After)>> to, string verb)
+    {
+        if (!from.TryPop(out var step))
+            return;
+        var reversed = new List<(Position, Position)>();
+        for (var i = step.Count - 1; i >= 0; i--)
+        {
+            _source.ReplaceRow(step[i].After, step[i].Before);
+            reversed.Add((step[i].After, step[i].Before));
+        }
+        to.Push(reversed);
+        _rules.Evaluate(_source.Window, _columns);
+        _message = $"{verb}: {step.Count} cell(s).";
+    }
+
+    private Position Row(CellPosition cell) => _source.Window[cell.Row];
+
+    private static IEnumerable<CellPosition> Cells(IEnumerable<SelectionRange> ranges) =>
+        from range in ranges
+        from row in Enumerable.Range(range.TopRow, range.RowCount)
+        from column in Enumerable.Range(range.LeftColumn, range.ColumnCount)
+        select new CellPosition(row, column);
+
+    private static int Mod(int value, int by) => ((value % by) + by) % by;
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+}

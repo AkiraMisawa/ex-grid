@@ -1,0 +1,98 @@
+@page "/exgrid"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Overview"
+          Lead="A grid for reading large tables of numbers, with a spreadsheet user's selection, keyboard and clipboard. Your application holds the rows; ExGrid shows them and tells you what the user asked for.">
+
+    <DocsSection Title="A first grid">
+        <p>
+            Hand the grid a source and a list of columns. <code>GridSource.From</code> is the bundled
+            in-memory source: it sorts and filters a list you already hold, and its behaviour is the
+            reference for what sorting and filtering mean. Click a cell, drag across a rectangle, press
+            the arrows, or open a column's menu from the ▾ in its header.
+        </p>
+        <DocsExample Builtin="typeof(FirstGrid)" Mud="typeof(FirstGridMud)" Files="@(["Examples/Data/Trade.cs"])" CodeOpen="true" />
+        <p>
+            Add <code>_content/ExGrid/ex-grid.css</code> to your host page; the grid loads its own script. With
+            MudBlazor, add ExGrid.MudBlazor and <code>mud-ex-grid.css</code> as well, and put the grid on a
+            <code>MudExGridPaper</code> with <code>MudGridChrome</code>, as the MudBlazor tab of the code shows.
+            ExGrid runs in Chrome and Edge, in an interactive render mode, on .NET 10 or newer.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The grid neither holds nor executes">
+        <p>
+            ExGrid paints the rows it is given and reports what the user does. It does not own the data, and it does
+            not sort, filter, search or write anything itself:
+        </p>
+        <ul>
+            <li>A <strong>header click</strong> asks for a sort. A <strong>filter panel</strong> asks for a filter. <kbd>Ctrl</kbd>+<kbd>F</kbd> asks where the next match is.</li>
+            <li>A <strong>commit in the editor</strong>, a <strong>paste</strong> and a <strong>Delete</strong> each arrive as an intent — "this row, this column, this value" — that your application applies, or not.</li>
+            <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> is forwarded to you, because only your application sees every change.</li>
+            <li>Column widths, order and visibility are your state too: a drag reports the new layout, and you hand back a new column list.</li>
+        </ul>
+        <p>
+            That keeps one source of truth — yours — and lets the same grid sit over a list in memory, a database or a
+            live feed.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A Source, or a Window you push">
+        <p>
+            There are two ways to give the grid rows. A <strong>Source</strong> —
+            <code>GridSource.From(rows)</code> for a list in memory, <code>GridSource.Fetch(...)</code> for a server —
+            holds the rows and answers the grid's questions for you. Or you push a <strong>Window</strong> yourself:
+            the rows you have, where they start and how many there are, answering <code>OnRangeNeeded</code> when the
+            user scrolls past them. A Source drives that same push form, so the grid behaves identically either way.
+            Either way it paints only the rows in view, on both axes: a million rows and a hundred columns keep the same
+            few dozen elements. See <a href="exgrid/data">Data sources</a>.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="It refuses rather than guesses">
+        <p>
+            ExGrid was built for money and risk numbers, where a plausible wrong answer is worse than none. Where it
+            cannot do something correctly, it says so:
+        </p>
+        <ul>
+            <li>A number too wide for its column shows <code>####</code>, never a truncated figure that reads as a smaller one.</li>
+            <li>A copy larger than the cap copies <strong>nothing</strong>, rather than the first rows with a total quietly too small.</li>
+            <li>A paste never writes outside the selection; a block pasted onto one cell is refused.</li>
+            <li>When the order of the rows changes, the selection is dropped rather than left on rows nobody chose.</li>
+            <li>Where nothing can search every row, <kbd>Ctrl</kbd>+<kbd>F</kbd> is refused rather than left to the browser, which sees only the painted rows.</li>
+            <li>A malformed filter, an unknown column or a contradictory parameter throws, naming what was wrong.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Two rules that keep it fast">
+        <ul>
+            <li>
+                <strong>A row repaints when its instance changes.</strong> Rows skip their render while their instance
+                is the same, so rewriting a row object in place does not repaint it. Replace the instance instead —
+                records and <code>with</code> make it one line.
+            </li>
+            <li>
+                <strong>Give the grid the same objects across renders.</strong> Keep the source, the column list and
+                any delegates you pass in fields. A new array or lambda on every render looks like a change and renders
+                every row again.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Where to next">
+        <ul>
+            <li><a href="exgrid/columns">Columns</a> — types, widths, formats, tones, pinned columns and Header Groups.</li>
+            <li><a href="exgrid/selection">Selection and keyboard</a> — rectangles, the Focus, and Excel's keys.</li>
+            <li><a href="exgrid/sorting-filtering">Sorting, filtering and find</a> — the gestures and what they mean.</li>
+            <li><a href="exgrid/editing">Editing</a> — the editor, validation, Delete and Undo.</li>
+            <li><a href="exgrid/clipboard">Clipboard</a> — copy to Excel, paste from it, and the refusals.</li>
+            <li><a href="exgrid/data">Data sources</a> — in memory, from a server, a million rows, live data.</li>
+            <li><a href="exgrid/appearance">Appearance</a> — density, Visual Tokens, the dark scheme and MudBlazor.</li>
+            <li><a href="showcase/blotter" target="_blank">The trade blotter showcase</a> — all of it at once.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(ExGrid<>)" />
+    </DocsSection>
+</DocsPage>

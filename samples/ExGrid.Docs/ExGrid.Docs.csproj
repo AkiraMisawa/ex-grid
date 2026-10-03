@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <!-- The Docs Site (ADR-0110): a standalone WebAssembly application, published to GitHub
+         Pages. It is a Consumer like any other — it references the shipped packages, nothing
+         references it, and it is not shipped. Targets what the SDK provides (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExGrid.Docs</RootNamespace>
+    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <!-- The version the site states: a tag's on a release, the commit's on demand, "dev" here. -->
+    <DocsVersion Condition=" '$(DocsVersion)' == '' ">dev</DocsVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The API tables read the shipped types by reflection, nullability included: keep what
+         they read when the publish trims the application. -->
+    <NullabilityInfoContextSupport>true</NullabilityInfoContextSupport>
+    <!-- Keep the runtime's own exception messages: an Example that shows one would otherwise read
+         "Arg_ParamName_Name" where the sentence belongs. -->
+    <UseSystemResourceKeys>false</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootAssembly Include="ExGrid;ExGrid.MudBlazor;ExSheet;ExSheet.Engine;ExSheet.MudBlazor;ExPivot;ExPivot.Engine;ExPivot.MudBlazor;ExGrid.Data;ExGrid.Data.Arrow" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="DocsVersion" Value="$(DocsVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.7" PrivateAssets="all" />
+    <!-- The site's own frame is MudBlazor's (ADR-0110). Only this project references it
+         directly; the core packages never do (ADR-0019). -->
+    <PackageReference Include="MudBlazor" Version="9.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
+    <ProjectReference Include="..\..\src\ExGrid.MudBlazor\ExGrid.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExSheet\ExSheet.csproj" />
+    <ProjectReference Include="..\..\src\ExSheet.MudBlazor\ExSheet.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExPivot\ExPivot.csproj" />
+    <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
+    <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
+    <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
+    <!-- The build step that highlights the Examples and reads the API documentation. -->
+    <ProjectReference Include="..\ExGrid.Docs.Generator\ExGrid.Docs.Generator.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- An Example's .razor reaches the generator already, as the Razor compiler's input; its
+         .cs files, and the snippets a page quotes (.html, .sh, .css), are handed over here. The code a page shows is the file it runs. -->
+    <AdditionalFiles Include="Examples\**\*.cs;Examples\**\*.html;Examples\**\*.sh;Examples\**\*.css" />
+    <!-- The decision records, by name only: an API summary's "ADR-0016" links to its file. -->
+    <AdditionalFiles Include="..\..\docs\adr\*.md" />
+    <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <!-- Setup snippets are an application's own files (its Program.cs), quoted, never compiled
+         into the site. -->
+    <Compile Remove="Examples\Setup\**\*.cs" />
+  </ItemGroup>
+
+  <!-- The shipped assemblies' XML documentation, for the API tables: the file beside each
+       referenced src/ project's assembly. -->
+  <Target Name="AddApiDocumentation" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_DocsProjectAssembly Include="@(ReferencePath)" Condition=" '%(ReferencePath.ReferenceSourceTarget)' == 'ProjectReference' " />
+      <AdditionalFiles Include="@(_DocsProjectAssembly->'%(RootDir)%(Directory)%(Filename).xml')"
+                       Condition="Exists('%(RootDir)%(Directory)%(Filename).xml')" />
+    </ItemGroup>
+  </Target>
+
+</Project>

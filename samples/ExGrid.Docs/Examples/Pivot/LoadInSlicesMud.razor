@@ -1,0 +1,50 @@
+@using ExGrid.Data
+@using ExPivot.Components
+@using ExPivot.Engine
+@using ExPivot.MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-3">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadAsync" Disabled="_loading">Load 200,000 sales</MudButton>
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Value="_progress.Rows" Max="_progress.TotalRows ?? 1" Style="max-width: 240px" />
+        <MudText Typo="Typo.body2">@_progress.Rows.ToString("N0") sales read</MudText>
+    }
+</MudStack>
+
+@if (_source is not null)
+{
+    <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+        <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="MudPivotChrome.Default" ViewportHeight="320" />
+    </MudExGridPaper>
+}
+
+@code {
+    private PivotSource? _source;
+    private bool _loading;
+    private SnapshotProgress _progress;
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Country")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        await Task.Yield();   // paint the disabled button before the sales are made
+        var sales = Sales.Sample(200_000);
+        _progress = new SnapshotProgress(0, sales.Length);
+        // Read in slices of about 30 ms, yielding between them: the page paints the progress.
+        var progress = new Progress<SnapshotProgress>(p =>
+        {
+            if (!_loading)
+                return;
+            _progress = p;
+            StateHasChanged();
+        });
+        _source = await PivotSource.FromAsync(sales, Sales.Fields, progress: progress);
+        _loading = false;
+    }
+}

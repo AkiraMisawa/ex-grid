@@ -1,0 +1,106 @@
+@page "/expivot/sources"
+@using ExGrid.Docs.Examples.Pivot
+
+
+<DocsPage Product="ExPivot" Title="Sources"
+          Lead="A Pivot Source is what a report is computed from: your records in the browser, a Snapshot read from a file, or a server that answers the same questions over your own transport.">
+
+    <DocsSection Title="How a source is asked">
+        <p>
+            ExPivot never holds or loops over your records itself. It asks its <code>PivotSource</code> for the
+            <em>Leaf Aggregates</em> of a layout, one per combination of the row and column Items that has
+            records, carrying the parts each Aggregation is computed from. Every subtotal and grand total is
+            merged from those parts, exactly. It asks without blocking: a slow answer leaves the report as it
+            was under a loading indication, and a newer question cancels the older one.
+        </p>
+        <ul>
+            <li><strong><code>PivotSource.From</code></strong> answers in the process, from a Snapshot: the reference implementation of ExPivot's semantics.</li>
+            <li><strong><code>PivotSource.Fetch</code></strong> hands every question to delegates you write, so a server answers it.</li>
+            <li><strong>A new source is a refresh.</strong> Keep the source in a field; hand over a new instance when the data is new.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Over your objects">
+        <p>
+            <code>PivotFields.Of&lt;T&gt;()</code> declares each field once with a typed accessor
+            (<code>Sales.cs</code> shows them all). The declaration makes both the Snapshot column the records
+            are read into, without boxing a value, and the Pivot Field over it:
+        </p>
+        <ul>
+            <li><strong>Text</strong>, with Excel's custom list (<code>itemOrder</code>) or an Order Key; <code>null</code> is the Item <code>(blank)</code>, and <code>""</code> is a value.</li>
+            <li><strong>Number</strong> over <code>decimal</code> (exact), <code>int</code> or <code>long</code> (exact), or <code>double</code> (Excel's arithmetic).</li>
+            <li><strong>Date</strong> over <code>DateTime</code>, <code>DateOnly</code> or <code>DateTimeOffset</code>, with <code>Year</code>, <code>Quarter</code> and <code>Month</code> as fields of their own, ordered by the calendar.</li>
+            <li><strong>Boolean</strong>, labelled <code>TRUE</code> and <code>FALSE</code>; and a <strong>Key</strong>, the Record Key a Change Batch finds a record by.</li>
+        </ul>
+        <p>
+            <code>PivotSource.From(records, fields)</code> reads the records on the calling thread. For a large
+            list in a browser, <code>PivotSource.FromAsync</code> reads them in slices of about 30 ms, yielding
+            between them and reporting progress, so the page keeps painting.
+        </p>
+        <DocsExample Builtin="typeof(LoadInSlices)" Mud="typeof(LoadInSlicesMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Over a Snapshot">
+        <p>
+            A <a href="data">Snapshot</a> is pivoted as it is, wherever it came from. <code>PivotSource.From(snapshot)</code>
+            offers one field per column, captioned and typed by it; or name the fields you want over its columns,
+            a date part naming the Date column it is a part of. A field naming a column the Snapshot does not
+            have is refused by name.
+        </p>
+        <DocsExample Builtin="typeof(FromSnapshot)" Mud="typeof(FromSnapshotMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="From a CSV">
+        <p>
+            <code>ExGrid.Data</code> reads a CSV straight into a Snapshot's columns under a <code>CsvSchema</code> you
+            declare: what each column is and how to read it. Nothing is guessed, because a guess reads the account
+            number <code>004417</code> as the number 4,417. A file the user brings comes from Blazor's
+            <code>InputFile</code> (<code>e.File.OpenReadStream(maxAllowedSize)</code>); the Example writes one in
+            memory instead.
+        </p>
+        <p>
+            A value its column cannot read refuses the whole file, naming the row and the column. The report is
+            then not drawn at all, rather than drawn over the rows that happened to read. See
+            <a href="data">Snapshot</a> for the Schema's options and for suggesting one from a file nobody has
+            described.
+        </p>
+        <DocsExample Builtin="typeof(FromCsv)" Mud="typeof(FromCsvMud)" Files="@(["Examples/Pivot/SalesCsv.cs", "Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="A server's source">
+        <p>
+            <code>PivotSource.Fetch(fields, features, aggregate, items, details)</code> carries your transport to a
+            server. ExPivot ships no HTTP client and no endpoint. <code>PivotJson</code> writes every question and
+            every answer as versioned JSON (decimals exactly, doubles to the last bit), so each delegate is one
+            request. The server answers from the same engine over a Snapshot, or from SQL, building its answer
+            with <code>PivotAnswerBuilder</code>; either way it is held to <code>From</code>'s answers.
+        </p>
+        <ul>
+            <li><code>features</code> says which Aggregations the server answers; a question asking for another is refused before it is sent.</li>
+            <li>An answer to another question than the one asked is refused by name.</li>
+            <li>
+                Every answer carries its Source Version. A field's Items and a cell's records are asked for under it,
+                and a server that can no longer answer under it refuses, so Show Details never mixes two versions.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(ServerSource)" Mud="typeof(ServerSourceMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
+            The server here is simulated in the page, with half a second of latency: change the layout and watch the
+            report wait under its loading indication.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Caps">
+        <p>
+            <code>Caps</code> (<code>PivotCaps</code>) refuses, by name, a layout whose report is too large to read:
+            more than 200,000 leaves, or more rows or columns than Excel's 1,048,576 and 16,384. The report on screen
+            stays, and the Pivot Toolbar says why.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotSource)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.SnapshotPivotSource)" />
+        <ApiTable Type="typeof(global::ExPivot.Engine.FetchingPivotSource)" />
+        <ApiTable Type="typeof(global::ExPivot.PivotCaps)" />
+    </DocsSection>
+</DocsPage>

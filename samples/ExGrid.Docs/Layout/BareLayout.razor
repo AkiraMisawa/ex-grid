@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject DocsState State
+
+@* A Showcase's frame (ADR-0110): the providers and the scheme, and nothing else, so the page
+   fills the window. ?scheme=dark asks for the dark scheme, as a recording does. *@
+@if (State.Dark)
+{
+    <HeadContent><style>:root { color-scheme: dark; }</style></HeadContent>
+}
+
+<MudThemeProvider Theme="DocsTheme.Theme" IsDarkMode="State.Dark" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="docs-bare">
+    @Body
+</div>
+
+@code {
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnChanged;
+}

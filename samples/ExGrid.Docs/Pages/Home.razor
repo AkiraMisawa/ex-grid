@@ -1,0 +1,51 @@
+@page "/"
+
+<PageTitle>ExGrid — Excel-like grids for Blazor</PageTitle>
+
+<section class="docs-hero">
+    <MudText Typo="Typo.h2" HtmlTag="h1">Excel-like grids for Blazor</MudText>
+    <MudText Typo="Typo.subtitle1" Class="docs-lead">
+        Built for reading money and risk numbers. A spreadsheet user's selection, keyboard and
+        clipboard, virtualised on both axes, and a grid that refuses rather than guesses.
+    </MudText>
+    <div class="mt-6 d-flex gap-3 flex-wrap">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="getting-started" DropShadow="false">Get started</MudButton>
+        <MudButton Variant="Variant.Outlined" Href="showcase/blotter" Target="_blank">See a showcase</MudButton>
+    </div>
+</section>
+
+<div class="docs-cards">
+    <MudPaper Outlined="true" Class="docs-card">
+        <MudText Typo="Typo.h6" HtmlTag="h2">ExGrid</MudText>
+        <MudText Typo="Typo.body2" Class="docs-muted mt-1 mb-3">
+            The grid. Pinned columns, Header Groups, rectangular selection, sorting, filtering, find,
+            editing and the clipboard, over a million rows.
+        </MudText>
+        <MudLink Href="exgrid">Read the ExGrid docs →</MudLink>
+    </MudPaper>
+    <MudPaper Outlined="true" Class="docs-card">
+        <MudText Typo="Typo.h6" HtmlTag="h2">ExSheet</MudText>
+        <MudText Typo="Typo.body2" Class="docs-muted mt-1 mb-3">
+            A general-purpose sheet drawn by ExGrid: cells addressed A1, Formulas computed as Excel
+            computes them, a Formula Bar, Format Cells and a toolbar.
+        </MudText>
+        <MudLink Href="exsheet">Read the ExSheet docs →</MudLink>
+    </MudPaper>
+    <MudPaper Outlined="true" Class="docs-card">
+        <MudText Typo="Typo.h6" HtmlTag="h2">ExPivot</MudText>
+        <MudText Typo="Typo.body2" Class="docs-muted mt-1 mb-3">
+            Excel's PivotTable drawn by ExGrid: the Fields pane, Excel's report forms and totals, Show
+            Values As, and money summed exactly.
+        </MudText>
+        <MudLink Href="expivot">Read the ExPivot docs →</MudLink>
+    </MudPaper>
+</div>
+
+<DocsSection Title="Try it">
+    <p>
+        Every Example on this site is the real component, running in your browser. The switch at the
+        top switches every Example between the built-in Chrome and MudBlazor's: the same rows and the
+        same gestures, only the look changes. The code beneath each Example is the file it runs.
+    </p>
+    <DocsExample Builtin="typeof(ExGrid.Docs.Examples.Grid.FirstGrid)" Mud="typeof(ExGrid.Docs.Examples.Grid.FirstGridMud)" Files="@(["Examples/Data/Trade.cs"])" />
+</DocsSection>
