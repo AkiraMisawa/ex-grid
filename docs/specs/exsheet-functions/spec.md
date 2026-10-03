@@ -184,7 +184,7 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `PROPER` | Observe | P3 | As `UPPER` |
 | `REPT` | Ready | P3 | |
 | `EXACT` | Ready | P3 | |
-| `TEXT` | Decide | P1 | Excel reads its format code in the system's locale (`"yyyy"` is `"JJJJ"` in German). ADR-0047 writes every Formula in one spelling, so which codes it reads is a decision; `NumberFormat` already renders the codes |
+| `TEXT` | Supported | — | Its code in the invariant spelling, under every culture, shown as a cell format shows it (ADR-0120) |
 | `VALUE` | Decide | P2 | Excel parses the text in the system's locale. ExSheet's culture is the Sheet's (ADR-0048) |
 | `NUMBERVALUE` | Ready | P3 | Its separators are arguments, so it does not depend on a culture |
 
@@ -228,6 +228,6 @@ own. Every function here waits for that ADR.
 1. **The P1 Ready functions** — done, ticket 01. Their `uncertain` cases go to the next Windows run.
 2. **The P1 Observe functions, through one Windows run.** The criteria of the `SUMIF` family, and
    the approximate match of `VLOOKUP` and `MATCH`.
-3. **The P1 Decide functions, to the user.** `TODAY` (volatility, and what a saved document means),
-   and `TEXT` (which culture's format codes).
+3. **The P1 Decide functions, to the user.** `TEXT` — done, ticket 02 (ADR-0120). `TODAY` waits
+   for its ADR: where the day comes from, and what a saved document means.
 4. P2, then P3, in the same way.

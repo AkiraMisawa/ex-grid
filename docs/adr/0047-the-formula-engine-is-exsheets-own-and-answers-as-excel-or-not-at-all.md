@@ -393,3 +393,7 @@ give); `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where the day
 lies; and a boolean typed into `EOMONTH` or `EDATE`. The functions that answer about any Value —
 `IFNA`, `ISBLANK`, `ISNUMBER` — give `#GETTING_DATA` and `#CIRC!` back, as `IFERROR` and `ISERROR`
 do, and `INDEX` with a row or column of 0 over more than one cell is the spill refusal above.
+
+`TEXT` is admitted under [ADR-0120](./0120-text-reads-its-format-code-in-the-invariant-spelling-as-a-cell-format-shows-it.md),
+which settles the one thing this ADR left open for it: its format code is read in the invariant
+spelling, under every culture.

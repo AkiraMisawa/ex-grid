@@ -144,6 +144,9 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "index")] // ADR-0047, docs/specs/exsheet-functions ticket 01
     public void Index(string id) => Run("index", id);
 
+    [Theory, MemberData(nameof(Ids), "text")] // ADR-0120: TEXT reads its code in the invariant spelling, as a cell format shows it
+    public void Text(string id) => Run("text", id);
+
     [Theory, MemberData(nameof(Ids), "typed-constants")] // ADR-0048: constants read under the Sheet's culture
     public void TypedConstants(string id) => Run("typed-constants", id);
 
@@ -179,7 +182,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "abs", "and", "arithmetic", "average", "column-widths", "concat", "copy", "count", "counta", "date", "dates", "day", "edate", "eomonth", "errors", "fill", "format-levels", "formula-formats", "formula-text", "general-width", "if", "iferror", "ifna", "index", "int", "isblank", "iserror", "isnumber", "left", "len", "linked-tables", "max", "mid", "min", "mod", "month", "not", "number-formats", "or", "references", "right", "round", "rounddown", "roundup", "sheet-names", "structure", "sum", "trim", "typed-constants", "xlookup", "year",
+        "abs", "and", "arithmetic", "average", "column-widths", "concat", "copy", "count", "counta", "date", "dates", "day", "edate", "eomonth", "errors", "fill", "format-levels", "formula-formats", "formula-text", "general-width", "if", "iferror", "ifna", "index", "int", "isblank", "iserror", "isnumber", "left", "len", "linked-tables", "max", "mid", "min", "mod", "month", "not", "number-formats", "or", "references", "right", "round", "rounddown", "roundup", "sheet-names", "structure", "sum", "text", "trim", "typed-constants", "xlookup", "year",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

@@ -124,6 +124,7 @@ them:
 | `MID` | `text, start_num, num_chars` |
 | `LEN`, `TRIM` | `text` |
 | `CONCAT` | `text1, [text2], ...` |
+| `TEXT` | `value, format_text` |
 | `INDEX` | `array, row_num, [column_num]` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
 
@@ -150,6 +151,10 @@ answer:
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
   `ISERROR`, where Excel's are: a fallback never stands in for data that has not arrived.
   `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE.
+- **`TEXT` reads its code in the invariant spelling** under every culture (`"yyyy"`, never German
+  Excel's `"JJJJ"`), as a cell's number format records it, and shows the Value as a cell in that
+  format would under the Sheet's culture (ADR-0120). A code outside the cell formats' subset, an
+  empty code, and `General` past 11 characters are `#VALUE!`.
 - **Asked of Excel before they are answered**, each refused until the next Windows run says what
   Excel gives: `MOD` whose quotient is 2^27 or more (`#NUM!`, as older versions of Excel gave);
   `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where Excel's calendar holds the day

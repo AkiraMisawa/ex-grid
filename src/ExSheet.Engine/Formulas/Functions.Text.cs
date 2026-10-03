@@ -3,7 +3,8 @@ using System.Text;
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// LEFT, RIGHT, MID, LEN, TRIM and CONCAT, each to Microsoft's documentation of it. A number or a
+/// LEFT, RIGHT, MID, LEN, TRIM and CONCAT, each to Microsoft's documentation of it, and TEXT as
+/// ADR-0120 reads it. A number or a
 /// boolean is read as the text <c>&amp;</c> makes of it. Characters are counted as Excel counts
 /// them, in UTF-16 code units, so a character outside the Basic Multilingual Plane counts as two.
 /// </summary>
@@ -96,5 +97,40 @@ internal static partial class FunctionLibrary
             if (joined.Length > TextLimit) return Operand.Of(ErrorValue.Value);
         }
         return Operand.Of(Value.FromText(joined.ToString()));
+    }
+
+    /// <summary>
+    /// The longest General text <c>TEXT</c> answers. Excel is reported to fit TEXT's General to a
+    /// width, as it fits a cell's; at 11 characters or fewer every reading of that width agrees, and
+    /// past it the answer waits for a Windows run (ADR-0120).
+    /// </summary>
+    private const int TextGeneralLimit = 11;
+
+    /// <summary>
+    /// TEXT (ADR-0120): the Value as a cell in the format shows it under the Sheet's culture, the
+    /// code read in the invariant spelling and as written. A blank is 0, and text that reads as a
+    /// number is that number. A code the cell formats refuse, an empty code, and a number the
+    /// format cannot show are <c>#VALUE!</c>; the code's colour is dropped.
+    /// </summary>
+    private static Operand FormatAsText(FunctionCall call)
+    {
+        if (!TryScalar(call, 0, out var value, out var failure)) return failure;
+        if (!TryText(call, 1, out var code, out failure)) return failure;
+        if (code.Length == 0 || !NumberFormat.TryParseAsWritten(code, out var format)) return Operand.Of(ErrorValue.Value);
+
+        var culture = call.Evaluator.Culture;
+        var shown = value switch
+        {
+            null => Value.FromNumber(0),
+            { Kind: ValueKind.Text } text when ConstantParser.TryParseNumber(text.Text, culture, out var number) => Value.FromNumber(number),
+            { } other => other,
+        };
+        if (shown.Kind == ValueKind.Number && format.ShowsNumbersAsGeneral)
+        {
+            var general = NumberText.General(shown.Number, culture);
+            return general.Length > TextGeneralLimit ? Operand.Of(ErrorValue.Value) : Operand.Of(Value.FromText(general));
+        }
+        var (formatted, cannotShow, _) = format.Format(shown, culture);
+        return cannotShow ? Operand.Of(ErrorValue.Value) : Operand.Of(Value.FromText(formatted));
     }
 }

@@ -359,6 +359,21 @@ public sealed class NumberFormat : IEquatable<NumberFormat>
     }
 
     /// <summary>
+    /// Reads a code as <c>TEXT</c> reads it (ADR-0120): the invariant spelling under every culture,
+    /// and as written — a code that spells a built-in shown in the culture's own form
+    /// (<see cref="LocalIn"/>) is a code of its own, so <c>m/d/yyyy</c> shows <c>9/26/2026</c> under
+    /// ja-JP, where the built-in shows <c>2026/09/26</c>. <see langword="false"/> where
+    /// <see cref="TryParse"/> refuses the code.
+    /// </summary>
+    internal static bool TryParseAsWritten(string code, [NotNullWhen(true)] out NumberFormat? format)
+    {
+        if (!TryParse(code, out format, out _)) return false;
+        var written = format.Code;
+        if (LocalisedBuiltIns.Any(builtIn => string.Equals(builtIn.Code, written, StringComparison.OrdinalIgnoreCase))) format = Parse(OwnSpelling(written));
+        return true;
+    }
+
+    /// <summary>
     /// A built-in's invariant code as a code of its own: each separator escaped, so that it shows
     /// as it is spelled and is no built-in's. A built-in's code holds no quote or backslash.
     /// </summary>

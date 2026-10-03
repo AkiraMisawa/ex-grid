@@ -48,6 +48,7 @@ internal static partial class FunctionLibrary
         new("MID", 3, 3, "text, start_num, num_chars", "Returns a specific number of characters from a text string, starting at the position you specify.", Mid),
         new("LEN", 1, 1, "text", "Returns the number of characters in a text string.", Len),
         new("TRIM", 1, 1, "text", "Removes spaces from text, leaving single spaces between words.", Trim),
+        new("TEXT", 2, 2, "value, format_text", "Formats a number and converts it to text.", FormatAsText),
         new("CONCAT", 1, 253, "text1, [text2], ...", "Combines the text from multiple ranges and strings.", Concat),
         new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
