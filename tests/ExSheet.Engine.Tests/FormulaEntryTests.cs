@@ -24,12 +24,15 @@ public class FormulaEntryTests
     [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COUNT", "COUNTA" })]
     [InlineData("=SUM(A1,m|", new[] { "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH" })]
     [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP", "XMATCH", "XNPV", "XOR" })]
+    [InlineData("=LOG1|", new[] { "LOG10" })]
     public void Completion_offers_declared_functions(string marked, string[] expected)
     {
         Assert.Equal(expected, Names(marked));
     }
 
     [Theory] // ADR-0051: no completion where no name is being typed, or nothing matches
+    [InlineData("=F|3")]
+    [InlineData("=SUM(F|3)")]
     [InlineData("=|")]
     [InlineData("=SUM(|")]
     [InlineData("=\"SU|")]

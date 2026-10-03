@@ -244,8 +244,8 @@ for (const chrome of ['builtin', 'mud']) {
         // A Pinned Column's cell keeps its row's rule beneath the mark.
         expect(paint.pinnedMarked, JSON.stringify(paint)).toEqual([markLayer, ...paint.pinnedPlain]);
         if (chrome === 'mud') {
-            // The Wrapper maps the token onto its palette: the warning colour at 25% (ADR-0068).
-            expect(paint.token, JSON.stringify(paint)).toMatch(/0\.25\)$/);
+            // The Wrapper maps the token onto its palette: the warning colour at 25% (ADR-0068). The shipped stylesheet is minified (ADR-0123), which writes 0.25 as .25.
+            expect(paint.token, JSON.stringify(paint)).toMatch(/(^|[^0-9])0?\.25\)$/);
             expect(markLayer, JSON.stringify(paint)).toContain(', 0.25)');
             // And turns the row's rule on, so the rule the mark keeps is one that shows.
             expect(paint.pinnedPlain[0], JSON.stringify(paint)).toMatch(/^linear-gradient\(to top, (?!rgba\(0, 0, 0, 0\))/);

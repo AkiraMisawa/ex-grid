@@ -199,6 +199,9 @@ public static partial class FormulaEntry
         if (token.Kind != TokenKind.Operand || token.Unterminated) return null;
         var prefix = text[token.Start..caret];
         if (!NamePattern().IsMatch(prefix) || !OperandMayStart(tokens, index)) return null;
+        // Inside a Reference no name is being typed: =F|3 is the cell F3 with the caret in it. At its
+        // end the text may still be a name's beginning (=LOG1 lists LOG10), as Excel's list shows.
+        if (caret < token.End && Formulas.Lexer.ReadReference(text, token.Start, out var length) is not null && token.Start + length == token.End) return null;
 
         var candidates = DeclaredFunction.All
             .Where(f => f.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
