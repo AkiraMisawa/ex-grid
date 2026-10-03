@@ -119,6 +119,10 @@ public sealed class SheetRow
     /// <summary>The cell's Entry as the Cell Editor opens on it (ADR-0051).</summary>
     internal string EntryTextAt(int column) => _sheet.GetEntryText(new CellAddress(Index, column));
 
+    /// <summary>For a cell an array spills into, its Anchor's Formula, which the Formula Bar shows dimmed (ADR-0125); otherwise null.</summary>
+    internal string? SpilledFormulaAt(int column) =>
+        _sheet.SpilledFrom(new CellAddress(Index, column)) is { } anchor ? _sheet.GetEntryText(anchor) : null;
+
     /// <summary>
     /// The verdict on a commit into this row (ADR-0034): a Formula the engine cannot read is
     /// rejected with the engine's reason, and the editor holds the text so it can be corrected.

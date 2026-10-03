@@ -52,7 +52,7 @@ public static class SheetCases
     /// <summary>The names <see cref="Document"/> knows, in the order the run numbers them.</summary>
     public static IReadOnlyList<string> Names { get; } =
         ["1", "2", "3b", "3c", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "16", "17", "18", "paper", "lines", "12-1", "12-14",
-            "14-16", "14-17", "14-18", "fills", "today"];
+            "14-16", "14-17", "14-18", "fills", "today", "spill"];
 
     /// <summary>
     /// Case <paramref name="name"/>'s Sheet, in <paramref name="culture"/>; null when no case is
@@ -71,6 +71,13 @@ public static class SheetCases
                 Enter(sheet, "A1", "=TEXT(TODAY(),\"yyyy-mm-dd\")");
                 Enter(sheet, "A2", "=TODAY()");
                 Enter(sheet, "A3", "=TEXT(NOW(),\"yyyy-mm-dd\")");
+                break;
+            case "spill":
+                // ADR-0125: C1's Formula spills down C1:C3.
+                Enter(sheet, "A1", "1");
+                Enter(sheet, "A2", "2");
+                Enter(sheet, "A3", "3");
+                Enter(sheet, "C1", "=A1:A3*10");
                 break;
             case "1":
                 // Rows 1–8: -5 and 5 in each of the eight named colours; [White]'s row filled black.

@@ -99,9 +99,11 @@ public class MudGridChromeTests : MudTestContext
         Assert.Equal("xyzw", Assert.Single(intents).Value);
     }
 
-    private IRenderedComponent<ExGrid<Trade>> RenderBarGrid(MudGridChrome chrome, Action<string>? onNameBox = null)
+    private IRenderedComponent<ExGrid<Trade>> RenderBarGrid(MudGridChrome chrome, Action<string>? onNameBox = null, Func<Trade, GridColumn<Trade>, string?>? borrowed = null)
         => Render<ExGrid<Trade>>(ps =>
         {
+            if (borrowed is not null)
+                ps.Add(g => g.FormulaBarBorrowedTextOf, borrowed);
             ps.Add(g => g.Window, Rows(5))
               .Add(g => g.TotalCount, 5)
               .Add(g => g.Columns, Columns())
@@ -154,6 +156,18 @@ public class MudGridChromeTests : MudTestContext
 
         await ClickCellAsync(cut, 150, 30);                      // Amount does not
         Assert.True(cut.Find("input.mud-ex-formula-bar-text").HasAttribute("readonly"));
+    }
+
+    [Fact] // ADR-0125: text the bar borrows from another cell is dimmed in this Chrome's own class, and read-only
+    public async Task Borrowed_text_is_dimmed_and_read_only()
+    {
+        var cut = RenderBarGrid(MudGridChrome.Default, borrowed: (_, column) => column.Name == "Book" ? "=A1:A3" : null);
+        await ClickCellAsync(cut, 50, 30);                       // Book edits, but its text is borrowed
+
+        var bar = cut.Find("input.mud-ex-formula-bar-text");
+        Assert.Equal("=A1:A3", bar.GetAttribute("value"));
+        Assert.Contains("mud-ex-formula-bar-text-borrowed", bar.ClassList);
+        Assert.True(bar.HasAttribute("readonly"));
     }
 
     [Fact] // ADR-0010/0030: the loading bar is a MudProgressLinear in the Chrome's colour, only while loading

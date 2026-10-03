@@ -309,4 +309,32 @@ public class SpillTests
 
         Assert.Equal(ErrorValue.Num, sheet.Evaluate(formula).Error);
     }
+
+    [Fact] // ADR-0125: part of a spill copied without its Anchor pastes as Values, as Excel's does
+    public void Part_of_a_spill_copies_as_values()
+    {
+        var sheet = WithColumn(1, 2, 3);
+        sheet.Enter("C1", "=A1:A3*10");
+
+        var copy = sheet.Copy(CellRange.Parse("C2:C3"));
+        sheet.Do(SheetEdit.Paste(copy.Block!, At("E1")));
+
+        Assert.Equal("20\r\n30\r\n", copy.Text);
+        Assert.Equal("20", sheet.GetEntryText(At("E1")));
+        Assert.Equal(30, sheet.Number("E2"));
+        Assert.Null(sheet.SpilledFrom(At("E1")));
+    }
+
+    [Fact] // ADR-0125: a spill copied with its Anchor pastes the Formula, which spills again
+    public void A_spill_with_its_anchor_copies_its_formula()
+    {
+        var sheet = WithColumn(1, 2, 3);
+        sheet.Enter("C1", "=A1:A3*10");
+
+        sheet.Do(SheetEdit.Paste(sheet.Copy(CellRange.Parse("C1:C3")).Block!, At("D1")));
+
+        Assert.Equal("=B1:B3*10", sheet.GetEntryText(At("D1")));
+        Assert.Null(sheet.GetEntry(At("D2")));
+        Assert.Equal(At("D1"), sheet.SpilledFrom(At("D2")));
+    }
 }

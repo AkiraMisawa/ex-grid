@@ -524,7 +524,7 @@
                 {
                     <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" data-ex-colours="@BarReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceText</div></div>
                 }
-                <input class="ex-editor ex-formula-bar-text" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
+                <input class="@(FormulaBarBorrowed ? "ex-editor ex-formula-bar-text ex-formula-bar-borrowed" : "ex-editor ex-formula-bar-text")" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarPressedAsync"
                        @ref="_formulaBarElement" />
             }
@@ -1678,6 +1678,16 @@
     /// before.
     /// </summary>
     [Parameter] public Func<TRow, GridColumn<TRow>, string?>? EditorTextOf { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ExSheet, ADR-0125): text the Formula Bar shows for a cell that is
+    /// not the cell's own — a cell an array spills into shows its Anchor's Formula — per cell, or
+    /// null for a cell whose text is its own. The bar shows it dimmed (<c>ex-formula-bar-borrowed</c>,
+    /// <c>--ex-formula-bar-borrowed-color</c>) and opens no edit on it, since what it shows is not
+    /// what the cell holds; typing on the cell still opens Overwrite there, and F2 opens on
+    /// <see cref="EditorTextOf"/>'s answer, as on any cell.
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, string?>? FormulaBarBorrowedTextOf { get; set; }
 
     /// <summary>
     /// A Consumer declaration (ADR-0051): the Formula Bar, a band inside the root above the
@@ -6925,6 +6935,8 @@
             return "";
         var row = _window[slice];
         var column = Columns[focus.Column];
+        if (FormulaBarBorrowedTextOf?.Invoke(row, column) is { } borrowed)
+            return borrowed;
         if (EditorTextOf?.Invoke(row, column) is { } supplied)
             return supplied;
         if (!column.PaintsValue)
@@ -7396,7 +7408,7 @@
                 await PushEditingStateAsync();
             return;
         }
-        if (_selection.Selection.IsEmpty || !IsEditableCell(_selection.Selection.Focus))
+        if (_selection.Selection.IsEmpty || !IsEditableCell(_selection.Selection.Focus) || FormulaBarBorrowed)
         {
             _suppressRender = true;
             return;
@@ -7444,7 +7456,22 @@
     /// Focus cell edits and one can open there (ADR-0051/0035).</summary>
     private bool FormulaBarEditable
         => _editMode != EditMode.None
-            || (!_selection.Selection.IsEmpty && IsEditableCell(_selection.Selection.Focus));
+            || (!_selection.Selection.IsEmpty && IsEditableCell(_selection.Selection.Focus) && !FormulaBarBorrowed);
+
+    /// <summary>Whether, with no edit open, the Formula Bar shows text that is not the Focus cell's
+    /// own (<see cref="FormulaBarBorrowedTextOf"/>, ADR-0125).</summary>
+    private bool FormulaBarBorrowed
+    {
+        get
+        {
+            if (FormulaBarBorrowedTextOf is not { } borrowed || _editMode != EditMode.None || _selection.Selection.IsEmpty)
+                return false;
+            var focus = _selection.Selection.Focus;
+            var slice = focus.Row - _windowStart;
+            return focus.Column >= 0 && focus.Column < Columns.Count && slice >= 0 && slice < _window.Count
+                && borrowed(_window[slice], Columns[focus.Column]) is not null;
+        }
+    }
 
     /// <summary>
     /// A press into the Name Box (ADR-0051): an open edit commits first, as a press anywhere
@@ -7529,6 +7556,7 @@
             _chromeBarTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: true)))
         {
             ReferenceText = BarReferenceTextForChrome,
+            Borrowed = FormulaBarBorrowed,
         };
 
     /// <summary>A handler reached from a Chrome's control rather than from an event on the

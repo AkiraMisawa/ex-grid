@@ -162,6 +162,9 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-borrowed {
+    color: var(--mud-palette-text-disabled);
+}
 .mud-ex-grid .ex-formula-bar-text .mud-ex-formula-bar-text-editable:focus {
     box-shadow: inset 0 -2px 0 var(--mud-palette-primary);
 }
