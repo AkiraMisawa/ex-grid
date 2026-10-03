@@ -105,7 +105,7 @@ places.
   and −2) answers only over data that is sorted as the mode says, and gives `#VALUE!` otherwise:
   over unsorted data, which row Excel returns depends on an algorithm that is not documented.
   Which of several equal keys it returns is to be observed in Excel first.
-- **Spilled arrays are not supported.** A Formula whose result is more than one cell gives
+- *(Replaced 2026-10-03 by [ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md), decided with the user: a Formula whose result is an array now spills, and the refusal below became the answer it was kept for. The text stands as it was decided.)* **Spilled arrays are not supported.** A Formula whose result is more than one cell gives
   `#VALUE!`. Excel 365 would spill it. Implicit intersection, Excel 2019's behaviour, would return
   one value instead, and was rejected: it would silently change what a Formula means on the day
   spilling arrives. A refusal can become an answer later without changing any sheet already
@@ -412,3 +412,7 @@ Admitted as ticket 05, the P3 functions that were Ready: `RANK.EQ`, `STDEV.S`, `
 `VAR.P`, `XOR`, `ROWS`, `COLUMNS`, `SIGN`, `EXP`, `LN`, `LOG10`, `PI`, `TIME`, `HOUR`, `MINUTE`,
 `SECOND`, `REPT`, `EXACT`, `NUMBERVALUE` and `XNPV`. With them, every function the catalogue marked
 Ready is Supported; what remains waits on a Windows run (Observe) or on a decision (Decide).
+
+`VALUE` is admitted under [ADR-0124](./0124-volatile-functions-are-recalculated-after-every-change.md):
+it reads its text under the Sheet's culture, as the arithmetic operators read text. `OFFSET` and
+`NOW` are admitted under the same ADR, as volatile functions.

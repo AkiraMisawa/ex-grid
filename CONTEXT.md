@@ -661,6 +661,27 @@ it is now in a time zone: the Consumer's, or else the browser's. Until one is kn
 ([ADR-0121](./docs/adr/0121-today-is-the-sheet-day-and-exsheet-keeps-it.md)).
 _Avoid_: system date, server date, current date
 
+**Volatile Function**:
+A function whose answer can change while no cell its Formula names changes — `OFFSET`, which reads
+a Reference it computes, and `NOW`. A Formula that calls one is recalculated in every recalculation
+([ADR-0124](./docs/adr/0124-volatile-functions-are-recalculated-after-every-change.md)).
+_Avoid_: dynamic function, live function
+
+**Spill**:
+What a Formula whose result is an array does: its first Value shows in the Formula's own cell, the
+**Anchor**, and the rest in the cells below and to the right, the **Spill Range**, which hold no
+Entry. A cell of the Spill Range that holds an Entry stops it, and the Anchor shows `#SPILL!`
+([ADR-0125](./docs/adr/0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md)).
+_Avoid_: array formula (Excel's older, entered-with-Ctrl+Shift+Enter kind), overflow
+
+**Anchor**:
+The cell whose Formula **Spill**s. `A1#` names its Spill Range.
+_Avoid_: origin, parent cell
+
+**Spill Range**:
+The cells an **Anchor**'s array covers, itself included.
+_Avoid_: spill area, array range
+
 **Formula**:
 An Entry beginning with `=`, written in Excel's syntax, that computes a Value from other cells'
 Values. A function ExSheet does not know yields `#NAME?`; it is never guessed at

@@ -64,7 +64,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `MAXIFS` | Observe | P2 | As `SUMIF` |
 | `MINIFS` | Observe | P2 | As `SUMIF` |
 | `COUNTBLANK` | Observe | P2 | Whether `""` returned by a Formula counts as blank is to be observed |
-| `SUMPRODUCT` | Decide | P2 | Arguments given as ranges, `SUMPRODUCT(A1:A3, B1:B3)`, could be Ready. Its common form `SUMPRODUCT((A1:A3="x")*B1:B3)` applies an operator to a range, which ADR-0047 refuses until arrays get their ADR |
+| `SUMPRODUCT` | Ready | P2 | Its arrays, operators on ranges included, reduced to one Value (ADR-0125) |
 | `PRODUCT` | Supported | — | |
 | `MEDIAN` | Supported | — | |
 | `LARGE` | Supported | — | |
@@ -113,7 +113,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `COLUMN` | Supported | — | |
 | `ROWS` | Supported | — | |
 | `COLUMNS` | Supported | — | |
-| `OFFSET` | Decide | P2 | A Reference computed at recalculation: the dependency graph reads References from the Formula's text (ADR-0047), and Excel makes `OFFSET` volatile |
+| `OFFSET` | Ready | P2 | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
 | `INDIRECT` | Decide | P3 | As `OFFSET`, and its text names cells that an insertion does not rewrite |
 
 ### Math and rounding
@@ -161,7 +161,7 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `MINUTE` | Supported | — | |
 | `SECOND` | Supported | — | |
 | `TODAY` | Supported | — | The Sheet Day: a fixed day, or the day in the Consumer's time zone, or else the browser's; `#GETTING_DATA` until one is known (ADR-0121, ADR-0122) |
-| `NOW` | Decide | P2 | The Sheet Day of ADR-0121 holds no time of day; `NOW` needs one, and when it moves on |
+| `NOW` | Ready | P2 | Volatile, and moved on each minute; the moment in the Sheet's zone (ADR-0124) |
 
 ### Text
 
@@ -185,7 +185,7 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `REPT` | Supported | — | |
 | `EXACT` | Supported | — | |
 | `TEXT` | Supported | — | Its code in the invariant spelling, under every culture, shown as a cell format shows it (ADR-0120) |
-| `VALUE` | Decide | P2 | Excel parses the text in the system's locale. ExSheet's culture is the Sheet's (ADR-0048) |
+| `VALUE` | Ready | P2 | Under the Sheet's culture, as the operators read text (ADR-0124) |
 | `NUMBERVALUE` | Supported | — | Its separators are arguments, so it does not depend on a culture |
 
 ### Financial
@@ -203,17 +203,16 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 
 ### Dynamic arrays
 
-ADR-0047 refuses a result of more than one cell with `#VALUE!` and gives spilling an ADR of its
-own. Every function here waits for that ADR.
+A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refusal).
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `FILTER` | Decide | P2 | |
-| `SORT` | Decide | P3 | |
-| `SORTBY` | Decide | P3 | |
-| `UNIQUE` | Decide | P2 | |
-| `SEQUENCE` | Decide | P3 | |
-| `TRANSPOSE` | Decide | P3 | |
+| `FILTER` | Ready | P2 | Spills (ADR-0125) |
+| `SORT` | Ready | P3 | Spills (ADR-0125) |
+| `SORTBY` | Ready | P3 | Spills (ADR-0125) |
+| `UNIQUE` | Ready | P2 | Spills (ADR-0125) |
+| `SEQUENCE` | Ready | P3 | Spills (ADR-0125) |
+| `TRANSPOSE` | Ready | P3 | Spills (ADR-0125) |
 | `LET` | Decide | P3 | Not an array function, but names inside a Formula are new grammar (ADR-0047) |
 
 ### Random
