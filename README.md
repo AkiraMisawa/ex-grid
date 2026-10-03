@@ -10,8 +10,10 @@ Three products share this repository and ship as separate packages
 ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)):
 
 - **ExGrid** — display-oriented. Fully specified; this is what gets built first.
-- **ExSheet** — edit-oriented. Being specified: decided in ADR-0046 to ADR-0051, specified in
-  `docs/specs/exsheet/`.
+- **ExSheet** — edit-oriented: a general-purpose sheet drawn by ExGrid as its Consumer, with a
+  MudBlazor Wrapper (`ExSheet.MudBlazor`). Being specified: decided from
+  [ADR-0046](docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)
+  on, specified in `docs/specs/exsheet/`.
 - **ExPivot** — Excel's PivotTable, drawn by ExGrid, with a MudBlazor Wrapper
   (`ExPivot.MudBlazor`). Decided in ADR-0059 to ADR-0070, specified in `docs/specs/expivot/`.
   See it on the demo host's pages, one per use case, each showing the code it runs: `/pivot`
@@ -32,7 +34,7 @@ pure-logic core and the component layer exist, virtualised on both axes, with pi
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (69 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) (74 decision records) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Using the packages
@@ -136,10 +138,10 @@ your environment alone.
 | [`docs/adr/`](docs/adr/) | Architecture decision records — the specification and the reasons behind it |
 | [`src/ExGrid/`](src/ExGrid/) | The ExGrid package: pure-logic core and the Blazor components |
 | [`src/ExGrid.MudBlazor/`](src/ExGrid.MudBlazor/) | The ExGrid.MudBlazor package: the Wrapper for MudBlazor applications |
-| [`src/ExSheet.Engine/`](src/ExSheet.Engine/), [`src/ExSheet/`](src/ExSheet/) | ExSheet: its Formula engine, and the Sheet ExGrid draws |
+| [`src/ExSheet.Engine/`](src/ExSheet.Engine/), [`src/ExSheet/`](src/ExSheet/), [`src/ExSheet.MudBlazor/`](src/ExSheet.MudBlazor/) | ExSheet: its Formula engine, the Sheet ExGrid draws, and its MudBlazor Wrapper |
 | [`src/ExGrid.Data/`](src/ExGrid.Data/), [`src/ExGrid.Data.Arrow/`](src/ExGrid.Data.Arrow/) | The Snapshot, its loaders and Change Batches; and its Apache Arrow reader and writer |
 | [`src/ExPivot.Engine/`](src/ExPivot.Engine/), [`src/ExPivot/`](src/ExPivot/), [`src/ExPivot.MudBlazor/`](src/ExPivot.MudBlazor/) | ExPivot: the pivot engine and the Pivot Source, the component, and its MudBlazor Wrapper |
-| [`tests/`](tests/) | The gating test layers — xUnit for each package's logic (`ExGrid.Tests`, `ExSheet.Engine.Tests`, `ExPivot.Engine.Tests`, `ExGrid.Data.Tests`, `ExGrid.Data.Arrow.Tests`, and `ExGrid.DemoApi.Tests` for the demo server), bUnit for the components (`ExGrid.Components`, `ExGrid.MudBlazor.Tests`, `ExSheet.Components`, `ExPivot.Components`, `ExPivot.MudBlazor.Tests`), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
+| [`tests/`](tests/) | The gating test layers — xUnit for each package's logic (`ExGrid.Tests`, `ExSheet.Engine.Tests`, `ExPivot.Engine.Tests`, `ExGrid.Data.Tests`, `ExGrid.Data.Arrow.Tests`, and `ExGrid.DemoApi.Tests` for the demo server), bUnit for the components (`ExGrid.Components`, `ExGrid.MudBlazor.Tests`, `ExSheet.Components`, `ExSheet.MudBlazor.Tests`, `ExPivot.Components`, `ExPivot.MudBlazor.Tests`), `ExGrid.Browser` (Playwright) — and `ExGrid.PackageSmoke`, the packages taken as a Consumer takes them |
 | [`.github/workflows/`](.github/workflows/) | CI (`ci.yml`) and the prerelease publish (`release.yml`) |
 | [`samples/ExGrid.DemoPages/`](samples/ExGrid.DemoPages/) | The demo pages both hosts serve, and the browser layer's fixture. Not shipped |
 | [`samples/ExGrid.DemoHost/`](samples/ExGrid.DemoHost/) | The standalone WebAssembly host for those pages — the default. Not shipped |
@@ -154,10 +156,11 @@ The two rules that override convenience (details in [`AGENTS.md`](AGENTS.md)):
 
 1. **Everything committed to this repository is written in English** — documents, code,
    comments, commit messages, test names, UI strings.
-2. **JavaScript is allowlisted, not "minimised"** — six permitted uses (capture-phase
+2. **JavaScript is allowlisted, not "minimised"** — eight permitted uses (capture-phase
    `keydown`, scroll offsets, the clipboard, a `ResizeObserver` reporting the Scrollbar
-   Gutter, a pointer report for the hover band, and a `ResizeObserver` reporting the Layout
-   Ceiling); anything else needs a new ADR
+   Gutter, a pointer report for the hover band, a `ResizeObserver` reporting the Layout
+   Ceiling, the Keyboard Field's composition and focus for an IME, and a `matchMedia`
+   listener reporting the Device Pixel); anything else needs a new ADR
    ([ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md)).
 
 Before changing behaviour, read the relevant ADR — the reasons are written down, and
