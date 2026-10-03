@@ -113,7 +113,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `COLUMN` | Supported | — | |
 | `ROWS` | Supported | — | |
 | `COLUMNS` | Supported | — | |
-| `OFFSET` | Ready | P2 | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
+| `OFFSET` | Supported | — | Volatile (ADR-0124): recalculated after every change, its computed Reference read as it stands |
 | `INDIRECT` | Decide | P3 | As `OFFSET`, and its text names cells that an insertion does not rewrite |
 
 ### Math and rounding
@@ -161,7 +161,7 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `MINUTE` | Supported | — | |
 | `SECOND` | Supported | — | |
 | `TODAY` | Supported | — | The Sheet Day: a fixed day, or the day in the Consumer's time zone, or else the browser's; `#GETTING_DATA` until one is known (ADR-0121, ADR-0122) |
-| `NOW` | Ready | P2 | Volatile, and moved on each minute; the moment in the Sheet's zone (ADR-0124) |
+| `NOW` | Supported | — | Volatile, and moved on each minute; the moment in the Sheet's zone (ADR-0124) |
 
 ### Text
 
@@ -185,7 +185,7 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 | `REPT` | Supported | — | |
 | `EXACT` | Supported | — | |
 | `TEXT` | Supported | — | Its code in the invariant spelling, under every culture, shown as a cell format shows it (ADR-0120) |
-| `VALUE` | Ready | P2 | Under the Sheet's culture, as the operators read text (ADR-0124) |
+| `VALUE` | Supported | — | Under the Sheet's culture, as the operators read text (ADR-0124) |
 | `NUMBERVALUE` | Supported | — | Its separators are arguments, so it does not depend on a culture |
 
 ### Financial

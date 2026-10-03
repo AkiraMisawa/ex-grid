@@ -1,0 +1,70 @@
+{
+  "area": "value",
+  "about": "VALUE (ADR-0124): text read under the Sheet's culture.",
+  "cases": [
+    {
+      "id": "VALUEFN-001",
+      "source": "documented",
+      "description": "Microsoft's example: currency text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=VALUE(\"$1,000\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1000}
+    },
+    {
+      "id": "VALUEFN-002",
+      "source": "documented",
+      "description": "Microsoft's example: times as text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=VALUE(\"16:48:00\")-VALUE(\"12:00:00\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.2, "digits": 12}
+    },
+    {
+      "id": "VALUEFN-003",
+      "source": "documented",
+      "description": "A number is itself",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=VALUE(5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "VALUEFN-004",
+      "source": "documented",
+      "description": "Text that is no number is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=VALUE(\"abc\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "VALUEFN-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank cell is 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=VALUE(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "VALUEFN-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a boolean is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=VALUE(TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "VALUEFN-007",
+      "source": "uncertain",
+      "culture": "de-DE",
+      "description": "Under de-DE, the Sheet's culture reads the comma as the decimal separator",
+      "cells": {"ZZ1000": "=VALUE(\"1,5\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.5},
+      "engineDiffersByDecision": "ADR-0124: VALUE reads text under the Sheet's culture, where Excel reads the system's locale"
+    }
+  ]
+}

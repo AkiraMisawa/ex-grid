@@ -20,6 +20,9 @@ internal interface ICellReader
     /// <summary>The Sheet Day <c>TODAY</c> answers (ADR-0121), or <see langword="null"/> while it is not known.</summary>
     DateOnly? Today { get; }
 
+    /// <summary>The moment <c>NOW</c> answers, in the Sheet's zone, read once for the recalculation (ADR-0124); <see langword="null"/> while it is not known.</summary>
+    DateTime? Now { get; }
+
     /// <summary>Whether a Reference names the Sheet's own cells: unqualified, or qualified with the Sheet's name (ADR-0046).</summary>
     bool IsLocal(Reference reference);
 }

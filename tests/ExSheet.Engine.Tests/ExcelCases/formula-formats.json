@@ -367,6 +367,15 @@
       "action": {"do": "enter", "cells": {"B1": "=TODAY()"}},
       "check": "B1",
       "expect": {"numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-039",
+      "source": "documented",
+      "description": "NOW in a General cell gives the short date and time format, as Microsoft documents (its Value is the moment the oracle runs, so only the format is compared)",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=NOW()"}},
+      "check": "B1",
+      "expect": {"numberFormat": "m/d/yyyy h:mm"}
     }
   ]
 }

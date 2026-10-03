@@ -335,6 +335,7 @@ public sealed partial class Sheet
         if (areas.Count > 0) _areaPrecedents[formulaCell] = [.. areas];
         RegisterTableReaders(formulaCell, formula);
         RegisterTodayReader(formulaCell, formula);
+        RegisterVolatile(formulaCell, formula);
     }
 
     private void Unregister(CellAddress formulaCell, Node formula)
@@ -351,6 +352,7 @@ public sealed partial class Sheet
         _areaPrecedents.Remove(formulaCell);
         UnregisterTableReaders(formulaCell, formula);
         _todayReaders.Remove(formulaCell);
+        _volatileFormulas.Remove(formulaCell);
     }
 
     /// <summary>The Formula cells that read <paramref name="address"/> directly.</summary>
@@ -380,9 +382,11 @@ public sealed partial class Sheet
     /// </summary>
     private SheetChange Recalculate(HashSet<CellAddress> changed, SortedSet<int> rows)
     {
-        // 1. Everything the change can reach.
+        // 1. Everything the change can reach, and every volatile Formula, whatever the change (ADR-0124).
+        _moment = NowSource?.Invoke();
         var dirty = new HashSet<CellAddress>(changed);
-        var queue = new Queue<CellAddress>(changed);
+        dirty.UnionWith(_volatileFormulas);
+        var queue = new Queue<CellAddress>(dirty);
         while (queue.Count > 0)
         {
             foreach (var dependent in Dependents(queue.Dequeue()))
@@ -416,17 +420,20 @@ public sealed partial class Sheet
             edges[precedent] = targets;
         }
 
-        var reader = new StagedReader(this, staged);
-        var evaluator = new Evaluator(reader, Culture);
-        var ready = new Queue<CellAddress>(waiting.Where(w => w.Value == 0).Select(w => w.Key));
+        // A Reference a volatile function computes is read as it stands after this recalculation:
+        // a cell this recalculation has still to compute is computed first, on demand, and a
+        // Formula that reaches itself that way is #CIRC! (ADR-0124).
+        var inProgress = new HashSet<CellAddress>();
         var recalculated = new List<CellAddress>();
+        StagedReader reader = null!;
+        Evaluator evaluator = null!;
+        reader = new StagedReader(this, staged, address => formulas.Contains(address) ? Compute(address) : null);
+        evaluator = new Evaluator(reader, Culture);
+        var ready = new Queue<CellAddress>(waiting.Where(w => w.Value == 0).Select(w => w.Key));
         while (ready.Count > 0)
         {
             var address = ready.Dequeue();
-            var node = _cells[address].Entry!.Parsed!;
-            evaluator.Self = address;
-            staged[address] = Taint(node, reader) ?? evaluator.Evaluate(node);
-            recalculated.Add(address);
+            if (!staged.ContainsKey(address)) Compute(address);
             foreach (var dependent in edges[address])
             {
                 if (--waiting[dependent] == 0) ready.Enqueue(dependent);
@@ -436,8 +443,8 @@ public sealed partial class Sheet
         {
             if (count > 0)
             {
+                if (!staged.ContainsKey(address)) recalculated.Add(address);
                 staged[address] = Value.FromError(ErrorValue.Circ);
-                recalculated.Add(address);
             }
         }
 
@@ -461,6 +468,23 @@ public sealed partial class Sheet
         valueChanges.Sort();
         recalculated.Sort();
         return new SheetChange(valueChanges, recalculated, [.. rows]);
+
+        // One Formula, once: in dependency order from the loop above, or first, on demand, when a
+        // computed Reference reads it before its turn.
+        Value? Compute(CellAddress address)
+        {
+            if (staged.TryGetValue(address, out var done)) return done;
+            if (!inProgress.Add(address)) return Value.FromError(ErrorValue.Circ);
+            var node = _cells[address].Entry!.Parsed!;
+            var outer = evaluator.Self;
+            evaluator.Self = address;
+            var value = Taint(node, reader) ?? evaluator.Evaluate(node);
+            evaluator.Self = outer;
+            inProgress.Remove(address);
+            staged[address] = value;
+            recalculated.Add(address);
+            return value;
+        }
     }
 
     /// <summary>
@@ -470,7 +494,7 @@ public sealed partial class Sheet
     /// </summary>
     private Value? Taint(Node node, StagedReader reader)
     {
-        var gettingData = ReadsWaitingTable(node) || WaitsForToday(node);
+        var gettingData = ReadsWaitingTable(node) || WaitsForToday(node) || WaitsForNow(node);
         foreach (var reference in node.References)
         {
             if (!IsLocal(reference)) continue;
@@ -509,10 +533,15 @@ public sealed partial class Sheet
         }
     }
 
-    private sealed class StagedReader(Sheet sheet, Dictionary<CellAddress, Value?> staged) : ICellReader
+    private sealed class StagedReader(Sheet sheet, Dictionary<CellAddress, Value?> staged, Func<CellAddress, Value?>? onDemand = null) : ICellReader
     {
-        public Value? Read(CellAddress address) =>
-            staged.TryGetValue(address, out var value) ? value : sheet.GetValue(address);
+        /// <summary>A cell as this recalculation leaves it: staged, or computed now when it is still to be (ADR-0124), or as it stood.</summary>
+        public Value? Read(CellAddress address)
+        {
+            if (staged.TryGetValue(address, out var value)) return value;
+            if (onDemand?.Invoke(address) is { } computed) return computed;
+            return sheet.GetValue(address);
+        }
 
         public IEnumerable<CellAddress> NonBlankIn(Area area) =>
             sheet.CellsIn(area).Where(a => Read(a) is not null).Order();
@@ -522,6 +551,8 @@ public sealed partial class Sheet
         public bool IsLocal(Reference reference) => sheet.IsLocal(reference);
 
         public DateOnly? Today => sheet.Today;
+
+        public DateTime? Now => sheet._moment;
     }
 
     private sealed class Cell(CellAddress address)

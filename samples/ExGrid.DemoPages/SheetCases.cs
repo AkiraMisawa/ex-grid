@@ -27,7 +27,7 @@ namespace ExGrid.DemoPages;
 /// E3's Fill, B5's right between two, E5's right beside F5's Fill, and B8's bottom between
 /// two.</item>
 /// <item><c>today</c> reads the Sheet Day (ADR-0121): A1 is <c>TODAY()</c> as <c>yyyy-mm-dd</c>, and
-/// A2 is <c>TODAY()</c> itself; <c>/sheet</c>'s <c>?zone=</c> and <c>?today=</c> set the Sheet's
+/// A2 is <c>TODAY()</c> itself, and A3 is <c>NOW()</c>'s day as <c>yyyy-mm-dd</c> (ADR-0124); <c>/sheet</c>'s <c>?zone=</c> and <c>?today=</c> set the Sheet's
 /// <c>TimeZone</c> and <c>Today</c>.</item>
 /// </list>
 /// </summary>
@@ -70,6 +70,7 @@ public static class SheetCases
             case "today":
                 Enter(sheet, "A1", "=TEXT(TODAY(),\"yyyy-mm-dd\")");
                 Enter(sheet, "A2", "=TODAY()");
+                Enter(sheet, "A3", "=TEXT(NOW(),\"yyyy-mm-dd\")");
                 break;
             case "1":
                 // Rows 1–8: -5 and 5 in each of the eight named colours; [White]'s row filled black.

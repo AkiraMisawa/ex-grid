@@ -297,6 +297,12 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "xnpv")] // ADR-0047, docs/specs/exsheet-functions ticket 05
     public void XNpv(string id) => Run("xnpv", id);
 
+    [Theory, MemberData(nameof(Ids), "value")] // ADR-0124, docs/specs/exsheet-functions ticket 06
+    public void ValueFunction(string id) => Run("value", id);
+
+    [Theory, MemberData(nameof(Ids), "offset")] // ADR-0124, docs/specs/exsheet-functions ticket 06
+    public void OffsetFunction(string id) => Run("offset", id);
+
     [Theory, MemberData(nameof(Ids), "typed-constants")] // ADR-0048: constants read under the Sheet's culture
     public void TypedConstants(string id) => Run("typed-constants", id);
 
@@ -332,7 +338,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "abs", "and", "arithmetic", "average", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "count", "counta", "date", "dates", "day", "days", "edate", "eomonth", "errors", "exact", "exp", "fill", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hour", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "ln", "log10", "max", "median", "mid", "min", "minute", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "or", "pi", "pmt", "power", "product", "pv", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "second", "sheet-names", "sign", "small", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "sum", "switch", "text", "textjoin", "time", "trim", "trunc", "typed-constants", "var-p", "var-s", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year",
+        "abs", "and", "arithmetic", "average", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "count", "counta", "date", "dates", "day", "days", "edate", "eomonth", "errors", "exact", "exp", "fill", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hour", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "ln", "log10", "max", "median", "mid", "min", "minute", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "pv", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "second", "sheet-names", "sign", "small", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "sum", "switch", "text", "textjoin", "time", "trim", "trunc", "typed-constants", "value", "var-p", "var-s", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

@@ -102,6 +102,9 @@ internal static partial class FunctionLibrary
         new("EXACT", 2, 2, "text1, text2", "Checks to see if two text values are identical, case-sensitive.", Exact),
         new("NUMBERVALUE", 1, 3, "text, [decimal_separator], [group_separator]", "Converts text to a number with the separators given.", NumberValue),
         new("XNPV", 3, 3, "rate, values, dates", "Returns the net present value for a schedule of cash flows that is not necessarily periodic.", XNpv),
+        new("VALUE", 1, 1, "text", "Converts a text argument to a number, read under the Sheet's culture.", ValueOf),
+        new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
+        new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
             // Excel's lists, character for character: match_mode's as the Windows runs of

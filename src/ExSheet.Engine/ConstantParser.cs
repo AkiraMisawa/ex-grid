@@ -91,6 +91,8 @@ internal static partial class ConstantParser
     {
         var trimmed = text.Trim(' ');
         if (TryParseNumber(trimmed, culture, out number, out _)) return true;
+        // A dollar amount reads as it does typed (TYPED-021): "$1,000" is 1000 to VALUE and to the operators.
+        if (TryParseDollars(trimmed, culture, out number, out _)) return true;
         if (TryParseDateTime(trimmed, culture, DateTime.Today.Year, out number, out _)) return true;
         number = 0;
         return false;

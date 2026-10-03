@@ -127,6 +127,7 @@ them:
 | `POWER` | `number, power` |
 | `DATE` | `year, month, day` |
 | `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
+| `NOW` | (none) — the moment `Sheet.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
 | `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
 | `TIME` | `hour, minute, second` |
 | `WEEKDAY` | `serial_number, [return_type]` |
@@ -146,8 +147,10 @@ them:
 | `EXACT` | `text1, text2` |
 | `NUMBERVALUE` | `text, [decimal_separator], [group_separator]` |
 | `TEXT` | `value, format_text` |
+| `VALUE` | `text` — read under the Sheet's culture (ADR-0124) |
 | `INDEX` | `array, row_num, [column_num]` |
 | `CHOOSE` | `index_num, value1, [value2], ...` |
+| `OFFSET` | `reference, rows, cols, [height], [width]` — volatile (ADR-0124) |
 | `ROW`, `COLUMN` | `[reference]` |
 | `ROWS`, `COLUMNS` | `array` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |

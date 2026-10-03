@@ -86,7 +86,8 @@ the browser has told it, `TODAY()` shows `#GETTING_DATA`. The server's own zone 
 ```
 
 ExSheet moves the day on at midnight in the zone and recalculates only the Formulas that call
-`TODAY`. It reads the time from a registered `TimeProvider`, or the system's, so a test can set the
+`TODAY`. `NOW()` reads the same zone's clock; it is recalculated with every change, as Excel's is,
+and moved on as each minute turns (ADR-0124). A fixed `Today` does not fix it. It reads the time from a registered `TimeProvider`, or the system's, so a test can set the
 clock. The Sheet Day is not part of a Sheet Document. Without the component, the engine is given it
 as data: `sheet.SetToday(new DateOnly(2026, 10, 3))`.
 

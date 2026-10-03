@@ -34,6 +34,16 @@ for (const browserZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
             const { shown, expected } = await shownDay(page, '/sheet?case=today', browserZone);
             expect(expected).toContain(shown);
         });
+
+        test(`ADR-0124: NOW() is the moment in the browser's zone, ${browserZone}`, async ({ page }) => {
+            await page.goto('/sheet?case=today');
+            const a3 = cell(sheet(page), 'A3');
+            await expect(a3).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+            const before = dateIn(browserZone);
+            const shown = (await a3.textContent()).trim();
+            const after = dateIn(browserZone);
+            expect([before, after]).toContain(shown);
+        });
     });
 }
 

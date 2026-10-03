@@ -122,4 +122,36 @@ internal static partial class FunctionLibrary
         };
         return Operand.Of(Value.FromNumber(count));
     }
+
+    /// <summary>
+    /// OFFSET (ADR-0124, a volatile function): the Reference <c>rows</c> below and <c>cols</c> right
+    /// of <c>reference</c>, <c>height</c> rows by <c>width</c> columns, each truncated and the size the
+    /// reference's own when left out. A size below 1, or a Reference past the Sheet's edge, is
+    /// <c>#REF!</c>; a Linked Table's column has no place to move from: <c>#VALUE!</c>. A Reference of
+    /// several cells is a range for a function such as <c>SUM</c>, and spills where it is the
+    /// result (ADR-0125).
+    /// </summary>
+    private static Operand Offset(FunctionCall call)
+    {
+        var reference = call.Operand(0);
+        if (reference.Kind != OperandKind.Area) return reference.IsError ? reference : Operand.Of(ErrorValue.Value);
+        var area = reference.Area;
+        if (!TryNumber(call, 1, out var rows, out var failure)) return failure;
+        if (!TryNumber(call, 2, out var columns, out failure)) return failure;
+        double height = area.Rows;
+        double width = area.Columns;
+        if (call.Has(3) && !TryNumber(call, 3, out height, out failure)) return failure;
+        if (call.Has(4) && !TryNumber(call, 4, out width, out failure)) return failure;
+        rows = Math.Truncate(rows);
+        columns = Math.Truncate(columns);
+        height = Math.Truncate(height);
+        width = Math.Truncate(width);
+        if (height < 1 || width < 1) return Operand.Of(ErrorValue.Ref);
+        var top = area.Row1 + rows;
+        var left = area.Column1 + columns;
+        var bottom = top + height - 1;
+        var right = left + width - 1;
+        if (top < 0 || left < 0 || bottom >= Sheet.RowCount || right >= Sheet.ColumnCount) return Operand.Of(ErrorValue.Ref);
+        return Operand.Of(new Area((int)top, (int)left, (int)bottom, (int)right));
+    }
 }

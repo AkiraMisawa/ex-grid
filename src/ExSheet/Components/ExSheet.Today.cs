@@ -36,17 +36,24 @@ public partial class ExSheet
     private TimeProvider? _clock;
     private TimeZoneInfo? _browserZone;
     private ITimer? _dayTimer;
+    private ITimer? _minuteTimer;
     private bool _dayParametersSeen;
     private DateOnly? _todayParameter;
     private TimeZoneInfo? _timeZoneParameter;
 
     // What a change of Today or TimeZone recalculated, painted once the parameters are set.
-    private SheetChange? _dayChange;
+    private IReadOnlyList<SheetChange>? _dayChange;
 
     private TimeProvider Clock => _clock ??= Services.GetService<TimeProvider>() ?? TimeProvider.System;
 
     /// <summary>The zone the day is read in: the Consumer's, else the browser's; null while neither is known or a fixed day is given.</summary>
-    private TimeZoneInfo? DayZone => Today is null ? TimeZone ?? _browserZone : null;
+    private TimeZoneInfo? DayZone => Today is null ? NowZone : null;
+
+    /// <summary>The zone <c>NOW</c> is read in (ADR-0124): the Consumer's, else the browser's. A fixed day does not fix it.</summary>
+    private TimeZoneInfo? NowZone => TimeZone ?? _browserZone;
+
+    /// <summary>The moment <c>NOW</c> answers: the clock in <see cref="NowZone"/>, read when the engine asks, once per recalculation.</summary>
+    private DateTime? Moment() => NowZone is { } zone ? TimeZoneInfo.ConvertTime(Clock.GetUtcNow(), zone).DateTime : null;
 
     /// <summary>The Sheet Day as it stands now (ADR-0121): the fixed day, else the day in <see cref="DayZone"/>, else unknown.</summary>
     private DateOnly? ResolveDay()
@@ -59,8 +66,10 @@ public partial class ExSheet
     /// <summary>Gives a Sheet just opened its day, before any of its rows is read.</summary>
     private void GiveTheDay(Sheet sheet)
     {
+        sheet.NowSource = Moment;
         sheet.SetToday(ResolveDay());
         ArmTheDay();
+        ArmTheMinute();
     }
 
     /// <summary>
@@ -77,15 +86,16 @@ public partial class ExSheet
         _todayParameter = Today;
         _timeZoneParameter = TimeZone;
         if (_sheet is not { } sheet) return;
-        _dayChange = sheet.SetToday(ResolveDay());
+        _dayChange = [sheet.SetToday(ResolveDay()), sheet.RecalculateVolatile()];
         ArmTheDay();
+        ArmTheMinute();
     }
 
     private async Task PaintTheDayAsync()
     {
-        if (_dayChange is not { } change) return;
+        if (_dayChange is not { } changes) return;
         _dayChange = null;
-        await ChangedAsync(change, raiseDocument: false, byUser: false);
+        await ChangedAsync(changes, raiseDocument: false, byUser: false);
     }
 
     /// <summary>
@@ -105,9 +115,10 @@ public partial class ExSheet
         }
         _browserZone = known;
         if (_sheet is not { } sheet) return;
-        var change = sheet.SetToday(ResolveDay());
+        var changes = new[] { sheet.SetToday(ResolveDay()), sheet.RecalculateVolatile() };
         ArmTheDay();
-        await ChangedAsync(change, raiseDocument: false, byUser: false);
+        ArmTheMinute();
+        await ChangedAsync(changes, raiseDocument: false, byUser: false);
     }
 
     /// <summary>
@@ -145,6 +156,35 @@ public partial class ExSheet
         if (change.Rows.Count > 0 || change.Recalculated.Count > 0) await ChangedAsync(change, raiseDocument: false, byUser: false);
     }
 
+    /// <summary>
+    /// Moves <c>NOW</c> on as the minute turns in <see cref="NowZone"/> (ADR-0124): the volatile
+    /// Formulas are recalculated, and nothing at all when the Sheet has none.
+    /// </summary>
+    private void ArmTheMinute()
+    {
+        _minuteTimer?.Dispose();
+        _minuteTimer = null;
+        if (NowZone is null) return;
+        var now = Clock.GetUtcNow();
+        var due = TimeSpan.FromTicks(TimeSpan.TicksPerMinute - (now.Ticks % TimeSpan.TicksPerMinute));
+        _minuteTimer = Clock.CreateTimer(_ => _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                if (_disposedDay || _sheet is not { } sheet) return;
+                ArmTheMinute();
+                if (!sheet.HasVolatileFormulas) return;
+                var change = sheet.RecalculateVolatile();
+                if (change.Rows.Count > 0) await ChangedAsync(change, raiseDocument: false, byUser: false);
+            }
+            catch (Exception ex)
+            {
+                // A timer is not a UI event, so nothing else would surface this.
+                await DispatchExceptionAsync(ex);
+            }
+        }), null, due, Timeout.InfiniteTimeSpan);
+    }
+
     private bool _disposedDay;
 
     private void StopTheDay()
@@ -152,5 +192,7 @@ public partial class ExSheet
         _disposedDay = true;
         _dayTimer?.Dispose();
         _dayTimer = null;
+        _minuteTimer?.Dispose();
+        _minuteTimer = null;
     }
 }

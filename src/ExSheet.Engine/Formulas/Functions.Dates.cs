@@ -318,4 +318,15 @@ internal static partial class FunctionLibrary
         var seconds = (long)Math.Round((serial - Math.Floor(serial)) * SecondsPerDay, MidpointRounding.AwayFromZero) % SecondsPerDay;
         return Operand.Of(Value.FromNumber(part(seconds)));
     }
+
+    /// <summary>
+    /// NOW (ADR-0124): the moment the Sheet was given for this recalculation, as a serial with the
+    /// time of day; <c>#GETTING_DATA</c> while it is not known.
+    /// </summary>
+    private static Operand Now(FunctionCall call)
+    {
+        if (call.Evaluator.Cells.Now is not { } moment) return Operand.Of(ErrorValue.GettingData);
+        if (DateSerial.FromDate(moment.Year, moment.Month, moment.Day) is not { } day) return Operand.Of(ErrorValue.Num);
+        return Operand.Of(Value.FromNumber(day + (moment.TimeOfDay.TotalSeconds / SecondsPerDay)));
+    }
 }

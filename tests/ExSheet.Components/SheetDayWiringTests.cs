@@ -122,4 +122,27 @@ public class SheetDayWiringTests : SheetTestContext
 
         Assert.Equal("2026-10-02", CellText(cut, "A1"));
     }
+
+    private static SheetDocument NowReader()
+    {
+        var sheet = new Sheet(System.Globalization.CultureInfo.GetCultureInfo("en-US"));
+        sheet.Enter(CellAddress.Parse("A1"), "=TEXT(NOW(),\"yyyy-mm-dd hh:mm\")");
+        return sheet.ToDocument();
+    }
+
+    [Fact] // ADR-0124: NOW is the moment in the Sheet's zone, and moves on as the minute turns, on the clock it is given
+    public async Task Now_moves_on_each_minute()
+    {
+        Clock.SetUtcNow(LateInLondon);
+        var cut = RenderSheet(ps => ps.Add(s => s.Document, NowReader()));
+        Assert.Equal("#GETTING_DATA", CellText(cut, "A1"));
+
+        await BrowserSaysAsync(cut, "Asia/Tokyo");
+        Assert.Equal("2026-10-03 07:30", CellText(cut, "A1"));
+
+        Clock.Advance(TimeSpan.FromMinutes(1));
+        await cut.InvokeAsync(() => { });
+
+        cut.WaitForAssertion(() => Assert.Equal("2026-10-03 07:31", CellText(cut, "A1")));
+    }
 }

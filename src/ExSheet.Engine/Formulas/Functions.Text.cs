@@ -352,4 +352,21 @@ internal static partial class FunctionLibrary
         }
         return Operand.Of(Evaluator.Number(number / Math.Pow(100, percents)));
     }
+
+    /// <summary>
+    /// VALUE (ADR-0124): text read as a number under the Sheet's culture, as the arithmetic operators
+    /// read text — a date or a time typed as one is its serial. A number is itself, a blank 0; a
+    /// boolean, and text that reads as no number, are <c>#VALUE!</c>.
+    /// </summary>
+    private static Operand ValueOf(FunctionCall call)
+    {
+        if (!TryScalar(call, 0, out var value, out var failure)) return failure;
+        return value switch
+        {
+            null => Operand.Of(Value.FromNumber(0)),
+            { Kind: ValueKind.Number } number => Operand.Of(number),
+            { Kind: ValueKind.Text } text when ConstantParser.TryParseNumber(text.Text, call.Evaluator.Culture, out var parsed) => Operand.Of(Value.FromNumber(parsed)),
+            _ => Operand.Of(ErrorValue.Value),
+        };
+    }
 }
