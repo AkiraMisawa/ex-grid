@@ -1,0 +1,51 @@
+{
+  "area": "cot",
+  "about": "COT (ticket 07).",
+  "cases": [
+    {
+      "id": "COT-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(30)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.156, "digits": 3}
+    },
+    {
+      "id": "COT-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(45)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.617, "digits": 3}
+    },
+    {
+      "id": "COT-003",
+      "source": "documented",
+      "description": "Documented: COT(0) is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "COT-004",
+      "source": "documented",
+      "description": "Documented: the absolute value must be less than 2^27",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "COT-005",
+      "source": "documented",
+      "description": "Documented: a non-numeric value is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COT(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

@@ -327,6 +327,78 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "typed-constants")] // ADR-0048: constants read under the Sheet's culture
     public void TypedConstants(string id) => Run("typed-constants", id);
 
+    [Theory, MemberData(nameof(Ids), "log")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Log(string id) => Run("log", id);
+
+    [Theory, MemberData(nameof(Ids), "sin")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Sin(string id) => Run("sin", id);
+
+    [Theory, MemberData(nameof(Ids), "cos")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Cos(string id) => Run("cos", id);
+
+    [Theory, MemberData(nameof(Ids), "tan")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Tan(string id) => Run("tan", id);
+
+    [Theory, MemberData(nameof(Ids), "cot")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Cot(string id) => Run("cot", id);
+
+    [Theory, MemberData(nameof(Ids), "csc")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Csc(string id) => Run("csc", id);
+
+    [Theory, MemberData(nameof(Ids), "sec")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Sec(string id) => Run("sec", id);
+
+    [Theory, MemberData(nameof(Ids), "asin")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Asin(string id) => Run("asin", id);
+
+    [Theory, MemberData(nameof(Ids), "acos")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Acos(string id) => Run("acos", id);
+
+    [Theory, MemberData(nameof(Ids), "atan")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Atan(string id) => Run("atan", id);
+
+    [Theory, MemberData(nameof(Ids), "atan2")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Atan2(string id) => Run("atan2", id);
+
+    [Theory, MemberData(nameof(Ids), "acot")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Acot(string id) => Run("acot", id);
+
+    [Theory, MemberData(nameof(Ids), "sinh")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Sinh(string id) => Run("sinh", id);
+
+    [Theory, MemberData(nameof(Ids), "cosh")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Cosh(string id) => Run("cosh", id);
+
+    [Theory, MemberData(nameof(Ids), "tanh")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Tanh(string id) => Run("tanh", id);
+
+    [Theory, MemberData(nameof(Ids), "coth")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Coth(string id) => Run("coth", id);
+
+    [Theory, MemberData(nameof(Ids), "csch")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Csch(string id) => Run("csch", id);
+
+    [Theory, MemberData(nameof(Ids), "sech")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Sech(string id) => Run("sech", id);
+
+    [Theory, MemberData(nameof(Ids), "asinh")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Asinh(string id) => Run("asinh", id);
+
+    [Theory, MemberData(nameof(Ids), "acosh")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Acosh(string id) => Run("acosh", id);
+
+    [Theory, MemberData(nameof(Ids), "atanh")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Atanh(string id) => Run("atanh", id);
+
+    [Theory, MemberData(nameof(Ids), "acoth")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Acoth(string id) => Run("acoth", id);
+
+    [Theory, MemberData(nameof(Ids), "degrees")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Degrees(string id) => Run("degrees", id);
+
+    [Theory, MemberData(nameof(Ids), "radians")] // ADR-0047, docs/specs/exsheet-functions ticket 07
+    public void Radians(string id) => Run("radians", id);
+
     [Theory, MemberData(nameof(Ids), "dates")] // ADR-0047/0048: Excel's 1900 serials
     public void Dates(string id) => Run("dates", id);
 
@@ -359,7 +431,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "abs", "and", "arithmetic", "average", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "count", "counta", "date", "dates", "day", "days", "edate", "eomonth", "errors", "exact", "exp", "fill", "filter", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hour", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "ln", "log10", "max", "median", "mid", "min", "minute", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "pv", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "second", "sequence", "sheet-names", "sign", "small", "sort", "sortby", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "sum", "sumproduct", "switch", "text", "textjoin", "time", "transpose", "trim", "trunc", "typed-constants", "unique", "value", "var-p", "var-s", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year",
+        "abs", "acos", "acosh", "acot", "acoth", "and", "arithmetic", "asin", "asinh", "atan", "atan2", "atanh", "average", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "cos", "cosh", "cot", "coth", "count", "counta", "csc", "csch", "date", "dates", "day", "days", "degrees", "edate", "eomonth", "errors", "exact", "exp", "fill", "filter", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hour", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "ln", "log", "log10", "max", "median", "mid", "min", "minute", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "pv", "radians", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "sec", "sech", "second", "sequence", "sheet-names", "sign", "sin", "sinh", "small", "sort", "sortby", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "sum", "sumproduct", "switch", "tan", "tanh", "text", "textjoin", "time", "transpose", "trim", "trunc", "typed-constants", "unique", "value", "var-p", "var-s", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

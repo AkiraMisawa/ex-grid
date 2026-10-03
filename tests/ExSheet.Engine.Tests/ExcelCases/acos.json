@@ -1,0 +1,42 @@
+{
+  "area": "acos",
+  "about": "ACOS (ticket 07).",
+  "cases": [
+    {
+      "id": "ACOS-001",
+      "source": "documented",
+      "description": "Microsoft's example: 2pi/3",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOS(-0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.094395102, "digits": 9}
+    },
+    {
+      "id": "ACOS-002",
+      "source": "documented",
+      "description": "Microsoft's example: in degrees",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOS(-0.5)*180/PI()"},
+      "check": "ZZ1000",
+      "expect": {"value2": 120, "digits": 9}
+    },
+    {
+      "id": "ACOS-003",
+      "source": "documented",
+      "description": "Microsoft's example: DEGREES",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DEGREES(ACOS(-0.5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 120, "digits": 9}
+    },
+    {
+      "id": "ACOS-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: outside -1 to 1 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOS(-1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

@@ -424,3 +424,10 @@ return array of several columns, and `ROW` and `COLUMN` over several rows or col
 answer, and their corpus cases changed from a difference by decision to it. `UNIQUE` refuses a blank
 in its array, and `SORT` and `SORTBY` a blank or an Error Value among their keys, with `#VALUE!`
 until Excel is asked how it orders them.
+
+*(2026-10-03)* Admitted as the catalogue's ticket 07: `LOG`, `SIN`, `COS`, `TAN`, `COT`, `CSC`,
+`SEC`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `ACOT`, `SINH`, `COSH`, `TANH`, `COTH`, `CSCH`, `SECH`,
+`ASINH`, `ACOSH`, `ATANH`, `ACOTH`, `DEGREES` and `RADIANS`. Where Microsoft's pages leave a case
+open they refuse it: `SIN`, `COS` and `TAN` give `#NUM!` from 2^27, the limit documented for `COT`
+and its kin, and `ACOTH` gives `#NUM!` where its page names both `#NUM!` and `#VALUE!`, until a
+Windows run asks Excel.

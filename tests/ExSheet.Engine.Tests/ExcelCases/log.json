@@ -1,0 +1,78 @@
+{
+  "area": "log",
+  "about": "LOG (ticket 07).",
+  "cases": [
+    {
+      "id": "LOG-001",
+      "source": "documented",
+      "description": "Microsoft's example: base 10 when left out",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "LOG-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(8,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3, "digits": 12}
+    },
+    {
+      "id": "LOG-003",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(86,2.7182818)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4.4543473, "digits": 7}
+    },
+    {
+      "id": "LOG-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: base 10 is exact, as LOG10's",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "LOG-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number not above 0 is #NUM!, as LOG10's",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "LOG-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a base not above 0 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(10,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "LOG-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: base 1, whose logarithm is 0, is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(10,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "LOG-008",
+      "source": "documented",
+      "description": "Text that is no number is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LOG(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

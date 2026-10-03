@@ -1,0 +1,33 @@
+{
+  "area": "coth",
+  "about": "COTH (ticket 07).",
+  "cases": [
+    {
+      "id": "COTH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COTH(2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.037, "digits": 3}
+    },
+    {
+      "id": "COTH-002",
+      "source": "documented",
+      "description": "Documented: the absolute value must be less than 2^27",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COTH(2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "COTH-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at 0 is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COTH(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

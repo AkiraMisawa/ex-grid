@@ -1,0 +1,42 @@
+{
+  "area": "sinh",
+  "about": "SINH (ticket 07).",
+  "cases": [
+    {
+      "id": "SINH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=2.868*SINH(0.0342*1.03)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.1010491, "digits": 7}
+    },
+    {
+      "id": "SINH-002",
+      "source": "documented",
+      "description": "The documented formula, (e^x - e^-x)/2",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SINH(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.175201194, "digits": 9}
+    },
+    {
+      "id": "SINH-003",
+      "source": "documented",
+      "description": "The documented formula: the function is odd",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SINH(-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1.175201194, "digits": 9}
+    },
+    {
+      "id": "SINH-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: past what a number holds is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SINH(711)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "area": "radians",
+  "about": "RADIANS (ticket 07).",
+  "cases": [
+    {
+      "id": "RADIANS-001",
+      "source": "documented",
+      "description": "Microsoft's example: 3pi/2",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=RADIANS(270)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4.712389, "digits": 6}
+    },
+    {
+      "id": "RADIANS-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 180 degrees is PI() exactly",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=RADIANS(180)=PI()"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    }
+  ]
+}

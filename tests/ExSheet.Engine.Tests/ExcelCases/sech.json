@@ -1,0 +1,33 @@
+{
+  "area": "sech",
+  "about": "SECH (ticket 07).",
+  "cases": [
+    {
+      "id": "SECH-001",
+      "source": "documented",
+      "description": "Microsoft's example, 5.73E-20, scaled to compare",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SECH(45)*1E20"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.73, "digits": 2}
+    },
+    {
+      "id": "SECH-002",
+      "source": "documented",
+      "description": "Microsoft's example, 1.87E-13, scaled to compare",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SECH(30)*1E13"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.87, "digits": 2}
+    },
+    {
+      "id": "SECH-003",
+      "source": "documented",
+      "description": "Documented: the absolute value must be less than 2^27",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SECH(2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

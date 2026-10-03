@@ -1,0 +1,24 @@
+{
+  "area": "asinh",
+  "about": "ASINH (ticket 07).",
+  "cases": [
+    {
+      "id": "ASINH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ASINH(-2.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1.647231146, "digits": 9}
+    },
+    {
+      "id": "ASINH-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ASINH(10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.99822295, "digits": 8}
+    }
+  ]
+}

@@ -136,7 +136,40 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `EXP` | Supported | — | |
 | `LN` | Supported | — | |
 | `LOG10` | Supported | — | |
+| `LOG` | Supported | — | Base 10 when left out, through `LOG10`'s logarithm; base 1 is `#DIV/0!` until Excel is asked |
 | `PI` | Supported | — | |
+
+### Trigonometry
+
+Angles are in radians. Microsoft documents a limit of 2^27 on the argument of `COT`, `CSC`, `SEC`,
+`COTH`, `CSCH` and `SECH`; `SIN`, `COS` and `TAN` refuse an argument that large with `#NUM!` as
+well, until Excel is asked (ticket 07).
+
+| Function | Status | Priority | Notes |
+|---|---|---|---|
+| `SIN` | Supported | — | `#NUM!` from 2^27, until Excel is asked |
+| `COS` | Supported | — | As `SIN` |
+| `TAN` | Supported | — | As `SIN` |
+| `COT` | Supported | — | `COT(0)` is `#DIV/0!`, as documented |
+| `CSC` | Supported | — | At 0, `#DIV/0!` until Excel is asked |
+| `SEC` | Supported | — | |
+| `ASIN` | Supported | — | Outside −1 to 1, `#NUM!` |
+| `ACOS` | Supported | — | As `ASIN` |
+| `ATAN` | Supported | — | |
+| `ATAN2` | Supported | — | `x_num` first, as Excel; both 0 is `#DIV/0!` |
+| `ACOT` | Supported | — | From 0 to pi |
+| `SINH` | Supported | — | Past what a number holds, `#NUM!` |
+| `COSH` | Supported | — | As `SINH` |
+| `TANH` | Supported | — | |
+| `COTH` | Supported | — | At 0, `#DIV/0!` until Excel is asked |
+| `CSCH` | Supported | — | As `COTH` |
+| `SECH` | Supported | — | |
+| `ASINH` | Supported | — | |
+| `ACOSH` | Supported | — | Below 1, `#NUM!` |
+| `ATANH` | Supported | — | Not strictly between −1 and 1, `#NUM!` |
+| `ACOTH` | Supported | — | An absolute value not above 1 is `#NUM!`; the documentation names `#VALUE!` as well, so Excel is to be asked |
+| `DEGREES` | Supported | — | |
+| `RADIANS` | Supported | — | |
 
 ### Date and time
 
@@ -231,5 +264,7 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
    ticket 03 (ADR-0121, ADR-0122).
 4. **The P2 Ready functions** — done, ticket 04.
 5. **The P3 Ready functions** — done, ticket 05. No function is Ready any more.
-6. **The Observe functions, through one Windows run**, P1 first, and the `uncertain` cases of
+6. **`LOG` and the trigonometric functions** — done, ticket 07. Their `uncertain` cases go to the
+   next Windows run.
+7. **The Observe functions, through one Windows run**, P1 first, and the `uncertain` cases of
    tickets 01 to 05 in the same run. Then the Decide functions, P2 first, each to the user.

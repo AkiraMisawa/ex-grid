@@ -123,6 +123,10 @@ them:
 | `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
 | `TRUNC` | `number, [num_digits]` |
 | `ABS`, `INT`, `SQRT`, `SIGN`, `EXP`, `LN`, `LOG10` | `number` |
+| `LOG` | `number, [base]` |
+| `SIN`, `COS`, `TAN`, `COT`, `CSC`, `SEC`, `ASIN`, `ACOS`, `ATAN`, `ACOT`, `SINH`, `COSH`, `TANH`, `COTH`, `CSCH`, `SECH`, `ASINH`, `ACOSH`, `ATANH`, `ACOTH` | `number` |
+| `ATAN2` | `x_num, y_num` |
+| `DEGREES`, `RADIANS` | `angle` |
 | `MOD` | `number, divisor` |
 | `POWER` | `number, power` |
 | `DATE` | `year, month, day` |
@@ -211,7 +215,9 @@ answer:
   `WORKDAY` the same way, and with text among the holidays; `LARGE` and `SMALL` with a `k` that is
   not a whole number; `PMT`, `PV` and `FV` with a `type` other than 0 or 1 (`#VALUE!`); `UNIQUE`
   with a blank in its array, and `SORT` and `SORTBY` with a blank or an Error Value among their keys
-  (`#VALUE!`).
+  (`#VALUE!`); `SIN`, `COS` and `TAN` of 2^27 or more (`#NUM!`, the limit Microsoft documents for
+  `COT` and its kin); `ACOTH` of an absolute value not above 1 (`#NUM!`; the page names `#VALUE!`
+  too); `LOG` to base 1, and `CSC`, `COTH` and `CSCH` at 0 (`#DIV/0!`).
 - **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
   `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 
