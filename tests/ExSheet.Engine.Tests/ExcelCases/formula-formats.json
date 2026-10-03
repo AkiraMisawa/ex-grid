@@ -340,6 +340,24 @@
       "check": "B1",
       "expect": {"text": "46290.5", "numberFormat": "General"},
       "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-036",
+      "source": "documented",
+      "description": "DATE in a General cell gives the short date format, as Microsoft documents",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=DATE(2026,9,26)"}},
+      "check": "B1",
+      "expect": {"text": "9/26/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-037",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: DATE plus a number keeps the date format, as a date's Reference does",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=DATE(2026,9,26)+1"}},
+      "check": "B1",
+      "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
     }
   ]
 }

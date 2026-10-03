@@ -1,0 +1,72 @@
+{
+  "area": "ifna",
+  "about": "IFNA (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "IFNA-001",
+      "source": "documented",
+      "description": "#N/A is replaced by value_if_na",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=IFNA(XLOOKUP(\"Fig\",G1:G5,H1:H5),\"Not found\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Not found"}
+    },
+    {
+      "id": "IFNA-002",
+      "source": "documented",
+      "description": "Another Error Value is not caught",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFNA(1/0,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "IFNA-003",
+      "source": "documented",
+      "description": "A value that is not an error is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFNA(5,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "IFNA-004",
+      "source": "documented",
+      "description": "A typed #N/A is caught",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFNA(#N/A,7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "IFNA-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an empty value_if_na joined to text is empty, as IFERROR's (IFERROR-013)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFNA(#N/A,A5)&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "IFNA-006",
+      "source": "uncertain",
+      "description": "IFNA over a cycle is #CIRC!",
+      "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=IFNA(A1,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a Formula that reads a cycle member is #CIRC!, where Excel shows 0",
+      "excelExpect": {"value2": 0}
+    },
+    {
+      "id": "IFNA-007",
+      "source": "uncertain",
+      "description": "IFNA over a range where one Value is wanted is refused",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=IFNA(A1:A2,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": 1}
+    }
+  ]
+}

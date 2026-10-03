@@ -1,0 +1,59 @@
+{
+  "area": "len",
+  "about": "LEN (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "LEN-001",
+      "source": "documented",
+      "description": "Microsoft's example: spaces count",
+      "cells": {"A1": "Phoenix, AZ", "ZZ1000": "=LEN(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 11}
+    },
+    {
+      "id": "LEN-002",
+      "source": "documented",
+      "description": "Microsoft's example: an empty cell is 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEN(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "LEN-003",
+      "source": "documented",
+      "description": "Microsoft's example: leading and trailing spaces count",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEN(\"     One   \")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 11}
+    },
+    {
+      "id": "LEN-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number is counted as its text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEN(123.45)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "LEN-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a boolean is counted as its text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEN(TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "LEN-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEN(C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

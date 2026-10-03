@@ -1,6 +1,6 @@
 # ExSheet's function catalogue
 
-Status: needs-triage
+Status: ready-for-agent
 
 The functions ExSheet's engine supports, and the queue of those it may support next, each with its
 status and a priority. **ADR-0047 decides whether a function is admitted; this file only orders the
@@ -84,12 +84,12 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `IF` | Supported | — | |
 | `IFERROR` | Supported | — | |
 | `ISERROR` | Supported | — | |
-| `AND` | Ready | P1 | |
-| `OR` | Ready | P1 | |
-| `NOT` | Ready | P1 | |
-| `IFNA` | Ready | P1 | The partner of `XLOOKUP` and `MATCH`. Like `IFERROR`, it catches neither `#CIRC!` nor `#GETTING_DATA` (ADR-0047, ADR-0049) |
-| `ISBLANK` | Ready | P1 | |
-| `ISNUMBER` | Ready | P1 | |
+| `AND` | Supported | — | |
+| `OR` | Supported | — | |
+| `NOT` | Supported | — | |
+| `IFNA` | Supported | — | The partner of `XLOOKUP` and `MATCH`. Like `IFERROR`, it catches neither `#CIRC!` nor `#GETTING_DATA` (ADR-0047, ADR-0049) |
+| `ISBLANK` | Supported | — | |
+| `ISNUMBER` | Supported | — | |
 | `ISTEXT` | Ready | P2 | |
 | `ISNA` | Ready | P2 | `#CIRC!` and `#GETTING_DATA` as `ISERROR` treats them |
 | `IFS` | Ready | P2 | |
@@ -105,7 +105,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `XLOOKUP` | Supported | — | Binary search only over data sorted as the mode says (ADR-0047) |
 | `VLOOKUP` | Observe | P1 | The default is the approximate match, a binary search: answered only over sorted data, as `XLOOKUP`'s binary search is, and `#VALUE!` otherwise. Which of equal keys it returns is to be observed |
 | `HLOOKUP` | Observe | P2 | As `VLOOKUP` |
-| `INDEX` | Ready | P1 | One value only. A row or column of 0, which returns a whole range, is `#VALUE!` until arrays get their ADR |
+| `INDEX` | Supported | — | One value only. A row or column of 0, which returns a whole range, is `#VALUE!` until arrays get their ADR |
 | `MATCH` | Observe | P1 | `match_type` 1 and −1 are binary searches, as `VLOOKUP` |
 | `XMATCH` | Ready | P2 | The modes as `XLOOKUP`'s |
 | `CHOOSE` | Ready | P2 | |
@@ -121,11 +121,11 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | Function | Status | Priority | Notes |
 |---|---|---|---|
 | `ROUND` | Supported | — | |
-| `ROUNDUP` | Ready | P1 | |
-| `ROUNDDOWN` | Ready | P1 | |
-| `ABS` | Ready | P1 | |
-| `INT` | Ready | P1 | |
-| `MOD` | Ready | P1 | Excel's sign follows the divisor |
+| `ROUNDUP` | Supported | — | |
+| `ROUNDDOWN` | Supported | — | |
+| `ABS` | Supported | — | |
+| `INT` | Supported | — | |
+| `MOD` | Supported | — | Excel's sign follows the divisor |
 | `MROUND` | Observe | P2 | Halfway cases in binary doubles are to be observed |
 | `CEILING.MATH` | Observe | P2 | As `MROUND` |
 | `FLOOR.MATH` | Observe | P2 | As `MROUND` |
@@ -144,12 +144,12 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `DATE` | Ready | P1 | Months and days out of range roll over, as Excel's do |
-| `YEAR` | Ready | P1 | |
-| `MONTH` | Ready | P1 | |
-| `DAY` | Ready | P1 | |
-| `EOMONTH` | Ready | P1 | |
-| `EDATE` | Ready | P1 | |
+| `DATE` | Supported | — | Months and days out of range roll over, as Excel's do |
+| `YEAR` | Supported | — | |
+| `MONTH` | Supported | — | |
+| `DAY` | Supported | — | |
+| `EOMONTH` | Supported | — | |
+| `EDATE` | Supported | — | |
 | `WEEKDAY` | Ready | P2 | |
 | `NETWORKDAYS` | Ready | P2 | |
 | `WORKDAY` | Ready | P2 | |
@@ -167,12 +167,12 @@ Dates are serial day numbers in Excel's 1900 date system, 29 February 1900 inclu
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `LEFT` | Ready | P1 | Counts UTF-16 code units, as Excel does |
-| `RIGHT` | Ready | P1 | As `LEFT` |
-| `MID` | Ready | P1 | As `LEFT` |
-| `LEN` | Ready | P1 | As `LEFT` |
-| `TRIM` | Ready | P1 | Only the space character, U+0020, as Excel trims |
-| `CONCAT` | Ready | P1 | |
+| `LEFT` | Supported | — | Counts UTF-16 code units, as Excel does |
+| `RIGHT` | Supported | — | As `LEFT` |
+| `MID` | Supported | — | As `LEFT` |
+| `LEN` | Supported | — | As `LEFT` |
+| `TRIM` | Supported | — | Only the space character, U+0020, as Excel trims |
+| `CONCAT` | Supported | — | |
 | `TEXTJOIN` | Ready | P2 | |
 | `CONCATENATE` | Ready | P2 | |
 | `SUBSTITUTE` | Ready | P2 | |
@@ -225,10 +225,7 @@ own. Every function here waits for that ADR.
 
 ## Order of work
 
-1. **The P1 Ready functions.** Logic: `AND`, `OR`, `NOT`, `IFNA`, `ISBLANK`, `ISNUMBER`. Rounding:
-   `ROUNDUP`, `ROUNDDOWN`, `ABS`, `INT`, `MOD`. Dates: `DATE`, `YEAR`, `MONTH`, `DAY`, `EOMONTH`,
-   `EDATE`. Text: `LEFT`, `RIGHT`, `MID`, `LEN`, `TRIM`, `CONCAT`. And `INDEX`. Each can be written
-   from Microsoft's documentation now, and each still goes past the next Windows run.
+1. **The P1 Ready functions** — done, ticket 01. Their `uncertain` cases go to the next Windows run.
 2. **The P1 Observe functions, through one Windows run.** The criteria of the `SUMIF` family, and
    the approximate match of `VLOOKUP` and `MATCH`.
 3. **The P1 Decide functions, to the user.** `TODAY` (volatility, and what a saved document means),

@@ -72,6 +72,78 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "xlookup")] // ADR-0047/0049
     public void XLookup(string id) => Run("xlookup", id);
 
+    [Theory, MemberData(nameof(Ids), "and")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void And(string id) => Run("and", id);
+
+    [Theory, MemberData(nameof(Ids), "or")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Or(string id) => Run("or", id);
+
+    [Theory, MemberData(nameof(Ids), "not")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Not(string id) => Run("not", id);
+
+    [Theory, MemberData(nameof(Ids), "ifna")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void IfNa(string id) => Run("ifna", id);
+
+    [Theory, MemberData(nameof(Ids), "isblank")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void IsBlank(string id) => Run("isblank", id);
+
+    [Theory, MemberData(nameof(Ids), "isnumber")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void IsNumber(string id) => Run("isnumber", id);
+
+    [Theory, MemberData(nameof(Ids), "roundup")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void RoundUp(string id) => Run("roundup", id);
+
+    [Theory, MemberData(nameof(Ids), "rounddown")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void RoundDown(string id) => Run("rounddown", id);
+
+    [Theory, MemberData(nameof(Ids), "abs")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Abs(string id) => Run("abs", id);
+
+    [Theory, MemberData(nameof(Ids), "int")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Int(string id) => Run("int", id);
+
+    [Theory, MemberData(nameof(Ids), "mod")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Mod(string id) => Run("mod", id);
+
+    [Theory, MemberData(nameof(Ids), "date")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Date(string id) => Run("date", id);
+
+    [Theory, MemberData(nameof(Ids), "year")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Year(string id) => Run("year", id);
+
+    [Theory, MemberData(nameof(Ids), "month")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Month(string id) => Run("month", id);
+
+    [Theory, MemberData(nameof(Ids), "day")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Day(string id) => Run("day", id);
+
+    [Theory, MemberData(nameof(Ids), "eomonth")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void EoMonth(string id) => Run("eomonth", id);
+
+    [Theory, MemberData(nameof(Ids), "edate")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void EDate(string id) => Run("edate", id);
+
+    [Theory, MemberData(nameof(Ids), "left")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Left(string id) => Run("left", id);
+
+    [Theory, MemberData(nameof(Ids), "right")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Right(string id) => Run("right", id);
+
+    [Theory, MemberData(nameof(Ids), "mid")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Mid(string id) => Run("mid", id);
+
+    [Theory, MemberData(nameof(Ids), "len")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Len(string id) => Run("len", id);
+
+    [Theory, MemberData(nameof(Ids), "trim")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Trim(string id) => Run("trim", id);
+
+    [Theory, MemberData(nameof(Ids), "concat")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Concat(string id) => Run("concat", id);
+
+    [Theory, MemberData(nameof(Ids), "index")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Index(string id) => Run("index", id);
+
     [Theory, MemberData(nameof(Ids), "typed-constants")] // ADR-0048: constants read under the Sheet's culture
     public void TypedConstants(string id) => Run("typed-constants", id);
 
@@ -107,8 +179,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "arithmetic", "average", "column-widths", "copy", "count", "counta", "dates", "errors", "fill", "format-levels", "formula-formats", "formula-text", "general-width", "if", "iferror", "iserror",
-        "linked-tables", "max", "min", "number-formats", "references", "round", "sheet-names", "structure", "sum", "typed-constants", "xlookup",
+        "abs", "and", "arithmetic", "average", "column-widths", "concat", "copy", "count", "counta", "date", "dates", "day", "edate", "eomonth", "errors", "fill", "format-levels", "formula-formats", "formula-text", "general-width", "if", "iferror", "ifna", "index", "int", "isblank", "iserror", "isnumber", "left", "len", "linked-tables", "max", "mid", "min", "mod", "month", "not", "number-formats", "or", "references", "right", "round", "rounddown", "roundup", "sheet-names", "structure", "sum", "trim", "typed-constants", "xlookup", "year",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

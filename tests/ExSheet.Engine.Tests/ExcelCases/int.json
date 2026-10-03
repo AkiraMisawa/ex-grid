@@ -1,0 +1,50 @@
+{
+  "area": "int",
+  "about": "INT (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "INT-001",
+      "source": "documented",
+      "description": "Microsoft's example: rounds down",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=INT(8.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 8}
+    },
+    {
+      "id": "INT-002",
+      "source": "documented",
+      "description": "Microsoft's example: rounds a negative number down, away from zero",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=INT(-8.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -9}
+    },
+    {
+      "id": "INT-003",
+      "source": "documented",
+      "description": "Microsoft's example: the decimal part of a number",
+      "cells": {"A1": "19.5", "ZZ1000": "=A1-INT(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5, "digits": 12}
+    },
+    {
+      "id": "INT-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: TRUE is 1",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=INT(TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "INT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that is not a number is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=INT(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

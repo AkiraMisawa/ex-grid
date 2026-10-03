@@ -1,0 +1,71 @@
+{
+  "area": "isblank",
+  "about": "ISBLANK (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "ISBLANK-001",
+      "source": "documented",
+      "description": "An empty cell is blank",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISBLANK(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISBLANK-002",
+      "source": "documented",
+      "description": "A number is not blank",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISBLANK(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISBLANK-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a Formula that returns empty text is not blank",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISBLANK(D1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISBLANK-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is not blank, and not the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISBLANK(C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISBLANK-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: empty text typed as the argument is not blank",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISBLANK(\"\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISBLANK-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: INDEX returns the cell, so its blank is blank",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISBLANK(INDEX(A1:A7,5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISBLANK-007",
+      "source": "uncertain",
+      "description": "ISBLANK over a range where one Value is wanted is refused",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISBLANK(A5:A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": true}
+    }
+  ]
+}

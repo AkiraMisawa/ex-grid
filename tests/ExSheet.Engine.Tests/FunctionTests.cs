@@ -41,11 +41,13 @@ public class FunctionTests
         Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula(formula));
     }
 
-    [Fact] // ADR-0047/0051: the declared list is exposed for completion and hints, and is exactly ADR-0047's set
+    [Fact] // ADR-0047/0051: the declared list is exposed for completion and hints, and is exactly ADR-0047's set with its additions
     public void The_declared_functions_are_exactly_adr_0047s_set()
     {
         Assert.Equal(
-            ["AVERAGE", "COUNT", "COUNTA", "IF", "IFERROR", "ISERROR", "MAX", "MIN", "ROUND", "SUM", "XLOOKUP"],
+            [
+                "ABS", "AND", "AVERAGE", "CONCAT", "COUNT", "COUNTA", "DATE", "DAY", "EDATE", "EOMONTH", "IF", "IFERROR", "IFNA", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNUMBER", "LEFT", "LEN", "MAX", "MID", "MIN", "MOD", "MONTH", "NOT", "OR", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "SUM", "TRIM", "XLOOKUP", "YEAR",
+            ],
             DeclaredFunction.All.Select(f => f.Name));
         Assert.Equal("SUM(number1, [number2], ...)", DeclaredFunction.Find("sum")!.Signature);
         Assert.Equal(

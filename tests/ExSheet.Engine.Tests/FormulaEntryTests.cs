@@ -19,10 +19,10 @@ public class FormulaEntryTests
     [Theory] // ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case
     [InlineData("=SU|", new[] { "SUM" })]
     [InlineData("=su|", new[] { "SUM" })]
-    [InlineData("=I|", new[] { "IF", "IFERROR", "ISERROR" })]
+    [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNUMBER" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
-    [InlineData("=1+co|", new[] { "COUNT", "COUNTA" })]
-    [InlineData("=SUM(A1,m|", new[] { "MAX", "MIN" })]
+    [InlineData("=1+co|", new[] { "CONCAT", "COUNT", "COUNTA" })]
+    [InlineData("=SUM(A1,m|", new[] { "MAX", "MID", "MIN", "MOD", "MONTH" })]
     [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP" })]
     public void Completion_offers_declared_functions(string marked, string[] expected)
     {
@@ -47,7 +47,7 @@ public class FormulaEntryTests
     [Fact] // ADR-0049/0051: Linked Tables' names are offered beside the functions, in one alphabetical list
     public void Completion_offers_linked_tables()
     {
-        Assert.Equal(["Accounts", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
+        Assert.Equal(["ABS", "Accounts", "AND", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
         Assert.Equal(["Positions"], Names("=SUM(po|", "Positions", "Accounts")!);
     }
 

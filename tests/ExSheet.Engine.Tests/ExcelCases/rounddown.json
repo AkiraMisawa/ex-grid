@@ -1,0 +1,69 @@
+{
+  "area": "rounddown",
+  "about": "ROUNDDOWN (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "ROUNDDOWN-001",
+      "source": "documented",
+      "description": "Microsoft's example: down to no decimals",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDDOWN(3.2,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ROUNDDOWN-002",
+      "source": "documented",
+      "description": "Microsoft's example: down to no decimals",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDDOWN(76.9,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 76}
+    },
+    {
+      "id": "ROUNDDOWN-003",
+      "source": "documented",
+      "description": "Microsoft's example: down to three decimals",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDDOWN(3.14159,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.141, "digits": 12}
+    },
+    {
+      "id": "ROUNDDOWN-004",
+      "source": "documented",
+      "description": "Microsoft's example: a negative number rounds toward zero",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDDOWN(-3.14159,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -3.1, "digits": 12}
+    },
+    {
+      "id": "ROUNDDOWN-005",
+      "source": "documented",
+      "description": "Microsoft's example: to the left of the decimal point",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDDOWN(31415.92654,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 31400}
+    },
+    {
+      "id": "ROUNDDOWN-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the number as Excel holds it to 15 digits, so 0.3-0.1 rounds down to 0.2",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDDOWN(0.3-0.1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.2, "digits": 12}
+    },
+    {
+      "id": "ROUNDDOWN-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number below the place rounds down to 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDDOWN(0.009,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    }
+  ]
+}

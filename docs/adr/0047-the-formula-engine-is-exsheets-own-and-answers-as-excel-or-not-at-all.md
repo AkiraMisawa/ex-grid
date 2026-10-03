@@ -373,3 +373,23 @@ reimplementation of Excel documents the same boundary for it.
 
 The equality run also settled ADR-0014's amendment. Plain text pasted over B2:C3 from C3 went into
 B2, the top-left, and not into the active cell.
+
+## The list grows: the first additions *(2026-10-03, decided with the user)*
+
+The queue after the first set, with each candidate's status and priority, is catalogued in
+[`docs/specs/exsheet-functions/spec.md`](../specs/exsheet-functions/spec.md). The catalogue orders
+the queue; this ADR's rule still decides each admission, and a test holds the catalogue's
+**Supported** rows equal to the declared set.
+
+Admitted under that rule, as the catalogue's first ticket: `AND`, `OR`, `NOT`, `IFNA`, `ISBLANK`,
+`ISNUMBER`, `ROUNDUP`, `ROUNDDOWN`, `ABS`, `INT`, `MOD`, `DATE`, `YEAR`, `MONTH`, `DAY`,
+`EOMONTH`, `EDATE`, `LEFT`, `RIGHT`, `MID`, `LEN`, `TRIM`, `CONCAT` and `INDEX` (the array form).
+Each case Microsoft documents is in the corpus as `documented`; each case it leaves open is there
+as `uncertain`, with the engine's answer, for the next Windows run to ask.
+
+Following "admitted with some argument values refused", three are refused until Excel answers: a
+`MOD` whose quotient is 2^27 or more (`#NUM!`, the answer older versions of Excel were known to
+give); `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where the day that never existed
+lies; and a boolean typed into `EOMONTH` or `EDATE`. The functions that answer about any Value —
+`IFNA`, `ISBLANK`, `ISNUMBER` — give `#GETTING_DATA` and `#CIRC!` back, as `IFERROR` and `ISERROR`
+do, and `INDEX` with a row or column of 0 over more than one cell is the spill refusal above.

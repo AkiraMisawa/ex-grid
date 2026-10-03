@@ -1,0 +1,41 @@
+{
+  "area": "day",
+  "about": "DAY (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "DAY-001",
+      "source": "documented",
+      "description": "Microsoft's example: the day of 15 April 2011",
+      "cells": {"A1": "4/15/2011", "ZZ1000": "=DAY(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 15}
+    },
+    {
+      "id": "DAY-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 60 is the 29th",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DAY(60)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 29}
+    },
+    {
+      "id": "DAY-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 59 is the 28th",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DAY(59)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 28}
+    },
+    {
+      "id": "DAY-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 0 is day 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DAY(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    }
+  ]
+}

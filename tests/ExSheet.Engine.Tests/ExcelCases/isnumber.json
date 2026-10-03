@@ -1,0 +1,81 @@
+{
+  "area": "isnumber",
+  "about": "ISNUMBER (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "ISNUMBER-001",
+      "source": "documented",
+      "description": "A number is a number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNUMBER(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "ISNUMBER-002",
+      "source": "documented",
+      "description": "A number stored as text is not a number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNUMBER(A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISNUMBER-003",
+      "source": "documented",
+      "description": "A blank cell is not a number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNUMBER(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISNUMBER-004",
+      "source": "documented",
+      "description": "A boolean is not a number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNUMBER(A4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISNUMBER-005",
+      "source": "documented",
+      "description": "Numeric text typed as the argument is not converted",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNUMBER(\"19\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISNUMBER-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is not a number, and not the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNUMBER(C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "ISNUMBER-007",
+      "source": "uncertain",
+      "description": "ISNUMBER over a range where one Value is wanted is refused",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNUMBER(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": true}
+    },
+    {
+      "id": "ISNUMBER-008",
+      "source": "uncertain",
+      "description": "ISNUMBER over a cycle is #CIRC!",
+      "cells": {"A1": "=B1", "B1": "=A1", "ZZ1000": "=ISNUMBER(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CIRC!"},
+      "engineDiffersByDecision": "ADR-0047: a Formula that reads a cycle member is #CIRC!, where Excel reads 0",
+      "excelExpect": {"value2": true}
+    }
+  ]
+}

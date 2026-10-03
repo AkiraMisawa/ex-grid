@@ -1,0 +1,80 @@
+{
+  "area": "not",
+  "about": "NOT (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "NOT-001",
+      "source": "documented",
+      "description": "NOT of FALSE is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(FALSE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "NOT-002",
+      "source": "documented",
+      "description": "Microsoft's example: NOT of a condition that holds",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(1+1=2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "NOT-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank cell is FALSE, so NOT is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "NOT-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number other than 0 is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(E2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "NOT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that spells no logical value is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "NOT-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text spelling FALSE reads as FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(\"false\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "NOT-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "NOT-008",
+      "source": "uncertain",
+      "description": "NOT over a range where one Value is wanted is refused",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NOT(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": false}
+    }
+  ]
+}

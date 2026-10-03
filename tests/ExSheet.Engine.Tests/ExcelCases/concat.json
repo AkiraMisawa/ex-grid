@@ -1,0 +1,50 @@
+{
+  "area": "concat",
+  "about": "CONCAT (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "CONCAT-001",
+      "source": "documented",
+      "description": "Microsoft's example: text and cells joined",
+      "cells": {"A1": "brook trout", "A2": "species", "A3": "32", "ZZ1000": "=CONCAT(\"Stream population for \",A1,\" \",A2,\" is \",A3,\"/mile.\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Stream population for brook trout species is 32/mile."}
+    },
+    {
+      "id": "CONCAT-002",
+      "source": "documented",
+      "description": "A range is joined row by row",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=CONCAT(M1:O2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "xyz123"}
+    },
+    {
+      "id": "CONCAT-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: blanks add nothing, and booleans are their text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CONCAT(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "123TRUEabc4"}
+    },
+    {
+      "id": "CONCAT-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value in a range is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CONCAT(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "CONCAT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an argument left empty adds nothing",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CONCAT(\"a\",,\"b\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "ab"}
+    }
+  ]
+}

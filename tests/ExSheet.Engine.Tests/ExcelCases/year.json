@@ -1,0 +1,68 @@
+{
+  "area": "year",
+  "about": "YEAR (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "YEAR-001",
+      "source": "documented",
+      "description": "Microsoft's example: the year of 5 July 2008",
+      "cells": {"A1": "7/5/2008", "ZZ1000": "=YEAR(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2008}
+    },
+    {
+      "id": "YEAR-002",
+      "source": "documented",
+      "description": "Microsoft's example: the year of 5 July 2010",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=YEAR(DATE(2010,7,5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2010}
+    },
+    {
+      "id": "YEAR-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 0 is in 1900",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=YEAR(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1900}
+    },
+    {
+      "id": "YEAR-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the time of day is ignored",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=YEAR(45000.75)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2023}
+    },
+    {
+      "id": "YEAR-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative serial is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=YEAR(-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "YEAR-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a serial past 31 December 9999 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=YEAR(2958466)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "YEAR-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that is not a number is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=YEAR(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

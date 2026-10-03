@@ -3,7 +3,8 @@ using System.Globalization;
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// The declared set, ADR-0047's first list. Each function is written to Microsoft's documented
+/// The declared set: ADR-0047's first list, and the functions admitted after it
+/// (<c>docs/specs/exsheet-functions/spec.md</c>). Each function is written to Microsoft's documented
 /// behaviour for it: how it treats blanks, text, booleans and Error Values typed as arguments and
 /// found inside ranges, and its rounding. Where ExSheet cannot give Excel's answer — a result that
 /// would spill an array, XLOOKUP's binary search over data it cannot show to be sorted — it gives
@@ -25,6 +26,30 @@ internal static partial class FunctionLibrary
         new("ROUND", 2, 2, "number, num_digits", "Rounds a number to a specified number of digits, half away from zero.", Round),
         new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError),
         new("ISERROR", 1, 1, "value", "Returns TRUE if value is an Error Value. #GETTING_DATA is not an error to it.", IsError),
+        new("AND", 1, Open, "logical1, [logical2], ...", "Returns TRUE if all of its arguments are TRUE.", And),
+        new("OR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if any argument is TRUE.", Or),
+        new("NOT", 1, 1, "logical", "Reverses the logic of its argument.", Not),
+        new("IFNA", 2, 2, "value, value_if_na", "Returns value_if_na if value is #N/A, and value otherwise.", IfNa),
+        new("ISBLANK", 1, 1, "value", "Returns TRUE if value refers to an empty cell.", IsBlank),
+        new("ISNUMBER", 1, 1, "value", "Returns TRUE if value is a number.", IsNumber),
+        new("ROUNDUP", 2, 2, "number, num_digits", "Rounds a number up, away from zero.", RoundUp),
+        new("ROUNDDOWN", 2, 2, "number, num_digits", "Rounds a number down, toward zero.", RoundDown),
+        new("ABS", 1, 1, "number", "Returns the absolute value of a number.", Abs),
+        new("INT", 1, 1, "number", "Rounds a number down to the nearest integer.", Int),
+        new("MOD", 2, 2, "number, divisor", "Returns the remainder from division, with the sign of the divisor.", Mod),
+        new("DATE", 3, 3, "year, month, day", "Returns the serial number of a particular date.", Date),
+        new("YEAR", 1, 1, "serial_number", "Converts a serial number to a year.", Year),
+        new("MONTH", 1, 1, "serial_number", "Converts a serial number to a month.", Month),
+        new("DAY", 1, 1, "serial_number", "Converts a serial number to a day of the month.", Day),
+        new("EOMONTH", 2, 2, "start_date, months", "Returns the serial number of the last day of the month before or after a specified number of months.", EoMonth),
+        new("EDATE", 2, 2, "start_date, months", "Returns the serial number of the date that is the indicated number of months before or after the start date.", EDate),
+        new("LEFT", 1, 2, "text, [num_chars]", "Returns the leftmost characters from a text value.", Left),
+        new("RIGHT", 1, 2, "text, [num_chars]", "Returns the rightmost characters from a text value.", Right),
+        new("MID", 3, 3, "text, start_num, num_chars", "Returns a specific number of characters from a text string, starting at the position you specify.", Mid),
+        new("LEN", 1, 1, "text", "Returns the number of characters in a text string.", Len),
+        new("TRIM", 1, 1, "text", "Removes spaces from text, leaving single spaces between words.", Trim),
+        new("CONCAT", 1, 253, "text1, [text2], ...", "Combines the text from multiple ranges and strings.", Concat),
+        new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
             // Excel's lists, character for character: match_mode's as the Windows runs of
@@ -197,32 +222,37 @@ internal static partial class FunctionLibrary
         var test = call.Operand(0);
         if (IsArray(test)) return Operand.Of(ErrorValue.Value);
         var condition = call.Evaluator.ScalarOf(test);
-        bool truth;
-        switch (condition)
-        {
-            case null:
-                truth = false;
-                break;
-            case { IsError: true } e:
-                return Operand.Of(e);
-            case { Kind: ValueKind.Number } n:
-                truth = n.Number != 0;
-                break;
-            case { Kind: ValueKind.Boolean } b:
-                truth = b.Boolean;
-                break;
-            case { } t when t.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase):
-                truth = true;
-                break;
-            case { } t when t.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase):
-                truth = false;
-                break;
-            default:
-                return Operand.Of(ErrorValue.Value);
-        }
+        var truth = false;
+        if (condition is { } value && !TryTruth(value, out truth)) return Operand.Of(value.IsError ? value.Error : ErrorValue.Value);
         if (truth) return call.Has(1) ? call.Operand(1) : Operand.Of(Value.FromNumber(0));
         if (call.Count < 3) return Operand.Of(Value.FromBoolean(false));
         return call.Has(2) ? call.Operand(2) : Operand.Of(Value.FromNumber(0));
+    }
+
+    /// <summary>
+    /// A Value read as a logical one, as <c>IF</c>'s test and <c>NOT</c> read it: a number is TRUE
+    /// unless it is 0, and text is TRUE or FALSE only when it spells one, without regard to case.
+    /// <see langword="false"/> for any other text and for an Error Value.
+    /// </summary>
+    private static bool TryTruth(Value value, out bool truth)
+    {
+        truth = false;
+        switch (value.Kind)
+        {
+            case ValueKind.Number:
+                truth = value.Number != 0;
+                return true;
+            case ValueKind.Boolean:
+                truth = value.Boolean;
+                return true;
+            case ValueKind.Text when value.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase):
+                truth = true;
+                return true;
+            case ValueKind.Text when value.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase):
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>
@@ -272,12 +302,24 @@ internal static partial class FunctionLibrary
         return Operand.Of(Evaluator.Number(RoundHalfAwayFromZero(number, Math.Truncate(digits))));
     }
 
+    /// <summary>How ROUND, ROUNDUP and ROUNDDOWN treat the digits they drop.</summary>
+    internal enum Rounding
+    {
+        HalfAwayFromZero,
+        AwayFromZero,
+        TowardZero,
+    }
+
+    /// <summary>Excel's ROUND: half away from zero (<see cref="RoundAt"/>).</summary>
+    internal static double RoundHalfAwayFromZero(double number, double digits) => RoundAt(number, digits, Rounding.HalfAwayFromZero);
+
     /// <summary>
-    /// Excel's ROUND: half away from zero, applied to the number as Excel holds it to 15
+    /// Excel's ROUND, ROUNDUP and ROUNDDOWN, applied to the number as Excel holds it to 15
     /// significant digits — so 2.675, which is 2.67499999999999982236431605997495353221893310546875
-    /// as a double, rounds to 2.68 as its decimal spelling says.
+    /// as a double, rounds to 2.68 as its decimal spelling says, and 0.1+0.2 rounds up to 0.3 at one
+    /// digit, not 0.4. <paramref name="digits"/> is already a whole number.
     /// </summary>
-    internal static double RoundHalfAwayFromZero(double number, double digits)
+    internal static double RoundAt(double number, double digits, Rounding rounding)
     {
         if (number == 0) return 0;
         // "E14": 15 significant digits, d.dddddddddddddd, then the exponent.
@@ -287,19 +329,23 @@ internal static partial class FunctionLibrary
         // How many of the 15 digits sit at or above the 10^-digits place.
         var kept = exponent + 1 + digits;
         if (kept >= 15) return number;
-        if (kept < 0) return 0;
+        if (kept < 0)
+        {
+            // Every digit is dropped: a number below half the place is 0, and away from zero it is the place itself.
+            if (rounding != Rounding.AwayFromZero) return 0;
+            var place = Math.Pow(10, -digits);
+            return number < 0 ? -place : place;
+        }
         var keep = (int)kept;
         var retained = mantissa[..keep];
-        var roundUp = mantissa[keep] >= '5';
-        decimal magnitude;
-        if (keep == 0)
+        var roundUp = rounding switch
         {
-            magnitude = roundUp ? 1 : 0;
-        }
-        else
-        {
-            magnitude = decimal.Parse(retained, CultureInfo.InvariantCulture) + (roundUp ? 1 : 0);
-        }
+            Rounding.HalfAwayFromZero => mantissa[keep] >= '5',
+            Rounding.AwayFromZero => mantissa[keep..].Any(c => c != '0'),
+            _ => false,
+        };
+        decimal magnitude = (keep == 0 ? 0 : decimal.Parse(retained, CultureInfo.InvariantCulture)) + (roundUp ? 1 : 0);
+        if (magnitude == 0) return 0;
         // magnitude is an integer of at most 16 digits; place it back at 10^(exponent + 1 - keep).
         var scale = exponent + 1 - keep;
         var result = double.Parse(

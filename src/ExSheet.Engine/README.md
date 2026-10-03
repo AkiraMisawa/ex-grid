@@ -50,9 +50,9 @@ change.ValueChanges;                        // C1
 a constant read under the Sheet's culture and recorded already parsed. Typing into a General cell
 can give it a format, as in Excel: a date or a percentage typed as one, and a Formula of simple
 arithmetic (`+`, `-`, single-cell References, parentheses) takes the format of the first
-formatted cell it reads, so `=A1+7` over a date shows a date. It happens once, at entry. A Formula keeps the
-whitespace it was typed with where Excel keeps it — before a token, but not at the end nor before
-a `,` — and a tab between tokens is refused, as Excel refuses it. Its tokens are written in
+formatted cell it reads, so `=A1+7` over a date shows a date; `DATE` gives the short date
+format. It happens once, at entry. A Formula keeps the whitespace it was typed with where Excel
+keeps it — before a token, but not at the end nor before a `,` — and a tab between tokens is refused, as Excel refuses it. Its tokens are written in
 Excel's spelling (`= sum( a1 , 2 ) ` is kept as `= SUM( A1, 2 )`), and rewriting its References
 changes only the Reference tokens; one rewritten to `#REF!` takes the whitespace before it along
 and keeps its qualifier (`Sheet1!#REF!`). References are written as Excel writes them: a range
@@ -109,9 +109,22 @@ them:
 | `SUM`, `AVERAGE`, `MIN`, `MAX` | `number1, [number2], ...` |
 | `COUNT`, `COUNTA` | `value1, [value2], ...` |
 | `IF` | `logical_test, value_if_true, [value_if_false]` |
-| `ROUND` | `number, num_digits` |
+| `AND`, `OR` | `logical1, [logical2], ...` |
+| `NOT` | `logical` |
 | `IFERROR` | `value, value_if_error` |
-| `ISERROR` | `value` |
+| `IFNA` | `value, value_if_na` |
+| `ISERROR`, `ISBLANK`, `ISNUMBER` | `value` |
+| `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
+| `ABS`, `INT` | `number` |
+| `MOD` | `number, divisor` |
+| `DATE` | `year, month, day` |
+| `YEAR`, `MONTH`, `DAY` | `serial_number` |
+| `EOMONTH`, `EDATE` | `start_date, months` |
+| `LEFT`, `RIGHT` | `text, [num_chars]` |
+| `MID` | `text, start_num, num_chars` |
+| `LEN`, `TRIM` | `text` |
+| `CONCAT` | `text1, [text2], ...` |
+| `INDEX` | `array, row_num, [column_num]` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
 
 Which functions come next, each with its status and priority, is catalogued in
@@ -126,15 +139,21 @@ answer:
 
 - **No spilled arrays.** A Formula whose result would be a multi-cell range, or an operator applied
   to one, is `#VALUE!`; so is an `XLOOKUP` whose return array is more than one cell across.
-  `IFERROR` and `ISERROR` do not turn that refusal into a fallback.
+  `IFERROR` and `ISERROR` do not turn that refusal into a fallback. `INDEX` with a row or a
+  column of 0 over more than one cell is that refusal too.
 - **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) answers only over a lookup array sorted
   as the mode says — one kind of value, no blanks, text of ASCII letters, digits and spaces; it is
   `#VALUE!` otherwise. Over duplicate keys it returns the one Excel was observed to: an equal key
   is the first of its run ascending and the last descending.
 - **`#CIRC!`** is shown by every cell of a circular reference and every Formula that reads one,
-  where Excel shows 0. `IFERROR` does not catch it.
+  where Excel shows 0. `IFERROR` and `IFNA` do not catch it.
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
   `ISERROR`, where Excel's are: a fallback never stands in for data that has not arrived.
+  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE.
+- **Asked of Excel before they are answered**, each refused until the next Windows run says what
+  Excel gives: `MOD` whose quotient is 2^27 or more (`#NUM!`, as older versions of Excel gave);
+  `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where Excel's calendar holds the day
+  that never existed, and with a boolean typed as an argument (`#VALUE!`).
 
 ## Operations, and undoing them
 

@@ -1,0 +1,33 @@
+{
+  "area": "trim",
+  "about": "TRIM (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "TRIM-001",
+      "source": "documented",
+      "description": "Microsoft's example: spaces at both ends removed",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TRIM(\" First Quarter Earnings \")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "First Quarter Earnings"}
+    },
+    {
+      "id": "TRIM-002",
+      "source": "documented",
+      "description": "Runs of spaces between words become one",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TRIM(\"  a   b  \")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a b"}
+    },
+    {
+      "id": "TRIM-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: only spaces leaves empty text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TRIM(\"   \")&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    }
+  ]
+}

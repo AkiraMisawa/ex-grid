@@ -1,0 +1,49 @@
+{
+  "area": "right",
+  "about": "RIGHT (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "RIGHT-001",
+      "source": "documented",
+      "description": "Microsoft's example: the last five characters",
+      "cells": {"A1": "Sale Price", "ZZ1000": "=RIGHT(A1,5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Price"}
+    },
+    {
+      "id": "RIGHT-002",
+      "source": "documented",
+      "description": "Microsoft's example: num_chars left out is 1",
+      "cells": {"A1": "Stock Number", "ZZ1000": "=RIGHT(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "r"}
+    },
+    {
+      "id": "RIGHT-003",
+      "source": "documented",
+      "description": "More characters than the text holds give the whole text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=RIGHT(\"abc\",10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "abc"}
+    },
+    {
+      "id": "RIGHT-004",
+      "source": "documented",
+      "description": "num_chars below 0 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=RIGHT(\"abc\",-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "RIGHT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number is read as its text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=RIGHT(1234,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "34", "kind": "text"}
+    }
+  ]
+}

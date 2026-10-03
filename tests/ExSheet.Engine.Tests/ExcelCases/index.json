@@ -1,0 +1,125 @@
+{
+  "area": "index",
+  "about": "INDEX, its array form (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "INDEX-001",
+      "source": "documented",
+      "description": "Microsoft's example: the second row and second column",
+      "cells": {"A1": "Apples", "B1": "Lemons", "A2": "Bananas", "B2": "Pears", "ZZ1000": "=INDEX(A1:B2,2,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Pears"}
+    },
+    {
+      "id": "INDEX-002",
+      "source": "documented",
+      "description": "Microsoft's example: the second row and first column",
+      "cells": {"A1": "Apples", "B1": "Lemons", "A2": "Bananas", "B2": "Pears", "ZZ1000": "=INDEX(A1:B2,2,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Bananas"}
+    },
+    {
+      "id": "INDEX-003",
+      "source": "documented",
+      "description": "A row and a column inside the range",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,3,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 30}
+    },
+    {
+      "id": "INDEX-004",
+      "source": "documented",
+      "description": "Over one column, column_num may be left out",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:G5,4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Banana"}
+    },
+    {
+      "id": "INDEX-005",
+      "source": "documented",
+      "description": "A row past the range is #REF!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,6,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "INDEX-006",
+      "source": "documented",
+      "description": "A column past the range is #REF!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,1,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "INDEX-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: over one row, row_num alone runs along it",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(M1:O1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "y"}
+    },
+    {
+      "id": "INDEX-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative row is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,-1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "INDEX-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: column 0 of one column is that column",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:G5,3,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Cherry"}
+    },
+    {
+      "id": "INDEX-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank cell reads as 0 in a Formula's result",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(Q1:Q2,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "INDEX-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: row_num is truncated",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(H1:H5,2.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "INDEX-012",
+      "source": "uncertain",
+      "description": "A whole row of several cells would spill",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": "Banana"}
+    },
+    {
+      "id": "INDEX-013",
+      "source": "uncertain",
+      "description": "A whole column of several cells would spill",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=INDEX(G1:H5,0,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
+      "excelExpect": {"value2": 10}
+    }
+  ]
+}

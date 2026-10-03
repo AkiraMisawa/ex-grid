@@ -1,0 +1,41 @@
+{
+  "area": "month",
+  "about": "MONTH (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "MONTH-001",
+      "source": "documented",
+      "description": "Microsoft's example: the month of 15 April 2011",
+      "cells": {"A1": "4/15/2011", "ZZ1000": "=MONTH(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "MONTH-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 60, 29 February 1900, is in February",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MONTH(60)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "MONTH-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 61 is in March",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MONTH(61)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "MONTH-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: serial 0 is in January",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MONTH(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    }
+  ]
+}
