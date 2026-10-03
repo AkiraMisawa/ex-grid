@@ -33,7 +33,7 @@ here. `FILTER`, `UNIQUE`, `SORT` and the other functions built for arrays need i
   Excel's Error Values, and it propagates as they do.
 - **No limit but the Sheet's edge.** A spill of a million rows is allowed, as Excel allows it. Its
   cost is measured, and a limit, if one is needed, is a later decision.
-  - *(2026-10-03, implementation.)* What the engine cannot hold is not a limit on a spill but a
+  - *(2026-10-03, found in implementation and agreed with the user.)* What the engine cannot hold is not a limit on a spill but a
     refusal of what cannot be executed (the design's fifth principle): an array of more than 2^24
     Values (sixteen whole columns) is not built, and whatever would build one is `#NUM!`. Excel
     runs out of resources before it. `=1:1048576*1` would be 17 billion Values.
