@@ -143,7 +143,8 @@ on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak
 10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
 assemblies only — the family's ten packages — and is reported, never gated: each run's summary
 carries the table per product and in total, and the README's five badges (the total, ExGrid,
-ExSheet, ExPivot and Data, each lines and branches) follow `main` (history in `history.csv` on
+ExSheet, ExPivot and Data, each its line coverage; branches are in the table they link to)
+follow `main` (history in `history.csv` on
 the `badges` branch). Windows (VZ-14)
 and a real IME remain runs by hand. A fourth job packs the family's ten packages
 into the release feed and publishes an application that takes them from the packed files alone

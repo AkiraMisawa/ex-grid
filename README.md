@@ -2,12 +2,12 @@
 
 [![CI](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AkiraMisawa/ex-grid/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/vpre/ExGrid)](https://www.nuget.org/packages/ExGrid)
-[![Total coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-total.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
+[![Docs](https://img.shields.io/badge/docs-live%20examples-1b6ac9)](https://akiramisawa.github.io/ex-grid/)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-total.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![ExGrid coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-exgrid.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![ExSheet coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-exsheet.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![ExPivot coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-expivot.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
 [![Data coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FAkiraMisawa%2Fex-grid%2Fbadges%2Fcoverage-data.json)](https://github.com/AkiraMisawa/ex-grid/blob/badges/coverage.md)
-[![Docs](https://img.shields.io/badge/docs-live%20examples-1b6ac9)](https://akiramisawa.github.io/ex-grid/)
 
 **Excel-like grids for Blazor, built for reading money and risk numbers.**
 
