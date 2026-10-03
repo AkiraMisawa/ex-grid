@@ -13,8 +13,7 @@ the categories, the palette and the line styles, and the same choices set the sa
 under either Chrome. The dialog is page-level and modal; while it is open the keys are its own,
 and when it closes the keyboard is the Sheet's again.
 
-> **This is a prerelease (`0.x`).** ExSheet is built alongside ExGrid and is not part of its
-> release. This package depends on exactly the ExSheet and ExGrid.MudBlazor versions it ships
+> **This is a prerelease (`0.x`).** ExSheet ships with ExGrid, at the same version. This package depends on exactly the ExSheet and ExGrid.MudBlazor versions it ships
 > with, so upgrade them together.
 
 ## Install

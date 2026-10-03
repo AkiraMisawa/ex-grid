@@ -226,7 +226,10 @@ they hold for every reader.**
     grid as an index beside those objects, never as their replacement.
   - A sheet's cells are sparse, which columns do not suit. Its Linked Tables are not sparse.
 - **It ships with ExPivot, outside ExGrid's release** (Definition of Done §2), until ExGrid adopts
-  it. Its criteria are §30.
+  it. Its criteria are §30. *(Changed 2026-10-03: the whole family ships as prereleases from
+  ExGrid's tag, the data packages with it
+  ([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+  §30 still judges them, and still never gates ExGrid.)*
 
 ## Considered options
 

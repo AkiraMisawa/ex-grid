@@ -211,6 +211,11 @@ ExPivot.MudBlazor  the Wrapper: → ExPivot, → ExGrid.MudBlazor, → MudBlazor
 - `ExGrid.Data` references nothing of ours.
 
 **ExPivot is not part of the release**, as ExSheet is not (Definition of Done §2).
+*(Changed 2026-10-03, decided with the user: ExPivot's three packages and the data packages ship as
+prereleases with ExGrid, at its version and from its tag
+([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+The first bullet below is replaced: the package check packs them into the release feed. The other
+two stand.)*
 
 - The package check packs ExPivot into a feed of its own, together with `ExGrid.Data` and
   `ExGrid.Data.Arrow`.

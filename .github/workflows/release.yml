@@ -1,4 +1,6 @@
-# Publishes a prerelease of ExGrid and ExGrid.MudBlazor from a v* tag (ADR-0042).
+# Publishes a prerelease of the family's ten packages, at one version, from a v* tag (ADR-0042):
+# ExGrid, ExGrid.MudBlazor, ExSheet.Engine, ExSheet, ExSheet.MudBlazor, ExGrid.Data,
+# ExGrid.Data.Arrow, ExPivot.Engine, ExPivot and ExPivot.MudBlazor.
 #
 #   git tag v0.1.0-beta.1 <a commit on main> && git push origin v0.1.0-beta.1
 #
@@ -82,12 +84,13 @@ jobs:
         run: |
           set -euo pipefail
           ls -l packages
-          for id in ExGrid ExGrid.MudBlazor; do
+          ids="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor"
+          for id in $ids; do
             for ext in nupkg snupkg; do
               [ -f "packages/$id.$VERSION.$ext" ] || { echo "::error::packages/$id.$VERSION.$ext is missing"; exit 1; }
             done
           done
-          [ "$(ls packages | wc -l)" -eq 4 ] || { echo "::error::the artifact holds more than the four expected files"; exit 1; }
+          [ "$(ls packages | wc -l)" -eq 20 ] || { echo "::error::the artifact holds more than the twenty expected files"; exit 1; }
 
       - uses: actions/setup-dotnet@v6
         with:

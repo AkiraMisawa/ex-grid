@@ -123,16 +123,28 @@ Link the stylesheet in your host page (`wwwroot/index.html`, or `App.razor` in a
 }
 ```
 
-For a MudBlazor application, add `ExGrid.MudBlazor` as well. Each package's own readme takes it
-from there:
+The whole family is published to NuGet as prereleases at one shared `0.1.0-beta.N` version
+([ADR-0042](docs/adr/0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+Each package depends on exactly the versions of the others it was built with, so upgrade them
+together. A MudBlazor application adds each product's Wrapper:
 
-| Package | Readme | NuGet |
-|---|---|---|
-| ExGrid | [`src/ExGrid`](src/ExGrid/README.md) | prerelease |
-| ExGrid.MudBlazor | [`src/ExGrid.MudBlazor`](src/ExGrid.MudBlazor/README.md) | prerelease |
-| ExSheet, ExSheet.Engine, ExSheet.MudBlazor | [`src/ExSheet`](src/ExSheet/README.md), [`src/ExSheet.Engine`](src/ExSheet.Engine/README.md), [`src/ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md) | not yet published |
-| ExPivot, ExPivot.Engine, ExPivot.MudBlazor | [`src/ExPivot`](src/ExPivot/README.md), [`src/ExPivot.Engine`](src/ExPivot.Engine/README.md), [`src/ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md) | not yet published |
-| ExGrid.Data, ExGrid.Data.Arrow | [`src/ExGrid.Data`](src/ExGrid.Data/README.md), [`src/ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md) | not yet published |
+```sh
+dotnet add package ExGrid.MudBlazor --prerelease    # for a MudBlazor application
+dotnet add package ExSheet --prerelease             # the sheet; ExSheet.Engine alone computes on a server
+dotnet add package ExSheet.MudBlazor --prerelease
+dotnet add package ExPivot --prerelease             # the pivot table; ExPivot.Engine alone aggregates
+dotnet add package ExPivot.MudBlazor --prerelease
+dotnet add package ExGrid.Data.Arrow --prerelease   # a Snapshot as Apache Arrow
+```
+
+Each package's own readme takes it from there:
+
+| Product | Readmes |
+|---|---|
+| ExGrid | [`ExGrid`](src/ExGrid/README.md), [`ExGrid.MudBlazor`](src/ExGrid.MudBlazor/README.md) |
+| ExSheet | [`ExSheet`](src/ExSheet/README.md), [`ExSheet.Engine`](src/ExSheet.Engine/README.md), [`ExSheet.MudBlazor`](src/ExSheet.MudBlazor/README.md) |
+| ExPivot | [`ExPivot`](src/ExPivot/README.md), [`ExPivot.Engine`](src/ExPivot.Engine/README.md), [`ExPivot.MudBlazor`](src/ExPivot.MudBlazor/README.md) |
+| Data | [`ExGrid.Data`](src/ExGrid.Data/README.md), [`ExGrid.Data.Arrow`](src/ExGrid.Data.Arrow/README.md) |
 
 **Requirements:** .NET 10 or newer, Chrome or Edge, and an interactive render mode. ExGrid is
 verified under WebAssembly; every browser test also runs under Blazor Server.
@@ -172,9 +184,8 @@ Every decision is recorded with its reasons in [`docs/adr/`](docs/adr/), and the
 ## Status
 
 **Beta.** The specification is settled and every test layer passes in CI, but the API may change
-between betas. ExGrid and ExGrid.MudBlazor ship as `0.1.0-beta.N`; a stable version waits for the
-[Definition of Done](docs/definition-of-done.md) to be signed off. ExSheet, ExPivot and the data
-packages are built alongside and are not part of ExGrid's release. What remains is in
+between betas. The family's ten packages ship together as `0.1.0-beta.N`; a stable version waits
+for the [Definition of Done](docs/definition-of-done.md) to be signed off. What remains is in
 [`docs/implementation-status.md`](docs/implementation-status.md).
 
 ## Contributing

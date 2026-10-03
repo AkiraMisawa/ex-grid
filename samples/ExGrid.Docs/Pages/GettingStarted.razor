@@ -13,16 +13,12 @@
 
     <DocsSection Title="Install">
         <p>
-            ExGrid and its MudBlazor Wrapper are published to nuget.org as prereleases, at one shared
-            <code>0.1.0-beta.N</code> version. Upgrade the two together: the Wrapper depends on exactly
-            its ExGrid version.
+            The whole family is published to nuget.org as prereleases, at one shared
+            <code>0.1.0-beta.N</code> version. Each package depends on exactly the versions of the others
+            it was built with, so upgrade them together. Add the products you use, and each one's
+            MudBlazor Wrapper in a MudBlazor application.
         </p>
         <CodeBlock Path="Examples/Setup/install.sh" />
-        <p>
-            ExSheet, ExPivot and the data packages are built alongside ExGrid and are not part of its
-            release yet. They are not on nuget.org: to use them now, reference their projects from a
-            clone of the <MudLink Href="https://github.com/AkiraMisawa/ex-grid" Target="_blank">repository</MudLink>.
-        </p>
     </DocsSection>
 
     <DocsSection Title="Link the stylesheets">

@@ -54,3 +54,8 @@ so `ExSheet`) out of the release workflow while ExSheet is outside the release (
 §2), so `release.yml` and `ci.yml` are unchanged — the `package` job uploads `.feed` alone, and the
 release's publish job still accepts exactly ExGrid's four files. Publishing both is the release
 decision's, when ExSheet joins it.
+
+2026-10-03, publishing: the release decision came (ADR-0042's "The family ships together", decided
+with the user). `check.sh` packs every package of the family into `.feed`, and `release.yml`
+publishes `ExSheet.Engine`, `ExSheet` and `ExSheet.MudBlazor` from the next tag, with ExGrid's
+and ExPivot's packages, at one version.

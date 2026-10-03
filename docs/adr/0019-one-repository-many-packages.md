@@ -139,4 +139,5 @@ Format Cells dialog with a MudBlazor Chrome. It lives in its own package, `ExShe
 - **The reference direction stays one-way.** Nothing references `ExSheet.MudBlazor`, and
   `ExGrid.MudBlazor` still references no ExSheet package.
 - **Release**: it stays outside the release while ExSheet does (Definition of Done §2). The package
-  smoke check packs it.
+  smoke check packs it. *(Since 2026-10-03 ExSheet ships as a prerelease with ExGrid, and this
+  package with it; ADR-0042.)*

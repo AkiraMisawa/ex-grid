@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# Packs ExGrid and ExGrid.MudBlazor, reads back what the packages declare, and builds and
-# publishes an application that takes them from the packed files alone (ADR-0042). ExSheet,
-# ExSheet.Engine and ExSheet.MudBlazor are packed and taken the same way, into a feed of their own,
-# and so are ExPivot.Engine, ExPivot and ExPivot.MudBlazor, into another, with ExGrid.Data and
-# ExGrid.Data.Arrow, which ship beside ExPivot: .feed holds exactly what the release publishes,
-# and neither product, nor the family's data packages, is part of that release yet (ADR-0046,
-# ADR-0059, ADR-0064, ADR-0065; ExSheet.MudBlazor, ADR-0019's note of 2026-09-30). A Snapshot is
-# written to an Arrow stream and read back through the packed data packages, and the check fails
-# if it comes back different (DA-16).
+# Packs the family's ten packages — ExGrid and ExGrid.MudBlazor; ExSheet.Engine, ExSheet and
+# ExSheet.MudBlazor; ExGrid.Data and ExGrid.Data.Arrow; ExPivot.Engine, ExPivot and
+# ExPivot.MudBlazor — reads back what each declares, and builds and publishes an application that
+# takes them from the packed files alone (ADR-0042; the family ships at one version since its note
+# of 2026-10-03). A Snapshot is written to an Arrow stream and read back through the packed data
+# packages, and the check fails if it comes back different (DA-16).
 #
 #   tests/ExGrid.PackageSmoke/check.sh [version]
 #
@@ -20,33 +17,25 @@ here=$(cd "$(dirname "$0")" && pwd)
 root=$(cd "$here/../.." && pwd)
 version=${1:-0.0.0-smoke.$(date +%s)}
 feed="$here/.feed"
-sheetfeed="$here/.sheet-feed"
-pivotfeed="$here/.pivot-feed"
 cache="$here/.nuget-packages"
 out="$here/.publish"
 
 fail() { echo "package check: $*" >&2; exit 1; }
 
-rm -rf "$feed" "$sheetfeed" "$pivotfeed" "$cache" "$out" "$here/bin" "$here/obj" "$here/RoundTrip/bin" "$here/RoundTrip/obj"
-mkdir -p "$feed" "$sheetfeed" "$pivotfeed"
+rm -rf "$feed" "$cache" "$out" "$here/bin" "$here/obj" "$here/RoundTrip/bin" "$here/RoundTrip/obj"
+mkdir -p "$feed"
 
 echo "== pack $version"
-for project in ExGrid ExGrid.MudBlazor; do
+packages="ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor"
+for project in $packages; do
   dotnet pack "$root/src/$project" -c Release -o "$feed" -p:Version="$version" --nologo
-done
-for project in ExSheet.Engine ExSheet ExSheet.MudBlazor; do
-  dotnet pack "$root/src/$project" -c Release -o "$sheetfeed" -p:Version="$version" --nologo
-done
-for project in ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor; do
-  dotnet pack "$root/src/$project" -c Release -o "$pivotfeed" -p:Version="$version" --nologo
 done
 
 echo "== what the packages declare"
-feedof() { case "$1" in ExSheet|ExSheet.*) echo "$sheetfeed" ;; ExPivot|ExPivot.*|ExGrid.Data|ExGrid.Data.*) echo "$pivotfeed" ;; *) echo "$feed" ;; esac; }
-nuspec() { unzip -p "$(feedof "$1")/$1.$version.nupkg" "$1.nuspec"; }
-entries() { unzip -Z1 "$(feedof "$1")/$1.$version.nupkg"; }
-for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExGrid.Data ExGrid.Data.Arrow ExPivot.Engine ExPivot ExPivot.MudBlazor; do
-  [ -f "$(feedof "$id")/$id.$version.snupkg" ] || fail "$id has no symbol package"
+nuspec() { unzip -p "$feed/$1.$version.nupkg" "$1.nuspec"; }
+entries() { unzip -Z1 "$feed/$1.$version.nupkg"; }
+for id in $packages; do
+  [ -f "$feed/$id.$version.snupkg" ] || fail "$id has no symbol package"
   spec=$(nuspec "$id")
   grep -q '<license type="expression">MIT</license>' <<<"$spec" || fail "$id does not declare MIT"
   grep -q '<readme>README.md</readme>' <<<"$spec" || fail "$id has no readme"
@@ -110,23 +99,21 @@ muddeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.
 [ "$muddeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExPivot\" version=\"[$version]\"" "<dependency id=\"MudBlazor\" version=\"9.0.0\"" | sort)" ] \
   || fail "ExPivot.MudBlazor's dependencies are not exactly ExPivot and ExGrid.MudBlazor $version and MudBlazor 9.0.0: $muddeps"
 
-# The release publishes .feed as it is, so nothing of ExSheet or ExPivot may be in it (ADR-0046,
-# ADR-0059).
-if ls "$feed" | grep -qi '^exsheet'; then fail "the release feed $feed holds an ExSheet package"; fi
-if ls "$feed" | grep -qi '^expivot'; then fail "the release feed $feed holds an ExPivot package"; fi
-if ls "$feed" | grep -qi '^exgrid\.data'; then fail "the release feed $feed holds an ExGrid.Data package"; fi
+# The release publishes .feed as it is, so it holds the ten packages and their symbol packages, and
+# nothing else (ADR-0042).
+expected=$(for id in $packages; do printf '%s\n' "$id.$version.nupkg" "$id.$version.snupkg"; done | sort)
+[ "$(ls "$feed" | sort)" = "$expected" ] || fail "the release feed $feed does not hold exactly the ten packages: $(ls "$feed" | tr '\n' ' ')"
 
 echo "== an application that takes them"
 dotnet publish "$here" -c Release -o "$out" --nologo \
   -p:ExGridVersion="$version" -p:RestorePackagesPath="$cache"
 
 # Restored from the packed files, not from anywhere else.
-for id in exgrid exgrid.mudblazor exsheet.engine exsheet exsheet.mudblazor exgrid.data exgrid.data.arrow expivot.engine expivot expivot.mudblazor; do
+for id in $packages; do
+  id=${id,,}
   meta="$cache/$id/$version/.nupkg.metadata"
-  from=$feed
-  case "$id" in exsheet|exsheet.*) from=$sheetfeed ;; expivot|expivot.*|exgrid.data|exgrid.data.*) from=$pivotfeed ;; esac
   [ -f "$meta" ] || fail "$id $version was not restored"
-  grep -qF "$from" "$meta" || fail "$id $version came from somewhere other than $from"
+  grep -qF "$feed" "$meta" || fail "$id $version came from somewhere other than $feed"
 done
 
 # The paths the README tells a Consumer to link, and the module the component imports.
@@ -144,7 +131,7 @@ echo "== a Snapshot through an Arrow stream and back, through the packed package
 dotnet build "$here/RoundTrip" -c Release --nologo \
   -p:ExGridVersion="$version" -p:RestorePackagesPath="$cache"
 for id in exgrid.data exgrid.data.arrow; do
-  grep -qF "$pivotfeed" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $pivotfeed"
+  grep -qF "$feed" "$cache/$id/$version/.nupkg.metadata" || fail "the round trip took $id $version from somewhere other than $feed"
 done
 dotnet "$here/RoundTrip/bin/Release/net10.0/PackageSmoke.RoundTrip.dll" \
   || fail "a Snapshot written to an Arrow stream and read back through the packed packages is not the one written"

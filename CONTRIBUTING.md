@@ -143,9 +143,8 @@ on Linux, headed under xvfb, on the runner's installed Chrome and Edge. The soak
 10⁶ rows run weekly, or on demand from the Actions tab. Coverage counts the shipped
 assemblies only and is reported, never gated: each run's summary carries the table, and the
 badges on the README follow `main` (history in `history.csv` on the `badges` branch). Windows (VZ-14)
-and a real IME remain runs by hand. A fourth job packs the packages — ExGrid's two
-into the release feed, and ExSheet's, ExPivot's and the data packages into feeds of their own —
-and publishes an application that takes them from the packed files alone
+and a real IME remain runs by hand. A fourth job packs the family's ten packages
+into the release feed and publishes an application that takes them from the packed files alone
 ([`tests/ExGrid.PackageSmoke`](tests/ExGrid.PackageSmoke/check.sh)).
 
 Test names carry the ADR number they enforce, so a failure says which decision was

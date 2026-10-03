@@ -341,7 +341,7 @@ jobs:
         with:
           global-json-file: global.json
 
-      # Packs both, reads back what each .nuspec declares, and publishes a net10.0
+      # Packs the family's ten, reads back what each .nuspec declares, and publishes a net10.0
       # application that restores them from the packed files alone.
       - name: Pack, read back, and consume
         run: tests/ExGrid.PackageSmoke/check.sh "${{ inputs.version || format('0.0.0-ci.{0}', github.run_number) }}"
