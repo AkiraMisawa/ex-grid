@@ -1,0 +1,22 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="380" />
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    private PivotLayout _layout = new()
+    {
+        Rows =
+        [
+            // Every region collapsed but Europe.
+            new PivotFieldPlacement("Region") { Collapsed = true, ToggledItems = [PivotItemKey.Text("Europe")] },
+            // Countries by their revenue, largest first: the Value Field at index 0.
+            new PivotFieldPlacement("Country") { Sort = new PivotSort(PivotSortDirection.Descending, ByValue: 0) },
+        ],
+        // Direct sales left out of every cell and every total.
+        Columns = [new PivotFieldPlacement("Channel") { HiddenItems = [PivotItemKey.Text("Direct")] }],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+}

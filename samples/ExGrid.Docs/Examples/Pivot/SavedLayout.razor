@@ -1,0 +1,32 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<p>
+    <button @onclick="Save">Save the layout</button>
+    <button @onclick="Restore" disabled="@(_saved is null)">Restore the saved layout</button>
+</p>
+
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="320" />
+
+@if (_saved is not null)
+{
+    <pre style="white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px">@_saved</pre>
+}
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Category")],
+        Columns = [new PivotFieldPlacement("Channel")],
+        Values = [new PivotValueField("Units", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    // What you would store as the user's setting: versioned JSON, holding no value.
+    private string? _saved;
+
+    private void Save() => _saved = PivotLayoutJson.Write(_layout);
+
+    private void Restore() => _layout = PivotLayoutJson.Read(_saved!);
+}

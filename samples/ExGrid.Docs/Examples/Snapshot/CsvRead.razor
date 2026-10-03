@@ -1,0 +1,60 @@
+@using System.Text
+@using ExGrid.Data
+
+<textarea @bind="_csv" rows="7" cols="60" spellcheck="false" style="font-family: monospace"></textarea>
+<p>
+    <button @onclick="ReadAsync">Read under the Schema</button>
+    <span>@_status</span>
+</p>
+
+@if (_source is not null)
+{
+    <ExGrid TRow="SnapshotLine" Source="_source" Columns="_columns" ViewportHeight="200" ViewportWidth="ViewportSize.Stretch" />
+}
+
+@code {
+    // A spreadsheet set to German saved this file: a semicolon between fields, a decimal comma,
+    // dates day first. The Schema says so; nothing is guessed.
+    private static readonly CsvSchema Schema = new(
+    [
+        new CsvColumn("Account", SnapshotKind.Text),          // "004417" stays "004417"
+        new CsvColumn("Desk", SnapshotKind.Text),
+        new CsvColumn("Balance", SnapshotKind.Decimal) { DecimalPoint = ",", ThousandsSeparator = "." },
+        new CsvColumn("Opened", SnapshotKind.Date) { DateFormats = ["dd.MM.yyyy"] },
+        new CsvColumn("Active", SnapshotKind.Boolean) { TrueText = ["1"], FalseText = ["0"] },
+    ])
+    {
+        Separator = CsvSeparator.Semicolon,
+        BlankText = ["NULL"],                                 // an empty field is a Blank already
+        RecordKey = "Account",
+    };
+
+    private string _csv = """
+        Account;Desk;Balance;Opened;Active
+        004417;Rates;1.250.000,00;14.03.2019;1
+        010032;Credit;7.340.215,37;02.11.2021;1
+        020101;FX;NULL;30.06.2023;1
+        020102;;15.000.000,00;;0
+        """;
+
+    private string _status = "";
+    private InMemoryGridSource<SnapshotLine>? _source;
+    private GridColumn<SnapshotLine>[] _columns = [];
+
+    private async Task ReadAsync()
+    {
+        try
+        {
+            var snapshot = await Schema.ReadAsync(new MemoryStream(Encoding.UTF8.GetBytes(_csv)));
+            _source = GridSource.From(SnapshotGrid.Rows(snapshot));
+            _columns = SnapshotGrid.Columns(snapshot);
+            _status = $"{snapshot.RowCount} rows read.";
+        }
+        catch (SnapshotException refused)
+        {
+            // Whole or nothing: the row, the column and the line are named.
+            _source = null;
+            _status = refused.Message;
+        }
+    }
+}

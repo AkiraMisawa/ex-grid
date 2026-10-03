@@ -1,0 +1,25 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+@using ExPivot.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="MudPivotChrome.Default" ViewportHeight="300" />
+</MudExGridPaper>
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    // Five Value Fields side by side, under Σ Values in Columns.
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Category")],
+        Values =
+        [
+            new PivotValueField("Units", PivotAggregation.Sum) { NumberFormat = "#,##0" },
+            new PivotValueField("Product", PivotAggregation.Count) { Caption = "Order lines", NumberFormat = "#,##0" },
+            new PivotValueField("Revenue", PivotAggregation.Average) { NumberFormat = "#,##0.00" },
+            new PivotValueField("Revenue", PivotAggregation.Max) { NumberFormat = "#,##0.00" },
+            new PivotValueField("Revenue", PivotAggregation.StdDev) { NumberFormat = "#,##0.00" },
+        ],
+    };
+}

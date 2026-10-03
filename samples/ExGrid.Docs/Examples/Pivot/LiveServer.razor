@@ -1,0 +1,35 @@
+@implements IDisposable
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="300" />
+
+@code {
+    private readonly SalesServer _server = new();
+    private FetchingPivotSource _source = default!;
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Category")],
+        Columns = [new PivotFieldPlacement("Region")],
+        Values = [new PivotValueField("Units", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    protected override void OnInitialized()
+    {
+        _source = PivotSource.Fetch(_server.Fields, PivotSourceFeatures.All,
+            async (query, token) => PivotJson.ReadAnswer(await _server.AggregateAsync(PivotJson.Write(query), token)),
+            async (query, token) => PivotJson.ReadItemPage(await _server.ItemsAsync(PivotJson.Write(query), token)),
+            async (query, token) => PivotJson.ReadDetailPage(await _server.DetailsAsync(PivotJson.Write(query), token)));
+        // However the news arrives — SignalR, polling, a message bus — pass it on: ExPivot asks
+        // the server again for the whole answer.
+        _server.VersionChanged += _source.NotifyChanged;
+        _server.StartTrading(TimeSpan.FromSeconds(1));
+    }
+
+    public void Dispose()
+    {
+        _server.VersionChanged -= _source.NotifyChanged;
+        _server.Dispose();
+    }
+}

@@ -1,0 +1,34 @@
+@using ExGrid.Data
+
+<p>
+    @foreach (var column in _snapshot.Columns)
+    {
+        <code>@column.Name: @column.Kind</code>@(" ")
+    }
+</p>
+
+<ExGrid TRow="SnapshotLine" Source="_source" Columns="_columns" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    // Each column declared once, with a typed accessor: nothing is boxed, and the accounts are
+    // kept by reference behind their rows. Id is the Record Key.
+    private static readonly SnapshotBuilder<Account> Builder = new SnapshotBuilder<Account>()
+        .Integer("Id", a => a.Id)
+        .Text("Code", a => a.Code)
+        .Text("Desk", a => a.Desk)
+        .Decimal("Balance", a => a.Balance)
+        .Double("Rate", a => a.Rate)
+        .Date("Opened", a => a.Opened)
+        .Boolean("Active", a => a.Active)
+        .Key("Id");
+
+    private readonly Snapshot _snapshot = Builder.Build(Accounts.Sample());
+    private InMemoryGridSource<SnapshotLine> _source = default!;
+    private GridColumn<SnapshotLine>[] _columns = [];
+
+    protected override void OnInitialized()
+    {
+        _source = GridSource.From(SnapshotGrid.Rows(_snapshot));
+        _columns = SnapshotGrid.Columns(_snapshot);
+    }
+}
