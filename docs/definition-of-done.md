@@ -97,6 +97,11 @@ those ADRs the same day, in a grilling that also added ADR-0064 to ADR-0069.
   the rest of §26: `OnCellDoubleClick` (DC-63), the Change Highlight (DC-64 to DC-66), and
   `ReturnKeyboardAsync()` and `HandKeyboardToAsync()` with `OnLeave` (DC-61, DC-62).
 
+**A Column's Cell Class gates ExGrid the same way** (DC-67 to DC-69, added 2026-10-03 with
+[ADR-0121](adr/0121-a-consumers-cell-class-paints-and-only-paints.md)). The CDS marking sample asked
+for it; it is a core declaration any Consumer may make, so it is part of "finished" like the rest of
+§26.
+
 **"Finished" means every ADR from 0001 to 0030 is implemented** — and, since 2026-09-27, the
 ExGrid half of [ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md) and
 [ADR-0051](adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md), judged by §26. This was asked as an open
@@ -990,7 +995,8 @@ depends on which shape it takes.
 *(Added 2026-09-27, with [ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md) and
 [ADR-0051](adr/0051-formula-entry-completion-point-mode-and-the-formula-bar.md).)* What ExSheet
 asks of the core, as ExGrid features any Consumer may declare — and, since 2026-09-30, what ExPivot
-asks of it (DC-61 to DC-66: ADR-0063, ADR-0068 and ADR-0070). **Every one gates the release**
+asks of it (DC-61 to DC-66: ADR-0063, ADR-0068 and ADR-0070), and, since 2026-10-03, what the CDS
+marking sample asks of it (DC-67 to DC-69: ADR-0121). **Every one gates the release**
 (§2). The first criterion is the one that makes the rest safe to ship: a Consumer who declares
 nothing sees nothing change.
 
@@ -1061,6 +1067,9 @@ nothing sees nothing change.
 | **DC-64** | MUST | With `CellChangedAt` declared, a value cell carries `ex-changed` while the Consumer's answer is less than `ChangeHighlightDuration` (1 s by default) before the `Clock`'s time. When a mark ends, the class goes in one step, and no row renders whose mark did not end. A new delegate is the change signal, and rewriting what an unchanged delegate answers changes no mark. It is asked of value cells only. Without the declaration there is no call, no class and no timer (ADR-0068; DC-1) | Layer 2 with a fake `TimeProvider` and render counts | as stated |
 | **DC-65** | MUST | A mark is keyed by row and column: after a scroll recycles the row elements, the mark stays on its cell and never moves with an element to another row (ADR-0068/0027) | Layer 2; Layer 3 on `/grid-live` | as stated |
 | **DC-66** | MUST | A mark never animates: UX-6 holds with marks painted, under the core's stylesheet and under a Wrapper's. The forced-colors block restates the mark. No live region announces it (ADR-0068/0027/0033) | Layer 3 on `/grid-live` (UX-6's check with marks showing); inspect `wwwroot` | no transition or animation; the forced-colors rule present; the live region unchanged |
+| **DC-67** | MUST | With a Cell Class declared on a Column, each value cell of that column carries the class the function returns for its row, together with the grid's marker class; a null answer adds neither. The function is asked when the row renders and at no other time, so a row that skips its render keeps its class. A name containing whitespace, or beginning with `ex-`, is refused by name. One class string is interned per distinct name. It is asked of value cells only. Without the declaration there is no call, no marker and no rule (ADR-0121; DC-1) | Layer 2 with render counts | as stated |
+| **DC-68** | MUST | On a classed cell, a Consumer rule that sets `font-size`, `font-family`, `font-style`, `letter-spacing`, `padding`, `line-height` or `height` changes neither the cell's box nor its text's width, and a weight above 600 paints at 600. The core's `####` decision then agrees with the painted text: no number shown is clipped, and none that fits is hashed (ADR-0121/0016) | Layer 3 on a demo page whose Cell Class sets each of them: overflow read from the layout against the core's decision | no disagreement |
+| **DC-69** | MUST | A classed cell never transitions or animates: UX-6 holds with a Cell Class that declares a transition and an animation. The selection overlay, the Focus outline and the Change Highlight paint over a classed cell as over any other (ADR-0121/0027/0068) | Layer 3 (UX-6's check on the same page); inspect `wwwroot` | as stated |
 | **DC-25** | MUST | The declarations are per instance: two grids on one page, one declaring and one not, behave each as its own declarations say (ADR-0018) | Layer 3 | independent |
 
 ---
@@ -1128,6 +1137,7 @@ the preconditions §2 has for ExGrid.
 | **SH-53** | MUST | Ctrl with `+` (with Shift or without) and Ctrl with `-` insert and delete the rows a Selection of whole rows spans, and the columns a Selection of whole columns spans, each as one undo step, on the Selection the key carries; any other Selection, and a key while an edit is open, changes nothing and says why; the page does not zoom from inside a Sheet (ADR-0050 item 14, ADR-0071) | Layer 2; Layer 3 on both hosts | as stated |
 | **SH-54** | MUST | On a Sheet's Paper, the Selection's outline and the Focus's are 2 Device Pixels on the gridline and one outside it, with a white line of one Device Pixel inside that is not drawn while an edit is open; under the built-in Chrome the outline is `#217346` and the shade `#C7C7C7` over white; a black line inside the shade stays `#000000`; the Focus cell is unshaded; under `ExSheet.MudBlazor` the outline is the palette's primary and the shade the primary mixed into white (ADR-0071, 2026-10-02) | Layer 3 pixels at 100% and 150% under both Chromes | as stated |
 | **SH-55** | MUST | Format Cells' Font tab has a *Normal font* box under both Chromes: checking it sets the colour Automatic and every emphasis off, OK records them on each selected cell over a row's or column's Font, and it shows checked exactly while every part is the default (ADR-0071, 2026-10-02) | Layer 2 under both Chromes | as stated |
+| **SH-56** | MUST | `Sheet` answers a cell's Read Set: the Linked Table cells, by table, row and column, with the row's key where the table has one, whose values the evaluation of the cell's current Value took as operands, following the Formula cells it reads. A lookup's consulted cells are reported apart from the cells it took. A branch of `IF` not taken contributes nothing. A waiting table contributes nothing. The answer is computed when asked, matches the Value the Sheet shows, and changes no Value. A Sheet that is never asked does no extra work in a recalculation (ADR-0120) | Layer 1 | as stated |
 | **SH-19** | OBSERVATIONAL | Recalculation time at a large Sheet, and completion's keystroke-to-list time on a circuit | recorded in `metrics.json` | recorded, never gated |
 
 ---

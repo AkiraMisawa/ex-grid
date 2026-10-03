@@ -1,0 +1,508 @@
+{
+  "browser": "141.0.7390.37",
+  "frames": 600,
+  "cells": 800,
+  "query": "&fraction=0.05",
+  "when": "2026-10-03T02:26:56.526Z",
+  "pairs": [
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.1,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 0.8,
+        "mean": 0.15
+      },
+      "changedFramesBrowser": null,
+      "hashed": 751,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.2,
+        "max": 1,
+        "mean": 0.11
+      },
+      "browser": {
+        "n": 600,
+        "p50": 7.9,
+        "p95": 10.6,
+        "max": 16.4,
+        "mean": 8.08
+      },
+      "changedFramesBrowser": null,
+      "hashed": 760,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 600,
+        "p50": 2.1,
+        "p95": 3.3,
+        "max": 11.9,
+        "mean": 2.27
+      },
+      "browser": {
+        "n": 600,
+        "p50": 22.7,
+        "p95": 32.9,
+        "max": 136.9,
+        "mean": 24.02
+      },
+      "changedFramesBrowser": null,
+      "hashed": 764,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0.1,
+        "max": 0.2,
+        "mean": 0.05
+      },
+      "browser": {
+        "n": 600,
+        "p50": 3.9,
+        "p95": 5.6,
+        "max": 7.2,
+        "mean": 4.01
+      },
+      "changedFramesBrowser": null,
+      "hashed": 766,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.1,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 2.7,
+        "mean": 0.19
+      },
+      "changedFramesBrowser": null,
+      "hashed": 751,
+      "animations": 44,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.2,
+        "max": 0.3,
+        "mean": 0.12
+      },
+      "browser": {
+        "n": 600,
+        "p50": 8.1,
+        "p95": 9.7,
+        "max": 17.6,
+        "mean": 8.11
+      },
+      "changedFramesBrowser": null,
+      "hashed": 760,
+      "animations": 49,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 417,
+        "p50": 2.9,
+        "p95": 4.5,
+        "max": 18.5,
+        "mean": 3.1
+      },
+      "browser": {
+        "n": 417,
+        "p50": 31.8,
+        "p95": 44.4,
+        "max": 170.7,
+        "mean": 33.61
+      },
+      "changedFramesBrowser": null,
+      "hashed": 759,
+      "animations": 44,
+      "frames": 417,
+      "cappedByTime": true
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 0.2,
+        "mean": 0.05
+      },
+      "browser": {
+        "n": 600,
+        "p50": 4,
+        "p95": 5.2,
+        "max": 11.5,
+        "mean": 4.08
+      },
+      "changedFramesBrowser": null,
+      "hashed": 766,
+      "animations": 44,
+      "frames": 600,
+      "cappedByTime": false
+    }
+  ],
+  "accumulation": [
+    {
+      "css": "candidate-scroll-state.css",
+      "steps": [
+        {
+          "step": "idle, fresh page",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 0.4,
+            "mean": 0.14
+          },
+          "heapBytes": 954060
+        },
+        {
+          "step": "fling #1 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 22.3,
+            "p95": 36.9,
+            "max": 82.7,
+            "mean": 24.36
+          },
+          "heapBytes": 6552728
+        },
+        {
+          "step": "idle after fling #1",
+          "browser": {
+            "n": 300,
+            "p50": 1.5,
+            "p95": 2.1,
+            "max": 4.6,
+            "mean": 1.57
+          },
+          "heapBytes": 6667500
+        },
+        {
+          "step": "fling #2 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 24.2,
+            "p95": 30.1,
+            "max": 148.1,
+            "mean": 25.87
+          },
+          "heapBytes": 8756940
+        },
+        {
+          "step": "idle after fling #2",
+          "browser": {
+            "n": 300,
+            "p50": 3.3,
+            "p95": 5.3,
+            "max": 11.8,
+            "mean": 3.44
+          },
+          "heapBytes": 8866908
+        },
+        {
+          "step": "fling #3 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 25,
+            "p95": 36.9,
+            "max": 198,
+            "mean": 27.92
+          },
+          "heapBytes": 9831380
+        },
+        {
+          "step": "idle after fling #3",
+          "browser": {
+            "n": 300,
+            "p50": 5.1,
+            "p95": 5.9,
+            "max": 17.4,
+            "mean": 5.07
+          },
+          "heapBytes": 9934260
+        },
+        {
+          "step": "idle after a forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 0.4,
+            "p95": 0.5,
+            "max": 1,
+            "mean": 0.37
+          },
+          "heapBytes": 928828
+        },
+        {
+          "step": "fling after the forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 22.5,
+            "p95": 44.7,
+            "max": 120.1,
+            "mean": 25.77
+          },
+          "heapBytes": 7124896
+        }
+      ]
+    },
+    {
+      "css": "candidate.css",
+      "steps": [
+        {
+          "step": "idle, fresh page",
+          "browser": {
+            "n": 300,
+            "p50": 0.2,
+            "p95": 0.3,
+            "max": 2.5,
+            "mean": 0.2
+          },
+          "heapBytes": 953844
+        },
+        {
+          "step": "fling #1 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 28.6,
+            "p95": 46.9,
+            "max": 117.2,
+            "mean": 30.85
+          },
+          "heapBytes": 7706188
+        },
+        {
+          "step": "idle after fling #1",
+          "browser": {
+            "n": 300,
+            "p50": 5.8,
+            "p95": 7.9,
+            "max": 13.1,
+            "mean": 4.26
+          },
+          "heapBytes": 898912
+        },
+        {
+          "step": "fling #2 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 25.8,
+            "p95": 37.9,
+            "max": 136.7,
+            "mean": 28.34
+          },
+          "heapBytes": 6164312
+        },
+        {
+          "step": "idle after fling #2",
+          "browser": {
+            "n": 300,
+            "p50": 5.8,
+            "p95": 7.4,
+            "max": 16.6,
+            "mean": 5.85
+          },
+          "heapBytes": 6278356
+        },
+        {
+          "step": "fling #3 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 38,
+            "p95": 51.2,
+            "max": 223.6,
+            "mean": 40.36
+          },
+          "heapBytes": 7252384
+        },
+        {
+          "step": "idle after fling #3",
+          "browser": {
+            "n": 300,
+            "p50": 13.3,
+            "p95": 16.9,
+            "max": 23.2,
+            "mean": 13.17
+          },
+          "heapBytes": 7358556
+        },
+        {
+          "step": "idle after a forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 0.4,
+            "p95": 0.7,
+            "max": 1.5,
+            "mean": 0.42
+          },
+          "heapBytes": 927856
+        },
+        {
+          "step": "fling after the forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 28.9,
+            "p95": 44.2,
+            "max": 144.2,
+            "mean": 30.99
+          },
+          "heapBytes": 6282084
+        }
+      ]
+    },
+    {
+      "css": "none",
+      "steps": [
+        {
+          "step": "idle, fresh page",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 0.3,
+            "mean": 0.14
+          },
+          "heapBytes": 947808
+        },
+        {
+          "step": "fling #1 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 17.8,
+            "p95": 26.5,
+            "max": 36.8,
+            "mean": 18.96
+          },
+          "heapBytes": 1017824
+        },
+        {
+          "step": "idle after fling #1",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.3,
+            "max": 0.9,
+            "mean": 0.15
+          },
+          "heapBytes": 1132284
+        },
+        {
+          "step": "fling #2 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 16.9,
+            "p95": 26.9,
+            "max": 39.8,
+            "mean": 18.09
+          },
+          "heapBytes": 1127352
+        },
+        {
+          "step": "idle after fling #2",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 0.3,
+            "mean": 0.14
+          },
+          "heapBytes": 1241916
+        },
+        {
+          "step": "fling #3 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 17.5,
+            "p95": 25.5,
+            "max": 36.9,
+            "mean": 18.71
+          },
+          "heapBytes": 1020452
+        },
+        {
+          "step": "idle after fling #3",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 0.3,
+            "mean": 0.13
+          },
+          "heapBytes": 1128036
+        },
+        {
+          "step": "idle after a forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 0.4,
+            "mean": 0.14
+          },
+          "heapBytes": 923428
+        },
+        {
+          "step": "fling after the forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 17.4,
+            "p95": 26.6,
+            "max": 37.9,
+            "mean": 18.69
+          },
+          "heapBytes": 964960
+        }
+      ]
+    }
+  ],
+  "console": []
+}

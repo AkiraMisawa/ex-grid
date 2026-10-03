@@ -1,0 +1,16 @@
+=== overflow=CssScrollState&scenario=ScrollFling&hold=1
+  CssScrollState | ScrollFling | 600 | 23.50 | 29.80 | 102.30 | 178.20 | 125.50 | 203.80 | 783.80 | – | 0 | 363
+\nOUTCOME: COMPLETED
+mode now 800 hs cells, 840 cells
+idle p50, as left 91.40000000037253
+idle p50 after window.gc() 4
+idle p50 after CDP collectGarbage 4.299999998882413
+=== overflow=Css&scenario=ScrollFling&hold=1
+  Css | ScrollFling | 600 | 34.10 | 49.20 | 225.20 | 397.40 | 259.70 | 445.20 | 1457.20 | – | 800 | 363
+\nOUTCOME: COMPLETED
+mode now 800 hs cells, 840 cells
+idle p50, as left 177.5
+idle p50 after window.gc() 3.800000000745058
+idle p50 after CDP collectGarbage 3.900000000372529
+
+[exited with code 0]

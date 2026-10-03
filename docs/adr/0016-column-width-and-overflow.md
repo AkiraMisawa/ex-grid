@@ -482,3 +482,44 @@ differ.
 - **Only a `####` run may break.** A number that is shown keeps `white-space: nowrap`, so an estimate
   that came out under the painted width would still show its ellipsis rather than wrap a digit out of
   sight.
+
+## The browser could decide `####` — measured, and not adopted *(2026-10-03, decided with the user)*
+
+*(Asked in the grilling for the CDS marking sample, `docs/specs/cds-marking/`. The research is
+`docs/research/css-decided-overflow.md`, measured in Chromium 141 under xvfb with software
+rendering. It ran on the base of 2026-10-02, before ExSheet merged, so the estimate it compared
+against predates ticket 91's glyph-by-glyph charge and the fill rule above. Neither changes the
+finding, which is about cost.)*
+
+The question: a Consumer asked for per-cell classes of its own, as ag-grid's `cellClassRules` gives.
+A class that changes typography would make the estimate above quietly wrong — the core judges a
+number as fitting, and the stylesheet clips it. If the browser decided `####` at layout time, the
+guarantee would not depend on the estimate.
+
+- **It works.** Two CSS mechanisms detect overflow on `.ex-cell` as it stands: a scroll-driven
+  animation on the cell's own scroll timeline, and a `scroll-state(scrollable: inline-end)`
+  container query, which animates nothing. Across 3,120 cells, no value that fits was hashed and no
+  overflow of a pixel or more was missed, under bold, a larger size, letter-spacing, another family
+  and italic. The run is Excel's: as many `#` as fit, whole glyphs, no ellipsis. The accessible name
+  stays the value, written as `content: "…" / ""`. The first painted frame after any change is
+  already right, so a recycled row never shows the previous row's state. On the DemoHost the CSS
+  hashed exactly the cells the core hashes.
+- **Not adopted, on cost.** The browser's time per frame grows with every cell that carries the
+  switch. Through Blazor, a fling cost 81 ms (container query) and 367 ms (timeline) of browser time
+  per frame, against 13 ms today. Worse, it keeps growing with every cell that has scrolled past,
+  until a garbage collection: an idle frame went from 0.2 ms to 88.8 ms after one fling. That is cost
+  as a function of the history, not of the Viewport, which is what
+  [ADR-0004](./0004-cap-the-cells-touched-per-frame.md) refuses. The core's estimate costs nothing
+  measurable.
+- **Two further costs, either way.** The timeline form animates inside the Viewport (P8, UX-6), and
+  both forms need forced colors switched off on numeric cells, or the hidden digits show between the
+  hashes.
+- **So the estimate stays the decision, and glyph width stays metrics-bearing wherever it comes
+  from.** The question that prompted this is answered by
+  [ADR-0121](./0121-a-consumers-cell-class-paints-and-only-paints.md): a Consumer's Cell Class may
+  change how a cell is painted, and its weight up to 600, which the defaults above already cover
+  because group and total rows paint at 600. The grid's stylesheet holds every other property that
+  moves a glyph.
+- **Revisit if Blink stops servicing departed scroll timelines and scroll-state containers between
+  collections.** The bench mode in `spikes/render-bench` ("Measure overflow paint") reruns in
+  minutes.

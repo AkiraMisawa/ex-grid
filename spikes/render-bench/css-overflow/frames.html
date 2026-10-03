@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>css-decided overflow — frame cost (no Blazor)</title>
+    <!-- The product stylesheet, then the candidate named by ?css= (none: no candidate). -->
+    <link rel="stylesheet" href="../../../src/ExGrid/wwwroot/ex-grid.css" />
+    <link rel="stylesheet" id="candidate" />
+    <style>
+        body { margin: 0; background: #fff; }
+        .ex-grid { --ex-row-height: 24px; --ex-header-height: 0px; --ex-cell-padding-x: 8px; }
+        .ex-scroller { width: 1900px; height: 980px; }
+        /* "inert": candidate.css with the animation taken away — what the rest of the
+           candidate (position, pseudo, clip) costs on its own. */
+        .probe-inert .ex-cell.ex-cell-numeric { animation: none !important; }
+        /* A cell outside the candidate: painted as today's numeric cell, minus the class. */
+        .probe-plain { text-align: right; }
+    </style>
+</head>
+<body>
+<div class="ex-grid" role="grid">
+    <div class="ex-scroller">
+        <div class="ex-spacer" style="height: 960px">
+            <div class="ex-viewport" id="viewport"></div>
+        </div>
+    </div>
+</div>
+<script>
+    // A pure-DOM stand-in for the Viewport: 40 rows × 20 numeric cells at 90px, the
+    // same markup ExGridRow paints. What changes per frame mirrors the Blazor bench's
+    // scenarios, minus Blazor, so only the browser's side is on the clock.
+    const params = new URLSearchParams(location.search);
+    const css = params.get('css') ?? 'none';
+    if (css === 'inert') { document.getElementById('candidate').href = 'candidate.css'; document.querySelector('.ex-grid').classList.add('probe-inert'); }
+    else if (css !== 'none') document.getElementById('candidate').href = css;
+
+    // ?width= sets the cell width (how many values overflow); ?pseudo=off removes the
+    // #### run's box, leaving only the switch — to tell the switch's cost from the run's.
+    // ?fraction=F gives only that share of cells the candidate's class (ex-cell-numeric):
+    // the price of CSS as a backstop on the cells a Consumer class touches, not on all.
+    const ROWS = 40, COLS = 20, WIDTH = Number(params.get('width') ?? 90);
+    const FRACTION = Number(params.get('fraction') ?? 1);
+    // ?hashes=N shortens the run: fewer characters for break-all to lay out in every hashed cell.
+    if (params.get('hashes')) {
+        const st = document.createElement('style');
+        st.textContent = `.ex-cell.ex-cell-numeric::after { content: "${'#'.repeat(Number(params.get('hashes')))}" / ""; }`;
+        document.head.appendChild(st);
+    }
+    if (params.get('pseudo') === 'off') {
+        const st = document.createElement('style');
+        st.textContent = '.ex-cell.ex-cell-numeric::after { display: none !important; }';
+        document.head.appendChild(st);
+    }
+    let seed = 7;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    const fmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const value = () => fmt.format((rnd() - 0.5) * 2_000_000);
+    const viewport = document.getElementById('viewport');
+
+    function makeRow() {
+        const r = document.createElement('div');
+        r.className = 'ex-row';
+        for (let c = 0; c < COLS; c++) {
+            const d = document.createElement('div');
+            d.className = FRACTION >= 1 || rnd() < FRACTION ? 'ex-cell ex-cell-numeric' : 'ex-cell probe-plain';
+            d.style.width = WIDTH + 'px';
+            d.textContent = value();
+            r.appendChild(d);
+        }
+        return r;
+    }
+    function reset() { viewport.replaceChildren(); for (let i = 0; i < ROWS; i++) viewport.appendChild(makeRow()); }
+
+    const scenarios = {
+        Idle: () => false,
+        ScrollSlow: () => { viewport.firstChild.remove(); viewport.appendChild(makeRow()); return true; },
+        ScrollFling: () => { for (let i = 0; i < ROWS; i++) { viewport.firstChild.remove(); viewport.appendChild(makeRow()); } return true; },
+        ChurnBurst: (i) => { if (i % 60) return false; for (let k = 0; k < 300; k++) viewport.children[(rnd() * ROWS) | 0].children[(rnd() * COLS) | 0].textContent = value(); return true; },
+        ChurnTrickle: () => { for (let k = 0; k < 5; k++) viewport.children[(rnd() * ROWS) | 0].children[(rnd() * COLS) | 0].textContent = value(); return true; },
+    };
+
+    // One rAF per frame: the change runs in the callback, and a message posted from it
+    // runs once the frame's rendering (style, layout, animation update, paint record) is done.
+    // A run stops at `frames` frames or after maxMs of wall time, whichever comes first:
+    // a candidate costing hundreds of ms a frame would otherwise run for minutes.
+    function run(name, frames, maxMs = 20000) {
+        const step = scenarios[name];
+        return new Promise((resolve) => {
+            const dom = [], browser = [], changed = [];
+            const ch = new MessageChannel();
+            let i = 0, mark = 0, stop = false;
+            const start = performance.now();
+            ch.port1.onmessage = () => {
+                browser.push(performance.now() - mark);
+                if (browser.length === frames || (stop && browser.length === i)) { ch.port1.close(); resolve({ dom, browser, changed, cappedByTime: stop }); }
+            };
+            const tick = () => {
+                const t0 = performance.now();
+                changed.push(step(i));
+                mark = performance.now();
+                dom.push(mark - t0);
+                ch.port2.postMessage(0);
+                stop = performance.now() - start > maxMs;
+                if (++i < frames && !stop) requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+        });
+    }
+    // Hashed = the cell overflows, read from geometry, so it also counts with ?pseudo=off.
+    function hashed() { return [...viewport.querySelectorAll('.ex-cell')].filter((el) => el.scrollWidth > el.clientWidth).length; }
+    window.bench = { reset, run, hashed, css };
+    reset();
+</script>
+</body>
+</html>

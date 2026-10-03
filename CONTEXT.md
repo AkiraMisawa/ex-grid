@@ -378,6 +378,14 @@ for from outside. A tone names a meaning, never a colour; the grid paints none o
 ([ADR-0006](./docs/adr/0006-grid-owns-a-generic-cell-state-vocabulary.md)).
 _Avoid_: colour, conditional formatting, style
 
+**Cell Class**:
+A class name of the Consumer's own that a Column's function gives a row's value cell, for the
+Consumer's stylesheet to paint. It paints and only paints: the grid holds every property that
+moves a glyph or a box, and the weight at 600 or below, so `####` and the row's geometry stay the
+core's. Unlike a Tone or a Cell State it names no shared meaning, and no theme or Wrapper paints it
+([ADR-0121](./docs/adr/0121-a-consumers-cell-class-paints-and-only-paints.md)).
+_Avoid_: style, cell style, conditional formatting, `cellClassRules`
+
 **Cell Metadata**:
 Information a cell carries that is not the value itself. It affects display and decoration but is
 never sorted or aggregated on. Example: an as-of stamp, where two metrics in the *same row* can
@@ -687,6 +695,14 @@ older value — and `IFERROR` does not catch the wait. The Consumer may declare 
 its key; a snapshot in which a key repeats is refused, and the table waits again ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md)).
 _Avoid_: external reference (Excel's name for a reference into another workbook), data
 connection, link
+
+**Read Set**:
+The Linked Table cells a cell's current Value was computed from: those its evaluation took as
+operands, directly or through the Formula cells it reads, named by table, row and column. The
+cells a lookup only consulted to find its row are told apart from it, and a branch not taken adds
+nothing. The engine answers it when asked, and it never changes a Value
+([ADR-0120](./docs/adr/0120-the-engine-tells-which-linked-table-cells-a-value-was-computed-from.md)).
+_Avoid_: provenance, lineage, precedents (Excel's word for the cells a Formula refers to), dependencies
 
 **Pointing Scope**:
 The Sheets and grids a Consumer groups so that a Formula can **Point** across instances. For each

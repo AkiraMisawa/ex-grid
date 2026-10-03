@@ -124,6 +124,14 @@ interned classes** (Cell State, Row Kind, alignment, tone) for per-column and pe
 **Template Column** for arbitrary content, paid for per column
 ([ADR-0020](./0020-action-and-template-columns.md)).
 
+*(2026-10-03, decided with the user: a fourth, narrow hatch.
+[ADR-0121](./0121-a-consumers-cell-class-paints-and-only-paints.md) lets a Column declare a **Cell
+Class**, a function of the row that names one class of the Consumer's own for the row's value cell.
+It answers each reason above rather than setting it aside: no style is taken, the grid's stylesheet
+holds every property that moves a glyph or a box on a classed cell, weight is held at 600 or below,
+nothing animates, and one class string is interned per name. The rest of this section stands: no
+Class or Style parameter on the root, a column, a header or a row.)*
+
 ## State hooks: how each state reaches CSS
 
 | State | Mechanism | Why this one |

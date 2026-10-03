@@ -54,6 +54,42 @@
                 };
                 requestAnimationFrame(tick);
             },
+            // Overflow paint frame loop (docs/research/css-decided-overflow.md). One synchronous
+            // .NET call per rAF; the frame's own rendering is timed from the end of that call
+            // to a message posted from the same callback, which runs once the frame is done.
+            frameLoop: function (ref, scenario, frames) {
+                return new Promise((resolve) => {
+                    const net = [], browser = [], interval = [], changed = [];
+                    const ch = new MessageChannel();
+                    let i = 0, last = null, mark = 0;
+                    ch.port1.onmessage = () => {
+                        browser.push(performance.now() - mark);
+                        if (browser.length === frames) {
+                            ch.port1.close();
+                            const cells = [...document.querySelectorAll('.window .c.num')];
+                            resolve({
+                                net, browser, interval, changed,
+                                animations: document.getAnimations().length,
+                                // #### painted by CSS (::after shown) or by C# (the text itself).
+                                hashed: cells.filter((el) => getComputedStyle(el, '::after').display === 'block' || el.textContent.startsWith('#')).length,
+                            });
+                        }
+                    };
+                    const tick = (t) => {
+                        if (last !== null) interval.push(t - last);
+                        last = t;
+                        const t0 = performance.now();
+                        changed.push(ref.invokeMethod('FrameStep', scenario, i));
+                        mark = performance.now();
+                        net.push(mark - t0);
+                        ch.port2.postMessage(0);
+                        if (++i < frames) requestAnimationFrame(tick);
+                    };
+                    requestAnimationFrame(tick);
+                });
+            },
+            // Between runs, when the browser was started with --js-flags=--expose-gc.
+            gc: () => { if (window.gc) { window.gc(); return true; } return false; },
             stopFps: function () {
                 const s = this._fps;
                 if (!s) return [];

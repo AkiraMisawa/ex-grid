@@ -1,0 +1,195 @@
+{
+  "browser": "141.0.7390.37",
+  "frames": 600,
+  "cells": 800,
+  "query": "&hashes=40",
+  "when": "2026-10-03T01:11:19.119Z",
+  "pairs": [
+    {
+      "css": "candidate.css",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.1,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 1.8,
+        "p95": 2.7,
+        "max": 8.7,
+        "mean": 1.91
+      },
+      "changedFramesBrowser": null,
+      "hashed": 756,
+      "animations": 800,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 578,
+        "p50": 0.5,
+        "p95": 0.8,
+        "max": 1.5,
+        "mean": 0.5
+      },
+      "browser": {
+        "n": 578,
+        "p50": 23.5,
+        "p95": 32.5,
+        "max": 48.9,
+        "mean": 24.75
+      },
+      "changedFramesBrowser": null,
+      "hashed": 761,
+      "animations": 800,
+      "frames": 578,
+      "cappedByTime": true
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 67,
+        "p50": 11.9,
+        "p95": 19.1,
+        "max": 25.9,
+        "mean": 12.07
+      },
+      "browser": {
+        "n": 67,
+        "p50": 184.4,
+        "p95": 276.3,
+        "max": 632.6,
+        "mean": 195
+      },
+      "changedFramesBrowser": null,
+      "hashed": 756,
+      "animations": 800,
+      "frames": 67,
+      "cappedByTime": true
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.2,
+        "max": 1.1,
+        "mean": 0.08
+      },
+      "browser": {
+        "n": 600,
+        "p50": 8.5,
+        "p95": 11.2,
+        "max": 18.8,
+        "mean": 8.74
+      },
+      "changedFramesBrowser": null,
+      "hashed": 757,
+      "animations": 800,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.1,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.6,
+        "p95": 0.9,
+        "max": 3,
+        "mean": 0.62
+      },
+      "changedFramesBrowser": null,
+      "hashed": 756,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 0.6,
+        "mean": 0.18
+      },
+      "browser": {
+        "n": 600,
+        "p50": 17.1,
+        "p95": 22.8,
+        "max": 28.9,
+        "mean": 17.58
+      },
+      "changedFramesBrowser": null,
+      "hashed": 753,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 174,
+        "p50": 3.9,
+        "p95": 5.9,
+        "max": 7.8,
+        "mean": 4.1
+      },
+      "browser": {
+        "n": 174,
+        "p50": 76.9,
+        "p95": 142.5,
+        "max": 230.7,
+        "mean": 85.25
+      },
+      "changedFramesBrowser": null,
+      "hashed": 760,
+      "animations": 0,
+      "frames": 174,
+      "cappedByTime": true
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 0.4,
+        "mean": 0.06
+      },
+      "browser": {
+        "n": 600,
+        "p50": 4.7,
+        "p95": 6.9,
+        "max": 10.3,
+        "mean": 4.91
+      },
+      "changedFramesBrowser": null,
+      "hashed": 757,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    }
+  ],
+  "accumulation": [],
+  "console": []
+}

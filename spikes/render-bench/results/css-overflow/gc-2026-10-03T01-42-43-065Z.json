@@ -1,0 +1,26 @@
+{
+  "browser": "141.0.7390.37",
+  "when": "2026-10-03T01:41:25.156Z",
+  "runs": [
+    {
+      "css": "candidate.css",
+      "idleP50ByStep": {
+        "fresh page": 1.9,
+        "after a fling (77 frames)": 31.4,
+        "after window.gc()": 6.4,
+        "after window.gc() ×3, 1.5s apart": 6,
+        "after CDP HeapProfiler.collectGarbage": 2.8
+      }
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "idleP50ByStep": {
+        "fresh page": 0.5,
+        "after a fling (149 frames)": 13,
+        "after window.gc()": 1.1,
+        "after window.gc() ×3, 1.5s apart": 1.1,
+        "after CDP HeapProfiler.collectGarbage": 1.2
+      }
+    }
+  ]
+}

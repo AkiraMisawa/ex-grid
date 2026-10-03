@@ -93,6 +93,62 @@ tr.bad  td { background: #fdf0f0; }
 .c.missing { color: #999; background: #f7f7f7; }
 .c.err     { color: #a33; background: #fdf0f0; }
 
+/* ---- overflow paint: the CSS-decided #### candidate (OverflowPaint.Css) ----
+   A copy of spikes/render-bench/css-overflow/candidate.css on the bench's own classes.
+   See docs/research/css-decided-overflow.md. */
+
+@keyframes hx-overflowing {
+    from, to {
+        --ex-hash-display: block;
+        -webkit-text-fill-color: transparent;
+    }
+}
+
+.c.num.hx {
+    position: relative;
+    text-overflow: clip;
+    animation: hx-overflowing auto linear both;
+    animation-timeline: scroll(self inline);
+}
+
+.c.num.hx::after {
+    display: var(--ex-hash-display, none);
+    content: "################################################################################################################################" / "";
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    padding: inherit;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-all;
+    -webkit-text-fill-color: currentcolor;
+}
+
+/* Candidate B (OverflowPaint.CssScrollState): css-overflow/candidate-scroll-state.css on
+   the bench's classes. A scroll-state container query; nothing animates. */
+.c.num.hs {
+    container-type: scroll-state;
+    position: relative;
+    text-overflow: clip;
+}
+
+.c.num.hs::after {
+    display: none;
+    content: "################################################################################################################################" / "";
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    padding: inherit;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-all;
+}
+
+@container scroll-state(scrollable: inline-end) {
+    .c.num.hs::after { display: block; }
+    .c.num.hs::first-line { color: transparent; }
+}
+
 /* ---- template boot UI ---- */
 
 .loading-progress {

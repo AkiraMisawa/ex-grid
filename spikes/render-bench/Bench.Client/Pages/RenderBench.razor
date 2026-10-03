@@ -3,6 +3,7 @@
 @using Bench.Client.Components
 @inject HttpClient Http
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <PageTitle>cell-grid render bench</PageTitle>
 
@@ -21,6 +22,7 @@
     <span class="cells">= @(VisibleRows * VisibleCols) cells/render</span>
     <button @onclick="RunAllAsync" disabled="@_running">@(_running ? "measuring…" : "Measure all modes")</button>
     <button @onclick="RunSelectionAsync" disabled="@_running">Measure selection drag (rows fixed)</button>
+    <button @onclick="RunFramesAsync" disabled="@_running">@(_running ? "measuring…" : "Measure overflow paint (frame cost)")</button>
 </div>
 
 <div class="controls">
@@ -34,6 +36,42 @@
 @if (_error is not null)
 {
     <pre class="err-box">@_error</pre>
+}
+
+@if (_frameRuns.Count > 0)
+{
+    <h4>Overflow paint — per-frame cost (milliseconds of main thread per frame)</h4>
+    <table class="results">
+        <thead>
+            <tr>
+                <th>Overflow</th><th>Scenario</th><th>Frames</th>
+                <th>.NET p50</th><th>.NET p95</th><th>Browser p50</th><th>Browser p95</th>
+                <th>Total p50</th><th>Total p95</th><th>Total max</th><th>Changed frames p95</th>
+                <th>Animations</th><th>Hashed</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _frameRuns)
+            {
+                <tr class="@(r.Total.P95 > 16.6 ? "warn" : "ok")">
+                    <td><b>@r.Overflow</b></td><td>@r.Scenario</td><td>@r.Frames</td>
+                    <td>@r.Net.P50.ToString("F2")</td><td>@r.Net.P95.ToString("F2")</td>
+                    <td>@r.Browser.P50.ToString("F2")</td><td>@r.Browser.P95.ToString("F2")</td>
+                    <td>@r.Total.P50.ToString("F2")</td><td>@r.Total.P95.ToString("F2")</td><td>@r.Total.Max.ToString("F2")</td>
+                    <td>@(r.ChangedFramesTotal?.P95.ToString("F2") ?? "–")</td>
+                    <td>@r.Animations</td><td>@r.HashedCells</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="muted">Browser = the frame's style, layout, animation update and paint recording on the main
+        thread, from the end of the rAF callback to a message posted from it. Overflow: None paints the value
+        and clips it; CSharp decides #### with a glyph-width estimate; Css carries a scroll-timeline switch on
+        every numeric cell (docs/research/css-decided-overflow.md).</p>
+    @if (_runs.Count == 0)
+    {
+        <button @onclick="PostResultsAsync" disabled="@_posting">@_postLabel</button>
+    }
 }
 
 @if (_runs.Count > 0)
@@ -99,7 +137,7 @@
                 if (_mode is CellRenderMode.RowComponent or CellRenderMode.RowComponentTone)
                 {
                     <BenchRow @key="row.Id" RowData="row" Cols="_cols" VisibleCols="VisibleCols" Meta="_metaFn" Tone="@(_mode == CellRenderMode.RowComponentTone ? _toneFn : null)"
-                              SelFrom="@RowSelFrom(_startRow + r)" SelTo="@RowSelTo(_startRow + r)" />
+                              SelFrom="@RowSelFrom(_startRow + r)" SelTo="@RowSelTo(_startRow + r)" Overflow="_overflow" />
                 }
                 else
                 {
@@ -161,6 +199,7 @@
     private int Iterations = 200;
 
     private Row[] _rows = [];
+    private Row[] _rowsPristine = [];
     private Col[] _cols = [];
     private Dictionary<(int Book, int Col), CellState> _meta = new();
 
@@ -209,6 +248,8 @@
                 Values = values,
             };
         }
+
+        _rowsPristine = (Row[])_rows.Clone();
 
         _cols = new Col[MaxCols];
         for (var c = 0; c < MaxCols; c++)
@@ -332,6 +373,148 @@
         finally { _running = false; StateHasChanged(); }
     }
 
+    // ---- Overflow paint: per-frame cost (docs/research/css-decided-overflow.md) ----------
+    //
+    // The render ladder above stops the clock at the DOM update, which is exactly the part
+    // a CSS-decided #### does not touch: its cost, if any, is in the browser's style,
+    // layout and animation update. So this loop is driven from requestAnimationFrame in JS
+    // and calls into .NET synchronously once per frame; JS times the call (.NET) and the
+    // rest of the frame (Browser) separately.
+    private const int FrameCount = 600;
+    private OverflowPaint _overflow = OverflowPaint.None;
+    private readonly List<FrameRun> _frameRuns = [];
+    private DotNetObjectReference<RenderBench>? _selfRef;
+    private Random _churnRnd = new(7);
+
+    private async Task RunFramesAsync()
+    {
+        try
+        {
+            _running = true;
+            _error = null;
+            _frameRuns.Clear();
+            _postLabel = "Save results to the server";
+            _mode = CellRenderMode.RowComponent;   // the design we settled on
+            _selfRef ??= DotNetObjectReference.Create(this);
+            StateHasChanged();
+            await Task.Delay(100);
+
+            // ?overflow=Css,CSharp and ?scenario=Idle,ScrollSlow narrow the run, so each
+            // mode can be measured on a page that has run nothing else.
+            var query = new Uri(Nav.Uri).Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
+                .Select(kv => kv.Split('=', 2)).Where(kv => kv.Length == 2)
+                .ToDictionary(kv => kv[0], kv => Uri.UnescapeDataString(kv[1]).Split(','));
+            T[] Pick<T>(string key) where T : struct, Enum =>
+                query.TryGetValue(key, out var names) ? names.Select(Enum.Parse<T>).ToArray() : Enum.GetValues<T>();
+
+            foreach (var overflow in Pick<OverflowPaint>("overflow"))
+            {
+                foreach (var scenario in Pick<FrameScenario>("scenario"))
+                {
+                    _overflow = overflow;
+                    _rows = (Row[])_rowsPristine.Clone();
+                    _startRow = 0;
+                    _churnRnd = new Random(7);
+                    await RenderOnceAsync();
+                    // Collect what earlier runs left behind (cells that came and went),
+                    // where the browser exposes gc — see the accumulation experiment in
+                    // docs/research/css-decided-overflow.md.
+                    var gc = await JS.InvokeAsync<bool>("bench.gc");
+                    await Task.Delay(200);
+
+                    // Warm-up frames: JIT, first animation and timeline creation.
+                    await JS.InvokeAsync<FrameSamples>("bench.frameLoop", _selfRef, (int)scenario, 60);
+                    var f = await JS.InvokeAsync<FrameSamples>("bench.frameLoop", _selfRef, (int)scenario, FrameCount);
+
+                    var total = f.Net.Zip(f.Browser, (a, b) => a + b).ToArray();
+                    var changedTotals = total.Where((_, i) => f.Changed[i]).ToArray();
+                    _frameRuns.Add(new FrameRun
+                    {
+                        Overflow = overflow.ToString(),
+                        Scenario = scenario.ToString(),
+                        Frames = total.Length,
+                        Cells = VisibleRows * VisibleCols,
+                        Net = Stats.From(f.Net),
+                        Browser = Stats.From(f.Browser),
+                        Total = Stats.From(total),
+                        Interval = Stats.From(f.Interval),
+                        ChangedFramesTotal = changedTotals.Length > 0 && changedTotals.Length < total.Length ? Stats.From(changedTotals) : null,
+                        Animations = f.Animations,
+                        HashedCells = f.Hashed,
+                        GcBeforeRun = gc,
+                    });
+                    StateHasChanged();
+                    await Task.Delay(150);
+                }
+            }
+            // ?hold leaves the last mode on screen, so what the run left behind can be
+            // measured from outside (the GC check in docs/research/css-decided-overflow.md).
+            if (!query.ContainsKey("hold"))
+            {
+                _overflow = OverflowPaint.None;
+                _rows = (Row[])_rowsPristine.Clone();
+            }
+        }
+        catch (Exception ex) { _error = ex.ToString(); }
+        finally { _running = false; StateHasChanged(); }
+    }
+
+    public sealed class FrameSamples
+    {
+        public double[] Net { get; set; } = [];
+        public double[] Browser { get; set; } = [];
+        public double[] Interval { get; set; } = [];
+        public bool[] Changed { get; set; } = [];
+        public int Animations { get; set; }
+        public int Hashed { get; set; }
+    }
+
+    /// <summary>Called synchronously from the rAF loop, once per frame. Returns whether
+    /// anything changed — an unchanged frame renders nothing in .NET, as in the grid.</summary>
+    [JSInvokable]
+    public bool FrameStep(int scenario, int frame)
+    {
+        var changed = (FrameScenario)scenario switch
+        {
+            FrameScenario.Idle => false,
+            FrameScenario.ScrollSlow => Scroll(1),
+            FrameScenario.ScrollFling => Scroll(50),
+            FrameScenario.ChurnBurst => frame % 60 == 0 && Churn(300),
+            FrameScenario.ChurnTrickle => Churn(5),
+            _ => false,
+        };
+        if (changed) StateHasChanged();
+        return changed;
+    }
+
+    private bool Scroll(int rows)
+    {
+        _startRow = (_startRow + rows) % (TotalRows - VisibleRows);
+        return true;
+    }
+
+    // A live feed: new values for random visible cells. A changed row is handed over as a
+    // NEW instance (identity is the change signal, ADR-0003), so its element is kept and
+    // its cells' text rewritten in place — the path a recycled cell takes.
+    private bool Churn(int cells)
+    {
+        var cloned = new Dictionary<int, Row>();
+        for (var k = 0; k < cells; k++)
+        {
+            var abs = (_startRow + _churnRnd.Next(VisibleRows)) % TotalRows;
+            var c = _churnRnd.Next(VisibleCols);
+            if (!cloned.TryGetValue(abs, out var row))
+            {
+                var old = _rows[abs];
+                row = new Row { Id = old.Id, BookId = old.BookId, Book = old.Book, Typology = old.Typology, Values = (decimal[])old.Values.Clone() };
+                cloned[abs] = row;
+                _rows[abs] = row;
+            }
+            row.Values[c] = (decimal)((_churnRnd.NextDouble() - 0.5) * 2_000_000);
+        }
+        return true;
+    }
+
     private void Preset(int rows, int cols, int step)
     {
         VisibleRows = rows; VisibleCols = cols; Step = step;
@@ -453,6 +636,7 @@
                 Environment = _env,
                 Runs = _runs,
                 ManualScrollFrames = _manualStats,
+                FrameRuns = _frameRuns.Count > 0 ? _frameRuns : null,
                 Note = "cell-grid render spike: cost of the API shape, not of row count.",
             };
             var res = await Http.PostAsJsonAsync("api/results", report);

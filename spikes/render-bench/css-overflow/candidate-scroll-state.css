@@ -1,0 +1,39 @@
+/* RESEARCH CANDIDATE B — not product CSS. The same switch as candidate.css, made with a
+   scroll-state container query instead of a scroll-driven animation: nothing animates,
+   so ADR-0027 P8 / UX-6 would hold to the letter. See docs/research/css-decided-overflow.md.
+
+   The cell is its own scroll-state container. A pseudo-element's query container is
+   looked up among the inclusive ancestors of its originating element, so the cell's own
+   ::after and ::first-line can ask whether the cell is scrollable; the text node cannot,
+   so the digits are hidden through ::first-line. */
+
+.ex-cell.ex-cell-numeric {
+    container-type: scroll-state;
+    text-overflow: clip;
+}
+.ex-cell.ex-cell-numeric:not(.ex-pinned) { position: relative; }
+
+.ex-cell.ex-cell-numeric::after {
+    display: none;
+    content: "################################################################################################################################" / "";
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    padding: inherit;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-all;
+    pointer-events: none;
+}
+
+@container scroll-state(scrollable: inline-end) {
+    .ex-cell.ex-cell-numeric::after { display: block; --ex-hash-display: block; }
+    .ex-cell.ex-cell-numeric::first-line { color: transparent; }
+}
+
+/* Forced colors (UX-7) forces `transparent` back to a visible colour, and the digits then
+   show between the hashes ("1#####7", measured). A numeric cell opts out of forcing and
+   restates the system colour itself, so the hidden digits stay hidden. */
+@media (forced-colors: active) {
+    .ex-cell.ex-cell-numeric { forced-color-adjust: none; color: CanvasText; }
+}
