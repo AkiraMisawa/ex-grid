@@ -1,0 +1,93 @@
+@page "/expivot/values"
+@using ExGrid.Docs.Examples.Pivot
+
+<NativeControls />
+
+<DocsPage Product="ExPivot" Title="Values"
+          Lead="What a cell holds: a Value Field's Aggregation over the records where its row and column meet, shown as itself or as a share of a total, in the number format you choose.">
+
+    <DocsSection Title="Aggregations">
+        <p>
+            A <code>PivotValueField</code> names a field and how its records are summarised: Excel's
+            <em>Summarize Values By</em>. A field declared as a number takes <strong>Sum</strong> when it is
+            ticked; any other takes <strong>Count</strong>. The user changes it in <em>Value Field
+            Settings…</em>, from the entry's menu in Values.
+        </p>
+        <ul>
+            <li><strong>Sum</strong>, <strong>Average</strong>, <strong>Max</strong>, <strong>Min</strong> and <strong>Product</strong> of the numbers.</li>
+            <li><strong>Count</strong> counts every value that is not Blank, numbers or not (Excel's <code>COUNTA</code>); <strong>Count Numbers</strong> counts the numbers only (<code>COUNT</code>).</li>
+            <li><strong>StdDev</strong> and <strong>Var</strong> are the sample statistics, of two or more numbers; <strong>StdDevp</strong> and <strong>Varp</strong> the population ones.</li>
+            <li>
+                A total is aggregated from its records, never from the totals below it: the Average of a
+                region is the average of its sales, not the average of its countries' averages.
+            </li>
+        </ul>
+        <p>
+            Values may hold several Value Fields, the same field more than once. They stand side by side
+            under <strong>Σ Values</strong>, innermost in Columns; set <code>PivotLayout.ValuesAxis</code> to
+            <code>PivotAxis.Rows</code>, or drag Σ Values to Rows, to stack them instead. <code>Caption</code>
+            gives a Value Field a name of its own, Excel's <em>Custom Name</em>.
+        </p>
+        <DocsExample Builtin="typeof(Aggregations)" Mud="typeof(AggregationsMud)" Files="@(["Examples/Pivot/Sales.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Show Values As">
+        <p>
+            <code>ShowValuesAs</code> shows each aggregated value as a share of a total, after aggregation:
+            <strong>% of Grand Total</strong>, <strong>% of Column Total</strong> or <strong>% of Row Total</strong>.
+            A Value Field with no number format of its own is then shown as <code>0.00%</code>.
+        </p>
+        <DocsExample Builtin="typeof(ShowValuesAs)" Mud="typeof(ShowValuesAsMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Revenue, and the same revenue as each region's share of its year.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Number formats and ####">
+        <p>
+            <code>NumberFormat</code> is a .NET format string, applied under the report's <code>Culture</code>:
+            <code>#,##0</code>, <code>#,##0.00</code>, <code>0.0%</code>. Without one a value is shown as
+            General, at most 15 significant digits. A field's <code>format</code> in its declaration labels its
+            Items when it stands in Rows or Columns.
+        </p>
+        <p>
+            A value too wide for its column is painted <code>####</code>, as in Excel, never cut short to a
+            smaller-looking number: drag a column's edge narrower in any report on this page to see it. The
+            text a cell paints is not what a copy carries: copying puts the full-precision value on the
+            clipboard, so Excel receives the number, not its rounding.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Money is summed exactly">
+        <p>
+            A field declared over <code>decimal</code> is held as a Decimal column and summed as integers,
+            never through a <code>double</code>; so are <code>int</code> and <code>long</code>. A field over
+            <code>double</code> follows Excel's arithmetic, binary floating point, which runs out of digits
+            once a total passes about fifteen of them. Below, 5,000 holdings in the tens of billions are summed
+            both ways: the decimal totals keep their cents, the double ones have lost them.
+        </p>
+        <DocsExample Builtin="typeof(ExactMoney)" Mud="typeof(ExactMoneyMud)" Files="@(["Examples/Pivot/Holdings.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Show Details">
+        <p>
+            Double-click a value, or choose <em>Show Details</em> from the Context Menu, to see the records
+            behind it, Excel's drill-down. They open in a tab at the report's foot, beside the <em>PivotTable</em> tab that leads back, or in a dialog with <code>DetailsView="PivotDetailsView.Dialog"</code>. The records are read
+            under the report's Source Version: if the data has moved on meanwhile, ExPivot says so rather than
+            show records that do not add up to the cell.
+        </p>
+        <p>
+            To take the records yourself, listen to <code>OnShowDetails</code>. ExPivot then opens neither tab
+            nor dialog, and hands you a <code>PivotDetails</code> naming the cell's Items and Value Field, whose
+            <code>DetailsAsync(start, count)</code> pages its records. A source over your own objects hands back
+            the objects themselves (<code>PivotDetailRecord.Record</code>).
+        </p>
+        <DocsExample Builtin="typeof(ShowDetails)" Mud="typeof(ShowDetailsMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Double-click any value.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExPivot.Engine.PivotValueField)" />
+        <ApiTable Type="typeof(global::ExPivot.PivotDetails)" />
+    </DocsSection>
+</DocsPage>

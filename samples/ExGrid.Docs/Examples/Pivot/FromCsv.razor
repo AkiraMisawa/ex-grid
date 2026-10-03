@@ -1,0 +1,70 @@
+@using ExGrid.Data
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<p>
+    <button @onclick="() => ReadAsync(malformed: false)" disabled="@_reading">Read 50,000 sales from a CSV</button>
+    <button @onclick="() => ReadAsync(malformed: true)" disabled="@_reading">Read a file with a bad row</button>
+    <span>@_status</span>
+</p>
+
+@if (_source is not null)
+{
+    <ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="320" />
+}
+
+@code {
+    // The export this application knows, declared: nothing is guessed. A column the Schema does
+    // not declare is skipped; a declared one missing from the header is refused by name.
+    private static readonly CsvSchema Export = new(
+    [
+        new CsvColumn("Order", SnapshotKind.Integer),
+        new CsvColumn("Region", SnapshotKind.Text),
+        new CsvColumn("Country", SnapshotKind.Text),
+        new CsvColumn("Category", SnapshotKind.Text),
+        new CsvColumn("Channel", SnapshotKind.Text),
+        new CsvColumn("Date", SnapshotKind.Date) { Header = "Order date", DateFormats = ["yyyy-MM-dd"] },
+        new CsvColumn("Units", SnapshotKind.Integer),
+        new CsvColumn("Revenue", SnapshotKind.Decimal) { ThousandsSeparator = "," },
+    ])
+    {
+        RecordKey = "Order",
+    };
+
+    private PivotSource? _source;
+    private bool _reading;
+    private string _status = "";
+
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Country")],
+        Columns = [new PivotFieldPlacement("Channel")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+
+    private async Task ReadAsync(bool malformed)
+    {
+        _reading = true;
+        _status = "Reading…";
+        await Task.Yield();
+        var file = SalesCsv.Write(50_000, malformed);
+        try
+        {
+            var snapshot = await Export.ReadAsync(new MemoryStream(file));
+            // One field per column, captioned and typed by it.
+            _source = PivotSource.From(snapshot);
+            _status = $"{snapshot.RowCount:N0} rows read.";
+        }
+        catch (SnapshotException refused)
+        {
+            // The whole file is refused, naming the row and the column: a report over the rows
+            // that could be read would be quietly short.
+            _source = null;
+            _status = refused.Message;
+        }
+        finally
+        {
+            _reading = false;
+        }
+    }
+}

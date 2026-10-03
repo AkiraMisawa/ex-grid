@@ -1,0 +1,64 @@
+@page "/expivot/live"
+@using ExGrid.Docs.Examples.Pivot
+
+<NativeControls />
+
+<DocsPage Product="ExPivot" Title="Live data"
+          Lead="Records that change while the report is read: each change makes the next Snapshot, ExPivot asks again, and the values that moved are marked for a moment.">
+
+    <DocsSection Title="Change Batches">
+        <p>
+            A source over records with a Record Key takes <strong>Change Batches</strong>: the records added, the
+            records changed (found by their key) and the keys removed. <code>Sales.Fields.Batch(added, changed,
+            removedKeys)</code> reads one through the same declarations, and <code>SnapshotPivotSource.Apply</code>
+            applies it.
+        </p>
+        <ul>
+            <li>
+                <strong>Whole or not at all.</strong> The Snapshot makes the next one, sharing everything the batch did
+                not touch. A batch that changes a key the Snapshot does not hold, adds one it does, or names a key twice
+                is refused by name, and nothing of it is applied.
+            </li>
+            <li>
+                <strong>Folded in, not read again.</strong> The answer held for the current question is brought up to
+                date from what the batch removed and added. Every leaf still equals a fresh aggregation of the new
+                Snapshot, to the last bit.
+            </li>
+            <li>
+                <strong>ExPivot listens to <code>Changed</code></strong> and asks again. Changes are gathered and the report
+                is redrawn at most every <code>RedrawInterval</code> (250 ms by default; zero redraws on every change).
+                A change of values keeps the Selection and any open menu or panel.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(LiveBatches)" Mud="typeof(LiveBatchesMud)" Files="@(["Examples/Pivot/Sales.cs"])">
+            Five sales are amended every 400 ms. Select a few cells, or open a field's menu: they stay as the values move.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="The Change Highlight">
+        <p>
+            A value cell whose painted text changed with the data is marked for <code>ChangeHighlightDuration</code>,
+            one second by default; zero marks nothing. Only data marks a cell: a Change Batch, a server's notice,
+            Refresh or a new source. A new layout, a sort, a collapse or Show Values As marks nothing, and neither does a
+            change the number format hides. The mark's colour is the Visual Token
+            <code>--ex-change-highlight-background</code>, which <code>ExGrid.MudBlazor</code>'s stylesheet maps to the theme.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A server whose data moves on">
+        <p>
+            A server's source learns of changes however your application does: SignalR, polling, a message bus. Pass
+            each notice to <code>FetchingPivotSource.NotifyChanged(version)</code>, and ExPivot asks the server again for
+            the whole answer. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
+            refreshed.
+        </p>
+        <p>
+            When the newest data cannot be shown (it breaks a cap, the source fails, or a Refresh fails), the report
+            stays on the last version it could compute, and a notice under the Pivot Toolbar says what happened and as of
+            when, with Retry. The report never shows half a change.
+        </p>
+        <DocsExample Builtin="typeof(LiveServer)" Mud="typeof(LiveServerMud)" Files="@(["Examples/Pivot/SalesServer.cs", "Examples/Pivot/Sales.cs"])">
+            The simulated server amends eight sales a second and announces each new Source Version.
+        </DocsExample>
+    </DocsSection>
+</DocsPage>

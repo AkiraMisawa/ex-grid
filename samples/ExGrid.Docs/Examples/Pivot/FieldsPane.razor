@@ -1,0 +1,14 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<ExPivot Source="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList" ViewportHeight="380" />
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    // Nothing placed yet: the report asks for fields until the user ticks some.
+    private PivotLayout _layout = PivotLayout.Empty;
+
+    // Bound as well, so a pane the user hid stays hidden when you keep the setting.
+    private bool _showFieldList = true;
+}

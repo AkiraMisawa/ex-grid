@@ -1,0 +1,39 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+
+<p>
+    <label>
+        Form
+        <select @bind:get="_layout.Form" @bind:set="form => _layout = _layout with { Form = form }">
+            <option value="@PivotReportForm.Compact">Compact</option>
+            <option value="@PivotReportForm.Outline">Outline</option>
+            <option value="@PivotReportForm.Tabular">Tabular</option>
+        </select>
+    </label>
+    <label>
+        <input type="checkbox" @bind:get="_layout.SubtotalsAtTop" @bind:set="on => _layout = _layout with { SubtotalsAtTop = on }" />
+        Subtotals at the top
+    </label>
+    <label>
+        <input type="checkbox" @bind:get="_layout.GrandTotalRow" @bind:set="on => _layout = _layout with { GrandTotalRow = on }" />
+        Grand Total row
+    </label>
+    <label>
+        <input type="checkbox" @bind:get="_layout.GrandTotalColumn" @bind:set="on => _layout = _layout with { GrandTotalColumn = on }" />
+        Grand Total column
+    </label>
+</p>
+
+<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="380" />
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    // Every setting is a property of the layout: a change is a new layout.
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Country")],
+        Columns = [new PivotFieldPlacement("Year")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+}

@@ -1,0 +1,68 @@
+@using ExGrid.Data
+
+<p>
+    <button @onclick="Open">Open an account</button>
+    <button @onclick="Amend" disabled="@(_snapshot.RowCount == 0)">Amend the first balance</button>
+    <button @onclick="Close" disabled="@(_snapshot.RowCount == 0)">Close the last account</button>
+    <button @onclick="Duplicate">Open account 1 again</button>
+</p>
+<p>@_status</p>
+
+<ExGrid TRow="SnapshotLine" Source="_source" Columns="_columns" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private static readonly SnapshotBuilder<Account> Builder = new SnapshotBuilder<Account>()
+        .Integer("Id", a => a.Id)
+        .Text("Code", a => a.Code)
+        .Text("Desk", a => a.Desk)
+        .Decimal("Balance", a => a.Balance)
+        .Key("Id");
+
+    private Snapshot _snapshot = Builder.Build(Accounts.Sample());
+    private InMemoryGridSource<SnapshotLine> _source = default!;
+    private GridColumn<SnapshotLine>[] _columns = [];
+    private string _status = "";
+    private long _nextId = 9;
+
+    protected override void OnInitialized() => Show(null);
+
+    private void Open()
+    {
+        var id = _nextId++;
+        Apply(Builder.Batch(added: [new Account(id, $"0400{id:00}", "Rates", 100_000m, null, null, null)]));
+    }
+
+    private void Amend()
+    {
+        var first = (Account)_snapshot.RecordAt(_snapshot.Rows[0])!;
+        Apply(Builder.Batch(changed: [first with { Balance = (first.Balance ?? 0) + 1_000m }]));
+    }
+
+    private void Close() => Apply(Builder.Batch(removedKeys: [_snapshot.ValueAt(_snapshot.Rows[^1], _snapshot["Id"])!]));
+
+    private void Duplicate() => Apply(Builder.Batch(added: [Accounts.Sample()[0]]));
+
+    private void Apply(ChangeBatch batch)
+    {
+        try
+        {
+            // The next Snapshot, whole or not at all; the one before reads exactly as it did.
+            var change = _snapshot.Apply(batch);
+            _snapshot = change.After;
+            Show(change);
+        }
+        catch (SnapshotException refused)
+        {
+            _status = refused.Message;
+        }
+    }
+
+    private void Show(SnapshotChange? change)
+    {
+        _source = GridSource.From(SnapshotGrid.Rows(_snapshot));
+        _columns = SnapshotGrid.Columns(_snapshot);
+        _status = change is null
+            ? $"Version {_snapshot.Version}: {_snapshot.RowCount} rows."
+            : $"Version {_snapshot.Version}: {change.Removed.Count} rows removed and {change.Added.Count} added; {_snapshot.RowCount} rows.";
+    }
+}

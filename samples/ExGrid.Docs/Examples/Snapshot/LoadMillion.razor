@@ -1,0 +1,66 @@
+@using System.Diagnostics
+@using ExGrid.Data
+
+<p>
+    <button @onclick="LoadAsync" disabled="@(_loading is not null)">Load 1,000,000 rows</button>
+    <button @onclick="() => _loading?.Cancel()" disabled="@(_loading is null)">Cancel</button>
+    <progress max="@Rows" value="@_rows"></progress>
+    <span>@_status</span>
+</p>
+
+@if (_source is not null)
+{
+    <ExGrid TRow="SnapshotLine" Source="_source" Columns="_columns" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+}
+
+@code {
+    private const int Rows = 1_000_000;
+    private static readonly string[] Desks = ["Rates", "Credit", "FX", "Equities"];
+
+    private CancellationTokenSource? _loading;
+    private long _rows;
+    private string _status = "";
+    private InMemoryGridSource<SnapshotLine>? _source;
+    private GridColumn<SnapshotLine>[] _columns = [];
+
+    private async Task LoadAsync()
+    {
+        using var loading = _loading = new CancellationTokenSource();
+        var clock = Stopwatch.StartNew();
+        // Told after every slice of about 30 ms; the page paints between slices.
+        var options = new SnapshotLoadOptions
+        {
+            Progress = new Progress<SnapshotProgress>(p => { _rows = p.Rows; StateHasChanged(); }),
+        };
+        try
+        {
+            // Columns appended a value at a time, as a reader that parses its own format would.
+            var columns = new SnapshotColumnsBuilder(options, loading.Token) { TotalRows = Rows };
+            var id = columns.Integer("Id");
+            var desk = columns.Text("Desk");
+            var notional = columns.Decimal("Notional");
+            var price = columns.Double("Price");
+            var random = new Random(20261003);
+            for (var i = 0; i < Rows; i++)
+            {
+                id.Append(i + 1);
+                desk.Append(Desks[random.Next(Desks.Length)]);
+                notional.Append(random.Next(1, 5_000) * 10_000m);
+                price.Append(Math.Round(80 + (random.NextDouble() * 40), 3));
+                await columns.CheckpointAsync();   // cancellation, progress, and a yield when the slice is spent
+            }
+            var snapshot = await columns.BuildAsync();
+            _source = GridSource.From(SnapshotGrid.Rows(snapshot));
+            _columns = SnapshotGrid.Columns(snapshot);
+            _status = $"{snapshot.RowCount:N0} rows in {clock.Elapsed.TotalSeconds:N1} s.";
+        }
+        catch (OperationCanceledException)
+        {
+            _status = "Cancelled: nothing was built.";
+        }
+        finally
+        {
+            _loading = null;
+        }
+    }
+}

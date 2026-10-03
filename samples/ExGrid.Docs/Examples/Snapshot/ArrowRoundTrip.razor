@@ -1,0 +1,60 @@
+@using System.Diagnostics
+@using ExGrid.Data
+@using ExGrid.Data.Arrow
+@using ExGrid.Docs.Examples.Pivot
+
+<p>
+    <button @onclick="RoundTripAsync">Write 20,000 sales as Arrow and read them back</button>
+</p>
+
+@if (_read is not null)
+{
+    <ul>
+        <li>Wrote @_bytes.ToString("N0") bytes in @_writeMs ms; read @_read.RowCount.ToString("N0") rows back in @_readMs ms.</li>
+        <li>Record Key: @_read.RecordKey?.Name; version @_read.Version, as written.</li>
+        <li>
+            @foreach (var column in _read.Columns)
+            {
+                <code>@column.Caption: @column.Kind</code>@(" ")
+            }
+        </li>
+    </ul>
+    <ExGrid TRow="SnapshotLine" Source="_source" Columns="_columns" ViewportHeight="260" ViewportWidth="ViewportSize.Stretch" />
+}
+
+@code {
+    private Snapshot? _read;
+    private long _bytes;
+    private long _writeMs;
+    private long _readMs;
+    private InMemoryGridSource<SnapshotLine>? _source;
+    private GridColumn<SnapshotLine>[] _columns = [];
+
+    private async Task RoundTripAsync()
+    {
+        var snapshot = new SnapshotBuilder<Sale>()
+            .Integer("Id", s => s.Id)
+            .Text("Country", s => s.Country)
+            .Text("Product", s => s.Product)
+            .Date("Date", s => s.Date, caption: "Order date")
+            .Integer("Units", s => s.Units)
+            .Decimal("Revenue", s => s.Revenue)
+            .Key("Id")
+            .Build(Sales.Sample());
+
+        // What a server writes into a response body (SnapshotArrow.StreamMediaType)...
+        var clock = Stopwatch.StartNew();
+        using var stream = new MemoryStream();
+        await SnapshotArrow.WriteAsync(snapshot, stream);
+        _writeMs = clock.ElapsedMilliseconds;
+        _bytes = stream.Length;
+
+        // ...and what the browser reads from the payload it fetched whole.
+        clock.Restart();
+        _read = await SnapshotArrow.ReadAsync(stream.ToArray());
+        _readMs = clock.ElapsedMilliseconds;
+
+        _source = GridSource.From(SnapshotGrid.Rows(_read));
+        _columns = SnapshotGrid.Columns(_read);
+    }
+}

@@ -1,0 +1,34 @@
+@using ExPivot.Components
+@using ExPivot.Engine
+@using ExPivot.MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Wrap="Wrap.Wrap" Class="mb-3">
+    <MudSelect T="PivotReportForm" Label="Form" Dense="true" Variant="Variant.Outlined" Style="max-width: 160px"
+               Value="_layout.Form" ValueChanged="form => _layout = _layout with { Form = form }">
+        <MudSelectItem Value="PivotReportForm.Compact">Compact</MudSelectItem>
+        <MudSelectItem Value="PivotReportForm.Outline">Outline</MudSelectItem>
+        <MudSelectItem Value="PivotReportForm.Tabular">Tabular</MudSelectItem>
+    </MudSelect>
+    <MudCheckBox T="bool" Label="Subtotals at the top"
+                 Value="_layout.SubtotalsAtTop" ValueChanged="on => _layout = _layout with { SubtotalsAtTop = on }" />
+    <MudCheckBox T="bool" Label="Grand Total row"
+                 Value="_layout.GrandTotalRow" ValueChanged="on => _layout = _layout with { GrandTotalRow = on }" />
+    <MudCheckBox T="bool" Label="Grand Total column"
+                 Value="_layout.GrandTotalColumn" ValueChanged="on => _layout = _layout with { GrandTotalColumn = on }" />
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="MudPivotChrome.Default" ViewportHeight="380" />
+</MudExGridPaper>
+
+@code {
+    private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);
+
+    // Every setting is a property of the layout: a change is a new layout.
+    private PivotLayout _layout = new()
+    {
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Country")],
+        Columns = [new PivotFieldPlacement("Year")],
+        Values = [new PivotValueField("Revenue", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+}

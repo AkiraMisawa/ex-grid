@@ -1,0 +1,57 @@
+@using Apache.Arrow
+@using Apache.Arrow.Ipc
+@using Apache.Arrow.Types
+@using ExGrid.Data
+@using ExGrid.Data.Arrow
+@using ExGrid.Docs.Examples.Pivot
+
+<p>
+    <button @onclick="CutShortAsync">Read a stream cut short</button>
+    <button @onclick="TimeZoneAsync">Read a timestamp in Asia/Tokyo</button>
+</p>
+<p>@_outcome</p>
+
+@code {
+    private string _outcome = "";
+
+    // A download that stopped half way: never read as fewer rows.
+    private async Task CutShortAsync()
+    {
+        var snapshot = new SnapshotBuilder<Sale>().Text("Country", s => s.Country).Decimal("Revenue", s => s.Revenue).Build(Sales.Sample());
+        using var stream = new MemoryStream();
+        await SnapshotArrow.WriteAsync(snapshot, stream);
+        await ReadAsync(stream.ToArray().AsMemory(0, (int)stream.Length / 2));
+    }
+
+    // Another producer's stream, written with Apache.Arrow: a timestamp in a time zone other than
+    // UTC, which only a time zone database could convert.
+    private async Task TimeZoneAsync()
+    {
+        var tokyo = new TimestampType(TimeUnit.Millisecond, "Asia/Tokyo");
+        var times = new TimestampArray.Builder(tokyo)
+            .Append(new DateTimeOffset(2026, 10, 3, 9, 0, 0, TimeSpan.FromHours(9)))
+            .Build();
+        var schema = new Schema.Builder().Field(f => f.Name("TradeTime").DataType(tokyo)).Build();
+        using var batch = new RecordBatch(schema, [times], times.Length);
+        using var stream = new MemoryStream();
+        using (var writer = new ArrowStreamWriter(stream, schema, leaveOpen: true))
+        {
+            writer.WriteRecordBatch(batch);
+            writer.WriteEnd();
+        }
+        await ReadAsync(stream.ToArray());
+    }
+
+    private async Task ReadAsync(ReadOnlyMemory<byte> payload)
+    {
+        try
+        {
+            var snapshot = await SnapshotArrow.ReadAsync(payload);
+            _outcome = $"Read {snapshot.RowCount} rows.";
+        }
+        catch (SnapshotException refused)
+        {
+            _outcome = "Refused: " + refused.Message;
+        }
+    }
+}

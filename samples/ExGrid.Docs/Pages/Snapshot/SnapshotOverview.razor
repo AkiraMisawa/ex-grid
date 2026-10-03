@@ -1,0 +1,122 @@
+@page "/data"
+@using ExGrid.Docs.Examples.Snapshot
+@using ExGrid.Docs.Pages.Pivot
+
+<NativeControls />
+
+<DocsPage Product="ExGrid.Data" Title="Snapshot"
+          Lead="The family's immutable data: a copy of a table at one version, held column by column, so a pass over a million rows is a loop over arrays rather than over objects.">
+
+    <DocsSection Title="What a Snapshot is">
+        <p>
+            <code>ExGrid.Data</code> has no dependency. ExPivot's bundled source reads it, and anything else may: a
+            Snapshot is data, not a query engine, and it does not sort, filter, group or aggregate. Text is held as a
+            dictionary of codes, money as exact scaled 64-bit integers, dates as clock values.
+        </p>
+        <ul>
+            <li>
+                <strong>Six kinds.</strong> Text, Decimal, Double, Integer, Date and Boolean. Every value of a column is of
+                its kind.
+            </li>
+            <li>
+                <strong>A Blank in every kind</strong>, kept apart from <code>""</code> and from 0. From objects, a
+                <code>null</code> is a Blank. ExPivot shows it as the Item <code>(blank)</code>.
+            </li>
+            <li>
+                <strong>Whole or refused.</strong> Every way in yields a Snapshot or refuses, naming the row and the column.
+                No way in yields the rows that happened to read.
+            </li>
+            <li>
+                <strong>Immutable.</strong> A Change Batch makes the next Snapshot, sharing what it did not touch; the one
+                before reads exactly as it did.
+            </li>
+        </ul>
+        <p>
+            <code>dotnet add package ExGrid.Data --prerelease</code>. ExPivot brings it in already.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="From objects">
+        <p>
+            <code>SnapshotBuilder&lt;T&gt;</code> declares each column once, with a typed accessor: a value is read without
+            boxing, and the objects are kept by reference behind their rows (<code>Snapshot.RecordAt</code>). A Double
+            column holds its values as they came, non-finite ones included. <code>Key</code> names the Record Key, a Text or
+            Integer column whose value tells each record from every other; a Blank key or one carried twice refuses the
+            build.
+        </p>
+        <p>
+            To read a Snapshot, take its columns by name and loop over its slices' spans:
+            <code>slice.Codes(textColumn)</code>, <code>slice.Decimals(decimalColumn)</code>. <code>ValueAt(row, column)</code>
+            reads one value, boxed, for small reads like the grid below.
+        </p>
+        <DocsExample Builtin="typeof(SnapshotKinds)" Mud="typeof(SnapshotKindsMud)"
+                     Files="@(["Examples/Snapshot/Accounts.cs", "Examples/Snapshot/SnapshotGrid.cs"])">
+            Account 4's desk is <code>""</code>, a value; account 6's is a Blank. Account 7's rate is NaN.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="From a CSV, under a Schema">
+        <p>
+            A <code>CsvSchema</code> says what each column is and how its text is read: the header it goes by, the decimal
+            point and thousands separator, the date formats, the words for true, false and Blank. The file is read as bytes,
+            straight into the columns, with no string made per cell, and quoting follows RFC 4180.
+        </p>
+        <ul>
+            <li>A value its kind cannot read, a record of the wrong length, an open quote or invalid text fails the load, naming the row, the column and the line.</li>
+            <li>A declared column missing from the header is refused by name; a column the Schema does not declare is skipped.</li>
+            <li>UTF-8 is read with or without its byte-order mark; Shift-JIS when the Schema says <code>Encoding = CsvEncoding.ShiftJis</code>.</li>
+            <li>
+                For a file nobody has described, <code>CsvSchema.SuggestAsync</code> proposes a Schema from its first rows and
+                marks every column whose reading is not clear: digits with leading zeros, mixed date formats, a comma that could
+                be the decimal point. It is never applied by itself; show it to the user and read the file once they confirm.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(CsvRead)" Mud="typeof(CsvReadMud)" Files="@(["Examples/Snapshot/SnapshotGrid.cs"])">
+            Edit the file and read it again: type a letter into a balance, write a date the other way round, or remove the
+            Balance header.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="From columns, in slices">
+        <p>
+            <code>SnapshotColumnsBuilder</code> takes columns a value or a span at a time, for data a reader has parsed
+            itself. A text column makes a string only for text it has not seen. <code>CheckpointAsync</code> checks for
+            cancellation, reports progress and yields once the slice's budget (30 ms by default) is spent, so a browser keeps
+            painting while a million rows load. Every way in takes the same <code>SnapshotLoadOptions</code>; a cancelled load
+            builds nothing.
+        </p>
+        <p>
+            A <code>DbDataReader</code> is read by <code>SnapshotDataReaderBuilder</code>, each column by its own type, and an
+            Arrow stream by <a href="data/arrow"><code>ExGrid.Data.Arrow</code></a>.
+        </p>
+        <DocsExample Builtin="typeof(LoadMillion)" Mud="typeof(LoadMillionMud)" Files="@(["Examples/Snapshot/SnapshotGrid.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Change Batches">
+        <p>
+            A <code>ChangeBatch</code> carries records added, records changed (found by their Record Key) and keys removed.
+            <code>Snapshot.Apply</code> makes the next Snapshot from it, whole or not at all, and returns a
+            <code>SnapshotChange</code>: <code>Before</code> and <code>After</code>, the rows <code>Before</code> held that are
+            gone (<code>Removed</code>) and the rows <code>After</code> holds that are new (<code>Added</code>). A changed record is
+            one of each, at the place of the one it replaced. A reader folds the change into what it computed rather than start
+            again; that is how ExPivot stays live.
+        </p>
+        <p>
+            A batch that changes or removes a key the Snapshot does not hold, adds one it does, names a key twice, or carries a
+            Blank key is refused by name, and nothing of it is applied.
+        </p>
+        <DocsExample Builtin="typeof(ChangeBatches)" Mud="typeof(ChangeBatchesMud)"
+                     Files="@(["Examples/Snapshot/Accounts.cs", "Examples/Snapshot/SnapshotGrid.cs"])">
+            "Open account 1 again" adds a key the Snapshot already holds.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExGrid.Data.Snapshot)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.SnapshotBuilder<>)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.CsvSchema)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.CsvColumn)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.SnapshotColumnsBuilder)" />
+        <ApiTable Type="typeof(global::ExGrid.Data.SnapshotChange)" />
+    </DocsSection>
+</DocsPage>
