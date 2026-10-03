@@ -603,15 +603,6 @@ public class HeadingDragTests : GridTestContext
         => Regex.Matches(element.GetAttribute("style") ?? "", @"([a-z-]+):\s*(-?[\d.]+)px")
             .ToDictionary(m => m.Groups[1].Value, m => double.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture));
 
-    private static string ShippedStylesheet()
-    {
-        var manifest = Path.Combine(AppContext.BaseDirectory, "ExGrid.staticwebassets.runtime.json");
-        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        return document.RootElement.GetProperty("ContentRoots").EnumerateArray()
-            .Select(root => root.GetString()!)
-            .Where(Directory.Exists)
-            .SelectMany(root => Directory.EnumerateFiles(root, "ex-grid.css", SearchOption.AllDirectories))
-            .Select(File.ReadAllText)
-            .First();
-    }
+    // The stylesheet's source (ADR-0123): what ships is its minified form.
+    private static string ShippedStylesheet() => AssetSources.Read("ExGrid", "ex-grid.css");
 }

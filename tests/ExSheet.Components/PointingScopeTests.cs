@@ -115,6 +115,26 @@ public partial class PointingScopeTests : SheetTestContext
         Assert.Equal("500", CellText(page.Left, "D2"));
     }
 
+    [Fact] // ADR-0058 (amended 2026-10-03): a press on a cell of a table keyed by several columns writes the lookup by every part, and Enter computes it
+    public async Task A_press_on_a_cell_of_a_table_keyed_by_several_columns_writes_every_part()
+    {
+        var page = await RenderAsync(declare: false);
+        foreach (var sheet in new[] { page.Cut.Instance.Left!, page.Cut.Instance.Right! })
+        {
+            await sheet.DeclareLinkedTableAsync("Positions", TableColumns, ["Book", "Id"]);
+            await sheet.PushLinkedTableAsync("Positions", ScopedSheets.Positions.Select(ScopedSheets.TableRow));
+        }
+        await StartTypingAsync(page.Left, "D2", "=");
+
+        await PressCellAsync(page.Positions, ValueX, Row(1));
+
+        const string written = "XLOOKUP(1, (Positions[Book]=\"FX\")*(Positions[Id]=\"R-2\"), Positions[PV])";
+        Assert.Equal("=" + written, EditorText(page.Left));
+        Assert.Empty(page.Cut.Instance.LeftRefusals);
+        await PressAsync(page.Left, "Enter");
+        Assert.Equal("250", CellText(page.Left, "D2"));
+    }
+
     [Fact] // ADR-0058 / SH-32: =SUM( and a press on a column header writes the table's column, ) and Enter compute it
     public async Task A_press_on_a_column_header_writes_the_tables_column()
     {

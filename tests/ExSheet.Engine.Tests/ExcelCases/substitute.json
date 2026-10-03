@@ -1,0 +1,57 @@
+{
+  "area": "substitute",
+  "about": "SUBSTITUTE (ticket 04).",
+  "cases": [
+    {
+      "id": "SUBSTITUTE-001",
+      "source": "documented",
+      "description": "Microsoft's example: every occurrence",
+      "cells": {"A1": "Sales Data", "ZZ1000": "=SUBSTITUTE(A1,\"Sales\",\"Cost\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Cost Data"}
+    },
+    {
+      "id": "SUBSTITUTE-002",
+      "source": "documented",
+      "description": "Microsoft's example: the first occurrence only",
+      "cells": {"A1": "Quarter 1, 2008", "ZZ1000": "=SUBSTITUTE(A1,\"1\",\"2\",1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Quarter 2, 2008"}
+    },
+    {
+      "id": "SUBSTITUTE-003",
+      "source": "documented",
+      "description": "Microsoft's example: the third occurrence only",
+      "cells": {"A1": "Quarter 1, 2011", "ZZ1000": "=SUBSTITUTE(A1,\"1\",\"2\",3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Quarter 1, 2012"}
+    },
+    {
+      "id": "SUBSTITUTE-004",
+      "source": "documented",
+      "description": "Case is told apart",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUBSTITUTE(\"Abc\",\"a\",\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Abc"}
+    },
+    {
+      "id": "SUBSTITUTE-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: occurrences are counted without overlapping",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUBSTITUTE(\"aaaa\",\"aa\",\"b\",2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "aab"}
+    },
+    {
+      "id": "SUBSTITUTE-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an instance below 1 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUBSTITUTE(\"abc\",\"a\",\"x\",0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

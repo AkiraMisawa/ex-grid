@@ -1,0 +1,24 @@
+{
+  "area": "na",
+  "about": "NA (ticket 04).",
+  "cases": [
+    {
+      "id": "NA-001",
+      "source": "documented",
+      "description": "NA() is #N/A",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NA()"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "NA-002",
+      "source": "documented",
+      "description": "ISNA(NA()) is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ISNA(NA())"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    }
+  ]
+}

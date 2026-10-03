@@ -1,0 +1,57 @@
+{
+  "area": "mid",
+  "about": "MID (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "MID-001",
+      "source": "documented",
+      "description": "Microsoft's example: five characters from the first",
+      "cells": {"A1": "Fluid Flow", "ZZ1000": "=MID(A1,1,5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Fluid"}
+    },
+    {
+      "id": "MID-002",
+      "source": "documented",
+      "description": "Microsoft's example: more characters than remain give the rest",
+      "cells": {"A1": "Fluid Flow", "ZZ1000": "=MID(A1,7,20)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Flow"}
+    },
+    {
+      "id": "MID-003",
+      "source": "documented",
+      "description": "Microsoft's example: a start past the end gives empty text",
+      "cells": {"A1": "Fluid Flow", "ZZ1000": "=MID(A1,20,5)&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "MID-004",
+      "source": "documented",
+      "description": "start_num below 1 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MID(\"abc\",0,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "MID-005",
+      "source": "documented",
+      "description": "num_chars below 0 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MID(\"abc\",1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "MID-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number is read as its text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MID(12345,2,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "234", "kind": "text"}
+    }
+  ]
+}

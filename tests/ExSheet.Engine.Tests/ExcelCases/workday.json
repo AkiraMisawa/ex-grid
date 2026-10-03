@@ -1,0 +1,46 @@
+{
+  "area": "workday",
+  "about": "WORKDAY (ticket 04).",
+  "cases": [
+    {
+      "id": "WORKDAY-001",
+      "source": "documented",
+      "description": "Microsoft's example: 151 workdays after 1 October 2008",
+      "cells": {"A1": "10/1/2008", "A2": "151", "A3": "11/26/2008", "A4": "12/4/2008", "A5": "1/21/2009", "ZZ1000": "=WORKDAY(A1,A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 39933}
+    },
+    {
+      "id": "WORKDAY-002",
+      "source": "documented",
+      "description": "Microsoft's example: with three holidays",
+      "cells": {"A1": "10/1/2008", "A2": "151", "A3": "11/26/2008", "A4": "12/4/2008", "A5": "1/21/2009", "ZZ1000": "=WORKDAY(A1,A2,A3:A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 39938}
+    },
+    {
+      "id": "WORKDAY-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 0 days is the start itself",
+      "cells": {"A1": "10/1/2008", "A2": "151", "A3": "11/26/2008", "A4": "12/4/2008", "A5": "1/21/2009", "ZZ1000": "=WORKDAY(A1,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 39722}
+    },
+    {
+      "id": "WORKDAY-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: backwards over a weekend",
+      "cells": {"A1": "10/1/2008", "ZZ1000": "=WORKDAY(A1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 39721}
+    },
+    {
+      "id": "WORKDAY-005",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: text among the holidays",
+      "cells": {"A1": "10/1/2008", "A2": "abc", "ZZ1000": "=WORKDAY(A1,1,A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

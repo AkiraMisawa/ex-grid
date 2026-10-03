@@ -40,8 +40,9 @@ await sheet.PushLinkedTableAsync("CostCentres", centres.Select(c => c.ToRow()));
             as <code>XLOOKUP</code> compares — <code>cc-2300</code> and <code>CC-2300</code> are one key; blank keys are
             not compared. A push in which a key repeats throws <code>RepeatedKeyException</code>, naming the table, the
             key column and the key, and the table goes back to waiting: its readers show <code>#GETTING_DATA</code>,
-            never the last snapshot's numbers. A table whose rows are told apart by several columns needs a column that
-            joins them (<code>ACME|5Y</code>) as its key.
+            never the last snapshot's numbers. A table whose rows are told apart by several columns declares them all
+            as its key, <code>DeclareLinkedTableAsync("Cds", ["Entity", "Tenor", "Spread"], ["Entity", "Tenor"])</code>,
+            and a press on one of its cells writes <code>XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])</code>.
         </p>
         <DocsExample Builtin="typeof(LinkedTable)" Mud="typeof(LinkedTableMud)" CodeOpen="true"
                      Files="@(["Examples/Sheet/CostCentre.cs", "Examples/Sheet/CostReport.cs"])">

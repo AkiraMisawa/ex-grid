@@ -95,7 +95,7 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
     // read before it lands the selectionchange listener still stood (CI, Edge on the Server
     // host, 2026-10-02). A listener the dispose never takes off still fails here.
     await expect.poll(async () => (await grid.listenersOn('document')).map(key)
-        .filter((k) => /@ex-grid(\.\w+)?\.js$/.test(k)), { message: 'the first cycle\'s grid let go of the document' })
+        .filter((k) => /@ex-grid(\.[\w-]+)*\.js$/.test(k)), { message: 'the first cycle\'s grid let go of the document' })
         .toEqual([]);
     const baseline = await grid.counters();
     const byFramework = added(freshOnDocument, await grid.listenersOn('document'));
@@ -123,9 +123,9 @@ test('mounting and disposing the grid fifty times returns nodes and listeners to
 
 test('disposal takes the module\'s listeners off the root, and the count comes back (MEM-4)', async ({ page }) => {
     const grid = await lifecycle(page);
-    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.\\w+)?\\.js$`));
+    const fromModule = (t) => expect.stringMatching(new RegExp(`^${t.replace(/[()]/g, '\\$&')} @ex-grid(\\.[\\w-]+)*\\.js$`));
     const moduleOnDocument = async () => (await grid.listenersOn('document')).map(key)
-        .filter((k) => /@ex-grid(\.\w+)?\.js$/.test(k));
+        .filter((k) => /@ex-grid(\.[\w-]+)*\.js$/.test(k));
     // Blazor's own delegated listeners land here (MEM-2 checks which). Mounted until it
     // listens, and read once the module has let go, so the baseline is not taken while an
     // attach or a dispose is still on the wire (a Server circuit's round trip).

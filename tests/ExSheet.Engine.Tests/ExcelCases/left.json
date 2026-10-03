@@ -1,0 +1,85 @@
+{
+  "area": "left",
+  "about": "LEFT (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "LEFT-001",
+      "source": "documented",
+      "description": "Microsoft's example: the first four characters",
+      "cells": {"A1": "Sale Price", "ZZ1000": "=LEFT(A1,4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Sale"}
+    },
+    {
+      "id": "LEFT-002",
+      "source": "documented",
+      "description": "Microsoft's example: num_chars left out is 1",
+      "cells": {"A1": "Sweden", "ZZ1000": "=LEFT(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "S"}
+    },
+    {
+      "id": "LEFT-003",
+      "source": "documented",
+      "description": "More characters than the text holds give the whole text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEFT(\"abc\",10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "abc"}
+    },
+    {
+      "id": "LEFT-004",
+      "source": "documented",
+      "description": "num_chars below 0 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEFT(\"abc\",-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "LEFT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number is read as its text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEFT(1234,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "12", "kind": "text"}
+    },
+    {
+      "id": "LEFT-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a boolean is read as its text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEFT(TRUE,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "T"}
+    },
+    {
+      "id": "LEFT-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: num_chars given empty is 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEFT(\"abc\",)&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "LEFT-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: num_chars is truncated",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEFT(\"abc\",1.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "a"}
+    },
+    {
+      "id": "LEFT-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LEFT(C2,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

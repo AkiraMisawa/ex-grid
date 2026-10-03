@@ -1,3 +1,4 @@
+using ExGrid.Components.Tests.Support;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -18,19 +19,12 @@ namespace ExGrid.Components.Tests;
 /// </summary>
 public class ShippedStylesheetTests
 {
+    // The sources of what ships (ADR-0123): the package serves their minified form, and
+    // ShippedAssetTests holds the two together, so a rule about how the code is written is read
+    // where it is written.
     private static IReadOnlyList<(string Path, string Text)> ShippedAssets()
     {
-        var manifest = Path.Combine(AppContext.BaseDirectory, "ExGrid.staticwebassets.runtime.json");
-        Assert.True(File.Exists(manifest), $"the package ships no static assets at all ({manifest})");
-
-        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        var roots = document.RootElement.GetProperty("ContentRoots")
-            .EnumerateArray().Select(root => root.GetString()!).ToList();
-        Assert.NotEmpty(roots);
-
-        var files = roots
-            .Where(Directory.Exists)
-            .SelectMany(root => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        var files = Directory.EnumerateFiles(AssetSources.Folder("ExGrid"))
             .Where(file => file.EndsWith(".css", StringComparison.Ordinal)
                         || file.EndsWith(".js", StringComparison.Ordinal))
             .Select(file => (Path: file, Text: File.ReadAllText(file)))
@@ -572,7 +566,7 @@ public class ShippedStylesheetTests
             .Where(line => line.Length > 0 && !char.IsWhiteSpace(line[0]) && !line.StartsWith("//", StringComparison.Ordinal)
                 && !line.StartsWith("/**", StringComparison.Ordinal))
             .ToList();
-        Assert.Equal(["export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys) {", "}"], topLevel);
+        Assert.Equal(["export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, canFind, declaredKeys, reportTimeZone) {", "}"], topLevel);
     }
 
     [Fact] // ADR-0021 (2026-09-28/29) / ED-26: a bar a passed-on press leaves holding DOM focus is the hand-back's to take only until that press is answered
@@ -958,7 +952,7 @@ public class ShippedStylesheetTests
         Assert.True(gate.Success, "the gate is not in the module");
 
         // Handed at attach and re-told with the claims, per instance.
-        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys\) \{"), script.Text);
+        Assert.Matches(new Regex(@"export function attach\([^)]*, declaredKeys, reportTimeZone\) \{"), script.Text);
         Assert.Matches(new Regex(@"let declared = new Set\(declaredKeys \?\? \[\]\);"), script.Text);
         Assert.Matches(new Regex(@"setClaims: \(takenKeys, editable, findable, declaredKeys\) => \{[^}]*declared = new Set\(declaredKeys \?\? \[\]\);", RegexOptions.Singleline), script.Text);
         // With no edit open they are among the taken keys, and only a taken one is asked about: the

@@ -1,0 +1,33 @@
+{
+  "area": "ln",
+  "about": "LN (ticket 05).",
+  "cases": [
+    {
+      "id": "LN-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LN(86)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4.454347296253507, "digits": 12}
+    },
+    {
+      "id": "LN-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LN(EXP(3))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3, "digits": 12}
+    },
+    {
+      "id": "LN-003",
+      "source": "documented",
+      "description": "A number not above 0 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LN(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

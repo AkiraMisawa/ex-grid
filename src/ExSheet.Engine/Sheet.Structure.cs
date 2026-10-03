@@ -122,12 +122,16 @@ public sealed partial class Sheet
         var dirty = new HashSet<CellAddress>();
         foreach (var cell in _cells.Values)
         {
+            // A spilled Value is its Anchor's to lay out again from wherever the Anchor moves (ADR-0125).
+            if (cell.Entry is null && cell.SpilledFrom is not null && !cell.IsFormatted) continue;
             if (edit.Move(cell.Address) is not { } to)
             {
                 dropped.Add((cell.Address, before[cell.Address]));
                 continue;
             }
             var entry = cell.Entry;
+            // ROW() and COLUMN() read their own cell's place, which a move changes without a word of the Formula's.
+            if (entry?.Parsed is { } own && to != cell.Address && ReadsOwnPlace(own)) dirty.Add(to);
             if (entry?.Parsed is { } parsed)
             {
                 var mapped = ReferenceRewriter.Rewrite(entry, r => edit.Map(r, this));
@@ -143,7 +147,8 @@ public sealed partial class Sheet
                 }
                 entry = mapped;
             }
-            var movedCell = new Cell(to) { Entry = entry, Value = cell.Value };
+            var movedCell = new Cell(to) { Entry = entry, Value = entry is null ? null : cell.Value };
+            if (cell.Array is not null) dirty.Add(to);
             movedCell.TakeFormatOf(cell);
             moved.Add(movedCell);
         }
@@ -160,4 +165,8 @@ public sealed partial class Sheet
             .ReformattingUnnamedRows();
         return new StructuralOutcome(change, dropped, rewritten, rowsBefore, columnsBefore, widthsBefore);
     }
+
+    /// <summary>Whether a Formula calls <c>ROW()</c> or <c>COLUMN()</c> with no argument: its Value is its own cell's place.</summary>
+    private static bool ReadsOwnPlace(Formulas.Node formula) =>
+        formula.Calls.Any(call => call.Function is not null && call.Name is "ROW" or "COLUMN" && call.Arguments.Count == 0);
 }

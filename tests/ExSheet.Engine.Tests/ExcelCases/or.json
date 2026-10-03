@@ -1,0 +1,78 @@
+{
+  "area": "or",
+  "about": "OR (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "OR-001",
+      "source": "documented",
+      "description": "OR with one TRUE is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(TRUE,FALSE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "OR-002",
+      "source": "documented",
+      "description": "OR of two FALSEs is FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(FALSE,FALSE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "OR-003",
+      "source": "documented",
+      "description": "Microsoft's example: neither condition holds",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(1+1=1,2+2=5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "OR-004",
+      "source": "documented",
+      "description": "Text and blanks inside a Reference are ignored",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(A4:A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "OR-005",
+      "source": "documented",
+      "description": "A Reference holding no logical value is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "OR-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number other than 0 inside a range is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(E1:E2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "OR-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a 0 in a Reference is FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(E1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "OR-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value in a Reference is the result, even beside a TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OR(TRUE,C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

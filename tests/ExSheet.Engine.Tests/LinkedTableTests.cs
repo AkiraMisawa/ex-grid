@@ -200,7 +200,7 @@ public class LinkedTableTests
     public void A_table_is_never_undeclared()
     {
         Assert.Equal(
-            ["DeclareLinkedTable", "PushLinkedTable", "get_LinkedTables"],
+            ["DeclareLinkedTable", "DeclareLinkedTable", "PushLinkedTable", "get_LinkedTables"],
             typeof(Sheet).GetMethods().Select(m => m.Name).Where(n => n.Contains("LinkedTable", StringComparison.Ordinal) || n.Contains("Undeclare", StringComparison.Ordinal)).Order(StringComparer.Ordinal));
     }
 
@@ -218,7 +218,7 @@ public class LinkedTableTests
         Assert.Equal(["Rates", "Trades"], Sheet.Open(document).LinkedTables.Select(t => t.Name));
     }
 
-    [Fact] // ADR-0049: after opening, an unknown column is still #REF!, and a one-row column still reads as its Value
+    [Fact] // ADR-0049 / ADR-0125: after opening, an unknown column is still #REF!, a one-row column still reads as its Value, and a longer one spills
     public void Opened_declarations_read_as_declared()
     {
         var sheet = NewSheet();
@@ -232,7 +232,9 @@ public class LinkedTableTests
         Assert.Equal(42, reopened.Number("A2"));
 
         reopened.PushLinkedTable("One", [[N(21)], [N(1)]]);
-        Assert.Equal(ErrorValue.Value, reopened.Error("A2"));
+        Assert.Equal(42, reopened.Number("A2"));
+        Assert.Equal(2, reopened.Number("A3"));
+        Assert.Equal(CellAddress.Parse("A2"), reopened.SpilledFrom(CellAddress.Parse("A3")));
 
         reopened.PushLinkedTable("One", []);
         Assert.Equal(ErrorValue.Value, reopened.Error("A2"));
@@ -508,6 +510,85 @@ public class LinkedTableTests
     [InlineData("""{"version":7,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"key":null}],"cells":[]}""")]
     [InlineData("""{"version":7,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["V"],"key":""}],"cells":[]}""")]
     public void A_bad_key_in_a_document_is_refused(string json)
+    {
+        Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
+    }
+
+    [Fact] // ADR-0058 (amended 2026-10-03): a key of several columns is declared as a list, spelled as the columns are
+    public void A_key_of_several_columns_is_declared()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Cds", ["Entity", "Tenor", "Spread"], ["entity", "TENOR"]);
+
+        var table = sheet.LinkedTables.Single();
+        Assert.Equal(["Entity", "Tenor"], table.KeyColumns);
+        Assert.Null(table.Key);
+        Assert.Empty(sheet.DeclareLinkedTable("Cds", ["Entity", "Tenor", "Spread"], ["Entity", "Tenor"]).ValueChanges);
+    }
+
+    [Theory] // ADR-0058 (amended 2026-10-03): a key column that is not a column, or is named twice, is refused
+    [InlineData("Entity", "Desk")]
+    [InlineData("Entity", "entity")]
+    public void A_bad_key_of_several_columns_is_refused(string first, string second)
+    {
+        var sheet = NewSheet();
+
+        Assert.Throws<ArgumentException>(() => sheet.DeclareLinkedTable("Cds", ["Entity", "Tenor", "Spread"], [first, second]));
+    }
+
+    [Fact] // ADR-0058 (amended 2026-10-03): a snapshot in which two rows hold the same Values in every key column is refused, and the table waits
+    public void A_repeated_key_of_several_columns_is_refused()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Cds", ["Entity", "Tenor", "Spread"], ["Entity", "Tenor"]);
+        sheet.Enter("A1", "=SUM(Cds[Spread])");
+
+        sheet.PushLinkedTable("Cds", [[T("ACME"), T("5Y"), N(1)], [T("ACME"), T("10Y"), N(2)], [T("BETA"), T("5Y"), N(3)]]);
+        Assert.Equal(6, sheet.Number("A1"));
+
+        var refused = Assert.Throws<RepeatedKeyException>(() =>
+            sheet.PushLinkedTable("Cds", [[T("ACME"), T("5Y"), N(1)], [T("ACME"), T("10Y"), N(2)], [T("acme"), T("5y"), N(3)]]));
+
+        Assert.Equal(["Entity", "Tenor"], refused.KeyColumns);
+        Assert.Equal([Value.FromText("ACME"), Value.FromText("5Y")], refused.Keys);
+        Assert.Equal((0, 2), (refused.FirstRow, refused.SecondRow));
+        Assert.Contains("'Entity', 'Tenor'", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(ErrorValue.GettingData, sheet.Error("A1"));
+    }
+
+    [Fact] // ADR-0058 (amended 2026-10-03): a row with a blank part of its key has no key, as a blank key is none
+    public void A_blank_part_is_no_key()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Cds", ["Entity", "Tenor", "Spread"], ["Entity", "Tenor"]);
+
+        sheet.PushLinkedTable("Cds", [[T("ACME"), null, N(1)], [T("ACME"), null, N(2)]]);
+
+        Assert.False(sheet.LinkedTables.Single().IsWaiting);
+    }
+
+    [Fact] // ADR-0058 (amended 2026-10-03), ADR-0048: a key of several columns is recorded as a list at version 9, and one column still as its name
+    public void A_key_of_several_columns_round_trips()
+    {
+        var sheet = NewSheet();
+        sheet.DeclareLinkedTable("Cds", ["Entity", "Tenor", "Spread"], ["Entity", "Tenor"]);
+        sheet.DeclareLinkedTable("Positions", ["Id", "PV"], key: "Id");
+
+        var json = sheet.ToDocument().ToJson();
+        var reopened = Sheet.Open(SheetDocument.FromJson(json));
+
+        Assert.Contains("\"key\":[\"Entity\",\"Tenor\"]", json, StringComparison.Ordinal);
+        Assert.Contains("\"key\":\"Id\"", json, StringComparison.Ordinal);
+        Assert.Equal(["Entity", "Tenor"], reopened.LinkedTables[0].KeyColumns);
+        Assert.Equal("Id", reopened.LinkedTables[1].Key);
+    }
+
+    [Theory] // ADR-0048: a key of several columns is not part of version 8, and a list of one column is not one
+    [InlineData("""{"version":8,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["A","B"],"key":["A","B"]}],"cells":[]}""")]
+    [InlineData("""{"version":9,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["A","B"],"key":["A"]}],"cells":[]}""")]
+    [InlineData("""{"version":9,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["A","B"],"key":["A","C"]}],"cells":[]}""")]
+    [InlineData("""{"version":9,"culture":"en-US","name":"Sheet1","linkedTables":[{"name":"T","columns":["A","B"],"key":["A",1]}],"cells":[]}""")]
+    public void A_bad_key_of_several_columns_in_a_document_is_refused(string json)
     {
         Assert.Throws<SheetDocumentException>(() => SheetDocument.FromJson(json));
     }

@@ -1,0 +1,51 @@
+{
+  "area": "xor",
+  "about": "XOR (ticket 05).",
+  "cases": [
+    {
+      "id": "XOR-001",
+      "source": "documented",
+      "description": "Microsoft's example: both TRUE is FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=XOR(3>0,2<9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "XOR-002",
+      "source": "documented",
+      "description": "Microsoft's example: both FALSE is FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=XOR(3>12,4>6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "XOR-003",
+      "source": "documented",
+      "description": "One TRUE is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=XOR(3>0,2>9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "XOR-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: three TRUEs are TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=XOR(TRUE,TRUE,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "XOR-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: no logical value is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=XOR(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

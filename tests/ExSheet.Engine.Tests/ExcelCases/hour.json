@@ -1,0 +1,42 @@
+{
+  "area": "hour",
+  "about": "HOUR (ticket 05).",
+  "cases": [
+    {
+      "id": "HOUR-001",
+      "source": "documented",
+      "description": "Microsoft's example: three quarters of a day",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=HOUR(0.75)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 18}
+    },
+    {
+      "id": "HOUR-002",
+      "source": "documented",
+      "description": "Microsoft's example: a date and time",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=HOUR(40742.322916666664)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "HOUR-003",
+      "source": "documented",
+      "description": "Microsoft's example: a date alone is hour 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=HOUR(41020)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "HOUR-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a moment before the hour rounds up to it",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=HOUR(0.999999999)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    }
+  ]
+}

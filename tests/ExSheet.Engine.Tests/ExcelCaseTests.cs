@@ -72,6 +72,258 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "xlookup")] // ADR-0047/0049
     public void XLookup(string id) => Run("xlookup", id);
 
+    [Theory, MemberData(nameof(Ids), "and")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void And(string id) => Run("and", id);
+
+    [Theory, MemberData(nameof(Ids), "or")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Or(string id) => Run("or", id);
+
+    [Theory, MemberData(nameof(Ids), "not")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Not(string id) => Run("not", id);
+
+    [Theory, MemberData(nameof(Ids), "ifna")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void IfNa(string id) => Run("ifna", id);
+
+    [Theory, MemberData(nameof(Ids), "isblank")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void IsBlank(string id) => Run("isblank", id);
+
+    [Theory, MemberData(nameof(Ids), "isnumber")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void IsNumber(string id) => Run("isnumber", id);
+
+    [Theory, MemberData(nameof(Ids), "roundup")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void RoundUp(string id) => Run("roundup", id);
+
+    [Theory, MemberData(nameof(Ids), "rounddown")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void RoundDown(string id) => Run("rounddown", id);
+
+    [Theory, MemberData(nameof(Ids), "abs")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Abs(string id) => Run("abs", id);
+
+    [Theory, MemberData(nameof(Ids), "int")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Int(string id) => Run("int", id);
+
+    [Theory, MemberData(nameof(Ids), "mod")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Mod(string id) => Run("mod", id);
+
+    [Theory, MemberData(nameof(Ids), "date")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Date(string id) => Run("date", id);
+
+    [Theory, MemberData(nameof(Ids), "year")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Year(string id) => Run("year", id);
+
+    [Theory, MemberData(nameof(Ids), "month")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Month(string id) => Run("month", id);
+
+    [Theory, MemberData(nameof(Ids), "day")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Day(string id) => Run("day", id);
+
+    [Theory, MemberData(nameof(Ids), "eomonth")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void EoMonth(string id) => Run("eomonth", id);
+
+    [Theory, MemberData(nameof(Ids), "edate")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void EDate(string id) => Run("edate", id);
+
+    [Theory, MemberData(nameof(Ids), "left")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Left(string id) => Run("left", id);
+
+    [Theory, MemberData(nameof(Ids), "right")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Right(string id) => Run("right", id);
+
+    [Theory, MemberData(nameof(Ids), "mid")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Mid(string id) => Run("mid", id);
+
+    [Theory, MemberData(nameof(Ids), "len")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Len(string id) => Run("len", id);
+
+    [Theory, MemberData(nameof(Ids), "trim")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Trim(string id) => Run("trim", id);
+
+    [Theory, MemberData(nameof(Ids), "concat")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Concat(string id) => Run("concat", id);
+
+    [Theory, MemberData(nameof(Ids), "index")] // ADR-0047, docs/specs/exsheet-functions ticket 01
+    public void Index(string id) => Run("index", id);
+
+    [Theory, MemberData(nameof(Ids), "text")] // ADR-0120: TEXT reads its code in the invariant spelling, as a cell format shows it
+    public void Text(string id) => Run("text", id);
+
+    [Theory, MemberData(nameof(Ids), "product")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Product(string id) => Run("product", id);
+
+    [Theory, MemberData(nameof(Ids), "median")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Median(string id) => Run("median", id);
+
+    [Theory, MemberData(nameof(Ids), "large")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Large(string id) => Run("large", id);
+
+    [Theory, MemberData(nameof(Ids), "small")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Small(string id) => Run("small", id);
+
+    [Theory, MemberData(nameof(Ids), "istext")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void IsText(string id) => Run("istext", id);
+
+    [Theory, MemberData(nameof(Ids), "isna")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void IsNa(string id) => Run("isna", id);
+
+    [Theory, MemberData(nameof(Ids), "na")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Na(string id) => Run("na", id);
+
+    [Theory, MemberData(nameof(Ids), "ifs")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Ifs(string id) => Run("ifs", id);
+
+    [Theory, MemberData(nameof(Ids), "switch")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Switch(string id) => Run("switch", id);
+
+    [Theory, MemberData(nameof(Ids), "filter")] // ADR-0125
+    public void Filter(string id) => Run("filter", id);
+
+    [Theory, MemberData(nameof(Ids), "unique")] // ADR-0125
+    public void Unique(string id) => Run("unique", id);
+
+    [Theory, MemberData(nameof(Ids), "sort")] // ADR-0125
+    public void Sort(string id) => Run("sort", id);
+
+    [Theory, MemberData(nameof(Ids), "sortby")] // ADR-0125
+    public void SortBy(string id) => Run("sortby", id);
+
+    [Theory, MemberData(nameof(Ids), "sequence")] // ADR-0125
+    public void Sequence(string id) => Run("sequence", id);
+
+    [Theory, MemberData(nameof(Ids), "transpose")] // ADR-0125
+    public void Transpose(string id) => Run("transpose", id);
+
+    [Theory, MemberData(nameof(Ids), "sumproduct")] // ADR-0125
+    public void SumProduct(string id) => Run("sumproduct", id);
+
+    [Theory, MemberData(nameof(Ids), "xmatch")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void XMatch(string id) => Run("xmatch", id);
+
+    [Theory, MemberData(nameof(Ids), "choose")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Choose(string id) => Run("choose", id);
+
+    [Theory, MemberData(nameof(Ids), "row")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Row(string id) => Run("row", id);
+
+    [Theory, MemberData(nameof(Ids), "column")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Column(string id) => Run("column", id);
+
+    [Theory, MemberData(nameof(Ids), "trunc")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Trunc(string id) => Run("trunc", id);
+
+    [Theory, MemberData(nameof(Ids), "power")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Power(string id) => Run("power", id);
+
+    [Theory, MemberData(nameof(Ids), "sqrt")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Sqrt(string id) => Run("sqrt", id);
+
+    [Theory, MemberData(nameof(Ids), "weekday")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Weekday(string id) => Run("weekday", id);
+
+    [Theory, MemberData(nameof(Ids), "days")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Days(string id) => Run("days", id);
+
+    [Theory, MemberData(nameof(Ids), "networkdays")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void NetworkDays(string id) => Run("networkdays", id);
+
+    [Theory, MemberData(nameof(Ids), "workday")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Workday(string id) => Run("workday", id);
+
+    [Theory, MemberData(nameof(Ids), "textjoin")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void TextJoin(string id) => Run("textjoin", id);
+
+    [Theory, MemberData(nameof(Ids), "concatenate")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Concatenate(string id) => Run("concatenate", id);
+
+    [Theory, MemberData(nameof(Ids), "substitute")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Substitute(string id) => Run("substitute", id);
+
+    [Theory, MemberData(nameof(Ids), "replace")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Replace(string id) => Run("replace", id);
+
+    [Theory, MemberData(nameof(Ids), "find")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Find(string id) => Run("find", id);
+
+    [Theory, MemberData(nameof(Ids), "pmt")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Pmt(string id) => Run("pmt", id);
+
+    [Theory, MemberData(nameof(Ids), "pv")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Pv(string id) => Run("pv", id);
+
+    [Theory, MemberData(nameof(Ids), "fv")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Fv(string id) => Run("fv", id);
+
+    [Theory, MemberData(nameof(Ids), "npv")] // ADR-0047, docs/specs/exsheet-functions ticket 04
+    public void Npv(string id) => Run("npv", id);
+
+    [Theory, MemberData(nameof(Ids), "rank-eq")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void RankEq(string id) => Run("rank-eq", id);
+
+    [Theory, MemberData(nameof(Ids), "stdev-s")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void StdevS(string id) => Run("stdev-s", id);
+
+    [Theory, MemberData(nameof(Ids), "stdev-p")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void StdevP(string id) => Run("stdev-p", id);
+
+    [Theory, MemberData(nameof(Ids), "var-s")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void VarS(string id) => Run("var-s", id);
+
+    [Theory, MemberData(nameof(Ids), "var-p")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void VarP(string id) => Run("var-p", id);
+
+    [Theory, MemberData(nameof(Ids), "xor")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Xor(string id) => Run("xor", id);
+
+    [Theory, MemberData(nameof(Ids), "rows")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Rows(string id) => Run("rows", id);
+
+    [Theory, MemberData(nameof(Ids), "columns")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Columns(string id) => Run("columns", id);
+
+    [Theory, MemberData(nameof(Ids), "sign")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Sign(string id) => Run("sign", id);
+
+    [Theory, MemberData(nameof(Ids), "exp")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Exp(string id) => Run("exp", id);
+
+    [Theory, MemberData(nameof(Ids), "ln")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Ln(string id) => Run("ln", id);
+
+    [Theory, MemberData(nameof(Ids), "log10")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Log10(string id) => Run("log10", id);
+
+    [Theory, MemberData(nameof(Ids), "pi")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Pi(string id) => Run("pi", id);
+
+    [Theory, MemberData(nameof(Ids), "time")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Time(string id) => Run("time", id);
+
+    [Theory, MemberData(nameof(Ids), "hour")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Hour(string id) => Run("hour", id);
+
+    [Theory, MemberData(nameof(Ids), "minute")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Minute(string id) => Run("minute", id);
+
+    [Theory, MemberData(nameof(Ids), "second")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Second(string id) => Run("second", id);
+
+    [Theory, MemberData(nameof(Ids), "rept")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Rept(string id) => Run("rept", id);
+
+    [Theory, MemberData(nameof(Ids), "exact")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void Exact(string id) => Run("exact", id);
+
+    [Theory, MemberData(nameof(Ids), "numbervalue")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void NumberValue(string id) => Run("numbervalue", id);
+
+    [Theory, MemberData(nameof(Ids), "xnpv")] // ADR-0047, docs/specs/exsheet-functions ticket 05
+    public void XNpv(string id) => Run("xnpv", id);
+
+    [Theory, MemberData(nameof(Ids), "value")] // ADR-0124, docs/specs/exsheet-functions ticket 06
+    public void ValueFunction(string id) => Run("value", id);
+
+    [Theory, MemberData(nameof(Ids), "offset")] // ADR-0124, docs/specs/exsheet-functions ticket 06
+    public void OffsetFunction(string id) => Run("offset", id);
+
     [Theory, MemberData(nameof(Ids), "typed-constants")] // ADR-0048: constants read under the Sheet's culture
     public void TypedConstants(string id) => Run("typed-constants", id);
 
@@ -107,8 +359,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "arithmetic", "average", "column-widths", "copy", "count", "counta", "dates", "errors", "fill", "format-levels", "formula-formats", "formula-text", "general-width", "if", "iferror", "iserror",
-        "linked-tables", "max", "min", "number-formats", "references", "round", "sheet-names", "structure", "sum", "typed-constants", "xlookup",
+        "abs", "and", "arithmetic", "average", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "count", "counta", "date", "dates", "day", "days", "edate", "eomonth", "errors", "exact", "exp", "fill", "filter", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hour", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "ln", "log10", "max", "median", "mid", "min", "minute", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "pv", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "second", "sequence", "sheet-names", "sign", "small", "sort", "sortby", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "sum", "sumproduct", "switch", "text", "textjoin", "time", "transpose", "trim", "trunc", "typed-constants", "unique", "value", "var-p", "var-s", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

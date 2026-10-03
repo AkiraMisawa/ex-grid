@@ -1,0 +1,87 @@
+{
+  "area": "mod",
+  "about": "MOD (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "MOD-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(3,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "MOD-002",
+      "source": "documented",
+      "description": "Microsoft's example: the sign is the divisor's",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(-3,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "MOD-003",
+      "source": "documented",
+      "description": "Microsoft's example: the sign is the divisor's",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(3,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1}
+    },
+    {
+      "id": "MOD-004",
+      "source": "documented",
+      "description": "Microsoft's example: the sign is the divisor's",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(-3,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -1}
+    },
+    {
+      "id": "MOD-005",
+      "source": "documented",
+      "description": "A divisor of 0 is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(3,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "MOD-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a fractional remainder",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(5.5,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.5, "digits": 12}
+    },
+    {
+      "id": "MOD-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a fractional remainder of a negative number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(-7.5,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5, "digits": 12}
+    },
+    {
+      "id": "MOD-008",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a quotient of 2^27 or more, where older versions of Excel gave #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(2^27,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "MOD-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 0.3 over 0.1 leaves almost 0.1 in doubles",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MOD(0.3,0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.1, "digits": 12}
+    }
+  ]
+}

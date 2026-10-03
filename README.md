@@ -105,7 +105,7 @@ dotnet add package ExGrid --prerelease
 Link the stylesheet in your host page (`wwwroot/index.html`, or `App.razor` in a Blazor Web App):
 
 ```html
-<link rel="stylesheet" href="_content/ExGrid/ex-grid.css" />
+<link rel="stylesheet" href="_content/ExGrid/ex-grid.min.css" />
 ```
 
 ```razor

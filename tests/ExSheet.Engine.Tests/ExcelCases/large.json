@@ -1,0 +1,64 @@
+{
+  "area": "large",
+  "about": "LARGE (ticket 04).",
+  "cases": [
+    {
+      "id": "LARGE-001",
+      "source": "documented",
+      "description": "Microsoft's example: the third largest",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5}
+    },
+    {
+      "id": "LARGE-002",
+      "source": "documented",
+      "description": "Microsoft's example: the seventh largest",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "LARGE-003",
+      "source": "documented",
+      "description": "k past the count is #NUM!",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,11)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "LARGE-004",
+      "source": "documented",
+      "description": "k below 1 is #NUM!",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "LARGE-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text and booleans in a range are passed over",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LARGE(A1:A7,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "LARGE-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an empty range is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=LARGE(A5,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "LARGE-007",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a k that is not a whole number",
+      "cells": {"A1": "3", "A2": "5", "A3": "3", "A4": "5", "A5": "4", "B1": "4", "B2": "2", "B3": "4", "B4": "6", "B5": "7", "ZZ1000": "=LARGE(A1:B5,1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

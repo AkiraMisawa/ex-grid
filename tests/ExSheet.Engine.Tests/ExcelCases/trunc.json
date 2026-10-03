@@ -1,0 +1,42 @@
+{
+  "area": "trunc",
+  "about": "TRUNC (ticket 04).",
+  "cases": [
+    {
+      "id": "TRUNC-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TRUNC(8.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 8}
+    },
+    {
+      "id": "TRUNC-002",
+      "source": "documented",
+      "description": "Microsoft's example: toward zero",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TRUNC(-8.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -8}
+    },
+    {
+      "id": "TRUNC-003",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TRUNC(0.45)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "TRUNC-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: to two digits",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TRUNC(3.14159,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.14, "digits": 12}
+    }
+  ]
+}

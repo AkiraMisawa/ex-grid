@@ -1,0 +1,33 @@
+{
+  "area": "concatenate",
+  "about": "CONCATENATE (ticket 04).",
+  "cases": [
+    {
+      "id": "CONCATENATE-001",
+      "source": "documented",
+      "description": "Microsoft's example: text and cells joined",
+      "cells": {"A1": "brook trout", "A2": "species", "A3": "32", "ZZ1000": "=CONCATENATE(\"Stream population for \",A1,\" \",A2,\" is \",A3,\"/mile.\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Stream population for brook trout species is 32/mile."}
+    },
+    {
+      "id": "CONCATENATE-002",
+      "source": "documented",
+      "description": "Microsoft's example: two cells and a space",
+      "cells": {"A1": "Andreas", "A2": "Hauser", "ZZ1000": "=CONCATENATE(A1,\" \",A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Andreas Hauser"}
+    },
+    {
+      "id": "CONCATENATE-003",
+      "source": "uncertain",
+      "description": "A range of several cells would spill",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CONCATENATE(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0125: functions are not lifted over arrays yet; an array where the function wants one Value is #VALUE!, where Excel 365 lifts it and spills",
+      "excelExpect": {"value2": "1"}
+    }
+  ]
+}

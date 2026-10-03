@@ -1,0 +1,84 @@
+{
+  "area": "edate",
+  "about": "EDATE (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "EDATE-001",
+      "source": "documented",
+      "description": "Microsoft's example: one month after 15 January 2011",
+      "cells": {"A1": "1/15/2011", "ZZ1000": "=EDATE(A1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 40589}
+    },
+    {
+      "id": "EDATE-002",
+      "source": "documented",
+      "description": "Microsoft's example: one month before",
+      "cells": {"A1": "1/15/2011", "ZZ1000": "=EDATE(A1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 40527}
+    },
+    {
+      "id": "EDATE-003",
+      "source": "documented",
+      "description": "Microsoft's example: two months after",
+      "cells": {"A1": "1/15/2011", "ZZ1000": "=EDATE(A1,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 40617}
+    },
+    {
+      "id": "EDATE-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a day the month does not have is its last day",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(DATE(2011,1,31),1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 40602}
+    },
+    {
+      "id": "EDATE-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: into February of a leap year",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(DATE(2024,1,31),1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 45351}
+    },
+    {
+      "id": "EDATE-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: months that are not whole are truncated",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(DATE(2011,1,15),-1.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 40527}
+    },
+    {
+      "id": "EDATE-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start date below 0 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(-1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "EDATE-008",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a result before 1 March 1900",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(DATE(1900,3,15),-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "EDATE-009",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: a boolean typed as an argument",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EDATE(TRUE,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

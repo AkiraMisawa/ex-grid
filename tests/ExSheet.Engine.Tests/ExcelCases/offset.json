@@ -1,0 +1,49 @@
+{
+  "area": "offset",
+  "about": "OFFSET (ADR-0124, a volatile function).",
+  "cases": [
+    {
+      "id": "OFFSET-001",
+      "source": "documented",
+      "description": "Microsoft's example: three rows down and two columns left of D3",
+      "cells": {"B6": "7", "ZZ1000": "=OFFSET(D3,3,-2,1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7}
+    },
+    {
+      "id": "OFFSET-002",
+      "source": "documented",
+      "description": "Microsoft's example: SUM over a moved range of three by three",
+      "cells": {"B6": "1", "C6": "2", "D6": "3", "B7": "4", "C7": "5", "D7": "6", "B8": "7", "C8": "8", "D8": "9", "ZZ1000": "=SUM(OFFSET(D3:F5,3,-2,3,3))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 45}
+    },
+    {
+      "id": "OFFSET-003",
+      "source": "documented",
+      "description": "Microsoft's example: a Reference past the Sheet's edge is #REF!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=OFFSET(D3,-3,-3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "OFFSET-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a height of 0 is #REF!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(OFFSET(A1,0,0,0,1))"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#REF!"}
+    },
+    {
+      "id": "OFFSET-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the size is the reference's own when left out (A2:A3, whose text is passed over)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SUM(OFFSET(A1:A2,1,0))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    }
+  ]
+}

@@ -17,19 +17,22 @@ public class FormulaEntryTests
     }
 
     [Theory] // ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case
-    [InlineData("=SU|", new[] { "SUM" })]
-    [InlineData("=su|", new[] { "SUM" })]
-    [InlineData("=I|", new[] { "IF", "IFERROR", "ISERROR" })]
+    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUM", "SUMPRODUCT" })]
+    [InlineData("=su|", new[] { "SUBSTITUTE", "SUM", "SUMPRODUCT" })]
+    [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
-    [InlineData("=1+co|", new[] { "COUNT", "COUNTA" })]
-    [InlineData("=SUM(A1,m|", new[] { "MAX", "MIN" })]
-    [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP" })]
+    [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COUNT", "COUNTA" })]
+    [InlineData("=SUM(A1,m|", new[] { "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH" })]
+    [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP", "XMATCH", "XNPV", "XOR" })]
+    [InlineData("=LOG1|", new[] { "LOG10" })]
     public void Completion_offers_declared_functions(string marked, string[] expected)
     {
         Assert.Equal(expected, Names(marked));
     }
 
     [Theory] // ADR-0051: no completion where no name is being typed, or nothing matches
+    [InlineData("=F|3")]
+    [InlineData("=SUM(F|3)")]
     [InlineData("=|")]
     [InlineData("=SUM(|")]
     [InlineData("=\"SU|")]
@@ -47,19 +50,19 @@ public class FormulaEntryTests
     [Fact] // ADR-0049/0051: Linked Tables' names are offered beside the functions, in one alphabetical list
     public void Completion_offers_linked_tables()
     {
-        Assert.Equal(["Accounts", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
-        Assert.Equal(["Positions"], Names("=SUM(po|", "Positions", "Accounts")!);
+        Assert.Equal(["ABS", "Accounts", "AND", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
+        Assert.Equal(["Positions"], Names("=SUM(pos|", "Positions", "Accounts")!);
     }
 
     [Fact] // ADR-0051: accepting a candidate replaces the whole name at the caret with the candidate's text
     public void A_completion_names_what_it_replaces()
     {
-        var (text, caret) = AtCaret("=1+SU|M(A1)");
+        var (text, caret) = AtCaret("=1+SUM|(A1)");
         var completion = FormulaEntry.Complete(text, caret, [])!;
 
         Assert.Equal(3, completion.Start);
         Assert.Equal(3, completion.Length);
-        var sum = Assert.Single(completion.Candidates);
+        var sum = Assert.Single(completion.Candidates, c => c.InsertText == "SUM(");
         Assert.Equal("SUM(", sum.InsertText);
         Assert.Equal(CompletionKind.Function, sum.Kind);
         Assert.Equal("Adds its arguments.", sum.Description);

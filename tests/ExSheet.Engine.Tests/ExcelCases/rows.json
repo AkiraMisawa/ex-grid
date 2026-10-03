@@ -1,0 +1,33 @@
+{
+  "area": "rows",
+  "about": "ROWS (ticket 05).",
+  "cases": [
+    {
+      "id": "ROWS-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROWS(C1:E4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "ROWS-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a whole column",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROWS(A:A)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1048576}
+    },
+    {
+      "id": "ROWS-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a single value is one row",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROWS(5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    }
+  ]
+}

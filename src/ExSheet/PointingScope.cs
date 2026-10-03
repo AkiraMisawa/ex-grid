@@ -379,9 +379,10 @@ public sealed class PointingScope
 
     /// <summary>
     /// What a cell of a registered grid writes, <c>XLOOKUP(&lt;key&gt;, T[&lt;key column&gt;],
-    /// T[&lt;column&gt;])</c>, and the dashes that find it by its row's key; or null, with the reason
-    /// nothing is written: a row that has not arrived, a table declared without a key, a blank key or
-    /// an Error Value as the key.
+    /// T[&lt;column&gt;])</c>, or for a key of several columns <c>XLOOKUP(1, (T[K1]=v1)*(T[K2]=v2),
+    /// T[&lt;column&gt;])</c> (ADR-0058, amended 2026-10-03), and the dashes that find it by its row's
+    /// key; or null, with the reason nothing is written: a row that has not arrived, a table declared
+    /// without a key, a blank key or an Error Value as the key, or as any part of it.
     /// </summary>
     private static (string Text, PointDashes Dashes)? CellLookup(
         LinkedTable table, string tableColumn, string gridColumn, Func<IReadOnlyList<Value?>>? row, out PointingRefusalReason refused)
@@ -392,7 +393,8 @@ public sealed class PointingScope
             refused = PointingRefusalReason.RowNotArrived;
             return null;
         }
-        if (table.Key is not { } keyColumn)
+        var keyColumns = table.KeyColumns;
+        if (keyColumns.Count == 0)
         {
             refused = PointingRefusalReason.NoKey;
             return null;
@@ -404,20 +406,25 @@ public sealed class PointingScope
                 $"The row a grid registered for '{table.Name}' gave has {values?.Count ?? 0} Values, and the table declares {table.Columns.Count} columns: " +
                 "RegisterGrid's tableRow gives one Value per declared column, in the declared order, as a push does (ADR-0058).");
         }
-        var keyIndex = IndexOf(table, keyColumn);
-        if (values[keyIndex] is not { } key)
+        var keyIndexes = keyColumns.Select(k => IndexOf(table, k)).ToArray();
+        var keys = new Value[keyIndexes.Length];
+        for (var i = 0; i < keyIndexes.Length; i++)
         {
-            refused = PointingRefusalReason.BlankKey;
-            return null;
-        }
-        if (key.IsError)
-        {
-            refused = PointingRefusalReason.KeyIsAnError;
-            return null;
+            if (values[keyIndexes[i]] is not { } key)
+            {
+                refused = PointingRefusalReason.BlankKey;
+                return null;
+            }
+            if (key.IsError)
+            {
+                refused = PointingRefusalReason.KeyIsAnError;
+                return null;
+            }
+            keys[i] = key;
         }
         var width = table.Columns.Count;
-        return (FormulaEntry.LookupText(table.Name, keyColumn, key, tableColumn),
-            new PointDashes(gridColumn, candidate => candidate.Count == width && FormulaEntry.LookupFinds(key, candidate[keyIndex])));
+        return (FormulaEntry.LookupText(table.Name, keyColumns, keys, tableColumn),
+            new PointDashes(gridColumn, candidate => candidate.Count == width && FormulaEntry.LookupFinds(keys, [.. keyIndexes.Select(i => candidate[i])])));
     }
 
     private static Task RefuseAsync(IPointingSheet sheet, PointingRefusalReason reason, string table, string? column, bool tookBack)

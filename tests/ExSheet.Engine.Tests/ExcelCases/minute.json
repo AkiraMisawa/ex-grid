@@ -1,0 +1,23 @@
+{
+  "area": "minute",
+  "about": "MINUTE (ticket 05).",
+  "cases": [
+    {
+      "id": "MINUTE-001",
+      "source": "documented",
+      "description": "Microsoft's example: 12:45",
+      "cells": {"A1": "12:45", "ZZ1000": "=MINUTE(A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 45}
+    },
+    {
+      "id": "MINUTE-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative serial is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MINUTE(-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

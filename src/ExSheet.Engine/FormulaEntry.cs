@@ -199,6 +199,9 @@ public static partial class FormulaEntry
         if (token.Kind != TokenKind.Operand || token.Unterminated) return null;
         var prefix = text[token.Start..caret];
         if (!NamePattern().IsMatch(prefix) || !OperandMayStart(tokens, index)) return null;
+        // Inside a Reference no name is being typed: =F|3 is the cell F3 with the caret in it. At its
+        // end the text may still be a name's beginning (=LOG1 lists LOG10), as Excel's list shows.
+        if (caret < token.End && Formulas.Lexer.ReadReference(text, token.Start, out var length) is not null && token.Start + length == token.End) return null;
 
         var candidates = DeclaredFunction.All
             .Where(f => f.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
@@ -481,7 +484,55 @@ public static partial class FormulaEntry
     }
 
     /// <summary>
-    /// Whether the lookup <see cref="LookupText"/> writes for <paramref name="key"/> finds a row whose
+    /// What Point writes for a pressed cell of a Linked Table whose key is several columns, through a
+    /// Pointing Scope (ADR-0058, amended 2026-10-03): the lookup that reads the cell by every part of
+    /// its row's key, <c>XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])</c>. Each part
+    /// is compared as the <c>=</c> operator compares, and the row whose parts all match is the one
+    /// read. For a key of one column it is <see cref="LookupText(string, string, Value, string)"/>.
+    /// </summary>
+    /// <param name="table">The table's name, as declared.</param>
+    /// <param name="keyColumns">The table's key columns, as declared, in the declared order.</param>
+    /// <param name="keys">The row's key, one Value per key column: text, a number or a boolean.</param>
+    /// <param name="column">The pressed column, as declared.</param>
+    /// <exception cref="ArgumentException">A name is null or empty, the key has not one Value per key
+    /// column, or a part of it is an Error Value, which no lookup finds.</exception>
+    public static string LookupText(string table, IReadOnlyList<string> keyColumns, IReadOnlyList<Value> keys, string column)
+    {
+        ArgumentNullException.ThrowIfNull(keyColumns);
+        ArgumentNullException.ThrowIfNull(keys);
+        if (keyColumns.Count == 0 || keyColumns.Count != keys.Count) throw new ArgumentException("The key has one Value per key column.", nameof(keys));
+        if (keyColumns.Count == 1) return LookupText(table, keyColumns[0], keys[0], column);
+        var parts = keyColumns.Select((keyColumn, i) =>
+            "(" + StructuredReferenceText(table, keyColumn) + "="
+            + (ConstantText(keys[i]) ?? throw new ArgumentException("An Error Value is not a key a lookup finds (ADR-0058).", nameof(keys))) + ")");
+        return "XLOOKUP(1, " + string.Join("*", parts) + ", " + StructuredReferenceText(table, column) + ")";
+    }
+
+    /// <summary>
+    /// Whether the lookup <see cref="LookupText(string, IReadOnlyList{string}, IReadOnlyList{Value}, string)"/>
+    /// writes for <paramref name="keys"/> finds a row whose key is <paramref name="candidates"/>: every
+    /// part equal as the <c>=</c> operator finds it — of one kind, text without regard to case,
+    /// numbers at Excel's fifteen digits — and none blank or an Error Value. For a key of one column
+    /// it is <see cref="LookupFinds(Value, Value?)"/>.
+    /// </summary>
+    /// <param name="keys">The key the lookup was written for, one Value per key column.</param>
+    /// <param name="candidates">A row's key, one Value per key column; <see langword="null"/> is a blank.</param>
+    public static bool LookupFinds(IReadOnlyList<Value> keys, IReadOnlyList<Value?> candidates)
+    {
+        ArgumentNullException.ThrowIfNull(keys);
+        ArgumentNullException.ThrowIfNull(candidates);
+        if (keys.Count != candidates.Count) return false;
+        if (keys.Count == 1) return LookupFinds(keys[0], candidates[0]);
+        for (var i = 0; i < keys.Count; i++)
+        {
+            if (candidates[i] is not { } value || value.Kind != keys[i].Kind || keys[i].IsError) return false;
+            if (Formulas.Evaluator.Compare(value, keys[i], Formulas.Arithmetic.ApproximatelyEqual) != 0) return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Whether the lookup <see cref="LookupText(string, string, Value, string)"/> writes for <paramref name="key"/> finds a row whose
     /// key is <paramref name="candidate"/>: <c>XLOOKUP</c>'s exact match, which tells a number from
     /// text and text apart without regard to case, and never matches a blank or an Error Value. A
     /// Pointing Scope finds the row a press was written for by it, wherever the grid that shows the

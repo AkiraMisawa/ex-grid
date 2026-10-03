@@ -228,4 +228,38 @@ public class FormulaBarDisplayTests : GridTestContext
         Assert.Equal("Namenfeld", renamed.Find("input.ex-name-box").GetAttribute("aria-label"));
         Assert.Equal("Bearbeitungsleiste", renamed.Find("input.ex-formula-bar-text").GetAttribute("aria-label"));
     }
+
+    // ADR-0125: Book on row 2 shows another cell's text, as a spilled cell shows its Anchor's Formula.
+    private static string? Borrowed(TestRow row, GridColumn<TestRow> column)
+        => column.Name == "Book" && row.Book == "Row 000002" ? "=A1:A3" : null;
+
+    [Fact] // ADR-0125: borrowed text is shown dimmed and read-only, and a press on the bar opens no edit; the cell's own text is not dimmed
+    public async Task Borrowed_text_is_shown_dimmed_and_opens_no_edit()
+    {
+        var cut = RenderGrid(ps => { WithBar(ps); ps.Add(g => g.FormulaBarBorrowedTextOf, Borrowed); });
+        await ClickAsync(cut, 50, 45);                           // Book, row 2
+
+        var bar = cut.Find("input.ex-formula-bar-text");
+        Assert.Equal("=A1:A3", bar.GetAttribute("value"));
+        Assert.Contains("ex-formula-bar-borrowed", bar.ClassList);
+        Assert.True(bar.HasAttribute("readonly"));
+        await bar.FocusAsync(new FocusEventArgs());
+        Assert.Empty(cut.FindAll(".ex-editing"));
+
+        await ClickAsync(cut, 50, 25);                           // Book, row 1: its own text
+        Assert.DoesNotContain("ex-formula-bar-borrowed", cut.Find("input.ex-formula-bar-text").ClassList);
+        Assert.False(cut.Find("input.ex-formula-bar-text").HasAttribute("readonly"));
+    }
+
+    [Fact] // ADR-0125: typing on a cell whose bar text is borrowed still opens Overwrite there, and the bar then shows the typing
+    public async Task Typing_on_a_borrowed_cell_opens_overwrite()
+    {
+        var cut = RenderGrid(ps => { WithBar(ps); ps.Add(g => g.FormulaBarBorrowedTextOf, Borrowed); });
+        await ClickAsync(cut, 50, 45);
+
+        await PressAsync(cut, "7");
+
+        Assert.Equal("7", BarText(cut));
+        Assert.DoesNotContain("ex-formula-bar-borrowed", cut.Find("input.ex-formula-bar-text").ClassList);
+    }
 }

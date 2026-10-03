@@ -11,9 +11,9 @@ namespace ExPivot.MudBlazor.Tests;
 /// </summary>
 public class WrapperStylesheetTests
 {
-    private static string Wrapper() => Repository.Read("src", "ExPivot.MudBlazor", "wwwroot", "mud-ex-pivot.css");
+    private static string Wrapper() => Repository.Read("src", "ExPivot.MudBlazor", "Assets", "mud-ex-pivot.css");
 
-    private static string Core() => Repository.Read("src", "ExPivot", "wwwroot", "ex-pivot.css");
+    private static string Core() => Repository.Read("src", "ExPivot", "Assets", "ex-pivot.css");
 
     private static string WithoutComments(string css) => Regex.Replace(css, @"/\*.*?\*/", "", RegexOptions.Singleline);
 

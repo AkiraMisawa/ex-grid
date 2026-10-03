@@ -105,7 +105,7 @@ places.
   and −2) answers only over data that is sorted as the mode says, and gives `#VALUE!` otherwise:
   over unsorted data, which row Excel returns depends on an algorithm that is not documented.
   Which of several equal keys it returns is to be observed in Excel first.
-- **Spilled arrays are not supported.** A Formula whose result is more than one cell gives
+- *(Replaced 2026-10-03 by [ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md), decided with the user: a Formula whose result is an array now spills, and the refusal below became the answer it was kept for. The text stands as it was decided.)* **Spilled arrays are not supported.** A Formula whose result is more than one cell gives
   `#VALUE!`. Excel 365 would spill it. Implicit intersection, Excel 2019's behaviour, would return
   one value instead, and was rejected: it would silently change what a Formula means on the day
   spilling arrives. A refusal can become an answer later without changing any sheet already
@@ -373,3 +373,54 @@ reimplementation of Excel documents the same boundary for it.
 
 The equality run also settled ADR-0014's amendment. Plain text pasted over B2:C3 from C3 went into
 B2, the top-left, and not into the active cell.
+
+## The list grows: the first additions *(2026-10-03, decided with the user)*
+
+The queue after the first set, with each candidate's status and priority, is catalogued in
+[`docs/specs/exsheet-functions/spec.md`](../specs/exsheet-functions/spec.md). The catalogue orders
+the queue; this ADR's rule still decides each admission, and a test holds the catalogue's
+**Supported** rows equal to the declared set.
+
+Admitted under that rule, as the catalogue's first ticket: `AND`, `OR`, `NOT`, `IFNA`, `ISBLANK`,
+`ISNUMBER`, `ROUNDUP`, `ROUNDDOWN`, `ABS`, `INT`, `MOD`, `DATE`, `YEAR`, `MONTH`, `DAY`,
+`EOMONTH`, `EDATE`, `LEFT`, `RIGHT`, `MID`, `LEN`, `TRIM`, `CONCAT` and `INDEX` (the array form).
+Each case Microsoft documents is in the corpus as `documented`; each case it leaves open is there
+as `uncertain`, with the engine's answer, for the next Windows run to ask.
+
+Following "admitted with some argument values refused", three are refused until Excel answers: a
+`MOD` whose quotient is 2^27 or more (`#NUM!`, the answer older versions of Excel were known to
+give); `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where the day that never existed
+lies; and a boolean typed into `EOMONTH` or `EDATE`. The functions that answer about any Value —
+`IFNA`, `ISBLANK`, `ISNUMBER` — give `#GETTING_DATA` and `#CIRC!` back, as `IFERROR` and `ISERROR`
+do, and `INDEX` with a row or column of 0 over more than one cell is the spill refusal above.
+
+`TEXT` is admitted under [ADR-0120](./0120-text-reads-its-format-code-in-the-invariant-spelling-as-a-cell-format-shows-it.md),
+which settles the one thing this ADR left open for it: its format code is read in the invariant
+spelling, under every culture.
+
+`TODAY` is admitted under [ADR-0121](./0121-today-is-the-sheet-day-and-exsheet-keeps-it.md): it
+answers the Sheet Day, which the engine is given as data and never reads from a clock.
+
+Admitted as the catalogue's ticket 04, the P2 functions that were Ready: `PRODUCT`, `MEDIAN`,
+`LARGE`, `SMALL`, `ISTEXT`, `ISNA`, `IFS`, `SWITCH`, `NA`, `XMATCH`, `CHOOSE`, `ROW`, `COLUMN`, `TRUNC`,
+`POWER`, `SQRT`, `WEEKDAY`, `DAYS`, `NETWORKDAYS`, `WORKDAY`, `TEXTJOIN`, `CONCATENATE`, `SUBSTITUTE`,
+`REPLACE`, `FIND`, `PMT`, `PV`, `FV` and `NPV`. The refusals they add are listed in the engine's
+README. `ROW()` and `COLUMN()` read their own cell's place, so an insertion or a deletion that moves
+the cell recalculates them though their text is unchanged.
+
+Admitted as ticket 05, the P3 functions that were Ready: `RANK.EQ`, `STDEV.S`, `STDEV.P`, `VAR.S`,
+`VAR.P`, `XOR`, `ROWS`, `COLUMNS`, `SIGN`, `EXP`, `LN`, `LOG10`, `PI`, `TIME`, `HOUR`, `MINUTE`,
+`SECOND`, `REPT`, `EXACT`, `NUMBERVALUE` and `XNPV`. With them, every function the catalogue marked
+Ready is Supported; what remains waits on a Windows run (Observe) or on a decision (Decide).
+
+`VALUE` is admitted under [ADR-0124](./0124-volatile-functions-are-recalculated-after-every-change.md):
+it reads its text under the Sheet's culture, as the arithmetic operators read text. `OFFSET` and
+`NOW` are admitted under the same ADR, as volatile functions.
+
+`FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE`, `TRANSPOSE` and `SUMPRODUCT` are admitted under
+[ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md), which made a
+result of more than one Value spill. With it, `INDEX` with a row or a column of 0, `XLOOKUP` with a
+return array of several columns, and `ROW` and `COLUMN` over several rows or columns give Excel's
+answer, and their corpus cases changed from a difference by decision to it. `UNIQUE` refuses a blank
+in its array, and `SORT` and `SORTBY` a blank or an Error Value among their keys, with `#VALUE!`
+until Excel is asked how it orders them.

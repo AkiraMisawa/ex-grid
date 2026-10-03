@@ -581,15 +581,12 @@ public class CompletionTriggerWiringTests : SheetTestContext
         Assert.Empty(Candidates(cut));
     }
 
-    /// <summary>The grid's key listener as the package ships it.</summary>
+    /// <summary>The grid's key listener as it is written: what ships is its minified form (ADR-0123).</summary>
     private static string ShippedKeyListener()
     {
-        var manifest = Path.Combine(AppContext.BaseDirectory, "ExGrid.staticwebassets.runtime.json");
-        Assert.True(File.Exists(manifest), $"ExGrid ships no static assets here ({manifest})");
-        using var document = JsonDocument.Parse(File.ReadAllText(manifest));
-        var script = document.RootElement.GetProperty("ContentRoots").EnumerateArray()
-            .Select(root => Path.Combine(root.GetString()!, "ex-grid.js"))
-            .Single(File.Exists);
-        return File.ReadAllText(script);
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ExGrid.slnx"))) directory = directory.Parent;
+        Assert.True(directory is not null, $"no ExGrid.slnx above {AppContext.BaseDirectory}");
+        return File.ReadAllText(Path.Combine(directory!.FullName, "src", "ExGrid", "Assets", "ex-grid.js"));
     }
 }

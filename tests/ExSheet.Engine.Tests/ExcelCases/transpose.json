@@ -1,0 +1,42 @@
+{
+  "area": "transpose",
+  "about": "TRANSPOSE (ADR-0125): an array's rows as columns; it spills.",
+  "cases": [
+    {
+      "id": "TRANSPOSE-001",
+      "source": "documented",
+      "description": "The first row becomes the first column",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=TRANSPOSE(G1:H2)"},
+      "check": "ZZ1001",
+      "expect": {"value2": 10}
+    },
+    {
+      "id": "TRANSPOSE-002",
+      "source": "documented",
+      "description": "The first column becomes the first row",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=TRANSPOSE(G1:H2)"},
+      "check": "AAA1000",
+      "expect": {"value2": "Banana", "kind": "text"}
+    },
+    {
+      "id": "TRANSPOSE-003",
+      "source": "documented",
+      "description": "A row becomes a column",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=TRANSPOSE(M1:O1)"},
+      "check": "ZZ1002",
+      "expect": {"value2": "z", "kind": "text"}
+    },
+    {
+      "id": "TRANSPOSE-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank spills as 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=TRANSPOSE(Q1:Q2)"},
+      "check": "AAA1000",
+      "expect": {"value2": 0}
+    }
+  ]
+}

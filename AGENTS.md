@@ -29,7 +29,7 @@ Chrome, Overwrite, Caret, …); do not translate those.
 ### 2. JavaScript is allowlisted, not "minimised"
 
 JS is used only where Blazor genuinely cannot do the job, or where a **recorded measurement**
-shows the Blazor-side approach is too slow. There are currently **eight** permitted uses:
+shows the Blazor-side approach is too slow. There are currently **nine** permitted uses:
 capture-phase `keydown`, reading/setting scroll offsets, the clipboard, a `ResizeObserver`
 reporting the Scrollbar Gutter, and a `mousemove` listener that reports the pointer **only when
 it moves onto another row, and when it comes to rest** (the hover band, ADR-0029; the error
@@ -40,7 +40,9 @@ changed or settled. The sixth is a `ResizeObserver` reporting the Layout Ceiling
 element the browser lays out at the current scale and zoom (ADR-0053). The seventh is the Keyboard
 Field's composition and focus on the root, so an IME can start on a selected cell (ADR-0080). The
 eighth is a `matchMedia` listener that reports the Device Pixel when the resolution changes, so lines
-and column edges lie on Device Pixels at every scale and zoom (ADR-0090).
+and column edges lie on Device Pixels at every scale and zoom (ADR-0090). The ninth reports the
+browser's time zone once at attach, when a Consumer asks, so `TODAY()` is the user's day and not
+the server's (ADR-0122).
 
 **Anything else needs a new ADR.** See
 [ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md), which also lists what
@@ -90,6 +92,10 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 - **Flakes only see git-tracked files.** A new file must be `git add`-ed before the build can
   see it (committing is not required)
 - **Do not commit or push unless asked**
+- **A shipped script or stylesheet is edited in `src/<Package>/Assets/`, never in `wwwroot`.**
+  `wwwroot` holds its minified build (ADR-0123): after an edit run
+  `nix develop .#browser -c bash -c 'cd tools/assets && npm ci && npm run minify'` and commit what
+  it writes. A minified file older than its source fails `ShippedAssetTests`
 - **Only `src/` packs, and only a tag writes a version.** The projects say `0.0.0-dev`; pushing
   a `v*` tag runs `release.yml`, which publishes a prerelease and refuses a version without a
   suffix until the Definition of Done is signed off (ADR-0042). Every public member of a shipped

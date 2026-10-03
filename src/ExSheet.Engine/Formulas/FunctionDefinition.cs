@@ -22,6 +22,9 @@ internal sealed class FunctionDefinition(string name, int minimum, int maximum, 
     /// </summary>
     public IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> Values { get; init; } = NoValues;
 
+    /// <summary>Whether the arguments come in pairs, as <c>IFS</c>'s do: an odd count is refused on entry, as Excel refuses it.</summary>
+    public bool InPairs { get; init; }
+
     private static readonly IReadOnlyDictionary<int, IReadOnlyList<ArgumentValue>> NoValues = new Dictionary<int, IReadOnlyList<ArgumentValue>>();
 
     public Operand Invoke(FunctionCall call) => invoke(call);

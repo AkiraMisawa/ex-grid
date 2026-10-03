@@ -34,7 +34,7 @@
         RowHeight="RowHeight" ViewportHeight="GridViewportHeight" ViewportWidth="ViewportWidth"
         PinnedColumnCount="PinnedColumnCount" Chrome="Chrome"
         OnRangeNeeded="OnRangeNeededAsync" OnEdit="OnEditAsync" SelectionChanged="_selectionChanged"
-        CellType="SheetColumns.CellType" CellAlign="SheetColumns.CellAlign" EditorTextOf="SheetColumns.EditorText"
+        CellType="SheetColumns.CellType" CellAlign="SheetColumns.CellAlign" EditorTextOf="SheetColumns.EditorText" FormulaBarBorrowedTextOf="SheetColumns.SpilledFormula"
         PaintedText="SheetColumns.PaintedText" CellAppearance="_cellAppearance" EdgeBorder="SheetAppearance.EdgeBorder" EditorAppearance="SheetAppearance.Editor"
         HeaderClickSelects="true" HideHeader="!ShowColumnHeadings"
         RowHeadings="(ShowRowHeadings ? RowLabels : null)"
@@ -49,7 +49,7 @@
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
-        DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" />
+        DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" OnBrowserTimeZone="_browserTimeZone" />
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
    stands in the grid's popover frame instead (ADR-0050 item 16), and nothing is rendered here. *@
@@ -106,6 +106,7 @@
     private readonly Func<global::ExGrid.Finding.GridFindRequest, CancellationToken, Task<global::ExGrid.Finding.GridFindResult>> _find;
     private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _rowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
+    private readonly EventCallback<string> _browserTimeZone;
     private readonly EventCallback _undo;
     private readonly EventCallback<ColumnWidthChange> _columnWidthChanged;
     private readonly EventCallback _redo;
@@ -232,6 +233,7 @@
         // A resize is the user's, and the width is the document's (ADR-0046): it is recorded in
         // the Sheet as one step on the undo stack, and the column list follows the Sheet.
         _columnWidthChanged = new EventCallback<ColumnWidthChange>(null, (Func<ColumnWidthChange, Task>)(change => OnColumnWidthChangedAsync(change)));
+        _browserTimeZone = new EventCallback<string>(null, (Func<string, Task>)(zone => OnBrowserTimeZoneAsync(zone)));
         // The grid says when an edit opens and ends, at the change and before the browser hears
         // of it (ADR-0050 section 6), so a command given in between is refused (ADR-0048). No
         // receiver: nothing this component paints depends on it.
@@ -442,6 +444,7 @@
             _documentParameter = Document;
             _cultureParameter = Culture;
             Open(Document);
+            FollowTheDayParameters();
             RefreshToolbar();
             return;
         }
@@ -462,6 +465,7 @@
         }
         // Widths are recorded in characters; the pixels they paint at follow the Cell Metrics.
         if (_columns.Metrics is { } metrics && !metrics.Equals(CellMetrics)) _columns = SheetColumnList.Of(CurrentSheet, CellMetrics);
+        FollowTheDayParameters();
         RefreshToolbar();
     }
 
@@ -473,6 +477,7 @@
     /// </summary>
     protected override async Task OnParametersSetAsync()
     {
+        await PaintTheDayAsync();
         if (!_documentReplaced) return;
         _documentReplaced = false;
         if (_grid is not { } grid) return;
@@ -874,17 +879,35 @@
     /// The key column, one of <paramref name="columns"/>, or <see langword="null"/> for none
     /// (ADR-0049, 2026-09-30). A row is read by its key, and every snapshot of a keyed table is
     /// checked: one in which a key repeats is refused (<see cref="PushLinkedTableAsync"/>). A table
-    /// whose rows are told apart by several columns is given a column that joins them, and that
-    /// column is its key.
+    /// whose rows are told apart by several columns is declared with all of them as its key (the
+    /// overload that takes a list).
     /// </param>
     /// <exception cref="ArgumentException">
     /// The name or the columns are not ones a structured reference can name, or the key is not one
     /// of the columns.
     /// </exception>
-    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, string? key = null)
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, string? key = null) =>
+        DeclareLinkedTableAsync(name, columns, key is null ? (IReadOnlyList<string>)[] : [key]);
+
+    /// <summary>
+    /// Declares a Linked Table whose rows are told apart by the Values of several columns together
+    /// (ADR-0058, amended 2026-10-03). A Pointing Scope writes a press on one of its cells as
+    /// <c>XLOOKUP(1, (T[K1]=v1)*(T[K2]=v2), T[C])</c>, and a snapshot in which two rows hold the same
+    /// Values in every key column is refused. Otherwise as the overload that takes one key column; an
+    /// empty list declares no key.
+    /// </summary>
+    /// <param name="name">The name Formulas read it by, as for the overload that takes one key column.</param>
+    /// <param name="columns">The column names, as for the overload that takes one key column.</param>
+    /// <param name="key">The key's columns, each one of <paramref name="columns"/> named without regard to case, none twice.</param>
+    /// <exception cref="ArgumentException">
+    /// The name or the columns are not ones a structured reference can name, or a key column is not
+    /// one of the columns, or is named twice.
+    /// </exception>
+    public Task DeclareLinkedTableAsync(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(columns);
+        ArgumentNullException.ThrowIfNull(key);
         return InvokeAsync(async () =>
         {
             var sheet = CurrentSheet;
@@ -955,7 +978,7 @@
 
     // What the Sheet Document records of the tables: names, columns and keys, in order (ADR-0049).
     private static bool SameDeclarations(IReadOnlyList<LinkedTable> a, IReadOnlyList<LinkedTable> b) =>
-        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns) && p.First.Key == p.Second.Key);
+        a.Count == b.Count && a.Zip(b).All(p => p.First.Name == p.Second.Name && p.First.Columns.SequenceEqual(p.Second.Columns) && p.First.KeyColumns.SequenceEqual(p.Second.KeyColumns));
 
     /// <summary>The Sheet as it stands, as a Sheet Document: Entries, never Values (ADR-0048).</summary>
     public SheetDocument ToDocument() => CurrentSheet.ToDocument();
@@ -985,6 +1008,8 @@
     private void Open(SheetDocument? document)
     {
         _sheet = document is null ? new Sheet(Culture ?? CultureInfo.CurrentCulture) : Sheet.Open(document);
+        // A Sheet opened from a document has no day: the Sheet Day is not recorded (ADR-0121).
+        GiveTheDay(_sheet);
         _edges = SheetEdges.Of(_sheet);
         _history.Clear();
         _resizing = null;

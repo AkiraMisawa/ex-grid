@@ -1,0 +1,51 @@
+{
+  "area": "rept",
+  "about": "REPT (ticket 05).",
+  "cases": [
+    {
+      "id": "REPT-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=REPT(\"*-\",3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "*-*-*-"}
+    },
+    {
+      "id": "REPT-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=REPT(\"-\",10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "----------"}
+    },
+    {
+      "id": "REPT-003",
+      "source": "documented",
+      "description": "0 times is empty text",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=REPT(\"a\",0)&\"x\""},
+      "check": "ZZ1000",
+      "expect": {"value2": "x"}
+    },
+    {
+      "id": "REPT-004",
+      "source": "documented",
+      "description": "Longer than a cell holds is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=REPT(\"ab\",20000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "REPT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative count is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=REPT(\"a\",-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

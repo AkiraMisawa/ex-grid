@@ -13,7 +13,7 @@ computes, ExGrid paints, selects, navigates and reports.
 
 - **.NET 10 or newer.** The package targets `net10.0`.
 - ExGrid's stylesheet and script, as for any ExGrid, and ExSheet's own stylesheet,
-  `_content/ExSheet/ex-sheet.css`, which paints the Paper and the Ink and draws the built-in Format
+  `_content/ExSheet/ex-sheet.min.css`, which paints the Paper and the Ink and draws the built-in Format
   Cells.
 
 ## Showing a Sheet
@@ -66,6 +66,30 @@ the direction the Focus cell gives them, and Ctrl+Shift with `~ ! @ # $ % ^` app
 Format Excel applies under the Sheet's culture, `&` an outline and `_` no borders. The date, the
 time and the currency are Excel's built-ins, shown in the culture's own form: `05-Jan-26`, `09:05`
 and `£5.00` under en-GB, `5-Jan-26`, `9:05 AM` and `$5.00` under en-US.
+
+## Today's date
+
+`TODAY()` answers the **Sheet Day** (ADR-0121). By default it is the day in the browser's own time
+zone, as Excel answers with the day on the user's device. On Blazor Server, too, the grid is told the
+browser's zone, so a server in London never gives a user in Tokyo yesterday's date (ADR-0122). Until
+the browser has told it, `TODAY()` shows `#GETTING_DATA`. The server's own zone is never used.
+
+```razor
+@* The user's own day: nothing to set. *@
+<ExSheet @bind-Document="_document" />
+
+@* One business day for every user, head office's. *@
+<ExSheet @bind-Document="_document" TimeZone="@TimeZoneInfo.FindSystemTimeZoneById("Europe/London")" />
+
+@* A report that shows the same day whenever it is opened. *@
+<ExSheet @bind-Document="_document" Today="new DateOnly(2026, 9, 30)" />
+```
+
+ExSheet moves the day on at midnight in the zone and recalculates only the Formulas that call
+`TODAY`. `NOW()` reads the same zone's clock; it is recalculated with every change, as Excel's is,
+and moved on as each minute turns (ADR-0124). A fixed `Today` does not fix it. It reads the time from a registered `TimeProvider`, or the system's, so a test can set the
+clock. The Sheet Day is not part of a Sheet Document. Without the component, the engine is given it
+as data: `sheet.SetToday(new DateOnly(2026, 10, 3))`.
 
 ## Linked Tables
 

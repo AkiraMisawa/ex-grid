@@ -654,6 +654,34 @@ in Excel. It is never recorded — it is computed again wherever a Sheet Documen
 ([ADR-0047](./docs/adr/0047-the-formula-engine-is-exsheets-own-and-answers-as-excel-or-not-at-all.md)).
 _Avoid_: result, cached value, computed value
 
+**Sheet Day**:
+The calendar day `TODAY()` answers in a Sheet. It is a fixed day the Consumer gives, or else the day
+it is now in a time zone: the Consumer's, or else the browser's. Until one is known, `TODAY()` is
+`#GETTING_DATA`. The engine never reads a clock. ExSheet keeps the day and moves it at midnight
+([ADR-0121](./docs/adr/0121-today-is-the-sheet-day-and-exsheet-keeps-it.md)).
+_Avoid_: system date, server date, current date
+
+**Volatile Function**:
+A function whose answer can change while no cell its Formula names changes — `OFFSET`, which reads
+a Reference it computes, and `NOW`. A Formula that calls one is recalculated in every recalculation
+([ADR-0124](./docs/adr/0124-volatile-functions-are-recalculated-after-every-change.md)).
+_Avoid_: dynamic function, live function
+
+**Spill**:
+What a Formula whose result is an array does: its first Value shows in the Formula's own cell, the
+**Anchor**, and the rest in the cells below and to the right, the **Spill Range**, which hold no
+Entry. A cell of the Spill Range that holds an Entry stops it, and the Anchor shows `#SPILL!`
+([ADR-0125](./docs/adr/0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md)).
+_Avoid_: array formula (Excel's older, entered-with-Ctrl+Shift+Enter kind), overflow
+
+**Anchor**:
+The cell whose Formula **Spill**s. `A1#` names its Spill Range.
+_Avoid_: origin, parent cell
+
+**Spill Range**:
+The cells an **Anchor**'s array covers, itself included.
+_Avoid_: spill area, array range
+
 **Formula**:
 An Entry beginning with `=`, written in Excel's syntax, that computes a Value from other cells'
 Values. A function ExSheet does not know yields `#NAME?`; it is never guessed at
@@ -683,8 +711,8 @@ structured references — `SUM(Positions[PV])`. Its rows are reached by key thro
 Reference into it would change value without anyone editing it. ExSheet never reads another
 component instance; what a Linked Table holds comes from the Consumer, pushed as one whole
 snapshot. Until it has arrived, a Formula that reads it shows `#GETTING_DATA` — never 0, never an
-older value — and `IFERROR` does not catch the wait. The Consumer may declare one of its columns as
-its key; a snapshot in which a key repeats is refused, and the table waits again ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md)).
+older value — and `IFERROR` does not catch the wait. The Consumer may declare one of its columns, or
+several together, as its key; a snapshot in which a key repeats is refused, and the table waits again ([ADR-0049](./docs/adr/0049-linked-tables-are-the-consumers-data-read-by-key.md), [ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).
 _Avoid_: external reference (Excel's name for a reference into another workbook), data
 connection, link
 
@@ -693,7 +721,8 @@ The Sheets and grids a Consumer groups so that a Formula can **Point** across in
 grid in it, the Consumer says which **Linked Table** the grid shows and which of the grid's columns
 are which of the table's; the key column is the table's own, declared with it. While a Sheet in the
 scope is pointing, a press on one of its grids moves neither DOM focus nor that grid's Selection. It
-writes what reads the pressed cell by key (`XLOOKUP("R-4471", Positions[Id], Positions[PV])`) or the pressed
+writes what reads the pressed cell by key (`XLOOKUP("R-4471", Positions[Id], Positions[PV])`, or
+`XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])` for a key of several columns) or the pressed
 column's name (`Positions[PV]`). Only the Sheet that holds the keyboard points. Nothing on a page
 is joined unless the Consumer put it in the same scope, and a grid in no scope behaves as it
 always does ([ADR-0058](./docs/adr/0058-a-formula-points-across-grids-through-a-pointing-scope.md)).

@@ -29,6 +29,12 @@ internal sealed record Reference(
     bool Row2Absolute,
     bool Column2Absolute)
 {
+    /// <summary>
+    /// <c>A1#</c>: the Spill Range of the Formula in this one cell (ADR-0125). Its dependency is the
+    /// Anchor's cell, and it moves as the cell's Reference moves.
+    /// </summary>
+    public bool Spilled { get; init; }
+
     /// <summary>The rectangle the Reference covers.</summary>
     public Area Area => Shape switch
     {
@@ -79,6 +85,7 @@ internal sealed record Reference(
             case ReferenceShape.Cell:
                 WriteColumn(text, Column1, Column1Absolute);
                 WriteRow(text, Row1, Row1Absolute);
+                if (Spilled) text.Append('#');
                 break;
             case ReferenceShape.Area:
                 WriteColumn(text, Column1, Column1Absolute);

@@ -1,0 +1,57 @@
+{
+  "area": "switch",
+  "about": "SWITCH (ticket 04).",
+  "cases": [
+    {
+      "id": "SWITCH-001",
+      "source": "documented",
+      "description": "Microsoft's example: the value matched",
+      "cells": {"A1": "2", "ZZ1000": "=SWITCH(A1,1,\"Sunday\",2,\"Monday\",3,\"Tuesday\",\"No match\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Monday"}
+    },
+    {
+      "id": "SWITCH-002",
+      "source": "documented",
+      "description": "Microsoft's example: no match, the default",
+      "cells": {"A1": "99", "ZZ1000": "=SWITCH(A1,1,\"Sunday\",2,\"Monday\",3,\"Tuesday\",\"No match\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "No match"}
+    },
+    {
+      "id": "SWITCH-003",
+      "source": "documented",
+      "description": "Microsoft's example: no match and no default is #N/A",
+      "cells": {"A1": "99", "ZZ1000": "=SWITCH(A1,1,\"Sunday\",2,\"Monday\",3,\"Tuesday\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#N/A"}
+    },
+    {
+      "id": "SWITCH-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text matches without regard to case",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SWITCH(\"b\",\"B\",1,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "SWITCH-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank cell matches 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SWITCH(A5,0,\"zero\",\"other\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "zero"}
+    },
+    {
+      "id": "SWITCH-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the expression's Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SWITCH(1/0,1,\"x\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

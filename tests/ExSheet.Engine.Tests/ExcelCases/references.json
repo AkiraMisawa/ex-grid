@@ -74,42 +74,34 @@
     {
       "id": "REF-009",
       "source": "observed",
-      "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
+      "description": "A multi-cell Reference as a Formula's result spills (ADR-0125), or is #SPILL! past the Sheet's edge",
       "cells": {"A1": "5", "ZZ1000": "=A1:A2"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": 5}
+      "expect": {"value2": 5}
     },
     {
       "id": "REF-010",
       "source": "observed",
-      "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
+      "description": "A multi-cell Reference as a Formula's result spills (ADR-0125), or is #SPILL! past the Sheet's edge",
       "cells": {"A1": "5", "ZZ1000": "=A:A"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": "#SPILL!"}
+      "expect": {"value2": "#SPILL!"}
     },
     {
       "id": "REF-011",
       "source": "observed",
-      "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
+      "description": "A multi-cell Reference as a Formula's result spills (ADR-0125), or is #SPILL! past the Sheet's edge",
       "cells": {"A1": "5", "ZZ1000": "=1:1"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": "#SPILL!"}
+      "expect": {"value2": "#SPILL!"}
     },
     {
       "id": "REF-012",
       "source": "observed",
-      "description": "A multi-cell Reference as a Formula's result is refused (one Formula cannot show many cells)",
+      "description": "A multi-cell Reference as a Formula's result spills (ADR-0125), or is #SPILL! past the Sheet's edge",
       "cells": {"A1": "5", "ZZ1000": "=A1:A2+1"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": 6}
+      "expect": {"value2": 6}
     },
     {
       "id": "REF-013",

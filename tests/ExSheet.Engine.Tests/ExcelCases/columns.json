@@ -1,0 +1,24 @@
+{
+  "area": "columns",
+  "about": "COLUMNS (ticket 05).",
+  "cases": [
+    {
+      "id": "COLUMNS-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COLUMNS(C1:E4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "COLUMNS-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a whole row",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COLUMNS(1:1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 16384}
+    }
+  ]
+}

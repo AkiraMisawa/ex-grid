@@ -1,0 +1,33 @@
+{
+  "area": "sqrt",
+  "about": "SQRT (ticket 04).",
+  "cases": [
+    {
+      "id": "SQRT-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SQRT(16)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "SQRT-002",
+      "source": "documented",
+      "description": "Microsoft's example: a negative number is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SQRT(-16)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "SQRT-003",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SQRT(ABS(-16))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    }
+  ]
+}

@@ -12,10 +12,18 @@ namespace ExSheet.Engine;
 /// </param>
 /// <param name="RowCount">How many rows the current snapshot holds; 0 while waiting.</param>
 /// <param name="Key">
-/// The key column, one of <paramref name="Columns"/> as declared there, or <see langword="null"/> for a
-/// table declared without one (ADR-0049, 2026-09-30). No key appears twice in a snapshot of it.
+/// The key column, one of <paramref name="Columns"/> as declared there, when the key is one column;
+/// <see langword="null"/> for a table declared without one (ADR-0049, 2026-09-30), and for a key of
+/// several columns, which <see cref="KeyColumns"/> names. No key appears twice in a snapshot of it.
 /// </param>
-public sealed record LinkedTable(string Name, IReadOnlyList<string> Columns, bool IsWaiting, int RowCount, string? Key = null);
+public sealed record LinkedTable(string Name, IReadOnlyList<string> Columns, bool IsWaiting, int RowCount, string? Key = null)
+{
+    /// <summary>
+    /// The key's columns, as declared there: one for a key of one column, several for a key of
+    /// several (ADR-0058, amended 2026-10-03), none for a table declared without a key.
+    /// </summary>
+    public IReadOnlyList<string> KeyColumns { get; init; } = Key is null ? [] : [Key];
+}
 
 public sealed partial class Sheet
 {
@@ -26,7 +34,7 @@ public sealed partial class Sheet
 
     /// <summary>The Linked Tables declared on this Sheet, in the order they were declared.</summary>
     public IReadOnlyList<LinkedTable> LinkedTables =>
-        [.. _tables.Values.OrderBy(t => t.Order).Select(t => new LinkedTable(t.Name, t.Columns, t.Data is null, t.RowCount, t.Key))];
+        [.. _tables.Values.OrderBy(t => t.Order).Select(t => new LinkedTable(t.Name, t.Columns, t.Data is null, t.RowCount, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
 
     /// <summary>
     /// Declares a Linked Table by name and columns (ADR-0049), before any of its rows arrive.
@@ -50,22 +58,39 @@ public sealed partial class Sheet
     /// <see langword="null"/> for none (ADR-0049, 2026-09-30). A row is read by its key
     /// (<c>XLOOKUP</c>), and every snapshot of a keyed table is checked: one in which a key repeats is
     /// refused (<see cref="PushLinkedTable"/>). A table whose rows are told apart by several columns
-    /// is given a column that joins them, and that column is its key.
+    /// is declared with all of them as its key (the overload that takes a list).
     /// </param>
     /// <exception cref="ArgumentException">
     /// The name or the columns are not ones a structured reference can name, or the key is not one of
     /// the columns.
     /// </exception>
-    public SheetChange DeclareLinkedTable(string name, IReadOnlyList<string> columns, string? key = null)
+    public SheetChange DeclareLinkedTable(string name, IReadOnlyList<string> columns, string? key = null) =>
+        DeclareLinkedTable(name, columns, key is null ? (IReadOnlyList<string>)[] : [key]);
+
+    /// <summary>
+    /// Declares a Linked Table whose rows are told apart by the Values of several columns together
+    /// (ADR-0058, amended 2026-10-03): a row is read by all of them, and a snapshot in which two rows
+    /// hold the same Values in every one of them is refused. Otherwise as the overload that takes one
+    /// key column; an empty list declares no key.
+    /// </summary>
+    /// <param name="name">The name Formulas read it by, as for the overload that takes one key column.</param>
+    /// <param name="columns">The column names, as for the overload that takes one key column.</param>
+    /// <param name="key">The key's columns, each one of <paramref name="columns"/> named without regard to case, none twice.</param>
+    /// <exception cref="ArgumentException">
+    /// The name or the columns are not ones a structured reference can name, or a key column is not
+    /// one of the columns, or is named twice.
+    /// </exception>
+    public SheetChange DeclareLinkedTable(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key)
     {
         ArgumentNullException.ThrowIfNull(name);
         ArgumentNullException.ThrowIfNull(columns);
+        ArgumentNullException.ThrowIfNull(key);
         if (WhyNotALinkedTable(name, columns) is { } why) throw new ArgumentException(why, IsTableName(name) ? nameof(columns) : nameof(name));
         if (WhyNotAKey(name, columns, key) is { } whyNotKey) throw new ArgumentException(whyNotKey, nameof(key));
         if (_tables.TryGetValue(name, out var held))
         {
             // The same declaration again changes nothing; other columns or another key replace it (ADR-0049).
-            if (held.Columns.SequenceEqual(columns, StringComparer.Ordinal) && held.Key == KeyAsDeclared(columns, key)) return SheetChange.None;
+            if (held.Columns.SequenceEqual(columns, StringComparer.Ordinal) && held.Key.SequenceEqual(KeyAsDeclared(columns, key), StringComparer.Ordinal)) return SheetChange.None;
             _tables.Remove(name);
             Declare(name, columns, key, held.Order);
         }
@@ -76,16 +101,16 @@ public sealed partial class Sheet
         return RecalculateReaders(name);
     }
 
-    private void Declare(string name, IReadOnlyList<string> columns, string? key, int? order = null)
+    private void Declare(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key, int? order = null)
     {
         var index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (var i = 0; i < columns.Count; i++) index[columns[i]] = i;
         _tables[name] = new TableState(name, [.. columns], index, KeyAsDeclared(columns, key), order ?? NextOrder());
     }
 
-    /// <summary>The key column as the columns spell it, so that <c>id</c> and <c>Id</c> declare the same key.</summary>
-    private static string? KeyAsDeclared(IReadOnlyList<string> columns, string? key) =>
-        key is null ? null : columns.First(column => string.Equals(column, key, StringComparison.OrdinalIgnoreCase));
+    /// <summary>The key's columns as the columns spell them, so that <c>id</c> and <c>Id</c> declare the same key.</summary>
+    private static string[] KeyAsDeclared(IReadOnlyList<string> columns, IReadOnlyList<string> key) =>
+        [.. key.Select(k => columns.First(column => string.Equals(column, k, StringComparison.OrdinalIgnoreCase)))];
 
     private int NextOrder() => _tables.Count == 0 ? 0 : _tables.Values.Max(t => t.Order) + 1;
 
@@ -104,12 +129,20 @@ public sealed partial class Sheet
     }
 
     /// <summary>Why a key cannot be declared with a table's columns, or <see langword="null"/> when it can (ADR-0049, 2026-09-30).</summary>
-    internal static string? WhyNotAKey(string name, IReadOnlyList<string> columns, string? key) =>
-        key is null || columns.Contains(key, StringComparer.OrdinalIgnoreCase) ? null : $"The key '{key}' is not one of the columns of '{name}'.";
+    internal static string? WhyNotAKey(string name, IReadOnlyList<string> columns, IReadOnlyList<string> key)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var column in key)
+        {
+            if (column is null || !columns.Contains(column, StringComparer.OrdinalIgnoreCase)) return $"The key '{column}' is not one of the columns of '{name}'.";
+            if (!seen.Add(column)) return $"The key column '{column}' of '{name}' is named twice.";
+        }
+        return null;
+    }
 
     /// <summary>The declarations, as a Sheet Document records them (ADR-0049).</summary>
     private IReadOnlyList<SheetDocumentTable> TableDeclarations =>
-        [.. _tables.Values.OrderBy(t => t.Order).Select(t => new SheetDocumentTable(t.Name, t.Columns, t.Key))];
+        [.. _tables.Values.OrderBy(t => t.Order).Select(t => new SheetDocumentTable(t.Name, t.Columns, t.Key.Count == 1 ? t.Key[0] : null) { KeyColumns = t.Key })];
 
     /// <summary>
     /// Replaces a Linked Table's data with a whole snapshot, in one step (ADR-0049): no
@@ -154,7 +187,7 @@ public sealed partial class Sheet
             }
             count++;
         }
-        if (table.Key is { } key && FirstRepeat(columns[table.ColumnIndex[key]]) is (var first, var second))
+        if (table.Key.Count > 0 && FirstRepeat([.. table.Key.Select(k => (IReadOnlyList<Value?>)columns[table.ColumnIndex[k]])]) is (var first, var second))
         {
             // The table waits again, so its readers show #GETTING_DATA, which IFERROR does not
             // catch. The previous snapshot is not kept: it would show an older value (ADR-0049,
@@ -162,8 +195,9 @@ public sealed partial class Sheet
             table.Data = null;
             table.RowCount = 0;
             var waiting = RecalculateReaders(table.Name);
-            var keys = columns[table.ColumnIndex[key]];
-            throw new RepeatedKeyException(table.Name, key, keys[first]!.Value, first, keys[second]!.Value, second, waiting);
+            var parts = table.Key.Select(k => columns[table.ColumnIndex[k]]).ToList();
+            throw new RepeatedKeyException(
+                table.Name, table.Key, [.. parts.Select(p => p[first]!.Value)], first, [.. parts.Select(p => p[second]!.Value)], second, waiting);
         }
         // The snapshot is built whole before it replaces the old one.
         table.Data = [.. columns.Select(c => (IReadOnlyList<Value?>)c.AsReadOnly())];
@@ -172,19 +206,39 @@ public sealed partial class Sheet
     }
 
     /// <summary>
-    /// The first two rows whose keys <c>XLOOKUP</c>'s exact match cannot tell apart, or
-    /// <see langword="null"/>. Blank keys and Error Values are passed over: a blank is not a key, and
-    /// an Error Value matches nothing.
+    /// The first two rows whose keys the lookup a Pointing Scope writes cannot tell apart, or
+    /// <see langword="null"/>. A key of one column is compared as <c>XLOOKUP</c>'s exact match
+    /// compares; a key of several, part by part as the <c>=</c> operator compares, which its lookup
+    /// uses (ADR-0058, amended 2026-10-03), so numbers equal at Excel's fifteen digits are one. A row
+    /// whose key, or any part of it, is blank or an Error Value is passed over: a blank is not a key,
+    /// and an Error Value matches nothing.
     /// </summary>
-    private static (int First, int Second)? FirstRepeat(IReadOnlyList<Value?> keys)
+    private static (int First, int Second)? FirstRepeat(IReadOnlyList<IReadOnlyList<Value?>> parts)
     {
-        var seen = new Dictionary<(ValueKind Kind, double Number, string? Text), int>();
-        for (var row = 0; row < keys.Count; row++)
+        var several = parts.Count > 1;
+        var seen = new Dictionary<string, int>(StringComparer.Ordinal);
+        var rows = parts[0].Count;
+        for (var row = 0; row < rows; row++)
         {
-            if (keys[row] is not { IsError: false } key) continue;
-            var identity = ExactMatchIdentity(key);
-            if (seen.TryGetValue(identity, out var first)) return (first, row);
-            seen.Add(identity, row);
+            var identity = new System.Text.StringBuilder();
+            var isKey = true;
+            foreach (var part in parts)
+            {
+                if (part[row] is not { IsError: false } key)
+                {
+                    isKey = false;
+                    break;
+                }
+                var (kind, number, text) = ExactMatchIdentity(key);
+                if (several && kind == ValueKind.Number) number = Arithmetic.AtFifteenDigits(number);
+                identity.Append((int)kind).Append(':')
+                    .Append(number.ToString("R", System.Globalization.CultureInfo.InvariantCulture)).Append(':')
+                    .Append(text?.Length ?? -1).Append(':').Append(text).Append('|');
+            }
+            if (!isKey) continue;
+            var written = identity.ToString();
+            if (seen.TryGetValue(written, out var first)) return (first, row);
+            seen.Add(written, row);
         }
         return null;
     }
@@ -255,7 +309,7 @@ public sealed partial class Sheet
         && !name.Equals("TRUE", StringComparison.OrdinalIgnoreCase)
         && !name.Equals("FALSE", StringComparison.OrdinalIgnoreCase);
 
-    private sealed class TableState(string name, IReadOnlyList<string> columns, Dictionary<string, int> columnIndex, string? key, int order)
+    private sealed class TableState(string name, IReadOnlyList<string> columns, Dictionary<string, int> columnIndex, IReadOnlyList<string> key, int order)
     {
         public string Name { get; } = name;
 
@@ -263,8 +317,8 @@ public sealed partial class Sheet
 
         public Dictionary<string, int> ColumnIndex { get; } = columnIndex;
 
-        /// <summary>The key column, as <see cref="Columns"/> spells it; <see langword="null"/> for none.</summary>
-        public string? Key { get; } = key;
+        /// <summary>The key's columns, as <see cref="Columns"/> spells them; empty for none.</summary>
+        public IReadOnlyList<string> Key { get; } = key;
 
         public int Order { get; } = order;
 

@@ -229,7 +229,7 @@ public abstract class MudPivotTestContext : BunitContext
     /// </summary>
     internal BunitJSModuleInterop ReportGridHandle()
     {
-        var module = JSInterop.SetupModule("./_content/ExGrid/ex-grid.js");
+        var module = JSInterop.SetupModule("./_content/ExGrid/ex-grid.min.js");
         module.SetupModule("attach", _ => true);
         return module.SetupModule("attach",
             invocation => invocation.Arguments[2] is Microsoft.JSInterop.DotNetObjectReference<ExGrid<PivotReportRow>>);

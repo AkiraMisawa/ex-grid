@@ -288,7 +288,7 @@ find and replace, protecting cells, and `.xlsx`. Also:
   is `#VALUE!`, never implicitly intersected, so that spilling can arrive later without changing
   any written sheet (ADR-0047, decided with the user 2026-09-27).
 - **A Formula Bar placed outside the grid** (ADR-0051).
-- **Functions beyond ADR-0047's list**, and fill patterns beyond copy, linear series and dates by
+- **Functions beyond ADR-0047's list** (their queue is [`exsheet-functions`](../exsheet-functions/spec.md)), and fill patterns beyond copy, linear series and dates by
   day.
 
 ## Further Notes

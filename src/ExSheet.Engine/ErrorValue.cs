@@ -43,10 +43,10 @@ public enum ErrorValue
     /// </summary>
     Circ,
 
-    /// <summary><c>#SPILL!</c>, one of Excel's newer Error Values: data only, typed or loaded; nothing in the engine produces it (ADR-0047, second run).</summary>
+    /// <summary><c>#SPILL!</c>, one of Excel's newer Error Values: an array that cannot spill, because an Entry or another spill is in its way or it would pass the Sheet's edge (ADR-0125).</summary>
     Spill,
 
-    /// <summary><c>#CALC!</c>, one of Excel's newer Error Values: data only; nothing in the engine produces it.</summary>
+    /// <summary><c>#CALC!</c>, one of Excel's newer Error Values: an array that would be empty, such as a <c>FILTER</c> that keeps nothing (ADR-0125).</summary>
     Calc,
 
     /// <summary><c>#FIELD!</c>, one of Excel's newer Error Values: data only; nothing in the engine produces it.</summary>

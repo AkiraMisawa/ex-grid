@@ -1,0 +1,123 @@
+{
+  "area": "and",
+  "about": "AND (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "AND-001",
+      "source": "documented",
+      "description": "AND of two TRUEs is TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(TRUE,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "AND-002",
+      "source": "documented",
+      "description": "AND with a FALSE is FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(TRUE,FALSE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "AND-003",
+      "source": "documented",
+      "description": "Microsoft's example: both conditions hold",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(2+2=4,2+3=5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "AND-004",
+      "source": "documented",
+      "description": "Text and blanks inside a Reference are ignored",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(A4:A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "AND-005",
+      "source": "documented",
+      "description": "A Reference holding no logical value is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AND-006",
+      "source": "documented",
+      "description": "A blank Reference holds no logical value: #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AND-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers inside a range count, 0 as FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(A1:A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "AND-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a 0 inside a range is FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(E1:E2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "AND-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value in a Reference is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(TRUE,C2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "AND-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: typed text spelling TRUE counts",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(\"TRUE\",1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "AND-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: other typed text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(\"abc\",TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "AND-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an argument left empty is FALSE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(TRUE,)"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "AND-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an error after a FALSE is still the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=AND(FALSE,1/0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

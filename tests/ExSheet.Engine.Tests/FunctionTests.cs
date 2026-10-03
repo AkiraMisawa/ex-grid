@@ -41,11 +41,13 @@ public class FunctionTests
         Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula(formula));
     }
 
-    [Fact] // ADR-0047/0051: the declared list is exposed for completion and hints, and is exactly ADR-0047's set
+    [Fact] // ADR-0047/0051: the declared list is exposed for completion and hints, and is exactly ADR-0047's set with its additions
     public void The_declared_functions_are_exactly_adr_0047s_set()
     {
         Assert.Equal(
-            ["AVERAGE", "COUNT", "COUNTA", "IF", "IFERROR", "ISERROR", "MAX", "MIN", "ROUND", "SUM", "XLOOKUP"],
+            [
+                "ABS", "AND", "AVERAGE", "CHOOSE", "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COUNT", "COUNTA", "DATE", "DAY", "DAYS", "EDATE", "EOMONTH", "EXACT", "EXP", "FILTER", "FIND", "FV", "HOUR", "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT", "LARGE", "LEFT", "LEN", "LN", "LOG10", "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH", "NA", "NETWORKDAYS", "NOT", "NOW", "NPV", "NUMBERVALUE", "OFFSET", "OR", "PI", "PMT", "POWER", "PRODUCT", "PV", "RANK.EQ", "REPLACE", "REPT", "RIGHT", "ROUND", "ROUNDDOWN", "ROUNDUP", "ROW", "ROWS", "SECOND", "SEQUENCE", "SIGN", "SMALL", "SORT", "SORTBY", "SQRT", "STDEV.P", "STDEV.S", "SUBSTITUTE", "SUM", "SUMPRODUCT", "SWITCH", "TEXT", "TEXTJOIN", "TIME", "TODAY", "TRANSPOSE", "TRIM", "TRUNC", "UNIQUE", "VALUE", "VAR.P", "VAR.S", "WEEKDAY", "WORKDAY", "XLOOKUP", "XMATCH", "XNPV", "XOR", "YEAR",
+            ],
             DeclaredFunction.All.Select(f => f.Name));
         Assert.Equal("SUM(number1, [number2], ...)", DeclaredFunction.Find("sum")!.Signature);
         Assert.Equal(

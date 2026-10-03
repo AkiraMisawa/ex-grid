@@ -1,0 +1,40 @@
+{
+  "area": "days",
+  "about": "DAYS (ticket 04).",
+  "cases": [
+    {
+      "id": "DAYS-001",
+      "source": "documented",
+      "description": "Microsoft's example: 15 March back to 1 February 2021",
+      "cells": {"A1": "3/15/2021", "A2": "2/1/2021", "ZZ1000": "=DAYS(A1,A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 42}
+    },
+    {
+      "id": "DAYS-002",
+      "source": "documented",
+      "description": "Microsoft's example: across a year",
+      "cells": {"A1": "12/31/2021", "A2": "1/1/2021", "ZZ1000": "=DAYS(A1,A2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 364}
+    },
+    {
+      "id": "DAYS-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the start after the end is negative",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DAYS(10,15)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -5}
+    },
+    {
+      "id": "DAYS-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a negative serial is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DAYS(-1,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "area": "sort",
+  "about": "SORT (ADR-0125): an array ordered by one of its columns or rows; it spills.",
+  "cases": [
+    {
+      "id": "SORT-001",
+      "source": "documented",
+      "description": "Descending: the largest first",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(H1:H5,1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 50}
+    },
+    {
+      "id": "SORT-002",
+      "source": "documented",
+      "description": "Descending: the smallest last",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(H1:H5,1,-1)"},
+      "check": "ZZ1004",
+      "expect": {"value2": 10}
+    },
+    {
+      "id": "SORT-003",
+      "source": "documented",
+      "description": "By the first column, ascending, when nothing more is given",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(G1:H5)"},
+      "check": "ZZ1001",
+      "expect": {"value2": "Banana", "kind": "text"}
+    },
+    {
+      "id": "SORT-004",
+      "source": "documented",
+      "description": "Equal keys keep their order",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(G1:H5)"},
+      "check": "AAA1002",
+      "expect": {"value2": 40}
+    },
+    {
+      "id": "SORT-005",
+      "source": "documented",
+      "description": "By the second column, descending",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(G1:H5,2,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Date", "kind": "text"}
+    },
+    {
+      "id": "SORT-006",
+      "source": "documented",
+      "description": "by_col sorts the columns by a row",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(M1:O2,2,-1,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "z", "kind": "text"}
+    },
+    {
+      "id": "SORT-007",
+      "source": "documented",
+      "description": "An index past the array is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(G1:H5,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-008",
+      "source": "documented",
+      "description": "An order other than 1 and -1 is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(H1:H5,1,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SORT-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text sorts without regard to case",
+      "fixture": "binaryData",
+      "cells": {"ZZ1000": "=SORT(D1:D5,1,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "fig", "kind": "text"}
+    },
+    {
+      "id": "SORT-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: numbers sort before text, and text before booleans",
+      "fixture": "lookupData",
+      "cells": {"Z1": "b", "Z2": "1", "Z3": "TRUE", "ZZ1000": "=SORT(Z1:Z3)"},
+      "check": "ZZ1001",
+      "expect": {"value2": "b", "kind": "text"}
+    },
+    {
+      "id": "SORT-011",
+      "source": "uncertain",
+      "description": "Engine's refusal, Excel to be asked: a blank key is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SORT(Q1:Q2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

@@ -524,7 +524,7 @@
                 {
                     <div class="ex-reference-text ex-reference-text-bar" style="@ReferenceTextBarStyle()" data-ex-text="@BarReferenceText" data-ex-colours="@BarReferenceColours" aria-hidden="true"><div class="ex-reference-text-line">@BarReferenceText</div></div>
                 }
-                <input class="ex-editor ex-formula-bar-text" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
+                <input class="@(FormulaBarBorrowed ? "ex-editor ex-formula-bar-text ex-formula-bar-borrowed" : "ex-editor ex-formula-bar-text")" @bind:get="FormulaBarText()" @bind:set="OnFormulaBarInput" @bind:event="oninput" readonly="@(!FormulaBarEditable)" tabindex="-1" aria-label="@WordFor(GridLabelIds.FormulaBar)" aria-autocomplete="@EditorAutocomplete" aria-controls="@EditorControls" aria-activedescendant="@CompletionActiveDescendant"
                        @onfocus="_onFormulaBarFocus ??= OnFormulaBarPressedAsync"
                        @ref="_formulaBarElement" />
             }
@@ -955,7 +955,7 @@
     /// decision, the period is not.</summary>
     private static readonly TimeSpan EdgeScrollTick = TimeSpan.FromMilliseconds(50);
 
-    private const string ModulePath = "./_content/ExGrid/ex-grid.js";
+    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
 
     /// <summary>
     /// The metrics behind width observation and the overflow decision until a theme
@@ -1103,6 +1103,15 @@
     /// only while this has a delegate.
     /// </summary>
     [Parameter] public EventCallback<ColumnWidthChange> OnColumnWidthChanged { get; set; }
+
+    /// <summary>
+    /// The browser's time zone, an IANA name such as <c>Asia/Tokyo</c>, told once when the grid
+    /// attaches and only when this has a delegate (ADR-0122, ADR-0021's ninth entry). The grid
+    /// does nothing with it; it is for a Consumer that needs the user's day where .NET runs
+    /// elsewhere — ExSheet's <c>TODAY()</c> on Blazor Server (ADR-0121). Browsers raise no event
+    /// when the zone changes, so it is not told again.
+    /// </summary>
+    [Parameter] public EventCallback<string> OnBrowserTimeZone { get; set; }
 
     /// <summary>
     /// Raised when a header drag drops (ADR-0011/0032): the whole new column order,
@@ -1669,6 +1678,16 @@
     /// before.
     /// </summary>
     [Parameter] public Func<TRow, GridColumn<TRow>, string?>? EditorTextOf { get; set; }
+
+    /// <summary>
+    /// A Consumer declaration (ExSheet, ADR-0125): text the Formula Bar shows for a cell that is
+    /// not the cell's own — a cell an array spills into shows its Anchor's Formula — per cell, or
+    /// null for a cell whose text is its own. The bar shows it dimmed (<c>ex-formula-bar-borrowed</c>,
+    /// <c>--ex-formula-bar-borrowed-color</c>) and opens no edit on it, since what it shows is not
+    /// what the cell holds; typing on the cell still opens Overwrite there, and F2 opens on
+    /// <see cref="EditorTextOf"/>'s answer, as on any cell.
+    /// </summary>
+    [Parameter] public Func<TRow, GridColumn<TRow>, string?>? FormulaBarBorrowedTextOf { get; set; }
 
     /// <summary>
     /// A Consumer declaration (ADR-0051): the Formula Bar, a band inside the root above the
@@ -3193,7 +3212,7 @@
             _jsDeclared = _declared;
             var handle = await _module.InvokeAsync<IJSObjectReference>(
                 "attach", _root, _scroller, _self, TakenKeys(claims), claims.CanEdit,
-                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate());
+                PopoverDelay.TotalMilliseconds, claims.CanFind, DeclaredForGate(), OnBrowserTimeZone.HasDelegate);
             if (_disposed)
             {
                 // Disposal overtook the attach; nobody else holds this handle now. Its own
@@ -6916,6 +6935,8 @@
             return "";
         var row = _window[slice];
         var column = Columns[focus.Column];
+        if (FormulaBarBorrowedTextOf?.Invoke(row, column) is { } borrowed)
+            return borrowed;
         if (EditorTextOf?.Invoke(row, column) is { } supplied)
             return supplied;
         if (!column.PaintsValue)
@@ -7387,7 +7408,7 @@
                 await PushEditingStateAsync();
             return;
         }
-        if (_selection.Selection.IsEmpty || !IsEditableCell(_selection.Selection.Focus))
+        if (_selection.Selection.IsEmpty || !IsEditableCell(_selection.Selection.Focus) || FormulaBarBorrowed)
         {
             _suppressRender = true;
             return;
@@ -7435,7 +7456,22 @@
     /// Focus cell edits and one can open there (ADR-0051/0035).</summary>
     private bool FormulaBarEditable
         => _editMode != EditMode.None
-            || (!_selection.Selection.IsEmpty && IsEditableCell(_selection.Selection.Focus));
+            || (!_selection.Selection.IsEmpty && IsEditableCell(_selection.Selection.Focus) && !FormulaBarBorrowed);
+
+    /// <summary>Whether, with no edit open, the Formula Bar shows text that is not the Focus cell's
+    /// own (<see cref="FormulaBarBorrowedTextOf"/>, ADR-0125).</summary>
+    private bool FormulaBarBorrowed
+    {
+        get
+        {
+            if (FormulaBarBorrowedTextOf is not { } borrowed || _editMode != EditMode.None || _selection.Selection.IsEmpty)
+                return false;
+            var focus = _selection.Selection.Focus;
+            var slice = focus.Row - _windowStart;
+            return focus.Column >= 0 && focus.Column < Columns.Count && slice >= 0 && slice < _window.Count
+                && borrowed(_window[slice], Columns[focus.Column]) is not null;
+        }
+    }
 
     /// <summary>
     /// A press into the Name Box (ADR-0051): an open edit commits first, as a press anywhere
@@ -7520,6 +7556,7 @@
             _chromeBarTakeFocus ??= () => InvokeAsync(() => FocusSurfaceAsync(bar: true)))
         {
             ReferenceText = BarReferenceTextForChrome,
+            Borrowed = FormulaBarBorrowed,
         };
 
     /// <summary>A handler reached from a Chrome's control rather than from an event on the
@@ -8745,6 +8782,32 @@
             ResolveRowHeadingWidth();
             PrepareRender();
             StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Not a UI event, so nothing else would surface this.
+            await DispatchExceptionAsync(ex);
+        }
+    }
+
+    /// <summary>
+    /// The browser told the grid its time zone (ADR-0122, ADR-0021's ninth entry), once, at attach,
+    /// because <see cref="OnBrowserTimeZone"/> has a delegate. It is passed on as it came, after
+    /// the checks that anything crossing the JavaScript boundary gets.
+    ///
+    /// <para>Called by the grid's own script module and not for Consumers: it is public
+    /// only because JavaScript interop requires it.</para>
+    /// </summary>
+    /// <param name="zone">The IANA name the browser reports.</param>
+    /// <returns>A task that completes when the Consumer has been told.</returns>
+    [JSInvokable]
+    public async Task OnTimeZoneAsync(string zone)
+    {
+        // It crosses the JS boundary, so nothing here is trusted.
+        if (_disposed || string.IsNullOrWhiteSpace(zone) || zone.Length > 100) return;
+        try
+        {
+            await OnBrowserTimeZone.InvokeAsync(zone);
         }
         catch (Exception ex)
         {

@@ -1,0 +1,65 @@
+{
+  "area": "find",
+  "about": "FIND (ticket 04).",
+  "cases": [
+    {
+      "id": "FIND-001",
+      "source": "documented",
+      "description": "Microsoft's example: the first M",
+      "cells": {"A1": "Miriam McGovern", "ZZ1000": "=FIND(\"M\",A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "FIND-002",
+      "source": "documented",
+      "description": "Microsoft's example: the first m, case told apart",
+      "cells": {"A1": "Miriam McGovern", "ZZ1000": "=FIND(\"m\",A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6}
+    },
+    {
+      "id": "FIND-003",
+      "source": "documented",
+      "description": "Microsoft's example: the first M from the third character",
+      "cells": {"A1": "Miriam McGovern", "ZZ1000": "=FIND(\"M\",A1,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 8}
+    },
+    {
+      "id": "FIND-004",
+      "source": "documented",
+      "description": "Text not found is #VALUE!",
+      "cells": {"A1": "Miriam McGovern", "ZZ1000": "=FIND(\"z\",A1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FIND-005",
+      "source": "documented",
+      "description": "A start below 1 is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FIND(\"a\",\"abc\",0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FIND-006",
+      "source": "documented",
+      "description": "An empty find_text is found at the start",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FIND(\"\",\"abc\",2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "FIND-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a start past the text is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FIND(\"a\",\"abc\",4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

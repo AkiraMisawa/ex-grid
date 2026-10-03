@@ -1,0 +1,23 @@
+{
+  "area": "stdev-s",
+  "about": "STDEV.S (ticket 05).",
+  "cases": [
+    {
+      "id": "STDEVS-001",
+      "source": "documented",
+      "description": "Microsoft's example: ten tools' breaking strength",
+      "cells": {"A1": "1345", "A2": "1301", "A3": "1368", "A4": "1322", "A5": "1310", "A6": "1370", "A7": "1318", "A8": "1350", "A9": "1303", "A10": "1299", "ZZ1000": "=STDEV.S(A1:A10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 27.463915719843495, "digits": 9}
+    },
+    {
+      "id": "STDEVS-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: one number is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=STDEV.S(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

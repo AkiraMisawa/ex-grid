@@ -1,0 +1,33 @@
+{
+  "area": "exact",
+  "about": "EXACT (ticket 05).",
+  "cases": [
+    {
+      "id": "EXACT-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EXACT(\"word\",\"word\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": true}
+    },
+    {
+      "id": "EXACT-002",
+      "source": "documented",
+      "description": "Microsoft's example: case is told apart",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EXACT(\"Word\",\"word\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    },
+    {
+      "id": "EXACT-003",
+      "source": "documented",
+      "description": "Microsoft's example: a space is told apart",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EXACT(\"w ord\",\"word\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": false}
+    }
+  ]
+}

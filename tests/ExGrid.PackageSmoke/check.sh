@@ -69,7 +69,17 @@ mudsheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExS
 [ "$mudsheetdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExSheet\" version=\"[$version]\"" '<dependency id="MudBlazor" version="9.0.0"' | sort)" ] \
   || fail "ExSheet.MudBlazor's dependencies are not exactly ExGrid.MudBlazor $version, ExSheet $version and MudBlazor 9.0.0: $mudsheetdeps"
 if entries ExSheet.MudBlazor | grep -qiE '\.(js|mjs|cjs)$'; then fail "ExSheet.MudBlazor ships a script"; fi
-entries ExSheet.MudBlazor | grep -qxF 'staticwebassets/mud-ex-sheet.css' || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.css"
+entries ExSheet.MudBlazor | grep -qxF 'staticwebassets/mud-ex-sheet.min.css' || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.min.css"
+# What ships is minified, with its source map, and the sources stay home (ADR-0123): every script
+# and stylesheet a package serves is a .min file, and none packs its Assets folder.
+for p in ExGrid ExGrid.MudBlazor ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
+  unminified=$(entries "$p" | grep -E '^staticwebassets/.*\.(css|js)$' | grep -vE '\.min\.(css|js)$' || true)
+  [ -z "$unminified" ] || fail "$p ships an asset that is not minified: $unminified"
+  entries "$p" | grep -qE '^staticwebassets/.*\.min\.css\.map$' || fail "$p ships no source map for its stylesheet"
+  if entries "$p" | grep -qiE '(^|/)Assets/'; then fail "$p packs its Assets sources"; fi
+done
+entries ExGrid | grep -qxF 'staticwebassets/ex-grid.min.js.map' || fail "ExGrid ships no source map for its script"
+
 # The Wrapper still takes no ExSheet package: the direction is one-way (SH-47).
 if grep -q '<dependency id="ExSheet' <<<"$(nuspec ExGrid.MudBlazor)"; then fail "ExGrid.MudBlazor depends on an ExSheet package"; fi
 
@@ -117,13 +127,13 @@ for id in $packages; do
 done
 
 # The paths the README tells a Consumer to link, and the module the component imports.
-for f in _content/ExGrid/ex-grid.css _content/ExGrid/ex-grid.js _content/ExGrid.MudBlazor/mud-ex-grid.css \
-         _content/ExSheet/ex-sheet.css _content/ExSheet.MudBlazor/mud-ex-sheet.css \
-         _content/ExPivot/ex-pivot.css _content/ExPivot.MudBlazor/mud-ex-pivot.css; do
+for f in _content/ExGrid/ex-grid.min.css _content/ExGrid/ex-grid.min.js _content/ExGrid.MudBlazor/mud-ex-grid.min.css \
+         _content/ExSheet/ex-sheet.min.css _content/ExSheet.MudBlazor/mud-ex-sheet.min.css \
+         _content/ExPivot/ex-pivot.min.css _content/ExPivot.MudBlazor/mud-ex-pivot.min.css; do
   [ -f "$out/wwwroot/$f" ] || fail "the published application has no $f"
 done
-grep -qF '"./_content/ExGrid/ex-grid.js"' "$root/src/ExGrid/Components/ExGrid.razor" \
-  || fail "the component no longer imports ./_content/ExGrid/ex-grid.js; update this check with it"
+grep -qF '"./_content/ExGrid/ex-grid.min.js"' "$root/src/ExGrid/Components/ExGrid.razor" \
+  || fail "the component no longer imports ./_content/ExGrid/ex-grid.min.js; update this check with it"
 
 echo "== a Snapshot through an Arrow stream and back, through the packed packages"
 # RoundTrip runs what the application above compiled for a browser: it writes a Snapshot of every

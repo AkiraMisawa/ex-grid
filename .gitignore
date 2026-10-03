@@ -24,3 +24,6 @@ docs/agent-runs/
 .feed/
 .nuget-packages/
 .publish/
+
+# The asset minifier's own dependencies (ADR-0123)
+tools/assets/node_modules/

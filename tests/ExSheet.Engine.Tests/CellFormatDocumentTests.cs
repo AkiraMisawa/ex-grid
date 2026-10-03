@@ -11,7 +11,7 @@ namespace ExSheet.Engine.Tests;
 /// </summary>
 public class CellFormatDocumentTests
 {
-    private const string Head = "{\"version\":8,\"culture\":\"en-US\",\"name\":\"Sheet1\"";
+    private const string Head = "{\"version\":9,\"culture\":\"en-US\",\"name\":\"Sheet1\"";
 
     private static CellAddress At(string address) => CellAddress.Parse(address);
 

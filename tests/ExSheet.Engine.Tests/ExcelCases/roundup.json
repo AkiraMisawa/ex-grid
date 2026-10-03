@@ -1,0 +1,87 @@
+{
+  "area": "roundup",
+  "about": "ROUNDUP (docs/specs/exsheet-functions).",
+  "cases": [
+    {
+      "id": "ROUNDUP-001",
+      "source": "documented",
+      "description": "Microsoft's example: up to no decimals",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(3.2,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "ROUNDUP-002",
+      "source": "documented",
+      "description": "Microsoft's example: up to no decimals",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(76.9,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 77}
+    },
+    {
+      "id": "ROUNDUP-003",
+      "source": "documented",
+      "description": "Microsoft's example: up to three decimals",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(3.14159,3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.142, "digits": 12}
+    },
+    {
+      "id": "ROUNDUP-004",
+      "source": "documented",
+      "description": "Microsoft's example: a negative number rounds away from zero",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(-3.14159,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -3.2, "digits": 12}
+    },
+    {
+      "id": "ROUNDUP-005",
+      "source": "documented",
+      "description": "Microsoft's example: to the left of the decimal point",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(31415.92654,-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 31500}
+    },
+    {
+      "id": "ROUNDUP-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the number as Excel holds it to 15 digits, so 0.1+0.2 rounds up to 0.3",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(0.1+0.2,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.3, "digits": 12}
+    },
+    {
+      "id": "ROUNDUP-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number below the place rounds up to the place",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(0.001,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.1, "digits": 12}
+    },
+    {
+      "id": "ROUNDUP-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: num_digits is truncated",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(2.5,0.9)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ROUNDUP-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that is not a number is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROUNDUP(A6,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

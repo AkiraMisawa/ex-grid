@@ -1,0 +1,33 @@
+{
+  "area": "exp",
+  "about": "EXP (ticket 05).",
+  "cases": [
+    {
+      "id": "EXP-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EXP(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.718281828459045, "digits": 12}
+    },
+    {
+      "id": "EXP-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EXP(2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 7.38905609893065, "digits": 12}
+    },
+    {
+      "id": "EXP-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: past what a number holds is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=EXP(710)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

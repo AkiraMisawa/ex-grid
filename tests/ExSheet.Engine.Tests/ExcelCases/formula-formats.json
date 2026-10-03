@@ -340,6 +340,42 @@
       "check": "B1",
       "expect": {"text": "46290.5", "numberFormat": "General"},
       "oracleSkip": "Through COM (Formula2 over a cell set by FormulaLocal) Excel gives this result no format, but typed with real keys it does (verification/2026-09-27-windows-excel-2); ask by keys"
+    },
+    {
+      "id": "FF-036",
+      "source": "documented",
+      "description": "DATE in a General cell gives the short date format, as Microsoft documents",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=DATE(2026,9,26)"}},
+      "check": "B1",
+      "expect": {"text": "9/26/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-037",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: DATE plus a number keeps the date format, as a date's Reference does",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=DATE(2026,9,26)+1"}},
+      "check": "B1",
+      "expect": {"text": "9/27/2026", "numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-038",
+      "source": "documented",
+      "description": "TODAY in a General cell gives the short date format, as Microsoft documents (its Value is the day the oracle runs, so only the format is compared)",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=TODAY()"}},
+      "check": "B1",
+      "expect": {"numberFormat": "m/d/yyyy"}
+    },
+    {
+      "id": "FF-039",
+      "source": "documented",
+      "description": "NOW in a General cell gives the short date and time format, as Microsoft documents (its Value is the moment the oracle runs, so only the format is compared)",
+      "cells": {},
+      "action": {"do": "enter", "cells": {"B1": "=NOW()"}},
+      "check": "B1",
+      "expect": {"numberFormat": "m/d/yyyy h:mm"}
     }
   ]
 }

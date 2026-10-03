@@ -21,7 +21,7 @@ namespace ExSheet.Components.Tests.Support;
 /// </summary>
 public abstract class SheetTestContext : BunitContext
 {
-    private const string ModulePath = "./_content/ExGrid/ex-grid.js";
+    private const string ModulePath = "./_content/ExGrid/ex-grid.min.js";
 
     private readonly BunitJSModuleInterop _handle;
     private bool _rendererInfoSet;

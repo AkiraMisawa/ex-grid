@@ -1,0 +1,42 @@
+{
+  "area": "median",
+  "about": "MEDIAN (ticket 04).",
+  "cases": [
+    {
+      "id": "MEDIAN-001",
+      "source": "documented",
+      "description": "Microsoft's example: the middle of five numbers",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MEDIAN(1,2,3,4,5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "MEDIAN-002",
+      "source": "documented",
+      "description": "Microsoft's example: the mean of the middle two of six",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MEDIAN(1,2,3,4,5,6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3.5}
+    },
+    {
+      "id": "MEDIAN-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: no number at all is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MEDIAN(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "MEDIAN-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the numbers of a range in any order",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=MEDIAN(C1,C3,E2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 10}
+    }
+  ]
+}

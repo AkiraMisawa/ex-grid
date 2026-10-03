@@ -15,7 +15,7 @@ namespace ExSheet.Engine;
 /// <remarks>
 /// The document is a format with a version. A reader meeting a version it does not know refuses
 /// the document rather than guess at it (ADR-0048); so does a reader meeting anything it does not
-/// understand. This engine writes version 8 and reads versions 1 to 8: version 1 recorded no
+/// understand. This engine writes version 9 and reads versions 1 to 9: version 1 recorded no
 /// name and no Linked Table, and a Sheet opened from one is named <see cref="Sheet.DefaultName"/>
 /// and declares none; versions 1 and 2 recorded formats on cells only, where General meant the
 /// cell set nothing; versions 1 to 3 recorded no column width, and every column of a Sheet
@@ -25,12 +25,13 @@ namespace ExSheet.Engine;
 /// by entry, which is what version 5 meant by them (ADR-0046, 2026-09-28); versions 2 to 6 recorded
 /// no Linked Table's key, and every table of a Sheet opened from one is declared without one
 /// (ADR-0049, 2026-09-30); versions 1 to 7 recorded no Font, Fill or Borders, and a Sheet opened
-/// from one has none (ADR-0071, ADR-0048).
+/// from one has none (ADR-0071, ADR-0048); versions 7 and 8 recorded a key of one column only, which
+/// version 9 still writes as a name, and a key of several as a list (ADR-0058, amended 2026-10-03).
 /// </remarks>
 public sealed class SheetDocument
 {
     /// <summary>The version this engine writes.</summary>
-    public const int CurrentVersion = 8;
+    public const int CurrentVersion = 9;
 
     /// <summary>The oldest version this engine reads.</summary>
     public const int OldestReadableVersion = 1;
@@ -102,7 +103,17 @@ public sealed class SheetDocument
                     json.WriteStartArray("columns");
                     foreach (var column in table.Columns) json.WriteStringValue(column);
                     json.WriteEndArray();
-                    if (table.Key is { } key) json.WriteString("key", key);
+                    // One key column is written as its name, as version 7 wrote it; several as a list (version 9).
+                    if (table.KeyColumns.Count == 1)
+                    {
+                        json.WriteString("key", table.KeyColumns[0]);
+                    }
+                    else if (table.KeyColumns.Count > 1)
+                    {
+                        json.WriteStartArray("key");
+                        foreach (var column in table.KeyColumns) json.WriteStringValue(column);
+                        json.WriteEndArray();
+                    }
                     json.WriteEndObject();
                 }
                 json.WriteEndArray();
@@ -572,7 +583,7 @@ public sealed class SheetDocument
         if (element.ValueKind != JsonValueKind.Object) throw new SheetDocumentException("A Linked Table is not a JSON object.");
         string? name = null;
         List<string>? columns = null;
-        string? key = null;
+        List<string> key = [];
         foreach (var property in element.EnumerateObject())
         {
             var value = property.Value;
@@ -585,9 +596,15 @@ public sealed class SheetDocument
                     if (value.ValueKind != JsonValueKind.Array) throw new SheetDocumentException("A Linked Table's columns are not an array.");
                     columns = [.. value.EnumerateArray().Select(c => c.ValueKind == JsonValueKind.String ? c.GetString()! : throw new SheetDocumentException($"'{c}' is not a column name."))];
                     break;
-                case "key" when version >= 7:
-                    key = value.ValueKind == JsonValueKind.String ? value.GetString() : throw new SheetDocumentException($"'{value}' is not a Linked Table's key column.");
+                case "key" when version >= 7 && value.ValueKind == JsonValueKind.String:
+                    key = [value.GetString()!];
                     break;
+                case "key" when version >= 9 && value.ValueKind == JsonValueKind.Array:
+                    key = [.. value.EnumerateArray().Select(c => c.ValueKind == JsonValueKind.String ? c.GetString()! : throw new SheetDocumentException($"'{c}' is not a Linked Table's key column."))];
+                    if (key.Count < 2) throw new SheetDocumentException($"A key of several columns lists at least two; '{value}' does not.");
+                    break;
+                case "key" when version >= 7:
+                    throw new SheetDocumentException($"'{value}' is not a Linked Table's key column.");
                 default:
                     throw new SheetDocumentException($"'{property.Name}' is not part of a version {version} Linked Table's declaration.");
             }
@@ -596,7 +613,7 @@ public sealed class SheetDocument
         if (columns is null) throw new SheetDocumentException($"The Linked Table '{name}' has no columns.");
         if (Sheet.WhyNotALinkedTable(name, columns) is { } why) throw new SheetDocumentException(why);
         if (Sheet.WhyNotAKey(name, columns, key) is { } whyNotKey) throw new SheetDocumentException(whyNotKey);
-        return new SheetDocumentTable(name, columns, key);
+        return new SheetDocumentTable(name, columns, key.Count == 1 ? key[0] : null) { KeyColumns = key };
     }
 
     private static SheetDocumentCell ReadCell(JsonElement element, int version)
@@ -736,10 +753,15 @@ public sealed record SheetDocumentColumnWidth(int First, int Last, double Width,
 /// <param name="Name">The name Formulas read it by.</param>
 /// <param name="Columns">The column names, in order.</param>
 /// <param name="Key">
-/// The key column, one of <paramref name="Columns"/>, or <see langword="null"/> for a table declared
-/// without one, and for every table of a document read from versions 2 to 6 (ADR-0049, 2026-09-30).
+/// The key column, one of <paramref name="Columns"/>, when the key is one column; <see langword="null"/>
+/// for a table declared without one, for every table of a document read from versions 2 to 6
+/// (ADR-0049, 2026-09-30), and for a key of several columns, which <see cref="KeyColumns"/> names.
 /// </param>
-public sealed record SheetDocumentTable(string Name, IReadOnlyList<string> Columns, string? Key = null);
+public sealed record SheetDocumentTable(string Name, IReadOnlyList<string> Columns, string? Key = null)
+{
+    /// <summary>The key's columns: one, several for a key of several columns (version 9; ADR-0058, amended 2026-10-03), or none.</summary>
+    public IReadOnlyList<string> KeyColumns { get; init; } = Key is null ? [] : [Key];
+}
 
 /// <summary>A Sheet Document that cannot be read: an unknown version, or anything the version does not define (ADR-0048).</summary>
 public sealed class SheetDocumentException : FormatException

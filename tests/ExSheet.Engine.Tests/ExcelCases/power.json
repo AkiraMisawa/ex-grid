@@ -1,0 +1,51 @@
+{
+  "area": "power",
+  "about": "POWER (ticket 04).",
+  "cases": [
+    {
+      "id": "POWER-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=POWER(5,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 25}
+    },
+    {
+      "id": "POWER-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=POWER(98.6,3.2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2401077.2220695773, "digits": 6}
+    },
+    {
+      "id": "POWER-003",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=POWER(4,5/4)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 5.656854249492381, "digits": 10}
+    },
+    {
+      "id": "POWER-004",
+      "source": "uncertain",
+      "description": "Engine's answer, as the ^ operator's: 0 to the power 0 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=POWER(0,0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "POWER-005",
+      "source": "uncertain",
+      "description": "Engine's answer, as the ^ operator's: 0 to a negative power is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=POWER(0,-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

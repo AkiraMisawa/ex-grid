@@ -165,8 +165,15 @@ internal static partial class Lexer
             var reference = ReferencePattern().Match(formula, i);
             if (reference.Success && TryReadReference(reference) is { } parsed)
             {
-                tokens.Add(new Token(TokenKind.Reference, i, reference.Value, afterSpace) { Reference = parsed, Length = reference.Length });
-                i += reference.Length;
+                // A1#: the Spill Range of the Formula in A1, written after one cell only (ADR-0125).
+                var length = reference.Length;
+                if (parsed.Shape == ReferenceShape.Cell && i + length < formula.Length && formula[i + length] == '#')
+                {
+                    parsed = parsed with { Spilled = true };
+                    length++;
+                }
+                tokens.Add(new Token(TokenKind.Reference, i, formula.Substring(i, length), afterSpace) { Reference = parsed, Length = length });
+                i += length;
                 continue;
             }
 

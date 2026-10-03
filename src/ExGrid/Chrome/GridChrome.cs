@@ -423,6 +423,12 @@ public sealed record FormulaBarTextContext(
     /// open on the Focus cell. Null where none is declared.
     /// </summary>
     public RenderFragment? ReferenceText { get; init; }
+
+    /// <summary>
+    /// Whether <see cref="Text"/> is not the Focus cell's own (ADR-0125): a cell an array spills
+    /// into shows its Anchor's Formula. The control shows it dimmed, and it is read-only.
+    /// </summary>
+    public bool Borrowed { get; init; }
 }
 
 /// <summary>

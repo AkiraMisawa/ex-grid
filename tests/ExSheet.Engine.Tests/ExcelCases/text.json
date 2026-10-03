@@ -1,0 +1,206 @@
+{
+  "area": "text",
+  "about": "TEXT (ADR-0120): the code in the invariant spelling, shown as a cell format shows it.",
+  "cases": [
+    {
+      "id": "TEXTFN-001",
+      "source": "documented",
+      "description": "Microsoft's example: currency with a thousands separator and two decimals",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(1234.567,\"$#,##0.00\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "$1,234.57"}
+    },
+    {
+      "id": "TEXTFN-002",
+      "source": "documented",
+      "description": "Microsoft's example: a date as month, day and year in two digits, codes in upper case",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(DATE(2012,3,14),\"MM/DD/YY\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "03/14/12", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-003",
+      "source": "documented",
+      "description": "Microsoft's example: the day of the week",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(DATE(2012,3,14),\"DDDD\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Wednesday"}
+    },
+    {
+      "id": "TEXTFN-004",
+      "source": "documented",
+      "description": "Microsoft's example: a percentage",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(0.285,\"0.0%\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "28.5%", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-005",
+      "source": "documented",
+      "description": "Microsoft's example: scientific notation",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(12200000,\"0.00E+00\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "1.22E+07", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-006",
+      "source": "documented",
+      "description": "Microsoft's example: leading zeros",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(1234,\"0000000\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "0001234", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-007",
+      "source": "documented",
+      "description": "Thousands grouped, rounded to the code",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(1234.5,\"#,##0\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "1,235", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: under ja-JP a code that spells the built-in short date shows as written",
+      "cells": {"ZZ1000": "=TEXT(DATE(2026,9,26),\"m/d/yyyy\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "9/26/2026", "kind": "text"},
+      "culture": "ja-JP"
+    },
+    {
+      "id": "TEXTFN-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: under de-DE the invariant code shows the culture's separators",
+      "cells": {"ZZ1000": "=TEXT(1234.5,\"#,##0.00\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "1.234,50", "kind": "text"},
+      "culture": "de-DE"
+    },
+    {
+      "id": "TEXTFN-010",
+      "source": "uncertain",
+      "description": "German Excel's own year code is not read",
+      "cells": {"ZZ1000": "=TEXT(DATE(2026,9,26),\"JJJJ\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"},
+      "engineDiffersByDecision": "ADR-0120: TEXT reads its code in the invariant spelling under every culture, where Excel reads the system locale's",
+      "excelExpect": {"value2": "2026"},
+      "culture": "de-DE"
+    },
+    {
+      "id": "TEXTFN-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that is no number stays as it is",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(\"abc\",\"0\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "abc"}
+    },
+    {
+      "id": "TEXTFN-012",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text that reads as a number is formatted as one",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(\"12\",\"0.0\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "12.0", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-013",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a boolean stays TRUE",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(TRUE,\"0\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "TRUE"}
+    },
+    {
+      "id": "TEXTFN-014",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a blank cell is 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(A5,\"0.00\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "0.00", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-015",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number a date format cannot show is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(-1,\"yyyy\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "TEXTFN-016",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: General with a short number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(5,\"General\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "5", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-017",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: General with a number longer than 11 characters",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(1/3,\"General\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "TEXTFN-018",
+      "source": "uncertain",
+      "description": "Refused until Excel is asked: an empty code",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(5,\"\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "TEXTFN-019",
+      "source": "uncertain",
+      "description": "Refused: a fraction code is outside the cell formats' subset",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(4.34,\"# ?/?\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "TEXTFN-020",
+      "source": "uncertain",
+      "description": "Refused: a condition is outside the cell formats' subset",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(5,\"[<=9]0;0.0\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "TEXTFN-021",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a colour is dropped, and the minus kept",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(-5,\"[Red]0\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "-5", "kind": "text"}
+    },
+    {
+      "id": "TEXTFN-022",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TEXT(C2,\"0\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

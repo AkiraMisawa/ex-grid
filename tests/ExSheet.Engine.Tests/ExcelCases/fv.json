@@ -1,0 +1,42 @@
+{
+  "area": "fv",
+  "about": "FV (ticket 04).",
+  "cases": [
+    {
+      "id": "FV-001",
+      "source": "documented",
+      "description": "Microsoft's example: savings with a present value, at the start of each period",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.06/12,10,-200,-500,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2581.4033740601362, "digits": 12}
+    },
+    {
+      "id": "FV-002",
+      "source": "documented",
+      "description": "Microsoft's example: a year of payments",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.12/12,12,-1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 12682.503013196976, "digits": 12}
+    },
+    {
+      "id": "FV-003",
+      "source": "documented",
+      "description": "Microsoft's example: payments at the start",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0.11/12,35,-2000,,1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 82846.24637190059, "digits": 12}
+    },
+    {
+      "id": "FV-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a rate of 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=FV(0,10,-100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1000}
+    }
+  ]
+}

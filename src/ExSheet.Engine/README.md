@@ -12,8 +12,8 @@ cell from its **Entry**:
   recalculation; a circular reference is `#CIRC!` in every cell of the cycle and every cell that
   depends on it
 
-The **Sheet Document** is the Sheet's serialisable form (version 8, which also reads versions 1
-to 7), with the Cell Formats recorded on its columns, rows and cells — Number Format, Alignment,
+The **Sheet Document** is the Sheet's serialisable form (version 9, which also reads versions 1
+to 8), with the Cell Formats recorded on its columns, rows and cells — Number Format, Alignment,
 Font, Fill and Borders — and the widths recorded on its columns. It holds Entries and never Values, so
 anyone who wants a saved Sheet's numbers runs this engine — on a server as in the browser, with
 the same result.
@@ -50,9 +50,9 @@ change.ValueChanges;                        // C1
 a constant read under the Sheet's culture and recorded already parsed. Typing into a General cell
 can give it a format, as in Excel: a date or a percentage typed as one, and a Formula of simple
 arithmetic (`+`, `-`, single-cell References, parentheses) takes the format of the first
-formatted cell it reads, so `=A1+7` over a date shows a date. It happens once, at entry. A Formula keeps the
-whitespace it was typed with where Excel keeps it — before a token, but not at the end nor before
-a `,` — and a tab between tokens is refused, as Excel refuses it. Its tokens are written in
+formatted cell it reads, so `=A1+7` over a date shows a date; `DATE` gives the short date
+format. It happens once, at entry. A Formula keeps the whitespace it was typed with where Excel
+keeps it — before a token, but not at the end nor before a `,` — and a tab between tokens is refused, as Excel refuses it. Its tokens are written in
 Excel's spelling (`= sum( a1 , 2 ) ` is kept as `= SUM( A1, 2 )`), and rewriting its References
 changes only the Reference tokens; one rewritten to `#REF!` takes the whitespace before it along
 and keeps its qualifier (`Sheet1!#REF!`). References are written as Excel writes them: a range
@@ -106,13 +106,78 @@ them:
 
 | Function | Arguments |
 |---|---|
-| `SUM`, `AVERAGE`, `MIN`, `MAX` | `number1, [number2], ...` |
+| `SUM`, `AVERAGE`, `MIN`, `MAX`, `PRODUCT`, `MEDIAN` | `number1, [number2], ...` |
 | `COUNT`, `COUNTA` | `value1, [value2], ...` |
+| `LARGE`, `SMALL` | `array, k` |
+| `RANK.EQ` | `number, ref, [order]` |
+| `STDEV.S`, `STDEV.P`, `VAR.S`, `VAR.P` | `number1, [number2], ...` |
 | `IF` | `logical_test, value_if_true, [value_if_false]` |
-| `ROUND` | `number, num_digits` |
+| `IFS` | `logical_test1, value_if_true1, ...` |
+| `SWITCH` | `expression, value1, result1, [default_or_value2], [result2], ...` |
+| `AND`, `OR`, `XOR` | `logical1, [logical2], ...` |
+| `NOT` | `logical` |
 | `IFERROR` | `value, value_if_error` |
-| `ISERROR` | `value` |
+| `IFNA` | `value, value_if_na` |
+| `ISERROR`, `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISNA` | `value` |
+| `NA`, `PI` | (none) |
+| `ROUND`, `ROUNDUP`, `ROUNDDOWN` | `number, num_digits` |
+| `TRUNC` | `number, [num_digits]` |
+| `ABS`, `INT`, `SQRT`, `SIGN`, `EXP`, `LN`, `LOG10` | `number` |
+| `MOD` | `number, divisor` |
+| `POWER` | `number, power` |
+| `DATE` | `year, month, day` |
+| `TODAY` | (none) — the Sheet Day, `#GETTING_DATA` until it is set (`Sheet.SetToday`, ADR-0121) |
+| `NOW` | (none) — the moment `Sheet.NowSource` gives, read once per recalculation; volatile (ADR-0124) |
+| `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND` | `serial_number` |
+| `TIME` | `hour, minute, second` |
+| `WEEKDAY` | `serial_number, [return_type]` |
+| `DAYS` | `end_date, start_date` |
+| `EOMONTH`, `EDATE` | `start_date, months` |
+| `NETWORKDAYS` | `start_date, end_date, [holidays]` |
+| `WORKDAY` | `start_date, days, [holidays]` |
+| `LEFT`, `RIGHT` | `text, [num_chars]` |
+| `MID` | `text, start_num, num_chars` |
+| `LEN`, `TRIM` | `text` |
+| `CONCAT`, `CONCATENATE` | `text1, [text2], ...` |
+| `TEXTJOIN` | `delimiter, ignore_empty, text1, [text2], ...` |
+| `SUBSTITUTE` | `text, old_text, new_text, [instance_num]` |
+| `REPLACE` | `old_text, start_num, num_chars, new_text` |
+| `FIND` | `find_text, within_text, [start_num]` |
+| `REPT` | `text, number_times` |
+| `EXACT` | `text1, text2` |
+| `NUMBERVALUE` | `text, [decimal_separator], [group_separator]` |
+| `TEXT` | `value, format_text` |
+| `VALUE` | `text` — read under the Sheet's culture (ADR-0124) |
+| `INDEX` | `array, row_num, [column_num]` |
+| `CHOOSE` | `index_num, value1, [value2], ...` |
+| `OFFSET` | `reference, rows, cols, [height], [width]` — volatile (ADR-0124) |
+| `ROW`, `COLUMN` | `[reference]` |
+| `ROWS`, `COLUMNS` | `array` |
 | `XLOOKUP` | `lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]` |
+| `XMATCH` | `lookup_value, lookup_array, [match_mode], [search_mode]` |
+| `PMT` | `rate, nper, pv, [fv], [type]` |
+| `PV`, `FV` | `rate, nper, pmt, [fv or pv], [type]` |
+| `NPV` | `rate, value1, [value2], ...` |
+| `XNPV` | `rate, values, dates` |
+| `FILTER` | `array, include, [if_empty]` |
+| `UNIQUE` | `array, [by_col], [exactly_once]` |
+| `SORT` | `array, [sort_index], [sort_order], [by_col]` |
+| `SORTBY` | `array, by_array1, [sort_order1], ...` |
+| `SEQUENCE` | `rows, [columns], [start], [step]` |
+| `TRANSPOSE` | `array` |
+| `SUMPRODUCT` | `array1, [array2], ...` |
+
+A Formula whose result is an array of more than one Value **spills** (ADR-0125): its cell, the
+Anchor, shows the first Value, and the cells below and to the right show the rest, holding no
+Entry of their own. `Sheet.SpilledFrom(address)` names the Anchor of a spilled cell. An Entry or
+another spill in the way, or the Sheet's edge, makes the Anchor `#SPILL!`, and the spill is laid
+out again when the obstacle is cleared; of two spills that would overlap, the Anchor first in
+address order spills. `A1#` reads the spill of the Formula in A1, and is `#REF!` where A1 does not
+spill. Operators work element by element over ranges, and a function that reduces (`SUM`,
+`SUMPRODUCT`) takes an array whole.
+
+Which functions come next, each with its status and priority, is catalogued in
+[`docs/specs/exsheet-functions/spec.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/specs/exsheet-functions/spec.md).
 
 `DeclaredFunction.ValuesOf(index)` gives the values an argument takes from a fixed list, in Excel's
 order and with Excel's texts, which completion lists there: `XLOOKUP`'s `match_mode` (`0 - Exact
@@ -121,17 +186,34 @@ match`, `-1 - Exact match or next smaller item`, …) and `search_mode` (`1 - Se
 Where the engine cannot give Excel's answer, it gives an Error Value and never a different
 answer:
 
-- **No spilled arrays.** A Formula whose result would be a multi-cell range, or an operator applied
-  to one, is `#VALUE!`; so is an `XLOOKUP` whose return array is more than one cell across.
-  `IFERROR` and `ISERROR` do not turn that refusal into a fallback.
+- **Functions are not lifted over arrays yet** (ADR-0125). An array where a function wants one
+  Value — `ROUND(A1:A3,0)`, `IF(A1:A3>1,…)` — is `#VALUE!`, where Excel 365 applies the function to
+  each Value and spills. `IFERROR` and `ISERROR` do not turn that refusal into a fallback. The `@`
+  operator is refused on entry.
+- **An array larger than the engine holds**, more than 2^24 Values, is `#NUM!` (ADR-0125).
 - **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) answers only over a lookup array sorted
   as the mode says — one kind of value, no blanks, text of ASCII letters, digits and spaces; it is
   `#VALUE!` otherwise. Over duplicate keys it returns the one Excel was observed to: an equal key
   is the first of its run ascending and the last descending.
 - **`#CIRC!`** is shown by every cell of a circular reference and every Formula that reads one,
-  where Excel shows 0. `IFERROR` does not catch it.
+  where Excel shows 0. `IFERROR` and `IFNA` do not catch it.
 - **`#GETTING_DATA`**, a Linked Table's data on its way, is not an error to `IFERROR` and
   `ISERROR`, where Excel's are: a fallback never stands in for data that has not arrived.
+  `ISBLANK` and `ISNUMBER` give it back too, rather than FALSE.
+- **`TEXT` reads its code in the invariant spelling** under every culture (`"yyyy"`, never German
+  Excel's `"JJJJ"`), as a cell's number format records it, and shows the Value as a cell in that
+  format would under the Sheet's culture (ADR-0120). A code outside the cell formats' subset, an
+  empty code, and `General` past 11 characters are `#VALUE!`.
+- **Asked of Excel before they are answered**, each refused until the next Windows run says what
+  Excel gives: `MOD` whose quotient is 2^27 or more (`#NUM!`, as older versions of Excel gave);
+  `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where Excel's calendar holds the day
+  that never existed, and with a boolean typed as an argument (`#VALUE!`); `NETWORKDAYS` and
+  `WORKDAY` the same way, and with text among the holidays; `LARGE` and `SMALL` with a `k` that is
+  not a whole number; `PMT`, `PV` and `FV` with a `type` other than 0 or 1 (`#VALUE!`); `UNIQUE`
+  with a blank in its array, and `SORT` and `SORTBY` with a blank or an Error Value among their keys
+  (`#VALUE!`).
+- **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
+  `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 
 ## Operations, and undoing them
 
@@ -257,7 +339,8 @@ text for a range, what F4 makes of the Reference at the caret, and every Referen
 with the cells it names or the Linked Table column it reads, for Reference Outlines
 (`Sheet.References` reads a Sheet qualifier against the Sheet's own name). For a Pointing Scope
 (ADR-0058) it writes what reads a Linked Table's cell by key, `LookupText` —
-`XLOOKUP("R-4471", Positions[Id], Positions[PV])` — a column's structured reference,
+`XLOOKUP("R-4471", Positions[Id], Positions[PV])`, or for a key of several columns
+`XLOOKUP(1, (Cds[Entity]="ACME")*(Cds[Tenor]="5Y"), Cds[Spread])` — a column's structured reference,
 `StructuredReferenceText`, and a Value as Excel writes a constant of its kind, `ConstantText`.
 
 ## More

@@ -196,13 +196,11 @@
     {
       "id": "TABLE-021",
       "source": "observed",
-      "description": "A column of more than one row used as one Value is #VALUE! (no implicit intersection)",
+      "description": "An operator on a column of more than one row spills (ADR-0125); no implicit intersection",
       "tables": {"Positions": {"columns": ["Id", "PV", "Desk"], "rows": [["R-1001", 100, "Rates"], ["R-4471", 250.5, "FX"], ["R-2002", -50, "Rates"]]}, "One": {"columns": ["V"], "rows": [[21]]}},
       "cells": {"ZZ1000": "=Positions[PV]*2"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": 200}
+      "expect": {"value2": 200}
     },
     {
       "id": "TABLE-022",

@@ -504,6 +504,9 @@
     background: transparent;
     color: inherit;
 }
+/* Text that is not the Focus cell's own, such as the Anchor's Formula over a spilled cell
+   (ADR-0125): dimmed, as Excel's is. After the rule above, and narrower, so its colour wins. */
+.ex-formula-bar > .ex-formula-bar-text.ex-formula-bar-borrowed { color: var(--ex-formula-bar-borrowed-color, GrayText); }
 .ex-formula-bar > .ex-editor:focus,
 .ex-formula-bar > .ex-editor:focus-within { outline: var(--ex-editor-outline, 2px solid Highlight); outline-offset: -2px; }
 .ex-name-box-form { display: contents; }

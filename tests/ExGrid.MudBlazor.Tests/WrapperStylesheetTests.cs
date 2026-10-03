@@ -15,7 +15,7 @@ public class WrapperStylesheetTests
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "ExGrid.slnx")))
             directory = directory.Parent;
         Assert.True(directory is not null, $"no ExGrid.slnx above {AppContext.BaseDirectory}");
-        var path = Path.Combine(directory!.FullName, "src", "ExGrid.MudBlazor", "wwwroot", "mud-ex-grid.css");
+        var path = Path.Combine(directory!.FullName, "src", "ExGrid.MudBlazor", "Assets", "mud-ex-grid.css");
         Assert.True(File.Exists(path), $"the Wrapper's stylesheet is not at {path}");
         return File.ReadAllText(path);
     }

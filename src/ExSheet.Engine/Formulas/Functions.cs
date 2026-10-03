@@ -3,7 +3,8 @@ using System.Globalization;
 namespace ExSheet.Engine.Formulas;
 
 /// <summary>
-/// The declared set, ADR-0047's first list. Each function is written to Microsoft's documented
+/// The declared set: ADR-0047's first list, and the functions admitted after it
+/// (<c>docs/specs/exsheet-functions/spec.md</c>). Each function is written to Microsoft's documented
 /// behaviour for it: how it treats blanks, text, booleans and Error Values typed as arguments and
 /// found inside ranges, and its rounding. Where ExSheet cannot give Excel's answer — a result that
 /// would spill an array, XLOOKUP's binary search over data it cannot show to be sorted — it gives
@@ -25,6 +26,92 @@ internal static partial class FunctionLibrary
         new("ROUND", 2, 2, "number, num_digits", "Rounds a number to a specified number of digits, half away from zero.", Round),
         new("IFERROR", 2, 2, "value, value_if_error", "Returns value_if_error if value is an Error Value, and value otherwise. #GETTING_DATA is not an error to it.", IfError),
         new("ISERROR", 1, 1, "value", "Returns TRUE if value is an Error Value. #GETTING_DATA is not an error to it.", IsError),
+        new("AND", 1, Open, "logical1, [logical2], ...", "Returns TRUE if all of its arguments are TRUE.", And),
+        new("OR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if any argument is TRUE.", Or),
+        new("NOT", 1, 1, "logical", "Reverses the logic of its argument.", Not),
+        new("IFNA", 2, 2, "value, value_if_na", "Returns value_if_na if value is #N/A, and value otherwise.", IfNa),
+        new("ISBLANK", 1, 1, "value", "Returns TRUE if value refers to an empty cell.", IsBlank),
+        new("ISNUMBER", 1, 1, "value", "Returns TRUE if value is a number.", IsNumber),
+        new("ROUNDUP", 2, 2, "number, num_digits", "Rounds a number up, away from zero.", RoundUp),
+        new("ROUNDDOWN", 2, 2, "number, num_digits", "Rounds a number down, toward zero.", RoundDown),
+        new("ABS", 1, 1, "number", "Returns the absolute value of a number.", Abs),
+        new("INT", 1, 1, "number", "Rounds a number down to the nearest integer.", Int),
+        new("MOD", 2, 2, "number, divisor", "Returns the remainder from division, with the sign of the divisor.", Mod),
+        new("DATE", 3, 3, "year, month, day", "Returns the serial number of a particular date.", Date),
+        new("TODAY", 0, 0, "", "Returns the serial number of today's date: the Sheet Day.", Today),
+        new("YEAR", 1, 1, "serial_number", "Converts a serial number to a year.", Year),
+        new("MONTH", 1, 1, "serial_number", "Converts a serial number to a month.", Month),
+        new("DAY", 1, 1, "serial_number", "Converts a serial number to a day of the month.", Day),
+        new("EOMONTH", 2, 2, "start_date, months", "Returns the serial number of the last day of the month before or after a specified number of months.", EoMonth),
+        new("EDATE", 2, 2, "start_date, months", "Returns the serial number of the date that is the indicated number of months before or after the start date.", EDate),
+        new("LEFT", 1, 2, "text, [num_chars]", "Returns the leftmost characters from a text value.", Left),
+        new("RIGHT", 1, 2, "text, [num_chars]", "Returns the rightmost characters from a text value.", Right),
+        new("MID", 3, 3, "text, start_num, num_chars", "Returns a specific number of characters from a text string, starting at the position you specify.", Mid),
+        new("LEN", 1, 1, "text", "Returns the number of characters in a text string.", Len),
+        new("TRIM", 1, 1, "text", "Removes spaces from text, leaving single spaces between words.", Trim),
+        new("TEXT", 2, 2, "value, format_text", "Formats a number and converts it to text.", FormatAsText),
+        new("CONCAT", 1, 253, "text1, [text2], ...", "Combines the text from multiple ranges and strings.", Concat),
+        new("INDEX", 2, 3, "array, row_num, [column_num]", "Returns the value of the cell at the intersection of a row and a column of a range.", Index),
+        new("PRODUCT", 1, Open, "number1, [number2], ...", "Multiplies its arguments.", Product),
+        new("MEDIAN", 1, Open, "number1, [number2], ...", "Returns the median of the given numbers.", Median),
+        new("LARGE", 2, 2, "array, k", "Returns the k-th largest value in a data set.", Large),
+        new("SMALL", 2, 2, "array, k", "Returns the k-th smallest value in a data set.", Small),
+        new("ISTEXT", 1, 1, "value", "Returns TRUE if value is text.", IsText),
+        new("ISNA", 1, 1, "value", "Returns TRUE if value is the #N/A error value.", IsNa),
+        new("IFS", 2, 254, "logical_test1, value_if_true1, ...", "Checks whether one or more conditions are met, and returns a value that corresponds to the first TRUE condition.", Ifs) { InPairs = true },
+        new("SWITCH", 3, 254, "expression, value1, result1, [default_or_value2], [result2], ...", "Evaluates an expression against a list of values, and returns the result corresponding to the first matching value.", Switch),
+        new("NA", 0, 0, "", "Returns the error value #N/A.", Na),
+        new("XMATCH", 2, 4, "lookup_value, lookup_array, [match_mode], [search_mode]", "Returns the relative position of an item in an array or range of cells.", XMatch),
+        new("CHOOSE", 2, Open, "index_num, value1, [value2], ...", "Chooses a value from a list of values.", Choose),
+        new("ROW", 0, 1, "[reference]", "Returns the row number of a reference.", Row),
+        new("COLUMN", 0, 1, "[reference]", "Returns the column number of a reference.", Column),
+        new("TRUNC", 1, 2, "number, [num_digits]", "Truncates a number to an integer, or to num_digits.", Trunc),
+        new("POWER", 2, 2, "number, power", "Returns the result of a number raised to a power.", Power),
+        new("SQRT", 1, 1, "number", "Returns a positive square root.", Sqrt),
+        new("WEEKDAY", 1, 2, "serial_number, [return_type]", "Converts a serial number to a day of the week.", Weekday),
+        new("DAYS", 2, 2, "end_date, start_date", "Returns the number of days between two dates.", Days),
+        new("NETWORKDAYS", 2, 3, "start_date, end_date, [holidays]", "Returns the number of whole workdays between two dates.", NetworkDays),
+        new("WORKDAY", 2, 3, "start_date, days, [holidays]", "Returns the serial number of the date before or after a specified number of workdays.", Workday),
+        new("TEXTJOIN", 3, 252, "delimiter, ignore_empty, text1, [text2], ...", "Combines the text from multiple ranges and strings, with a delimiter between each value.", TextJoin),
+        new("CONCATENATE", 1, Open, "text1, [text2], ...", "Joins several text items into one text item.", Concatenate),
+        new("SUBSTITUTE", 3, 4, "text, old_text, new_text, [instance_num]", "Substitutes new text for old text in a text string.", Substitute),
+        new("REPLACE", 4, 4, "old_text, start_num, num_chars, new_text", "Replaces characters within text.", Replace),
+        new("FIND", 2, 3, "find_text, within_text, [start_num]", "Finds one text value within another, case-sensitive.", Find),
+        new("PMT", 3, 5, "rate, nper, pv, [fv], [type]", "Returns the periodic payment for an annuity.", Pmt),
+        new("PV", 3, 5, "rate, nper, pmt, [fv], [type]", "Returns the present value of an investment.", Pv),
+        new("FV", 3, 5, "rate, nper, pmt, [pv], [type]", "Returns the future value of an investment.", Fv),
+        new("NPV", 2, Open, "rate, value1, [value2], ...", "Returns the net present value of an investment based on a series of periodic cash flows and a discount rate.", Npv),
+        new("RANK.EQ", 2, 3, "number, ref, [order]", "Returns the rank of a number in a list of numbers.", RankEq),
+        new("STDEV.S", 1, Open, "number1, [number2], ...", "Estimates standard deviation based on a sample.", StdevS),
+        new("STDEV.P", 1, Open, "number1, [number2], ...", "Calculates standard deviation based on the entire population.", StdevP),
+        new("VAR.S", 1, Open, "number1, [number2], ...", "Estimates variance based on a sample.", VarS),
+        new("VAR.P", 1, Open, "number1, [number2], ...", "Calculates variance based on the entire population.", VarP),
+        new("XOR", 1, Open, "logical1, [logical2], ...", "Returns TRUE if an odd number of its arguments are TRUE.", Xor),
+        new("ROWS", 1, 1, "array", "Returns the number of rows in a reference.", Rows),
+        new("COLUMNS", 1, 1, "array", "Returns the number of columns in a reference.", Columns),
+        new("SIGN", 1, 1, "number", "Returns the sign of a number: 1, 0 or -1.", Sign),
+        new("EXP", 1, 1, "number", "Returns e raised to the power of a given number.", Exp),
+        new("LN", 1, 1, "number", "Returns the natural logarithm of a number.", Ln),
+        new("LOG10", 1, 1, "number", "Returns the base-10 logarithm of a number.", Log10),
+        new("PI", 0, 0, "", "Returns the value of pi.", Pi),
+        new("TIME", 3, 3, "hour, minute, second", "Returns the serial number of a particular time.", Time),
+        new("HOUR", 1, 1, "serial_number", "Converts a serial number to an hour.", Hour),
+        new("MINUTE", 1, 1, "serial_number", "Converts a serial number to a minute.", Minute),
+        new("SECOND", 1, 1, "serial_number", "Converts a serial number to a second.", Second),
+        new("REPT", 2, 2, "text, number_times", "Repeats text a given number of times.", Rept),
+        new("EXACT", 2, 2, "text1, text2", "Checks to see if two text values are identical, case-sensitive.", Exact),
+        new("NUMBERVALUE", 1, 3, "text, [decimal_separator], [group_separator]", "Converts text to a number with the separators given.", NumberValue),
+        new("XNPV", 3, 3, "rate, values, dates", "Returns the net present value for a schedule of cash flows that is not necessarily periodic.", XNpv),
+        new("VALUE", 1, 1, "text", "Converts a text argument to a number, read under the Sheet's culture.", ValueOf),
+        new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
+        new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset),
+        new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter),
+        new("UNIQUE", 1, 3, "array, [by_col], [exactly_once]", "Returns a list of unique values in a list or range.", Unique),
+        new("SORT", 1, 4, "array, [sort_index], [sort_order], [by_col]", "Sorts the contents of a range or array.", Sort),
+        new("SORTBY", 2, Open, "array, by_array1, [sort_order1], ...", "Sorts the contents of a range or array based on the values in a corresponding range or array.", SortBy),
+        new("SEQUENCE", 1, 4, "rows, [columns], [start], [step]", "Generates a list of sequential numbers in an array.", Sequence),
+        new("TRANSPOSE", 1, 1, "array", "Returns the transpose of an array.", Transpose),
+        new("SUMPRODUCT", 1, Open, "array1, [array2], ...", "Returns the sum of the products of corresponding array components.", SumProduct),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
             // Excel's lists, character for character: match_mode's as the Windows runs of
@@ -59,15 +146,15 @@ internal static partial class FunctionLibrary
     /// arguments, booleans and text that reads as a number count too, and other text is
     /// <c>#VALUE!</c>. An Error Value anywhere is the result, the first one found left to right.
     /// </summary>
-    private static ErrorValue? CollectNumbers(FunctionCall call, List<double> numbers)
+    private static ErrorValue? CollectNumbers(FunctionCall call, List<double> numbers, int from = 0)
     {
         var evaluator = call.Evaluator;
-        for (var i = 0; i < call.Count; i++)
+        for (var i = from; i < call.Count; i++)
         {
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     foreach (var value in evaluator.RangeValues(operand))
                     {
                         if (value.Kind == ValueKind.Number) numbers.Add(value.Number);
@@ -142,7 +229,7 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     count += evaluator.RangeValues(operand).Count(v => v.Kind == ValueKind.Number);
                     break;
                 case OperandKind.Missing:
@@ -168,7 +255,7 @@ internal static partial class FunctionLibrary
             var operand = call.Operand(i);
             switch (operand.Kind)
             {
-                case OperandKind.Area or OperandKind.Column:
+                case OperandKind.Area or OperandKind.Column or OperandKind.Array:
                     count += evaluator.RangeValues(operand).Count();
                     break;
                 case OperandKind.Missing:
@@ -190,39 +277,46 @@ internal static partial class FunctionLibrary
     /// error — they refuse too, rather than turn "cannot" into a fallback value.
     /// </summary>
     private static bool IsArray(Operand operand) =>
-        (operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell) || (operand.Kind == OperandKind.Column && operand.Column!.Count != 1);
+        (operand.Kind == OperandKind.Area && !operand.Area.IsSingleCell)
+        || (operand.Kind == OperandKind.Column && operand.Column!.Count != 1)
+        || operand.Kind == OperandKind.Array;
 
     private static Operand If(FunctionCall call)
     {
         var test = call.Operand(0);
         if (IsArray(test)) return Operand.Of(ErrorValue.Value);
         var condition = call.Evaluator.ScalarOf(test);
-        bool truth;
-        switch (condition)
-        {
-            case null:
-                truth = false;
-                break;
-            case { IsError: true } e:
-                return Operand.Of(e);
-            case { Kind: ValueKind.Number } n:
-                truth = n.Number != 0;
-                break;
-            case { Kind: ValueKind.Boolean } b:
-                truth = b.Boolean;
-                break;
-            case { } t when t.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase):
-                truth = true;
-                break;
-            case { } t when t.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase):
-                truth = false;
-                break;
-            default:
-                return Operand.Of(ErrorValue.Value);
-        }
+        var truth = false;
+        if (condition is { } value && !TryTruth(value, out truth)) return Operand.Of(value.IsError ? value.Error : ErrorValue.Value);
         if (truth) return call.Has(1) ? call.Operand(1) : Operand.Of(Value.FromNumber(0));
         if (call.Count < 3) return Operand.Of(Value.FromBoolean(false));
         return call.Has(2) ? call.Operand(2) : Operand.Of(Value.FromNumber(0));
+    }
+
+    /// <summary>
+    /// A Value read as a logical one, as <c>IF</c>'s test and <c>NOT</c> read it: a number is TRUE
+    /// unless it is 0, and text is TRUE or FALSE only when it spells one, without regard to case.
+    /// <see langword="false"/> for any other text and for an Error Value.
+    /// </summary>
+    private static bool TryTruth(Value value, out bool truth)
+    {
+        truth = false;
+        switch (value.Kind)
+        {
+            case ValueKind.Number:
+                truth = value.Number != 0;
+                return true;
+            case ValueKind.Boolean:
+                truth = value.Boolean;
+                return true;
+            case ValueKind.Text when value.Text.Equals("TRUE", StringComparison.OrdinalIgnoreCase):
+                truth = true;
+                return true;
+            case ValueKind.Text when value.Text.Equals("FALSE", StringComparison.OrdinalIgnoreCase):
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>
@@ -272,12 +366,24 @@ internal static partial class FunctionLibrary
         return Operand.Of(Evaluator.Number(RoundHalfAwayFromZero(number, Math.Truncate(digits))));
     }
 
+    /// <summary>How ROUND, ROUNDUP and ROUNDDOWN treat the digits they drop.</summary>
+    internal enum Rounding
+    {
+        HalfAwayFromZero,
+        AwayFromZero,
+        TowardZero,
+    }
+
+    /// <summary>Excel's ROUND: half away from zero (<see cref="RoundAt"/>).</summary>
+    internal static double RoundHalfAwayFromZero(double number, double digits) => RoundAt(number, digits, Rounding.HalfAwayFromZero);
+
     /// <summary>
-    /// Excel's ROUND: half away from zero, applied to the number as Excel holds it to 15
+    /// Excel's ROUND, ROUNDUP and ROUNDDOWN, applied to the number as Excel holds it to 15
     /// significant digits — so 2.675, which is 2.67499999999999982236431605997495353221893310546875
-    /// as a double, rounds to 2.68 as its decimal spelling says.
+    /// as a double, rounds to 2.68 as its decimal spelling says, and 0.1+0.2 rounds up to 0.3 at one
+    /// digit, not 0.4. <paramref name="digits"/> is already a whole number.
     /// </summary>
-    internal static double RoundHalfAwayFromZero(double number, double digits)
+    internal static double RoundAt(double number, double digits, Rounding rounding)
     {
         if (number == 0) return 0;
         // "E14": 15 significant digits, d.dddddddddddddd, then the exponent.
@@ -287,19 +393,23 @@ internal static partial class FunctionLibrary
         // How many of the 15 digits sit at or above the 10^-digits place.
         var kept = exponent + 1 + digits;
         if (kept >= 15) return number;
-        if (kept < 0) return 0;
+        if (kept < 0)
+        {
+            // Every digit is dropped: a number below half the place is 0, and away from zero it is the place itself.
+            if (rounding != Rounding.AwayFromZero) return 0;
+            var place = Math.Pow(10, -digits);
+            return number < 0 ? -place : place;
+        }
         var keep = (int)kept;
         var retained = mantissa[..keep];
-        var roundUp = mantissa[keep] >= '5';
-        decimal magnitude;
-        if (keep == 0)
+        var roundUp = rounding switch
         {
-            magnitude = roundUp ? 1 : 0;
-        }
-        else
-        {
-            magnitude = decimal.Parse(retained, CultureInfo.InvariantCulture) + (roundUp ? 1 : 0);
-        }
+            Rounding.HalfAwayFromZero => mantissa[keep] >= '5',
+            Rounding.AwayFromZero => mantissa[keep..].Any(c => c != '0'),
+            _ => false,
+        };
+        decimal magnitude = (keep == 0 ? 0 : decimal.Parse(retained, CultureInfo.InvariantCulture)) + (roundUp ? 1 : 0);
+        if (magnitude == 0) return 0;
         // magnitude is an integer of at most 16 digits; place it back at 10^(exponent + 1 - keep).
         var scale = exponent + 1 - keep;
         var result = double.Parse(
@@ -313,47 +423,87 @@ internal static partial class FunctionLibrary
 
     private static Operand XLookup(FunctionCall call)
     {
-        var evaluator = call.Evaluator;
-
+        // The lookup value's own refusal and Error Value come first, before the arrays are looked at.
         var lookupOperand = call.Operand(0);
         if (IsArray(lookupOperand)) return Operand.Of(ErrorValue.Value);
-        var lookup = evaluator.ScalarOf(lookupOperand);
-        if (lookup is { IsError: true } lookupError) return Operand.Of(lookupError);
+        if (call.Evaluator.ScalarOf(lookupOperand) is { IsError: true } lookupError) return Operand.Of(lookupError);
 
-        var lookupArray = call.Operand(1);
-        var returnArray = call.Operand(2);
+        var lookupArray = ArrayOrValue(call.Operand(1));
+        var returnArray = ArrayOrValue(call.Operand(2));
         if (!lookupArray.IsRange) return lookupArray.IsError ? lookupArray : Operand.Of(ErrorValue.Value);
         if (!returnArray.IsRange) return returnArray.IsError ? returnArray : Operand.Of(ErrorValue.Value);
-
-        var matchMode = 0;
-        if (call.Has(4))
-        {
-            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(4)), out var modeError);
-            if (modeError is { } me) return Operand.Of(me);
-            matchMode = (int)Math.Truncate(mode);
-            if (matchMode is not (0 or -1 or 1 or 2 or 3)) return Operand.Of(ErrorValue.Value);
-        }
-        var searchMode = 1;
-        if (call.Has(5))
-        {
-            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(5)), out var modeError);
-            if (modeError is { } me) return Operand.Of(me);
-            searchMode = (int)Math.Truncate(mode);
-            if (searchMode is not (1 or -1 or 2 or -2)) return Operand.Of(ErrorValue.Value);
-        }
-
         // A range of one row or one column; a Linked Table's column runs down.
         if (Vector.Of(lookupArray) is not { } vector) return Operand.Of(ErrorValue.Value);
-        // The return array lies along the lookup array; more than one cell across it would spill.
-        if (Vector.Of(returnArray) is not { } result || result.Vertical != vector.Vertical || result.Length != vector.Length)
+        // The return array lies along the lookup array. Several cells across it return the whole
+        // row (or column) found, which spills (ADR-0125).
+        var (along, across) = returnArray.Kind switch
         {
-            return Operand.Of(ErrorValue.Value);
+            OperandKind.Area => vector.Vertical ? (returnArray.Area.Rows, returnArray.Area.Columns) : (returnArray.Area.Columns, returnArray.Area.Rows),
+            OperandKind.Array => vector.Vertical ? (returnArray.Array!.Rows, returnArray.Array.Columns) : (returnArray.Array!.Columns, returnArray.Array.Rows),
+            _ => vector.Vertical ? (returnArray.Column!.Count, 1) : (1, returnArray.Column!.Count),
+        };
+        if (along != vector.Length) return Operand.Of(ErrorValue.Value);
+        if (Search(call, vector, modesAt: 4) is not { } outcome) return Operand.Of(ErrorValue.Value);
+        if (outcome.Failure is { } failure) return failure;
+        if (outcome.Found is not { } index) return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
+        if (across == 1) return Vector.Of(returnArray)!.Value.ItemAt(index);
+        if (returnArray.Kind == OperandKind.Area)
+        {
+            var area = returnArray.Area;
+            return Operand.Of(vector.Vertical
+                ? new Area(area.Row1 + index, area.Column1, area.Row1 + index, area.Column2)
+                : new Area(area.Row1, area.Column1 + index, area.Row2, area.Column1 + index));
+        }
+        var array = returnArray.Array!;
+        return Operand.Of(vector.Vertical ? Slice(array, index, index, 0, array.Columns - 1) : Slice(array, 0, array.Rows - 1, index, index));
+    }
+
+    /// <summary>
+    /// An argument that takes an array, where a computation gave one Value that is not an Error
+    /// Value: that Value as an array of one, as Excel's array of one row. A blank argument, a
+    /// Reference or a column stays as it is.
+    /// </summary>
+    private static Operand ArrayOrValue(Operand operand) =>
+        operand.Kind == OperandKind.Scalar && operand.Scalar is { IsError: false } value ? Operand.AsArray(value) : operand;
+
+    /// <summary>What a search answered: the position found, or none; or the Error Value an argument was.</summary>
+    private readonly record struct SearchOutcome(int? Found, Operand? Failure);
+
+    /// <summary>
+    /// XLOOKUP's and XMATCH's search of <paramref name="vector"/> for argument 0, with
+    /// <c>match_mode</c> and <c>search_mode</c> at <paramref name="modesAt"/> and the one after.
+    /// <see langword="null"/> is a refusal (<c>#VALUE!</c>): a mode outside Excel's list, or a binary
+    /// search over data that is not sorted as the mode says (<see cref="TryBinarySearch"/>).
+    /// </summary>
+    private static SearchOutcome? Search(FunctionCall call, Vector vector, int modesAt)
+    {
+        var evaluator = call.Evaluator;
+        var lookupOperand = call.Operand(0);
+        if (IsArray(lookupOperand)) return null;
+        var lookup = evaluator.ScalarOf(lookupOperand);
+        if (lookup is { IsError: true } lookupError) return new SearchOutcome(null, Operand.Of(lookupError));
+
+        var matchMode = 0;
+        if (call.Has(modesAt))
+        {
+            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(modesAt)), out var modeError);
+            if (modeError is { } me) return new SearchOutcome(null, Operand.Of(me));
+            matchMode = (int)Math.Truncate(mode);
+            if (matchMode is not (0 or -1 or 1 or 2 or 3)) return null;
+        }
+        var searchMode = 1;
+        if (call.Has(modesAt + 1))
+        {
+            var mode = evaluator.ToNumber(evaluator.ScalarOf(call.Operand(modesAt + 1)), out var modeError);
+            if (modeError is { } me) return new SearchOutcome(null, Operand.Of(me));
+            searchMode = (int)Math.Truncate(mode);
+            if (searchMode is not (1 or -1 or 2 or -2)) return null;
         }
 
         int? found = null;
         if (searchMode is 2 or -2)
         {
-            if (!TryBinarySearch(vector, evaluator, lookup, matchMode, ascending: searchMode == 2, out found)) return Operand.Of(ErrorValue.Value);
+            if (!TryBinarySearch(vector, evaluator, lookup, matchMode, ascending: searchMode == 2, out found)) return null;
         }
         else if (lookup is { } wanted)
         {
@@ -363,7 +513,7 @@ internal static partial class FunctionLibrary
             {
                 // Numbers and booleans are matched by their text; Error Values match nothing.
                 var texts = candidates.Where(c => !c.Value.IsError).Select(c => (c.Index, evaluator.ToText(c.Value)));
-                if (!PortableRegex.TryFirstMatch(evaluator.ToText(wanted), texts, out found)) return Operand.Of(ErrorValue.Value);
+                if (!PortableRegex.TryFirstMatch(evaluator.ToText(wanted), texts, out found)) return null;
             }
             else
             {
@@ -380,12 +530,7 @@ internal static partial class FunctionLibrary
             // A blank lookup value matches a blank cell, as Excel was observed to (XLOOKUP-067).
             found = vector.FirstBlank(evaluator, fromEnd: searchMode == -1);
         }
-
-        if (found is not { } index)
-        {
-            return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
-        }
-        return result.ItemAt(index);
+        return new SearchOutcome(found, null);
     }
 
     /// <summary>
@@ -469,6 +614,13 @@ internal static partial class FunctionLibrary
         public static Vector? Of(Operand range)
         {
             if (range.Kind == OperandKind.Column) return new Vector(range, true, range.Column!.Count);
+            if (range.Kind == OperandKind.Array)
+            {
+                var array = range.Array!;
+                if (array.Columns == 1) return new Vector(range, true, array.Rows);
+                if (array.Rows == 1) return new Vector(range, false, array.Columns);
+                return null;
+            }
             var area = range.Area;
             if (area.Columns == 1) return new Vector(range, true, area.Rows);
             if (area.Rows == 1) return new Vector(range, false, area.Columns);
@@ -482,6 +634,15 @@ internal static partial class FunctionLibrary
             {
                 var column = Source.Column!;
                 return Enumerable.Range(0, column.Count).Where(i => column[i] is not null).Select(i => (i, column[i]!.Value));
+            }
+            if (Source.Kind == OperandKind.Array)
+            {
+                var array = Source.Array!;
+                var down = Vertical;
+                return Enumerable.Range(0, Length)
+                    .Select(i => (Index: i, Value: down ? array[i, 0] : array[0, i]))
+                    .Where(c => c.Value is not null)
+                    .Select(c => (c.Index, c.Value!.Value));
             }
             var area = Source.Area;
             var vertical = Vertical;
@@ -505,11 +666,14 @@ internal static partial class FunctionLibrary
         public Operand ItemAt(int index)
         {
             if (Source.Kind == OperandKind.Column) return Source.Column![index] is { } value ? Operand.Of(value) : Operand.Blank;
+            if (Source.Kind == OperandKind.Array) return At(Source.Array!, index) is { } item ? Operand.Of(item) : Operand.Blank;
             var area = Source.Area;
             var row = Vertical ? area.Row1 + index : area.Row1;
             var column = Vertical ? area.Column1 : area.Column1 + index;
             return Operand.Of(new Area(row, column, row, column));
         }
+
+        private Value? At(ValueArray array, int index) => Vertical ? array[index, 0] : array[0, index];
     }
 
     private static bool SameKindEqual(Value candidate, Value wanted) =>

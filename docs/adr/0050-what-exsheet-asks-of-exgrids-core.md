@@ -444,3 +444,19 @@ the built-in Chrome.
     and never the grid's.)*
   - A dynamic call was chosen over a fixed flag on the command, because the same command opens the
     core's popover under one Chrome and a frame of its own under another.
+
+## A Formula Bar text that is not the cell's own *(2026-10-03, with ADR-0125)*
+
+[ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md) has a spilled
+cell show its Anchor's Formula in the Formula Bar, dimmed, as Excel does: the Formula is not that
+cell's, and it is not edited there. ExGrid's bar shows the Focus cell's text, so this is one more
+opt-in declaration:
+
+- **`FormulaBarBorrowedTextOf`**, asked by (row, column) as `EditorTextOf` is: text the bar shows for
+  a cell that is not the cell's own, or null. While no edit is open the bar shows it with the class
+  `ex-formula-bar-borrowed` (`--ex-formula-bar-borrowed-color`, ADR-0029), read-only, and a press on
+  it opens no edit. Typing on the cell still opens Overwrite there, and F2 opens on `EditorTextOf`'s
+  answer, as on any cell.
+- **The Chrome's bar is told** through `FormulaBarTextContext.Borrowed`; the MudBlazor Chrome dims the
+  text in `--mud-palette-text-disabled`.
+- Without the declaration, nothing changes.

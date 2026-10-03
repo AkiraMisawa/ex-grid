@@ -1,0 +1,42 @@
+{
+  "area": "row",
+  "about": "ROW (ticket 04).",
+  "cases": [
+    {
+      "id": "ROW-001",
+      "source": "documented",
+      "description": "Microsoft's example: the row of the Formula's own cell",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROW()"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1000}
+    },
+    {
+      "id": "ROW-002",
+      "source": "documented",
+      "description": "Microsoft's example: the row of a Reference",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROW(C10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 10}
+    },
+    {
+      "id": "ROW-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: one row of several columns",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROW(A3:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3}
+    },
+    {
+      "id": "ROW-004",
+      "source": "uncertain",
+      "description": "Several rows spill, each row's number",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ROW(A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    }
+  ]
+}

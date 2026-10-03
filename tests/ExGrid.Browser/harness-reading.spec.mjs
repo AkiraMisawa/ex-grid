@@ -52,7 +52,7 @@ test('circuitQuiet says what kept the wire busy rather than waiting for ever', a
     await openSheet(page);
     // Something on the page that never stops asking the host: here, a stylesheet every 50 ms.
     await alterPage(page, () => {
-        const timer = setInterval(() => fetch('/_content/ExGrid/ex-grid.css', { cache: 'no-store' }).catch(() => { }), 50);
+        const timer = setInterval(() => fetch('/_content/ExGrid/ex-grid.min.css', { cache: 'no-store' }).catch(() => { }), 50);
         return () => clearInterval(timer);
     });
     await expect(circuitQuiet({ timeout: 1_500 }))

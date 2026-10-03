@@ -1,0 +1,60 @@
+{
+  "area": "numbervalue",
+  "about": "NUMBERVALUE (ticket 05).",
+  "cases": [
+    {
+      "id": "NUMBERVALUE-001",
+      "source": "documented",
+      "description": "Microsoft's example: separators given",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NUMBERVALUE(\"2.500,27\",\",\",\".\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2500.27, "digits": 10}
+    },
+    {
+      "id": "NUMBERVALUE-002",
+      "source": "documented",
+      "description": "Microsoft's example: a percent sign divides by 100",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NUMBERVALUE(\"3.5%\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.035, "digits": 12}
+    },
+    {
+      "id": "NUMBERVALUE-003",
+      "source": "documented",
+      "description": "Empty text is 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NUMBERVALUE(\"\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "NUMBERVALUE-004",
+      "source": "documented",
+      "description": "Spaces are ignored",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NUMBERVALUE(\" 3 000 \")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 3000}
+    },
+    {
+      "id": "NUMBERVALUE-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a group separator after the decimal one is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NUMBERVALUE(\"1.2,3\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "NUMBERVALUE-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: two percent signs divide by 10000",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=NUMBERVALUE(\"5%%\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.0005, "digits": 12}
+    }
+  ]
+}

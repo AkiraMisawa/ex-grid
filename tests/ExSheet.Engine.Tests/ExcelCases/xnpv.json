@@ -1,0 +1,30 @@
+{
+  "area": "xnpv",
+  "about": "XNPV (ticket 05).",
+  "cases": [
+    {
+      "id": "XNPV-001",
+      "source": "documented",
+      "description": "Microsoft's example: five cash flows at irregular dates",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(0.09,A1:A5,B1:B5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2086.647602031535, "digits": 6}
+    },
+    {
+      "id": "XNPV-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a date before the first is #NUM!",
+      "cells": {"A1": "100", "A2": "100", "B1": "40000", "B2": "39000", "ZZ1000": "=XNPV(0.09,A1:A2,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "XNPV-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: values and dates of different counts are #NUM!",
+      "cells": {"A1": "-10000", "A2": "2750", "A3": "4250", "A4": "3250", "A5": "2750", "B1": "39448", "B2": "39508", "B3": "39751", "B4": "39859", "B5": "39904", "ZZ1000": "=XNPV(0.09,A1:A3,B1:B2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

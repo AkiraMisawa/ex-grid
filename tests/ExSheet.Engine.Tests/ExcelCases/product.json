@@ -1,0 +1,49 @@
+{
+  "area": "product",
+  "about": "PRODUCT (docs/specs/exsheet-functions, ticket 04).",
+  "cases": [
+    {
+      "id": "PRODUCT-001",
+      "source": "documented",
+      "description": "Microsoft's example: the numbers of a range multiplied",
+      "cells": {"A1": "5", "A2": "15", "A3": "30", "ZZ1000": "=PRODUCT(A1:A3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2250}
+    },
+    {
+      "id": "PRODUCT-002",
+      "source": "documented",
+      "description": "Microsoft's example: a range and a number",
+      "cells": {"A1": "5", "A2": "15", "A3": "30", "ZZ1000": "=PRODUCT(A1:A3,2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4500}
+    },
+    {
+      "id": "PRODUCT-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text, booleans and blanks in a range are passed over",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PRODUCT(A1:A7)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 8}
+    },
+    {
+      "id": "PRODUCT-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: no number at all is 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PRODUCT(A5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "PRODUCT-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an Error Value in a range is the result",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=PRODUCT(C1:C3)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

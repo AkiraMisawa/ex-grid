@@ -8,6 +8,9 @@ internal abstract class Node
 
     /// <summary>Every structured reference this node reads, statically: a Linked Table's readers (ADR-0049).</summary>
     public virtual IEnumerable<StructuredReferenceNode> StructuredReferences => [];
+
+    /// <summary>Every function call this node makes, statically, its arguments' calls included: <c>TODAY</c>'s readers (ADR-0121).</summary>
+    public virtual IEnumerable<FunctionNode> Calls => [];
 }
 
 internal sealed class NumberNode(double number) : Node
@@ -71,6 +74,8 @@ internal sealed class IntersectionNode(Node left, Node right) : Node
     public Node Right { get; } = right;
 
     public override IEnumerable<Reference> References => Left.References.Concat(Right.References);
+
+    public override IEnumerable<FunctionNode> Calls => Left.Calls.Concat(Right.Calls);
 }
 
 internal sealed class FunctionNode(string name, IReadOnlyList<Node> arguments, FunctionDefinition? function) : Node
@@ -86,6 +91,8 @@ internal sealed class FunctionNode(string name, IReadOnlyList<Node> arguments, F
     public override IEnumerable<Reference> References => Arguments.SelectMany(a => a.References);
 
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Arguments.SelectMany(a => a.StructuredReferences);
+
+    public override IEnumerable<FunctionNode> Calls => Arguments.SelectMany(a => a.Calls).Prepend(this);
 }
 
 internal sealed class ParenthesesNode(Node inner) : Node
@@ -95,6 +102,8 @@ internal sealed class ParenthesesNode(Node inner) : Node
     public override IEnumerable<Reference> References => Inner.References;
 
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Inner.StructuredReferences;
+
+    public override IEnumerable<FunctionNode> Calls => Inner.Calls;
 }
 
 internal sealed class UnaryNode(char op, Node operand) : Node
@@ -106,6 +115,8 @@ internal sealed class UnaryNode(char op, Node operand) : Node
     public override IEnumerable<Reference> References => Operand.References;
 
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Operand.StructuredReferences;
+
+    public override IEnumerable<FunctionNode> Calls => Operand.Calls;
 }
 
 internal sealed class PercentNode(Node operand) : Node
@@ -115,6 +126,8 @@ internal sealed class PercentNode(Node operand) : Node
     public override IEnumerable<Reference> References => Operand.References;
 
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Operand.StructuredReferences;
+
+    public override IEnumerable<FunctionNode> Calls => Operand.Calls;
 }
 
 internal sealed class BinaryNode(string op, Node left, Node right) : Node
@@ -128,4 +141,6 @@ internal sealed class BinaryNode(string op, Node left, Node right) : Node
     public override IEnumerable<Reference> References => Left.References.Concat(Right.References);
 
     public override IEnumerable<StructuredReferenceNode> StructuredReferences => Left.StructuredReferences.Concat(Right.StructuredReferences);
+
+    public override IEnumerable<FunctionNode> Calls => Left.Calls.Concat(Right.Calls);
 }

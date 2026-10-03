@@ -92,6 +92,10 @@ internal static class SheetColumns
     internal static Func<SheetRow, GridColumn<SheetRow>, string?> EditorText { get; } =
         static (row, column) => row.EntryTextAt(IndexOf(column));
 
+    /// <summary>What the Formula Bar shows dimmed for a spilled cell: its Anchor's Formula (ADR-0125).</summary>
+    internal static Func<SheetRow, GridColumn<SheetRow>, string?> SpilledFormula { get; } =
+        static (row, column) => row.SpilledFormulaAt(IndexOf(column));
+
     /// <summary>The sheet column a grid column stands for.</summary>
     internal static int IndexOf(GridColumn<SheetRow> column) =>
         CellAddress.TryParseColumn(column.Name, out var index)

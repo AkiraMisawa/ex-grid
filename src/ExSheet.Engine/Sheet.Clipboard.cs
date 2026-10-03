@@ -33,7 +33,7 @@ public sealed partial class Sheet
             for (var column = range.First.Column; column <= range.Last.Column; column++)
             {
                 var address = new CellAddress(row, column);
-                states[i++] = CarriedState(address);
+                states[i++] = SpilledState(address, range) ?? CarriedState(address);
                 if (column > range.First.Column) text.Append('\t');
                 var value = GetValue(address);
                 var raw = value?.ToString() ?? "";
@@ -47,6 +47,21 @@ public sealed partial class Sheet
         }
         html.Append("</table>");
         return new SheetCopy(new SheetBlock(range, states), text.ToString(), html.ToString());
+    }
+
+    /// <summary>
+    /// A spilled cell as a copy carries it (ADR-0125): its Value as a constant when its Anchor is
+    /// outside the copied range, as Excel pastes part of a spill as values; nothing when the Anchor is
+    /// inside, whose Formula spills again where it is pasted. <see langword="null"/> for a cell no
+    /// array spills into.
+    /// </summary>
+    private CellState? SpilledState(CellAddress address, CellRange range)
+    {
+        if (SpilledFrom(address) is not { } anchor) return null;
+        var carried = CarriedState(address);
+        var inside = anchor.Row >= range.First.Row && anchor.Row <= range.Last.Row && anchor.Column >= range.First.Column && anchor.Column <= range.Last.Column;
+        if (inside || GetValue(address) is not { } value || value is { IsError: true, Error: ErrorValue.GettingData or ErrorValue.Circ }) return carried;
+        return carried with { Entry = Entry.FromValue(value) };
     }
 
     /// <summary>The namespace Excel's own HTML declares for its <c>x:</c> attributes.</summary>

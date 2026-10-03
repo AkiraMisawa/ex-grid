@@ -23,7 +23,8 @@ block on `claude/exsheet-start-8cx3v1` before it uses the first number.
 | 0090–0099 | `claude/exsheet-part-c` | Part C of the eleventh Windows run: what ADR-0071 left to the next PR |
 | 0100–0109 | `claude/trusting-babbage-1tpuqo` | The Sheet Toolbar: ticket 54 shipped as part of ExSheet (grilled 2026-10-02) |
 | 0110–0119 | `claude/update-repository-description-40up8q` | The documentation site on GitHub Pages, and how its code examples are shown |
-| 0120– | free | reserve a block of ten |
+| 0120–0129 | `claude/excel-formulas-management-4clj80` | ExSheet's function catalogue: `TODAY` and `TEXT`, the P1 functions that need a decision |
+| 0130– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
@@ -59,4 +60,5 @@ reserved here.
 | 1–6 | in | — |
 | 7 | in (Pointing Scope) | a Linked Table's key (ADR-0049) |
 | 8 | `claude/exsheet-cell-format` | Font, Fill and Borders (ADR-0071, numbered 0063 before) |
-| 9– | free | reserve one at a time |
+| 9 | `claude/excel-formulas-management-4clj80` | a Linked Table's key of several columns (ADR-0058, amended 2026-10-03) |
+| 10– | free | reserve one at a time |
