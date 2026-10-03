@@ -404,6 +404,32 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"dispose: \(\) => \{[^}]*dropReveal\(\);", RegexOptions.Singleline), script.Text);
     }
 
+    [Fact] // ADR-0021/0070 (the sixth decision about focus, 2026-10-02; DC-61): the keyboard is handed on to the Consumer's control only while it is still this grid's — DOM focus inside this root and not in a field of its own beside the rows, or on nothing — and only to a control still on the page, nothing measured
+    public void The_hand_on_gives_the_consumers_control_the_keyboard_only_while_it_is_still_this_grids()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
+        var handOn = Regex.Match(script, @"handKeyboardTo: \(element\) => \{.*?\n        \},", RegexOptions.Singleline);
+        Assert.True(handOn.Success, "handKeyboardTo(element) is not in the module");
+        var body = handOn.Value;
+
+        // The hand-back's condition: this root's own focus, or none (ADR-0018)...
+        Assert.Contains("root.contains(active)", body, StringComparison.Ordinal);
+        Assert.Contains("active === document.body", body, StringComparison.Ordinal);
+        Assert.Contains("active === document.documentElement", body, StringComparison.Ordinal);
+        // ...and not a field beside the rows with focus of its own, unless a press on the rows left
+        // it standing (ADR-0021, widened 2026-09-28).
+        Assert.Contains("active.closest('.ex-formula-bar') !== null", body, StringComparison.Ordinal);
+        Assert.Contains("active !== staleField", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("fromField", body, StringComparison.Ordinal);
+        // Only an element still on the page, focused as its own FocusAsync would focus it, scrolled
+        // into view; the field a press left standing is given up with the keyboard.
+        Assert.Contains("element instanceof HTMLElement && element.isConnected", body, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"staleField = null;\s*element\.focus\(\);"), body);
+        Assert.Single(Regex.Matches(body, @"\.(focus|blur)\("));
+        // A read of document.activeElement, never of layout, and no listener of its own.
+        Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle|addEventListener"), body);
+    }
+
     [Fact] // ADR-0021 (widened 2026-09-28) / ADR-0018: the hand-back leaves the fields beside the rows alone, found by the core's band, nothing measured
     public void The_hand_back_leaves_the_formula_bar_and_the_name_box_alone()
     {
@@ -442,11 +468,12 @@ public class ShippedStylesheetTests
         // ...into the surface that last held the keyboard, one of this grid's own.
         Assert.Contains("standingField()?.focus({ preventScroll: true })", body, StringComparison.Ordinal);
         Assert.Contains("const standingField = () => surfaceField(ownSurface(lastSurface));", script.Text, StringComparison.Ordinal);
-        // Script moves DOM focus in these five places only (ADR-0021, five since ADR-0080): this,
-        // the hand-back to the root or its Keyboard Field, the open edit's own focus, each only
-        // while the keyboard is this grid's; the root's own focus passed on to its Keyboard Field;
-        // and the field given up by a press during a composition.
-        Assert.Equal(5, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
+        // Script moves DOM focus in these six places only (ADR-0021, five since ADR-0080, six since
+        // 2026-10-02): this, the hand-back to the root or its Keyboard Field, the open edit's own
+        // focus, and the keyboard handed on to a control of the Consumer's, each only while the
+        // keyboard is this grid's; the root's own focus passed on to its Keyboard Field; and the
+        // field given up by a press during a composition.
+        Assert.Equal(6, Regex.Matches(script.Text, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), body);
         // The surface is forgotten with the instance.
         Assert.Matches(new Regex(@"dispose: \(\) => \{.*lastSurface = null;", RegexOptions.Singleline), script.Text);
@@ -600,9 +627,9 @@ public class ShippedStylesheetTests
 
         // Selected in those two places alone, by no listener of its own, and no focus is moved: the
         // press's default gives the field the keyboard (ADR-0021's decisions about focus are not
-        // added to: five since ADR-0080, none of them this one's).
+        // added to: six since 2026-10-02, none of them this one's).
         Assert.Equal(2, Regex.Matches(script, @"nameBox(Selected)?\.select\(\);").Count);
-        Assert.Equal(5, Regex.Matches(script, @"\.(focus|blur)\(").Count);
+        Assert.Equal(6, Regex.Matches(script, @"\.(focus|blur)\(").Count);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
     }
 
@@ -763,7 +790,7 @@ public class ShippedStylesheetTests
         Assert.Contains("releaseEndsHeard++;", ListenerBody(script, "onPress"), StringComparison.Ordinal);
     }
 
-    [Fact] // ADR-0080 / ADR-0021 (five decisions about focus): focus on the root itself goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
+    [Fact] // ADR-0080 / ADR-0021 (decisions about focus): focus on the root itself goes on to its Keyboard Field, the hand-back puts the keyboard there, and DOM focus never moves while the field composes
     public void ADR0080_the_keyboard_goes_to_the_field_and_never_moves_while_it_composes()
     {
         var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal)).Text;
@@ -873,9 +900,22 @@ public class ShippedStylesheetTests
         // text (F4, ADR-0051 2026-09-29) — reads of the field and of the listener's own note,
         // no layout read.
         Assert.Single(Regex.Matches(script.Text, @"'OnKeyAsync'"));
-        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false\)",
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*input \? input\.value : null, input \? \(input\.selectionStart \?\? input\.value\.length\) : -1,\s*input \? \(input\.selectionEnd \?\? input\.value\.length\) : -1, input \? movedByUser\(input\) : false,\s*k\.repeat === true\)",
             RegexOptions.Singleline), script.Text);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|getComputedStyle"), script.Text);
+    }
+
+    [Fact] // ADR-0070/0021 / DC-62: the key message says whether the key is a held key's repeat — a field of the event the listener already reads, the last of the one message
+    public void The_key_message_says_whether_the_key_is_a_repeat()
+    {
+        var script = ShippedAssets().Single(asset => asset.Path.EndsWith("ex-grid.js", StringComparison.Ordinal));
+
+        // Auto-repeat is visible only in the capture-phase listener: by the time a key reaches
+        // .NET, a repeat looks like a press. The snapshot every key is gated and held as keeps
+        // the browser's flag, and the one message to OnKeyAsync carries it last, so a held key
+        // replayed after a hold says so as well. The core raises OnLeave once per press from it.
+        Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*repeat: event\.repeat,", RegexOptions.Singleline), script.Text);
+        Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*,\s*k\.repeat === true\)\s*\.catch\(", RegexOptions.Singleline), script.Text);
     }
 
     [Fact] // ADR-0051 (2026-09-29) / ADR-0021 / DC-45 / DC-24: F4 is claimed only while an edit is open, and only where C# says the Consumer declared what it does
@@ -1272,5 +1312,145 @@ public class ShippedStylesheetTests
         Assert.Matches(new Regex(@"if \(verdict === 'caret'\) \{[^}]*placeCaretAtEnd\(input, k\);", RegexOptions.Singleline), script);
         Assert.Matches(new Regex(@"\} else if \(verdict === 'caret'\) \{\s*const input = editorInput\(\);\s*if \(input\) \{\s*placeCaretAtEnd\(input, rebased\);"), script);
         Assert.DoesNotMatch(new Regex(@"getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|getClientRects"), script);
+    }
+
+    /// <summary>The core stylesheet without its comments, split into the rules outside the
+    /// forced-colors block and the rules inside it, each in source order.</summary>
+    private static (IReadOnlyList<(string[] Selectors, string Body)> Outside, IReadOnlyList<(string[] Selectors, string Body)> ForcedColors) ForcedColorsSplit()
+    {
+        var (css, _) = CoreStylesheet();
+        var media = Regex.Match(css, @"@media \(forced-colors: active\) \{(?<body>(?:[^{}]|\{[^{}]*\})*)\}");
+        Assert.True(media.Success, "no @media (forced-colors: active) block in the core stylesheet");
+        return (RulesOf(css.Remove(media.Index, media.Length)), RulesOf(media.Groups["body"].Value));
+
+        static IReadOnlyList<(string[] Selectors, string Body)> RulesOf(string css)
+            => Regex.Matches(css, @"(?<selectors>[^{}]+)\{(?<body>[^{}]*)\}")
+                .Select(rule => (
+                    rule.Groups["selectors"].Value.Split(',').Select(selector => selector.Trim()).ToArray(),
+                    rule.Groups["body"].Value))
+                .ToList();
+    }
+
+    [Fact] // ADR-0068 / ADR-0029: the Change Highlight's one token defaults to a tint of the system colour Mark, readable on a dark page as on a light one, and the core only reads it
+    public void The_change_highlight_token_defaults_to_a_tint_of_mark_and_is_only_read()
+    {
+        var (css, _) = CoreStylesheet();
+
+        // Every read of the token carries the same fallback: Mark at 40% over the cell's own
+        // ground, because Mark itself stays yellow on a dark page whose text is light.
+        var reads = Regex.Matches(css, @"var\(--ex-change-highlight-background");
+        Assert.NotEmpty(reads);
+        Assert.Equal(reads.Count, Regex.Matches(css,
+            @"var\(--ex-change-highlight-background, color-mix\(in srgb, Mark 40%, transparent\)\)").Count);
+        // A theme sets it; the core never does (ADR-0027).
+        Assert.DoesNotMatch(new Regex(@"--ex-change-highlight-background\s*:"), css);
+    }
+
+    [Fact] // ADR-0068 / ADR-0006 / UX-16: the mark is a tint laid over exactly the layers the cell paints without it — over a stripe, a role and a Pinned Column's row rule, beneath a Missing state's tint, a total row's rule and a cell's lines
+    public void The_change_highlight_is_a_tint_ordered_against_the_other_grounds()
+    {
+        var (rules, _) = ForcedColorsSplit();
+        int IndexOf(string selector) => rules.ToList().FindIndex(rule => rule.Selectors.Contains(selector));
+        const string mark = "linear-gradient(var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)), var(--ex-change-highlight-background, color-mix(in srgb, Mark 40%, transparent)))";
+        const string rowRule = "var(--ex-row-rule, none)";
+        const string lines = "var(--ex-line-t, none), var(--ex-line-r, none), var(--ex-line-b, none), var(--ex-line-l, none)";
+
+        var marked = rules.Where(rule => rule.Selectors.Any(s => s.Contains("ex-changed", StringComparison.Ordinal))).ToList();
+        Assert.Equal(
+            [".ex-cell.ex-changed", ".ex-row-stripe .ex-pinned.ex-changed", ".ex-row-group .ex-cell.ex-changed",
+             ".ex-row-total .ex-cell.ex-changed", ".ex-cell.ex-state-missing.ex-changed:not(.ex-lined)",
+             ".ex-cell.ex-lined.ex-changed", ".ex-row-total .ex-cell.ex-lined.ex-changed, .ex-cell.ex-lined.ex-state-missing.ex-changed"],
+            marked.Select(rule => string.Join(", ", rule.Selectors)));
+        foreach (var (selectors, body) in marked)
+        {
+            var name = string.Join(", ", selectors);
+            // An image layer, never the shorthand or a colour: either would take the Pinned
+            // Column's opaque ground away, and a translucent mark would let the columns passing
+            // beneath show through (ADR-0006).
+            Assert.Matches(new Regex(@"(?<![\w-])background-image:"), body);
+            Assert.DoesNotMatch(new Regex(@"(?<![\w-])background(-color)?\s*:"), body);
+            var layers = Regex.Replace(Regex.Match(body, @"background-image:\s*(?<value>[^;]+);").Groups["value"].Value, @"\s+", " ");
+            Assert.Single(Regex.Matches(layers, Regex.Escape(mark)));
+            // A cell's lines lie above every ground, the mark among them (DC-59, ADR-0050 item 15).
+            var lined = name.Contains(".ex-lined.", StringComparison.Ordinal);
+            Assert.Equal(lined, layers.StartsWith(lines, StringComparison.Ordinal));
+            var grounds = lined ? layers[(lines.Length + 2)..] : layers;
+            // Of the grounds, the mark is the top one, except under a total row's rule and a
+            // Missing state's tint: a line stays a line, and a state is never the thing that
+            // disappears.
+            var beneath = name.Contains("ex-row-total", StringComparison.Ordinal) || name.Contains("ex-state-missing", StringComparison.Ordinal);
+            Assert.Equal(beneath, !grounds.StartsWith(mark, StringComparison.Ordinal));
+            if (beneath)
+                Assert.StartsWith("var(--ex-tint", grounds, StringComparison.Ordinal);
+            // And it takes no layer away: wherever a Pinned Column's cell paints its row's rule —
+            // everywhere but a group or total row, which names none — the rule stays, beneath the
+            // mark, as the row's own rule lies beneath the scrollable cells beside it.
+            if (name is not (".ex-row-group .ex-cell.ex-changed" or ".ex-row-total .ex-cell.ex-changed"))
+                Assert.True(layers.IndexOf(rowRule, StringComparison.Ordinal) > layers.IndexOf(mark, StringComparison.Ordinal), $"{name} keeps the row's rule beneath the mark");
+        }
+        // A marked cell with lines paints .ex-lined's layers and the mark: one layer more, and a
+        // size and a position for every layer. The others are .ex-lined's own, each as it is
+        // written there, so a layer .ex-lined changes changes under the mark too: when ADR-0090
+        // put the column rule in device pixels, the marked copies kept the old width.
+        var (_, plainLined) = Assert.Single(rules, rule => rule.Selectors.SequenceEqual([".ex-cell.ex-lined"]));
+        foreach (var (_, body) in marked.Where(rule => rule.Selectors.Any(s => s.Contains(".ex-lined.", StringComparison.Ordinal))))
+        {
+            Assert.Equal(ImagesOf(plainLined), ImagesOf(body).Replace(mark + ", ", "", StringComparison.Ordinal));
+            Assert.Equal(LayersOf(plainLined, "background-image") + 1, LayersOf(body, "background-image"));
+            Assert.Equal(LayersOf(body, "background-image"), LayersOf(body, "background-size"));
+            Assert.Equal(LayersOf(body, "background-image"), LayersOf(body, "background-position"));
+        }
+        // At equal specificity the later rule wins: the mark is declared after the stripes, the
+        // Row Kinds, Cell State and the lines, whose grounds it outranks or keeps, and the
+        // combinations in the order stripe, role, state, lines, as those grounds rank among themselves.
+        foreach (var ground in new[] { ".ex-row-stripe .ex-pinned", ".ex-row-group .ex-cell", ".ex-row-total .ex-cell", ".ex-cell.ex-state-missing", ".ex-cell.ex-lined" })
+            Assert.True(IndexOf(".ex-cell.ex-changed") > IndexOf(ground), $"{ground} is declared after the mark");
+        foreach (var combination in new[] { ".ex-row-stripe .ex-pinned.ex-changed", ".ex-row-group .ex-cell.ex-changed", ".ex-row-total .ex-cell.ex-changed" })
+            Assert.True(IndexOf(".ex-cell.ex-lined.ex-changed") > IndexOf(combination), $"{combination} is declared after the lined mark");
+
+        // A rule's background-image, its whitespace made single spaces.
+        static string ImagesOf(string body)
+            => Regex.Replace(Regex.Match(body, @"(?<![\w-])background-image:\s*(?<value>[^;]+);").Groups["value"].Value, @"\s+", " ").Trim();
+
+        // The layers a background property lists: its value split at the commas outside parentheses.
+        static int LayersOf(string body, string property)
+        {
+            var value = Regex.Match(body, $@"(?<![\w-]){property}:\s*(?<value>[^;]+);").Groups["value"].Value;
+            var (count, depth) = (1, 0);
+            foreach (var c in value)
+            {
+                if (c == '(')
+                    depth++;
+                else if (c == ')')
+                    depth--;
+                else if (c == ',' && depth == 0)
+                    count++;
+            }
+            return count;
+        }
+    }
+
+    [Fact] // ADR-0068 / ADR-0027 / DC-66 / UX-7: the forced-colors block restates the mark as a painted outline, before the states so a state keeps its own
+    public void The_forced_colors_block_restates_the_change_highlight()
+    {
+        var (_, forced) = ForcedColorsSplit();
+        int IndexOf(string selector) => forced.ToList().FindIndex(rule => rule.Selectors.Contains(selector));
+
+        var restated = Assert.Single(forced, rule => rule.Selectors.Contains(".ex-cell.ex-changed"));
+        // Not on a background alone, which forced colours may discard; painted, never laid out.
+        Assert.Matches(new Regex(@"(?<![\w-])outline:\s*\d+px dashed Highlight;"), restated.Body);
+        Assert.Matches(new Regex(@"outline-offset:\s*-\d+px;"), restated.Body);
+        Assert.DoesNotMatch(new Regex(@"background|border|margin|padding|width|height"), restated.Body);
+        // A state that is restated by an outline too keeps it on a cell carrying both.
+        Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-missing"));
+        Assert.True(IndexOf(".ex-cell.ex-changed") < IndexOf(".ex-cell.ex-state-modified"));
+    }
+
+    [Fact] // ADR-0068 / ADR-0027 P8 / UX-6 / DC-66: a mark comes and goes in one step — nothing in the core's stylesheet transitions or animates
+    public void Nothing_in_the_core_stylesheet_transitions_or_animates()
+    {
+        var (css, _) = CoreStylesheet();
+
+        Assert.DoesNotMatch(new Regex(@"(?<![\w-])(transition|animation)(-[\w-]+)?\s*:|@keyframes"), css);
     }
 }

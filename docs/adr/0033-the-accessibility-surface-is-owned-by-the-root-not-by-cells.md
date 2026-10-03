@@ -160,6 +160,25 @@ scrolling — the opposite of ADR-0012, which reveals the Focus in response to *
   host, which copies straight after a click, found it. The
   keydown, copy and paste listeners now read an event on the grid's own scroller as one on
   the root. Those listeners change; no allowlisted use is added.
+  *(Found on the Server host, 2026-10-03, through ExPivot's details dialog.)* The hand-off needs a
+  root that can take focus, and the root is no tab stop until the render that follows the
+  listener's attach (A11Y-20). The rows can paint up to two round trips before that render: the
+  attach starts the Viewport's report, and the render waits for two more answers. A press on the
+  rows in between gave the scroller focus. The hand-off's request then found a root that could not
+  take it, did nothing, and was never made again. The keyboard stayed on the scroller. The keys
+  still reached the grid, which reads them as the root's, but `aria-activedescendant`, on the root,
+  was read by no one. A test of ExPivot's dialog that pressed into the records as soon as they were
+  painted failed in 1 run of 3, with no latency injected. A probe found one such press 14 ms before
+  the tab stop.
+  - **The hand-off is now owed.** Focus that arrives on the scroller before a render has made the
+    root a tab stop is handed to the root after that render. It goes under the hand-back's own
+    condition: DOM focus still inside this root, or on nothing. A press elsewhere in the meantime
+    therefore keeps the keyboard. Whichever comes first, the press or the attach, the keyboard ends
+    on the root. No script is added: the request is the hand-back the grid already makes.
+  - **Making the root a tab stop sooner was rejected.** It narrows the window and does not close it
+    (AGENTS.md, principle 6): a press can come before the attach itself, a module import away.
+  - **Before the attach, the hand-off is owed as well.** There is no listener then, so nothing was
+    asked; now the request waits for the render that makes the root a tab stop.
 - **Layer 3 owns the verification.** Counts and indices are assertable in bUnit, but "the Focus is
   reachable by one tab, and the announcement is made once per settled selection" is a real-browser
   question. It joins the list in [ADR-0026](./0026-layer-three-runs-on-playwright-against-the-installed-chrome.md).

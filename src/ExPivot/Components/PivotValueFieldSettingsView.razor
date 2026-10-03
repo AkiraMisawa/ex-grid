@@ -1,0 +1,71 @@
+@* The built-in Value Field Settings… (ADR-0061): the caption, the Aggregation, Show Values As
+   and the number format with a sample, as ExPivot's draft until OK — which a taken caption or an
+   unusable format refuses, the sentence shown here. An Aggregation the Pivot Source does not
+   answer is offered disabled, with the reason (ADR-0066). *@
+<div class="ex-pivot-panel ex-pivot-value-settings">
+    <div class="ex-pivot-panel-title">@Context.Word("value-field-settings")</div>
+    <div class="ex-pivot-row ex-pivot-source">@Context.FieldCaption</div>
+    <label class="ex-pivot-row">
+        <span>@Context.Word("custom-name")</span>
+        <input @ref="_first" type="text" class="ex-pivot-text"
+               @bind:get="Context.Caption" @bind:set="Context.CaptionChanged" @bind:event="oninput" />
+    </label>
+    <label class="ex-pivot-row">
+        <span>@Context.Word("summarize-by")</span>
+        <select class="ex-pivot-select" value="@Context.Aggregation.ToString()"
+                @onchange="e => Context.AggregationChanged(Enum.Parse<PivotAggregation>((string)e.Value!))">
+            @foreach (var choice in Context.Aggregations)
+            {
+                <option value="@choice.Value.ToString()" disabled="@(!choice.Enabled)" title="@choice.Reason">@choice.Label</option>
+            }
+        </select>
+    </label>
+    @* An Aggregation the source does not answer is offered disabled, and the reason is said
+       (ADR-0066). *@
+    @foreach (var reason in Context.Aggregations.Where(c => !c.Enabled && c.Reason is not null).Select(c => c.Reason))
+    {
+        <div class="ex-pivot-note ex-pivot-not-offered">@reason</div>
+    }
+    <label class="ex-pivot-row">
+        <span>@Context.Word("show-values-as")</span>
+        <select class="ex-pivot-select" value="@Context.ShowValuesAs.ToString()"
+                @onchange="e => Context.ShowValuesAsChanged(Enum.Parse<PivotShowValuesAs>((string)e.Value!))">
+            @foreach (var choice in Context.ShowValuesAsChoices)
+            {
+                <option value="@choice.Value.ToString()">@choice.Label</option>
+            }
+        </select>
+    </label>
+    <label class="ex-pivot-row">
+        <span>@Context.Word("number-format")</span>
+        <input type="text" class="ex-pivot-text" placeholder="@Context.Word("number-format-general")"
+               @bind:get="Context.NumberFormat" @bind:set="Context.NumberFormatChanged" @bind:event="oninput" />
+    </label>
+    <div class="ex-pivot-sample">@Context.Sample</div>
+    @if (Context.Refusal is { } refusal)
+    {
+        <div class="ex-pivot-refusal" role="alert">@refusal</div>
+    }
+    <div class="ex-pivot-panel-actions">
+        <button type="button" class="ex-pivot-ok" @onclick="Context.Apply">@Context.Word("ok")</button>
+        <button type="button" class="ex-pivot-cancel" @onclick="Context.Cancel">@Context.Word("cancel")</button>
+    </div>
+</div>
+
+@code {
+    private ElementReference _first;
+    private int _acted;
+
+    /// <summary>The draft and the exits (ADR-0061).</summary>
+    [Parameter, EditorRequired] public PivotValueFieldSettingsContext Context { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Context.FocusRequest != 0 && Context.FocusRequest != _acted)
+        {
+            _acted = Context.FocusRequest;
+            await _first.FocusAsync();
+        }
+    }
+}

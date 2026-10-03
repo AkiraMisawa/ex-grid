@@ -1,0 +1,21 @@
+@* The content of Show Details' dialog under MudBlazor (ADR-0059/0062), inside ExPivot's own frame —
+   never a MudDialog: where the dialog stands, its name, that it is modal and that Escape closes it
+   are ExPivot's. Inside it, laid out as a MudDialog's: the cell's title as its heading, the
+   records' grid ExPivot hands over, and Close as a MudButton in the actions, which takes the
+   keyboard when the dialog opens. *@
+<div class="mud-ex-pivot-dialog-content">
+    <MudText Typo="Typo.h6" Class="mud-ex-pivot-dialog-title">@Context.Title</MudText>
+    <div class="mud-ex-pivot-dialog-records">@Context.Records</div>
+    <div class="mud-ex-pivot-dialog-actions">
+        <MudPivotButton Variant="Variant.Text" Color="Color.Primary" Class="mud-ex-pivot-dialog-close"
+                        OnClick="Context.Close" FocusRequest="Context.FocusRequest" TakeKeyboard="Context.TakeKeyboard">@Context.Word("close")</MudPivotButton>
+    </div>
+</div>
+
+@code {
+    /// <summary>The title, the records and the way out (ADR-0059).</summary>
+    [Parameter, EditorRequired] public PivotDetailsDialogContext Context { get; set; } = default!;
+
+    /// <summary>The Chrome this dialog's content belongs to.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+}

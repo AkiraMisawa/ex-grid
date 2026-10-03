@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <!-- Single-target net10.0, like every shipped package (ADR-0022). -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ExPivot</RootNamespace>
+    <Description>ExPivot: Excel's PivotTable for Blazor, drawn by ExGrid as that grid's Consumer. The user builds a report from the application's own records in the PivotTable Fields pane — Filters, Columns, Rows, Values, drag and drop — and reads it with ExGrid's selection, keyboard and clipboard; the application persists the layout.</Description>
+    <PackageTags>$(PackageTags);pivot;pivottable;report</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The one direction there is (ADR-0059): ExPivot references its engine and ExGrid, and
+         nothing references ExPivot but its Wrapper, the demo pages and its tests. -->
+    <ProjectReference Include="..\ExPivot.Engine\ExPivot.Engine.csproj" />
+    <ProjectReference Include="..\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ExPivot.Components.Tests" />
+  </ItemGroup>
+
+  <!-- ExPivot depends on exactly the core and engine versions it was built with, as ExSheet
+       does (ADR-0042): the declarations it makes are the core's of that version. -->
+  <Target Name="DependOnExactlyTheseVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+
+</Project>

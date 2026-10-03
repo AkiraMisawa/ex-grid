@@ -187,14 +187,22 @@ These are the places where reaching for JS would be the easy answer, and where w
   with its own `FocusAsync` when the core asks through the fragment's context. "Focus the first
   focusable thing in the cell" was the JavaScript answer and is recorded there as rejected. The
   one change to `ex-grid.js` is inside the first entry's filter: a repeated plain Space is taken
-  and dropped, so a held Space engages once.)* *(Three decisions about focus are now made in script,
+  and dropped, so a held Space engages once.)* *(Added 2026-10-01 by
+  [ADR-0070](./0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md): the first entry
+  also passes on whether a forwarded key is a repeat. That is `event.repeat`, a field of the event
+  the listener already reads, and it adds no listener and reads no layout. Only the browser knows
+  a repeat from a press, and the core answers a held Escape once (ADR-0012, refined the same day).
+  The gate reads it too, so that a held Escape's repeats do not end the Tab its press released
+  (ADR-0012, rewritten the same day; noted 2026-10-02).)* *(Three decisions about focus are now made in script,
   all in notes at the end of this ADR: the hand-back of 2026-09-27, the press that brings the
   keyboard back to an edit left standing, 2026-09-29, and the editor's own focus, taken only while
   the keyboard is still this grid's, 2026-09-30.)* *(Five since 2026-10-02, [ADR-0080](./0080-a-keyboard-field-holds-the-keyboard-so-an-ime-can-start-on-a-selected-cell.md): the root's own
   focus passed on to its Keyboard Field, and the field given up by a press during a composition, so
   that the composition ends and its text is held ahead of the press. The third is refined: the
   editor's request waits while the field composes, and until the task after a composition's end
-  (ticket 120). The hand-back puts the keyboard in the field.)*
+  (ticket 120). The hand-back puts the keyboard in the field.)* *(Six since 2026-10-02 too: the
+  keyboard a grid holds, handed on to a control of its Consumer's only while it is still the grid's,
+  in the last note of this ADR.)*
 - **Measuring the scrollbar.** The gutter is *reported*, never read — see the fourth entry above
   for why those are different things. Nothing in the grid calls `getBoundingClientRect`,
   `clientWidth` or `offsetWidth` on the path to a paint.
@@ -510,3 +518,27 @@ arrives. A key held before the press that moved the view therefore moved the pre
   resolve against the slice the core holds when they arrive. None of them is held, so none is
   replayed after the view has moved. The window left is one render on a circuit, and the case
   measured (an unheld press straight after a scroll at 80 to 300 ms) landed where it was made.
+
+*(Added 2026-10-02, decided with the user, with
+[ADR-0070](./0070-a-consumer-gives-the-keyboard-back-and-hears-escape-leave.md): the keyboard a grid
+holds is handed on to a control of its Consumer's only while it is still the grid's.)* A Consumer
+that opens something of its own from a grid can ask the grid to give that thing's control the
+keyboard: `HandKeyboardToAsync(control)`, in place of the control's own `FocusAsync`. ExPivot does
+so for its details dialog's Close and for its details tabs. The handle's `handKeyboardTo` focuses
+the control only while DOM focus is inside this root or on nothing, the condition `reclaimFocus`
+reads.
+
+- **Found on the Server host, with no latency injected, by a probe of the order of events**
+  (2026-10-03). Pressed as soon as the details dialog showed, its records lost the keyboard to Close
+  in 2 runs of 6. Close's `FocusAsync`, a round trip behind the render that drew the dialog, landed
+  after the press (ADR-0070, "Handed on, not taken").
+- **Only script can tell**, as for the third decision. C# cannot know where DOM focus is without
+  measuring, and cannot recall a request it has already sent.
+- **This is the sixth decision about focus made in script.** It reads `document.activeElement` and
+  no layout, and it adds no listener. It is the only one that moves DOM focus out of the root, and
+  only onto the element the Consumer handed over with the call. The grid keeps no reference to it.
+- **A field beside the rows that holds the keyboard of its own keeps it**, as it does from the
+  hand-back. A field a press on the rows left standing does not.
+- **Before the grid is attached, and once it is gone, the control takes the keyboard by its own
+  `FocusAsync`**, through Blazor, as it would without the grid. No script of the grid's is there to
+  read where the keyboard is.

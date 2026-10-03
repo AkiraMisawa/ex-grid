@@ -52,6 +52,9 @@
 @{
     var keyFieldShown = KeyFieldShown;
     var activeDescendant = ActiveDescendant();
+    // Once a render has made the root a tab stop, it is sent ahead of anything asked after it:
+    // the scroller's hand-off waits for one (OnScrollerFocusAsync).
+    _tabStopRendered |= !Prerendered;
 }
 @* data-ex-pointed-from: while the grid is pointed at, the root of the grid that points, which the
    script tells of each press handed over (ADR-0058, "On a circuit"). *@
@@ -72,9 +75,9 @@
        inside the grid (A11Y-4). A scroller that can hold focus would also take it from a
        click, so focus arriving there is handed straight to the root, where the keys and
        aria-activedescendant are (ADR-0033) — to its Keyboard Field on a grid that edits
-       (ADR-0080). *@
+       (ADR-0080) — or, before the root is a tab stop, once it is (OnScrollerFocusAsync). *@
     <div class="ex-scroller" style="@ScrollerStyle()" tabindex="-1"
-         role="presentation" @ref="_scroller" @onscroll="OnScrollAsync" @onfocus="ReclaimFocusAsync">
+         role="presentation" @ref="_scroller" @onscroll="OnScrollAsync" @onfocus="OnScrollerFocusAsync">
         <div class="ex-spacer" style="width: @Px(_columnStyles.Geometry.TotalWidthPx); height: @Px(BandHeightPx + _geometry.ScrollHeightPx)"
              role="presentation">
             @* The header occupies the content's first row height and covers the
@@ -424,6 +427,12 @@
                        identity objects and Placeholder keys are boxed indices, so the
                        two can never collide — and a position turning from Placeholder
                        into a row correctly reads as a fresh mount. *@
+                    @* The Change Highlight's time (ADR-0068): read once for the whole render,
+                       so every row paints its marks by the same instant, and only while the
+                       declaration is made. A row whose earliest mark ends by it renders again;
+                       the delegate and the channel each row reports its marks through are the
+                       same instances render after render. *@
+                    var highlightNow = HighlightNow();
                     BeginAppearances();
                     @for (var row = visible.Start; row < visible.Start + visible.Count; row++)
                     {
@@ -438,6 +447,8 @@
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
+                                       CellChangedAt="CellChangedAt" ChangeHighlightDuration="ChangeHighlightDuration" ChangeHighlightNow="highlightNow"
+                                       ChangeHighlightPainted="@(_highlightPainted ??= _highlightEnds.Painted)"
                                        RowIndex="row" Stripe="@StripeAt(row)" IdPrefix="@_idPrefix"
                                        OnAction="@(_onAction ??= RaiseActionAsync)"
                                        Engagement="EngagementFor(row)"
@@ -1310,6 +1321,18 @@
     /// row is not possible anyway (ADR-0013).
     /// </summary>
     [Parameter] public EventCallback<GridActionEventArgs<TRow>> OnAction { get; set; }
+
+    /// <summary>
+    /// Raised when a double click lands on a cell where no edit opens — a cell that is not
+    /// Editable — with the cell's position, after the click has placed the Focus there
+    /// (ADR-0063). The grid changes nothing: what the gesture means is the Consumer's, as
+    /// Show Details is on a pivot. Where an edit opens, the edit is the double click's meaning
+    /// and nothing is raised; while one is open, the double click is the editor's. A double
+    /// click on a control inside an Action, Template or Mark cell stops at that cell and
+    /// raises nothing, because its offsets would name another cell. No key raises it: a
+    /// Consumer offers the same command in the Context Menu.
+    /// </summary>
+    [Parameter] public EventCallback<CellPosition> OnCellDoubleClick { get; set; }
 
     /// <summary>
     /// The Row Marks on the push form (ADR-0043): who holds them, answers whether a row
@@ -2237,6 +2260,31 @@
     // attach, whose render lifts the Prerendered state.
     private bool _listening;
 
+    // Whether a render has made the root a tab stop (ADR-0033), and whether focus arrived on the
+    // scroller before one had, its hand-off to the root still to be made (OnScrollerFocusAsync).
+    private bool _tabStopRendered;
+    private bool _scrollerFocusOwed;
+
+    /// <summary>
+    /// Focus arriving on the scroller — a press on the rows, which the browser gives the nearest
+    /// element that can hold it — is handed to the root (ADR-0033). Until a render has made the
+    /// root a tab stop, once the listener is attached, the root cannot take it: its focus call does
+    /// nothing, and the keyboard stayed on the scroller for good, beside an
+    /// <c>aria-activedescendant</c> no assistive technology reads. The rows paint up to two round
+    /// trips before that on a circuit, and a press on them in between came out one way or the
+    /// other by timing. So the hand-off is owed, and made after the render that makes the root a
+    /// tab stop, under the hand-back's own condition (ADR-0033's note of 2026-10-03).
+    /// </summary>
+    private Task OnScrollerFocusAsync()
+    {
+        if (!_tabStopRendered)
+        {
+            _scrollerFocusOwed = true;
+            return Task.CompletedTask;
+        }
+        return ReclaimFocusAsync();
+    }
+
     // Interned per combination, as the header cells' classes are (ADR-0027 P5). ex-pointed-at is
     // the grid pointed at from outside (ADR-0058, ADR-0029's note of 2026-09-30).
     private string RootClass => (_loading || Prerendered, _editMode != EditMode.None, PointedAtNow) switch
@@ -2372,6 +2420,7 @@
     protected override void OnParametersSet()
     {
         ValidatePointDeclaration();
+        ValidateChangeHighlight();
         ResolveDeclaredKeys();
         BindPointedAt();
         ResolveOutlinedColumns();
@@ -2989,6 +3038,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // The rows of this render have painted their Change Highlights and told the grid
+        // where each ends, so the one timer is armed for the earliest, or goes with the last
+        // (ADR-0068). A prerender runs none of this, and so keeps no timer.
+        ArmHighlightTimer();
+
         // A Template cell's focus request lives for exactly the render that handed it
         // over (ADR-0037) — cleared first, before anything below can render again — and
         // one the Focus walked away from is dropped undelivered.
@@ -3007,6 +3061,14 @@
         // that renders statically and still calls it.
         if (firstRender && RendererInfo.IsInteractive)
             await AttachScrollAsync();
+
+        // The scroller's hand-off owed from before the root was a tab stop (OnScrollerFocusAsync),
+        // asked once a render has made it one: that render is ahead of this request on the wire.
+        if (_scrollerFocusOwed && _tabStopRendered)
+        {
+            _scrollerFocusOwed = false;
+            await ReclaimFocusAsync();
+        }
 
         if (_announcePending is { } pending)
         {
@@ -5973,6 +6035,11 @@
     /// hear each other's keys (ADR-0018). The listener has already prevented the default:
     /// what is left is to say what the key meant.
     ///
+    /// <para>The message says whether the key is a held key's repeat (<c>event.repeat</c>),
+    /// which only the listener can see: by the time a key reaches .NET, a repeat looks like a
+    /// press. It is read where one press must mean one thing, however long the key is held:
+    /// the Escape that raises <see cref="OnLeave"/> (ADR-0070).</para>
+    ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
@@ -5980,9 +6047,16 @@
     public async Task OnKeyAsync(
         string key, bool ctrl, bool shift, bool alt, bool meta, bool metaIsPrimary,
         bool fromDescendant = false, string? editorText = null, int editorCaret = -1,
-        int editorSelectionEnd = -1, bool editorCaretMoved = false)
+        int editorSelectionEnd = -1, bool editorCaretMoved = false, bool repeat = false)
     {
         if (_disposed)
+            return;
+        // A held Escape is one press (ADR-0012, refined with ADR-0070): the press peels its one
+        // layer, and the repeats dismiss nothing more. Otherwise a held key closed a Formula
+        // Entry's list and then cancelled the edit under it, or closed a dialog and then took the
+        // Tab of the grid it had just been handed back to out of its cycle. The gate leaves a Tab
+        // released by the press released through its repeats.
+        if (repeat && key == "Escape")
             return;
         // While editing, the keys the gate forwarded are the editor's contract
         // (ADR-0010): always Esc / Enter / Tab / F2, plus the arrows in Overwrite. The key
@@ -6131,14 +6205,15 @@
                 // The Interactive layer, between the popover and the grid (ADR-0037,
                 // ADR-0012's layering): Escape leaves the cell, the Focus stays where it
                 // is, and the grid keeps the keyboard. Only with nothing engaged is it
-                // the way out.
+                // the way out: Tab released (ADR-0012, rewritten 2026-10-01) — and, where
+                // the Consumer listens, its OnLeave raised beside the release (ADR-0070).
                 if (EndInteractive())
                 {
                     _suppressRender = false;
                     StateHasChanged();
                     return;
                 }
-                await ReleaseTabAsync();
+                await LeaveAsync();
                 return;
             case GridKeyKind.Engage:
                 // With no Focus, Space is a first key like any other: it only places the
@@ -7545,10 +7620,22 @@
     /// cell — the original value stays, with the caret inside it.</summary>
     private async Task OnViewportDoubleClickAsync(MouseEventArgs e)
     {
-        // The second press of a double click handed over (ADR-0058) opens no edit either.
-        if (_pressHandedOver || _editMode != EditMode.None || CellUnder(e) is not { } cell || !IsEditableCell(cell))
+        // The second press of a double click handed over (ADR-0058) opens no edit either, and
+        // raises no OnCellDoubleClick (ADR-0063): the press was the Consumer's, and the Focus
+        // never moved to the cell.
+        if (_pressHandedOver || _editMode != EditMode.None || CellUnder(e) is not { } cell)
         {
             _suppressRender = true;
+            return;
+        }
+        if (!IsEditableCell(cell))
+        {
+            // Where no edit opens, a listener hears the double click and decides what it means
+            // (ADR-0063). The grid changed nothing; it renders only what the answer may change.
+            if (OnCellDoubleClick.HasDelegate)
+                await OnCellDoubleClick.InvokeAsync(cell);
+            else
+                _suppressRender = true;
             return;
         }
         var extent = Extent;
@@ -8501,6 +8588,7 @@
         _edgeTimer?.Dispose();
         _announceTimer?.Dispose();
         _messageTimer?.Dispose();
+        DisposeHighlightTimer();
         if (_boundSource is not null)
         {
             _boundSource.StateChanged -= OnSourceStateChanged;

@@ -1,0 +1,44 @@
+@* A button that takes DOM focus when ExPivot asks (ADR-0061): once for each request number it
+   has not acted on, as a template's control does (ADR-0037). The built-in views put the keyboard
+   back on an entry this way when its menu or panel closes. Where the keyboard comes from the
+   report's grid — the dialog's Close, a details tab — it is taken through TakeKeyboard, which the
+   grid grants only while the keyboard is still the report's (ADR-0070's note of 2026-10-02). *@
+<button @ref="_button" type="button" class="@Class" disabled="@Disabled" @onclick="OnClick" @attributes="Attributes">@ChildContent</button>
+
+@code {
+    private ElementReference _button;
+    private int _acted;
+
+    /// <summary>The button's classes.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Whether the button is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Pressed.</summary>
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    /// <summary>The request to take DOM focus; zero asks nothing.</summary>
+    [Parameter] public int FocusRequest { get; set; }
+
+    /// <summary>How the button takes DOM focus when asked: called with its element, in place of the
+    /// element's own <c>FocusAsync</c> — the report's grid handing the keyboard on (ADR-0070's note
+    /// of 2026-10-02). Null, the element's own focus.</summary>
+    [Parameter] public Func<ElementReference, Task>? TakeKeyboard { get; set; }
+
+    /// <summary>What the button shows.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Any other attribute, on the button.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? Attributes { get; set; }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (FocusRequest != 0 && FocusRequest != _acted)
+        {
+            _acted = FocusRequest;
+            await (TakeKeyboard is { } take ? take(_button) : _button.FocusAsync().AsTask());
+        }
+    }
+}

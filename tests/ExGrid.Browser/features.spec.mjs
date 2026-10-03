@@ -211,6 +211,32 @@ test('Escape, an arrow, then Tab cycles inside the selection (KB-8)', async ({ p
     await expectActiveDescendant(grid(page), /r1c2$/);
 });
 
+// KB-44 with KB-8: a held Escape is one press. Its repeats are not another key, so the Tab its press
+// released stays released (ADR-0012, rewritten 2026-10-01 and refined the same day with ADR-0070).
+test('Escape held with nothing to dismiss, then Tab leaves for the page (KB-8, KB-44)', async ({ page }) => {
+    await aButtonEitherSide(page);
+    await clickCell(page, 0, 1);
+
+    // Held: the first keydown is the press, and Playwright sends the ones after it as the browser
+    // sends a held key's repeats. They wait behind the press for its answer, which released Tab.
+    await page.keyboard.down('Escape');
+    await page.keyboard.down('Escape');
+    await page.keyboard.down('Escape');
+    await page.keyboard.up('Escape');
+    // Every answer has landed: on the Server host once the circuit is quiet (ADR-0056); the fixed
+    // wait is the page's own time, all there is on WebAssembly.
+    await page.waitForTimeout(500);
+    await circuitQuiet();
+    await expectKeyboardOn(grid(page));
+    await expectActiveDescendant(grid(page), /r0c1$/);
+
+    // Released, the Tab leaves for the page's next element, the Focus where it was (ADR-0080: the
+    // header's ▾ buttons are not tab stops).
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#after-grid')).toBeFocused();
+    await expectActiveDescendant(grid(page), /r0c1$/);
+});
+
 test('the clipboard carries both formats, and #### never reaches it (CP-4/CP-5/CP-6/CP-10)', async ({ page }) => {
     // Select the Narrow (####) cell of row 0 and extend to include a text cell.
     await clickCell(page, 0, 2); // Notional

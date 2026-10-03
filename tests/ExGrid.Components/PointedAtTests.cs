@@ -306,6 +306,35 @@ public class PointedAtTests : GridTestContext
         Assert.DoesNotContain("ex-editing", RootClass(cut));
     }
 
+    [Fact] // ADR-0058 / DC-52 with ADR-0063 / DC-63: a double click handed over is not heard as the grid's
+    public async Task A_double_click_handed_over_raises_no_cell_double_click()
+    {
+        var heard = new List<CellPosition>();
+        var declared = Declaration();
+        var cut = RenderGrid(declared, more: ps => ps.Add(g => g.OnCellDoubleClick, (CellPosition cell) => heard.Add(cell)));
+
+        // Book, where no edit opens: a grid that is not pointed at would raise OnCellDoubleClick here.
+        await PressAsync(cut, 50, 30);
+        await ReleaseAsync(cut, 50, 30);
+        await PressAsync(cut, 50, 30);
+        await ReleaseAsync(cut, 50, 30);
+        await cut.Find(".ex-viewport").DoubleClickAsync(new MouseEventArgs { Button = 0, OffsetX = 50, OffsetY = 30 });
+
+        Assert.Equal(2, _presses.Count);
+        Assert.Empty(heard);
+        Assert.Empty(_selections);
+
+        // The same double click on the same grid, no longer pointed at, is heard: the cell is one the
+        // listener hears, and only the hand-over kept it from being.
+        await cut.InvokeAsync(() => declared.IsPointedAt = false);
+        await PressAsync(cut, 50, 30);
+        await ReleaseAsync(cut, 50, 30);
+        await cut.Find(".ex-viewport").DoubleClickAsync(new MouseEventArgs { Button = 0, OffsetX = 50, OffsetY = 30 });
+
+        Assert.Equal(2, _presses.Count);
+        Assert.Equal([new CellPosition(1, 0)], heard);
+    }
+
     [Fact] // ADR-0058 / DC-52: a secondary press is not handed over; it opens no menu and moves nothing
     public async Task A_secondary_press_is_not_handed_over_and_opens_no_menu()
     {

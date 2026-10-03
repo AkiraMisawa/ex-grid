@@ -75,13 +75,60 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// The core's focus function for a Chrome whose frame lies outside the grid (ADR-0010's note
-    /// of 2026-09-30, ADR-0071): the keyboard goes back to the grid's root, to its Keyboard Field on
-    /// a grid that edits (ADR-0080), granted only while it is still this grid's — DOM focus inside
-    /// the root or on nothing — as every hand-back is (ADR-0021's note of 2026-09-30). A grid or a
-    /// control of the page's that the user has moved to keeps the keyboard. A Chrome calls it once
-    /// its frame has closed, so that the next arrow moves the Focus again.
+    /// of 2026-09-30, ADR-0071), and a Consumer's for something of its own that held the keyboard
+    /// over the grid and goes away — a dialog, a panel, a tab (ADR-0070): the keyboard goes back to
+    /// the grid's root, to its Keyboard Field on a grid that edits (ADR-0080), granted only while it
+    /// is still this grid's — DOM focus inside the root or on nothing — as every hand-back is
+    /// (ADR-0021's note of 2026-09-30). A grid or a control of the page's that the user has moved
+    /// to keeps the keyboard (ADR-0018), and so does a field of the grid's own beside the rows, the
+    /// Formula Bar or the Name Box, where the user is typing (ADR-0021, widened 2026-09-28). A
+    /// Chrome calls it once its frame has closed, so that the next arrow moves the Focus again.
+    ///
+    /// <para>It moves neither the Focus nor the Selection, and it scrolls nothing: the keyboard
+    /// comes back to the cell it left. On Blazor Server the request lands a round trip after the
+    /// call, and a click made in that time wins. Before the grid is attached to the page, and after
+    /// it is gone, it does nothing. It adds no JavaScript: it is the grid's own hand-back
+    /// (ADR-0021).</para>
     /// </summary>
+    /// <returns>A task that completes once the request has been made.</returns>
     public Task ReturnKeyboardAsync() => InvokeAsync(() => ReclaimFocusAsync());
+
+    /// <summary>
+    /// Hands the keyboard this grid holds on to a control of the Consumer's own, outside the grid —
+    /// the first control of a frame or a tab the Consumer has opened from it, a dialog's Close for
+    /// one (ADR-0070's note of 2026-10-02) — in place of that control's own <c>FocusAsync</c>. It
+    /// is granted only while the keyboard is still this grid's: DOM focus inside the root or on
+    /// nothing, the condition every hand-back reads (ADR-0021's note of 2026-09-30).
+    ///
+    /// <para>On Blazor Server the request lands a round trip after the render that drew the
+    /// control. A press the user made in that time — on the frame's own content, another grid, a
+    /// control of the page's — keeps the keyboard where it put it (ADR-0018), so where the keyboard
+    /// ends up does not depend on how long the round trip took. A field of the grid's own beside
+    /// the rows, the Formula Bar or the Name Box, keeps it too, as from every hand-back.</para>
+    ///
+    /// <para>It moves neither the Focus nor the Selection, and renders nothing. The control scrolls
+    /// into view, as its own focus would have had it. It reads where DOM focus is and nothing of
+    /// the layout: the sixth decision about focus made in script (ADR-0021). Before the grid is
+    /// attached to the page, and after it is gone, there is no script of the grid's to read it, and
+    /// the control takes the keyboard by its own <c>FocusAsync</c>, as it would without the grid. A
+    /// request the page cannot carry out, with the control or the circuit gone, is dropped.</para>
+    /// </summary>
+    /// <param name="control">The element to hand the keyboard to.</param>
+    /// <returns>A task that completes once the request has been made.</returns>
+    public Task HandKeyboardToAsync(ElementReference control)
+        => InvokeAsync(async () =>
+        {
+            try
+            {
+                if (_disposed || _scrollHandle is null)
+                    await control.FocusAsync();
+                else
+                    await _scrollHandle.InvokeVoidAsync("handKeyboardTo", control);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        });
 
     /// <summary>
     /// The keyboard is going to a frame of the Consumer's own, outside the grid (ADR-0050 item 16

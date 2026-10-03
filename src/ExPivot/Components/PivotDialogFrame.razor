@@ -1,0 +1,22 @@
+@* ExPivot's frame around Show Details' dialog (ADR-0059): a modal dialog named by the cell, over a
+   backdrop, whose content is the Chrome's. Escape closes it from anywhere the keyboard is inside it
+   that hears the key — the content's own controls, or the frame itself. An Escape pressed in the
+   records' grid never reaches the frame: the grid's capture-phase listener keeps every one, peels
+   the grid's own layers with them, and raises its OnLeave for the one it has nothing left to
+   dismiss, which closes the dialog too (ADR-0070). *@
+<div class="ex-pivot-dialog" role="dialog" aria-modal="true" aria-label="@Label" tabindex="-1" @onkeydown="OnKeyDownAsync">
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>The dialog's accessible name: the cell's title.</summary>
+    [Parameter] public string Label { get; set; } = "";
+
+    /// <summary>Escape was pressed inside it.</summary>
+    [Parameter] public EventCallback OnEscape { get; set; }
+
+    /// <summary>The Chrome's content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task OnKeyDownAsync(KeyboardEventArgs e) => e.Key == "Escape" ? OnEscape.InvokeAsync() : Task.CompletedTask;
+}

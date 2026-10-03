@@ -17,6 +17,15 @@
          application resolves the dependency upward (ADR-0022), and these pages are where
          that is seen to work. -->
     <PackageReference Include="MudBlazor" Version="9.9.0" />
+    <!-- How /pivot-live and /grid-live hear the demo API server's "the trades changed": its
+         SignalR hub. The demo's dependency, never a library's (ADR-0069, Q63): ExGrid and ExPivot
+         are told what the page heard, not how it arrived. -->
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.12" />
+    <!-- For one call: /pivot-db turns the browser's response streaming off for its Arrow request,
+         which reads it in 0.3 s rather than 2 s (ADR-0065). The method sets an option on the
+         request; on the Server host the request goes out through SocketsHttpHandler, which
+         ignores it, so the same page code is right on both hosts. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +40,20 @@
     <!-- The Sheet pages under ?chrome=mud draw Format Cells as a MudDialog (ADR-0071); like ExSheet,
          only these pages and the package's tests reference it (ADR-0019's note of 2026-09-30). -->
     <ProjectReference Include="..\..\src\ExSheet.MudBlazor\ExSheet.MudBlazor.csproj" />
+    <!-- ExPivot's page (/pivot), plain and under its MudBlazor Wrapper: with its tests, the only
+         things that reference ExPivot and ExPivot.MudBlazor (ADR-0059, ADR-0062). -->
+    <ProjectReference Include="..\..\src\ExPivot\ExPivot.csproj" />
+    <ProjectReference Include="..\..\src\ExPivot.MudBlazor\ExPivot.MudBlazor.csproj" />
+    <!-- /pivot-db reads the demo API server's trades as an Arrow stream into a Snapshot
+         (ADR-0065): with the tests, the demo is what references the Arrow package (DA-1). -->
+    <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- What the ExPivot pages and /grid-live show under "The code" is read from their own source
+         (DemoCode), embedded here, so the code a page shows is the code it runs. -->
+    <EmbeddedResource Include="DemoPivotData.cs;DemoCsv.cs;DemoRiskData.cs;DemoServerPivot.cs;Pages\PivotPage.razor;Pages\PivotCsvPage.razor;Pages\PivotDbPage.razor;Pages\PivotLivePage.razor;Pages\PivotRiskPage.razor;Pages\GridLivePage.razor"
+                      LogicalName="DemoCode/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

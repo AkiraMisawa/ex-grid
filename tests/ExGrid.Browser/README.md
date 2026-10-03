@@ -81,6 +81,21 @@ trip (ED-22), a paste past the hub's message limit (CP-21), a write the browser 
 full speed into the editor, the filter's search box and the find field arriving whole (SRV-7). It runs on
 both hosts; a test that has no meaning on WebAssembly is skipped there by name.
 
+## The demo API server
+
+Beside either host, the run also starts `samples/ExGrid.DemoApi`, the server the database and
+live pages call (ADR-0069), where the pages look for it: BASE_URL's port plus 3000 (8299, or
+8298 beside the Server host's proxy; `API_URL` in `hosting.mjs`). It is asked for 20,000 trades
+unless `EXGRID_DEMO_TRADES` says otherwise; the first start for a count generates them in about
+a second into a file outside the repository (`exgrid-demo-api` in the temporary directory, or
+`EXGRID_DEMO_DATA`), and each start serves a fresh copy of that file, so every run begins from
+the same trades. `/api/status` answers 503 until they are ready, so the run waits for the data
+and not only for the port. The server lives for the whole run, across spec files: live updates
+stay off until a test turns them on (`POST /api/live`), a test that does turns them off again,
+and trades it moved stay moved. A server already on that port is reused with whatever count it
+was started with, so a test reads the count and the Source Version from `/api/status` rather
+than assuming them.
+
 ## Installing the browsers
 
 The flake ships none on purpose, and `flake.nix` says why: `channel: 'chrome'` means the
@@ -409,6 +424,15 @@ nobody had asked for. What that means when writing a test:
   virtualisation on and off (DOM-5), the settle repaint and the frame intervals at both
   settings (PF-6, and BIG-6 as its "on" half), and a selection drag's cost per step
   (PF-7). Each one asserts only that it measured something.
+- `measure-pivot.spec.mjs` — PV-21 and DA-17, recorded and never gated: ExPivot and the
+  Snapshot over a million trades in a published WebAssembly build without AOT. That build
+  must already be served, with the demo API server holding a million trades beside it,
+  and every test skips itself unless `EXGRID_MEASURE=pivot`. It times the gestures on
+  `/pivot?trades=1000000`, questions by their leaves up to the cap and past it, 1,000
+  changes on `/pivot-live`, and reading Arrow on `/pivot-db` and a CSV on `/pivot-csv`
+  (`EXGRID_MEASURE_CSV` names the file). Times are in the page's own clock, from the
+  input to the frame after the answer, and every long task is collected.
+  `verification/2026-10-01-linux-measure/results.md` says how it was run.
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
@@ -586,6 +610,96 @@ nobody had asked for. What that means when writing a test:
   under highlights named for it, which its own stylesheet paints, and gets its colours back when the
   keyboard returns after the other has coloured its own (ADR-0057's note of 2026-10-01): with one
   shared name the other's registration would have replaced it.
+- `pivot.spec.mjs` — ExPivot on `/pivot` (§29, docs/specs/expivot), **run once per Chrome**:
+  ExPivot's own markup and `ExPivot.MudBlazor`'s (`/pivot?chrome=mud`), found by role and name,
+  which both give the same. A field dragged from the list of fields onto an Area with the
+  browser's own drag and drop, an entry dropped before another and back onto the list (PV-10);
+  the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
+  opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
+  the keyboard on the tab, a second tab beside it, and closing them; a dialog when the page asks
+  for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the
+  page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-63); the
+  keyboard into a field's menu and back to its entry, a menu dropping down under its entry as
+  wide as the pane, and a command moving the field (PV-11); the Pivot Toolbar above the report — the
+  report filter band on its left, Layout and the pane's toggle on its right, no Refresh for the
+  bundled source (PV-30) — the band filtering, and its Filter… opening under the Pivot Toolbar over
+  the report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
+  Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
+  giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by the
+  page; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
+  Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade date, moved
+  to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in the Japanese
+  words (ADR-0060); and the code the page shows under "The code" equal to the regions of its source
+  it is read from (PV-20). Where the keyboard goes when the dialog or a tab goes (PV-39, DC-62,
+  ADR-0070): Escape in the dialog's grid closing the grid's Context Menu first, then the dialog, and
+  held, closing it once, its repeats leaving the report the keyboard (KB-44); however the dialog
+  closes — that Escape, Escape on Close, Close, the backdrop — the report's grid holding the
+  keyboard again, its arrows moving its Focus; Escape in a details tab's grid closing nothing and
+  releasing Tab (KB-8); the selected tab closed handing the keyboard to the tab selected next, and
+  the last one back to the report, on the cell it left. The keyboard put in the records before the
+  dialog's Close or a new tab takes it (PV-41, A11Y-20, ADR-0070/0033): DOM focus put on the
+  records' scroller in the task that draws them, where a press there puts it, before the control's
+  request can land on the Server host, staying in the records and reaching their grid's root once
+  that is a tab stop; on the Server host the control never takes it. Under MudBlazor alone, a
+  MudSelect's list in Value Field Settings… taking Escape before its panel (PV-11), and the palette
+  reaching the pane, the entries and the `−` button in both schemes (PV-18). Under ExPivot's own
+  markup alone, ExGrid's `ReturnKeyboardAsync` keeping to its conditions (DC-61): a control of the
+  page focused while the report's request is on its way keeps the keyboard, and so does a second
+  grid pressed meanwhile — the other pivot's report on `/pivot-db`. On the Server host the request
+  lands two round trips after the Escape or the close, with 150 ms injected; on WebAssembly the same
+  tests are the case without a round trip.
+- `pivot-csv.spec.mjs` — ExPivot over a CSV on `/pivot-csv` (ADR-0064, PV-20), **run once per
+  Chrome**: the trade export the page writes in memory from `/pivot`'s trades, read back under
+  the declared Schema to the very report `/pivot` paints, cell for cell; a file chosen through
+  Blazor's `InputFile` (`setInputFiles` with a file the test writes) with a malformed row,
+  refused whole with the library's sentence naming the row, the column, the value and the line,
+  and nothing pivoted — and the page's own malformed sample refused the same way; a file of a
+  million records painting its progress, the bar its bytes and the line its rows, with the
+  inputs disabled meanwhile, and Cancel stopping it with nothing read; an unknown semicolon
+  file's suggested Schema shown with what is not clear about it (leading zeros kept as Text, a
+  decimal comma), nothing read until it is confirmed, then read under it to exact totals by
+  desk, the account numbers keeping their zeros; the page's two samples, one under the declared
+  Schema and one under a suggested Schema, reading the same trades to the same total — a second
+  file read while a report stands; and the code shown under "The code" equal to its source.
+- `pivot-db.spec.mjs` — `/pivot-db` (ADR-0065/0066/0069), **run once per Chrome**, against the
+  demo API server from either host: its trades read over Arrow into a Snapshot the page pivots in
+  its own process, at the version `/api/status` names, and asked of the server through
+  `PivotSource.Fetch`, which answers in SQL, show the same numbers painted row for row — and
+  again after a layout changed in one pane is shown on the other pivot; Refresh is offered by the
+  server's source alone, and asks again; Show Details opens the same records behind a cell in
+  both, and the server's come a page at a time as the Details tab scrolls to its end (PV-20);
+  and the code the page shows equal to its source, the Arrow request taking its response whole
+  (ADR-0065).
+- `pivot-live.spec.mjs` — `/pivot-live` (ADR-0067/0068/0069), **run once per Chrome**: Change
+  Batches the page folds into the bundled source on its own timer mark the values they changed;
+  paused, the marks go after their second, and a collapse marks nothing however long after
+  (PV-36). The server's live updates, which the page turns on, mark the server report's values
+  through the hub's notices; the page's button turns them off and on, and leaving the page turns
+  them off (PV-20); and the code the page shows equal to its source.
+- `pivot-risk.spec.mjs` — the rate-delta report on `/pivot-risk` (ADR-0060, PV-20), **run once
+  per Chrome**, in a window wide enough for every tenor column beside the pane, since the report
+  grid paints only the columns in view: the tenors painted in the Order Key's order, `ON`, `TN`,
+  `1W` … `30Y`, with `18M` and `1Y6M` two Items side by side, each carrying its own desks'
+  positions; the tenor's Filter… listing its Items in the same order; without the key, the
+  labels' order (`10Y` before `1M`), and back; every total painted the sum of what it totals —
+  across each row, down each desk and down the Grand Total row — and the report's own the page's
+  sum of the positions; and the code the page shows, the README's `Tenors.Months` among it,
+  equal to its source.
+- `grid-live.spec.mjs` — `/grid-live` (ADR-0068/0069), ExGrid alone over the server's trades, its
+  marks set to last a minute so that where they are is what is compared. A mark is keyed by row and
+  column: across a three-row scroll every trade still painted keeps exactly its marked cells, and
+  after a scroll far away and back, which reads the Window again into new instances and new
+  elements, the same cells are marked again (DC-65). With marks painting and going, nothing under
+  the Viewport transitions or animates, under the core's stylesheet and under the Wrapper's
+  (`?chrome=mud`), whose warning tint the mark takes; the mark lies over exactly the layers its
+  cell paints without it, a Pinned Column's row rule among them; the grid's live region is not
+  touched; and forced colours restate the mark as a dashed outline (DC-66). The Window is read from
+  the server as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the
+  page shows is equal to its source.
+
+  `pivot-db`, `pivot-live` and `grid-live` share the run's one API server: each test starts from
+  `POST /api/reset`, reads the trade count and the Source Version from `/api/status`, and turns
+  the live updates off as it ends. They read "The code" regions through `demo-code.mjs`.
 - `edit-stands.spec.mjs` — an edit left standing when the keyboard leaves the grid (ED-26,
   ADR-0018 section 6, ticket 25 of docs/specs/exsheet), on `/sheet` under both Chromes and on
   `/sheets`: the edit neither committed nor discarded when the positions grid, a page button or

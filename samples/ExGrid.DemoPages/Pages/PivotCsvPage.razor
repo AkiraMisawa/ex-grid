@@ -1,0 +1,384 @@
+@page "/pivot-csv"
+@implements IDisposable
+@using System.Diagnostics
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Forms
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Chrome
+@using global::ExGrid.Data
+@using global::ExGrid.MudBlazor
+@using global::ExPivot
+@using global::ExPivot.Chrome
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
+
+@* ?chrome=mud stands the pivot on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's Chrome,
+   as /pivot does (ADR-0062). The page's own controls are plain HTML under either. *@
+<DemoChromeAssets Name="@ChromeName" Paper="true">
+    <Head>
+        <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <link href="_content/ExPivot.MudBlazor/mud-ex-pivot.css" rel="stylesheet" />
+        }
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>Pivot over a CSV — a file read under a Schema</h1>
+
+<p>
+    <strong>The use case:</strong> a file the user brings, pivoted in the page. A CSV is read
+    straight into a Snapshot's columns under a Schema, which says what each column is and how to
+    read it; nothing is guessed, because a guess reads the account number <code>004417</code> as
+    the number 4,417 (ADR-0064). A file the application knows is read under the Schema it declares.
+    A file nobody has described gets a Schema suggested from its first rows, with every column
+    whose reading is not clear marked, and is read under it only once the user confirms it.
+</p>
+<p>
+    The file is read in slices that yield between them, so the page paints its progress and
+    Cancel stops it. A value its column cannot read refuses the whole file, naming the row and the
+    column: a report over the rows that could be read would be quietly short. Only a file read
+    whole is pivoted.
+</p>
+
+<h2>A file this application knows: the trade export, under its declared Schema</h2>
+<div class="demo-toolbar">
+    @* #region The code: input *@
+    <label>Choose a trade export <InputFile id="csv-file" accept=".csv,.txt" OnChange="ChooseExportAsync" disabled="@Busy" /></label>
+    @* #endregion *@
+</div>
+<div class="demo-toolbar">
+    <span>Or a sample, written in memory from /pivot's trades:</span>
+    <button id="csv-sample" disabled="@Busy" @onclick="() => ReadSampleAsync(DemoPivotData.Count, malformed: false)">2,000 trades</button>
+    <button id="csv-sample-large" disabled="@Busy" @onclick="() => ReadSampleAsync(LargeSample, malformed: false)">100,000 trades</button>
+    <button id="csv-sample-malformed" disabled="@Busy" @onclick="() => ReadSampleAsync(DemoPivotData.Count, malformed: true)">2,000 trades, row @DemoCsv.MalformedRow.ToString("N0", Culture) malformed</button>
+</div>
+
+<h2>A file nobody has described: a suggested Schema, read under once you confirm it</h2>
+<div class="demo-toolbar">
+    <label>Choose any CSV <InputFile id="csv-unknown-file" accept=".csv,.txt,.tsv" OnChange="ChooseUnknownAsync" disabled="@Busy" /></label>
+</div>
+<div class="demo-toolbar">
+    <span>Or a sample:</span>
+    <button id="csv-unknown-sample" disabled="@Busy" @onclick="SuggestSampleAsync">the trades as a spreadsheet set to German saves them</button>
+</div>
+
+@if (_pending is { } pending)
+{
+    var suggestion = pending.Suggestion;
+    <section id="csv-suggestion" aria-labelledby="csv-suggestion-title">
+        <h3 id="csv-suggestion-title">The Schema suggested for @pending.Name</h3>
+        <p id="csv-suggestion-file">
+            From its first @suggestion.SampledRows.ToString("N0", Culture) rows:
+            @SeparatorName(suggestion.Schema.Separator) between fields,
+            @(suggestion.Schema.HasHeader ? "a header row first" : "no header row"),
+            @suggestion.Schema.Encoding.Name.
+            @foreach (var mark in suggestion.Marks)
+            {
+                <span class="demo-mark">@mark.Note</span>
+            }
+        </p>
+        <table class="demo-table">
+            <thead>
+                <tr><th>Column</th><th>Kind</th><th>Read as</th><th>Examples</th><th>Not clear</th></tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < suggestion.Columns.Count; i++)
+                {
+                    var index = i;
+                    var column = suggestion.Columns[i];
+                    <tr data-column="@column.Column.Name">
+                        <td>@column.Column.Name</td>
+                        <td>
+                            <select aria-label="@($"Kind of {column.Column.Name}")" value="@_kinds[index]"
+                                    @onchange="e => _kinds[index] = Enum.Parse<SnapshotKind>((string)e.Value!)">
+                                @foreach (var kind in Enum.GetValues<SnapshotKind>())
+                                {
+                                    <option value="@kind">@kind</option>
+                                }
+                            </select>
+                        </td>
+                        <td>@ReadAs(column.Column)</td>
+                        <td>@string.Join("  ", column.Examples)</td>
+                        <td>@string.Join(" ", column.Marks.Select(m => m.Note))</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="demo-toolbar">
+            <button id="csv-confirm" disabled="@Busy" @onclick="ConfirmAsync">Read the file under this Schema</button>
+            <button id="csv-discard" @onclick="Discard">Discard</button>
+        </div>
+    </section>
+}
+
+<h2>Reading</h2>
+<div class="demo-toolbar">
+    <progress id="csv-progress" max="@ProgressMax" value="@ProgressValue"></progress>
+    <span id="csv-read" class="demo-status">@ReadText</span>
+    <button id="csv-cancel" disabled="@(_reading is null)" @onclick="Cancel">Cancel</button>
+</div>
+<p class="demo-status"><span id="csv-status" role="status">@_status</span></p>
+<p id="csv-refusal" class="demo-refusal" role="alert">@_refusal</p>
+
+@if (_source is { } source)
+{
+    <p id="csv-shown">The report shows @_shown</p>
+    @if (DemoChrome.IsMud(ChromeName))
+    {
+        <MudExGridPaper Elevation="1" Class="demo-stretch-paper">@Pivot(source)</MudExGridPaper>
+    }
+    else
+    {
+        @Pivot(source)
+    }
+}
+
+<h2>The code</h2>
+
+<p>The Schema the trade export is declared with, and the fields over its columns, in <code>DemoCsv.cs</code>:</p>
+<DemoCodeBlock File="DemoCsv.cs" Region="schema" />
+
+<p>
+    Choosing a file with Blazor's <code>InputFile</code>, in <code>PivotCsvPage.razor</code>. The
+    file is opened once for each read: a suggestion reads only its first rows.
+</p>
+<DemoCodeBlock File="PivotCsvPage.razor" Region="input" />
+<DemoCodeBlock File="PivotCsvPage.razor" Region="choose" />
+
+<p>Reading it, with the progress, Cancel and a refusal by name, then the pivot over it:</p>
+<DemoCodeBlock File="PivotCsvPage.razor" Region="read" />
+
+<p>A file nobody has described: the suggestion, shown above as a table, and the read once it is confirmed:</p>
+<DemoCodeBlock File="PivotCsvPage.razor" Region="suggest" />
+
+@code {
+    /// <summary>A file waiting for the user to confirm the Schema suggested for it.</summary>
+    private sealed record PendingFile(string Name, long Size, Func<CancellationToken, Stream> Open, CsvSuggestion Suggestion);
+
+    private const int LargeSample = 100_000;
+
+    private PivotLayout _layout = new();
+    private string _shown = "";
+    private CancellationTokenSource? _reading;
+    private bool _writing;
+    private long _size;
+    private long _rows;
+    private long _bytes;
+    private string _status = "Choose a file, or a sample.";
+    private string? _refusal;
+    private PendingFile? _pending;
+    private SnapshotKind[] _kinds = [];
+    private IGridChrome? _gridChrome;
+    private IPivotChrome? _pivotChrome;
+
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    private static CultureInfo Culture => CultureInfo.GetCultureInfo("en-US");
+
+    protected override void OnParametersSet()
+    {
+        // The report grid takes ExPivot.MudBlazor's grid Chrome through the pivot Chrome
+        // (DemoChrome refuses any other name).
+        _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
+        _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+    }
+
+    #region The code: choose
+    // Blazor's InputFile refuses a stream past 512,000 bytes unless it is told otherwise. A million
+    // trades make a file of about 90 MB, and on the Server host every byte of it reaches the
+    // circuit over its WebSocket, so the cap is raised here deliberately: to what this page means
+    // to read, and no further.
+    private const long MaxFileSize = 256L * 1024 * 1024;
+
+    private Task ChooseExportAsync(InputFileChangeEventArgs e)
+        => ReadAsync(e.File.Name, e.File.Size, token => e.File.OpenReadStream(MaxFileSize, token),
+            DemoCsv.TradeExport, DemoCsv.TradeFields, DemoPivotData.FirstLayout(), "under the declared Schema");
+
+    private Task ChooseUnknownAsync(InputFileChangeEventArgs e)
+        => SuggestAsync(e.File.Name, e.File.Size, token => e.File.OpenReadStream(MaxFileSize, token));
+    #endregion
+
+    #region The code: read
+    private PivotSource? _source;
+
+    // Read in slices that yield between them: the page paints the progress, and Cancel stops the
+    // read at the next slice. A value a column cannot read refuses the whole file, by name. While
+    // a file is read, nothing else can be chosen.
+    private async Task ReadAsync(string name, long size, Func<CancellationToken, Stream> open,
+        CsvSchema schema, IReadOnlyList<PivotField>? fields, PivotLayout layout, string how)
+    {
+        using var reading = new CancellationTokenSource();
+        _reading = reading;
+        _source = null;
+        _refusal = null;
+        (_size, _rows, _bytes) = (size, 0, 0);
+        _status = $"Reading {name} {how}…";
+        // Told after every slice. The bytes are counted while the file is read; the last report,
+        // made once the columns are finished, counts the rows alone.
+        var progress = new Progress<SnapshotProgress>(p =>
+        {
+            _rows = p.Rows;
+            _bytes = p.Bytes ?? _bytes;
+            StateHasChanged();
+        });
+        var clock = Stopwatch.StartNew();
+        try
+        {
+            await using var stream = open(reading.Token);
+            var snapshot = await schema.ReadAsync(stream, new SnapshotLoadOptions { Progress = progress }, reading.Token);
+            // The fields over its columns; with none declared, one field per column.
+            _source = PivotSource.From(snapshot, fields);
+            _layout = layout;
+            _shown = $"{name}: {snapshot.RowCount.ToString("N0", Culture)} rows, read {how}.";
+            _status = $"{name}: {snapshot.RowCount.ToString("N0", Culture)} rows read in {clock.Elapsed.TotalSeconds.ToString("N1", Culture)} s.";
+        }
+        catch (SnapshotException refused)
+        {
+            // The library's sentence, naming the row and the column:
+            // "Row 1,234, column 'Notional': '40,00O.00' is not a number (line 1,235)."
+            _refusal = refused.Message;
+            _status = $"{name} was refused: nothing was read.";
+        }
+        catch (OperationCanceledException) when (reading.IsCancellationRequested)
+        {
+            _status = $"Cancelled after {_rows.ToString("N0", Culture)} rows: nothing was read.";
+        }
+        catch (IOException failed)
+        {
+            // The browser could not hand the file over, or it is larger than MaxFileSize.
+            _refusal = failed.Message;
+            _status = $"{name} could not be read: nothing was read.";
+        }
+        finally
+        {
+            _reading = null;
+        }
+    }
+
+    private void Cancel() => _reading?.Cancel();
+
+    // Another file is a new source, handed in with the layout read with it: ExPivot asks the new
+    // source under that layout, in one render.
+    private RenderFragment Pivot(PivotSource source) => @<ExPivot Source="source" @bind-Layout="_layout"
+                                                                   PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                                                   Culture="Culture" ViewportHeight="460" />;
+    #endregion
+
+    #region The code: suggest
+    // A file nobody has described: a Schema is suggested from its first rows, with every column
+    // whose reading is not clear marked. It is a proposal: the file is read under it, or under the
+    // kinds the user changed, only once they confirm.
+    private async Task SuggestAsync(string name, long size, Func<CancellationToken, Stream> open)
+    {
+        Discard();
+        try
+        {
+            await using var stream = open(CancellationToken.None);
+            var suggestion = await CsvSchema.SuggestAsync(stream, new CsvSuggestionOptions { Culture = Culture });
+            _pending = new PendingFile(name, size, open, suggestion);
+            _kinds = [.. suggestion.Schema.Columns.Select(column => column.Kind)];
+            _status = $"A Schema is suggested for {name}: confirm it to read the file.";
+        }
+        catch (SnapshotException refused)
+        {
+            // Its first rows cannot be read at all: an empty file, text not valid UTF-8, a quote left open.
+            _refusal = refused.Message;
+            _status = $"No Schema can be suggested for {name}.";
+        }
+        catch (IOException failed)
+        {
+            _refusal = failed.Message;
+            _status = $"{name} could not be read.";
+        }
+    }
+
+    private Task ConfirmAsync()
+    {
+        if (_pending is not { } pending)
+            return Task.CompletedTask;
+        _pending = null;
+        var suggested = pending.Suggestion.Schema;
+        var confirmed = suggested with { Columns = [.. suggested.Columns.Select((column, i) => column with { Kind = _kinds[i] })] };
+        return ReadAsync(pending.Name, pending.Size, pending.Open, confirmed, fields: null, new PivotLayout(), "under the confirmed Schema");
+    }
+    #endregion
+
+    private void Discard()
+    {
+        _pending = null;
+        _refusal = null;
+    }
+
+    // Nothing else is chosen while a file is read, or while a sample is written to be read.
+    private bool Busy => _reading is not null || _writing;
+
+    private async Task ReadSampleAsync(int trades, bool malformed)
+    {
+        var name = malformed ? "trades-malformed.csv" : $"trades-{trades}.csv";
+        _status = $"Writing {name}…";
+        _writing = true;
+        byte[] bytes;
+        try
+        {
+            // Written in slices, the page painting how far it has come between them.
+            bytes = await DemoCsv.TradeExportFileAsync(trades, malformed, async written =>
+            {
+                _status = $"Writing {name}: {written.ToString("N0", Culture)} of {trades.ToString("N0", Culture)} trades…";
+                StateHasChanged();
+                await Task.Delay(1);
+            });
+        }
+        finally
+        {
+            _writing = false;
+        }
+        await ReadAsync(name, bytes.Length, _ => new MemoryStream(bytes, writable: false),
+            DemoCsv.TradeExport, DemoCsv.TradeFields, DemoPivotData.FirstLayout(), "under the declared Schema");
+    }
+
+    private Task SuggestSampleAsync()
+    {
+        var bytes = DemoCsv.SpreadsheetFile(DemoPivotData.Count);
+        return SuggestAsync("trades-de.csv", bytes.Length, _ => new MemoryStream(bytes, writable: false));
+    }
+
+    private long ProgressMax => Math.Max(1, _size);
+
+    private long ProgressValue => Math.Min(ProgressMax, _bytes);
+
+    private string ReadText => _size == 0
+        ? ""
+        : $"{_rows.ToString("N0", Culture)} rows, {Megabytes(_bytes)} of {Megabytes(_size)} MB";
+
+    private static string Megabytes(long bytes) => (bytes / 1_048_576d).ToString("N1", Culture);
+
+    private static string SeparatorName(CsvSeparator separator) => separator switch
+    {
+        CsvSeparator.Tab => "a tab",
+        CsvSeparator.Semicolon => "a semicolon",
+        _ => "a comma",
+    };
+
+    // How the column's text is read, in words: what the table shows beside its kind.
+    private static string ReadAs(CsvColumn column)
+    {
+        var how = column.Kind switch
+        {
+            SnapshotKind.Decimal or SnapshotKind.Double =>
+                $"decimal point '{column.DecimalPoint ?? "."}'"
+                + (string.IsNullOrEmpty(column.ThousandsSeparator) ? "" : $", thousands '{column.ThousandsSeparator}'"),
+            SnapshotKind.Integer => "whole numbers",
+            SnapshotKind.Date => "dates: " + string.Join(", ", column.DateFormats ?? CsvColumn.IsoDateFormats),
+            SnapshotKind.Boolean => string.Join("/", column.TrueText ?? CsvColumn.ExcelTrue) + " or " + string.Join("/", column.FalseText ?? CsvColumn.ExcelFalse),
+            _ => "as written",
+        };
+        return column.BlankText is { Count: > 0 } blanks ? $"{how}; blank: {string.Join(", ", blanks)}" : how;
+    }
+
+    public void Dispose() => _reading?.Cancel();
+}

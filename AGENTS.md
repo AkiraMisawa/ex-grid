@@ -3,10 +3,12 @@
 An Excel-like grid component for Blazor. **The specification is settled; implementation
 is underway** (pure-logic core, first component layer, and the demo host exist).
 
-The products are **ExGrid** (display-oriented, the one that is specified) and **ExSheet**
+The products are **ExGrid** (display-oriented, the one that is specified), **ExSheet**
 (edit-oriented, being specified: a general-purpose sheet drawn by ExGrid as that grid's Consumer,
-[ADR-0046](docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)). `Ex` is a prefix that names the claim — Excel-like operability — in the
-same position where `ag-grid` puts `ag` = "AGnostic". Both live in one repository and ship as
+[ADR-0046](docs/adr/0046-exsheet-is-a-general-purpose-sheet-drawn-by-exgrid-as-its-consumer.md)) and **ExPivot** (Excel's PivotTable drawn by ExGrid the same way, with a
+MudBlazor Wrapper; [ADR-0059](docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md) to ADR-0069, decided with the user,
+which also put the family's immutable data, the **Snapshot**, into a package of its own, `ExGrid.Data`). `Ex` is a prefix that names the claim — Excel-like operability — in the
+same position where `ag-grid` puts `ag` = "AGnostic". All live in one repository and ship as
 separate packages ([ADR-0019](docs/adr/0019-one-repository-many-packages.md)).
 
 This document holds only what you will get wrong without being told. It does not restate the
@@ -52,7 +54,7 @@ not re-derive it.
 | | Contents |
 |---|---|
 | `CONTEXT.md` | **Glossary.** No implementation detail. `_Avoid_` lists words you must not use |
-| `docs/adr/` | **Decisions and their reasons.** 58 of them. The implementation follows these |
+| `docs/adr/` | **Decisions and their reasons.** 74 of them. The implementation follows these |
 | `docs/definition-of-done.md` | **The exit criteria.** What "finished" means, as pass/fail criteria tied to ADRs, plus what is still open |
 | `spikes/render-bench/README.md` | Render-cost measurement harness (disposable) |
 
@@ -95,7 +97,7 @@ nix develop .#browser -c npx playwright test   # layer 3, from tests/ExGrid.Brow
 
 ## The spine of the design — how to decide when unsure
 
-The principles that run through all 56 ADRs. **A new decision that follows these will not
+The principles that run through all 74 ADRs. **A new decision that follows these will not
 collide with the existing ones.**
 
 1. **Rather than be quietly wrong, say it cannot be done.** This component displays money and

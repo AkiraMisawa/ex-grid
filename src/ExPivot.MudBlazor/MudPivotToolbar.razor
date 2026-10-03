@@ -1,0 +1,45 @@
+@* The Pivot Toolbar above the report under MudBlazor (ADR-0061/0062): the report filter band on its
+   left, handed over drawn — MudPivotReportFilters — and on its right, in ExPivot's order, Layout ▾,
+   Refresh when the source can be refreshed, and the Field List's toggle, as text MudButtons with
+   Material icons. The roles are the built-in markup's: Layout ▾ says it opens a menu and whether it
+   is open, the toggle whether it is pressed. Layout ▾'s wrapper is positioned, so ExPivot's menu
+   frame opens under it, over the report, at its right edge; what closes it and what each choice
+   does are ExPivot's. What the report could not do with the last change is an error MudAlert under
+   the Pivot Toolbar, an alert as the built-in notice is: it answers what the user just did. *@
+<div class="mud-ex-pivot-toolbar">
+    <div class="mud-ex-pivot-toolbar-start">@Context.ReportFilters</div>
+    <div class="mud-ex-pivot-toolbar-end">
+        <span class="mud-ex-pivot-toolbar-anchor">
+            <MudPivotButton Variant="Variant.Text" Size="Size.Small" Class="mud-ex-pivot-toolbar-button mud-ex-pivot-layout-button"
+                            StartIcon="@Chrome.IconFor(Context.LayoutMenu.Id)" EndIcon="@Icons.Material.Filled.ArrowDropDown"
+                            OnClick="Context.LayoutMenu.Open" FocusRequest="Context.LayoutMenu.FocusRequest"
+                            aria-haspopup="menu" aria-expanded="@(Context.LayoutMenu.IsOpen ? "true" : "false")">@Context.LayoutMenu.Label</MudPivotButton>
+            @Context.LayoutMenu.Popup
+        </span>
+        @if (Context.Refresh is { } refresh)
+        {
+            <MudButton Variant="Variant.Text" Size="Size.Small" Class="mud-ex-pivot-toolbar-button mud-ex-pivot-refresh-button"
+                       StartIcon="@Chrome.IconFor(refresh.Id)" Disabled="@(!refresh.Enabled)"
+                       OnClick="refresh.Invoke">@refresh.Label</MudButton>
+        }
+        <MudButton Variant="Variant.Text" Size="Size.Small" Color="@(FieldListShown ? Color.Primary : Color.Default)"
+                   Class="@(FieldListShown ? "mud-ex-pivot-toolbar-button mud-ex-pivot-field-list-toggle mud-ex-pivot-pressed" : "mud-ex-pivot-toolbar-button mud-ex-pivot-field-list-toggle")"
+                   StartIcon="@Chrome.IconFor(Context.FieldList.Id)" aria-pressed="@(FieldListShown ? "true" : "false")"
+                   OnClick="Context.FieldList.Invoke">@Context.FieldList.Label</MudButton>
+    </div>
+</div>
+@if (Context.Refusal is { } refusal)
+{
+    <MudAlert Severity="Severity.Error" Variant="Variant.Outlined" Dense="true" Class="mud-ex-pivot-refusal-notice" role="alert">@refusal</MudAlert>
+}
+
+@code {
+    /// <summary>What to draw and whom to call back (ADR-0061).</summary>
+    [Parameter, EditorRequired] public PivotToolbarContext Context { get; set; } = default!;
+
+    /// <summary>The Chrome this Pivot Toolbar belongs to.</summary>
+    [Parameter, EditorRequired] public MudPivotChrome Chrome { get; set; } = default!;
+
+    // The toggle's pressed state is the pane's visibility, which ExPivot owns.
+    private bool FieldListShown => Context.FieldList.Checked == true;
+}

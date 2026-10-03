@@ -1,0 +1,271 @@
+@page "/pivot-db"
+@implements IDisposable
+@inject DemoApiClient Api
+@using System.Diagnostics
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.WebAssembly.Http
+@* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
+@using global::ExGrid.Chrome
+@using global::ExGrid.Data
+@using global::ExGrid.Data.Arrow
+@using global::ExGrid.MudBlazor
+@using global::ExPivot.Chrome
+@using global::ExPivot.Components
+@using global::ExPivot.Engine
+@using global::ExPivot.MudBlazor
+
+@* ?chrome=mud stands both pivots on ExGrid.MudBlazor's paper, dressed by ExPivot.MudBlazor's
+   Chrome, as /pivot does; absent or builtin is ExPivot's own markup. The browser tests run the
+   page under both (ADR-0061: swapping the Chrome changes no behaviour). *@
+<DemoChromeAssets Name="@ChromeName" Paper="true">
+    <Head>
+        <link href="_content/ExPivot/ex-pivot.css" rel="stylesheet" />
+        @if (DemoChrome.IsMud(ChromeName))
+        {
+            <link href="_content/ExPivot.MudBlazor/mud-ex-pivot.css" rel="stylesheet" />
+        }
+    </Head>
+</DemoChromeAssets>
+
+<DemoNav />
+
+<h1>Pivot over a database — the same trades two ways</h1>
+
+<p>
+    <strong>The use case:</strong> the trades live in a database on a server, and the page pivots
+    them. The demo API server owns a SQLite file of trades (ADR-0069), and the two pivots below read
+    the same file two ways, side by side:
+</p>
+<ul>
+    <li>
+        <strong>Database → Snapshot.</strong> The server reads the trades through a
+        <code>DbDataReader</code> into a Snapshot and sends it as an Arrow stream
+        (<code>GET /api/trades.arrows</code>). The page reads the stream into a Snapshot of its own
+        with <code>ExGrid.Data.Arrow</code>, and <code>PivotSource.From(snapshot, fields)</code>
+        answers every question here, in this process (ADR-0064, ADR-0065). One transfer, and every
+        gesture after it is local.
+    </li>
+    <li>
+        <strong>Database → server Pivot Source.</strong> <code>PivotSource.Fetch</code> sends each
+        question ExPivot asks to the server as a <code>PivotJson</code> document
+        (<code>POST /api/pivot/aggregate</code>, <code>/items</code> and <code>/details</code>), and
+        the server answers it with SQL written by hand: a <code>GROUP BY</code> for the Leaf
+        Aggregates, the Hidden Items as <code>WHERE</code>, and the records behind a cell as
+        <code>LIMIT</code>/<code>OFFSET</code> pages of at most 10,000 (ADR-0066). Only the answers
+        cross the wire.
+    </li>
+</ul>
+<p>
+    Both declare the fields the server offers and start from the same layout, so they show the same
+    numbers. Double-click a value for the trades behind it: the server's pivot pages them from the
+    server as its Details tab scrolls. Its Pivot Toolbar offers Refresh, because a server's data can
+    move on; the Snapshot is read again with the button below.
+</p>
+
+<div class="demo-toolbar">
+    <button id="pivot-db-reread" disabled="@(_snapshotFields is null || _reading)" @onclick="RereadAsync">Read the trades into a new Snapshot</button>
+    <button id="pivot-db-same-layout" @onclick="SameLayout">Show the Snapshot pivot's layout on the server's too</button>
+    <button id="pivot-db-reset" @onclick="ResetLayouts">Reset both layouts</button>
+</div>
+
+<div class="demo-pivot-pair">
+    <section id="pivot-db-snapshot" aria-labelledby="pivot-db-snapshot-title">
+        <h2 id="pivot-db-snapshot-title">Database → Snapshot</h2>
+        <p class="demo-status" id="pivot-db-snapshot-status">@_snapshotStatus</p>
+        @if (_snapshotSource is not null)
+        {
+            @Framed(SnapshotPivot)
+        }
+    </section>
+    <section id="pivot-db-server" aria-labelledby="pivot-db-server-title">
+        <h2 id="pivot-db-server-title">Database → server Pivot Source</h2>
+        <p class="demo-status" id="pivot-db-server-status">@_serverStatus</p>
+        @if (_serverSource is not null)
+        {
+            @Framed(ServerPivot)
+        }
+    </section>
+</div>
+
+<h2>The code</h2>
+<p>
+    What this page runs, read from its source. <code>Api.Http</code> is an <code>HttpClient</code>
+    whose base address is the demo API server, at the page's own port plus 3000
+    (<code>DemoApiClient</code>); the server lets this machine's pages call it (CORS).
+</p>
+<DemoCodeBlock File="PivotDbPage.razor" Region="snapshot" />
+<DemoCodeBlock File="DemoServerPivot.cs" Region="fields" />
+<DemoCodeBlock File="DemoServerPivot.cs" Region="fetch" />
+<DemoCodeBlock File="PivotDbPage.razor" Region="pivots" />
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    // Cancels whatever the page still has out when it goes.
+    private readonly CancellationTokenSource _leaving = new();
+    private IGridChrome? _gridChrome;
+    private IPivotChrome? _pivotChrome;
+
+    private IReadOnlyList<PivotField>? _snapshotFields;
+    private SnapshotPivotSource? _snapshotSource;
+    private PivotLayout _snapshotLayout = FirstLayout();
+    private string _snapshotStatus = "Reading the trades from the demo API server…";
+    private bool _reading;
+
+    private FetchingPivotSource? _serverSource;
+    private PivotLayout _serverLayout = FirstLayout();
+    private string _serverStatus = "Asking the demo API server for its fields…";
+    // How many questions of each kind the server has been asked, for the status line.
+    private readonly Dictionary<string, int> _asked = new(StringComparer.Ordinal);
+
+    [SupplyParameterFromQuery(Name = "chrome")]
+    public string? ChromeName { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        // The report grids take ExPivot.MudBlazor's grid Chrome through the pivot Chrome, as on
+        // /pivot; DemoChrome refuses any name but builtin and mud.
+        _gridChrome = DemoChrome.IsMud(ChromeName) ? null : DemoChrome.From(ChromeName);
+        _pivotChrome = DemoChrome.IsMud(ChromeName) ? MudPivotChrome.Default : null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Interactive only: on the Server host the page is prerendered first, and a prerender that
+        // read the trades would read them for nothing.
+        if (!firstRender)
+            return;
+        var token = _leaving.Token;
+        try
+        {
+            // Both pivots declare the fields the server's source offers, so their Field Lists,
+            // labels and formats are the same, and the same layout shows the same numbers.
+            var (fields, features) = await DemoServerPivot.DeclaredAsync(Api.Http, token);
+            _serverSource = DemoServerPivot.Fetch(Api.Http, fields, features, Asked);
+            DescribeServer();
+            _snapshotFields = fields;
+            StateHasChanged();
+            await ReadAsync(fields, token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            // The page went first.
+        }
+        catch (HttpRequestException error)
+        {
+            _snapshotStatus = _serverStatus = Api.NotAnswering(error);
+            StateHasChanged();
+        }
+    }
+
+    #region The code: snapshot
+    // Database → Snapshot (ADR-0064/0065). The server reads its trades through a DbDataReader into
+    // a Snapshot and writes it as an Arrow stream; the page reads the stream into a Snapshot of its
+    // own, and the bundled source answers every question from it, in this process.
+    private async Task<(SnapshotPivotSource Source, string Version)> ReadSnapshotAsync(
+        IReadOnlyList<PivotField> fields, CancellationToken token)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "api/trades.arrows");
+        // In a browser, HttpClient streams a response by default, which costs about 2 s for these
+        // payloads; taken whole, 0.3 s (ADR-0065). On the Server host the request goes out through
+        // SocketsHttpHandler, which ignores the option.
+        request.SetBrowserResponseStreamingEnabled(false);
+        using var response = await Api.Http.SendAsync(request, token);
+        response.EnsureSuccessStatusCode();
+        var snapshot = await SnapshotArrow.ReadAsync(await response.Content.ReadAsByteArrayAsync(token), cancellationToken: token);
+        // The Source Version the server read the trades at: its run and its change counter.
+        var version = response.Headers.GetValues("ExGrid-Source-Version").Single();
+        return (PivotSource.From(snapshot, fields), version);
+    }
+    #endregion
+
+    private async Task ReadAsync(IReadOnlyList<PivotField> fields, CancellationToken token)
+    {
+        _reading = true;
+        try
+        {
+            var started = Stopwatch.GetTimestamp();
+            var (source, version) = await ReadSnapshotAsync(fields, token);
+            // A new source is new data: ExPivot asks it again, and marks what changed (ADR-0067).
+            _snapshotSource = source;
+            _snapshotStatus = $"Read {source.Snapshot.RowCount.ToString("N0", Culture)} trades at version {version} "
+                + $"in {Stopwatch.GetElapsedTime(started).TotalMilliseconds.ToString("N0", Culture)} ms.";
+        }
+        finally
+        {
+            _reading = false;
+        }
+        StateHasChanged();
+    }
+
+    private async Task RereadAsync()
+    {
+        if (_snapshotFields is not { } fields)
+            return;
+        var token = _leaving.Token;
+        _snapshotStatus = "Reading the trades from the demo API server…";
+        try
+        {
+            await ReadAsync(fields, token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
+        catch (HttpRequestException error)
+        {
+            _snapshotStatus = Api.NotAnswering(error);
+        }
+    }
+
+    #region The code: pivots
+    // The same component over either source. A layout is View State, which the page holds and
+    // binds; the Chromes are the page's ?chrome= switch.
+    private RenderFragment SnapshotPivot => @<ExPivot Source="_snapshotSource" @bind-Layout="_snapshotLayout"
+                                                       PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                                       Culture="Culture" ViewportHeight="360" />;
+
+    private RenderFragment ServerPivot => @<ExPivot Source="_serverSource" @bind-Layout="_serverLayout"
+                                                     PivotChrome="_pivotChrome" Chrome="_gridChrome"
+                                                     Culture="Culture" ViewportHeight="360" />;
+
+    // P&L by region and desk across products, with the currency to filter by.
+    private static PivotLayout FirstLayout() => new()
+    {
+        Filters = [new PivotFieldPlacement("Currency")],
+        Rows = [new PivotFieldPlacement("Region"), new PivotFieldPlacement("Desk")],
+        Columns = [new PivotFieldPlacement("Product")],
+        Values = [new PivotValueField("Pnl", PivotAggregation.Sum) { NumberFormat = "#,##0" }],
+    };
+    #endregion
+
+    // Under ExGrid.MudBlazor's paper with ?chrome=mud, as /pivot stands its pivot.
+    private RenderFragment Framed(RenderFragment pivot) => DemoChrome.IsMud(ChromeName)
+        ? @<MudExGridPaper Elevation="1" Class="demo-stretch-paper">@pivot</MudExGridPaper>
+        : pivot;
+
+    // Told of each question as the server's source sends it; asked from inside ExPivot's question,
+    // so the status line is repainted after it rather than in it.
+    private void Asked(string path)
+    {
+        _asked[path] = _asked.GetValueOrDefault(path) + 1;
+        DescribeServer();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void DescribeServer()
+    {
+        string Count(string path) => _asked.GetValueOrDefault("api/pivot/" + path).ToString("N0", Culture);
+        _serverStatus = $"Asked of the server so far: {Count("aggregate")} aggregate, {Count("items")} items "
+            + $"and {Count("details")} details questions, each one POST.";
+    }
+
+    private void SameLayout() => _serverLayout = _snapshotLayout;
+
+    private void ResetLayouts()
+    {
+        _snapshotLayout = FirstLayout();
+        _serverLayout = FirstLayout();
+    }
+
+    public void Dispose() => _leaving.Cancel();
+}
