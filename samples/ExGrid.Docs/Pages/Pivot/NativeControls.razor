@@ -1,9 +1,0 @@
-@* MudBlazor's stylesheet resets every button, select and input on the page. The built-in Examples
-   use plain HTML controls, as an application without MudBlazor would, so inside them the controls
-   are given back the browser's own look. *@
-<HeadContent>
-    <style>
-        .docs-example-builtin :is(button, select, input, textarea, progress):not([class]):not(.ex-pivot *, .ex-grid *) { all: revert; }
-        .docs-example-builtin :is(button, select, label):not([class]):not(.ex-pivot *, .ex-grid *) { margin-right: 6px; }
-    </style>
-</HeadContent>

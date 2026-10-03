@@ -45,7 +45,7 @@
                 <ExGrid TRow="BlotterTrade" Source="_source" Columns="_columns" HeaderGroups="Groups" PinnedColumnCount="2"
                         CellChangedAt="_changedAt" CellState="StateOf" SelectionChanged="OnSelectionChanged"
                         HighlightFocusRow="true" Chrome="_mudChrome"
-                        ViewportHeight="GridHeight" ViewportWidth="GridWidth" />
+                        ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
             </MudExGridPaper>
             <div class="blotter-status">
                 <span>@StatusLeft()</span>
@@ -87,7 +87,7 @@
                 <ExGrid TRow="BlotterTrade" Source="_source" Columns="_columns" HeaderGroups="Groups" PinnedColumnCount="2"
                         CellChangedAt="_changedAt" CellState="StateOf" SelectionChanged="OnSelectionChanged"
                         HighlightFocusRow="true" StripeRows="true" Density="GridDensity.Excel"
-                        ViewportHeight="GridHeight" ViewportWidth="GridWidth" />
+                        ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
             </div>
             <footer class="blotter-status">
                 <span>@StatusLeft()</span>
@@ -99,10 +99,11 @@
 </ShowcaseFrame>
 
 <style>
-    /* Laid out for a 1280 × 720 window: 48 + 74 + 2 + 568 + 28. */
-    .blotter { min-height: 100vh; display: flex; flex-direction: column; }
-    .blotter-body { width: 1280px; margin: 0 auto; display: flex; flex-direction: column; }
-    .blotter-grid { flex: none; }
+    /* The window's height: the bar, the figures and the status line take theirs, and the grid
+       takes the rest, at any window size. */
+    .blotter { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    .blotter-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .blotter-grid { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     .blotter-kpis { display: flex; gap: 10px; height: 74px; box-sizing: border-box; padding: 8px 14px; flex: none; }
     .blotter-kpi { flex: 1; min-width: 0; padding: 6px 14px; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
     .blotter .blotter-kpi-label { font-size: 11px; line-height: 16px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
@@ -162,7 +163,7 @@
     .blotter-mud .blotter-mud-desks .mud-toggle-item { color: rgba(255, 255, 255, 0.8); }
     .blotter-mud .blotter-mud-desk-selected { background: rgba(255, 255, 255, 0.22) !important; color: #fff !important; }
     .blotter-mud .blotter-mud-live { font-weight: 700; letter-spacing: 0.06em; }
-    .blotter-mud .blotter-mud-paper { flex: none; margin: 0 14px; }
+    .blotter-mud .blotter-mud-paper { flex: 1 1 auto; min-height: 0; display: flex; margin: 0 14px; }
     .blotter-mud .blotter-mud-bar { height: 48px; border-bottom: 1px solid var(--mud-palette-lines-default); }
     .blotter-mud .blotter-status { color: var(--mud-palette-text-secondary); }
     .blotter-mud .blotter-up { color: var(--mud-palette-success); }
@@ -172,9 +173,6 @@
 @code {
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
     private static readonly MudGridChrome _mudChrome = new();
-    // Declared sizes: Header Groups do not yet render under ViewportSize.Stretch.
-    private const double GridWidth = 1250;
-    private const double GridHeight = 568;
     private static readonly string[] Desks = ["All", "Rates", "Credit", "FX", "Equities", "Commodities"];
     private static readonly string[] LiveColumns = ["Bid", "Ask", "Last", "Change", "DayPnl", "TotalPnl"];
 

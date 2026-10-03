@@ -181,10 +181,9 @@
 
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
 
-    // Sized for a 1280 × 720 window. The report's width is declared rather than stretched: a
-    // report whose first paint has Header Groups needs a declared width for now.
+    // The report takes the width the window leaves beside the Fields pane.
     private const double FieldListWidth = 280;
-    private static readonly ViewportSize ReportWidth = 920;
+    private static readonly ViewportSize ReportWidth = ViewportSize.Stretch;
     private static readonly ViewportSize ReportHeight = 468;
 
     private static readonly Sale[] AllSales = SalesData.Sample(60_000);

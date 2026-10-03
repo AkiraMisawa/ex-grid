@@ -103,7 +103,7 @@
                        header's own delegated click reads the offsets. *@
                     <div class="ex-headings-corner" style="@_rowHeadingStyle" aria-hidden="true"></div>
                 }
-                @if (_headerLayout.Groups.Count > 0)
+                @if (_headerLayout.Groups.Count > 0 && GroupsHaveGeometry)
                 {
                     @* The pinned rectangles ride a zero-size sticky anchor, exactly as
                        the pinned selection layer does: a group is entirely pinned or
@@ -154,7 +154,7 @@
                 @* A rectangle stands correctly whether or not its leaves are in the
                    DOM (ADR-0032): absolutely positioned from the geometry, so it never
                    depends on the sliced flex flow beside it. *@
-                @for (var g = 0; g < _headerLayout.Groups.Count; g++)
+                @for (var g = 0; GroupsHaveGeometry && g < _headerLayout.Groups.Count; g++)
                 {
                     var group = _headerLayout.Groups[g];
                     @if (!IsGroupHeld(group))
@@ -8906,6 +8906,12 @@
         _leafHeaderStyles = new string?[_columnStyles.Geometry.Count];
         _groupStyles = new string?[_headerLayout.Groups.Count];
     }
+
+    /// <summary>Whether the column geometry the rectangles stand on has been resolved for these
+    /// columns. Until a Stretch grid's first report — or while its box reports zero, as in a
+    /// hidden tab — it has not, and the band paints no rectangles, as the rows paint nothing:
+    /// nothing is painted and nothing is thrown, and the next report brings them (ADR-0028).</summary>
+    private bool GroupsHaveGeometry => _columnStyles.Geometry.Count == Columns.Count;
 
     /// <summary>A group inside the pinned block is held at the left edge, unless pinning is
     /// suspended and every column scrolls (ADR-0032/0045).</summary>

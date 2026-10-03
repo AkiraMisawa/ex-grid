@@ -184,22 +184,11 @@ body { font-family: Roboto, Helvetica, Arial, sans-serif; }
 
 .docs-showcase { min-height: 100vh; display: flex; flex-direction: column; }
 
-/* A built-in Example's own buttons: MudBlazor's reset leaves a plain <button> looking like text,
-   so the Examples' controls get a plain, visible button of their own. */
-.docs-example-builtin button:not([class*="ex-"]):not([class*="mud-"]) {
-    font: inherit;
-    font-size: 13px;
-    padding: 4px 12px;
-    margin: 0 6px 8px 0;
-    border: 1px solid var(--docs-code-border);
-    border-radius: 4px;
-    background: var(--docs-code-bg);
-    color: inherit;
-    cursor: pointer;
-}
-.docs-example-builtin button:not([class*="ex-"]):not([class*="mud-"]):hover {
-    border-color: var(--mud-palette-primary);
-}
+/* A built-in Example's own controls: MudBlazor's reset leaves a plain button, select or input
+   looking like text, and the built-in Examples use plain HTML as an application without MudBlazor
+   would. Inside them the browser's own look comes back; the grids' own markup is left alone. */
+.docs-example-builtin :is(button, select, input, textarea, progress):not([class]):not(.ex-pivot *, .ex-grid *, .ex-sheet *) { all: revert; }
+.docs-example-builtin :is(button, select, label):not([class]):not(.ex-pivot *, .ex-grid *, .ex-sheet *) { margin-right: 6px; }
 
 /* A short quotation in a page's prose: a formula, a call. */
 .docs-section > pre.docs-code {
@@ -209,3 +198,9 @@ body { font-family: Roboto, Helvetica, Arial, sans-serif; }
     border: 1px solid var(--docs-code-border);
     border-radius: 6px;
 }
+
+/* ExPivot's Show Details dialog stands at z-index 30 over its page, and this site's navigation
+   drawer at MudBlazor's 1100, so the dialog opened under the drawer. Raised over the app bar here,
+   on this site only; ExPivot's own value is a product question, not the site's. */
+.docs-content .ex-pivot-dialog-backdrop { z-index: calc(var(--mud-zindex-appbar) + 10); }
+.docs-content .ex-pivot-dialog { z-index: calc(var(--mud-zindex-appbar) + 11); }

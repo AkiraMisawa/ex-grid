@@ -296,4 +296,29 @@ public class HeaderGroupRenderingTests : GridTestContext
         // Pinning up to column c pins c + 1 columns.
         Assert.Equal([true, false, false, true, true], offered);
     }
+
+    [Fact] // ADR-0028 / ADR-0032: a Stretch grid paints nothing and throws nothing until the browser reports its box
+    public async Task A_stretch_grid_with_groups_waits_for_its_box()
+    {
+        // Before the first report the column geometry is unresolved, as in a hidden tab; the
+        // rectangles stand on that geometry, so they wait with the columns.
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(200))
+            .Add(g => g.TotalCount, 200)
+            .Add(g => g.Columns, TestRows.Wide(6))
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.HeaderHeight, HeaderPx)
+            .Add(g => g.ViewportHeight, 200)
+            .Add(g => g.ViewportWidth, ViewportSize.Stretch)
+            .Add(g => g.HeaderGroups, Groups()));
+
+        Assert.Empty(cut.FindAll(".ex-header-group"));
+
+        await cut.InvokeAsync(() => cut.Instance.OnViewportReportAsync(0, 0, 650, 200));
+
+        var rectangles = cut.FindAll(".ex-header-group");
+        Assert.Equal(2, rectangles.Count);
+        Assert.Contains("left: 100px", rectangles[0].GetAttribute("style"));
+        Assert.Contains("width: 300px", rectangles[0].GetAttribute("style"));
+    }
 }
