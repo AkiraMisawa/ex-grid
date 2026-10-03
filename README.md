@@ -34,7 +34,7 @@ pure-logic core and the component layer exist, virtualised on both axes, with pi
 columns, selection, the keyboard (including entering a cell), the Cell Editor and the
 clipboard. What is left is recorded in
 [`docs/implementation-status.md`](docs/implementation-status.md). The specification lives
-in [`docs/adr/`](docs/adr/) (74 decision records) and the domain glossary in
+in [`docs/adr/`](docs/adr/) and the domain glossary in
 [`CONTEXT.md`](CONTEXT.md).
 
 ## Using the packages
@@ -156,12 +156,10 @@ The two rules that override convenience (details in [`AGENTS.md`](AGENTS.md)):
 
 1. **Everything committed to this repository is written in English** — documents, code,
    comments, commit messages, test names, UI strings.
-2. **JavaScript is allowlisted, not "minimised"** — eight permitted uses (capture-phase
-   `keydown`, scroll offsets, the clipboard, a `ResizeObserver` reporting the Scrollbar
-   Gutter, a pointer report for the hover band, a `ResizeObserver` reporting the Layout
-   Ceiling, the Keyboard Field's composition and focus for an IME, and a `matchMedia`
-   listener reporting the Device Pixel); anything else needs a new ADR
-   ([ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md)).
+2. **JavaScript is allowlisted, not "minimised"** — used only where Blazor genuinely cannot
+   do the job, or where a recorded measurement shows the Blazor-side approach is too slow;
+   the permitted uses are listed in [`AGENTS.md`](AGENTS.md), and anything else needs a new
+   ADR ([ADR-0021](docs/adr/0021-javascript-is-allowlisted-not-minimised.md)).
 
 Before changing behaviour, read the relevant ADR — the reasons are written down, and
 changing something without knowing the reason usually walks back into an option that was
