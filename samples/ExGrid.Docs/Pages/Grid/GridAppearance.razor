@@ -1,0 +1,103 @@
+@page "/exgrid/appearance"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Appearance"
+          Lead="Geometry travels as C# parameters, because the grid's arithmetic depends on it. Colour travels as CSS custom properties, because your theme owns it. Keeping the two apart is what lets a theme restyle the grid without knocking its rows out of line.">
+
+    <DocsSection Title="Density and row height">
+        <p>
+            <code>Density</code> picks a consistent set of row height, header height, type size and padding:
+        </p>
+        <ul>
+            <li><code>Compact</code> — the default, 28&nbsp;px rows.</li>
+            <li><code>Standard</code> — 32&nbsp;px rows, the height of MudBlazor's tables.</li>
+            <li><code>Comfortable</code> — 40&nbsp;px rows and wider padding.</li>
+            <li><code>Excel</code> — Excel's default 20&nbsp;px row, at a smaller type.</li>
+        </ul>
+        <p>
+            <code>RowHeight</code> and <code>HeaderHeight</code> override the preset, value by value.
+            <strong>Change row height through the parameter, never in CSS.</strong> Virtualisation, the selection
+            overlay and the editor's position are all computed from it; a height set only in a stylesheet paints
+            rows that the arithmetic no longer matches, slightly at first and more the further you scroll.
+        </p>
+        <p>
+            <code>StripeRows</code> paints every second row, counted from the start of the whole result, so a stripe
+            stays with its row as you scroll. <code>HighlightFocusRow</code> and <code>HighlightHoverRow</code> are
+            covered under <a href="exgrid/selection">Selection</a>.
+        </p>
+        <DocsExample Title="Density, stripes and the Focus row" Builtin="typeof(DensityGrid)" Mud="typeof(DensityGridMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Visual Tokens">
+        <p>
+            Every colour the grid paints is a CSS custom property with an <code>--ex-</code> prefix, read from the
+            nearest element that sets it. Set them on a wrapper, a page section or your theme's root; the grid itself
+            takes no colour parameter and no <code>Class</code>. Among them:
+        </p>
+        <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead><tr><th style="width: 42%">Token</th><th>Paints</th></tr></thead>
+            <tbody>
+                <tr><td><code>--ex-background</code>, <code>--ex-color</code></td><td>The grid's ground and text.</td></tr>
+                <tr><td><code>--ex-pinned-background</code></td><td>The ground of pinned cells, which must be opaque.</td></tr>
+                <tr><td><code>--ex-header-background</code>, <code>--ex-header-color</code>, <code>--ex-header-rule-color</code></td><td>The header band.</td></tr>
+                <tr><td><code>--ex-row-rule-color</code>, <code>--ex-column-rule-color</code></td><td>Lines between rows and columns; transparent until set.</td></tr>
+                <tr><td><code>--ex-row-stripe-background</code></td><td>Row Stripes.</td></tr>
+                <tr><td><code>--ex-selection-fill</code>, <code>--ex-selection-outline</code>, <code>--ex-focus-outline</code></td><td>The selection and the Focus cell.</td></tr>
+                <tr><td><code>--ex-focus-row-fill</code>, <code>--ex-row-hover-background</code></td><td>The Focus row and hover bands.</td></tr>
+                <tr><td><code>--ex-tone-positive-color</code>, <code>--ex-tone-negative-color</code></td><td>Tones. Unset, a toned cell looks like any other.</td></tr>
+                <tr><td><code>--ex-state-stale-color</code>, <code>--ex-state-error-color</code>, <code>--ex-state-missing-background</code>, <code>--ex-state-modified-mark</code></td><td>Cell States.</td></tr>
+                <tr><td><code>--ex-change-highlight-background</code></td><td>The Change Highlight on live data.</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <p>
+            The font family is the exception. The grid decides whether a number fits — or becomes <code>####</code> —
+            from the width of its glyphs, so <code>--ex-font-family</code> is a metric as much as a look: whoever
+            changes it also passes matching <code>CellMetrics</code>. <code>MudExGridPaper</code> does this for
+            Roboto.
+        </p>
+        <h3 class="mud-typography mud-typography-h6 docs-example-title">Cell States</h3>
+        <p>
+            A tone is derived from the value. A <strong>Cell State</strong> is what only your application knows
+            about a cell — <code>Stale</code>, <code>Missing</code>, <code>Error</code> or <code>Modified</code> —
+            asked for through the <code>CellState</code> delegate, once per painted cell. Keep it in a field and keep
+            it to a lookup; hand over a new delegate when the answers change.
+        </p>
+        <DocsExample Title="A theme, tones and a stale price" Builtin="typeof(ThemedGrid)" Mud="typeof(ThemedGridMud)"
+                     Files="@(["Examples/Grid/Position.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Dark scheme">
+        <p>
+            Untouched, the built-in grid paints with the system colours <code>Canvas</code> and <code>CanvasText</code>,
+            so it follows the page's <code>color-scheme</code> and the user's forced-colours setting with no work. Declare
+            <code>color-scheme: dark</code> on your page and the grid is dark. Tokens you set can follow too, with
+            <code>light-dark()</code>, as the theme above does. Inside a <code>MudExGridPaper</code>, the tokens come
+            from MudBlazor's palette, so the grid follows <code>MudThemeProvider</code>'s dark mode.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Built-in Chrome or MudBlazor's">
+        <p>
+            The column menu, the filter panel, the find panel, the Context Menu, the Cell Editor and the loading
+            indicator are the grid's <strong>Chrome</strong>, drawn through <code>IGridChrome</code>. With no
+            <code>Chrome</code> parameter you get the built-in one, which needs nothing but <code>ex-grid.css</code>.
+            ExGrid.MudBlazor adds:
+        </p>
+        <ul>
+            <li><code>MudGridChrome</code> — the same seams drawn with MudBlazor's own controls. Pass it as <code>Chrome</code>.</li>
+            <li><code>MudExGridPaper</code> — a Material surface around the grid that maps <code>Dense</code>, <code>Hover</code> and <code>Striped</code> onto the grid and sets Roboto with its measured widths.</li>
+            <li><code>mud-ex-grid.css</code> — the Visual Tokens mapped onto MudBlazor's palette, dark mode included.</li>
+        </ul>
+        <p>
+            Chrome draws and calls back; the grid decides what every choice means. The same filter chosen under
+            either Chrome gives the same rows. Every Example on this site runs under both: switch with
+            <em>Built-in / MudBlazor</em> at the top of the page.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(ExGrid.MudBlazor.MudExGridPaper)" />
+        <ApiTable Type="typeof(ExGrid.MudBlazor.MudGridChrome)" />
+    </DocsSection>
+</DocsPage>

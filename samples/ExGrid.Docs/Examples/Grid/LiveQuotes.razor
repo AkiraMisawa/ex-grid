@@ -1,0 +1,90 @@
+@using System.Globalization
+@using ExGrid.Cells
+@implements IDisposable
+
+<div style="--ex-tone-positive-color: light-dark(#1a7f37, #4ac26b); --ex-tone-negative-color: light-dark(#cf222e, #ff7b72)">
+    <ExGrid TRow="Quote" Source="_source" Columns="Columns" CellChangedAt="_changedAt"
+            ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+</div>
+
+<div style="margin-top: 12px">
+    <button type="button" @onclick="() => _paused = !_paused">@(_paused ? "Resume" : "Pause")</button>
+</div>
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private static readonly GridColumn<Quote>[] Columns =
+    [
+        new("Symbol", ColumnType.Text, q => q.Symbol),
+        new("Name", ColumnType.Text, q => q.Name),
+        new("Bid", ColumnType.Number, q => q.Bid, format: Price),
+        new("Ask", ColumnType.Number, q => q.Ask, format: Price),
+        new("Last", ColumnType.Number, q => q.Last, format: Price),
+        new("Change", ColumnType.Number, q => q.Change, header: "Chg %",
+            format: v => ((decimal)v).ToString("+0.00%;-0.00%;0.00%", Invariant),
+            tone: v => (decimal)v switch { > 0 => CellTone.Positive, < 0 => CellTone.Negative, _ => CellTone.None }),
+        new("Volume", ColumnType.Number, q => q.Volume, format: v => ((long)v).ToString("N0", Invariant)),
+        new("Time", ColumnType.Text, q => q.Time.ToString("HH:mm:ss", Invariant)),
+    ];
+
+    private readonly Random _random = new(7);
+    private readonly CancellationTokenSource _stop = new();
+    private Quote[] _quotes = Quote.Opening();
+    private InMemoryGridSource<Quote> _source = default!;
+    private bool _paused;
+
+    // When each cell's value last changed, by symbol and column. The grid asks as it paints a cell,
+    // marks the ones that changed within the last second, and takes the marks away itself.
+    private readonly Dictionary<(string Symbol, string Column), DateTimeOffset> _changes = [];
+    private CellChangeOf<Quote> _changedAt = default!;
+
+    protected override void OnInitialized()
+    {
+        _source = GridSource.From(_quotes);
+        _changedAt = (quote, column) => _changes.TryGetValue((quote.Symbol, column.Name), out var at) ? at : null;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            _ = TickAsync(_stop.Token);
+    }
+
+    // Stands in for a price feed: every 600 ms a few quotes move.
+    private async Task TickAsync(CancellationToken stop)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(600));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(stop))
+            {
+                if (_paused)
+                    continue;
+                var now = DateTimeOffset.Now;
+                for (var n = 0; n < 3; n++)
+                {
+                    var i = _random.Next(_quotes.Length);
+                    var before = _quotes[i];
+                    var after = before.Tick(_random, TimeOnly.FromDateTime(now.LocalDateTime));
+                    foreach (var column in Columns.Where(c => !Equals(c.Value(before), c.Value(after))))
+                        _changes[(after.Symbol, column.Name)] = now;
+                    // A new instance: the row repaints, and asks for its cells' change times again.
+                    _source.ReplaceRow(before, after);
+                    _quotes[i] = after;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        _stop.Cancel();
+        _stop.Dispose();
+    }
+
+    private static string Price(object value) => ((decimal)value).ToString("N2", Invariant);
+}

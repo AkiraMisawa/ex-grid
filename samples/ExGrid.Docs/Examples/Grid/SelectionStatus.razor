@@ -1,0 +1,43 @@
+@using ExGrid.Selection
+@using ExGrid.Docs.Examples.Data
+
+<ExGrid TRow="Trade" Source="_source" Columns="_columns" SelectionChanged="OnSelectionChanged"
+        HighlightFocusRow="true" HighlightHoverRow="true"
+        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+<div style="display: flex; gap: 24px; margin-top: 12px; font-size: 14px">
+    <span>@_where</span>
+    <span>@_count</span>
+</div>
+
+@code {
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Currency", ColumnType.Text, t => t.Currency),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+    ];
+
+    private string _where = "Nothing selected";
+    private string _count = "";
+
+    // Positions are in the current order: the Focus's row is the row painted there now.
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        if (selection.IsEmpty)
+        {
+            (_where, _count) = ("Nothing selected", "");
+            return;
+        }
+        var trade = _source.Window[selection.Focus.Row];
+        _where = $"Focus: trade {trade.Id}, {_columns[selection.Focus.Column].Header}";
+        _count = $"{selection.Ranges.Count} range(s), {selection.CellCount:N0} cells";
+    }
+}

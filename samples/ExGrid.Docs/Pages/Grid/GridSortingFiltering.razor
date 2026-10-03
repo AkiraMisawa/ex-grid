@@ -1,0 +1,88 @@
+@page "/exgrid/sorting-filtering"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Sorting, filtering and find"
+          Lead="The grid never sorts, filters or searches rows itself: it does not hold them. It offers the gestures, and asks whoever holds the rows to answer. GridSource.From answers for a list in memory, and its answers are the reference for what each one means.">
+
+    <DocsSection Title="With GridSource.From">
+        <p>
+            Bind a <code>GridSource.From(rows)</code> and everything on this page works with no further code:
+        </p>
+        <ul>
+            <li>
+                <strong>Click a header to sort.</strong> One click sorts ascending, a second descending, a third
+                returns to your own order. A click replaces the whole sort with that one column; a multi-column
+                sort is expressed in code, as a list of <code>SortSpec</code>.
+            </li>
+            <li>
+                <strong>Open the ▾ in a header</strong> (or press <kbd>Alt</kbd>+<kbd>↓</kbd>) for the column menu
+                and the filter panel. A column declares which panel it offers with <code>filterUi</code>: a
+                <code>ValueList</code> of distinct values to tick, a <code>Condition</code> (the default), or
+                <code>Both</code>. The value list is asked for when the panel opens; past 1,000 distinct values it
+                gives way to the condition form.
+            </li>
+            <li>
+                <strong>Press <kbd>Ctrl</kbd>+<kbd>F</kbd></strong> in the grid for the find panel. It searches
+                every row of the result, not only the painted ones, and matches the text each cell shows.
+                With several cells selected, it searches the selection.
+            </li>
+        </ul>
+        <DocsExample Title="Sort, filter and find" Builtin="typeof(SortFilterFind)" Mud="typeof(SortFilterFindMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="What sorting and filtering mean">
+        <p>
+            <code>GridSource.From</code> is the reference implementation: a server that sorts or filters for the
+            grid should answer exactly as it does. The rules are short:
+        </p>
+        <ul>
+            <li>Text compares <strong>ordinally, ignoring case</strong>, everywhere: the same answer on every machine and in every culture, and one a database can match.</li>
+            <li>A <strong>Blank</strong> is a value accessor returning <code>null</code>. An empty string is a value, not a Blank.</li>
+            <li><strong>Blanks sort last</strong> in both directions, as in Excel, and the sort is stable.</li>
+            <li>A Blank matches only <code>IsBlank</code>, or a value list that ticks it. <code>NotEquals</code> and <code>DoesNotContain</code> do not match a Blank.</li>
+            <li>Which operators a column offers follows its type: <code>Contains</code> and <code>StartsWith</code> for text, <code>GreaterThan</code> and friends for numbers and dates.</li>
+            <li>Anything ambiguous is <strong>refused with an exception naming the column</strong> — an unknown column, an operator the type does not allow, a value of the wrong type — rather than guessed at.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Sorting and filtering from code">
+        <p>
+            The sort and filter are plain data — <code>SortSpec</code> and <code>GridFilter</code> — so a toolbar
+            button, a saved view or a link can set them. Call the source's <code>OnSortChanged</code> and
+            <code>OnFilterChanged</code>; the header's sort arrow and the filter panel follow, and the source raises
+            <code>StateChanged</code> whenever the result changes, whoever changed it.
+        </p>
+        <DocsExample Title="A saved view" Builtin="typeof(QueryFromCode)" Mud="typeof(QueryFromCodeMud)"
+                     Files="@(["Examples/Data/Trade.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="When you hold the rows yourself">
+        <p>
+            Without a Source you push the rows (see <a href="exgrid/data">Data sources</a>), and the gestures arrive
+            as notifications. Pass <code>Sorts</code> and <code>Filters</code> so the header and panel show what is in
+            force, answer <code>OnSortChanged</code> and <code>OnFilterChanged</code> with a new <code>Window</code>,
+            <code>OnDistinctValuesNeeded</code> for the value list, and <code>OnFind</code> for
+            <kbd>Ctrl</kbd>+<kbd>F</kbd>. <code>GridQueryEngine.Apply</code> and <code>GridFind.Step</code> are the
+            reference implementations, if you want to run them over rows of your own.
+        </p>
+        <p>
+            Bump <code>RowSequenceVersion</code> whenever the order of the rows changes. The grid holds only the
+            Window and cannot see a reorder; the version is how it knows to drop a selection that would now cover
+            other rows.
+        </p>
+        <p>
+            Where nothing can answer a find, <kbd>Ctrl</kbd>+<kbd>F</kbd> is <strong>refused</strong> rather than
+            left to the browser, whose find sees only the rows on screen and would report "no match" for a row a
+            little further down.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(InMemoryGridSource<>)" />
+        <ApiTable Type="typeof(SortSpec)" />
+        <ApiTable Type="typeof(GridFilter)" />
+        <ApiTable Type="typeof(FilterSpec)" />
+        <ApiTable Type="typeof(FilterClause)" />
+    </DocsSection>
+</DocsPage>

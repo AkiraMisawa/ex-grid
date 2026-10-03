@@ -1,0 +1,38 @@
+@using System.Globalization
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 12px; font-size: 14px">
+    <label>
+        Density
+        <select @bind="_density">
+            @foreach (var density in Enum.GetValues<GridDensity>())
+            {
+                <option value="@density">@density</option>
+            }
+        </select>
+    </label>
+    <label><input type="checkbox" @bind="_stripes" /> Row stripes</label>
+    <label><input type="checkbox" @bind="_focusRow" /> Focus row</label>
+</div>
+
+<ExGrid TRow="Position" Source="_source" Columns="_columns" Density="_density" StripeRows="_stripes" HighlightFocusRow="_focusRow"
+        ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+    private GridDensity _density = GridDensity.Standard;
+    private bool _stripes = true;
+    private bool _focusRow = true;
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id),
+        new("Desk", ColumnType.Text, p => p.Desk),
+        new("Trader", ColumnType.Text, p => p.Trader),
+        new("Instrument", ColumnType.Text, p => p.Instrument),
+        new("Quantity", ColumnType.Number, p => p.Quantity, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", format: v => ((decimal)v).ToString("N2", Invariant)),
+    ];
+}

@@ -1,0 +1,49 @@
+@using ExGrid.Selection
+@using ExGrid.Docs.Examples.Data
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true" Hover="true">
+    <ToolBarContent>
+        <MudText Typo="Typo.subtitle2">@_where</MudText>
+        <MudSpacer />
+        <MudText Typo="Typo.body2">@_count</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Trade" Source="_source" Columns="_columns" SelectionChanged="OnSelectionChanged"
+                HighlightFocusRow="true" Chrome="_chrome"
+                ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Currency", ColumnType.Text, t => t.Currency),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+    ];
+
+    private string _where = "Nothing selected";
+    private string _count = "";
+
+    // Positions are in the current order: the Focus's row is the row painted there now.
+    private void OnSelectionChanged(GridSelection selection)
+    {
+        if (selection.IsEmpty)
+        {
+            (_where, _count) = ("Nothing selected", "");
+            return;
+        }
+        var trade = _source.Window[selection.Focus.Row];
+        _where = $"Focus: trade {trade.Id}, {_columns[selection.Focus.Column].Header}";
+        _count = $"{selection.Ranges.Count} range(s), {selection.CellCount:N0} cells";
+    }
+}

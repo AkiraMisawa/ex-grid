@@ -1,0 +1,42 @@
+@using System.Globalization
+@using ExGrid.Cells
+@using ExGrid.Columns
+
+@* mud-ex-grid.css paints the tones in the palette's success and error colours. *@
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExGrid TRow="Position" Source="_source" Columns="_columns" Chrome="_chrome"
+            ViewportHeight="320" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(Position.Sample());
+
+    private readonly GridColumn<Position>[] _columns =
+    [
+        new("Id", ColumnType.Number, p => p.Id, width: Fixed(70), align: CellAlign.Left),
+        new("Instrument", ColumnType.Text, p => p.Instrument, width: new ColumnWidthSpec(ColumnWidth.Auto, minWidthPx: 120)),
+        new("Quantity", ColumnType.Number, p => p.Quantity, format: v => ((int)v).ToString("N0", Invariant)),
+        new("Price", ColumnType.Number, p => p.Price, format: v => ((decimal)v).ToString("N2", Invariant)),
+        new("Pnl", ColumnType.Number, p => p.Pnl, header: "P&L", width: Fixed(120),
+            format: v => ((decimal)v).ToString("#,##0.00;(#,##0.00)", Invariant), tone: Sign),
+        // Too narrow for most of its values on purpose: a number that does not fit is ####, never cut short.
+        new("MarketValue", ColumnType.Number, p => p.Price * p.Quantity, header: "Market value", width: Fixed(84),
+            format: v => ((decimal)v).ToString("N0", Invariant)),
+        new("TradeDate", ColumnType.Date, p => p.TradeDate, header: "Trade date", dateType: DateType.DateOnly,
+            format: v => ((DateOnly)v).ToString("dd MMM yyyy", Invariant)),
+        new("Hedged", ColumnType.Boolean, p => p.Hedged, align: CellAlign.Center, headerAlign: CellAlign.Center,
+            format: v => (bool)v ? "Yes" : "No"),
+    ];
+
+    private static ColumnWidthSpec Fixed(double px) => new(ColumnWidth.Fixed(px));
+
+    private static CellTone Sign(object value) => (decimal)value switch
+    {
+        > 0 => CellTone.Positive,
+        < 0 => CellTone.Negative,
+        _ => CellTone.None,
+    };
+}

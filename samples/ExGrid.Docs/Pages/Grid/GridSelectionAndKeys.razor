@@ -1,0 +1,82 @@
+@page "/exgrid/selection"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Selection and keyboard"
+          Lead="Selection works as it does in Excel: rectangles, a Focus that stays put while an Extent moves, and Enter and Tab that cycle inside what you selected. Selecting is cheap, so it is never capped.">
+
+    <DocsSection Title="Rectangles, a Focus and an Extent">
+        <p>
+            A selection is one or more rectangles of cells. The <strong>Focus</strong> is Excel's active cell: the
+            cell typing goes into, outlined inside the selection. The <strong>Extent</strong> is the corner that
+            moves while you extend a range.
+        </p>
+        <ul>
+            <li><strong>Click</strong> selects one cell. <strong>Drag</strong> or <strong>Shift+click</strong> draws a rectangle from the Focus.</li>
+            <li><strong>Ctrl+click</strong> adds another rectangle. On a cell that is already selected, it takes that cell out.</li>
+            <li>Clicking a <strong>header</strong> sorts. <strong>Shift+click</strong> on a header selects whole columns, and <strong>Ctrl+Space</strong> does from the keyboard.</li>
+        </ul>
+        <p>
+            Positions are in the current order. When the order of the rows changes — a sort, a filter, a row
+            inserted — the same positions would name other rows, so the grid <strong>drops the selection</strong>
+            rather than leave it on rows you did not choose.
+        </p>
+        <DocsExample Title="Reading the selection" Builtin="typeof(SelectionStatus)" Mud="typeof(SelectionStatusMud)"
+                     Files="@(["Examples/Data/Trade.cs"])">
+            <code>SelectionChanged</code> hands over a <code>GridSelection</code>: its ranges, the Focus, and the cell
+            count. Try Ctrl+click, then Ctrl+Shift+↓.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="The keyboard">
+        <p>Click into the grid, or tab to it: the grid is one tab stop, and its keys are Excel's.</p>
+        <MudSimpleTable Dense="true" Outlined="true" Class="docs-api-table">
+            <thead><tr><th style="width: 34%">Keys</th><th>What they do</th></tr></thead>
+            <tbody>
+                <tr><td><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>Move the Focus one cell; the selection collapses to it.</td></tr>
+                <tr><td><kbd>Shift</kbd> + arrow</td><td>Extend the range holding the Focus by one cell. The Focus stays.</td></tr>
+                <tr><td><kbd>Ctrl</kbd> + arrow</td><td>Jump to the first or last row or column of the result.</td></tr>
+                <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + arrow</td><td>Extend to that edge — a whole column in two keys, however many rows it has.</td></tr>
+                <tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>The row's first or last cell. With <kbd>Shift</kbd>, extend to it.</td></tr>
+                <tr><td><kbd>Ctrl</kbd> + <kbd>Home</kbd> / <kbd>End</kbd></td><td>The first or last cell of the whole result.</td></tr>
+                <tr><td><kbd>PageUp</kbd> / <kbd>PageDown</kbd></td><td>Move a Viewport's height. With <kbd>Shift</kbd>, extend.</td></tr>
+                <tr><td><kbd>Enter</kbd> / <kbd>Shift</kbd> + <kbd>Enter</kbd></td><td>With a range selected, move the Focus down each column in turn, wrapping back to the start. With one cell, move down.</td></tr>
+                <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></td><td>The same, along each row. Neither ever leaves the selection.</td></tr>
+                <tr><td><kbd>Ctrl</kbd> + <kbd>A</kbd></td><td>Select everything.</td></tr>
+                <tr><td><kbd>Ctrl</kbd> + <kbd>Space</kbd> / <kbd>Shift</kbd> + <kbd>Space</kbd></td><td>Make the range whole columns / whole rows.</td></tr>
+                <tr><td><kbd>Ctrl</kbd> + <kbd>.</kbd></td><td>Move the Focus to the next corner of its range.</td></tr>
+                <tr><td><kbd>Shift</kbd> + <kbd>Backspace</kbd></td><td>Collapse the selection to the Focus.</td></tr>
+                <tr><td><kbd>Alt</kbd> + <kbd>↓</kbd></td><td>Open the Focus column's menu: sorting and the filter.</td></tr>
+                <tr><td><kbd>Shift</kbd> + <kbd>F10</kbd> or the menu key</td><td>Open the Context Menu over the selection.</td></tr>
+                <tr><td><kbd>Escape</kbd></td><td>Close what is open. With nothing open, the next <kbd>Tab</kbd> leaves the grid.</td></tr>
+            </tbody>
+        </MudSimpleTable>
+        <p>
+            <strong>Why Enter and Tab never leave a range:</strong> select five cells and type five values, pressing
+            Enter after each. The fifth Enter returns to the first cell instead of carrying on into a sixth row you
+            did not mean to touch. Excel's "edge of the data block" for Ctrl+arrow is not used: query results have
+            no blank rows, and finding a block's edge would need every row.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Which row am I on?">
+        <ul>
+            <li>
+                <code>HighlightFocusRow</code> paints a band across the row holding the Focus — Excel 365's Focus
+                Cell — which helps on a grid wider than the screen.
+            </li>
+            <li>
+                <code>HighlightHoverRow</code> paints a band under the pointer, what design systems call
+                <em>hover</em>. On a <code>MudExGridPaper</code>, <code>Hover="true"</code> turns it on.
+            </li>
+        </ul>
+        <p>
+            Both are drawn by an overlay, not by the rows, so moving them renders no row. Their colours are the
+            Visual Tokens <code>--ex-focus-row-fill</code> and <code>--ex-row-hover-background</code>.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(ExGrid.Selection.GridSelection)" />
+        <ApiTable Type="typeof(ExGrid.Selection.SelectionRange)" />
+    </DocsSection>
+</DocsPage>

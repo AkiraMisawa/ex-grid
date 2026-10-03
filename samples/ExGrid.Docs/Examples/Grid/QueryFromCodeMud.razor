@@ -1,0 +1,64 @@
+@using ExGrid.Docs.Examples.Data
+@* MudBlazor has a FilterOperator and a SortDirection of its own. *@
+@using FilterOperator = global::ExGrid.FilterOperator
+@using SortDirection = global::ExGrid.SortDirection
+@implements IDisposable
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="LargeRatesTrades">Rates, 25m and over</MudButton>
+        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="ml-2" OnClick="LargestFirst">Largest notional first</MudButton>
+        <MudButton Size="Size.Small" Class="ml-2" OnClick="Clear">Clear</MudButton>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Trade" Source="_source" Columns="_columns" Chrome="_chrome"
+                ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+<MudText Typo="Typo.body2" Class="mt-3">@Describe()</MudText>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample(2_000));
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Instrument", ColumnType.Text, t => t.Instrument),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+    ];
+
+    // The same Filter the panel builds: per column, clauses; across columns, AND.
+    private static readonly GridFilter RatesFromTwentyFiveMillion = new(new Dictionary<string, FilterSpec>
+    {
+        ["Book"] = new([new FilterClause(FilterOperator.Equals, "Rates")]),
+        ["Notional"] = new([new FilterClause(FilterOperator.GreaterThanOrEqual, 25_000_000m)]),
+    });
+
+    // The header, the column menu and the filter panel change the source too; redraw the summary when they do.
+    protected override void OnInitialized() => _source.StateChanged += StateHasChanged;
+
+    private void LargeRatesTrades() => _source.OnFilterChanged(RatesFromTwentyFiveMillion);
+
+    private void LargestFirst() => _source.OnSortChanged([new SortSpec("Notional", SortDirection.Descending)]);
+
+    private void Clear()
+    {
+        _source.OnFilterChanged(null);
+        _source.OnSortChanged([]);
+    }
+
+    private string Describe()
+    {
+        var filtered = _source.Filter is { } filter ? string.Join(", ", filter.Columns.Keys) : "nothing";
+        var sorted = _source.Sorts.Count > 0 ? string.Join(", ", _source.Sorts.Select(s => $"{s.Column} {s.Direction}")) : "nothing";
+        return $"{_source.Window.Count:N0} trades. Filtered on {filtered}; sorted by {sorted}.";
+    }
+
+    public void Dispose() => _source.StateChanged -= StateHasChanged;
+}
