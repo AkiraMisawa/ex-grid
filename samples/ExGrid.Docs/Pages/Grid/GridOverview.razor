@@ -1,0 +1,20 @@
+@page "/exgrid"
+@using ExGrid.Docs.Examples.Grid
+
+<DocsPage Product="ExGrid" Title="Overview"
+          Lead="A grid for reading large tables of numbers, with a spreadsheet user's selection, keyboard and clipboard. Your application holds the rows; ExGrid shows them and tells you what the user asked for.">
+
+    <DocsSection Title="A first grid">
+        <p>
+            Hand the grid a source and a list of columns. <code>GridSource.From</code> is the bundled
+            in-memory source: it sorts and filters a list you already hold, and its behaviour is the
+            reference for what sorting and filtering mean. Click a cell, drag across a rectangle, press
+            the arrows, or open a column's menu from the ▾ in its header.
+        </p>
+        <DocsExample Builtin="typeof(FirstGrid)" Mud="typeof(FirstGridMud)" Files="@(["Examples/Data/Trade.cs"])" CodeOpen="true" />
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(ExGrid<>)" />
+    </DocsSection>
+</DocsPage>

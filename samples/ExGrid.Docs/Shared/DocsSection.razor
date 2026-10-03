@@ -1,0 +1,19 @@
+@* A section of a page, with a heading a reader can link to. *@
+<section class="docs-section" id="@Id">
+    <MudText Typo="Typo.h5" HtmlTag="h2" Class="docs-section-title">
+        <a href="@($"{Navigation.ToBaseRelativePath(Navigation.Uri).Split('#')[0]}#{Id}")" class="docs-anchor">@Title</a>
+    </MudText>
+    @ChildContent
+</section>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    /// <summary>The heading.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>The section's body.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Id => new(Title.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray());
+}

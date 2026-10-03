@@ -3,6 +3,8 @@
   <Project Path="samples/ExGrid.DemoHost/ExGrid.DemoHost.csproj" />
   <Project Path="samples/ExGrid.DemoHost.Server/ExGrid.DemoHost.Server.csproj" />
   <Project Path="samples/ExGrid.DemoPages/ExGrid.DemoPages.csproj" />
+  <Project Path="samples/ExGrid.Docs/ExGrid.Docs.csproj" />
+  <Project Path="samples/ExGrid.Docs.Generator/ExGrid.Docs.Generator.csproj" />
   <Project Path="src/ExGrid/ExGrid.csproj" />
   <Project Path="src/ExGrid.Data/ExGrid.Data.csproj" />
   <Project Path="src/ExGrid.Data.Arrow/ExGrid.Data.Arrow.csproj" />

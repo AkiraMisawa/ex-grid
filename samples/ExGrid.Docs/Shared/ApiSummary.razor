@@ -1,0 +1,33 @@
+@* A member's summary in an API table: its first paragraph, and the rest behind "More", since the
+   shipped documentation is written for the reader who needs every reason. *@
+@if (_first is not null)
+{
+    <div class="docs-api-text">@((MarkupString)_first)</div>
+    @if (_rest is not null)
+    {
+        <details class="docs-api-more">
+            <summary>More</summary>
+            <div class="docs-api-text">@((MarkupString)_rest)</div>
+        </details>
+    }
+}
+
+@code {
+    /// <summary>The summary's HTML, as the build wrote it, or null.</summary>
+    [Parameter] public string? Html { get; set; }
+
+    private string? _first;
+    private string? _rest;
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrEmpty(Html))
+        {
+            _first = _rest = null;
+            return;
+        }
+        var cut = Html.IndexOf(" <br /> ", StringComparison.Ordinal);
+        _first = cut < 0 ? Html : Html[..cut];
+        _rest = cut < 0 ? null : Html[(cut + 8)..];
+    }
+}

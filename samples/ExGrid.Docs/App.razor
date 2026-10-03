@@ -1,0 +1,11 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <MudText Typo="Typo.h4" Class="mt-8">Not found</MudText>
+            <MudText Class="mt-2">There is no page at this address. <MudLink Href="">Go to the start.</MudLink></MudText>
+        </LayoutView>
+    </NotFound>
+</Router>

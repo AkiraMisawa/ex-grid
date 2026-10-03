@@ -1,0 +1,57 @@
+@inject NavigationManager Navigation
+
+@* A documentation page: its title, a lead paragraph, the body, and the way to the pages either
+   side of it in the navigation. *@
+<PageTitle>@Title — ExGrid</PageTitle>
+
+<header class="docs-page-header">
+    @if (Product is not null)
+    {
+        <MudText Typo="Typo.overline" Color="Color.Primary">@Product</MudText>
+    }
+    <MudText Typo="Typo.h3" HtmlTag="h1" Class="docs-title">@Title</MudText>
+    @if (Lead is not null)
+    {
+        <MudText Typo="Typo.subtitle1" Class="docs-lead">@Lead</MudText>
+    }
+</header>
+
+@ChildContent
+
+<nav class="docs-prev-next" aria-label="Pages">
+    @if (_previous is not null)
+    {
+        <MudButton Variant="Variant.Text" Href="@_previous.Href" StartIcon="@Icons.Material.Filled.ChevronLeft">@_previous.Title</MudButton>
+    }
+    <MudSpacer />
+    @if (_next is not null)
+    {
+        <MudButton Variant="Variant.Text" Href="@_next.Href" EndIcon="@Icons.Material.Filled.ChevronRight">@_next.Title</MudButton>
+    }
+</nav>
+
+@code {
+    /// <summary>The page's title.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    /// <summary>The product the page belongs to, shown above the title.</summary>
+    [Parameter] public string? Product { get; set; }
+
+    /// <summary>One or two sentences under the title.</summary>
+    [Parameter] public string? Lead { get; set; }
+
+    /// <summary>The page's body.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private DocsLink? _previous;
+    private DocsLink? _next;
+
+    protected override void OnParametersSet()
+    {
+        var here = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].TrimEnd('/');
+        var pages = DocsNav.All.Where(l => !l.Href.StartsWith("showcase/", StringComparison.Ordinal)).ToList();
+        var index = pages.FindIndex(l => l.Href == here);
+        _previous = index > 0 ? pages[index - 1] : null;
+        _next = index >= 0 && index + 1 < pages.Count ? pages[index + 1] : null;
+    }
+}

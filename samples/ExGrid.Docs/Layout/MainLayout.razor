@@ -1,0 +1,57 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject DocsState State
+
+@* The built-in grid paints with system colours that follow the document's colour scheme
+   (ADR-0027), so the dark choice is declared for the whole document, as a host page in dark
+   mode does. *@
+@if (State.Dark)
+{
+    <HeadContent><style>:root { color-scheme: dark; }</style></HeadContent>
+}
+
+<MudThemeProvider Theme="DocsTheme.Theme" IsDarkMode="State.Dark" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Dense="true" Class="docs-appbar">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@(() => _drawer = !_drawer)" aria-label="Toggle navigation" />
+        <a href="" class="docs-brand">
+            <span class="docs-brand-mark">Ex</span><span>Grid</span>
+        </a>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Inherit" Class="docs-version">@DocsVersion.Value</MudChip>
+        <MudSpacer />
+        <ChromeSwitch Class="docs-appbar-switch" />
+        <MudTooltip Text="@(State.Dark ? "Light mode" : "Dark mode")">
+            <MudIconButton Icon="@(State.Dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit" OnClick="@(() => State.SetDark(!State.Dark))"
+                           aria-label="Toggle dark mode" />
+        </MudTooltip>
+        <MudTooltip Text="GitHub">
+            <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
+                           Href="https://github.com/AkiraMisawa/ex-grid" Target="_blank" aria-label="GitHub" />
+        </MudTooltip>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawer" ClipMode="DrawerClipMode.Always" Elevation="0"
+               Variant="DrawerVariant.Responsive" Class="docs-drawer">
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="docs-content">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawer = true;
+
+    protected override void OnInitialized() => State.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => State.Changed -= OnChanged;
+}
