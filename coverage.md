@@ -3,7 +3,7 @@
 | Product | Line | Branch |
 |---|---|---|
 | ExGrid | 95.4% | 88% |
-| ExSheet | 95.1% | 88.2% |
+| ExSheet | 95.2% | 88.4% |
 | ExPivot | 93.6% | 85% |
 | Data | 94.5% | 90.3% |
 
@@ -12,19 +12,19 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/03/2026 - 17:05:19 |
+| Generated on: | 10/03/2026 - 18:18:18 |
 | Parser: | MultiReport (12x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 699 |
-| Files: | 380 |
-| **Line coverage:** | 94.7% (46786 of 49365) |
-| Covered lines: | 46786 |
+| Files: | 381 |
+| **Line coverage:** | 94.7% (46857 of 49436) |
+| Covered lines: | 46857 |
 | Uncovered lines: | 2579 |
-| Coverable lines: | 49365 |
-| Total lines: | 80844 |
-| **Branch coverage:** | 87.7% (25338 of 28872) |
-| Covered branches: | 25338 |
-| Total branches: | 28872 |
+| Coverable lines: | 49436 |
+| Total lines: | 81001 |
+| **Branch coverage:** | 87.8% (25486 of 29024) |
+| Covered branches: | 25486 |
+| Total branches: | 29024 |
 | **Method coverage:** | [Feature is only available for sponsors](https://reportgenerator.io/pro) |
 
 </details>
@@ -674,7 +674,7 @@
 
 |**Name**|**Line**|**Branch**|
 |:---|---:|---:|
-|**ExSheet.Engine**|**97.2%**|**89.8%**|
+|**ExSheet.Engine**|**97.2%**|**89.9%**|
 |ExSheet.Engine.ArgumentHint|100%||
 |ExSheet.Engine.ArgumentValue|100%||
 |ExSheet.Engine.AxisFormat|100%|100%|
@@ -711,7 +711,7 @@
 |ExSheet.Engine.Formulas.FormulaText|100%|97.5%|
 |ExSheet.Engine.Formulas.FunctionCall|100%|100%|
 |ExSheet.Engine.Formulas.FunctionDefinition|100%||
-|ExSheet.Engine.Formulas.FunctionLibrary|93.9%|81.1%|
+|ExSheet.Engine.Formulas.FunctionLibrary|94.2%|82.3%|
 |ExSheet.Engine.Formulas.FunctionLibrary.SearchOutcome|100%||
 |ExSheet.Engine.Formulas.FunctionLibrary.Vector|90%|75%|
 |ExSheet.Engine.Formulas.FunctionNode|100%|100%|
