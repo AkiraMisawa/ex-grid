@@ -610,6 +610,12 @@ clean. The property is unchanged: the dependency points one way.
    A stable version still owes a review of the public C# surface, which nothing has decided
    yet (ADR-0042).
 
+   **From the next tag, the whole family ships** (decided with the user, 2026-10-03; ADR-0042's
+   "The family ships together"). ExSheet's three packages, ExPivot's three and the two data
+   packages join ExGrid's two, all at the tag's one version. The package check packs the ten
+   into the release feed and fails if it holds anything else; `release.yml` expects the ten and
+   their symbol packages. §27, §29 and §30 still judge their products, and never gate ExGrid.
+
 7. **`MaxWidth` bounds only what the grid computes (ADR-0016, FN-12 rewritten 2026-09-25).**
    Decided with the user. The contradiction came up while documenting the public API. ADR-0016
    let a drag go past `MaxWidth`, but FN-12 refused any Fixed width above it. So a Consumer who
@@ -762,6 +768,7 @@ dotnet test ExGrid.slnx                 # 5,384 pass, 0 failed; 8 skipped: the e
                                         # ExGrid.Data 248, ExGrid.Data.Arrow 182, ExPivot.Engine 304,
                                         # ExPivot 178, ExPivot.MudBlazor 53, the demo API server 136
 tests/ExGrid.PackageSmoke/check.sh      # passed: the data packages and ExPivot's in .pivot-feed, none in .feed
+                                        # (one feed for all ten since 2026-10-03, ADR-0042)
 npx playwright test pivot.spec.mjs pivot-csv.spec.mjs pivot-db.spec.mjs pivot-live.spec.mjs \
     pivot-risk.spec.mjs grid-live.spec.mjs navigation.spec.mjs   # 80 pass on each host
 ```

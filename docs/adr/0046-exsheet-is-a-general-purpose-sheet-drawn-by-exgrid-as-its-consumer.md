@@ -162,6 +162,10 @@ Sheet has to rewrite the References to it in the other.
   ([ADR-0071](./0071-a-sheets-cell-format-is-document-data-painted-on-white-paper.md)).)*
 - **`ExSheet.Engine` is not published by the release workflow** while ExSheet is outside the
   release (Definition of Done §2). The package smoke check still packs it, on its own feed.
+  *(Changed 2026-10-03, decided with the user: ExSheet's three packages ship as prereleases with
+  ExGrid, at its version and from its tag
+  ([ADR-0042](./0042-prereleases-ship-before-sign-off-and-only-a-stable-version-waits-for-it.md)).
+  The package check packs them into the release feed.)*
 
 - **Column widths are part of the Sheet Document** *(decided the same day)*. In ExGrid a column
   width is View State, a person's setting over data someone else owns. In a Sheet it is part of the

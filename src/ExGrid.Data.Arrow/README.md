@@ -18,8 +18,8 @@ pipeline produced as it is.
 - **The stream is written uncompressed.** HTTP's own compression (gzip, Brotli) does the rest. A
   compressed stream from another producer is read when you hand the reader a codec.
 
-> **This is a prerelease (`0.x`).** `ExGrid.Data.Arrow` ships with ExPivot, beside `ExGrid.Data`,
-> and is not part of ExGrid's release. The API may change between prereleases.
+> **This is a prerelease (`0.x`).** `ExGrid.Data.Arrow` ships beside `ExGrid.Data`, with ExGrid
+> and ExPivot, at the same version. The API may change between prereleases.
 
 ## Requirements
 

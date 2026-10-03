@@ -23,8 +23,8 @@ Excel's PivotTable lays them out.
 The engine's behaviour is the specification of ExPivot's semantics (ADR-0060 in the repository):
 a server that answers a pivot itself is held to it.
 
-> **This is a prerelease (`0.x`).** ExPivot is built alongside ExGrid and is not part of its
-> release. The API may change between prereleases.
+> **This is a prerelease (`0.x`).** ExPivot ships with ExGrid, at the same version; upgrade them
+> together. The API may change between prereleases.
 
 ## Requirements
 

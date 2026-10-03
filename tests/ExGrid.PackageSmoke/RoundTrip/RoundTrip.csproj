@@ -4,7 +4,7 @@
        from the packages check.sh just packed (ADR-0065, DA-16): the Blazor application beside it
        compiles the same code for a browser, and this one runs it, as a server would. Like that
        application, it is outside the solution, and check.sh is the only way in; nuget.config one
-       directory up takes the family's packages from the packed feeds alone. -->
+       directory up takes the family's packages from the packed feed alone. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
