@@ -3,14 +3,14 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/03/2026 - 02:05:23 |
+| Generated on: | 10/03/2026 - 02:44:49 |
 | Parser: | MultiReport (12x Cobertura) |
 | Assemblies: | 2 |
 | Classes: | 194 |
 | Files: | 136 |
-| **Line coverage:** | 95.4% (14202 of 14875) |
-| Covered lines: | 14202 |
-| Uncovered lines: | 673 |
+| **Line coverage:** | 95.4% (14203 of 14875) |
+| Covered lines: | 14203 |
+| Uncovered lines: | 672 |
 | Coverable lines: | 14875 |
 | Total lines: | 29229 |
 | **Branch coverage:** | 87.9% (7243 of 8233) |
