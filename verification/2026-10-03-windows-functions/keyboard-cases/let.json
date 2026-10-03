@@ -1,0 +1,159 @@
+{
+  "area": "let-keyboard",
+  "cases": [
+    {
+      "id": "LET-KEYS-001",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(x,2,x+1)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-002",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(c,2,c)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-003",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(r,2,r)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-004",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(A1,2,A1)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-005",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(a.b,2,a.b)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-006",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(_x,2,_x)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-007",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(x,1,x,2,x)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-008",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(x,y,y,2,x)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-009",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(x,NA(),1)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-010",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(名前,2,名前+1)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-011",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(x,1)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-012",
+      "source": "uncertain",
+      "description": "LET grammar typed through real SendInput; compare with Formula2 observations",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(x,1,y,2,x+y,3)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-013",
+      "source": "uncertain",
+      "description": "LET name of 250 characters typed by keys",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "A10",
+      "expect": null
+    },
+    {
+      "id": "LET-KEYS-014",
+      "source": "uncertain",
+      "description": "LET name of 255 characters typed by keys",
+      "culture": "en-GB",
+      "cells": {
+        "A10": "=LET(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx,2,xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx+1)"
+      },
+      "check": "A10",
+      "expect": null
+    }
+  ]
+}
