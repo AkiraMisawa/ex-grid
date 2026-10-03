@@ -10,8 +10,8 @@ internal static partial class FunctionLibrary
     /// <c>#REF!</c>. The result is the cell itself, so a blank one reads as blank.
     /// </summary>
     /// <remarks>
-    /// A row or a column of 0 names the whole column or row. Where that is more than one cell,
-    /// Excel would spill it, and ExSheet has no spilled arrays: <c>#VALUE!</c> (ADR-0047).
+    /// A row or a column of 0 names the whole column or row, which spills where it is more than one
+    /// cell (ADR-0125), and is a range a function such as <c>SUM</c> reads.
     /// </remarks>
     private static Operand Index(FunctionCall call)
     {
@@ -40,7 +40,22 @@ internal static partial class FunctionLibrary
         column = Math.Truncate(column);
         if (row < 0 || column < 0) return Operand.Of(ErrorValue.Value);
         if (row > rows || column > columns) return Operand.Of(ErrorValue.Ref);
-        if ((row == 0 && rows > 1) || (column == 0 && columns > 1)) return Operand.Of(ErrorValue.Value);
+        if ((row == 0 && rows > 1) || (column == 0 && columns > 1))
+        {
+            // The whole row, column or range: rows r1..r2 and columns c1..c2, from 0.
+            var (r1, r2) = row == 0 ? (0, rows - 1) : ((int)row - 1, (int)row - 1);
+            var (c1, c2) = column == 0 ? (0, columns - 1) : ((int)column - 1, (int)column - 1);
+            switch (source.Kind)
+            {
+                case OperandKind.Area:
+                    var area = source.Area;
+                    return Operand.Of(new Area(area.Row1 + r1, area.Column1 + c1, area.Row1 + r2, area.Column1 + c2));
+                case OperandKind.Column:
+                    return Operand.Of(Slice(call.Evaluator.ToArray(source), r1, r2, c1, c2));
+                case OperandKind.Array:
+                    return Operand.Of(Slice(source.Array!, r1, r2, c1, c2));
+            }
+        }
 
         var r = Math.Max((int)row, 1) - 1;
         var c = Math.Max((int)column, 1) - 1;
@@ -51,6 +66,17 @@ internal static partial class FunctionLibrary
             OperandKind.Array => source.Array![r, c] is { } item ? Operand.Of(item) : Operand.Blank,
             _ => source,
         };
+    }
+
+    /// <summary>Rows <paramref name="r1"/>..<paramref name="r2"/> and columns <paramref name="c1"/>..<paramref name="c2"/> of an array, from 0.</summary>
+    private static ValueArray Slice(ValueArray array, int r1, int r2, int c1, int c2)
+    {
+        var slice = new ValueArray(r2 - r1 + 1, c2 - c1 + 1);
+        for (var r = r1; r <= r2; r++)
+        {
+            for (var c = c1; c <= c2; c++) slice[r - r1, c - c1] = array[r, c];
+        }
+        return slice;
     }
 
     /// <summary>
@@ -90,8 +116,9 @@ internal static partial class FunctionLibrary
     /// <summary>
     /// ROW and COLUMN: the number, from 1, of the Reference's row or column, or of the Formula's own
     /// cell when it is left out (a move recalculates it: <c>Sheet.ReadsOwnPlace</c>). A Reference of
-    /// several rows to ROW, or several columns to COLUMN, would spill: <c>#VALUE!</c> (ADR-0047). A
-    /// Linked Table's column has no place on the Sheet: <c>#VALUE!</c>.
+    /// several rows to ROW gives each row's number, down a column, and of several columns to COLUMN
+    /// each column's, along a row; it spills (ADR-0125). A Linked Table's column has no place on the
+    /// Sheet: <c>#VALUE!</c>.
     /// </summary>
     private static Operand Place(FunctionCall call, bool row)
     {
@@ -103,8 +130,15 @@ internal static partial class FunctionLibrary
         var reference = call.Operand(0);
         if (reference.Kind != OperandKind.Area) return reference.IsError ? reference : Operand.Of(ErrorValue.Value);
         var area = reference.Area;
-        if (row ? area.Rows > 1 : area.Columns > 1) return Operand.Of(ErrorValue.Value);
-        return Operand.Of(Value.FromNumber((row ? area.Row1 : area.Column1) + 1));
+        var count = row ? area.Rows : area.Columns;
+        var places = row ? new ValueArray(count, 1) : new ValueArray(1, count);
+        for (var k = 0; k < count; k++)
+        {
+            var place = Value.FromNumber((row ? area.Row1 : area.Column1) + k + 1);
+            if (row) places[k, 0] = place;
+            else places[0, k] = place;
+        }
+        return Operand.Of(places);
     }
 
     private static Operand Rows(FunctionCall call) => Extent(call, rows: true);

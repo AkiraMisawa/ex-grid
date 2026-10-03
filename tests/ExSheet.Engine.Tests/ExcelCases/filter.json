@@ -1,0 +1,105 @@
+{
+  "area": "filter",
+  "about": "FILTER (ADR-0125): the rows or columns of an array that include keeps; it spills.",
+  "cases": [
+    {
+      "id": "FILTER-001",
+      "source": "documented",
+      "description": "The rows whose value is above 25; the anchor shows the first",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>25)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 30}
+    },
+    {
+      "id": "FILTER-002",
+      "source": "documented",
+      "description": "The rows whose value is above 25; the last spills two rows down",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>25)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 50}
+    },
+    {
+      "id": "FILTER-003",
+      "source": "documented",
+      "description": "Filtered by another column",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,G1:G5=\"Banana\")"},
+      "check": "ZZ1001",
+      "expect": {"value2": 40}
+    },
+    {
+      "id": "FILTER-004",
+      "source": "documented",
+      "description": "Two conditions multiplied are both",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,(G1:G5=\"Banana\")*(H1:H5>30))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 40}
+    },
+    {
+      "id": "FILTER-005",
+      "source": "documented",
+      "description": "Several columns spill across",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(G1:H5,H1:H5>=40)"},
+      "check": "AAA1001",
+      "expect": {"value2": 50}
+    },
+    {
+      "id": "FILTER-006",
+      "source": "documented",
+      "description": "Nothing kept, and no if_empty, is #CALC!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>100)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CALC!"}
+    },
+    {
+      "id": "FILTER-007",
+      "source": "documented",
+      "description": "Nothing kept is if_empty",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H5>100,\"none\")"},
+      "check": "ZZ1000",
+      "expect": {"value2": "none", "kind": "text"}
+    },
+    {
+      "id": "FILTER-008",
+      "source": "documented",
+      "description": "An Entry in the way is #SPILL!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1001": "x", "ZZ1000": "=FILTER(H1:H5,H1:H5>25)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#SPILL!"}
+    },
+    {
+      "id": "FILTER-009",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: include of another height is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,H1:H3>0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FILTER-010",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: include holding text is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(H1:H5,G1:G5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "FILTER-011",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number in include is TRUE when it is not 0",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=FILTER(G1:G5,H1:H5-20)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "Apple", "kind": "text"}
+    }
+  ]
+}

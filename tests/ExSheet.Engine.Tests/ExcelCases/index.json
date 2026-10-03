@@ -102,24 +102,20 @@
     {
       "id": "INDEX-012",
       "source": "uncertain",
-      "description": "A whole row of several cells would spill",
+      "description": "A whole row of several cells spills; the anchor shows its first",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=INDEX(G1:H5,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": "Banana"}
+      "expect": {"value2": "Banana"}
     },
     {
       "id": "INDEX-013",
       "source": "uncertain",
-      "description": "A whole column of several cells would spill",
+      "description": "A whole column of several cells spills; the anchor shows its first",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=INDEX(G1:H5,0,2)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": 10}
+      "expect": {"value2": 10}
     }
   ]
 }

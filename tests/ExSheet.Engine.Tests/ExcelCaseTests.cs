@@ -174,6 +174,27 @@ public class ExcelCaseTests
     [Theory, MemberData(nameof(Ids), "switch")] // ADR-0047, docs/specs/exsheet-functions ticket 04
     public void Switch(string id) => Run("switch", id);
 
+    [Theory, MemberData(nameof(Ids), "filter")] // ADR-0125
+    public void Filter(string id) => Run("filter", id);
+
+    [Theory, MemberData(nameof(Ids), "unique")] // ADR-0125
+    public void Unique(string id) => Run("unique", id);
+
+    [Theory, MemberData(nameof(Ids), "sort")] // ADR-0125
+    public void Sort(string id) => Run("sort", id);
+
+    [Theory, MemberData(nameof(Ids), "sortby")] // ADR-0125
+    public void SortBy(string id) => Run("sortby", id);
+
+    [Theory, MemberData(nameof(Ids), "sequence")] // ADR-0125
+    public void Sequence(string id) => Run("sequence", id);
+
+    [Theory, MemberData(nameof(Ids), "transpose")] // ADR-0125
+    public void Transpose(string id) => Run("transpose", id);
+
+    [Theory, MemberData(nameof(Ids), "sumproduct")] // ADR-0125
+    public void SumProduct(string id) => Run("sumproduct", id);
+
     [Theory, MemberData(nameof(Ids), "xmatch")] // ADR-0047, docs/specs/exsheet-functions ticket 04
     public void XMatch(string id) => Run("xmatch", id);
 
@@ -338,7 +359,7 @@ public class ExcelCaseTests
 
     private static readonly string[] Read =
     [
-        "abs", "and", "arithmetic", "average", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "count", "counta", "date", "dates", "day", "days", "edate", "eomonth", "errors", "exact", "exp", "fill", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hour", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "ln", "log10", "max", "median", "mid", "min", "minute", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "pv", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "second", "sheet-names", "sign", "small", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "sum", "switch", "text", "textjoin", "time", "trim", "trunc", "typed-constants", "value", "var-p", "var-s", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year",
+        "abs", "and", "arithmetic", "average", "choose", "column", "column-widths", "columns", "concat", "concatenate", "copy", "count", "counta", "date", "dates", "day", "days", "edate", "eomonth", "errors", "exact", "exp", "fill", "filter", "find", "format-levels", "formula-formats", "formula-text", "fv", "general-width", "hour", "if", "iferror", "ifna", "ifs", "index", "int", "isblank", "iserror", "isna", "isnumber", "istext", "large", "left", "len", "linked-tables", "ln", "log10", "max", "median", "mid", "min", "minute", "mod", "month", "na", "networkdays", "not", "npv", "number-formats", "numbervalue", "offset", "or", "pi", "pmt", "power", "product", "pv", "rank-eq", "references", "replace", "rept", "right", "round", "rounddown", "roundup", "row", "rows", "second", "sequence", "sheet-names", "sign", "small", "sort", "sortby", "sqrt", "stdev-p", "stdev-s", "structure", "substitute", "sum", "sumproduct", "switch", "text", "textjoin", "time", "transpose", "trim", "trunc", "typed-constants", "unique", "value", "var-p", "var-s", "weekday", "workday", "xlookup", "xmatch", "xnpv", "xor", "year",
     ];
 
     [Fact] // ADR-0047: a corpus file no theory reads would be a set of cases that silently never runs

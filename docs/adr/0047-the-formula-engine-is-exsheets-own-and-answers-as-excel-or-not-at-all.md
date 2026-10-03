@@ -416,3 +416,11 @@ Ready is Supported; what remains waits on a Windows run (Observe) or on a decisi
 `VALUE` is admitted under [ADR-0124](./0124-volatile-functions-are-recalculated-after-every-change.md):
 it reads its text under the Sheet's culture, as the arithmetic operators read text. `OFFSET` and
 `NOW` are admitted under the same ADR, as volatile functions.
+
+`FILTER`, `UNIQUE`, `SORT`, `SORTBY`, `SEQUENCE`, `TRANSPOSE` and `SUMPRODUCT` are admitted under
+[ADR-0125](./0125-a-formula-whose-result-is-an-array-spills-as-excel-365s-does.md), which made a
+result of more than one Value spill. With it, `INDEX` with a row or a column of 0, `XLOOKUP` with a
+return array of several columns, and `ROW` and `COLUMN` over several rows or columns give Excel's
+answer, and their corpus cases changed from a difference by decision to it. `UNIQUE` refuses a blank
+in its array, and `SORT` and `SORTBY` a blank or an Error Value among their keys, with `#VALUE!`
+until Excel is asked how it orders them.

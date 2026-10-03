@@ -582,13 +582,11 @@
     {
       "id": "XLOOKUP-064",
       "source": "observed",
-      "description": "A return array more than one cell across would spill, which ExSheet does not do",
+      "description": "A return array more than one cell across returns the row found, which spills",
       "fixture": "lookupData",
       "cells": {"ZZ1000": "=XLOOKUP(\"Apple\",G1:G5,H1:J5)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": 10}
+      "expect": {"value2": 10}
     },
     {
       "id": "XLOOKUP-065",

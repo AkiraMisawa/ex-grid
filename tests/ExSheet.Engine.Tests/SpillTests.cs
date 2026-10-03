@@ -297,4 +297,16 @@ public class SpillTests
     {
         Assert.Throws<FormulaSyntaxException>(() => Entry.FromFormula(formula));
     }
+
+    [Theory] // ADR-0125: an array larger than the engine holds is refused with #NUM!, never cut short
+    [InlineData("=SUM(1001:2025*1)")]
+    [InlineData("=SUM(A:Q*1)")]
+    [InlineData("=SEQUENCE(1048576,17)")]
+    [InlineData("=SUM(A1:A1048576+B1:XFD1)")]
+    public void An_array_too_large_to_hold_is_num(string formula)
+    {
+        var sheet = WithColumn(1, 2);
+
+        Assert.Equal(ErrorValue.Num, sheet.Evaluate(formula).Error);
+    }
 }

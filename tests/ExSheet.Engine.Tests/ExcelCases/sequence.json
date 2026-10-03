@@ -1,0 +1,78 @@
+{
+  "area": "sequence",
+  "about": "SEQUENCE (ADR-0125): a rectangle of numbers; it spills.",
+  "cases": [
+    {
+      "id": "SEQUENCE-001",
+      "source": "documented",
+      "description": "Microsoft's example: four rows by five columns, the last 20",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SEQUENCE(4,5)"},
+      "check": "AAD1003",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "SEQUENCE-002",
+      "source": "documented",
+      "description": "From a start, by a step",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SEQUENCE(3,1,10,5)"},
+      "check": "ZZ1002",
+      "expect": {"value2": 20}
+    },
+    {
+      "id": "SEQUENCE-003",
+      "source": "documented",
+      "description": "Row by row: the second row's second number",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SEQUENCE(2,2,0,-1)"},
+      "check": "AAA1001",
+      "expect": {"value2": -3}
+    },
+    {
+      "id": "SEQUENCE-004",
+      "source": "documented",
+      "description": "A function that reduces an array takes it",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SUM(SEQUENCE(10))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 55}
+    },
+    {
+      "id": "SEQUENCE-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a size of 0 is #CALC!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SEQUENCE(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CALC!"}
+    },
+    {
+      "id": "SEQUENCE-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a size below 0 is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SEQUENCE(-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    },
+    {
+      "id": "SEQUENCE-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a size is truncated",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ROWS(SEQUENCE(2.9))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "SEQUENCE-008",
+      "source": "documented",
+      "description": "Past the Sheet's edge is #SPILL!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=SEQUENCE(1,16384)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#SPILL!"}
+    }
+  ]
+}

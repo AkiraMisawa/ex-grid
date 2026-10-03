@@ -92,6 +92,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
                 return operand.Array!;
             case OperandKind.Area:
                 var area = operand.Area;
+                if ((long)area.Rows * area.Columns > ValueArray.MostCells) return ValueArray.Single(Value.FromError(ErrorValue.Num));
                 var array = new ValueArray(area.Rows, area.Columns);
                 foreach (var address in Cells.NonBlankIn(area)) array[address.Row - area.Row1, address.Column - area.Column1] = Cells.Read(address);
                 return array;
@@ -113,6 +114,7 @@ internal sealed class Evaluator(ICellReader cells, CultureInfo culture)
         var right = ToArray(rightOperand);
         var rows = left.Rows == 1 ? right.Rows : right.Rows == 1 ? left.Rows : Math.Max(left.Rows, right.Rows);
         var columns = left.Columns == 1 ? right.Columns : right.Columns == 1 ? left.Columns : Math.Max(left.Columns, right.Columns);
+        if ((long)rows * columns > ValueArray.MostCells) return Formulas.Operand.Of(ErrorValue.Num);
         var result = new ValueArray(rows, columns);
         for (var r = 0; r < rows; r++)
         {

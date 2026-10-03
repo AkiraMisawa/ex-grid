@@ -64,7 +64,7 @@ function marked **Decide** waits for its ADR, and the P1 functions marked **Read
 | `MAXIFS` | Observe | P2 | As `SUMIF` |
 | `MINIFS` | Observe | P2 | As `SUMIF` |
 | `COUNTBLANK` | Observe | P2 | Whether `""` returned by a Formula counts as blank is to be observed |
-| `SUMPRODUCT` | Ready | P2 | Its arrays, operators on ranges included, reduced to one Value (ADR-0125) |
+| `SUMPRODUCT` | Supported | — | Its arrays, operators on ranges included, reduced to one Value (ADR-0125) |
 | `PRODUCT` | Supported | — | |
 | `MEDIAN` | Supported | — | |
 | `LARGE` | Supported | — | |
@@ -207,12 +207,12 @@ A result of more than one cell spills (ADR-0125, which replaced ADR-0047's refus
 
 | Function | Status | Priority | Notes |
 |---|---|---|---|
-| `FILTER` | Ready | P2 | Spills (ADR-0125) |
-| `SORT` | Ready | P3 | Spills (ADR-0125) |
-| `SORTBY` | Ready | P3 | Spills (ADR-0125) |
-| `UNIQUE` | Ready | P2 | Spills (ADR-0125) |
-| `SEQUENCE` | Ready | P3 | Spills (ADR-0125) |
-| `TRANSPOSE` | Ready | P3 | Spills (ADR-0125) |
+| `FILTER` | Supported | — | Spills (ADR-0125); nothing kept is `#CALC!` without `if_empty` |
+| `SORT` | Supported | — | Spills (ADR-0125); a blank or Error Value among the keys is refused until Excel is asked |
+| `SORTBY` | Supported | — | Spills (ADR-0125); keys refused as `SORT`'s |
+| `UNIQUE` | Supported | — | Spills (ADR-0125); a blank in the array is refused until Excel is asked |
+| `SEQUENCE` | Supported | — | Spills (ADR-0125) |
+| `TRANSPOSE` | Supported | — | Spills (ADR-0125) |
 | `LET` | Decide | P3 | Not an array function, but names inside a Formula are new grammar (ADR-0047) |
 
 ### Random

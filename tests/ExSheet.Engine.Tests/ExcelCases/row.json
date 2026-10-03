@@ -32,13 +32,11 @@
     {
       "id": "ROW-004",
       "source": "uncertain",
-      "description": "Several rows would spill",
+      "description": "Several rows spill, each row's number",
       "fixture": "functionData",
       "cells": {"ZZ1000": "=ROW(A1:A3)"},
       "check": "ZZ1000",
-      "expect": {"value2": "#VALUE!"},
-      "engineDiffersByDecision": "ADR-0047: spilled arrays are not supported; a Formula whose result is more than one cell is #VALUE!, where Excel 365 spills",
-      "excelExpect": {"value2": 1}
+      "expect": {"value2": 1}
     }
   ]
 }

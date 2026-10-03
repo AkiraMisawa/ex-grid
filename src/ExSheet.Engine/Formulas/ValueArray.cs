@@ -8,9 +8,17 @@ internal sealed class ValueArray
 {
     private readonly Value?[] _values;
 
+    /// <summary>
+    /// The most Values one array holds: 2^24, sixteen whole columns. A larger array is not computed,
+    /// as Excel runs out of resources before it (ADR-0125: a cap belongs on what cannot be executed);
+    /// whatever would build one is <c>#NUM!</c>.
+    /// </summary>
+    public const long MostCells = 1L << 24;
+
     public ValueArray(int rows, int columns)
     {
         if (rows < 1 || columns < 1) throw new ArgumentOutOfRangeException(nameof(rows), "An array has at least one row and one column.");
+        if ((long)rows * columns > MostCells) throw new ArgumentOutOfRangeException(nameof(rows), "The array is larger than one array holds.");
         Rows = rows;
         Columns = columns;
         _values = new Value?[checked(rows * columns)];

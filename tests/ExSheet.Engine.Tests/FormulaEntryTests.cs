@@ -17,8 +17,8 @@ public class FormulaEntryTests
     }
 
     [Theory] // ADR-0051: completion offers the declared functions that begin with what was typed, without regard to case
-    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUM" })]
-    [InlineData("=su|", new[] { "SUBSTITUTE", "SUM" })]
+    [InlineData("=SU|", new[] { "SUBSTITUTE", "SUM", "SUMPRODUCT" })]
+    [InlineData("=su|", new[] { "SUBSTITUTE", "SUM", "SUMPRODUCT" })]
     [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
     [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COUNT", "COUNTA" })]
@@ -59,7 +59,7 @@ public class FormulaEntryTests
 
         Assert.Equal(3, completion.Start);
         Assert.Equal(3, completion.Length);
-        var sum = Assert.Single(completion.Candidates);
+        var sum = Assert.Single(completion.Candidates, c => c.InsertText == "SUM(");
         Assert.Equal("SUM(", sum.InsertText);
         Assert.Equal(CompletionKind.Function, sum.Kind);
         Assert.Equal("Adds its arguments.", sum.Description);

@@ -159,6 +159,22 @@ them:
 | `PV`, `FV` | `rate, nper, pmt, [fv or pv], [type]` |
 | `NPV` | `rate, value1, [value2], ...` |
 | `XNPV` | `rate, values, dates` |
+| `FILTER` | `array, include, [if_empty]` |
+| `UNIQUE` | `array, [by_col], [exactly_once]` |
+| `SORT` | `array, [sort_index], [sort_order], [by_col]` |
+| `SORTBY` | `array, by_array1, [sort_order1], ...` |
+| `SEQUENCE` | `rows, [columns], [start], [step]` |
+| `TRANSPOSE` | `array` |
+| `SUMPRODUCT` | `array1, [array2], ...` |
+
+A Formula whose result is an array of more than one Value **spills** (ADR-0125): its cell, the
+Anchor, shows the first Value, and the cells below and to the right show the rest, holding no
+Entry of their own. `Sheet.SpilledFrom(address)` names the Anchor of a spilled cell. An Entry or
+another spill in the way, or the Sheet's edge, makes the Anchor `#SPILL!`, and the spill is laid
+out again when the obstacle is cleared; of two spills that would overlap, the Anchor first in
+address order spills. `A1#` reads the spill of the Formula in A1, and is `#REF!` where A1 does not
+spill. Operators work element by element over ranges, and a function that reduces (`SUM`,
+`SUMPRODUCT`) takes an array whole.
 
 Which functions come next, each with its status and priority, is catalogued in
 [`docs/specs/exsheet-functions/spec.md`](https://github.com/AkiraMisawa/ex-grid/blob/main/docs/specs/exsheet-functions/spec.md).
@@ -170,10 +186,11 @@ match`, `-1 - Exact match or next smaller item`, …) and `search_mode` (`1 - Se
 Where the engine cannot give Excel's answer, it gives an Error Value and never a different
 answer:
 
-- **No spilled arrays.** A Formula whose result would be a multi-cell range, or an operator applied
-  to one, is `#VALUE!`; so is an `XLOOKUP` whose return array is more than one cell across.
-  `IFERROR` and `ISERROR` do not turn that refusal into a fallback. `INDEX` with a row or a
-  column of 0 over more than one cell is that refusal too.
+- **Functions are not lifted over arrays yet** (ADR-0125). An array where a function wants one
+  Value — `ROUND(A1:A3,0)`, `IF(A1:A3>1,…)` — is `#VALUE!`, where Excel 365 applies the function to
+  each Value and spills. `IFERROR` and `ISERROR` do not turn that refusal into a fallback. The `@`
+  operator is refused on entry.
+- **An array larger than the engine holds**, more than 2^24 Values, is `#NUM!` (ADR-0125).
 - **`XLOOKUP`'s binary search** (`search_mode` 2 and −2) answers only over a lookup array sorted
   as the mode says — one kind of value, no blanks, text of ASCII letters, digits and spaces; it is
   `#VALUE!` otherwise. Over duplicate keys it returns the one Excel was observed to: an equal key
@@ -192,10 +209,11 @@ answer:
   `EOMONTH` and `EDATE` from or to a day before 1 March 1900, where Excel's calendar holds the day
   that never existed, and with a boolean typed as an argument (`#VALUE!`); `NETWORKDAYS` and
   `WORKDAY` the same way, and with text among the holidays; `LARGE` and `SMALL` with a `k` that is
-  not a whole number; `PMT`, `PV` and `FV` with a `type` other than 0 or 1 (`#VALUE!`).
-- **More of the spill refusal.** `ROW` over several rows, `COLUMN` over several columns,
-  `CONCATENATE` over a range of several cells, and a `TEXTJOIN` delimiter of several cells are
-  `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
+  not a whole number; `PMT`, `PV` and `FV` with a `type` other than 0 or 1 (`#VALUE!`); `UNIQUE`
+  with a blank in its array, and `SORT` and `SORTBY` with a blank or an Error Value among their keys
+  (`#VALUE!`).
+- **More of the refusal of unlifted functions.** `CONCATENATE` over a range of several cells, and a
+  `TEXTJOIN` delimiter of several cells, are `#VALUE!`; `CONCAT` and `TEXTJOIN`'s texts take ranges.
 
 ## Operations, and undoing them
 

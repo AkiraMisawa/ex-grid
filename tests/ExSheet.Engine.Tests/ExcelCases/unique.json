@@ -1,0 +1,87 @@
+{
+  "area": "unique",
+  "about": "UNIQUE (ADR-0125): the distinct rows or columns of an array; it spills.",
+  "cases": [
+    {
+      "id": "UNIQUE-001",
+      "source": "documented",
+      "description": "The distinct values, in the order they first appear",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=UNIQUE(G1:G5)"},
+      "check": "ZZ1003",
+      "expect": {"value2": "Date", "kind": "text"}
+    },
+    {
+      "id": "UNIQUE-002",
+      "source": "documented",
+      "description": "Four distinct values of five",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=ROWS(UNIQUE(G1:G5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 4}
+    },
+    {
+      "id": "UNIQUE-003",
+      "source": "documented",
+      "description": "exactly_once keeps only the values that appear once",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=UNIQUE(G1:G5,,TRUE)"},
+      "check": "ZZ1001",
+      "expect": {"value2": "Cherry", "kind": "text"}
+    },
+    {
+      "id": "UNIQUE-004",
+      "source": "documented",
+      "description": "by_col compares columns",
+      "fixture": "lookupData",
+      "cells": {"Z1": "1", "AA1": "2", "AB1": "1", "ZZ1000": "=COLUMNS(UNIQUE(Z1:AB1,TRUE))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-005",
+      "source": "documented",
+      "description": "Rows of two columns are compared whole",
+      "fixture": "lookupData",
+      "cells": {"Z1": "a", "AA1": "1", "Z2": "a", "AA2": "2", "Z3": "a", "AA3": "1", "ZZ1000": "=ROWS(UNIQUE(Z1:AA3))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-006",
+      "source": "documented",
+      "description": "Nothing that appears once is #CALC!",
+      "fixture": "lookupData",
+      "cells": {"Z1": "1", "Z2": "1", "ZZ1000": "=UNIQUE(Z1:Z2,,TRUE)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#CALC!"}
+    },
+    {
+      "id": "UNIQUE-007",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: text is compared without regard to case",
+      "fixture": "lookupData",
+      "cells": {"Z1": "a", "Z2": "A", "ZZ1000": "=ROWS(UNIQUE(Z1:Z2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "UNIQUE-008",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: a number and text that reads as it are different",
+      "fixture": "lookupData",
+      "cells": {"Z1": "1", "Z2": "'1", "ZZ1000": "=ROWS(UNIQUE(Z1:Z2))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2}
+    },
+    {
+      "id": "UNIQUE-009",
+      "source": "uncertain",
+      "description": "Engine's refusal, Excel to be asked: a blank in the array is #VALUE!",
+      "fixture": "lookupData",
+      "cells": {"ZZ1000": "=UNIQUE(Q1:Q2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

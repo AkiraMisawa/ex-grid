@@ -105,6 +105,13 @@ internal static partial class FunctionLibrary
         new("VALUE", 1, 1, "text", "Converts a text argument to a number, read under the Sheet's culture.", ValueOf),
         new("NOW", 0, 0, "", "Returns the serial number of the current date and time.", Now),
         new("OFFSET", 3, 5, "reference, rows, cols, [height], [width]", "Returns a reference offset from a given reference.", Offset),
+        new("FILTER", 2, 3, "array, include, [if_empty]", "Filters a range of data based on criteria you define.", Filter),
+        new("UNIQUE", 1, 3, "array, [by_col], [exactly_once]", "Returns a list of unique values in a list or range.", Unique),
+        new("SORT", 1, 4, "array, [sort_index], [sort_order], [by_col]", "Sorts the contents of a range or array.", Sort),
+        new("SORTBY", 2, Open, "array, by_array1, [sort_order1], ...", "Sorts the contents of a range or array based on the values in a corresponding range or array.", SortBy),
+        new("SEQUENCE", 1, 4, "rows, [columns], [start], [step]", "Generates a list of sequential numbers in an array.", Sequence),
+        new("TRANSPOSE", 1, 1, "array", "Returns the transpose of an array.", Transpose),
+        new("SUMPRODUCT", 1, Open, "array1, [array2], ...", "Returns the sum of the products of corresponding array components.", SumProduct),
         new("XLOOKUP", 3, 6, "lookup_value, lookup_array, return_array, [if_not_found], [match_mode], [search_mode]", "Searches a range for a match and returns the corresponding item of a second range.", XLookup)
         {
             // Excel's lists, character for character: match_mode's as the Windows runs of
@@ -427,15 +434,28 @@ internal static partial class FunctionLibrary
         if (!returnArray.IsRange) return returnArray.IsError ? returnArray : Operand.Of(ErrorValue.Value);
         // A range of one row or one column; a Linked Table's column runs down.
         if (Vector.Of(lookupArray) is not { } vector) return Operand.Of(ErrorValue.Value);
-        // The return array lies along the lookup array; more than one cell across it would spill.
-        if (Vector.Of(returnArray) is not { } result || result.Vertical != vector.Vertical || result.Length != vector.Length)
+        // The return array lies along the lookup array. Several cells across it return the whole
+        // row (or column) found, which spills (ADR-0125).
+        var (along, across) = returnArray.Kind switch
         {
-            return Operand.Of(ErrorValue.Value);
-        }
+            OperandKind.Area => vector.Vertical ? (returnArray.Area.Rows, returnArray.Area.Columns) : (returnArray.Area.Columns, returnArray.Area.Rows),
+            OperandKind.Array => vector.Vertical ? (returnArray.Array!.Rows, returnArray.Array.Columns) : (returnArray.Array!.Columns, returnArray.Array.Rows),
+            _ => vector.Vertical ? (returnArray.Column!.Count, 1) : (1, returnArray.Column!.Count),
+        };
+        if (along != vector.Length) return Operand.Of(ErrorValue.Value);
         if (Search(call, vector, modesAt: 4) is not { } outcome) return Operand.Of(ErrorValue.Value);
         if (outcome.Failure is { } failure) return failure;
         if (outcome.Found is not { } index) return call.Has(3) ? call.Operand(3) : Operand.Of(ErrorValue.NA);
-        return result.ItemAt(index);
+        if (across == 1) return Vector.Of(returnArray)!.Value.ItemAt(index);
+        if (returnArray.Kind == OperandKind.Area)
+        {
+            var area = returnArray.Area;
+            return Operand.Of(vector.Vertical
+                ? new Area(area.Row1 + index, area.Column1, area.Row1 + index, area.Column2)
+                : new Area(area.Row1, area.Column1 + index, area.Row2, area.Column1 + index));
+        }
+        var array = returnArray.Array!;
+        return Operand.Of(vector.Vertical ? Slice(array, index, index, 0, array.Columns - 1) : Slice(array, 0, array.Rows - 1, index, index));
     }
 
     /// <summary>What a search answered: the position found, or none; or the Error Value an argument was.</summary>
