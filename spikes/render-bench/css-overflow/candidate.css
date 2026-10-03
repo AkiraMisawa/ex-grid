@@ -1,0 +1,53 @@
+/* RESEARCH CANDIDATE — not product CSS. The browser decides #### for a numeric cell
+   (ADR-0016) instead of the C# glyph-width estimate. See
+   docs/research/css-decided-overflow.md.
+
+   Mechanism: a scroll-driven animation is only active while its timeline is active, and
+   a scroll() timeline is only active while its scroll container has a non-zero scroll
+   range — that is, while its content overflows. `overflow: hidden` is a scroll container,
+   so .ex-cell already is one. The animation has a single constant keyframe, so whatever
+   the scroll position it applies the same values: it is an on/off switch, not motion.
+
+   No container style query is needed: the cell's own properties are set by the animation
+   directly, and its ::after reads the switch through an inherited custom property. */
+
+@keyframes ex-overflowing {
+    from, to {
+        --ex-hash-display: block;
+        -webkit-text-fill-color: transparent;
+    }
+}
+
+.ex-cell.ex-cell-numeric {
+    /* No ellipsis on a number, ever: if detection and the ellipsis disagreed by a
+       fraction of a pixel, "1,234,56…" is exactly the quietly wrong case. */
+    text-overflow: clip;
+    animation: ex-overflowing auto linear both;
+    animation-timeline: scroll(self inline);
+}
+.ex-cell.ex-cell-numeric:not(.ex-pinned) { position: relative; }
+
+/* The run: as many # as fit, no partial glyph. break-all wraps the run at a character
+   boundary, so the first line holds floor(content width / # width) and the rest wrap
+   below, out of the clipped box. The `/ ""` alt text keeps the run out of the
+   accessible name — the cell's name stays its real (transparent) text. */
+.ex-cell.ex-cell-numeric::after {
+    display: var(--ex-hash-display, none);
+    content: "################################################################################################################################" / "";
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    padding: inherit;
+    overflow: hidden;
+    white-space: normal;
+    word-break: break-all;
+    -webkit-text-fill-color: currentcolor;
+    pointer-events: none;
+}
+
+/* Forced colors (UX-7) forces `transparent` back to a visible colour, and the digits then
+   show between the hashes ("1#####7", measured). A numeric cell opts out of forcing and
+   restates the system colour itself, so the hidden digits stay hidden. */
+@media (forced-colors: active) {
+    .ex-cell.ex-cell-numeric { forced-color-adjust: none; color: CanvasText; }
+}

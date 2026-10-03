@@ -1,0 +1,802 @@
+{
+  "browser": "141.0.7390.37",
+  "candidate": "candidate-scroll-state.css",
+  "url": "file:///home/user/ex-grid/spikes/render-bench/css-overflow/probe.html?css=candidate-scroll-state.css",
+  "when": "2026-10-03T01:14:21.175Z",
+  "boundary": [
+    {
+      "variant": "regular",
+      "text": "1,234.56",
+      "textW": 62.344,
+      "samples": 65,
+      "minDetectedOverflow": 0.875,
+      "maxUndetectedOverflow": 0.75,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 6
+    },
+    {
+      "variant": "regular",
+      "text": "123,456,789,012.50",
+      "textW": 142.516,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "regular",
+      "text": "-98.7%",
+      "textW": 49.531,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "regular",
+      "text": "2026-10-02",
+      "textW": 81.375,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "regular",
+      "text": "(1,234,567.00)",
+      "textW": 104.453,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "regular",
+      "text": "¥1,234,567",
+      "textW": 80.172,
+      "samples": 65,
+      "minDetectedOverflow": 0.75,
+      "maxUndetectedOverflow": 0.625,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 5
+    },
+    {
+      "variant": "total row (600)",
+      "text": "1,234.56",
+      "textW": 69.094,
+      "samples": 65,
+      "minDetectedOverflow": 0.625,
+      "maxUndetectedOverflow": 0.5,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 4
+    },
+    {
+      "variant": "total row (600)",
+      "text": "123,456,789,012.50",
+      "textW": 157.656,
+      "samples": 65,
+      "minDetectedOverflow": 0.25,
+      "maxUndetectedOverflow": 0.125,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 1
+    },
+    {
+      "variant": "total row (600)",
+      "text": "-98.7%",
+      "textW": 54.391,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "total row (600)",
+      "text": "2026-10-02",
+      "textW": 89.563,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "total row (600)",
+      "text": "(1,234,567.00)",
+      "textW": 116.438,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "total row (600)",
+      "text": "¥1,234,567",
+      "textW": 88.578,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "consumer bold 700",
+      "text": "1,234.56",
+      "textW": 69.094,
+      "samples": 65,
+      "minDetectedOverflow": 0.625,
+      "maxUndetectedOverflow": 0.5,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 4
+    },
+    {
+      "variant": "consumer bold 700",
+      "text": "123,456,789,012.50",
+      "textW": 157.656,
+      "samples": 65,
+      "minDetectedOverflow": 0.25,
+      "maxUndetectedOverflow": 0.125,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 1
+    },
+    {
+      "variant": "consumer bold 700",
+      "text": "-98.7%",
+      "textW": 54.391,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "consumer bold 700",
+      "text": "2026-10-02",
+      "textW": 89.563,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "consumer bold 700",
+      "text": "(1,234,567.00)",
+      "textW": 116.438,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "consumer bold 700",
+      "text": "¥1,234,567",
+      "textW": 88.578,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "consumer 17px",
+      "text": "1,234.56",
+      "textW": 75.703,
+      "samples": 65,
+      "minDetectedOverflow": 0.25,
+      "maxUndetectedOverflow": 0.125,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 1
+    },
+    {
+      "variant": "consumer 17px",
+      "text": "123,456,789,012.50",
+      "textW": 173.047,
+      "samples": 65,
+      "minDetectedOverflow": 0.625,
+      "maxUndetectedOverflow": 0.5,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 4
+    },
+    {
+      "variant": "consumer 17px",
+      "text": "-98.7%",
+      "textW": 60.141,
+      "samples": 65,
+      "minDetectedOverflow": 0.75,
+      "maxUndetectedOverflow": 0.625,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 5
+    },
+    {
+      "variant": "consumer 17px",
+      "text": "2026-10-02",
+      "textW": 98.797,
+      "samples": 65,
+      "minDetectedOverflow": 0.375,
+      "maxUndetectedOverflow": 0.25,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 2
+    },
+    {
+      "variant": "consumer 17px",
+      "text": "(1,234,567.00)",
+      "textW": 126.828,
+      "samples": 65,
+      "minDetectedOverflow": 0.375,
+      "maxUndetectedOverflow": 0.25,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 2
+    },
+    {
+      "variant": "consumer 17px",
+      "text": "¥1,234,567",
+      "textW": 97.344,
+      "samples": 65,
+      "minDetectedOverflow": 0.875,
+      "maxUndetectedOverflow": 0.75,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 6
+    },
+    {
+      "variant": "consumer letter-spacing 1px",
+      "text": "1,234.56",
+      "textW": 70.344,
+      "samples": 65,
+      "minDetectedOverflow": 0.875,
+      "maxUndetectedOverflow": 0.75,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 6
+    },
+    {
+      "variant": "consumer letter-spacing 1px",
+      "text": "123,456,789,012.50",
+      "textW": 160.516,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "consumer letter-spacing 1px",
+      "text": "-98.7%",
+      "textW": 55.531,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "consumer letter-spacing 1px",
+      "text": "2026-10-02",
+      "textW": 91.375,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "consumer letter-spacing 1px",
+      "text": "(1,234,567.00)",
+      "textW": 118.453,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "consumer letter-spacing 1px",
+      "text": "¥1,234,567",
+      "textW": 90.172,
+      "samples": 65,
+      "minDetectedOverflow": 0.75,
+      "maxUndetectedOverflow": 0.625,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 5
+    },
+    {
+      "variant": "consumer serif family",
+      "text": "1,234.56",
+      "textW": 62.344,
+      "samples": 65,
+      "minDetectedOverflow": 0.875,
+      "maxUndetectedOverflow": 0.75,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 6
+    },
+    {
+      "variant": "consumer serif family",
+      "text": "123,456,789,012.50",
+      "textW": 142.516,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "consumer serif family",
+      "text": "-98.7%",
+      "textW": 49.219,
+      "samples": 65,
+      "minDetectedOverflow": 0.75,
+      "maxUndetectedOverflow": 0.625,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 5
+    },
+    {
+      "variant": "consumer serif family",
+      "text": "2026-10-02",
+      "textW": 80.719,
+      "samples": 65,
+      "minDetectedOverflow": 0.25,
+      "maxUndetectedOverflow": 0.125,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 1
+    },
+    {
+      "variant": "consumer serif family",
+      "text": "(1,234,567.00)",
+      "textW": 104.453,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "consumer serif family",
+      "text": "¥1,234,567",
+      "textW": 80.172,
+      "samples": 65,
+      "minDetectedOverflow": 0.75,
+      "maxUndetectedOverflow": 0.625,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 5
+    },
+    {
+      "variant": "stale (italic)",
+      "text": "1,234.56",
+      "textW": 62.344,
+      "samples": 65,
+      "minDetectedOverflow": 0.875,
+      "maxUndetectedOverflow": 0.75,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 6
+    },
+    {
+      "variant": "stale (italic)",
+      "text": "123,456,789,012.50",
+      "textW": 142.516,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "stale (italic)",
+      "text": "-98.7%",
+      "textW": 49.531,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "stale (italic)",
+      "text": "2026-10-02",
+      "textW": 81.375,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "stale (italic)",
+      "text": "(1,234,567.00)",
+      "textW": 104.453,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "stale (italic)",
+      "text": "¥1,234,567",
+      "textW": 80.172,
+      "samples": 65,
+      "minDetectedOverflow": 0.75,
+      "maxUndetectedOverflow": 0.625,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 5
+    },
+    {
+      "variant": "pinned",
+      "text": "1,234.56",
+      "textW": 62.344,
+      "samples": 65,
+      "minDetectedOverflow": 0.875,
+      "maxUndetectedOverflow": 0.75,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 6
+    },
+    {
+      "variant": "pinned",
+      "text": "123,456,789,012.50",
+      "textW": 142.516,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "pinned",
+      "text": "-98.7%",
+      "textW": 49.531,
+      "samples": 65,
+      "minDetectedOverflow": 0.125,
+      "maxUndetectedOverflow": 0,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 0
+    },
+    {
+      "variant": "pinned",
+      "text": "2026-10-02",
+      "textW": 81.375,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "pinned",
+      "text": "(1,234,567.00)",
+      "textW": 104.453,
+      "samples": 65,
+      "minDetectedOverflow": 1,
+      "maxUndetectedOverflow": 0.875,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 7
+    },
+    {
+      "variant": "pinned",
+      "text": "¥1,234,567",
+      "textW": 80.172,
+      "samples": 65,
+      "minDetectedOverflow": 0.75,
+      "maxUndetectedOverflow": 0.625,
+      "hashedWhileFitting": 0,
+      "shownWhileOverflowing": 5
+    }
+  ],
+  "subpixel": [
+    {
+      "overflowPx": 0.01,
+      "hashed": false,
+      "scrollWidth": 159,
+      "clientWidth": 159,
+      "textRightToCellRight": 7.984
+    },
+    {
+      "overflowPx": 0.1,
+      "hashed": true,
+      "scrollWidth": 159,
+      "clientWidth": 158,
+      "textRightToCellRight": 7.891
+    },
+    {
+      "overflowPx": 0.25,
+      "hashed": true,
+      "scrollWidth": 159,
+      "clientWidth": 158,
+      "textRightToCellRight": 7.75
+    },
+    {
+      "overflowPx": 0.5,
+      "hashed": true,
+      "scrollWidth": 159,
+      "clientWidth": 158,
+      "textRightToCellRight": 7.5
+    },
+    {
+      "overflowPx": 0.75,
+      "hashed": true,
+      "scrollWidth": 159,
+      "clientWidth": 158,
+      "textRightToCellRight": 7.25
+    },
+    {
+      "overflowPx": 0.99,
+      "hashed": true,
+      "scrollWidth": 159,
+      "clientWidth": 158,
+      "textRightToCellRight": 7
+    },
+    {
+      "overflowPx": 1,
+      "hashed": true,
+      "scrollWidth": 159,
+      "clientWidth": 158,
+      "textRightToCellRight": 7
+    },
+    {
+      "overflowPx": 1.01,
+      "hashed": true,
+      "scrollWidth": 159,
+      "clientWidth": 158,
+      "textRightToCellRight": 6.984
+    }
+  ],
+  "fill": [
+    {
+      "typography": "regular",
+      "width": 40,
+      "hashed": true,
+      "hashesOnFirstLine": 2,
+      "expectedFloor": 2,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "regular",
+      "width": 57,
+      "hashed": true,
+      "hashesOnFirstLine": 3,
+      "expectedFloor": 3,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "regular",
+      "width": 80,
+      "hashed": true,
+      "hashesOnFirstLine": 5,
+      "expectedFloor": 5,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "regular",
+      "width": 101,
+      "hashed": true,
+      "hashesOnFirstLine": 7,
+      "expectedFloor": 7,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "regular",
+      "width": 133,
+      "hashed": true,
+      "hashesOnFirstLine": 9,
+      "expectedFloor": 9,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-bold",
+      "width": 40,
+      "hashed": true,
+      "hashesOnFirstLine": 2,
+      "expectedFloor": 2,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-bold",
+      "width": 57,
+      "hashed": true,
+      "hashesOnFirstLine": 3,
+      "expectedFloor": 3,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-bold",
+      "width": 80,
+      "hashed": true,
+      "hashesOnFirstLine": 5,
+      "expectedFloor": 5,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-bold",
+      "width": 101,
+      "hashed": true,
+      "hashesOnFirstLine": 7,
+      "expectedFloor": 7,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-bold",
+      "width": 133,
+      "hashed": true,
+      "hashesOnFirstLine": 9,
+      "expectedFloor": 9,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "ex-row-total",
+      "width": 40,
+      "hashed": true,
+      "hashesOnFirstLine": 2,
+      "expectedFloor": 2,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "ex-row-total",
+      "width": 57,
+      "hashed": true,
+      "hashesOnFirstLine": 3,
+      "expectedFloor": 3,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "ex-row-total",
+      "width": 80,
+      "hashed": true,
+      "hashesOnFirstLine": 5,
+      "expectedFloor": 5,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "ex-row-total",
+      "width": 101,
+      "hashed": true,
+      "hashesOnFirstLine": 7,
+      "expectedFloor": 7,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "ex-row-total",
+      "width": 133,
+      "hashed": true,
+      "hashesOnFirstLine": 9,
+      "expectedFloor": 9,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-big",
+      "width": 40,
+      "hashed": true,
+      "hashesOnFirstLine": 1,
+      "expectedFloor": 1,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-big",
+      "width": 57,
+      "hashed": true,
+      "hashesOnFirstLine": 2,
+      "expectedFloor": 2,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-big",
+      "width": 80,
+      "hashed": true,
+      "hashesOnFirstLine": 4,
+      "expectedFloor": 4,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-big",
+      "width": 101,
+      "hashed": true,
+      "hashesOnFirstLine": 5,
+      "expectedFloor": 5,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-big",
+      "width": 133,
+      "hashed": true,
+      "hashesOnFirstLine": 8,
+      "expectedFloor": 8,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-spaced",
+      "width": 40,
+      "hashed": true,
+      "hashesOnFirstLine": 1,
+      "expectedFloor": 1,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-spaced",
+      "width": 57,
+      "hashed": true,
+      "hashesOnFirstLine": 3,
+      "expectedFloor": 3,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-spaced",
+      "width": 80,
+      "hashed": true,
+      "hashesOnFirstLine": 5,
+      "expectedFloor": 5,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-spaced",
+      "width": 101,
+      "hashed": true,
+      "hashesOnFirstLine": 6,
+      "expectedFloor": 6,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    },
+    {
+      "typography": "probe-spaced",
+      "width": 133,
+      "hashed": true,
+      "hashesOnFirstLine": 9,
+      "expectedFloor": 9,
+      "runInsideContentBox": true,
+      "textOverflow": "clip"
+    }
+  ],
+  "accessibility": {
+    "fits": "- gridcell \"1,234.56\"",
+    "hashedWithAltText": "- gridcell \"123,456,789,012.50\"",
+    "hashedInnerText": "123,456,789,012.50",
+    "hashedTextContent": "123,456,789,012.50",
+    "hashedWithoutAltText": "- 'gridcell \"123,456,789,012.50 ########\"'",
+    "cdpGridcellNamesWithoutAlt": [
+      "1,234.56",
+      "123,456,789,012.50 ########"
+    ],
+    "cdpGridcellNamesWithAlt": [
+      "1,234.56",
+      "123,456,789,012.50"
+    ]
+  },
+  "ux6": {
+    "animationName": "none",
+    "animationsPerCell": 0,
+    "timelineCurrentTimeHashed": "null",
+    "timelineCurrentTimeFits": "null"
+  },
+  "forcedColors": {
+    "hashedInk": 282,
+    "literalHashesInk": 282,
+    "hashedErrorInk": 488,
+    "literalHashesErrorInk": 449,
+    "hashed": true
+  },
+  "console": []
+}

@@ -1,0 +1,209 @@
+{
+  "browser": "HeadlessChrome/141.0.7390.37",
+  "candidate": "candidate-scroll-state.css",
+  "method": "HeadlessExperimental.beginFrame, one frame per call, DOM changed between frames",
+  "results": [
+    {
+      "scenario": "a new row mounted already overflowing (fresh element, e.g. a row scrolled into the Viewport)",
+      "expected": "hashed",
+      "hasDamage": true,
+      "firstFrame": "hashed",
+      "firstFrameInk": {
+        "red": 177,
+        "blue": 0,
+        "redMinX": 22,
+        "redMaxX": 78
+      },
+      "fifthFrame": "hashed",
+      "fifthFrameInk": {
+        "red": 177,
+        "blue": 0,
+        "redMinX": 22,
+        "redMaxX": 78
+      },
+      "ok": true
+    },
+    {
+      "scenario": "a new row mounted fitting",
+      "expected": "value",
+      "hasDamage": true,
+      "firstFrame": "value",
+      "firstFrameInk": {
+        "red": 0,
+        "blue": 154,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "fifthFrame": "value",
+      "fifthFrameInk": {
+        "red": 0,
+        "blue": 154,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "ok": true
+    },
+    {
+      "scenario": "text rewritten in place: fits → overflows (value churn, or a cell reused for another column)",
+      "expected": "hashed",
+      "hasDamage": true,
+      "firstFrame": "hashed",
+      "firstFrameInk": {
+        "red": 284,
+        "blue": 0,
+        "redMinX": 27,
+        "redMaxX": 118
+      },
+      "fifthFrame": "hashed",
+      "fifthFrameInk": {
+        "red": 284,
+        "blue": 0,
+        "redMinX": 27,
+        "redMaxX": 118
+      },
+      "ok": true
+    },
+    {
+      "scenario": "text rewritten in place: overflows → fits",
+      "expected": "value",
+      "hasDamage": true,
+      "firstFrame": "value",
+      "firstFrameInk": {
+        "red": 0,
+        "blue": 154,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "fifthFrame": "value",
+      "fifthFrameInk": {
+        "red": 0,
+        "blue": 154,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "ok": true
+    },
+    {
+      "scenario": "inline width narrowed (a column resize applied)",
+      "expected": "hashed",
+      "hasDamage": true,
+      "firstFrame": "hashed",
+      "firstFrameInk": {
+        "red": 247,
+        "blue": 0,
+        "redMinX": 19,
+        "redMaxX": 98
+      },
+      "fifthFrame": "hashed",
+      "fifthFrameInk": {
+        "red": 247,
+        "blue": 0,
+        "redMinX": 19,
+        "redMaxX": 98
+      },
+      "ok": true
+    },
+    {
+      "scenario": "inline width widened",
+      "expected": "value",
+      "hasDamage": true,
+      "firstFrame": "value",
+      "firstFrameInk": {
+        "red": 0,
+        "blue": 355,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "fifthFrame": "value",
+      "fifthFrameInk": {
+        "red": 0,
+        "blue": 355,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "ok": true
+    },
+    {
+      "scenario": "a Consumer class making the text bold, on a value that just fits at 400",
+      "expected": "hashed",
+      "hasDamage": true,
+      "firstFrame": "hashed",
+      "firstFrameInk": {
+        "red": 540,
+        "blue": 0,
+        "redMinX": 20,
+        "redMaxX": 158
+      },
+      "fifthFrame": "hashed",
+      "fifthFrameInk": {
+        "red": 540,
+        "blue": 0,
+        "redMinX": 20,
+        "redMaxX": 158
+      },
+      "ok": true
+    },
+    {
+      "scenario": "the row turning into a total row (weight 600 from the row class)",
+      "expected": "hashed",
+      "hasDamage": true,
+      "firstFrame": "hashed",
+      "firstFrameInk": {
+        "red": 540,
+        "blue": 0,
+        "redMinX": 20,
+        "redMaxX": 158
+      },
+      "fifthFrame": "hashed",
+      "fifthFrameInk": {
+        "red": 540,
+        "blue": 0,
+        "redMinX": 20,
+        "redMaxX": 158
+      },
+      "ok": true
+    },
+    {
+      "scenario": "a row element reused for another row: every cell text rewritten, mixed outcomes",
+      "expected": "hashed",
+      "hasDamage": true,
+      "firstFrame": "hashed",
+      "firstFrameInk": {
+        "red": 247,
+        "blue": 0,
+        "redMinX": 19,
+        "redMaxX": 98
+      },
+      "firstFrameOther": "value",
+      "fifthFrame": "hashed",
+      "fifthFrameInk": {
+        "red": 247,
+        "blue": 0,
+        "redMinX": 19,
+        "redMaxX": 98
+      },
+      "fifthFrameOther": "value",
+      "ok": true
+    },
+    {
+      "scenario": "CONTROL: a 1s stepped colour transition (blue → red) — must NOT have arrived yet",
+      "expected": "value",
+      "hasDamage": true,
+      "firstFrame": "value",
+      "firstFrameInk": {
+        "red": 0,
+        "blue": 154,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "fifthFrame": "value",
+      "fifthFrameInk": {
+        "red": 0,
+        "blue": 154,
+        "redMinX": null,
+        "redMaxX": null
+      },
+      "ok": true
+    }
+  ]
+}

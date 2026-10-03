@@ -1,0 +1,807 @@
+{
+  "browser": "141.0.7390.37",
+  "frames": 600,
+  "cells": 800,
+  "when": "2026-10-03T00:54:48.812Z",
+  "pairs": [
+    {
+      "css": "none",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.1,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 2.6,
+        "mean": 0.16
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "none",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.2,
+        "max": 2.1,
+        "mean": 0.11
+      },
+      "browser": {
+        "n": 600,
+        "p50": 6.9,
+        "p95": 9.7,
+        "max": 27.8,
+        "mean": 7.26
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "none",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 600,
+        "p50": 1.9,
+        "p95": 3.2,
+        "max": 9.9,
+        "mean": 2.06
+      },
+      "browser": {
+        "n": 600,
+        "p50": 17.2,
+        "p95": 26.5,
+        "max": 37.1,
+        "mean": 18.27
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "none",
+      "scenario": "ChurnBurst",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 1.6,
+        "mean": 0.02
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 13.9,
+        "mean": 0.33
+      },
+      "changedFramesBrowser": {
+        "n": 10,
+        "p50": 9.5,
+        "p95": 13.9,
+        "max": 13.9,
+        "mean": 10.5
+      },
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "none",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 1.9,
+        "mean": 0.06
+      },
+      "browser": {
+        "n": 600,
+        "p50": 4,
+        "p95": 5.5,
+        "max": 7.8,
+        "mean": 4.12
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.1,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 1.8,
+        "p95": 2.6,
+        "max": 4,
+        "mean": 1.91
+      },
+      "changedFramesBrowser": null,
+      "hashed": 756,
+      "animations": 800,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 536,
+        "p50": 0.5,
+        "p95": 0.8,
+        "max": 1.9,
+        "mean": 0.51
+      },
+      "browser": {
+        "n": 536,
+        "p50": 26.9,
+        "p95": 35.4,
+        "max": 46.6,
+        "mean": 27.21
+      },
+      "changedFramesBrowser": null,
+      "hashed": 758,
+      "animations": 800,
+      "frames": 536,
+      "cappedByTime": true
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 66,
+        "p50": 11.9,
+        "p95": 14.7,
+        "max": 20.8,
+        "mean": 12.04
+      },
+      "browser": {
+        "n": 66,
+        "p50": 188.8,
+        "p95": 271.9,
+        "max": 638.8,
+        "mean": 202.74
+      },
+      "changedFramesBrowser": null,
+      "hashed": 751,
+      "animations": 800,
+      "frames": 66,
+      "cappedByTime": true
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ChurnBurst",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0.1,
+        "max": 3,
+        "mean": 0.03
+      },
+      "browser": {
+        "n": 600,
+        "p50": 1.9,
+        "p95": 2.8,
+        "max": 32.5,
+        "mean": 2.39
+      },
+      "changedFramesBrowser": {
+        "n": 10,
+        "p50": 24.1,
+        "p95": 32.5,
+        "max": 32.5,
+        "mean": 25.44
+      },
+      "hashed": 757,
+      "animations": 800,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate.css",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.2,
+        "max": 2.2,
+        "mean": 0.09
+      },
+      "browser": {
+        "n": 600,
+        "p50": 8.4,
+        "p95": 12.1,
+        "max": 18.3,
+        "mean": 8.78
+      },
+      "changedFramesBrowser": null,
+      "hashed": 757,
+      "animations": 800,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "inert",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.2,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 2,
+        "mean": 0.18
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "inert",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.2,
+        "max": 0.5,
+        "mean": 0.12
+      },
+      "browser": {
+        "n": 600,
+        "p50": 7.2,
+        "p95": 10.4,
+        "max": 20.3,
+        "mean": 7.54
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "inert",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 600,
+        "p50": 2.1,
+        "p95": 3.1,
+        "max": 20.2,
+        "mean": 2.19
+      },
+      "browser": {
+        "n": 600,
+        "p50": 21.4,
+        "p95": 31.3,
+        "max": 46.9,
+        "mean": 22.57
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "inert",
+      "scenario": "ChurnBurst",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 1.5,
+        "mean": 0.02
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 12.7,
+        "mean": 0.33
+      },
+      "changedFramesBrowser": {
+        "n": 10,
+        "p50": 7.9,
+        "p95": 12.7,
+        "max": 12.7,
+        "mean": 8.52
+      },
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "inert",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 0.3,
+        "mean": 0.06
+      },
+      "browser": {
+        "n": 600,
+        "p50": 2,
+        "p95": 3.2,
+        "max": 13.8,
+        "mean": 2.21
+      },
+      "changedFramesBrowser": null,
+      "hashed": 0,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "Idle",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 0.1,
+        "mean": 0
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.6,
+        "p95": 1,
+        "max": 3.4,
+        "mean": 0.64
+      },
+      "changedFramesBrowser": null,
+      "hashed": 756,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ScrollSlow",
+      "dom": {
+        "n": 600,
+        "p50": 0.2,
+        "p95": 0.3,
+        "max": 4.1,
+        "mean": 0.19
+      },
+      "browser": {
+        "n": 600,
+        "p50": 18.1,
+        "p95": 24.4,
+        "max": 33.1,
+        "mean": 18.45
+      },
+      "changedFramesBrowser": null,
+      "hashed": 753,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ScrollFling",
+      "dom": {
+        "n": 155,
+        "p50": 4.8,
+        "p95": 6.8,
+        "max": 11.1,
+        "mean": 4.97
+      },
+      "browser": {
+        "n": 155,
+        "p50": 92.9,
+        "p95": 163.8,
+        "max": 242.8,
+        "mean": 100.19
+      },
+      "changedFramesBrowser": null,
+      "hashed": 752,
+      "animations": 0,
+      "frames": 155,
+      "cappedByTime": true
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ChurnBurst",
+      "dom": {
+        "n": 600,
+        "p50": 0,
+        "p95": 0,
+        "max": 1.1,
+        "mean": 0.02
+      },
+      "browser": {
+        "n": 600,
+        "p50": 0.6,
+        "p95": 1,
+        "max": 16.9,
+        "mean": 0.87
+      },
+      "changedFramesBrowser": {
+        "n": 10,
+        "p50": 14.2,
+        "p95": 16.9,
+        "max": 16.9,
+        "mean": 14.6
+      },
+      "hashed": 757,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "scenario": "ChurnTrickle",
+      "dom": {
+        "n": 600,
+        "p50": 0.1,
+        "p95": 0.1,
+        "max": 2.2,
+        "mean": 0.06
+      },
+      "browser": {
+        "n": 600,
+        "p50": 4.8,
+        "p95": 7,
+        "max": 11.1,
+        "mean": 4.96
+      },
+      "changedFramesBrowser": null,
+      "hashed": 757,
+      "animations": 0,
+      "frames": 600,
+      "cappedByTime": false
+    }
+  ],
+  "accumulation": [
+    {
+      "css": "candidate.css",
+      "steps": [
+        {
+          "step": "idle, fresh page",
+          "browser": {
+            "n": 300,
+            "p50": 1.8,
+            "p95": 2.5,
+            "max": 5,
+            "mean": 1.87
+          },
+          "heapBytes": 951576
+        },
+        {
+          "step": "fling #1 (93 frames, 74400 cells replaced)",
+          "browser": {
+            "n": 93,
+            "p50": 155.5,
+            "p95": 219.6,
+            "max": 471.9,
+            "mean": 159.68
+          },
+          "heapBytes": 3624332
+        },
+        {
+          "step": "idle after fling #1",
+          "browser": {
+            "n": 201,
+            "p50": 53.3,
+            "p95": 66.5,
+            "max": 89.1,
+            "mean": 54.37
+          },
+          "heapBytes": 3710968
+        },
+        {
+          "step": "fling #2 (54 frames, 43200 cells replaced)",
+          "browser": {
+            "n": 54,
+            "p50": 213,
+            "p95": 574.9,
+            "max": 889.3,
+            "mean": 241.09
+          },
+          "heapBytes": 3756268
+        },
+        {
+          "step": "idle after fling #2",
+          "browser": {
+            "n": 129,
+            "p50": 82.3,
+            "p95": 105.7,
+            "max": 138.5,
+            "mean": 84.78
+          },
+          "heapBytes": 3807888
+        },
+        {
+          "step": "fling #3 (43 frames, 34400 cells replaced)",
+          "browser": {
+            "n": 43,
+            "p50": 264.5,
+            "p95": 336.8,
+            "max": 736.9,
+            "mean": 274.63
+          },
+          "heapBytes": 4821444
+        },
+        {
+          "step": "idle after fling #3",
+          "browser": {
+            "n": 89,
+            "p50": 121.9,
+            "p95": 140.1,
+            "max": 175.6,
+            "mean": 122.54
+          },
+          "heapBytes": 3967400
+        },
+        {
+          "step": "idle after a forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 4.2,
+            "p95": 4.9,
+            "max": 6.4,
+            "mean": 4.31
+          },
+          "heapBytes": 899172
+        },
+        {
+          "step": "fling after the forced GC",
+          "browser": {
+            "n": 92,
+            "p50": 152.6,
+            "p95": 281.9,
+            "max": 492.6,
+            "mean": 164.37
+          },
+          "heapBytes": 3317968
+        }
+      ]
+    },
+    {
+      "css": "candidate-scroll-state.css",
+      "steps": [
+        {
+          "step": "idle, fresh page",
+          "browser": {
+            "n": 300,
+            "p50": 0.6,
+            "p95": 0.8,
+            "max": 1.1,
+            "mean": 0.58
+          },
+          "heapBytes": 952540
+        },
+        {
+          "step": "fling #1 (183 frames, 146400 cells replaced)",
+          "browser": {
+            "n": 183,
+            "p50": 81.6,
+            "p95": 138.8,
+            "max": 242.7,
+            "mean": 89.84
+          },
+          "heapBytes": 5856952
+        },
+        {
+          "step": "idle after fling #1",
+          "browser": {
+            "n": 300,
+            "p50": 16.2,
+            "p95": 19.7,
+            "max": 52.8,
+            "mean": 16.95
+          },
+          "heapBytes": 5709596
+        },
+        {
+          "step": "fling #2 (121 frames, 96800 cells replaced)",
+          "browser": {
+            "n": 121,
+            "p50": 106.5,
+            "p95": 209.2,
+            "max": 359,
+            "mean": 119.68
+          },
+          "heapBytes": 8467936
+        },
+        {
+          "step": "idle after fling #2",
+          "browser": {
+            "n": 300,
+            "p50": 28.3,
+            "p95": 36.9,
+            "max": 137.5,
+            "mean": 29.76
+          },
+          "heapBytes": 8381872
+        },
+        {
+          "step": "fling #3 (101 frames, 80800 cells replaced)",
+          "browser": {
+            "n": 101,
+            "p50": 122,
+            "p95": 173,
+            "max": 400.6,
+            "mean": 135.07
+          },
+          "heapBytes": 9273136
+        },
+        {
+          "step": "idle after fling #3",
+          "browser": {
+            "n": 256,
+            "p50": 46.6,
+            "p95": 56.1,
+            "max": 95.8,
+            "mean": 48.28
+          },
+          "heapBytes": 9037668
+        },
+        {
+          "step": "idle after a forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 2.5,
+            "p95": 4,
+            "max": 5.4,
+            "mean": 2.66
+          },
+          "heapBytes": 924608
+        },
+        {
+          "step": "fling after the forced GC",
+          "browser": {
+            "n": 184,
+            "p50": 80.8,
+            "p95": 145.7,
+            "max": 232.6,
+            "mean": 88.77
+          },
+          "heapBytes": 6038596
+        }
+      ]
+    },
+    {
+      "css": "none",
+      "steps": [
+        {
+          "step": "idle, fresh page",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 0.3,
+            "mean": 0.14
+          },
+          "heapBytes": 946848
+        },
+        {
+          "step": "fling #1 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 17.6,
+            "p95": 26.1,
+            "max": 39,
+            "mean": 18.84
+          },
+          "heapBytes": 864680
+        },
+        {
+          "step": "idle after fling #1",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 1,
+            "mean": 0.15
+          },
+          "heapBytes": 978972
+        },
+        {
+          "step": "fling #2 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 17.5,
+            "p95": 26.2,
+            "max": 43.6,
+            "mean": 18.88
+          },
+          "heapBytes": 1071692
+        },
+        {
+          "step": "idle after fling #2",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 0.3,
+            "mean": 0.15
+          },
+          "heapBytes": 1186992
+        },
+        {
+          "step": "fling #3 (300 frames, 240000 cells replaced)",
+          "browser": {
+            "n": 300,
+            "p50": 17.9,
+            "p95": 27.2,
+            "max": 36.4,
+            "mean": 19.11
+          },
+          "heapBytes": 1017672
+        },
+        {
+          "step": "idle after fling #3",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.3,
+            "max": 1.6,
+            "mean": 0.15
+          },
+          "heapBytes": 1125340
+        },
+        {
+          "step": "idle after a forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 0.1,
+            "p95": 0.2,
+            "max": 1.4,
+            "mean": 0.14
+          },
+          "heapBytes": 922248
+        },
+        {
+          "step": "fling after the forced GC",
+          "browser": {
+            "n": 300,
+            "p50": 18.4,
+            "p95": 27.9,
+            "max": 44.9,
+            "mean": 19.9
+          },
+          "heapBytes": 1125364
+        }
+      ]
+    }
+  ],
+  "console": []
+}

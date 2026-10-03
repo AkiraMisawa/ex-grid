@@ -26,6 +26,33 @@ absolutely positioned overlay, with scrolling held fixed so only the selection m
 
 The bar is **16.6 ms** (one frame at 60fps). A median past that is what "sluggish" means.
 
+A third benchmark, **Measure overflow paint (frame cost)**, prices *who decides `####`*
+([ADR-0016](../../docs/adr/0016-column-width-and-overflow.md)) — see
+[docs/research/css-decided-overflow.md](../../docs/research/css-decided-overflow.md). The ladder
+above stops its clock at the DOM update, and a CSS-decided `####` costs nothing there: its cost is
+in the browser's style, layout and animation update. So this one is driven from
+`requestAnimationFrame` in JS, calls into .NET synchronously once per frame, and times the .NET
+call and **the rest of the frame** separately.
+
+| `OverflowPaint` | What the numeric cells carry |
+|---|---|
+| `None` | the value, clipped — no decision at all |
+| `CSharp` | today's design: a per-class glyph-width estimate, `####` painted as interned text |
+| `Css` | the value, and a scroll-driven animation (`animation-timeline: scroll(self inline)`) that switches a `::after` run of `#` on while the cell overflows |
+| `CssScrollState` | the same switch made with `@container scroll-state(scrollable: inline-end)` — nothing animates |
+
+Scenarios: `Idle` (frames run, nothing changes), `ScrollSlow` (1 row a frame), `ScrollFling` (50
+rows a frame), `ChurnBurst` (300 cells take new values once a second), `ChurnTrickle` (5 cells a
+frame). **Run each mode on a fresh page** — `?overflow=Css` (and `?scenario=…`) narrow the run —
+because cells that have scrolled past keep costing the CSS modes every frame until they are
+garbage-collected; started with `--js-flags=--expose-gc`, the bench collects before each scenario
+and records that it did.
+
+`css-overflow/` and `tools/css-overflow-*.mjs` hold the same question without Blazor: the
+candidate stylesheets, a feasibility probe against layout geometry, a frame-exact first-frame
+check (`HeadlessExperimental.beginFrame`), a run against the real DemoHost, and a browser-cost
+harness with ablations. Their JSON and screenshots land in `results/css-overflow/`.
+
 ## Running it
 
 ```sh

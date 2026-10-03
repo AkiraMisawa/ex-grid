@@ -89,6 +89,7 @@ public sealed class Report
     public required Dictionary<string, object> Environment { get; init; }
     public required List<RunResult> Runs { get; init; }
     public Stats? ManualScrollFrames { get; init; }
+    public List<FrameRun>? FrameRuns { get; init; }
     public string? Note { get; init; }
 }
 
@@ -116,7 +117,100 @@ public static class CellFormat
     ];
 
     public static string Class(CellState s, CellTone t) => Toned[(int)s * 3 + (int)t];
+
+    /// <summary>The same classes carrying the CSS overflow switch (OverflowPaint.Css).</summary>
+    public static string ClassHx(CellState s) => s switch
+    {
+        CellState.Stale => "c num hx stale",
+        CellState.Missing => "c num hx missing",
+        CellState.Error => "c num hx err",
+        _ => "c num hx",
+    };
+
+    /// <summary>The classes carrying candidate B's switch (OverflowPaint.CssScrollState).</summary>
+    public static string ClassHs(CellState s) => s switch
+    {
+        CellState.Stale => "c num hs stale",
+        CellState.Missing => "c num hs missing",
+        CellState.Error => "c num hs err",
+        _ => "c num hs",
+    };
+
+    /// <summary>The C# decision as the product makes it, in miniature: a per-class estimate
+    /// against the cell's content width, the run interned by length (ADR-0016, P5). The
+    /// widths are DejaVu Sans at the bench's 13px, weight 400, rounded up.</summary>
+    public const double CellWidthPx = 90, PaddingPx = 6, DigitPx = 8.3, NarrowPx = 4.6, WidePx = 11;
+
+    public static double EstimatePx(string text)
+    {
+        var w = 2 * PaddingPx;
+        foreach (var ch in text)
+            w += ch is >= '0' and <= '9' ? DigitPx : ch is ',' or '.' ? NarrowPx : WidePx;
+        return w;
+    }
+
+    private static readonly string[] HashRuns = Enumerable.Range(0, 64).Select(n => new string('#', Math.Max(1, n))).ToArray();
+
+    public static string Decide(string text) =>
+        EstimatePx(text) <= CellWidthPx ? text : HashRuns[(int)((CellWidthPx - 2 * PaddingPx) / WidePx)];
 }
 
 /// <summary>The product's closed tone vocabulary (ADR-0006), as the bench prices it.</summary>
 public enum CellTone : byte { None = 0, Positive = 1, Negative = 2 }
+
+/// <summary>
+/// Who decides #### for a numeric cell that does not fit (ADR-0016), priced per frame
+/// (docs/research/css-decided-overflow.md).
+/// </summary>
+public enum OverflowPaint
+{
+    /// <summary>No decision at all: the value is painted and clipped. The floor.</summary>
+    None,
+    /// <summary>Today's design: a C# glyph-width estimate per cell, #### painted as text.</summary>
+    CSharp,
+    /// <summary>The candidate: the value is always painted, and every numeric cell carries a
+    /// scroll-timeline animation that switches the #### run on while the cell overflows.</summary>
+    Css,
+    /// <summary>Candidate B: the same switch made with a scroll-state container query
+    /// (`scrollable: inline-end`) — nothing animates.</summary>
+    CssScrollState,
+}
+
+/// <summary>What a frame-loop scenario does to the grid on each frame.</summary>
+public enum FrameScenario
+{
+    /// <summary>Nothing changes; frames keep running. Prices whatever the cells cost when idle.</summary>
+    Idle,
+    /// <summary>One row enters and one leaves per frame (a slow scroll).</summary>
+    ScrollSlow,
+    /// <summary>Every row is replaced per frame (a fling, 50 rows a step).</summary>
+    ScrollFling,
+    /// <summary>A live feed: 300 visible cells take new values once a second (every 60th frame).</summary>
+    ChurnBurst,
+    /// <summary>A live feed spread out: 5 visible cells take new values every frame (300/s).</summary>
+    ChurnTrickle,
+}
+
+public sealed class FrameRun
+{
+    public required string Overflow { get; init; }
+    public required string Scenario { get; init; }
+    public required int Frames { get; init; }
+    public required int Cells { get; init; }
+    /// <summary>Blazor's render and DOM update, timed in JS around the synchronous .NET call.</summary>
+    public required Stats Net { get; init; }
+    /// <summary>The browser's own rendering steps for the frame — style, layout, animation
+    /// update, paint recording — from the end of the rAF callback to a message posted from
+    /// it, which runs only once the frame's rendering is done.</summary>
+    public required Stats Browser { get; init; }
+    /// <summary>Net + Browser per frame: the main-thread cost the frame carried.</summary>
+    public required Stats Total { get; init; }
+    /// <summary>rAF-to-rAF interval (vsync-quantised; shows dropped frames, not cost).</summary>
+    public required Stats Interval { get; init; }
+    /// <summary>Only the frames that changed something (for ChurnBurst, the burst frames).</summary>
+    public Stats? ChangedFramesTotal { get; init; }
+    public int Animations { get; init; }
+    public int HashedCells { get; init; }
+    /// <summary>Whether a full garbage collection ran just before this run.</summary>
+    public bool GcBeforeRun { get; init; }
+}

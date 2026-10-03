@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>css-decided overflow probe</title>
+    <!-- The product stylesheet, unmodified, then the candidate on top of it. -->
+    <link rel="stylesheet" href="../../../src/ExGrid/wwwroot/ex-grid.css" />
+    <link rel="stylesheet" id="candidate" href="candidate.css" />
+    <style>
+        body { margin: 0; padding: 8px; background: #fff; }
+        /* The probe's own frame: a scroller sized like a small grid. Classes the core does
+           not paint are prefixed probe- so they cannot be mistaken for product ones. */
+        .ex-grid { --ex-row-height: 24px; --ex-header-height: 0px; --ex-cell-padding-x: 8px; width: 1200px; }
+        .ex-scroller { width: 1200px; height: 900px; }
+        .ex-viewport { width: 1200px; }
+        /* Consumer classes that change typography — the case ADR-0016's estimate cannot see. */
+        .probe-bold { font-weight: 700; }
+        .probe-big { font-size: 17px; }
+        .probe-spaced { letter-spacing: 1px; }
+        .probe-serif { font-family: "DejaVu Serif", serif; }
+        /* Colour discrimination for the first-frame screenshots: digits blue, hashes red. */
+        .probe-colour .ex-cell-numeric { color: rgb(0, 0, 255); }
+        .probe-colour .ex-cell-numeric::after { -webkit-text-fill-color: rgb(255, 0, 0); }
+    </style>
+</head>
+<body>
+<div class="ex-grid" role="grid" aria-rowcount="1000" aria-colcount="20">
+    <div class="ex-scroller">
+        <div class="ex-spacer" style="height: 880px">
+            <div class="ex-viewport" id="viewport"></div>
+        </div>
+    </div>
+</div>
+<script>
+    // ?css=<file> swaps the candidate stylesheet (candidate.css by default).
+    const css = new URLSearchParams(location.search).get('css');
+    if (css) document.getElementById('candidate').href = css;
+    // Builds the same markup ExGridRow paints: a flex row of cells with inline widths.
+    window.probe = {
+        // The timeline is updated by the frame, not by a style read: wait for frames.
+        frames(n = 2) { return new Promise((res) => { const step = (k) => k ? requestAnimationFrame(() => step(k - 1)) : res(); step(n); }); },
+        clear() { document.getElementById('viewport').replaceChildren(); },
+        row(cells, rowClass = '') {
+            const r = document.createElement('div');
+            r.className = ('ex-row ' + rowClass).trim();
+            r.setAttribute('role', 'row');
+            for (const c of cells) {
+                const d = document.createElement('div');
+                d.className = 'ex-cell ex-cell-numeric' + (c.pinned ? ' ex-pinned' : '') + (c.cls ? ' ' + c.cls : '');
+                d.setAttribute('role', 'gridcell');
+                d.style.width = c.width + 'px';
+                if (c.pinned) d.style.left = (c.left ?? 0) + 'px';
+                d.textContent = c.text;
+                if (c.id) d.id = c.id;
+                r.appendChild(d);
+            }
+            document.getElementById('viewport').appendChild(r);
+            return r;
+        },
+        // What the candidate decided, read the way any style is read.
+        hashed(el) { return getComputedStyle(el, '::after').display === 'block'; },
+        // Geometric truth: the laid-out width of the text against the content box.
+        geometry(el) {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            const text = range.getBoundingClientRect().width;
+            const cs = getComputedStyle(el);
+            const content = el.getBoundingClientRect().width - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+            return { text, content, overflow: text - content, scrollRange: el.scrollWidth - el.clientWidth };
+        },
+    };
+</script>
+</body>
+</html>
