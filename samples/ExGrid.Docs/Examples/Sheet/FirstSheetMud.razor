@@ -1,0 +1,15 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @bind-Document="_document" Chrome="MudSheetChrome.Default"
+             ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+<MudText Typo="Typo.body2" Class="mt-3">The document holds @_document.Cells.Count cells. Type into an empty one and the count follows.</MudText>
+
+@code {
+    // The Sheet Document is yours: ExSheet hands back a new one after every change.
+    private SheetDocument _document = Expenses.Document();
+}

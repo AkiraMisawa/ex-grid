@@ -1,0 +1,12 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @bind-Document="_document" PinnedColumnCount="1" Chrome="MudSheetChrome.Default"
+             ViewportHeight="360" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private SheetDocument _document = RegionalSales.Document();
+}

@@ -1,0 +1,45 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-3">
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="Save">Save</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(_saved is null)" OnClick="Load">Load the saved copy</MudButton>
+    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="New">New sheet</MudButton>
+    <MudText Typo="Typo.body2">@_said</MudText>
+</MudStack>
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @bind-Document="_document" Culture="Culture" Chrome="MudSheetChrome.Default"
+             ViewportHeight="280" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+
+    private SheetDocument? _document = Expenses.Document();
+
+    // Where your application would write to a database or a file.
+    private string? _saved;
+    private string _said = "";
+
+    private void Save()
+    {
+        _saved = (_document ?? new Sheet(Culture).ToDocument()).ToJson();
+        _said = $"Saved {_saved.Length:N0} characters of JSON.";
+    }
+
+    // A different document replaces the Sheet and clears its undo stack.
+    private void Load()
+    {
+        _document = SheetDocument.FromJson(_saved!);
+        _said = "Loaded the saved copy.";
+    }
+
+    // Null is an empty Sheet in the Culture parameter.
+    private void New()
+    {
+        _document = null;
+        _said = "";
+    }
+}

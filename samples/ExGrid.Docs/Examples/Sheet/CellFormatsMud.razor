@@ -1,0 +1,13 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+@using ExSheet.MudBlazor
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ExSheet @bind-Document="_document" Chrome="MudSheetChrome.Default"
+             ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+</MudExGridPaper>
+
+@code {
+    // Number formats, fonts, fills and borders travel in the document with the Entries.
+    private SheetDocument _document = QuarterlyPnl.Document();
+}

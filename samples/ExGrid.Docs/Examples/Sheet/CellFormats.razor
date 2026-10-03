@@ -1,0 +1,9 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<ExSheet @bind-Document="_document" ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    // Number formats, fonts, fills and borders travel in the document with the Entries.
+    private SheetDocument _document = QuarterlyPnl.Document();
+}

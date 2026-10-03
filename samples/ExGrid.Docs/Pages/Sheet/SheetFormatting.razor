@@ -1,0 +1,134 @@
+@page "/exsheet/formatting"
+@using ExGrid.Docs.Examples.Sheet
+
+<DocsPage Product="ExSheet" Title="Formatting"
+          Lead="Cell Formats as Excel records them — Number Format, Alignment, Font, Fill and Borders — set from the keyboard, from Format Cells, from the Sheet Toolbar or from your own code, and saved in the Sheet Document.">
+
+    <DocsSection Title="Cell Formats">
+        <p>
+            A Cell Format has five parts, and each is recorded in the Sheet Document beside the Entries:
+        </p>
+        <ul>
+            <li>
+                <b>Number Format</b>, in Excel's codes: <code>#,##0</code>, <code>#,##0;(#,##0)</code>,
+                <code>0.0%</code>, <code>dd-mmm-yy</code>, a colour such as <code>[Red]</code>. Excel's built-in date,
+                time and currency formats are shown in the Sheet culture's own form.
+            </li>
+            <li><b>Alignment</b>: General (numbers right, text left), left, centre or right.</li>
+            <li><b>Font</b>: a colour, bold, italic, underline and strikethrough.</li>
+            <li><b>Fill</b>: one solid colour.</li>
+            <li><b>Borders</b>: a line on each side, in any of Excel's thirteen styles and a colour.</li>
+        </ul>
+        <p>
+            A format lives at three levels, as in Excel: cell over row over column. A format set on whole columns or
+            whole rows is recorded once on them, and covers the cells that hold nothing as well.
+        </p>
+        <p>
+            <b>A number that does not fit shows <code>####</code>.</b> General rounds its decimals to fit the column,
+            as Excel's does; any other format is never shortened, because a formatted figure cut short would read as
+            a different figure. Widen the column and the number appears. Setting a Number Format widens a column the
+            user has not sized, as Excel's formatting keys do.
+        </p>
+        <DocsExample Builtin="typeof(CellFormats)" Mud="typeof(CellFormatsMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
+            Every format here is set in code, with <code>SheetEdit.SetCellFormat</code>, before the document is
+            handed to the Sheet.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="The Paper and the Ink">
+        <p>
+            The ground the cells lie on is the <b>Paper</b>, Excel's white, and text in the Automatic colour is the
+            <b>Ink</b>, Excel's black — in every colour scheme, as Excel's cells stay white under its dark theme. A
+            colour a user recorded reads as it did when it was chosen. What frames the cells — the Headings, the Name
+            Box, the Formula Bar, popovers — follows the page's scheme. Switch this site to dark mode to see it. Both
+            are Visual Tokens you can set in your stylesheet:
+        </p>
+        <pre class="docs-code"><code>.my-sheets { --ex-sheet-paper: #fdf6e3; --ex-sheet-ink: #073642; }</code></pre>
+    </DocsSection>
+
+    <DocsSection Title="From the keyboard, and from your code">
+        <p>
+            Excel's formatting keys format the Selection, each as one undo step: Ctrl+B, Ctrl+I, Ctrl+U and Ctrl+5
+            toggle bold, italic, underline and strikethrough; Ctrl+Shift with <code>~ ! @@ # $ % ^</code> applies
+            General, <code>#,##0.00</code>, a time, a date, the currency, a percentage and scientific; Ctrl+Shift+&amp;
+            draws an outline and Ctrl+Shift+_ removes the borders. Ctrl+1 opens Format Cells.
+        </p>
+        <p>
+            From code, <code>SetCellFormatAsync(CellFormatChange)</code> sets only the parts the change names, on every
+            range of the Selection, as one undo step: a change that sets bold keeps each cell's italic, Fill and Number
+            Format. Its borders are relative to each range, so each range gets its own outline.
+            <code>CellFormatAt(address)</code> reads back what a cell shows. Like every command, these are refused while
+            an edit is open.
+        </p>
+        <DocsExample Builtin="typeof(FormatFromCode)" Mud="typeof(FormatFromCodeMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])">
+            Select a range, then press a button. Ctrl+Z undoes each press.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="Format Cells">
+        <p>
+            Format Cells is Excel's dialog: five tabs — Number, Alignment, Font, Border and Fill — in Excel's order,
+            opened on the Focus cell's format, with what differs across the Selection shown as Excel shows it. OK sets
+            only the parts the user touched, as one undo step; Cancel and Escape set nothing. It opens from Ctrl+1,
+            from "Format Cells…" in the Context Menu, and from <code>OpenFormatCellsAsync()</code>.
+        </p>
+        <ul>
+            <li><b>Under the built-in Chrome</b> it is a popover inside the Sheet's box, which scrolls when the box is small.</li>
+            <li>
+                <b>Under <code>MudSheetChrome</code></b> (<code>ExSheet.MudBlazor</code>) it is a page-level, modal
+                <code>MudDialog</code>, with MudBlazor's colour picker for More Colours. It needs a
+                <code>&lt;MudDialogProvider /&gt;</code> in your layout, and is refused by name when it first opens
+                without one.
+            </li>
+        </ul>
+        <p>
+            What the dialog offers and what OK sets do not change with the Chrome: the same choices set the same Cell
+            Format under either. Switch the Example above to MudBlazor and press "Format Cells…" to compare.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The Sheet Toolbar">
+        <p>
+            The Sheet Toolbar is Excel's Home tab, above the Formula Bar. It is off until you set
+            <code>ShowToolbar</code>, and the Sheet's <code>ViewportHeight</code> includes it. Each item follows the
+            Focus cell — Bold shows pressed over a bold cell — acts on the Selection as one undo step, and is greyed
+            out while a cell is edited. A press leaves the keyboard on the Sheet.
+        </p>
+        <p>
+            What it holds, and in which order, is yours to declare in <code>ToolbarContent</code>.
+            <code>DefaultToolbarRow</code> is ExSheet's row; a <code>ToolbarRow</code> is a row of your own, and a
+            <code>ToolbarButton</code> an action of your own, greyed out while an edit is open like ExSheet's items.
+            ExSheet's items are <code>BoldItem</code>, <code>ItalicItem</code>, <code>UnderlineItem</code>,
+            <code>StrikethroughItem</code>, <code>FontColourItem</code>, <code>FillItem</code>,
+            <code>BordersItem</code>, <code>AlignLeftItem</code>, <code>AlignCenterItem</code>,
+            <code>AlignRightItem</code>, <code>NumberFormatItem</code>, <code>PercentItem</code>,
+            <code>CommaItem</code>, <code>FormatCellsItem</code> and <code>ToolbarSeparator</code>, so a row of
+            your own can hold any of them too.
+        </p>
+        <ul>
+            <li>
+                <b>Bind <code>ShowToolbar</code> both ways</b> and the user can hide and show the toolbar with Ctrl+F1,
+                Excel's key for the ribbon. Whether it is shown is yours to keep.
+            </li>
+            <li>
+                <b>KeyTips.</b> Release Alt on its own, or press F10, and each row shows its letter: ExSheet's row is H,
+                as Excel's Home tab is, and its items carry Excel's letters, so Alt, H, 1 sets bold. Your rows and
+                buttons have a KeyTip where you set <code>KeyTip</code>; two letters that collide at one level are
+                refused when the toolbar renders.
+            </li>
+            <li>
+                <b>The look is the Chrome's.</b> The built-in Chrome draws plain buttons with inline-SVG pictures;
+                <code>MudSheetChrome</code> draws MudBlazor's controls.
+            </li>
+        </ul>
+        <DocsExample Builtin="typeof(Toolbar)" Mud="typeof(ToolbarMud)" Files="@(["Examples/Sheet/QuarterlyPnl.cs"])" CodeOpen="true">
+            Select a few cells and press "Mark reviewed", or press Alt and then R, M.
+        </DocsExample>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExSheet.Engine.CellFormatChange)" />
+        <ApiTable Type="typeof(global::ExSheet.ToolbarButton)" />
+        <ApiTable Type="typeof(global::ExSheet.ToolbarRow)" />
+    </DocsSection>
+</DocsPage>

@@ -1,0 +1,9 @@
+@using ExSheet.Components
+@using ExSheet.Engine
+
+<ExSheet @bind-Document="_document" PinnedColumnCount="1"
+         ViewportHeight="360" ViewportWidth="ViewportSize.Stretch" />
+
+@code {
+    private SheetDocument _document = RegionalSales.Document();
+}

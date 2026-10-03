@@ -1,0 +1,113 @@
+@page "/exsheet"
+@using ExGrid.Docs.Examples.Sheet
+
+<DocsPage Product="ExSheet" Title="Overview"
+          Lead="A general-purpose sheet for Blazor: cells addressed A1 over Excel's full extent, Formulas computed as Excel computes them, a Formula Bar and a Name Box. ExSheet holds and computes; one ExGrid paints it.">
+
+    <DocsSection Title="What ExSheet is">
+        <p>
+            ExSheet holds a <b>Sheet</b> — 1,048,576 rows by 16,384 columns, stored sparsely — and computes
+            the <b>Value</b> of every cell from its <b>Entry</b>, what the user typed. It shows the Sheet by
+            rendering one ExGrid as that grid's Consumer: ExSheet holds and computes, ExGrid paints, selects,
+            navigates and reports. Everything you learn about ExGrid's selection, keyboard and clipboard
+            holds inside a Sheet.
+        </p>
+        <ul>
+            <li>
+                <b>The Sheet Document is yours to keep.</b> After every change ExSheet raises
+                <code>DocumentChanged</code> with a new <code>SheetDocument</code>, and stores nothing itself.
+                Bind it two ways and persist it wherever your application keeps its data.
+            </li>
+            <li>
+                <b>A document holds Entries, never Values.</b> <code>=B2*C2</code> is saved as the Formula, not as
+                the number it gave. Anyone who wants a saved Sheet's numbers runs the engine,
+                <code>ExSheet.Engine</code>, which gives the same result on a server as in the browser.
+            </li>
+            <li>
+                <b>It answers as Excel does, or says it cannot.</b> A function outside the supported set is
+                <code>#NAME?</code>, a circular reference is <code>#CIRC!</code>, and a number that does not fit its
+                column shows <code>####</code> — never an approximation.
+            </li>
+        </ul>
+        <p>
+            ExSheet ships in three packages: <code>ExSheet</code> (the component), <code>ExSheet.Engine</code>
+            (the Formula engine, with no UI and no dependency) and <code>ExSheet.MudBlazor</code> (Format Cells
+            as a <code>MudDialog</code>, and ExGrid.MudBlazor's controls in the grid). ExSheet is a prerelease:
+            its API may change between versions.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="A first sheet">
+        <p>
+            Bind <code>Document</code> to a field. A null document is an empty Sheet in <code>Culture</code>
+            (the current culture when you leave it out); a document carries its own culture, which is how typed
+            constants are read and Values are shown. Click a cell and read its Entry in the Formula Bar, press
+            F2 on a Formula to edit it, type an address such as <code>D200</code> into the Name Box, and use
+            Ctrl+arrow to jump to the end of a block.
+        </p>
+        <DocsExample Builtin="typeof(FirstSheet)" Mud="typeof(FirstSheetMud)" Files="@(["Examples/Sheet/Expenses.cs"])" CodeOpen="true" />
+        <p>
+            Beyond typing, the user gets what a spreadsheet user expects: the fill handle (Formulas with
+            their References shifted, a series from two or more numbers, dates by day — any other pattern is
+            refused, with the reason), Ctrl+D and Ctrl+R, Delete to clear contents and keep formats, Ctrl+F to
+            find text as it is shown, and a Context Menu that inserts and deletes the rows or columns the
+            Selection spans. References keep naming the same cells, and a deleted target becomes
+            <code>#REF!</code>.
+        </p>
+        <ul>
+            <li><code>PinnedColumnCount</code> freezes leading columns.</li>
+            <li><code>ShowRowHeadings</code>, <code>ShowColumnHeadings</code> and <code>ShowFormulaBar</code> hide the Headings or the Formula Bar; the cells are still addressed A1.</li>
+            <li>
+                A copy carries the Values as shown in <code>text/plain</code> and unformatted in
+                <code>text/html</code>. A paste may spill from one cell, as in Excel, and each pasted field is
+                read as if typed under the Sheet's culture.
+            </li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="Saving and opening a document">
+        <p>
+            <code>SheetDocument.ToJson()</code> and <code>SheetDocument.FromJson(json)</code> are its serialised
+            form. A document records Entries, Cell Formats, column widths and Linked Table declarations, under a
+            version number; a newer engine reads every older version, and an unknown version is refused with a
+            <code>SheetDocumentException</code> rather than half-read.
+        </p>
+        <p>
+            Handing over a different document replaces the Sheet and clears its undo stack. If the user has an
+            edit open at that moment, it is discarded and the Sheet says so, rather than typing into the new
+            document. Handing back the document ExSheet just raised — as <code>@@bind-Document</code> does —
+            changes nothing.
+        </p>
+        <DocsExample Builtin="typeof(SaveAndLoad)" Mud="typeof(SaveAndLoadMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="Undo, and commands of your own">
+        <p>
+            Each ExSheet has one undo stack. Ctrl+Z and Ctrl+Y work from the keyboard; <code>UndoAsync</code>
+            and <code>RedoAsync</code> do the same from your buttons. A command you give —
+            <code>DoAsync(SheetEdit)</code>, <code>SetCellFormatAsync</code> — goes onto the same stack in its
+            place in the order, so the user can undo it like anything they typed.
+        </p>
+        <p>
+            While a cell or the Formula Bar is being edited, every command is refused with a
+            <code>SheetRefusedException</code> and changes nothing, as Excel greys out its ribbon: a row inserted
+            above the cell would otherwise carry the typing into another row. <code>EditingChanged</code> tells
+            you when an edit opens and closes, so your buttons can grey out too. Commands act on the Selection
+            as the grid holds it when they run.
+        </p>
+        <DocsExample Builtin="typeof(UndoRedo)" Mud="typeof(UndoRedoMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
+    </DocsSection>
+
+    <DocsSection Title="See it in an application">
+        <p>
+            The <MudLink Href="showcase/budget" Target="_blank">budget sheet showcase</MudLink> is a departmental
+            budget as a finance team would build it: months across, cost lines down, subtotals and a variance
+            column, number formats, and the Sheet Toolbar.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="API">
+        <ApiTable Type="typeof(global::ExSheet.Components.ExSheet)" />
+        <ApiTable Type="typeof(global::ExSheet.Engine.SheetDocument)" />
+    </DocsSection>
+</DocsPage>
