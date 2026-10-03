@@ -947,6 +947,28 @@ has one, and otherwise ExSheet's own or the Consumer's declared one, never assig
 ([ADR-0100](./docs/adr/0100-the-sheet-toolbar-ships-as-an-opt-in-part-of-exsheet.md)).
 _Avoid_: access key, accelerator, mnemonic, shortcut (a shortcut is a chord, a KeyTip is a sequence)
 
+### Documentation
+
+**Docs Site**:
+The family's documentation, published to GitHub Pages: one site for ExGrid, ExSheet, ExPivot and
+the data packages, where each component has a page of description, **Examples** and its API. It
+runs the real components in the reader's browser, and it is a Consumer like any other
+([ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
+_Avoid_: demo, demo pages (those are layer 3's fixture), playground
+
+**Example**:
+A live component on a Docs Site page, with beneath it the code it runs, read from its own source.
+It shows one thing, and where a Wrapper exists it switches between the built-in Chrome and
+MudBlazor's
+([ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
+_Avoid_: sample, snippet (a snippet is code that does not run)
+
+**Showcase**:
+A Docs Site page for one use case — a trade blotter, a budget sheet, a sales analysis — that fills
+the window and carries no prose. The README's recordings are made from it
+([ADR-0110](./docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md)).
+_Avoid_: demo, hero
+
 ## Flagged ambiguities
 
 - **"Grid" on its own does not say whether ExGrid, ExSheet or ExPivot is meant.** When it is
