@@ -54,6 +54,9 @@
     <!-- The decision records, by name only: an API summary's "ADR-0016" links to its file. -->
     <AdditionalFiles Include="..\..\docs\adr\*.md" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <!-- Setup snippets are an application's own files (its Program.cs), quoted, never compiled
+         into the site. -->
+    <Compile Remove="Examples\Setup\**\*.cs" />
   </ItemGroup>
 
   <!-- The shipped assemblies' XML documentation, for the API tables: the file beside each

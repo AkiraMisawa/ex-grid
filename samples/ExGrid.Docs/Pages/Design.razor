@@ -1,0 +1,63 @@
+@page "/design"
+
+<DocsPage Title="Design"
+          Lead="A few principles run through every decision. Knowing them tells you what the grid will do in a case this site does not show.">
+
+    <DocsSection Title="Rather than be quietly wrong, say it cannot be done">
+        <p>
+            These grids display money and risk numbers. Where they cannot do something correctly, they
+            refuse, or show the value unreadably, before they show something that looks plausible but
+            is not.
+        </p>
+        <ul>
+            <li>A number that does not fit its column shows <code>####</code>, never a shorter number.</li>
+            <li>A copy is never truncated. A copy too large to carry is refused, and the user is told.</li>
+            <li>A paste never spills outside the selection unless you allow it.</li>
+            <li>The selection is dropped when the order changes, rather than left over different rows.</li>
+            <li>A Formula ExSheet cannot compute as Excel does is <code>#NAME?</code>, never an approximation.</li>
+        </ul>
+    </DocsSection>
+
+    <DocsSection Title="The grid neither holds nor executes">
+        <p>
+            The data, sorting, filtering, grouping and edits belong to your application, the Consumer.
+            The grid displays what it is given and tells you what the user asked for. Hand it
+            <code>GridSource.From</code> and the bundled source does the work in memory; answer its
+            notifications and your server does.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Immutable rows, a thin layer on top">
+        <p>
+            A row repaints when its instance changes. Replace a row to change it, rather than rewriting
+            the object in place: the grid compares identities, so an unchanged row skips its render.
+            Selection, highlights and the editor are painted over the rows, never into them.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="Chrome renders and calls back; the core decides">
+        <p>
+            Menus, the filter panel, the find panel, the Cell Editor and the loading indicator are seams
+            a design system fills. The Chrome draws them and reports what was chosen; the core decides
+            what every choice means. Swapping the built-in Chrome for MudBlazor's changes the look and
+            nothing else.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="An outcome never depends on timing">
+        <p>
+            People drive these grids at the speed of their hands, and tools drive them at machine speed
+            over a server's round trip. A gesture carries what it was taken against, and is refused if
+            that no longer holds, so the result is the same either way.
+        </p>
+    </DocsSection>
+
+    <DocsSection Title="The reasons are written down">
+        <p>
+            Every decision is recorded, with the options it rejected and why, in the repository's
+            <MudLink Href="https://github.com/AkiraMisawa/ex-grid/tree/main/docs/adr" Target="_blank">decision records</MudLink>,
+            and the vocabulary in its <MudLink Href="https://github.com/AkiraMisawa/ex-grid/blob/main/CONTEXT.md" Target="_blank">glossary</MudLink>.
+            The API tables on this site link to the record a member cites.
+        </p>
+    </DocsSection>
+</DocsPage>

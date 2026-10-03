@@ -1,0 +1,13 @@
+@inherits LayoutComponentBase
+
+@* A MudBlazor application's layout, as usual: the providers the Wrappers' menus,
+   selects and dialogs open through. *@
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+
+<MudLayout>
+    <MudMainContent>
+        @Body
+    </MudMainContent>
+</MudLayout>

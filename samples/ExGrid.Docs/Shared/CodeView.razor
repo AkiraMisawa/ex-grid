@@ -23,9 +23,11 @@
         <div class="docs-code-tabs"><span class="docs-code-tab docs-code-tab-selected">@Sources[0].FileName</span></div>
     }
     <div class="docs-code-body">
-        <MudTooltip Text="Copy" Class="docs-code-copy">
-            <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" OnClick="CopyAsync" aria-label="Copy code" />
-        </MudTooltip>
+        <div class="docs-code-copy">
+            <MudTooltip Text="Copy">
+                <MudIconButton Icon="@Icons.Material.Filled.ContentCopy" Size="Size.Small" OnClick="CopyAsync" aria-label="Copy code" />
+            </MudTooltip>
+        </div>
         <pre class="docs-code"><code class="@($"language-{Current.Language}")">@((MarkupString)Current.Html)</code></pre>
     </div>
 </div>
