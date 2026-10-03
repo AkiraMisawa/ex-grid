@@ -1,0 +1,42 @@
+{
+  "area": "sec",
+  "about": "SEC (ticket 07).",
+  "cases": [
+    {
+      "id": "SEC-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SEC(45)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.90359, "digits": 5}
+    },
+    {
+      "id": "SEC-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SEC(30)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6.48292, "digits": 5}
+    },
+    {
+      "id": "SEC-003",
+      "source": "documented",
+      "description": "Documented: the absolute value must be less than 2^27",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SEC(-2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "SEC-004",
+      "source": "documented",
+      "description": "1/COS(0)",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SEC(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    }
+  ]
+}

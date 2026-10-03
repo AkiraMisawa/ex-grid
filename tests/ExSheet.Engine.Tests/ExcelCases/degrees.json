@@ -1,0 +1,24 @@
+{
+  "area": "degrees",
+  "about": "DEGREES (ticket 07).",
+  "cases": [
+    {
+      "id": "DEGREES-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DEGREES(PI())"},
+      "check": "ZZ1000",
+      "expect": {"value2": 180}
+    },
+    {
+      "id": "DEGREES-002",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double below 30",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DEGREES(PI()/6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 29.999999999999996}
+    }
+  ]
+}

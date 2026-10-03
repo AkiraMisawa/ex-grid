@@ -1,0 +1,33 @@
+{
+  "area": "atanh",
+  "about": "ATANH (ticket 07).",
+  "cases": [
+    {
+      "id": "ATANH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ATANH(0.76159416)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.00000001, "digits": 8}
+    },
+    {
+      "id": "ATANH-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ATANH(-0.1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.100335348, "digits": 9}
+    },
+    {
+      "id": "ATANH-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1, excluded by the documentation, is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ATANH(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "area": "csc",
+  "about": "CSC (ticket 07).",
+  "cases": [
+    {
+      "id": "CSC-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CSC(15)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.538, "digits": 3}
+    },
+    {
+      "id": "CSC-002",
+      "source": "documented",
+      "description": "Documented: the absolute value must be less than 2^27",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CSC(2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "CSC-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1/SIN(0) is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CSC(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    }
+  ]
+}

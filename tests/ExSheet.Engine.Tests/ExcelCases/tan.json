@@ -1,0 +1,51 @@
+{
+  "area": "tan",
+  "about": "TAN (ticket 07).",
+  "cases": [
+    {
+      "id": "TAN-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TAN(0.785)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.9992, "digits": 5}
+    },
+    {
+      "id": "TAN-002",
+      "source": "documented",
+      "description": "Microsoft's example: 45 degrees",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TAN(45*PI()/180)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1, "digits": 12}
+    },
+    {
+      "id": "TAN-003",
+      "source": "documented",
+      "description": "Microsoft's example: RADIANS",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TAN(RADIANS(45))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1, "digits": 12}
+    },
+    {
+      "id": "TAN-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: pi/2 as a double has a finite tangent",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TAN(PI()/2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.633123935319537e+16}
+    },
+    {
+      "id": "TAN-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 2^27 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TAN(2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

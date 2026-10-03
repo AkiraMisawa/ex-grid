@@ -21,7 +21,7 @@ public class FormulaEntryTests
     [InlineData("=su|", new[] { "SUBSTITUTE", "SUM", "SUMPRODUCT" })]
     [InlineData("=I|", new[] { "IF", "IFERROR", "IFNA", "IFS", "INDEX", "INT", "ISBLANK", "ISERROR", "ISNA", "ISNUMBER", "ISTEXT" })]
     [InlineData("=IFE|", new[] { "IFERROR" })]
-    [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COUNT", "COUNTA" })]
+    [InlineData("=1+co|", new[] { "COLUMN", "COLUMNS", "CONCAT", "CONCATENATE", "COS", "COSH", "COT", "COTH", "COUNT", "COUNTA" })]
     [InlineData("=SUM(A1,m|", new[] { "MAX", "MEDIAN", "MID", "MIN", "MINUTE", "MOD", "MONTH" })]
     [InlineData("=IF(A1>0,x|", new[] { "XLOOKUP", "XMATCH", "XNPV", "XOR" })]
     [InlineData("=LOG1|", new[] { "LOG10" })]
@@ -50,7 +50,7 @@ public class FormulaEntryTests
     [Fact] // ADR-0049/0051: Linked Tables' names are offered beside the functions, in one alphabetical list
     public void Completion_offers_linked_tables()
     {
-        Assert.Equal(["ABS", "Accounts", "AND", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
+        Assert.Equal(["ABS", "Accounts", "ACOS", "ACOSH", "ACOT", "ACOTH", "AND", "ASIN", "ASINH", "ATAN", "ATAN2", "ATANH", "AVERAGE"], Names("=a|", "Positions", "Accounts")!);
         Assert.Equal(["Positions"], Names("=SUM(pos|", "Positions", "Accounts")!);
     }
 

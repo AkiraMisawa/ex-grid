@@ -1,0 +1,42 @@
+{
+  "area": "acoth",
+  "about": "ACOTH (ticket 07).",
+  "cases": [
+    {
+      "id": "ACOTH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOTH(6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.168, "digits": 3}
+    },
+    {
+      "id": "ACOTH-002",
+      "source": "documented",
+      "description": "The function is odd",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOTH(-6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.168, "digits": 3}
+    },
+    {
+      "id": "ACOTH-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the documentation names both #NUM! and #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOTH(0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "ACOTH-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 1 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOTH(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

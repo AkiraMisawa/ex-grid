@@ -1,0 +1,69 @@
+{
+  "area": "sin",
+  "about": "SIN (ticket 07).",
+  "cases": [
+    {
+      "id": "SIN-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(PI()/2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1}
+    },
+    {
+      "id": "SIN-002",
+      "source": "documented",
+      "description": "Microsoft's example: 30 degrees",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(30*PI()/180)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5, "digits": 12}
+    },
+    {
+      "id": "SIN-003",
+      "source": "documented",
+      "description": "Microsoft's example: RADIANS",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(RADIANS(30))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5, "digits": 12}
+    },
+    {
+      "id": "SIN-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: \"approximately 0\", the double's remainder",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(PI())"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.2246467991473532e-16}
+    },
+    {
+      "id": "SIN-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: 2^27, the limit COT documents, is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "SIN-006",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: just under 2^27 is answered",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(2^27-1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.9559933287732995, "digits": 9}
+    },
+    {
+      "id": "SIN-007",
+      "source": "documented",
+      "description": "Text that is no number is #VALUE!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=SIN(A6)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#VALUE!"}
+    }
+  ]
+}

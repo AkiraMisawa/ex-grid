@@ -1,0 +1,51 @@
+{
+  "area": "cos",
+  "about": "COS (ticket 07).",
+  "cases": [
+    {
+      "id": "COS-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COS(1.047)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5001711, "digits": 7}
+    },
+    {
+      "id": "COS-002",
+      "source": "documented",
+      "description": "Microsoft's example: 60 degrees",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COS(60*PI()/180)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5, "digits": 12}
+    },
+    {
+      "id": "COS-003",
+      "source": "documented",
+      "description": "Microsoft's example: RADIANS",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COS(RADIANS(60))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.5, "digits": 12}
+    },
+    {
+      "id": "COS-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: the double's remainder, not 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COS(PI()/2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 6.123233995736766e-17}
+    },
+    {
+      "id": "COS-005",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: an absolute value of 2^27 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=COS(-2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

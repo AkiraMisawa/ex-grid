@@ -1,0 +1,42 @@
+{
+  "area": "csch",
+  "about": "CSCH (ticket 07).",
+  "cases": [
+    {
+      "id": "CSCH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CSCH(1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.4696, "digits": 4}
+    },
+    {
+      "id": "CSCH-002",
+      "source": "documented",
+      "description": "Documented: the absolute value must be less than 2^27",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CSCH(2^27)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    },
+    {
+      "id": "CSCH-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: at 0 is #DIV/0!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CSCH(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#DIV/0!"}
+    },
+    {
+      "id": "CSCH-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: below the smallest number is 0",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=CSCH(1000)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    }
+  ]
+}

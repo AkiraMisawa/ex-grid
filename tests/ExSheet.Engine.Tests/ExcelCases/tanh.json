@@ -1,0 +1,33 @@
+{
+  "area": "tanh",
+  "about": "TANH (ticket 07).",
+  "cases": [
+    {
+      "id": "TANH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TANH(-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.964028, "digits": 6}
+    },
+    {
+      "id": "TANH-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TANH(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "TANH-003",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=TANH(0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.462117, "digits": 6}
+    }
+  ]
+}

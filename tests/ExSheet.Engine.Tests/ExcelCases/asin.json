@@ -1,0 +1,42 @@
+{
+  "area": "asin",
+  "about": "ASIN (ticket 07).",
+  "cases": [
+    {
+      "id": "ASIN-001",
+      "source": "documented",
+      "description": "Microsoft's example: -pi/6",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ASIN(-0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": -0.523598776, "digits": 9}
+    },
+    {
+      "id": "ASIN-002",
+      "source": "documented",
+      "description": "Microsoft's example: in degrees",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ASIN(-0.5)*180/PI()"},
+      "check": "ZZ1000",
+      "expect": {"value2": -30, "digits": 9}
+    },
+    {
+      "id": "ASIN-003",
+      "source": "documented",
+      "description": "Microsoft's example: DEGREES",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DEGREES(ASIN(-0.5))"},
+      "check": "ZZ1000",
+      "expect": {"value2": -30, "digits": 9}
+    },
+    {
+      "id": "ASIN-004",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: outside -1 to 1 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ASIN(1.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

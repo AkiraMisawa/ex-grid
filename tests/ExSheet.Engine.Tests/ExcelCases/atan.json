@@ -1,0 +1,33 @@
+{
+  "area": "atan",
+  "about": "ATAN (ticket 07).",
+  "cases": [
+    {
+      "id": "ATAN-001",
+      "source": "documented",
+      "description": "Microsoft's example: pi/4",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ATAN(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.785398163, "digits": 9}
+    },
+    {
+      "id": "ATAN-002",
+      "source": "documented",
+      "description": "Microsoft's example: in degrees",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ATAN(1)*180/PI()"},
+      "check": "ZZ1000",
+      "expect": {"value2": 45, "digits": 9}
+    },
+    {
+      "id": "ATAN-003",
+      "source": "documented",
+      "description": "Microsoft's example: DEGREES",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=DEGREES(ATAN(1))"},
+      "check": "ZZ1000",
+      "expect": {"value2": 45, "digits": 9}
+    }
+  ]
+}

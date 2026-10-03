@@ -1,0 +1,33 @@
+{
+  "area": "acosh",
+  "about": "ACOSH (ticket 07).",
+  "cases": [
+    {
+      "id": "ACOSH-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOSH(1)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0}
+    },
+    {
+      "id": "ACOSH-002",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOSH(10)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.9932228, "digits": 7}
+    },
+    {
+      "id": "ACOSH-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: below 1 is #NUM!",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOSH(0.5)"},
+      "check": "ZZ1000",
+      "expect": {"value2": "#NUM!"}
+    }
+  ]
+}

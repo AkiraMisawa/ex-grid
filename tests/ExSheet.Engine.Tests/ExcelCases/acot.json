@@ -1,0 +1,33 @@
+{
+  "area": "acot",
+  "about": "ACOT (ticket 07).",
+  "cases": [
+    {
+      "id": "ACOT-001",
+      "source": "documented",
+      "description": "Microsoft's example",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOT(2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 0.4636, "digits": 4}
+    },
+    {
+      "id": "ACOT-002",
+      "source": "documented",
+      "description": "Documented: the angle lies from 0 to pi",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOT(-2)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 2.677945044588987, "digits": 12}
+    },
+    {
+      "id": "ACOT-003",
+      "source": "uncertain",
+      "description": "Engine's answer, Excel to be asked: pi/2",
+      "fixture": "functionData",
+      "cells": {"ZZ1000": "=ACOT(0)"},
+      "check": "ZZ1000",
+      "expect": {"value2": 1.5707963267948966, "digits": 12}
+    }
+  ]
+}
