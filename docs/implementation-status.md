@@ -363,8 +363,8 @@ isolates by file and creates and destroys its grids per test:
   navigation through the index. The harness puts back what it owns. `alterPage` undoes what a
   test changes outside its page, and a document or a native left changed fails the test by
   name. `harness.spec.mjs` pins it.
-- **CI splits each host's layer 3 by browser and into two shards,** each on a runner of its
-  own, under a verdict job per host that keeps the old check names.
+- **CI splits each host's layer 3 by browser and into shards** (four for Chrome and Edge, two
+  for `chrome-150` since 2026-10-04), each on a runner of its own, under a verdict job per host that keeps the old check names.
 - **The audit for the new model found eight tests changing the page outside their grids,** and
   each of them would have run under every later test of its file: CP-23's clipboard stub, KB-15's
   listener, the printable key on `/cells`, A11Y-17's button, UX-2, UX-5 and UX-10's tokens on

@@ -115,21 +115,25 @@ jobs:
           path: coverage/
           retention-days: 30
 
-  # Layer 3 in six parts: each project (both browsers, and chrome-150's Layout Ceiling
-  # selection, ADR-0053), in two shards, on a runner of its own. The suite is
+  # Layer 3 in ten parts: each project (both browsers, and chrome-150's Layout Ceiling
+  # selection, ADR-0053) in shards, each on a runner of its own — four for each browser,
+  # whose shards took 20 minutes at two, and two for chrome-150's few files. The suite is
   # the one playwright.config.mjs defines, unchanged; --project and --shard only choose which
   # files a runner takes, and a shard is a set of whole spec files, so what a run shares —
   # the OS clipboard, the records, a spec file's booted app (ADR-0056) — is never split
   # between runners (ADR-0041).
   browser:
-    name: Layer 3 on ${{ matrix.project }}, shard ${{ matrix.shard }}/2 (Linux, headed)
+    name: Layer 3 on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }} (Linux, headed)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         project: [chrome, msedge, chrome-150]
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
+        exclude:
+          - { project: chrome-150, shard: 3 }
+          - { project: chrome-150, shard: 4 }
     steps:
       - uses: actions/checkout@v7
 
@@ -171,7 +175,7 @@ jobs:
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
+          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }}
 
       - name: Keep the run's records
         if: always()
@@ -201,14 +205,17 @@ jobs:
   # own log read for CON-6. Split the same way, with a verdict job of its own, so the
   # WebAssembly run keeps its check name.
   browser-server:
-    name: Layer 3 against the Server host on ${{ matrix.project }}, shard ${{ matrix.shard }}/2 (Linux, headed)
+    name: Layer 3 against the Server host on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }} (Linux, headed)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         project: [chrome, msedge, chrome-150]
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
+        exclude:
+          - { project: chrome-150, shard: 3 }
+          - { project: chrome-150, shard: 4 }
     steps:
       - uses: actions/checkout@v7
 
@@ -245,7 +252,7 @@ jobs:
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
-          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
+          npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }}
 
       - name: Keep the run's records
         if: always()
