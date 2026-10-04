@@ -15,6 +15,15 @@ if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
     fs.rmSync(HOST_LOG, { force: true });
 }
 
+// The build configuration the hosts and the demo API server run in: the SDK's default (Debug)
+// unless EXGRID_CONFIGURATION names one, which is what CI builds ahead with -c. Only the
+// configuration changes; the serving path and ASPNETCORE_ENVIRONMENT stay the launch profile's.
+const CONFIGURATION = process.env.EXGRID_CONFIGURATION ?? '';
+if (CONFIGURATION !== '' && CONFIGURATION !== 'Debug' && CONFIGURATION !== 'Release') {
+    throw new Error(`EXGRID_CONFIGURATION is "${CONFIGURATION}"; it is "Debug" or "Release", or unset.`);
+}
+const configured = CONFIGURATION === '' ? '' : ` -c ${CONFIGURATION}`;
+
 // Started here so `npx playwright test` is the whole command on any machine. An
 // already-running host is reused, which is what makes an edit-and-rerun loop quick.
 //
@@ -26,7 +35,7 @@ if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
 const hostServers = SERVER
     ? [
         {
-            command: `dotnet run --project ../../samples/ExGrid.DemoHost.Server --urls ${HOST_URL}`,
+            command: `dotnet run --project ../../samples/ExGrid.DemoHost.Server${configured} --urls ${HOST_URL}`,
             url: `${HOST_URL}/wide`,
             env: { EXGRID_HOST_LOG: HOST_LOG },
             reuseExistingServer: true,
@@ -45,7 +54,7 @@ const hostServers = SERVER
     ]
     : [
         {
-            command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
+            command: `dotnet run --project ../../samples/ExGrid.DemoHost${configured} --urls ${HOST_URL}`,
             url: `${BASE_URL}/wide`,
             reuseExistingServer: true,
             timeout: 180_000,
@@ -64,7 +73,7 @@ const hostServers = SERVER
 // it served (a killed one's copy is removed by the next start).
 const apiServer = {
     name: 'DemoApi',
-    command: `dotnet run --project ../../samples/ExGrid.DemoApi --urls ${API_URL}`,
+    command: `dotnet run --project ../../samples/ExGrid.DemoApi${configured} --urls ${API_URL}`,
     url: `${API_URL}/api/status`,
     env: { EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
     reuseExistingServer: true,

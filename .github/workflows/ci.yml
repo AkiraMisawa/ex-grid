@@ -158,13 +158,13 @@ jobs:
 
       # Built ahead, so the suite's own webServer start is a start and not a build.
       - name: Build the DemoHost
-        run: dotnet build samples/ExGrid.DemoHost
+        run: dotnet build samples/ExGrid.DemoHost -c Release
 
       # The demo API server the pages call (ADR-0069), which the suite starts beside the host.
       # Its first start on a fresh runner generates the 20,000 trades the suite asks for, which
       # takes about a second, well inside the webServer's timeout.
       - name: Build the demo API server
-        run: dotnet build samples/ExGrid.DemoApi
+        run: dotnet build samples/ExGrid.DemoApi -c Release
 
       # The screen is larger than any window the suite opens, so the chrome-150 project
       # (ADR-0053: Chrome at --force-device-scale-factor=1.5, its viewport left to the
@@ -172,6 +172,7 @@ jobs:
       - name: Layer 3, headed under xvfb
         working-directory: tests/ExGrid.Browser
         env:
+          EXGRID_CONFIGURATION: Release
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
@@ -239,16 +240,17 @@ jobs:
         run: npm ci
 
       - name: Build the Server host
-        run: dotnet build samples/ExGrid.DemoHost.Server
+        run: dotnet build samples/ExGrid.DemoHost.Server -c Release
 
       # As beside the WebAssembly host: the suite starts it with 20,000 trades.
       - name: Build the demo API server
-        run: dotnet build samples/ExGrid.DemoApi
+        run: dotnet build samples/ExGrid.DemoApi -c Release
 
       - name: Layer 3 against the Server host, headed under xvfb
         working-directory: tests/ExGrid.Browser
         env:
           EXGRID_HOSTING: server
+          EXGRID_CONFIGURATION: Release
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
