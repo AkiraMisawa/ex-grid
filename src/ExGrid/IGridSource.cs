@@ -94,6 +94,23 @@ public interface IGridSource<TRow>
     Rows.IRowMarks<TRow>? Marks => null;
 
     /// <summary>
+    /// The Row Key this source names its rows by (ADR-0140), or null for none. Where the
+    /// grid's own <c>RowKey</c> is not set, the grid keys each row's component by this, so a
+    /// row whose instance changes under the same key repaints in place. Row Identity stays the
+    /// change signal: a key never tells the grid that a row is unchanged.
+    /// </summary>
+    Func<TRow, object>? RowKey => null;
+
+    /// <summary>
+    /// Whether every Window this source hands over holds no row twice, because the source
+    /// refuses a repeated Row Key (ADR-0141). The grid then does not pass a new Window through
+    /// its own check for a repeated row: two rows under different keys cannot be one instance,
+    /// so the refusal is not weakened, only moved to the source, where it judges by key. The
+    /// default is no, and the grid checks.
+    /// </summary>
+    bool VouchesDistinctRows => false;
+
+    /// <summary>
     /// Whether this source answers <see cref="FindAsync"/> (ADR-0055). The default is no, so
     /// a source written before Find keeps compiling and is honestly reported as unable to
     /// search: Ctrl+F then refuses rather than handing the user the browser's search, which
