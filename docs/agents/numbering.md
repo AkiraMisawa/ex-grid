@@ -4,10 +4,11 @@ Several branches are written at once, each by its own session. An ADR, a ticket,
 Sheet Document version takes a number. Two branches that take the same number never conflict in git,
 because their files have different names. The collision only shows after both have merged, as two
 ADR-0063s. So **a branch takes numbers only from a block reserved for it here.** It reserves the
-block on `claude/exsheet-start-8cx3v1` before it uses the first number.
+block on `main` before it uses the first number.
 
-- **To reserve:** add a row below, commit, and push to `claude/exsheet-start-8cx3v1`. Take the next
-  free block. Don't take a number between blocks.
+- **To reserve:** add a row below, commit with `[skip ci]` in the message, and push to `main`. Take
+  the next free block. Don't take a number between blocks. *(Until 2026-10-05 the reservations were
+  pushed to `claude/exsheet-start-8cx3v1`, which is no longer worked on.)*
 - **When a branch merges,** its row stays. Its unused numbers stay unused.
 - **A number already used on two branches** is settled by moving the later branch's into its own
   block. The ADR says what it was numbered before.
@@ -24,7 +25,8 @@ block on `claude/exsheet-start-8cx3v1` before it uses the first number.
 | 0100–0109 | `claude/trusting-babbage-1tpuqo` | The Sheet Toolbar: ticket 54 shipped as part of ExSheet (grilled 2026-10-02) |
 | 0110–0119 | `claude/update-repository-description-40up8q` | The documentation site on GitHub Pages, and how its code examples are shown |
 | 0120–0129 | `claude/excel-formulas-management-4clj80` | ExSheet's function catalogue: `TODAY` and `TEXT`, the P1 functions that need a decision |
-| 0130– | free | reserve a block of ten |
+| 0130–0139 | `claude/selection-summary` | The Selection Summary: Excel's status-bar figures over a selection (grilled 2026-10-05) |
+| 0140– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
