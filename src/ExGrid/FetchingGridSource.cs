@@ -12,6 +12,16 @@ namespace ExGrid;
 /// <para>It fetches the first page itself. The grid cannot ask for rows in a result it
 /// has been told is empty — "nothing to show is not a range" (ADR-0001) — so a source
 /// that starts with nothing has to break its own cold start.</para>
+///
+/// <para><b>Given a Row Key, it hears that the data moved on</b> (ADR-0141): the Consumer calls
+/// <see cref="NotifyChanged"/> however it learns it — SignalR, polling, a message bus — and the
+/// source reads its Window again, gathered on the source's clock by the rules
+/// <c>GridSource.From</c> gathers by. It pairs every answer's rows with the ones it painted by
+/// key and marks the cells whose painted text changed (<see cref="CellChangedAt"/>); it refuses an
+/// answer that repeats a key, by name, and so vouches that no Window holds a row twice. Only the
+/// server knows whether the order of the whole result moved: an answer may carry the server's
+/// order token (<see cref="GridPage{TRow}.OrderToken"/>), and the Row Sequence Version moves when
+/// it differs from the previous answer's, and with every change when the server sends none.</para>
 /// </summary>
 public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, IBindsToOneCircuit
 {
@@ -40,21 +50,182 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     private int _pageRows = DefaultPageRows;
     private bool _started;
 
+    // ---- Live data, under a Row Key (ADR-0141). Null or idle without one. ---------------------
+
+    private readonly Func<TRow, object>? _key;
+    private readonly ChangeGatherer? _gatherer;
+    private readonly CellChangeTimes<TRow>? _changeTimes;
+    // The columns the grid paints by: what the painted text of a row is read from.
+    private IReadOnlyList<ColumnInfo<TRow>> _columns = [];
+    // The data moved on, and no question asked since carries it.
+    private bool _changeWaiting;
+    // Whether the question in flight was asked after the data moved on, so its answer carries it.
+    private bool _inFlightCarries;
+    // The order token of the last answer, and whether an answer has landed since the last restart:
+    // what the next answer's token is compared with.
+    private string? _orderToken;
+    private bool _answered;
+    // The rows the grid last said it needs: what a Window read again must still reach.
+    private RowRange? _lastNeeded;
+
     internal FetchingGridSource(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
         int readAheadRows,
         Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
         Rows.RowMarkAdapter<TRow>? marks = null,
-        Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null)
+        Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null,
+        Func<TRow, object>? rowKey = null,
+        TimeProvider? clock = null)
     {
         ArgumentNullException.ThrowIfNull(fetch);
         ArgumentOutOfRangeException.ThrowIfNegative(readAheadRows);
+        // The Row Mark adapter's key is a Row Key (ADR-0140): one value names a row for its marks,
+        // for a source and for the grid. Two different ones would let the marks follow one key and
+        // the grid pair rows by another, so both given and not the same is refused.
+        if (rowKey is not null && marks is not null && !ReferenceEquals(rowKey, marks.Key))
+        {
+            throw new ArgumentException(
+                "A Row Key and a Row Mark adapter with a key of its own were both given. The adapter's key is the " +
+                "Row Key (ADR-0140): give it once, as the adapter's, or hand the same delegate to both.", nameof(rowKey));
+        }
         _fetch = fetch;
         _readAheadRows = readAheadRows;
         _distinctValues = distinctValues;
         _find = find;
         Marks = marks is null ? null : new Rows.FetchingRowMarks<TRow>(this, marks);
+        _key = rowKey ?? marks?.Key;
+        if (_key is not null)
+        {
+            var time = clock ?? TimeProvider.System;
+            _gatherer = new ChangeGatherer(time, OnGatherDue);
+            _changeTimes = new CellChangeTimes<TRow>(_key, time);
+        }
     }
+
+    /// <summary>The Row Key this source names its rows by (ADR-0140/0141): the one it was given, or
+    /// its Row Mark adapter's; null for none. The grid pairs a row's next version with the one it
+    /// painted by it.</summary>
+    public Func<TRow, object>? RowKey => _key;
+
+    /// <summary>True under a Row Key: every answer is checked for a repeated or null key and refused
+    /// by name, so no Window this source hands over holds a row twice (ADR-0141).</summary>
+    public bool VouchesDistinctRows => _key is not null;
+
+    /// <summary>
+    /// The Change Highlight of this source (ADR-0141, on ADR-0067's rules), to hand to the grid's
+    /// <c>CellChangedAt</c>; null without a Row Key. One delegate for the source's life.
+    /// <list type="bullet">
+    /// <item>Every answer's rows are paired by key with the rows the source painted before it, and
+    /// a cell is marked when its painted text differs — the column's <c>Format</c>, as the grid
+    /// paints a value cell; a change the format hides is not marked.</item>
+    /// <item>On an answer that carries a change of data, a row not painted before is marked whole
+    /// where it cannot have come into view by moving: between two rows painted before, or past an
+    /// end of the result that the Window painted before also reached. A row at an edge of the
+    /// Window may have slid in from beyond it as rows were added or removed elsewhere, and the
+    /// source cannot tell that from a row that appeared, so it does not mark it: a mark never
+    /// appears on a value that did not change (ADR-0067).</item>
+    /// <item>A scroll, a sort or a filter marks nothing new: a sort or a filter drops the Window, and
+    /// nothing is left to pair with.</item>
+    /// </list>
+    /// A grid's <c>PaintedText</c> declaration is not seen here: a source compares what the columns
+    /// say. A change time is kept for <see cref="ChangeTimesKeptFor"/>, by key, so a mark comes back
+    /// with its row when the grid scrolls away and back.
+    /// </summary>
+    public Cells.CellChangeOf<TRow>? CellChangedAt => _changeTimes?.Delegate;
+
+    /// <summary>How long a cell's change time is kept for <see cref="CellChangedAt"/>: one minute
+    /// unless set; set it to at least the grid's <c>ChangeHighlightDuration</c>. A fetching source
+    /// never learns that a row it painted was removed — it only stops painting it — so this bound is
+    /// what keeps its memory to the rows that changed lately. Refused without a Row Key.</summary>
+    public TimeSpan ChangeTimesKeptFor
+    {
+        get => _changeTimes?.KeptFor ?? CellChangeTimes<TRow>.DefaultKeptFor;
+        set => (_changeTimes ?? throw NoKey(nameof(ChangeTimesKeptFor))).KeptFor = value;
+    }
+
+    /// <summary>The shortest time between two reads of the Window for data that moved on
+    /// (ADR-0141/0067): 250 ms unless set. Zero reads it for every notice, one question at a time.
+    /// Negative is refused, and so is setting it without a Row Key.</summary>
+    public TimeSpan GatherInterval
+    {
+        get => _gatherer?.Interval ?? ChangeGatherer.DefaultInterval;
+        set
+        {
+            var gatherer = _gatherer ?? throw NoKey(nameof(GatherInterval));
+            gatherer.Interval = value;
+            OnContext(() =>
+            {
+                if (_changeWaiting && !_disposed && gatherer.ShouldAskNow(busy: _inFlight is not null))
+                    AskForChange();
+            });
+        }
+    }
+
+    /// <summary>
+    /// The Consumer says that the data behind this source moved on (ADR-0141, LV-8), however it
+    /// learned it. The source reads its Window again: at once when the data has been quiet for
+    /// <see cref="GatherInterval"/>, else once at the interval's end for every notice that arrived
+    /// within it. A question already out is never cancelled for it; the change is read when that
+    /// one lands. A question for newer data does not raise <see cref="IsLoading"/>: four reads a
+    /// second would flicker the loading indication over data that is still the newest the grid has
+    /// (as ExPivot's, ADR-0067). May be called on any thread.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The source was given no Row Key, so it could not
+    /// pair what it reads again with what it painted.</exception>
+    public void NotifyChanged()
+    {
+        var gatherer = _gatherer ?? throw NoKey(nameof(NotifyChanged));
+        if (_disposed)
+            return;
+        OnContext(() =>
+        {
+            if (_disposed)
+                return;
+            _changeWaiting = true;
+            if (gatherer.ShouldAskNow(busy: _inFlight is not null))
+                AskForChange();
+        });
+    }
+
+    private static InvalidOperationException NoKey(string member) => new(
+        $"{member} needs a Row Key, and this source was given none: GridSource.Fetch(..., rowKey: ...) takes one, or a " +
+        "Row Mark adapter's key serves. Without one, rows read again cannot be paired with the rows painted (ADR-0141).");
+
+    /// <summary>Runs on the context this source was built on — where its state is kept, as every
+    /// answer's continuation already is — or here when there is none or this is it.</summary>
+    private void OnContext(Action action)
+    {
+        if (_context is null || ReferenceEquals(SynchronizationContext.Current, _context))
+            action();
+        else
+            _context.Post(static state => ((Action)state!)(), action);
+    }
+
+    /// <summary>The gathering timer fired, on the clock's thread.</summary>
+    private void OnGatherDue() => OnContext(() =>
+    {
+        _gatherer!.Fired();
+        if (_changeWaiting && !_disposed && _gatherer.ShouldAskNow(busy: _inFlight is not null))
+            AskForChange();
+    });
+
+    /// <summary>Reads the Window again for data that moved on: the range the Window was asked as —
+    /// wider than what came back when the result ended inside it, so a row added at the end comes
+    /// into view — or the first page when there is no Window. Before the cold start there is nothing
+    /// to read again: the first fetch reads the data as it is then.</summary>
+    private void AskForChange()
+    {
+        if (!_started || _disposed)
+            return;
+        var wanted = _windowAsked ?? new RowRange(0, _pageRows);
+        var needed = _lastNeeded is { } last && last.Start >= wanted.Start && last.Start < wanted.Start + wanted.Count
+            ? last
+            : new RowRange(wanted.Start, 1);
+        StartDetached(wanted, needed, quiet: true);
+    }
+
+    // The range the question that brought the Window asked for; null while there is no Window.
+    private RowRange? _windowAsked;
 
     /// <summary>The Row Marks of this source, when it was given a
     /// <see cref="Rows.RowMarkAdapter{TRow}"/> — or null, and a Mark Column bound to it is
@@ -120,6 +291,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     public void OnColumnsChanged(IReadOnlyList<ColumnInfo<TRow>> columns)
     {
         ArgumentNullException.ThrowIfNull(columns);
+        // Kept for the Change Highlight, which compares the text the columns paint; a new
+        // declaration marks nothing by itself (ADR-0067).
+        _columns = columns.ToArray();
         if (_started || _disposed)
             return;
         _started = true;
@@ -233,6 +407,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // tall the Viewport is — what a restart should fetch to fill it.
         _pageRows = Math.Max(_pageRows, range.Count);
         _started = true;
+        _lastNeeded = range;
 
         if (_disposed || Covers(range))
             return Task.CompletedTask;
@@ -280,6 +455,11 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         Window = [];
         WindowStart = 0;
         TotalCount = 0;
+        // A new query's first answer is compared with no order token: the restart has moved the
+        // version already.
+        _orderToken = null;
+        _answered = false;
+        _windowAsked = null;
         // Notified whatever the loading flag was doing. The Window, the total and the
         // order's version have all moved, and none of that depends on whether a fetch
         // happened to be in flight — which, while the user is scrolling, it usually is.
@@ -290,10 +470,15 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         Recount();
     }
 
-    private void StartDetached(RowRange wanted, RowRange needed, bool notify = false)
-        => _ = SurfaceAsync(Start(wanted, needed, notify));
+    private void StartDetached(RowRange wanted, RowRange needed, bool notify = false, bool quiet = false)
+        => _ = SurfaceAsync(Start(wanted, needed, notify, quiet));
 
-    private Task Start(RowRange wanted, RowRange needed, bool notify = false)
+    /// <param name="wanted">The range the server is asked for.</param>
+    /// <param name="needed">The range its answer has to reach.</param>
+    /// <param name="notify">Raise <see cref="StateChanged"/> whatever the loading flag does.</param>
+    /// <param name="quiet">A read of the Window for data that moved on: it does not raise
+    /// <see cref="IsLoading"/> (see <see cref="NotifyChanged"/>).</param>
+    private Task Start(RowRange wanted, RowRange needed, bool notify = false, bool quiet = false)
     {
         // The previous answer can no longer be the truth, so it is cancelled and, if it
         // arrives anyway, discarded by generation below. Cancelling is a courtesy to the
@@ -304,21 +489,33 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         _cancellation?.Cancel();
         var cancellation = new CancellationTokenSource();
         _cancellation = cancellation;
+        // Any question asked after the data moved on answers with the newer data, so it carries
+        // the change — a scroll or a sort as much as a read of the Window for it (ADR-0067: a
+        // user's gesture supersedes a question for newer data, and its own question brings the
+        // change). One that supersedes a question that carried it carries it on.
+        var carries = _changeWaiting || (_inFlightCarries && _inFlight is not null);
+        _inFlightCarries = carries;
         _inFlight = wanted;
         var generation = ++_generation;
+        if (_changeWaiting)
+        {
+            _changeWaiting = false;
+            _gatherer?.Disarm();
+        }
         // Only when it actually flips: a second range asked for while the first is still
         // in flight moves nothing the grid paints, and an event for it would repaint
         // every row for nothing (ADR-0023's no-op principle).
         var wasLoading = IsLoading;
-        IsLoading = true;
-        if (notify || !wasLoading)
+        if (!quiet)
+            IsLoading = true;
+        if (notify || (!quiet && !wasLoading))
             StateChanged?.Invoke();
-        _current = RunAsync(wanted, needed, generation, cancellation);
+        _current = RunAsync(wanted, needed, generation, cancellation, carries);
         return _current;
     }
 
     private async Task RunAsync(
-        RowRange wanted, RowRange needed, int generation, CancellationTokenSource cancellation)
+        RowRange wanted, RowRange needed, int generation, CancellationTokenSource cancellation, bool carries)
     {
         try
         {
@@ -331,7 +528,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             if (generation != _generation || _disposed)
                 return;
             ArgumentNullException.ThrowIfNull(page);
-            Apply(needed, page);
+            Apply(needed, page, carries);
+            _windowAsked = wanted;
+            Landed(carries);
         }
         catch (OperationCanceledException) when (generation != _generation)
         {
@@ -345,6 +544,10 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             IsLoading = false;
             LastError = ex;
             StateChanged?.Invoke();
+            // A change of data that could not be shown reached the screen as far as gathering is
+            // concerned (ADR-0067): the next read waits the interval from here. Nothing retries
+            // it on its own (ADR-0025); the next notice or scroll asks again.
+            Landed(carries);
             if (FetchFailed is { } handler)
             {
                 handler(ex);
@@ -366,7 +569,10 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         }
     }
 
-    private void Apply(RowRange asked, GridPage<TRow> page)
+    /// <param name="asked">The rows the grid needs, which the answer has to reach.</param>
+    /// <param name="page">The answer.</param>
+    /// <param name="carries">Whether the question was asked after the data moved on.</param>
+    private void Apply(RowRange asked, GridPage<TRow> page, bool carries)
     {
         // A server free to clamp is not free to answer somewhere else: a page that does
         // not reach the row that was asked for leaves the Viewport on Placeholders, and
@@ -383,13 +589,34 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
                 "position, but the rows the grid is about to paint have to be in it (ADR-0025). A server that " +
                 "caps its pages below the read-ahead window will trip this.");
         }
+        // Under a Row Key the answer is checked before anything of it is taken: a key that repeats,
+        // or a null one, is refused by name (ADR-0141), which is what lets the source vouch.
+        var keys = _key is null ? null : KeysOf(page);
 
         // A result that shrank means the positions mean something else — row 900 is a
         // different row, or no row at all — so the selection goes, exactly as it does for
         // a reorder (ADR-0011). Growing is safe: existing positions still name the same
         // rows.
-        if (TotalCount is int previous && page.TotalCount < previous)
+        var moved = TotalCount is int previous && page.TotalCount < previous;
+        // Only the server knows whether the order of the whole result moved (ADR-0141): its order
+        // token says so when it sends one, and a server that sends none is taken to have moved it
+        // with every change. Comparing the Window alone would miss a row cancelled after it.
+        if (_answered)
+        {
+            if ((page.OrderToken is not null || _orderToken is not null)
+                && !string.Equals(page.OrderToken, _orderToken, StringComparison.Ordinal))
+            {
+                moved = true;
+            }
+            if (carries && page.OrderToken is null)
+                moved = true;
+        }
+        if (moved)
             RowSequenceVersion++;
+        if (keys is not null)
+            RecordChanges(page, keys, carries);
+        _orderToken = page.OrderToken;
+        _answered = true;
 
         var totalMoved = TotalCount != page.TotalCount;
         _inFlight = null;
@@ -402,6 +629,94 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         // A result that grew or shrank changed what the counts are made of.
         if (totalMoved)
             Recount();
+    }
+
+    /// <summary>A question landed — answered, refused or failed. One that carried a change of data
+    /// brought it to the screen, or found it unshowable, and the next read waits
+    /// <see cref="GatherInterval"/> from here; a change that arrived meanwhile is asked for then.</summary>
+    private void Landed(bool carried)
+    {
+        if (_gatherer is not { } gatherer || _disposed)
+            return;
+        if (carried)
+            gatherer.Shown();
+        if (_changeWaiting && _inFlight is null && gatherer.ShouldAskNow())
+            AskForChange();
+    }
+
+    /// <summary>Each row's Row Key, in order, refused by name when one repeats or is null.</summary>
+    private object[] KeysOf(GridPage<TRow> page)
+    {
+        var keys = new object[page.Rows.Count];
+        var seen = new Dictionary<object, int>(keys.Length);
+        for (var i = 0; i < keys.Length; i++)
+        {
+            var key = _key!(page.Rows[i]) ?? throw new InvalidOperationException(
+                $"Row {page.Start + i} of the answer has a null Row Key. A Row Key names a row, and no row is named by " +
+                "nothing (ADR-0140/0141).");
+            if (!seen.TryAdd(key, i))
+            {
+                throw new InvalidOperationException(
+                    $"Rows {page.Start + seen[key]} and {page.Start + i} of the answer both have the Row Key '{key}'. Two " +
+                    "rows under one key would be painted as one, so the answer is refused (ADR-0140/0141).");
+            }
+            keys[i] = key;
+        }
+        return keys;
+    }
+
+    /// <summary>
+    /// The Change Highlight of one answer (ADR-0141/0067): its rows paired by key with the Window
+    /// it replaces, and the cells whose painted text differs marked; on an answer that carries a
+    /// change of data, a row not painted before marked whole where it cannot have slid into view
+    /// (see <see cref="CellChangedAt"/>).
+    /// </summary>
+    private void RecordChanges(GridPage<TRow> page, object[] keys, bool carries)
+    {
+        if (_changeTimes is not { Wanted: true } times || Window.Count == 0)
+            return;
+        var painted = new Dictionary<object, TRow>(Window.Count);
+        foreach (var row in Window)
+        {
+            if (row is not null && _key!(row) is { } key)
+                painted.TryAdd(key, row);
+        }
+        var pairs = new List<(object Key, TRow Old, TRow New)>();
+        var appeared = new List<object>();
+        // Whether the Window painted before reached an end of the result: nothing could slide in
+        // past that end, so a row there was not painted because it was not there.
+        var reachedTop = WindowStart == 0 && page.Start == 0;
+        var reachedBottom = WindowStart + Window.Count == TotalCount && page.Start + page.Rows.Count == page.TotalCount;
+        var run = -1;
+        for (var i = 0; i <= keys.Length; i++)
+        {
+            if (i < keys.Length && !painted.ContainsKey(keys[i]))
+            {
+                if (run < 0)
+                    run = i;
+                continue;
+            }
+            if (i < keys.Length)
+            {
+                var old = painted[keys[i]];
+                if (!ReferenceEquals(old, page.Rows[i]))
+                    pairs.Add((keys[i], old, page.Rows[i]));
+            }
+            if (run >= 0)
+            {
+                // A run of rows not painted before, from run to i - 1, and whether rows painted
+                // before stand on both sides of it, or an end of the result both Windows reached.
+                var above = run > 0 || reachedTop;
+                var below = i < keys.Length || reachedBottom;
+                if (carries && above && below)
+                {
+                    for (var j = run; j < i; j++)
+                        appeared.Add(keys[j]);
+                }
+                run = -1;
+            }
+        }
+        times.Record(_columns, pairs, appeared, []);
     }
 
     /// <summary>
@@ -510,5 +825,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
             return;
         _disposed = true;
         _cancellation?.Cancel();
+        // A read waiting for the interval's end is not asked for.
+        _gatherer?.Disarm();
     }
 }

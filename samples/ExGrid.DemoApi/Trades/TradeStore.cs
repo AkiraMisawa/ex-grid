@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -37,8 +38,10 @@ internal sealed record GenerationProgress(long Done, long Of)
 internal sealed record TradeChange(string Version, string[] TradeIds);
 
 /// <summary>A page of trades in <c>TradeId</c> order, read at one Source Version, with how many
-/// trades that version holds.</summary>
-internal sealed record TradePage(string Version, long Total, long Start, IReadOnlyList<Trade> Trades);
+/// trades that version holds, and the order token of that version (ADR-0141): it changes whenever
+/// a trade anywhere was cancelled or booked, and stays while only values change, so a grid reading
+/// a Window of the trades knows whether the positions beyond it still name the same trades.</summary>
+internal sealed record TradePage(string Version, long Total, long Start, IReadOnlyList<Trade> Trades, string? OrderToken);
 
 /// <summary>The named trades as they are at one Source Version, in <c>TradeId</c> order, and the
 /// Record Keys no trade has — a trade removed, or never booked — in ordinal order.</summary>
@@ -55,10 +58,15 @@ internal sealed record TradesById(string Version, IReadOnlyList<Trade> Trades, I
 /// <see cref="TradeStore.Version"/>, which may move between the two.
 /// </para>
 /// </summary>
-internal sealed class TradeRead(SqliteConnection connection, SqliteTransaction transaction, string version, long trades)
+internal sealed class TradeRead(SqliteConnection connection, SqliteTransaction transaction, string version, long trades,
+    string? orderToken = null)
 {
     /// <summary>The Source Version of everything this read sees.</summary>
     public string Version => version;
+
+    /// <summary>The order token of this version (ADR-0141): the Source Version at which a trade was
+    /// last cancelled or booked, or the data reset — what names the order of all the trades.</summary>
+    public string? OrderToken => orderToken;
 
     /// <summary>How many trades this version holds.</summary>
     public long Trades => trades;
@@ -185,6 +193,8 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             // live update never waits for a read to finish, nor a read for an update.
             TradeDatabase.Execute(writer, null, "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
             var (counter, trades) = ReadLatest(writer, null);
+            // The state the run starts from: its order is named by its own version (ADR-0141).
+            RecordOrder(counter, moved: true);
             _readConnectionString = TradeDatabase.ConnectionString(working, SqliteOpenMode.ReadOnly, pooling: true);
             _latest = new Latest(counter, trades, NextNumber(writer));
             _state = TradeStoreState.Ready;
@@ -219,7 +229,26 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
         // so the version and every row after it come from the same state.
         await using var transaction = connection.BeginTransaction(deferred: true);
         var (counter, trades) = ReadLatest(connection, transaction);
-        return await read(new TradeRead(connection, transaction, FormatVersion(counter), trades), cancellationToken);
+        return await read(new TradeRead(connection, transaction, FormatVersion(counter), trades, OrderTokenAt(counter)), cancellationToken);
+    }
+
+    // For each committed counter the run has seen, the counter at which the order of the trades last
+    // moved: a trade cancelled or booked, or a reset. Written before the commit that makes the
+    // counter readable, so a read that sees a counter always finds it; kept for as many states as
+    // the changes table keeps. A run starts from the generated trades, whose order is its own.
+    private readonly ConcurrentDictionary<long, long> _orderMovedAt = new();
+
+    /// <summary>The order token of the state at <paramref name="counter"/>, or null for a state this
+    /// run did not commit — which a grid then takes as an order that may have moved.</summary>
+    private string? OrderTokenAt(long counter)
+        => _orderMovedAt.TryGetValue(counter, out var movedAt) ? FormatVersion(movedAt) : null;
+
+    /// <summary>Records the order of the state about to be committed at <paramref name="counter"/>:
+    /// moved there, or as it was at the counter before.</summary>
+    private void RecordOrder(long counter, bool moved)
+    {
+        _orderMovedAt[counter] = moved || !_orderMovedAt.TryGetValue(counter - 1, out var before) ? counter : before;
+        _orderMovedAt.TryRemove(counter - KeptChanges, out _);
     }
 
     /// <summary>A page of trades in <c>TradeId</c> order: <paramref name="count"/> of them from the
@@ -235,7 +264,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             await using var reader = await command.ExecuteReaderAsync(token);
             while (await reader.ReadAsync(token))
                 trades.Add(Trade.Read(reader));
-            return new TradePage(read.Version, read.Trades, start, trades);
+            return new TradePage(read.Version, read.Trades, start, trades, read.OrderToken);
         }, cancellationToken);
 
     /// <summary>
@@ -305,6 +334,9 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                     ("$version", counter), ("$trades", trades), ("$ids", JsonSerializer.Serialize(ids)));
                 TradeDatabase.Execute(writer, transaction, "DELETE FROM changes WHERE Version <= $oldest",
                     ("$oldest", counter - KeptChanges));
+                // A reset may put cancelled trades back and take booked ones away: the order is taken
+                // to have moved, which costs a Selection at most and never leaves one on other rows.
+                RecordOrder(counter, moved: true);
                 transaction.Commit();
             }
             finally
@@ -316,6 +348,50 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             var change = new TradeChange(FormatVersion(counter), ids);
             _changes.Writer.TryWrite(change);
             logger.LogInformation("Reset to the generated trades at version {Version}: {Count} trades put back.", change.Version, ids.Length);
+            return change;
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
+    }
+
+    /// <summary>
+    /// Cancels one named trade, in one transaction that moves the Source Version and the order token
+    /// on, and tells <see cref="Changes"/> — for a test that needs a trade cancelled where it says,
+    /// not where a tick happens to cancel one (ADR-0141's LV-8: a trade cancelled after a grid's
+    /// Window). Null when no trade has that key, and nothing changes. A reset puts it back.
+    /// </summary>
+    public async Task<TradeChange?> CancelAsync(string tradeId, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(tradeId);
+        await _writeLock.WaitAsync(cancellationToken);
+        try
+        {
+            var writer = _writer ?? throw new InvalidOperationException($"The trades are not ready: {_state}.");
+            var latest = _latest!;
+            var counter = latest.Counter + 1;
+            using var transaction = writer.BeginTransaction();
+            using (var delete = Command(writer, transaction, "DELETE FROM trades WHERE TradeId = $id", "$id"))
+            {
+                delete.Parameters[0].Value = tradeId;
+                if (delete.ExecuteNonQuery() == 0)
+                    return null;
+            }
+            var trades = latest.Trades - 1;
+            string[] ids = [tradeId];
+            TradeDatabase.Execute(writer, transaction,
+                "INSERT INTO changes (Version, Trades, TradeIds) VALUES ($version, $trades, $ids)",
+                ("$version", counter), ("$trades", trades), ("$ids", JsonSerializer.Serialize(ids)));
+            TradeDatabase.Execute(writer, transaction, "DELETE FROM changes WHERE Version <= $oldest",
+                ("$oldest", counter - KeptChanges));
+            RecordOrder(counter, moved: true);
+            transaction.Commit();
+
+            _latest = new Latest(counter, trades, latest.NextNumber);
+            var change = new TradeChange(FormatVersion(counter), ids);
+            _changes.Writer.TryWrite(change);
+            logger.LogInformation("Cancelled {TradeId} at version {Version}.", tradeId, change.Version);
             return change;
         }
         finally
@@ -398,6 +474,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                 touched.Add(id);
             }
 
+            var booking = false;
             if (random.Next(BookingOneTickIn) == 0 && trades > 1
                 && Pick(ref random, next, touched, select) is { } cancelled)
             {
@@ -408,6 +485,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                 TradeDatabase.SetValues(values, booked);
                 insert.ExecuteNonQuery();
                 touched.Add(booked.TradeId);
+                booking = true;
             }
 
             var ids = touched.ToArray();
@@ -416,6 +494,8 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                 ("$version", counter), ("$trades", trades), ("$ids", JsonSerializer.Serialize(ids)));
             TradeDatabase.Execute(writer, transaction, "DELETE FROM changes WHERE Version <= $oldest",
                 ("$oldest", counter - KeptChanges));
+            // Values alone keep the order of the trades; a trade cancelled and another booked move it.
+            RecordOrder(counter, moved: booking);
             transaction.Commit();
 
             _latest = new Latest(counter, trades, next);

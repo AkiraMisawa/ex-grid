@@ -90,6 +90,12 @@ and its behaviour is the reference for what sorting and filtering mean. When the
 elsewhere, you push a `Window` of rows instead and answer the grid's `OnRangeNeeded`,
 `OnSortChanged` and `OnFilterChanged`.
 
+For data that changes while it is read, give the source a Row Key:
+`GridSource.From(trades, t => t.TradeId)` takes Change Batches (`Apply`) and whole new lists
+(`ReplaceAll`), and `GridSource.Fetch(..., rowKey: t => t.TradeId)` reads its Window again when
+told `NotifyChanged()`. Either gathers the changes, keeps the selection while only values change,
+and answers the grid's `CellChangedAt` with the cells whose text changed.
+
 Two rules keep the grid fast:
 
 - **A row repaints when its instance changes.** Rewriting a row object in place does not repaint

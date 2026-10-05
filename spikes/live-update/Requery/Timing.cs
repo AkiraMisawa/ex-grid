@@ -156,6 +156,29 @@ public static class Timing
                     stats.Add(Summarise("(c) incremental", n, k, samples, "binary-search out, Apply on the k, binary-search in, block merge"));
                     log.WriteLine(Line(stats[^1]));
                 }
+
+                // (d) what shipped (ADR-0141): GridSource.From with a Row Key, a Change Batch of the k
+                // changed rows applied and published at once (GatherInterval 0), the Change Highlight
+                // not asked for. Batches follow one another on one source, each from the rows it holds.
+                {
+                    var source = GridSource.From(rows, t => t.Id, TimeProvider.System);
+                    source.OnColumnsChanged(columns);
+                    source.OnFilterChanged(Filter);
+                    source.OnSortChanged(Sorts);
+                    source.GatherInterval = TimeSpan.Zero;
+                    var held = rows.ToArray();
+                    var samples = Measure(runs: n >= 1_000_000 ? 15 : 40, warmup: 3,
+                        prepare: () =>
+                        {
+                            var batch = Tick(held, k, random);
+                            foreach (var (old, replacement) in batch.Replaced)
+                                held[old.Id] = replacement;
+                            return new GridChangeBatch<Trade>(changed: batch.Replaced.Select(p => p.New).ToArray());
+                        },
+                        run: batch => source.Apply(batch));
+                    stats.Add(Summarise("(d) shipped: From with a Row Key, Apply", n, k, samples, "incremental requery in src, published at once"));
+                    log.WriteLine(Line(stats[^1]));
+                }
             }
         }
         return stats;
