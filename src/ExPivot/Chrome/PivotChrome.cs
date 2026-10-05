@@ -206,7 +206,10 @@ public sealed record PivotAreaView(
 /// <param name="Entry">Which entry it is.</param>
 /// <param name="Caption">What it is called: the field's caption, a Value Field's caption, Σ Values.</param>
 /// <param name="IsFiltered">Whether its field hides Items now.</param>
-/// <param name="IsMenuOpen">Whether its menu or one of its panels is open.</param>
+/// <param name="IsMenuOpen">Whether its menu or one of its panels is open. While true, the
+/// Chrome stops Blazor's <c>mousedown</c> and <c>focusin</c> propagation on the entry containing
+/// the opener, so pressing or focusing it is not an outside dismissal (ADR-0061). The core's
+/// popup frame stops its own events.</param>
 /// <param name="OpenMenu">Opens its menu; closes it when it is open.</param>
 /// <param name="Popup">The open menu or panel, in ExPivot's frame, which the Chrome places
 /// directly under the entry, with no positioned element of its own around them: the frame takes

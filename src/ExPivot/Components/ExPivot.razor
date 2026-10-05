@@ -17,7 +17,10 @@
     Editable and every write is refused by the grid's own gate (ADR-0035). The header click
     selects, and the column menu is left out; the grips stay.
 *@
-<div class="ex-pivot" style="@RootStyle">
+@{ var fieldMenu = _open is { Kind: Surface.Menu } menu ? menu : null; }
+<div class="ex-pivot" style="@RootStyle"
+     @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
+     @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
     @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
        the dialog is modal (ADR-0059). *@
     <div class="ex-pivot-report" inert="@(_dialog is not null)">

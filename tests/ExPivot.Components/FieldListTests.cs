@@ -1,7 +1,9 @@
+using System.Reflection;
 using Bunit;
 using ExPivot.Components.Tests.Support;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.AspNetCore.Components.Web;
 using Xunit;
 
@@ -186,6 +188,45 @@ public class FieldListTests : PivotTestContext
         Assert.Single(cut.FindAll(".ex-pivot-popup"));
         Assert.NotNull(AreaElement(cut, "Columns").QuerySelector(".ex-pivot-popup"));
     }
+
+    [Theory] // ADR-0061 (PV-11): an outside event painted for an old menu cannot close its replacement
+    [InlineData("onmousedown", false)]
+    [InlineData("onfocusin", false)]
+    [InlineData("onmousedown", true)]
+    [InlineData("onfocusin", true)]
+    public async Task A_late_dismissal_leaves_the_replacement_surface_open(string eventName, bool panel)
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
+        await OpenMenuAsync(cut, "Rows", "Region");
+        var oldDismissal = RenderedDismissal(cut, eventName);
+
+        if (panel)
+            await RunMenuAsync(cut, "Field Settings…");
+        else
+            await OpenMenuAsync(cut, "Rows", "Product");
+
+        // The browser saw the old menu when it made this gesture. Deliver that rendered event
+        // only after its replacement exists, without sleeps or assumptions about a round trip.
+        EventArgs args = eventName == "onmousedown" ? new MouseEventArgs() : new FocusEventArgs();
+        await cut.InvokeAsync(() => oldDismissal.InvokeAsync(args));
+
+        var popup = Assert.Single(cut.FindAll(".ex-pivot-popup"));
+        Assert.Equal(panel ? "Field Settings…" : "Options for Product", popup.GetAttribute("aria-label"));
+    }
+
+    // As in SurfaceWriteBackTests: the renderer's event binding is the browser-facing boundary.
+    // bUnit normally dispatches against the latest render; keep the older binding here so the
+    // test can deliver exactly the gesture a circuit had not received before the replacement.
+#pragma warning disable BL0006
+    private EventCallback RenderedDismissal(IRenderedComponent<global::ExPivot.Components.ExPivot> cut, string eventName)
+    {
+        var read = typeof(Renderer).GetMethod("GetCurrentRenderTreeFrames", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var frames = (ArrayRange<RenderTreeFrame>)read.Invoke(Renderer, [cut.ComponentId])!;
+        var binding = frames.Array.Take(frames.Count).First(frame =>
+            frame.FrameType == RenderTreeFrameType.Attribute && frame.AttributeName == eventName).AttributeValue;
+        return binding is EventCallback callback ? callback : new EventCallback(cut.Instance, (MulticastDelegate)binding);
+    }
+#pragma warning restore BL0006
 
     [Fact] // ADR-0061: Hide Field List from the Context Menu, and back
     public async Task The_field_list_can_be_hidden_and_shown()

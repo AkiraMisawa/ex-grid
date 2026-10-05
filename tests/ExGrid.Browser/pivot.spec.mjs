@@ -460,6 +460,132 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(entry(page, 'Region')).toHaveAttribute('aria-expanded', 'false');
         });
 
+        test(`ADR-0061 (PV-11): pressing the report dismisses a field menu and keeps the cell and keyboard (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+
+            await firstValue(page).click({ force: true });
+
+            await expect(menu).toHaveCount(0);
+            await expect(report(page)).toBeFocused();
+            await expect(report(page)).toHaveAttribute('aria-activedescendant', /-r1c1$/);
+            await circuitQuiet();
+            await expect(report(page)).toBeFocused();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+        });
+
+        test(`ADR-0061 (PV-11): a disabled item or padding keeps Escape inside the field menu (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            for (const target of ['disabled item', 'padding']) {
+                await entry(page, 'Region').click();
+                await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+                if (target === 'disabled item') {
+                    const disabled = menu.getByRole('menuitem', { name: 'Move Up', exact: true });
+                    await expect(disabled).toBeDisabled();
+                    await disabled.click({ force: true });
+                } else {
+                    await menu.click({ position: { x: 2, y: 2 } });
+                }
+                await page.keyboard.press('Escape');
+                await expect(menu).toHaveCount(0);
+                await expect(entry(page, 'Region')).toBeFocused();
+                await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            }
+        });
+
+        test(`ADR-0061 (PV-11): focus outside a field menu dismisses it without taking the keyboard back (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            const search = pane(page).getByRole(chrome === 'builtin' ? 'searchbox' : 'textbox', { name: 'Search', exact: true });
+            for (const destination of [report(page), search]) {
+                await entry(page, 'Region').click();
+                await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+                // Focus alone, with no pointer event that could hide a missing focus boundary.
+                await destination.focus();
+                await expect(menu).toHaveCount(0);
+                await circuitQuiet();
+                await expect(destination).toBeFocused();
+            }
+            await search.fill('Region');
+            await expect(fieldsList(page).getByRole('checkbox')).toHaveCount(1);
+            await expect(fieldsList(page).getByRole('checkbox', { name: 'Region', exact: true })).toBeVisible();
+        });
+
+        test(`ADR-0061 (PV-11): the field menu opener still toggles and another entry opens its own menu (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const opener = entry(page, 'Region');
+            const menu = page.getByRole('menu', { name: 'Options for Region' });
+            await opener.click();
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await opener.focus();
+            await circuitQuiet();
+            await expect(menu).toBeVisible();
+            // Hold the press through a render opportunity: it must not dismiss early and make
+            // the release reopen a menu it was meant to close (ADR-0056).
+            await opener.hover();
+            await page.mouse.down();
+            await circuitQuiet();
+            await expect(menu).toBeVisible();
+            await page.mouse.up();
+            await expect(menu).toHaveCount(0);
+            await expect(opener).toBeFocused();
+
+            await opener.click();
+            await expect(menu.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await entry(page, 'Product').click();
+            const next = page.getByRole('menu', { name: 'Options for Product' });
+            await expect(menu).toHaveCount(0);
+            await expect(next.getByRole('menuitem', { name: 'Move to Report Filter', exact: true })).toBeFocused();
+            await circuitQuiet();
+            await expect(next).toBeVisible();
+            await page.keyboard.press('Escape');
+            await expect(next).toHaveCount(0);
+            await expect(entry(page, 'Product')).toBeFocused();
+        });
+
+        test(`ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            await expect(page.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            // This caption takes no DOM focus: a focusin handler alone cannot dismiss the menu.
+            await pane(page).getByText('Drag fields between areas below:', { exact: true }).click();
+            await expect(page.getByRole('menu')).toHaveCount(0);
+            await circuitQuiet();
+            await expect(entry(page, 'Region')).not.toBeFocused();
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+
+            await entry(page, 'Region').click();
+            await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
+            const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
+            await expect(settings).toBeVisible();
+            await firstValue(page).click({ force: true });
+            await expect(report(page)).toBeFocused();
+            await circuitQuiet();
+            await expect(settings).toBeVisible();
+            await settings.getByRole('button', { name: 'Cancel', exact: true }).click();
+            await expect(settings).toHaveCount(0);
+        });
+
+        test(`ADR-0061 (PV-11): back-to-back field menu dismissal and opening keep the new keyboard behind a round trip (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await entry(page, 'Region').click();
+            await expect(page.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
+            await setRoundTrip(150);
+            await firstValue(page).click({ force: true });
+            await entry(page, 'Product').click();
+            const menu = page.getByRole('menu', { name: 'Options for Product' });
+            await expect(menu.getByRole('menuitem', { name: 'Move to Report Filter', exact: true })).toBeFocused();
+            await circuitQuiet();
+            await expect(menu).toBeVisible();
+            await expect(menu.getByRole('menuitem', { name: 'Move to Report Filter', exact: true })).toBeFocused();
+            await page.keyboard.press('Escape');
+            await expect(menu).toHaveCount(0);
+            await expect(entry(page, 'Product')).toBeFocused();
+        });
+
         test(`ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             // The Values Area stands in the pane's right-hand column.

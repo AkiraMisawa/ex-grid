@@ -177,6 +177,29 @@ pushing what follows down. Seen in a browser, that failed in two ways:
 The static position keeps what the in-flow version was for — nothing measured and nothing clipped —
 and drops both failures.
 
+### A Field List menu closes when the user moves elsewhere
+
+*Added 2026-10-05, decided with the user after a browser reproduction.* A Field List menu used to
+stay open after the user pressed the report. Pressing a disabled command then left DOM focus on
+`body`, so Escape could no longer reach the menu. The same loss happened when a disabled command
+was pressed directly after opening the menu, without visiting the report.
+
+- A press outside the menu, or DOM focus moving to another control **in the same ExPivot**, closes
+  the Field List menu. The press keeps its meaning: a report cell is selected, and a search field
+  takes the keyboard. Dismissal does not ask the opener for focus.
+- The menu and its own opener are inside that boundary. Pressing the opener still toggles the
+  menu; focusing it alone does not close it. Another entry can open its own menu normally.
+- Escape and a command keep their existing way back to the opener. Panels retain their existing
+  Apply/Cancel rules and Inner Popup handling; this outside dismissal is for Field List menus.
+- The core's menu frame can take DOM focus without adding a Tab stop (`tabindex="-1"`). A press
+  on a disabled item or on the frame's padding then leaves Escape inside the menu. The command
+  remains disabled, and opening still focuses the first enabled command.
+- The boundaries use Blazor's own events, under the instance root. A Chrome keeps presses and
+  focus on an open entry from bubbling to that root; the core protects its popup frame itself.
+  Nothing listens on `document`, nothing is measured, and no JavaScript is added (ADR-0021).
+- A dismissal names the menu it was rendered for. A late dismissal cannot close a replacement
+  menu or a settings panel, and a pointer dismissal never requests focus back across a circuit.
+
 **The Pivot Toolbar's popups** — the report filter band's Filter… and the Layout menu — open
 under it, over the report, with a backdrop that closes them on a press elsewhere.
 

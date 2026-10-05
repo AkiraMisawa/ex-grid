@@ -19,3 +19,10 @@ Settings…, Value Field Settings…, the report filter band, and the `IPivotChr
 2026-09-30: seen in a browser, a panel opened in the flow was only half the pane wide and pushed
 the Areas out of view; ADR-0061 was revised (before it was decided) to open it at its static
 position, as wide as the pane.
+
+2026-10-05: fixed the Field List menu remaining open after a report press, and Escape being lost
+after a press on a disabled command. ADR-0061 and PV-11 now distinguish outside dismissal, which
+keeps the destination's keyboard, from Escape's return to the opener. The shared menu frame can
+take focus without another Tab stop. Browser cases cover both Chromes, including back-to-back
+operations behind a circuit's round trip; component tests deliver an old rendered dismissal after
+a replacement menu or panel exists, and preserve the render-count and instance-independence checks.

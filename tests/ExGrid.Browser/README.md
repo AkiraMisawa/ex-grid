@@ -620,7 +620,11 @@ nobody had asked for. What that means when writing a test:
   for one (`?details=dialog`), taking the keyboard, inert behind it and closed by Escape; and the
   page taking the trades itself (`?details=page`) with neither opening (PV-14, DC-63); the
   keyboard into a field's menu and back to its entry, a menu dropping down under its entry as
-  wide as the pane, and a command moving the field (PV-11); the Pivot Toolbar above the report — the
+  wide as the pane, and a command moving the field (PV-11); a press on the report or a pane caption,
+  and focus moved to the report or search, dismissing a Field List menu without taking the keyboard
+  back; Escape after a press on a disabled item or frame padding; the opener still toggling and
+  another entry opening its menu; a menu dismissed and reopened behind 150 ms keeping its keyboard;
+  and Field Settings left standing by a report press (PV-11); the Pivot Toolbar above the report — the
   report filter band on its left, Layout and the pane's toggle on its right, no Refresh for the
   bundled source (PV-30) — the band filtering, and its Filter… opening under the Pivot Toolbar over
   the report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the

@@ -204,6 +204,8 @@ public class PivotRenderingTests : PivotTestContext
 
         await cut.Find(".ex-pivot-search").InputAsync(new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "Reg" });
         await OpenMenuAsync(cut, "Rows", "Region");
+        await cut.Find(".ex-pivot-search").FocusInAsync(new FocusEventArgs());
+        Assert.Empty(cut.FindAll(".ex-pivot-popup"));
 
         Assert.Equal(before, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);

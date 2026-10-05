@@ -296,6 +296,18 @@ public partial class ExPivot
 
     private void CloseOpenQuietly() => _open = null;
 
+    private void DismissFieldMenu(OpenSurface? menu)
+    {
+        // The gesture names the menu it was painted against. A replacement surface must not be
+        // closed by an older press or focus event arriving over the circuit (ADR-0061).
+        if (menu is not null && ReferenceEquals(_open, menu))
+        {
+            CloseOpenQuietly();
+            // The outside operation owns the keyboard: do not ask the entry for it back.
+            StateHasChanged();
+        }
+    }
+
     private Task OnEscapeAsync()
     {
         // While a popup of the content's own is open, Escape is that popup's (ADR-0039).

@@ -50,6 +50,7 @@
                     {
                         var index = entry.IsValuesPseudoField ? end : entry.Entry.Index;
                         <div @key="entry.Entry" class="@EntryClass(area, entry, index)" role="listitem" draggable="true"
+                             @onmousedown:stopPropagation="entry.IsMenuOpen" @onfocusin:stopPropagation="entry.IsMenuOpen"
                              @ondragstart="() => Context.StartDrag(PivotDragSubject.FromArea(entry.Entry))"
                              @ondragend="Context.EndDrag"
                              @ondragenter="() => Context.DragOver(area.Area, index)" @ondragenter:stopPropagation
