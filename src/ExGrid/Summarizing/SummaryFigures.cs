@@ -46,6 +46,10 @@ public static class SummaryFigureOrder
         SummaryFigures.Min, SummaryFigures.Max, SummaryFigures.Sum,
     ];
 
+    /// <summary>Whether a single figure counts cells — Count and Numerical Count — rather than reading
+    /// their numbers.</summary>
+    public static bool IsCount(SummaryFigures figure) => figure is SummaryFigures.Count or SummaryFigures.NumericalCount;
+
     /// <summary>The Aggregation a single figure means.</summary>
     public static ExGrid.Data.Aggregation AggregationOf(SummaryFigures figure) => figure switch
     {

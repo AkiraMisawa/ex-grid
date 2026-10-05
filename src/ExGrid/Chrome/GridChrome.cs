@@ -471,13 +471,12 @@ public sealed record SummaryFigureText(Summarizing.SummaryFigures Figure, string
 /// </summary>
 /// <param name="Status">Where the summary stands.</param>
 /// <param name="Figures">The figures to show, in Excel's order; empty unless Answered.</param>
-/// <param name="DeclineReason">The answerer's reason, when Declined.</param>
-/// <param name="PendingLabelId">The id of what to say while Pending.</param>
+/// <param name="DeclineReason">The answerer's reason, when Declined. While Pending, the line says
+/// <see cref="SummaryLabelIds.Pending"/>'s words.</param>
 public sealed record SelectionSummaryContext(
     Summarizing.SelectionSummaryStatus Status,
     IReadOnlyList<SummaryFigureText> Figures,
-    string? DeclineReason,
-    string PendingLabelId = SummaryLabelIds.Pending);
+    string? DeclineReason);
 
 /// <summary>
 /// The substitutable UI seams (ADR-0009/0010): the filter panel, the column menu, the

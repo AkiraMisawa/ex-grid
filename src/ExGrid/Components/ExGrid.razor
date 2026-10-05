@@ -3712,7 +3712,7 @@
             return;
         var intent = new GridFillIntent(from, decision.Extension, version);
         await OnFill.InvokeAsync(intent);
-        SummaryRowsEdited();
+        AskSummaryAgain();
         if (!intent.IsRefused)
             SelectFilledRange(from, intent.Target, version);
     }
@@ -5863,7 +5863,7 @@
         var intent = new GridPasteIntent(decision.Plan, block, version, parsed.Origins);
         if (OnPaste.HasDelegate)
             await OnPaste.InvokeAsync(intent);
-        SummaryRowsEdited();
+        AskSummaryAgain();
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.IsRefused)
             return;
@@ -6833,7 +6833,7 @@
         }
         if (OnClear.HasDelegate)
             await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
-        SummaryRowsEdited();
+        AskSummaryAgain();
     }
 
     /// <summary>
@@ -6878,7 +6878,7 @@
         }
         if (OnPaste.HasDelegate)
             await OnPaste.InvokeAsync(new GridPasteIntent(plan.Paste, block, version, fillSource: source));
-        SummaryRowsEdited();
+        AskSummaryAgain();
     }
 
     private string CellTextOf(CellPosition cell)
@@ -7250,7 +7250,7 @@
         _editError = null;
         var intent = new GridEditIntent<TRow>(_window[slice], Columns[cell.Column].Name, text);
         await EndEditingAsync(reclaimFocus, byPress, OnEdit.HasDelegate ? () => OnEdit.InvokeAsync(intent) : null);
-        SummaryRowsEdited();
+        AskSummaryAgain();
         return true;
     }
 
@@ -7320,7 +7320,7 @@
         // entered in, which a clipboard paste of the same field does not (ADR-0050 item 5).
         var intent = new GridPasteIntent(decision.Plan, [[_editText]], _sequenceVersion, enteredAt: _editingCell);
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
-        SummaryRowsEdited();
+        AskSummaryAgain();
         StateHasChanged();
     }
 

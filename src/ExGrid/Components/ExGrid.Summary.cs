@@ -75,7 +75,7 @@ public partial class ExGrid<TRow>
     {
         var rows = _window!;
         var previous = _summaryRows;
-        var moved = previous is null ? false : _total != _summaryRowsTotal;
+        var moved = previous is not null && _total != _summaryRowsTotal;
         if (previous is not null && !moved && !ReferenceEquals(previous, rows))
         {
             var from = Math.Max(_windowStart, _summaryRowsStart);
@@ -101,12 +101,14 @@ public partial class ExGrid<TRow>
         {
             if (_disposed || _summaryQuestion is null)
                 return;
-            SummaryRowsEdited();
+            AskSummaryAgain();
             StateHasChanged();
         });
 
-    /// <summary>An edit the grid handed over may have moved the values summed: ask again.</summary>
-    private void SummaryRowsEdited()
+    /// <summary>The values summed may have moved — an edit the grid handed over, a change it was
+    /// told of: the next render of the root, which this one is not allowed to skip, clears the
+    /// figures and asks again.</summary>
+    private void AskSummaryAgain()
     {
         _summaryRowsStamp++;
         _suppressRender = false;
@@ -256,7 +258,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     private string SummaryText(SummaryFigures figure, AggregateResult value)
     {
-        if (figure is SummaryFigures.Count or SummaryFigures.NumericalCount)
+        if (SummaryFigureOrder.IsCount(figure))
             return (value.Exact ?? (decimal)value.Number).ToString("0", CultureInfo.InvariantCulture);
         object number = value.Exact is { } exact ? exact : value.Number;
         var selection = _selection.Selection;
@@ -307,7 +309,7 @@ public partial class ExGrid<TRow>
             switch (context.Status)
             {
                 case SelectionSummaryStatus.Pending:
-                    builder.AddContent(6, Label(context.PendingLabelId));
+                    builder.AddContent(6, Label(SummaryLabelIds.Pending));
                     break;
                 case SelectionSummaryStatus.Declined:
                     builder.AddContent(7, context.DeclineReason);

@@ -180,5 +180,7 @@ criteria inside ExGrid's release (Definition of Done §2).
 - **ADR-0014's "sums and averages are the Consumer's job" now reads: the Consumer computes them,
   and the grid asks for them by this ADR.**
 - **ADR-0060's Aggregation definitions move to `ExGrid.Data`**; their meaning is unchanged.
+- **ADR-0019's "ExGrid has no dependencies" gains its one exception**, `ExGrid.Data`, which has none
+  of its own.
 - **The glossary gains Selection Summary.**
 - The Definition of Done gains §31 (SM), and DA-1 is amended.

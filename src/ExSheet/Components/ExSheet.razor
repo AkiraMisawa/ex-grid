@@ -198,7 +198,7 @@
         _find = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
             ? SheetFind.Step(sheet, request)
             : global::ExGrid.Finding.GridFindResult.NotFound);
-        _summarize = (request, _) => Task.FromResult(_sheet is { } sheet
+        _summarize = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
             ? SheetSummary.Answer(sheet, request)
             : new global::ExGrid.Summarizing.GridSummaryCells().Answer(request.Figures));
         _summaryFiguresChanged = new EventCallback<global::ExGrid.Summarizing.SummaryFigures>(null,

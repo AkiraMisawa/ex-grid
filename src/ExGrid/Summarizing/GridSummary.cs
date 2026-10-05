@@ -62,8 +62,7 @@ public static class GridSummary
         {
             if ((figures & figure) == 0)
                 continue;
-            var readsNumbers = figure is not (SummaryFigures.Count or SummaryFigures.NumericalCount);
-            answers[figure] = readsNumbers && accumulator.Numbers == 0
+            answers[figure] = !SummaryFigureOrder.IsCount(figure) && accumulator.Numbers == 0
                 ? AggregateResult.Empty
                 : accumulator.Read(SummaryFigureOrder.AggregationOf(figure));
         }

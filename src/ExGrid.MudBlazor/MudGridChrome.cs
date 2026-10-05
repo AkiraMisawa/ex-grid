@@ -87,7 +87,7 @@ public sealed class MudGridChrome : IGridChrome
             switch (context.Status)
             {
                 case Summarizing.SelectionSummaryStatus.Pending:
-                    Caption(builder, 0, "mud-ex-grid-summary-pending", MudExGridWords.Own(this, context.PendingLabelId));
+                    Caption(builder, 0, "mud-ex-grid-summary-pending", MudExGridWords.Own(this, SummaryLabelIds.Pending));
                     break;
                 case Summarizing.SelectionSummaryStatus.Declined:
                     Caption(builder, 10, "mud-ex-grid-summary-declined", context.DeclineReason ?? "");
