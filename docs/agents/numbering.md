@@ -26,7 +26,8 @@ block on `main` before it uses the first number.
 | 0110–0119 | `claude/update-repository-description-40up8q` | The documentation site on GitHub Pages, and how its code examples are shown |
 | 0120–0129 | `claude/excel-formulas-management-4clj80` | ExSheet's function catalogue: `TODAY` and `TEXT`, the P1 functions that need a decision |
 | 0130–0139 | `claude/selection-summary` | The Selection Summary: Excel's status-bar figures over a selection (grilled 2026-10-05) |
-| 0140– | free | reserve a block of ten |
+| 0140–0149 | `claude/exgrid-live-data` | ExGrid's live data: the Row Key, live Grid Sources, and writes refused when what the user saw changed (grilled 2026-10-05) |
+| 0150– | free | reserve a block of ten |
 
 ## ExSheet tickets (`docs/specs/exsheet/issues/`)
 
