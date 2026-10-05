@@ -49,3 +49,9 @@ offsets after the opening focus has arrived, reads both boxes together, and reac
 last action before using the heading's close button. A separate negative test for panel
 dismissal also waits for opening focus before pressing the report; with a 150 ms round trip its
 old setup failed on every run by racing that focus request. Neither test uses a fixed delay.
+
+The follow-up CI run 37333077012 exposed the same reading race in the existing menu geometry
+test: opening focus scrolled the body between its separate opener and menu measurements. A
+150 ms round trip with focus landing between those readings reproduced all six attempts.
+The test now awaits opening focus and reads every related box together; its width, placement
+and overlap thresholds are unchanged.

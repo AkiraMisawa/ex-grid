@@ -645,20 +645,25 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0061: a menu drops down under its entry, as wide as the pane and over what follows (${chrome})`, async ({ page }) => {
             await open(page, chrome);
+            await setRoundTrip(150);
             // The Values Area stands in the pane's right-hand column.
             const opener = entry(page, 'Sum of P&L');
             await opener.click();
             const menu = page.getByRole('menu', { name: 'Options for Sum of P&L' });
             await expect(menu).toBeVisible();
-
-            const field = await pane(page).boundingBox();
-            const at = await opener.boundingBox();
-            const box = await menu.boundingBox();
+            // Opening focus can scroll the body after the menu first renders on Server.
+            await expect(menu.locator(':focus')).toHaveCount(1);
+            await circuitQuiet();
+            const { field, at, box, area } = await pane(page).evaluate(p => ({
+                field: p.getBoundingClientRect().toJSON(),
+                at: p.querySelector('button[aria-label="Options for Sum of P&L"]').getBoundingClientRect().toJSON(),
+                box: p.querySelector('[role="menu"][aria-label="Options for Sum of P&L"]').getBoundingClientRect().toJSON(),
+                area: p.querySelector('[role="list"][aria-label="Values"]').parentElement.getBoundingClientRect().toJSON(),
+            }));
             expect(box.width).toBeGreaterThan(field.width - 40);
             expect(box.y).toBeGreaterThanOrEqual(at.y + at.height - 1);
             expect(box.y).toBeLessThan(at.y + at.height + 12);
             // Over what follows: the Values Area's own box did not grow to hold it.
-            const area = await areaList(page, 'Values').locator('xpath=..').boundingBox();
             expect(area.y + area.height).toBeLessThan(box.y + box.height);
         });
 
