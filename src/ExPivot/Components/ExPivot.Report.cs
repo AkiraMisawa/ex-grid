@@ -119,7 +119,7 @@ public partial class ExPivot
         _doubleClick = new EventCallback<CellPosition>(null, (Func<CellPosition, Task>)OnCellDoubleClickAsync);
         _summarize = (request, _) => Task.FromResult(_report is { } shown && request.RowSequenceVersion == _rowSequenceVersion
             ? PivotSummary.Answer(shown, request)
-            : GridSummary.Answer(new ExGrid.Data.AggregateAccumulator(), request.Figures));
+            : new GridSummaryCells().Answer(request.Figures));
         _summaryFiguresChanged = new EventCallback<SummaryFigures>(null, (Func<SummaryFigures, Task>)OnSummaryFiguresChangedAsync);
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);

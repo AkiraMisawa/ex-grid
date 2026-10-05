@@ -1,4 +1,3 @@
-using ExGrid.Data;
 using ExGrid.Summarizing;
 using ExPivot.Engine;
 
@@ -36,7 +35,7 @@ internal static class PivotSummary
             }
         }
 
-        var accumulator = new AggregateAccumulator();
+        var cells = new GridSummaryCells();
         var rows = report.Rows;
         foreach (var (top, bottom, bandColumns) in GridSummary.Bands(request.Ranges, rows.Count, request.Columns.Count))
         {
@@ -50,7 +49,7 @@ internal static class PivotSummary
                     if (!column.IsValue)
                     {
                         if (!string.IsNullOrEmpty(row.Labels[column.Index].Text))
-                            accumulator.AddOther();
+                            cells.AddOther();
                         continue;
                     }
                     switch (row.ValueAt(column.Index))
@@ -58,18 +57,18 @@ internal static class PivotSummary
                         case null:
                             break;
                         case { IsError: true }:
-                            accumulator.AddError();
+                            cells.AddError();
                             break;
                         case { Exact: { } exact }:
-                            accumulator.AddExact(exact);
+                            cells.AddNumber(exact);
                             break;
                         case { } value:
-                            accumulator.AddDouble(value.Number);
+                            cells.AddNumber(value.Number);
                             break;
                     }
                 }
             }
         }
-        return GridSummary.Answer(accumulator, request.Figures);
+        return cells.Answer(request.Figures);
     }
 }

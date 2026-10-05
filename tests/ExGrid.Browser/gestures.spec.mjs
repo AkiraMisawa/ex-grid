@@ -94,7 +94,7 @@ test('pasting onto an off-screen selection works, and the indicator showed first
 
     // Scroll the selection far off screen: the status line says so.
     await grid(page).locator('.ex-scroller').evaluate((el) => { el.scrollTop = 6000; });
-    await expect(page.locator('.ex-status')).toContainText('outside the visible range');
+    await expect(grid(page).locator('.ex-status')).toContainText('outside the visible range');
 
     // One cell copied as a table, which fills the range (a plain-text value would go into one
     // cell alone: ADR-0014, amended 2026-09-29).

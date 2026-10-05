@@ -200,7 +200,7 @@
             : global::ExGrid.Finding.GridFindResult.NotFound);
         _summarize = (request, _) => Task.FromResult(_sheet is { } sheet
             ? SheetSummary.Answer(sheet, request)
-            : global::ExGrid.Summarizing.GridSummary.Answer(new global::ExGrid.Data.AggregateAccumulator(), request.Figures));
+            : new global::ExGrid.Summarizing.GridSummaryCells().Answer(request.Figures));
         _summaryFiguresChanged = new EventCallback<global::ExGrid.Summarizing.SummaryFigures>(null,
             (Func<global::ExGrid.Summarizing.SummaryFigures, Task>)(async figures =>
             {

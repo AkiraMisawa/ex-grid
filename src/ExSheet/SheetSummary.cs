@@ -1,4 +1,3 @@
-using ExGrid.Data;
 using ExGrid.Summarizing;
 using ExSheet.Engine;
 
@@ -7,7 +6,7 @@ namespace ExSheet;
 /// <summary>
 /// ExSheet's answer to a Selection Summary (ADR-0130): the Values of the selected cells — a
 /// Formula's result, never its Entry, and every cell an array spills into — folded into the
-/// family's one definition of the figures (<see cref="AggregateAccumulator"/>). A number is in
+/// family's one definition of the figures (<see cref="GridSummaryCells"/>). A number is in
 /// every figure; text and a Boolean are counted; an Error Value is counted and leaves Count alone;
 /// a blank cell is in none. A date is a number here, as it is in the Sheet and in Excel: a Sheet
 /// date is a serial number shown with a date format (ADR-0047), so nothing is invented by summing
@@ -31,7 +30,7 @@ internal static class SheetSummary
                 positions[column] = i;
         }
 
-        var accumulator = new AggregateAccumulator();
+        var cells = new GridSummaryCells();
         foreach (var address in sheet.ValueAddresses)
         {
             if (!positions.TryGetValue(address.Column, out var position) || !InRanges(request, address.Row, position))
@@ -41,17 +40,17 @@ internal static class SheetSummary
             switch (value.Kind)
             {
                 case ValueKind.Number:
-                    accumulator.AddDouble(value.Number);
+                    cells.AddNumber(value.Number);
                     break;
                 case ValueKind.Error:
-                    accumulator.AddError();
+                    cells.AddError();
                     break;
                 default:
-                    accumulator.AddOther();
+                    cells.AddOther();
                     break;
             }
         }
-        return GridSummary.Answer(accumulator, request.Figures);
+        return cells.Answer(request.Figures);
     }
 
     // A cell covered by two ranges is one address, visited once.
