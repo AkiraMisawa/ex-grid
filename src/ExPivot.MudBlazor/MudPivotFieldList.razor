@@ -7,7 +7,7 @@
    component cannot carry :preventDefault. Every Area and the list of fields prevent dragover's
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
    ExPivot's to ignore. Each entry's open menu or panel stands directly under it, in ExPivot's
-   frame, and no element here is positioned, so the frame takes the pane's width. *@
+   frame, positioned against the full-width scrolling body so both scroll together. *@
 @* A delayed DOM gesture keeps the context from this render, including its layout (ADR-0061). *@
 @{ var renderedContext = Context; }
 <div class="mud-ex-pivot-pane">

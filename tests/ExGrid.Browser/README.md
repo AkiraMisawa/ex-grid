@@ -633,7 +633,9 @@ nobody had asked for. What that means when writing a test:
   Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
   giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by the
   page; the heading's close icon still reachable in a narrow, short pane with its body scrolled
-  and a panel open, closing through the same binding; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
+  and a panel open, following its opener at zero and nonzero scroll offsets and keeping its last
+  action reachable, closing through the same binding; opening focus awaited before a report press
+  or body scroll under a 150 ms round trip; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
   Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade date, moved
   to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in the Japanese
   words (ADR-0060); and the code the page shows under "The code" equal to the regions of its source

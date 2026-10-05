@@ -209,11 +209,11 @@
    fields taking what is left, scrolling on its own — as Excel's pane does, so a field is dragged
    to an Area without either scrolling away. Where even the least of each does not fit, the Field
    List's body scrolls, leaving the heading and its close button in view. */
-.ex-pivot-pane { display: flex; flex-direction: column; gap: 6px; padding: 8px; box-sizing: border-box; height: 100%; }
+.ex-pivot-pane { display: flex; flex-direction: column; gap: 6px; padding: 8px 0; box-sizing: border-box; height: 100%; }
 .ex-pivot-pane > * { flex: none; }
-.ex-pivot-pane > .ex-pivot-pane-body { display: flex; flex-direction: column; gap: inherit; flex: 1 1 auto; min-height: 0; overflow: auto; }
+.ex-pivot-pane > .ex-pivot-pane-body { position: relative; display: flex; flex-direction: column; gap: inherit; flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0 8px; }
 .ex-pivot-pane-body > * { flex: none; }
-.ex-pivot-pane-heading { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ex-pivot-pane-heading { display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0 8px; }
 .ex-pivot-pane-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 1.05em; }
 .ex-pivot-pane-close { flex: none; font: inherit; cursor: pointer; color: inherit; background: transparent; border: 0; padding: 0.2em 0.5em; }
 .ex-pivot-pane-close:hover { background: var(--ex-pivot-hover-background, ButtonFace); }
@@ -300,8 +300,8 @@
 }
 /* In the Field List: directly under the entry that opened it, at the place the flow gives it — its
    top is left to its static position, so nothing is measured — as wide as the pane and over what
-   follows, as a menu drops down. The Field List's scroller is its containing block, so it scrolls
-   with the pane. */
+   follows, as a menu drops down. The full-width body is its containing block, so it scrolls
+   with its opener while the heading stays in view (ADR-0061). */
 .ex-pivot-field-list .ex-pivot-popup {
     position: absolute;
     left: 8px;

@@ -602,6 +602,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0061 (PV-11): a press on a pane caption dismisses only the field menu (${chrome})`, async ({ page }) => {
             await open(page, chrome);
+            await setRoundTrip(150);
             await entry(page, 'Region').click();
             await expect(page.getByRole('menuitem', { name: 'Move Down' })).toBeFocused();
             // This caption takes no DOM focus: a focusin handler alone cannot dismiss the menu.
@@ -615,6 +616,8 @@ for (const chrome of ['builtin', 'mud']) {
             await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
             const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
             await expect(settings).toBeVisible();
+            // On Server, rendering the panel precedes its opening focus request (ADR-0039).
+            await expect(settings.locator(':focus')).toHaveCount(1);
             await firstValue(page).click({ force: true });
             await expect(report(page)).toBeFocused();
             await circuitQuiet();
@@ -778,6 +781,7 @@ for (const chrome of ['builtin', 'mud']) {
 
         test(`ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (${chrome})`, async ({ page }) => {
             await open(page, chrome);
+            await setRoundTrip(150);
             await alterPage(page, () => {
                 const root = document.querySelector('.ex-pivot');
                 const before = root.getAttribute('style');
@@ -790,13 +794,21 @@ for (const chrome of ['builtin', 'mud']) {
             await expect.poll(() => body.evaluate(b => b.scrollTop)).toBeGreaterThan(0);
             await entry(page, 'Region').click();
             await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
-            await expect(page.getByRole('dialog', { name: 'Field Settings…', exact: true })).toBeVisible();
-            await body.evaluate(b => { b.scrollTop = 0; });
-            await expect.poll(async () => {
-                const opener = await entry(page, 'Region').boundingBox();
-                const panel = await page.getByRole('dialog', { name: 'Field Settings…', exact: true }).boundingBox();
-                return Math.abs(panel.y - (opener.y + opener.height));
-            }).toBeLessThan(8);
+            const settings = page.getByRole('dialog', { name: 'Field Settings…', exact: true });
+            await expect(settings).toBeVisible();
+            await expect(settings.locator(':focus')).toHaveCount(1);
+            for (const offset of [0, 120]) {
+                await body.evaluate((b, offset) => { b.scrollTop = offset; }, offset);
+                await circuitQuiet();
+                await expect.poll(() => body.evaluate(b => b.scrollTop)).toBe(offset);
+                await expect.poll(() => body.evaluate(b => {
+                    const opener = b.querySelector('[aria-label="Options for Region"]').getBoundingClientRect();
+                    const panel = b.querySelector('[role="dialog"]').getBoundingClientRect();
+                    return Math.abs(panel.top - opener.bottom);
+                })).toBeLessThan(8);
+            }
+            // The panel's last action remains reachable through the body scroller.
+            await settings.getByRole('button', { name: 'Cancel', exact: true }).click({ trial: true });
             const close = pane(page).getByRole('button', { name: 'Hide Field List', exact: true });
             await expect.poll(() => close.evaluate(b => {
                 const box = b.getBoundingClientRect();

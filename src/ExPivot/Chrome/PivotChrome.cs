@@ -25,7 +25,9 @@ public interface IPivotChrome
     IGridChrome? GridChrome(Func<string, string?> commandLabel) => null;
 
     /// <summary>The Field List's content: the fields with their checkboxes and search, and the
-    /// four Areas with their entries, each entry's open menu or panel placed under it.</summary>
+    /// four Areas with their entries, each entry's open menu or panel placed under it. When the
+    /// heading stays outside a scrolling body, that full-width body is positioned to contain the
+    /// frames; no positioned Area or entry may narrow them (ADR-0061).</summary>
     RenderFragment? FieldList(PivotFieldListContext context) => null;
 
     /// <summary>The report filter band, on the Pivot Toolbar's left: one entry per field

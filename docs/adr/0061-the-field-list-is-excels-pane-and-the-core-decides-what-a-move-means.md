@@ -184,8 +184,15 @@ down over its pane.
   position ExPivot computes.
 - The pane scrolls, and nothing is clipped by it.
 - A menu's first command scrolls into view as the menu takes the keyboard.
-- A Chrome places the frame under its entry, and puts no positioned element of its own between the
-  frame and the Field List. Otherwise the frame would take that element's width instead.
+- A Chrome places the frame under its entry. Its full-width scrolling body is the frame's
+  containing block; no positioned Area or entry may intervene, since that would narrow the frame.
+
+*Refined 2026-10-05 after CI exposed the split heading's scroll bug.* The original rule forbade
+every positioned Chrome ancestor. Once the heading stayed outside the scrolling body, that left
+popups positioned against the outer pane: scrolling moved their opener but not the popup. The
+full-width body now establishes their containing block, so both scroll together and the popup's
+full height is reachable through that scroller. The heading and its close icon stay outside it.
+The body's horizontal padding is inside that full width; an Area never supplies the width.
 
 *Revised 2026-09-30, before it was decided.* The first version opened a menu or panel in the flow,
 pushing what follows down. Seen in a browser, that failed in two ways:

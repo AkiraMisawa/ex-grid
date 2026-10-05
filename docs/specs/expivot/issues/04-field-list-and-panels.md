@@ -39,3 +39,13 @@ views now capture the render's context. Four component cases retain the actual r
 and drop bindings under both Chromes: all four failed before this fix and pass with it. The
 cramped-pane browser case also scrolls with Field Settings open and checks that the panel tracks
 its opener while the close button remains reachable.
+
+2026-10-05: CI run 37323504879 exposed a scroll defect: after the heading/body split, an
+absolutely positioned popup still used the outer pane as its containing block. Its opener
+scrolled while the popup stayed behind. The full-width body now contains both, with horizontal
+padding inside that width, preserving the fixed heading. A nonzero body scroll reproduced a
+122 px separation under both Chromes before the fix. The browser test now checks two scroll
+offsets after the opening focus has arrived, reads both boxes together, and reaches the panel's
+last action before using the heading's close button. A separate negative test for panel
+dismissal also waits for opening focus before pressing the report; with a 150 ms round trip its
+old setup failed on every run by racing that focus request. Neither test uses a fixed delay.

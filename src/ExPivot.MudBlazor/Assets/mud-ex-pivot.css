@@ -61,14 +61,14 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 12px;
+    padding: 12px 0;
     box-sizing: border-box;
     height: 100%;
 }
 .mud-ex-pivot-pane > * { flex: none; }
-.mud-ex-pivot-pane > .mud-ex-pivot-pane-body { display: flex; flex-direction: column; gap: inherit; flex: 1 1 auto; min-height: 0; overflow: auto; }
+.mud-ex-pivot-pane > .mud-ex-pivot-pane-body { position: relative; display: flex; flex-direction: column; gap: inherit; flex: 1 1 auto; min-height: 0; overflow: auto; padding: 0 12px; }
 .mud-ex-pivot-pane-body > * { flex: none; }
-.mud-ex-pivot-pane-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mud-ex-pivot-pane-heading { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0 12px; }
 .mud-ex-pivot-pane .mud-ex-pivot-pane-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mud-ex-pivot-pane .mud-ex-pivot-pane-close { flex: none; }
 .mud-ex-pivot-pane .mud-ex-pivot-pane-caption { color: var(--mud-palette-text-secondary); }

@@ -2,8 +2,8 @@
    ExPivot's Visual Tokens. It draws what the context hands it and calls back; what a tick, a
    drop or a command means is ExPivot's. Every Area and the list of fields prevent dragover's
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
-   ExPivot's to ignore. Each entry's open menu or panel stands directly under it, and no element
-   here is positioned, so the frame takes the pane's width. Defer Layout Update and Update stand
+   ExPivot's to ignore. Each entry's open menu or panel stands directly under it, positioned
+   against the full-width scrolling body. Defer Layout Update and Update stand
    at the foot. *@
 @* A delayed DOM gesture keeps the context from this render, including its layout (ADR-0061). *@
 @{ var renderedContext = Context; }
