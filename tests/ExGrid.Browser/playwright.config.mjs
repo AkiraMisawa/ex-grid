@@ -1,5 +1,6 @@
 import { defineConfig } from '@playwright/test';
 import fs from 'node:fs';
+import path from 'node:path';
 import { API_URL, BASE_URL, HOST_LOG, HOST_PORT, LATENCY_CONTROL_URL, SERVER } from './hosting.mjs';
 
 // The host is started on whatever port BASE_URL names, so two checkouts — one per
@@ -15,6 +16,25 @@ if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
     fs.rmSync(HOST_LOG, { force: true });
 }
 
+// What starts the hosts. By default the projects themselves, with `dotnet run`: the
+// edit-and-rerun loop. With EXGRID_HOSTS naming a directory, the hosts as
+// `dotnet publish -c Release` wrote them, one directory each — `wasm`, `server` and `api` —
+// which is what CI's full run drives (ADR-0041): built once, as a Consumer deploys it.
+// The published Server host and demo API server run where they were published (their
+// content root) under ASPNETCORE_ENVIRONMENT=Development, as their launch profiles set it
+// for `dotnet run`, and the WebAssembly host's files are served by static-host.mjs, which
+// does what the dev server does. So what changes is how the hosts were built, not the
+// environment they run in.
+const PUBLISHED = process.env.EXGRID_HOSTS ? path.resolve(process.env.EXGRID_HOSTS) : null;
+const published = (name) => {
+    const dir = path.join(PUBLISHED, name);
+    if (!fs.existsSync(dir)) {
+        throw new Error(`EXGRID_HOSTS is "${PUBLISHED}", which holds no "${name}" directory.`);
+    }
+    return dir;
+};
+const development = { ASPNETCORE_ENVIRONMENT: 'Development' };
+
 // Started here so `npx playwright test` is the whole command on any machine. An
 // already-running host is reused, which is what makes an edit-and-rerun loop quick.
 //
@@ -26,9 +46,17 @@ if (SERVER && process.env.TEST_WORKER_INDEX === undefined) {
 const hostServers = SERVER
     ? [
         {
-            command: `dotnet run --project ../../samples/ExGrid.DemoHost.Server --urls ${HOST_URL}`,
+            ...(PUBLISHED
+                ? {
+                    command: `dotnet ExGrid.DemoHost.Server.dll --urls ${HOST_URL}`,
+                    cwd: published('server'),
+                    env: { ...development, EXGRID_HOST_LOG: HOST_LOG },
+                }
+                : {
+                    command: `dotnet run --project ../../samples/ExGrid.DemoHost.Server --urls ${HOST_URL}`,
+                    env: { EXGRID_HOST_LOG: HOST_LOG },
+                }),
             url: `${HOST_URL}/wide`,
-            env: { EXGRID_HOST_LOG: HOST_LOG },
             reuseExistingServer: true,
             timeout: 180_000,
             stdout: 'pipe',
@@ -45,7 +73,9 @@ const hostServers = SERVER
     ]
     : [
         {
-            command: `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
+            command: PUBLISHED
+                ? `node static-host.mjs ${JSON.stringify(path.join(published('wasm'), 'wwwroot'))} ${HOST_PORT}`
+                : `dotnet run --project ../../samples/ExGrid.DemoHost --urls ${HOST_URL}`,
             url: `${BASE_URL}/wide`,
             reuseExistingServer: true,
             timeout: 180_000,
@@ -64,9 +94,17 @@ const hostServers = SERVER
 // it served (a killed one's copy is removed by the next start).
 const apiServer = {
     name: 'DemoApi',
-    command: `dotnet run --project ../../samples/ExGrid.DemoApi --urls ${API_URL}`,
+    ...(PUBLISHED
+        ? {
+            command: `dotnet ExGrid.DemoApi.dll --urls ${API_URL}`,
+            cwd: published('api'),
+            env: { ...development, EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
+        }
+        : {
+            command: `dotnet run --project ../../samples/ExGrid.DemoApi --urls ${API_URL}`,
+            env: { EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
+        }),
     url: `${API_URL}/api/status`,
-    env: { EXGRID_DEMO_TRADES: process.env.EXGRID_DEMO_TRADES ?? '20000' },
     reuseExistingServer: true,
     timeout: 300_000,
     gracefulShutdown: { signal: 'SIGTERM', timeout: 5_000 },

@@ -46,10 +46,22 @@ and any failure's trace as an artifact of its own. The weekly run, or a dispatch
 long run, adds the soak (`EXGRID_SOAK=1`). The VZ-14 test still skips itself off Windows, so it
 stays a run by hand.
 
+CI does not start the hosts with `dotnet run`. One job publishes the WebAssembly DemoHost, the
+Server host and the demo API server with `dotnet publish -c Release`, once, and every runner
+takes those files. `EXGRID_HOSTS` names the directory that holds them, as `wasm`, `server` and
+`api`. Then the config starts the published Server host and demo API server from their own
+directories, under `ASPNETCORE_ENVIRONMENT=Development` as their launch profiles set it, and serves
+the published WebAssembly files with `static-host.mjs`, which does what the SDK's dev server does
+(the app for a path that names no file, a 404 for a missing file, `Blazor-Environment:
+Development`). Unset, the config runs the projects, which is the edit-and-rerun loop.
+
 To run one shard as CI does:
 
 ```sh
-npx playwright test --project=chrome --shard=1/4
+for h in wasm:ExGrid.DemoHost server:ExGrid.DemoHost.Server api:ExGrid.DemoApi; do
+  dotnet publish ../../samples/${h#*:} -c Release -o /tmp/exgrid-hosts/${h%%:*}
+done
+EXGRID_HOSTS=/tmp/exgrid-hosts npx playwright test --project=chrome --shard=1/4
 ```
 
 ## The two hosts
