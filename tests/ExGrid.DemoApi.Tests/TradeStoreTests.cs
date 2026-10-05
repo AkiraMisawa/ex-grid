@@ -266,6 +266,55 @@ public sealed class TradeStoreTests
         Assert.True(busy * 2 >= all, $"{busy} of {all} changes fell on the first {TradeStore.HotTrades} trades");
     }
 
+    [Fact] // ADR-0141 / LV-8: a page's order token stays while only values change, and moves when a trade is cancelled or booked
+    public async Task ADR0141_the_order_token_moves_exactly_when_a_trade_is_cancelled_or_booked()
+    {
+        using var directory = new TempDirectory();
+        await using var store = await TestData.ReadyStore(directory.Path, 1_000);
+        var token = (await store.ReadPageAsync(0, 10, Token)).OrderToken;
+        Assert.NotNull(token);
+
+        var bookings = 0;
+        for (var tick = 0; tick < 60; tick++)
+        {
+            var change = await store.ApplyLiveChangesAsync(2, Token);
+            var page = await store.ReadPageAsync(0, 10, Token);
+            // A tick that books names four trades: two moved, one cancelled, one booked.
+            var booked = change.TradeIds.Length == 4;
+            if (booked)
+                bookings++;
+            Assert.Equal(booked, page.OrderToken != token);
+            token = page.OrderToken;
+        }
+        Assert.True(bookings > 0, "no tick in sixty cancelled and booked");
+
+        // A trade cancelled by name moves it too, and a reset moves it again.
+        Assert.NotNull(await store.CancelAsync(TradeGenerator.TradeId(500), Token));
+        var cancelled = (await store.ReadPageAsync(0, 10, Token)).OrderToken;
+        Assert.NotEqual(token, cancelled);
+        Assert.Null(await store.CancelAsync(TradeGenerator.TradeId(500), Token));
+        await store.ResetAsync(Token);
+        Assert.NotEqual(cancelled, (await store.ReadPageAsync(0, 10, Token)).OrderToken);
+    }
+
+    [Fact] // ADR-0141 / LV-8: a trade cancelled by name leaves, and the change is told as a tick's is
+    public async Task ADR0141_a_trade_cancelled_by_name_leaves_and_is_told()
+    {
+        using var directory = new TempDirectory();
+        await using var store = await TestData.ReadyStore(directory.Path, 1_000);
+        var id = TradeGenerator.TradeId(250);
+
+        var change = await store.CancelAsync(id, Token);
+
+        Assert.NotNull(change);
+        Assert.Equal([id], change.TradeIds);
+        Assert.Equal(999, store.TradeCount);
+        var told = await store.Changes.ReadAsync(Token);
+        Assert.Equal(change.Version, told.Version);
+        var answer = await store.ReadByIdAsync([id], Token);
+        Assert.Equal([id], answer.Missing);
+    }
+
     private static string LineOf(Trade t) =>
         TestData.Line(t.TradeId, t.Region, t.Desk, t.Book, t.Product, t.Currency, TradeDatabase.FormatDate(t.TradeDate),
             decimal.ToInt64(t.Notional * 100), decimal.ToInt64(t.Pnl * 100), t.Quantity, t.Confirmed);

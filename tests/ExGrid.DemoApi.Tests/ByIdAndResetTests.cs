@@ -68,6 +68,37 @@ public sealed class TradesByIdTests(DemoApiServer server) : IClassFixture<DemoAp
         }
     }
 
+    [Fact] // ADR-0141 / LV-8: a trade cancelled by name over HTTP leaves, moves the order token, and a reset puts it back
+    public async Task ADR0141_a_trade_cancelled_by_name_moves_the_order_token()
+    {
+        using var client = server.Factory.CreateClient();
+        try
+        {
+            var before = await client.GetFromJsonAsync<JsonElement>("/api/trades?start=0&count=10", Token);
+            var id = TradeGenerator.TradeId(2_500);
+
+            using var cancelled = await client.PostAsJsonAsync("/api/trades/cancel", new { tradeId = id }, Token);
+            Assert.Equal(HttpStatusCode.OK, cancelled.StatusCode);
+            var after = await client.GetFromJsonAsync<JsonElement>("/api/trades?start=0&count=10", Token);
+
+            // The page's rows are the same rows; only the order token says a trade beyond it went.
+            Assert.Equal(
+                before.GetProperty("trades").EnumerateArray().Select(t => t.GetProperty("tradeId").GetString()),
+                after.GetProperty("trades").EnumerateArray().Select(t => t.GetProperty("tradeId").GetString()));
+            Assert.NotEqual(before.GetProperty("orderToken").GetString(), after.GetProperty("orderToken").GetString());
+            Assert.Equal(DemoApiServer.Trades - 1, after.GetProperty("total").GetInt64());
+
+            using var again = await client.PostAsJsonAsync("/api/trades/cancel", new { tradeId = id }, Token);
+            Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
+            using var nothing = await client.PostAsJsonAsync("/api/trades/cancel", new { }, Token);
+            Assert.Equal(HttpStatusCode.BadRequest, nothing.StatusCode);
+        }
+        finally
+        {
+            await server.Store.ResetAsync(Token);
+        }
+    }
+
     [Theory] // ADR-0069 and principle 1: a question naming no trade, or more than one answer holds, is refused by name, not cut short
     [InlineData("/api/trades/by-id", "ids names the trades to read")]
     [InlineData("/api/trades/by-id?ids=,", "ids names the trades to read")]
