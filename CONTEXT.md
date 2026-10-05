@@ -533,6 +533,15 @@ this pairing, not in each holder's discipline
 ([ADR-0011](./docs/adr/0011-selection-is-rectangles-in-index-space-and-is-dropped-on-reorder.md)).
 _Avoid_: selection snapshot, selection cache (nothing is restored from it)
 
+**Selection Summary**:
+Excel's status-bar figures over the Selection — Average, Count, Numerical Count, Min, Max and Sum —
+meaning what the **Aggregations** of the same names mean. The grid asks and whoever holds the data
+answers, as for **Find**; a figure is shown only as the answer to the current Selection, never a
+previous one's and never a partial one
+([ADR-0130](./docs/adr/0130-the-selection-summary-is-asked-of-the-consumer-like-find.md)). Distinct
+from the selected-cell count, which the grid makes itself from the rectangles' areas.
+_Avoid_: aggregate (ExPivot's word), status bar sum, footer, total row (a Row Kind)
+
 **Anchor** *(retired by ADR-0052)*:
 ADR-0012's name for the fixed end of range extension. Under ADR-0052 the fixed end is the
 **Focus** and the moving end is the **Extent**. It has left the code and the criteria; older ADRs
