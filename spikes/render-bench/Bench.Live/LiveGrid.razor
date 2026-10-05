@@ -1,0 +1,74 @@
+@using System.Runtime.CompilerServices
+@* The painted rows of one grid, keyed one of two ways:
+   - KeyByInstance (variant A, ExGrid today, src/ExGrid/Components/ExGrid.razor:446 and :8681): the
+     key is an object held per row instance, so a new instance is a new key, and Blazor disposes the
+     old row's component and mounts a new one;
+   - otherwise (variant B, candidate 2): the key is the record's Id, so the component is kept and
+     handed the new instance, which its ShouldRender still compares by reference. *@
+<div class="live-grid" @ref="_root">
+    @{ var window = Ticker.Window; }
+    @for (var i = 0; i < window.Length; i++)
+    {
+        var row = window[i];
+        if (KeyByInstance)
+        {
+            <LiveRow @key="InstanceKey(row)" Row="row" Columns="Columns" RowIndex="i" IdPrefix="@IdPrefix" Counters="Counters" />
+        }
+        else
+        {
+            <LiveRow @key="row.Id" Row="row" Columns="Columns" RowIndex="i" IdPrefix="@IdPrefix" Counters="Counters" />
+        }
+    }
+</div>
+
+@code {
+    private static readonly ConditionalWeakTable<LiveRecord, object> InstanceKeys = new();
+
+    private ElementReference _root;
+    private TaskCompletionSource? _rendered;
+
+    [Parameter, EditorRequired] public LiveTicker Ticker { get; set; } = default!;
+    [Parameter, EditorRequired] public LiveColumns Columns { get; set; } = default!;
+    [Parameter] public bool KeyByInstance { get; set; }
+    [Parameter] public string IdPrefix { get; set; } = "g";
+    [Parameter] public LiveCounters? Counters { get; set; }
+
+    public ElementReference Root => _root;
+
+    /// <summary>When the last render reached the DOM, stamped in OnAfterRender as the /format page
+    /// stamps it.</summary>
+    public long RenderedAt { get; private set; }
+
+    /// <summary>Called synchronously once a render has reached the DOM and before the browser has
+    /// had a frame: the page forces the style and layout that render caused, and returns the
+    /// milliseconds. Null where there is no browser.</summary>
+    public Func<double>? MeasureLayout { get; set; }
+
+    /// <summary>What <see cref="MeasureLayout"/> returned for the last render.</summary>
+    public double LayoutMs { get; private set; }
+
+    private static object InstanceKey(LiveRecord row) => InstanceKeys.GetValue(row, static _ => new object());
+
+    /// <summary>Renders this grid, and completes once the render has reached the DOM.</summary>
+    public Task RenderAsync()
+    {
+        // StateHasChanged can complete the render, and OnAfterRender with it, before it returns:
+        // the completion is held in a local first (AGENTS.md's trap).
+        var rendered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _rendered = rendered;
+        StateHasChanged();
+        return rendered.Task;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        var rendered = _rendered;
+        _rendered = null;
+        if (rendered is not null)
+        {
+            RenderedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+            LayoutMs = MeasureLayout?.Invoke() ?? 0;
+            rendered.TrySetResult();
+        }
+    }
+}

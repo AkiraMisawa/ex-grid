@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- The live-tick components (M1/M2 of the research note on ag-grid's repaint): one grid of 40
+       painted rows whose rows are replaced by new instances, keyed by instance (ExGrid today) or by
+       a stable record key (candidate 2). Shared by the WebAssembly page (/live), the .NET render
+       batch counter (Bench.BatchCount) and the Server host (Bench.Server), so all three measure
+       the same markup. Disposable, like the rest of render-bench. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.7" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- M2's deterministic half: the live-tick grid of Bench.Live rendered by a test Renderer that
+       captures every RenderBatch, which is what Blazor Server serialises onto the circuit. It
+       counts the edits, the frames and the strings a tick carries, keyed by instance (A) and by a
+       stable key (B), and times the .NET render alone (no DOM). Disposable. Run in Release. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- RenderTree types are public but "for framework use": reading a RenderBatch is the point. -->
+    <NoWarn>$(NoWarn);BL0006</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bench.Live\Bench.Live.csproj" />
+    <!-- The calibration (RealGrid.cs) renders the real ExGrid with the same ticks. -->
+    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+</Project>

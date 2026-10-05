@@ -1,0 +1,300 @@
+@page "/live"
+@using System.Diagnostics
+@using Bench.Live
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>live tick bench</PageTitle>
+
+<h3>A live tick: rows replaced by new instances (M1)</h3>
+<p class="muted">
+    Per tick, k of the painted rows are replaced by new instances with the same Id, and the grid
+    renders. <b>A</b> keys each row by its instance (ExGrid today); <b>B</b> keys it by the Id and
+    still compares the row by reference in <code>ShouldRender</code> (candidate 2 of the research
+    note on ag-grid's repaint). The two grids get the same ticks, interleaved A, B, A, B. The clock
+    covers Blazor's render and the DOM update; a MutationObserver on each grid counts what the
+    update did to the DOM.
+</p>
+
+<div class="controls">
+    <label>Visible rows <input type="number" @bind="VisibleRows" min="1" max="120" /></label>
+    <label>Changed cells per replaced row <input type="number" @bind="ChangedCells" min="1" max="50" /></label>
+    <label>Warm-up ticks <input type="number" @bind="WarmupTicks" min="0" max="200" /></label>
+    <label>Iterations <input type="number" @bind="Iterations" min="10" max="5000" /></label>
+    <button @onclick="RunAsync" disabled="@_running">@(_running ? "measuring…" : "Measure live ticks")</button>
+</div>
+
+@if (_error is not null)
+{
+    <pre class="err-box">@_error</pre>
+}
+
+@if (_results.Count > 0)
+{
+    <h4>Results (per tick)</h4>
+    <table class="results">
+        <thead>
+            <tr>
+                <th>Variant</th><th>Config</th><th>Ticks</th>
+                <th>Render median ms</th><th>p95 ms</th><th>Max ms</th><th>Layout median</th><th>Paint median</th><th>Frame median</th><th>Frame p95</th>
+                <th>Mutation records</th><th>Nodes added</th><th>Nodes removed</th><th>Attr. changes</th><th>Text changes</th>
+                <th>Mounts</th><th>Renders</th><th>Same DOM as the other</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _results)
+            {
+                <tr class="@(r.SameDom ? "ok" : "bad")">
+                    <td><b>@r.Variant</b></td>
+                    <td>@r.Columns cols, k @r.K, @(r.ChangedCells < 0 ? "all" : r.ChangedCells.ToString()) cells</td>
+                    <td>@r.Render.Count</td>
+                    <td>@r.Render.P50.ToString("F2")</td>
+                    <td>@r.Render.P95.ToString("F2")</td>
+                    <td>@r.Render.Max.ToString("F2")</td>
+                    <td>@r.Layout.P50.ToString("F2")</td>
+                    <td>@r.Paint.P50.ToString("F2")</td>
+                    <td>@r.Frame.P50.ToString("F2")</td>
+                    <td>@r.Frame.P95.ToString("F2")</td>
+                    <td>@r.MutationRecords.ToString("F1")</td>
+                    <td>@r.NodesAdded.ToString("F1")</td>
+                    <td>@r.NodesRemoved.ToString("F1")</td>
+                    <td>@r.AttributeChanges.ToString("F1")</td>
+                    <td>@r.TextChanges.ToString("F1")</td>
+                    <td>@r.Mounts.ToString("F1")</td>
+                    <td>@r.Renders.ToString("F1")</td>
+                    <td>@(r.SameDom ? "yes" : "NO")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="muted">Mutation and count columns are means per tick. Headless numbers are software-rendered: read A against B, not as absolutes.</p>
+    <button @onclick="PostResultsAsync" disabled="@_posting">@_postLabel</button>
+}
+
+<div class="live-pair">
+    @if (_tickerA is not null && _tickerB is not null && _columns is not null)
+    {
+        <LiveGrid @ref="_gridA" Ticker="_tickerA" Columns="_columns" KeyByInstance="true" IdPrefix="a" Counters="_countersA" />
+        <LiveGrid @ref="_gridB" Ticker="_tickerB" Columns="_columns" KeyByInstance="false" IdPrefix="b" Counters="_countersB" />
+    }
+</div>
+
+@code {
+    private int VisibleRows = 40;
+    private int ChangedCells = 3;
+    private int WarmupTicks = 20;
+    private int Iterations = 200;
+
+    private static readonly int[] ColumnCounts = [20, 50];
+    private static readonly int[] Ks = [1, 5, 40];
+
+    private LiveTicker? _tickerA;
+    private LiveTicker? _tickerB;
+    private LiveColumns? _columns;
+    private LiveGrid? _gridA;
+    private LiveGrid? _gridB;
+    private readonly LiveCounters _countersA = new();
+    private readonly LiveCounters _countersB = new();
+
+    private bool _running;
+    private string? _error;
+    private bool _posting;
+    private string _postLabel = "Save results to the server";
+    private readonly List<LiveResult> _results = [];
+    private Dictionary<string, object> _env = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try { _env = await JS.InvokeAsync<Dictionary<string, object>>("bench.env"); }
+            catch { /* spike: environment capture is best-effort */ }
+        }
+    }
+
+    private async Task RunAsync()
+    {
+        try
+        {
+            _running = true;
+            _error = null;
+            _results.Clear();
+            _postLabel = "Save results to the server";
+            StateHasChanged();
+            await Task.Delay(50);
+
+            var js = (IJSInProcessRuntime)JS;
+            // Each changed-cell setting the box asks for, and every cell.
+            foreach (var changed in new[] { ChangedCells, -1 })
+            {
+                foreach (var cols in ColumnCounts)
+                {
+                    foreach (var k in Ks)
+                    {
+                        // Fresh tickers with one seed: both grids see the same ticks.
+                        var seed = 1000 * cols + 10 * k + (changed < 0 ? 1 : 0);
+                        _tickerA = new LiveTicker(VisibleRows, seed);
+                        _tickerB = new LiveTicker(VisibleRows, seed);
+                        _columns = new LiveColumns(cols);
+                        StateHasChanged();
+                        await Task.Delay(30);
+                        js.InvokeVoid("bench.liveObserve", _gridA!.Root, _gridB!.Root);
+                        var gridA = _gridA!;
+                        var gridB = _gridB!;
+                        gridA.MeasureLayout ??= () => js.Invoke<double>("bench.layout", gridA.Root);
+                        gridB.MeasureLayout ??= () => js.Invoke<double>("bench.layout", gridB.Root);
+                        _countersA.Take();
+                        _countersB.Take();
+
+                        var a = new Series("A: instance key");
+                        var b = new Series("B: stable key");
+                        for (var i = 0; i < WarmupTicks + Iterations; i++)
+                        {
+                            var measured = i >= WarmupTicks;
+                            await TickAsync(js, _tickerA, _gridA!, 0, _countersA, k, changed, cols, measured ? a : null);
+                            await TickAsync(js, _tickerB, _gridB!, 1, _countersB, k, changed, cols, measured ? b : null);
+                        }
+                        var same = js.Invoke<bool>("bench.liveSame", _gridA!.Root, _gridB!.Root);
+                        _results.Add(a.Result(cols, k, changed, same));
+                        _results.Add(b.Result(cols, k, changed, same));
+                        StateHasChanged();
+                        await Task.Delay(50);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _error = ex.ToString();
+        }
+        finally
+        {
+            _running = false;
+            StateHasChanged();
+        }
+    }
+
+    private static async Task TickAsync(IJSInProcessRuntime js, LiveTicker ticker, LiveGrid grid, int observer, LiveCounters counters,
+        int k, int changed, int cols, Series? series)
+    {
+        // The model's work happens before the clock starts, as on the /format page.
+        ticker.Tick(k, changed, cols);
+        js.Invoke<int[]>("bench.liveTake", observer); // drop anything pending
+        counters.Take();
+
+        // render: Blazor's render and the DOM update, stamped in the grid's OnAfterRender;
+        // layout: the style and layout that render caused, forced right after it;
+        // paint: the next frame's main-thread paint and commit — as the /format page measures them.
+        var t0 = Stopwatch.GetTimestamp();
+        await grid.RenderAsync();
+        var render = (grid.RenderedAt - t0) * 1000.0 / Stopwatch.Frequency;
+        var layout = grid.LayoutMs;
+
+        var mutations = js.Invoke<int[]>("bench.liveTake", observer);
+        var (mounts, renders, _) = counters.Take();
+        var paint = await js.InvokeAsync<double>("bench.paint");
+        series?.Add(render, layout, paint, mutations, mounts, renders);
+    }
+
+    private sealed class Series(string variant)
+    {
+        private readonly List<double> _ms = [];
+        private readonly List<double> _layout = [];
+        private readonly List<double> _paint = [];
+        private readonly List<double> _frame = [];
+        private readonly List<int[]> _mutations = [];
+        private readonly List<int> _mounts = [];
+        private readonly List<int> _renders = [];
+
+        public void Add(double ms, double layout, double paint, int[] mutations, int mounts, int renders)
+        {
+            _ms.Add(ms);
+            _layout.Add(layout);
+            _paint.Add(paint);
+            _frame.Add(ms + layout + paint);
+            _mutations.Add(mutations);
+            _mounts.Add(mounts);
+            _renders.Add(renders);
+        }
+
+        public LiveResult Result(int cols, int k, int changed, bool same) => new()
+        {
+            Variant = variant,
+            Columns = cols,
+            K = k,
+            ChangedCells = changed,
+            Render = Stats.From(_ms),
+            Layout = Stats.From(_layout),
+            Paint = Stats.From(_paint),
+            Frame = Stats.From(_frame),
+            MutationRecords = _mutations.Average(m => m[0]),
+            NodesAdded = _mutations.Average(m => m[1]),
+            NodesRemoved = _mutations.Average(m => m[2]),
+            AttributeChanges = _mutations.Average(m => m[3]),
+            TextChanges = _mutations.Average(m => m[4]),
+            MutationRecordsMedian = Median(_mutations.Select(m => (double)m[0])),
+            Mounts = _mounts.Average(),
+            Renders = _renders.Average(),
+            SameDom = same,
+            Samples = _ms.ToArray(),
+        };
+
+        private static double Median(IEnumerable<double> values)
+        {
+            var sorted = values.OrderBy(v => v).ToArray();
+            return sorted.Length == 0 ? 0 : sorted[sorted.Length / 2];
+        }
+    }
+
+    public sealed class LiveResult
+    {
+        public required string Variant { get; init; }
+        public required int Columns { get; init; }
+        public required int K { get; init; }
+        /// <summary>Changed cells per replaced row; −1 for all of them.</summary>
+        public required int ChangedCells { get; init; }
+        public required Stats Render { get; init; }
+        public required Stats Layout { get; init; }
+        public required Stats Paint { get; init; }
+        public required Stats Frame { get; init; }
+        public required double MutationRecords { get; init; }
+        public required double MutationRecordsMedian { get; init; }
+        public required double NodesAdded { get; init; }
+        public required double NodesRemoved { get; init; }
+        public required double AttributeChanges { get; init; }
+        public required double TextChanges { get; init; }
+        public required double Mounts { get; init; }
+        public required double Renders { get; init; }
+        public required bool SameDom { get; init; }
+        public required double[] Samples { get; init; }
+    }
+
+    private async Task PostResultsAsync()
+    {
+        _posting = true;
+        try
+        {
+            var report = new
+            {
+                Page = "/live",
+                TimestampLocal = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                Environment = _env,
+                VisibleRows,
+                WarmupTicks,
+                Iterations,
+                Results = _results,
+                Note = "M1: a live tick, rows keyed by instance (A) against a stable key (B).",
+            };
+            var res = await Http.PostAsJsonAsync("api/results", report);
+            _postLabel = res.IsSuccessStatusCode ? "saved ✓" : $"failed ({(int)res.StatusCode})";
+        }
+        catch (Exception ex)
+        {
+            _postLabel = $"failed: {ex.Message}";
+        }
+        finally
+        {
+            _posting = false;
+        }
+    }
+}

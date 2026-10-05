@@ -1,0 +1,6384 @@
+{
+  "browser": "Chrome/154.0.8037.93",
+  "url": "http://127.0.0.1:5199/",
+  "ticks": 50,
+  "warmup": 5,
+  "webSocketExtensions": null,
+  "frameKinds": {
+    "out:other": 1,
+    "in:small (ping or ack)": 1,
+    "out:small (ping or ack)": 1,
+    "out:StartCircuit": 1,
+    "in:JS.BeginInvokeJS": 1,
+    "out:UpdateRootComponents": 1,
+    "in:other": 1,
+    "in:JS.AttachComponent": 1,
+    "in:JS.RenderBatch": 1333,
+    "out:OnRenderCompleted": 1333,
+    "in:UpdateRootComponents": 1,
+    "out:BeginInvokeDotNetFromJS": 1332,
+    "in:JS.EndInvokeDotNet": 1366
+  },
+  "results": [
+    {
+      "cols": 20,
+      "k": 1,
+      "changed": 3,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 5296,
+        "payloadMin": 5263,
+        "payloadMax": 5319,
+        "wireMedian": 5339,
+        "wireMin": 5307,
+        "wireMax": 5362,
+        "clientPayloadMedian": 383
+      },
+      "B": {
+        "payloadMedian": 471,
+        "payloadMin": 368,
+        "payloadMax": 530,
+        "wireMedian": 510,
+        "wireMin": 407,
+        "wireMax": 569,
+        "clientPayloadMedian": 383
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 5300,
+            "wire": 5343,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5308,
+            "wire": 5351,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5298,
+            "wire": 5341,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5287,
+            "wire": 5330,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5302,
+            "wire": 5345,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5292,
+            "wire": 5335,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5286,
+            "wire": 5329,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5309,
+            "wire": 5352,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5288,
+            "wire": 5331,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5307,
+            "wire": 5350,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5297,
+            "wire": 5340,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5299,
+            "wire": 5342,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5291,
+            "wire": 5334,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5308,
+            "wire": 5351,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5284,
+            "wire": 5327,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5280,
+            "wire": 5323,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5301,
+            "wire": 5344,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5296,
+            "wire": 5339,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5307,
+            "wire": 5350,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5294,
+            "wire": 5337,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5291,
+            "wire": 5334,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5287,
+            "wire": 5330,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5276,
+            "wire": 5319,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5319,
+            "wire": 5362,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5288,
+            "wire": 5331,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5292,
+            "wire": 5335,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5313,
+            "wire": 5356,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5296,
+            "wire": 5339,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5270,
+            "wire": 5313,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5293,
+            "wire": 5336,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5296,
+            "wire": 5339,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5304,
+            "wire": 5347,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5314,
+            "wire": 5357,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5269,
+            "wire": 5312,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5282,
+            "wire": 5325,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5292,
+            "wire": 5335,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5277,
+            "wire": 5320,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5279,
+            "wire": 5322,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5309,
+            "wire": 5352,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5299,
+            "wire": 5342,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5272,
+            "wire": 5315,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5274,
+            "wire": 5317,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5308,
+            "wire": 5351,
+            "clientPayload": 383
+          },
+          {
+            "payload": 5271,
+            "wire": 5315,
+            "clientPayload": 384
+          },
+          {
+            "payload": 5298,
+            "wire": 5342,
+            "clientPayload": 384
+          },
+          {
+            "payload": 5296,
+            "wire": 5340,
+            "clientPayload": 384
+          },
+          {
+            "payload": 5314,
+            "wire": 5358,
+            "clientPayload": 384
+          },
+          {
+            "payload": 5294,
+            "wire": 5338,
+            "clientPayload": 384
+          },
+          {
+            "payload": 5263,
+            "wire": 5307,
+            "clientPayload": 384
+          },
+          {
+            "payload": 5303,
+            "wire": 5347,
+            "clientPayload": 384
+          }
+        ],
+        "B": [
+          {
+            "payload": 478,
+            "wire": 517,
+            "clientPayload": 383
+          },
+          {
+            "payload": 529,
+            "wire": 568,
+            "clientPayload": 383
+          },
+          {
+            "payload": 479,
+            "wire": 518,
+            "clientPayload": 383
+          },
+          {
+            "payload": 369,
+            "wire": 408,
+            "clientPayload": 383
+          },
+          {
+            "payload": 530,
+            "wire": 569,
+            "clientPayload": 383
+          },
+          {
+            "payload": 475,
+            "wire": 514,
+            "clientPayload": 383
+          },
+          {
+            "payload": 430,
+            "wire": 469,
+            "clientPayload": 383
+          },
+          {
+            "payload": 470,
+            "wire": 509,
+            "clientPayload": 383
+          },
+          {
+            "payload": 525,
+            "wire": 564,
+            "clientPayload": 383
+          },
+          {
+            "payload": 430,
+            "wire": 469,
+            "clientPayload": 383
+          },
+          {
+            "payload": 481,
+            "wire": 520,
+            "clientPayload": 383
+          },
+          {
+            "payload": 368,
+            "wire": 407,
+            "clientPayload": 383
+          },
+          {
+            "payload": 470,
+            "wire": 509,
+            "clientPayload": 383
+          },
+          {
+            "payload": 479,
+            "wire": 518,
+            "clientPayload": 383
+          },
+          {
+            "payload": 474,
+            "wire": 513,
+            "clientPayload": 383
+          },
+          {
+            "payload": 481,
+            "wire": 520,
+            "clientPayload": 383
+          },
+          {
+            "payload": 479,
+            "wire": 518,
+            "clientPayload": 383
+          },
+          {
+            "payload": 425,
+            "wire": 464,
+            "clientPayload": 383
+          },
+          {
+            "payload": 475,
+            "wire": 514,
+            "clientPayload": 383
+          },
+          {
+            "payload": 369,
+            "wire": 408,
+            "clientPayload": 383
+          },
+          {
+            "payload": 425,
+            "wire": 464,
+            "clientPayload": 383
+          },
+          {
+            "payload": 475,
+            "wire": 514,
+            "clientPayload": 383
+          },
+          {
+            "payload": 370,
+            "wire": 409,
+            "clientPayload": 383
+          },
+          {
+            "payload": 429,
+            "wire": 468,
+            "clientPayload": 383
+          },
+          {
+            "payload": 371,
+            "wire": 410,
+            "clientPayload": 383
+          },
+          {
+            "payload": 475,
+            "wire": 514,
+            "clientPayload": 383
+          },
+          {
+            "payload": 429,
+            "wire": 468,
+            "clientPayload": 383
+          },
+          {
+            "payload": 521,
+            "wire": 560,
+            "clientPayload": 383
+          },
+          {
+            "payload": 471,
+            "wire": 510,
+            "clientPayload": 383
+          },
+          {
+            "payload": 425,
+            "wire": 464,
+            "clientPayload": 383
+          },
+          {
+            "payload": 370,
+            "wire": 409,
+            "clientPayload": 383
+          },
+          {
+            "payload": 466,
+            "wire": 505,
+            "clientPayload": 383
+          },
+          {
+            "payload": 370,
+            "wire": 409,
+            "clientPayload": 383
+          },
+          {
+            "payload": 368,
+            "wire": 407,
+            "clientPayload": 383
+          },
+          {
+            "payload": 475,
+            "wire": 514,
+            "clientPayload": 383
+          },
+          {
+            "payload": 429,
+            "wire": 468,
+            "clientPayload": 383
+          },
+          {
+            "payload": 429,
+            "wire": 468,
+            "clientPayload": 383
+          },
+          {
+            "payload": 471,
+            "wire": 510,
+            "clientPayload": 383
+          },
+          {
+            "payload": 370,
+            "wire": 409,
+            "clientPayload": 383
+          },
+          {
+            "payload": 471,
+            "wire": 510,
+            "clientPayload": 383
+          },
+          {
+            "payload": 475,
+            "wire": 514,
+            "clientPayload": 383
+          },
+          {
+            "payload": 471,
+            "wire": 510,
+            "clientPayload": 383
+          },
+          {
+            "payload": 525,
+            "wire": 565,
+            "clientPayload": 384
+          },
+          {
+            "payload": 424,
+            "wire": 464,
+            "clientPayload": 384
+          },
+          {
+            "payload": 425,
+            "wire": 465,
+            "clientPayload": 384
+          },
+          {
+            "payload": 480,
+            "wire": 520,
+            "clientPayload": 384
+          },
+          {
+            "payload": 431,
+            "wire": 471,
+            "clientPayload": 384
+          },
+          {
+            "payload": 425,
+            "wire": 465,
+            "clientPayload": 384
+          },
+          {
+            "payload": 519,
+            "wire": 559,
+            "clientPayload": 384
+          },
+          {
+            "payload": 480,
+            "wire": 520,
+            "clientPayload": 384
+          }
+        ]
+      }
+    },
+    {
+      "cols": 20,
+      "k": 5,
+      "changed": 3,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 25457,
+        "payloadMin": 25403,
+        "payloadMax": 25542,
+        "wireMedian": 25521,
+        "wireMin": 25467,
+        "wireMax": 25606,
+        "clientPayloadMedian": 385
+      },
+      "B": {
+        "payloadMedian": 1927,
+        "payloadMin": 1793,
+        "payloadMax": 2141,
+        "wireMedian": 1967,
+        "wireMin": 1833,
+        "wireMax": 2181,
+        "clientPayloadMedian": 385
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 25495,
+            "wire": 25559,
+            "clientPayload": 384
+          },
+          {
+            "payload": 25422,
+            "wire": 25486,
+            "clientPayload": 384
+          },
+          {
+            "payload": 25438,
+            "wire": 25502,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25438,
+            "wire": 25502,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25478,
+            "wire": 25542,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25426,
+            "wire": 25490,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25448,
+            "wire": 25512,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25457,
+            "wire": 25521,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25435,
+            "wire": 25499,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25470,
+            "wire": 25534,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25526,
+            "wire": 25590,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25421,
+            "wire": 25485,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25455,
+            "wire": 25519,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25475,
+            "wire": 25539,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25409,
+            "wire": 25473,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25450,
+            "wire": 25514,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25482,
+            "wire": 25546,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25455,
+            "wire": 25519,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25478,
+            "wire": 25542,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25488,
+            "wire": 25552,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25465,
+            "wire": 25529,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25481,
+            "wire": 25545,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25462,
+            "wire": 25526,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25429,
+            "wire": 25493,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25447,
+            "wire": 25511,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25467,
+            "wire": 25531,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25443,
+            "wire": 25507,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25431,
+            "wire": 25495,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25436,
+            "wire": 25500,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25490,
+            "wire": 25554,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25403,
+            "wire": 25467,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25507,
+            "wire": 25571,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25496,
+            "wire": 25560,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25492,
+            "wire": 25556,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25474,
+            "wire": 25538,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25436,
+            "wire": 25500,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25476,
+            "wire": 25540,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25493,
+            "wire": 25557,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25494,
+            "wire": 25558,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25530,
+            "wire": 25594,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25445,
+            "wire": 25509,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25425,
+            "wire": 25489,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25542,
+            "wire": 25606,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25436,
+            "wire": 25500,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25427,
+            "wire": 25491,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25415,
+            "wire": 25479,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25445,
+            "wire": 25509,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25431,
+            "wire": 25495,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25520,
+            "wire": 25584,
+            "clientPayload": 385
+          },
+          {
+            "payload": 25484,
+            "wire": 25548,
+            "clientPayload": 385
+          }
+        ],
+        "B": [
+          {
+            "payload": 1806,
+            "wire": 1846,
+            "clientPayload": 384
+          },
+          {
+            "payload": 1989,
+            "wire": 2029,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1798,
+            "wire": 1838,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1889,
+            "wire": 1929,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1893,
+            "wire": 1933,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1880,
+            "wire": 1920,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1793,
+            "wire": 1833,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1927,
+            "wire": 1967,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1945,
+            "wire": 1985,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1956,
+            "wire": 1996,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1994,
+            "wire": 2034,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1941,
+            "wire": 1981,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1851,
+            "wire": 1891,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1902,
+            "wire": 1942,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1876,
+            "wire": 1916,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1895,
+            "wire": 1935,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1996,
+            "wire": 2036,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1793,
+            "wire": 1833,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1894,
+            "wire": 1934,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1850,
+            "wire": 1890,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1853,
+            "wire": 1893,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1942,
+            "wire": 1982,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1850,
+            "wire": 1890,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1884,
+            "wire": 1924,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1994,
+            "wire": 2034,
+            "clientPayload": 385
+          },
+          {
+            "payload": 2036,
+            "wire": 2076,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1844,
+            "wire": 1884,
+            "clientPayload": 385
+          },
+          {
+            "payload": 2072,
+            "wire": 2112,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1988,
+            "wire": 2028,
+            "clientPayload": 385
+          },
+          {
+            "payload": 2141,
+            "wire": 2181,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1947,
+            "wire": 1987,
+            "clientPayload": 385
+          },
+          {
+            "payload": 2030,
+            "wire": 2070,
+            "clientPayload": 385
+          },
+          {
+            "payload": 2052,
+            "wire": 2092,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1946,
+            "wire": 1986,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1951,
+            "wire": 1991,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1895,
+            "wire": 1935,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1936,
+            "wire": 1976,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1853,
+            "wire": 1893,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1842,
+            "wire": 1882,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1903,
+            "wire": 1943,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1986,
+            "wire": 2026,
+            "clientPayload": 385
+          },
+          {
+            "payload": 2089,
+            "wire": 2129,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1900,
+            "wire": 1940,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1882,
+            "wire": 1922,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1804,
+            "wire": 1844,
+            "clientPayload": 385
+          },
+          {
+            "payload": 2083,
+            "wire": 2123,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1947,
+            "wire": 1987,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1888,
+            "wire": 1928,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1936,
+            "wire": 1976,
+            "clientPayload": 385
+          },
+          {
+            "payload": 1937,
+            "wire": 1977,
+            "clientPayload": 385
+          }
+        ]
+      }
+    },
+    {
+      "cols": 20,
+      "k": 40,
+      "changed": 3,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 201859,
+        "payloadMin": 201705,
+        "payloadMax": 201968,
+        "wireMedian": 202095,
+        "wireMin": 201941,
+        "wireMax": 202204,
+        "clientPayloadMedian": 386
+      },
+      "B": {
+        "payloadMedian": 14792,
+        "payloadMin": 14217,
+        "payloadMax": 15222,
+        "wireMedian": 14844,
+        "wireMin": 14269,
+        "wireMax": 15274,
+        "clientPayloadMedian": 386
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 201851,
+            "wire": 202087,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201819,
+            "wire": 202055,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201853,
+            "wire": 202089,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201859,
+            "wire": 202095,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201883,
+            "wire": 202119,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201922,
+            "wire": 202158,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201968,
+            "wire": 202204,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201932,
+            "wire": 202168,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201956,
+            "wire": 202192,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201963,
+            "wire": 202199,
+            "clientPayload": 385
+          },
+          {
+            "payload": 201917,
+            "wire": 202153,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201910,
+            "wire": 202146,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201929,
+            "wire": 202165,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201904,
+            "wire": 202140,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201903,
+            "wire": 202139,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201895,
+            "wire": 202131,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201864,
+            "wire": 202100,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201848,
+            "wire": 202084,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201852,
+            "wire": 202088,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201758,
+            "wire": 201994,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201749,
+            "wire": 201985,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201730,
+            "wire": 201966,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201751,
+            "wire": 201987,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201793,
+            "wire": 202029,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201820,
+            "wire": 202056,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201801,
+            "wire": 202037,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201840,
+            "wire": 202076,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201796,
+            "wire": 202032,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201857,
+            "wire": 202093,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201850,
+            "wire": 202086,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201888,
+            "wire": 202124,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201880,
+            "wire": 202116,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201895,
+            "wire": 202131,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201944,
+            "wire": 202180,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201939,
+            "wire": 202175,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201903,
+            "wire": 202139,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201874,
+            "wire": 202110,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201876,
+            "wire": 202112,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201848,
+            "wire": 202084,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201821,
+            "wire": 202057,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201843,
+            "wire": 202079,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201877,
+            "wire": 202113,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201865,
+            "wire": 202101,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201874,
+            "wire": 202110,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201824,
+            "wire": 202060,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201820,
+            "wire": 202056,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201826,
+            "wire": 202062,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201779,
+            "wire": 202015,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201705,
+            "wire": 201941,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201735,
+            "wire": 201971,
+            "clientPayload": 386
+          }
+        ],
+        "B": [
+          {
+            "payload": 14779,
+            "wire": 14831,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14859,
+            "wire": 14911,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14902,
+            "wire": 14954,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14977,
+            "wire": 15029,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14692,
+            "wire": 14744,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14512,
+            "wire": 14564,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14663,
+            "wire": 14715,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14471,
+            "wire": 14523,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14847,
+            "wire": 14899,
+            "clientPayload": 385
+          },
+          {
+            "payload": 15171,
+            "wire": 15223,
+            "clientPayload": 385
+          },
+          {
+            "payload": 14800,
+            "wire": 14852,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15065,
+            "wire": 15117,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14934,
+            "wire": 14986,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14863,
+            "wire": 14915,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14826,
+            "wire": 14878,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14630,
+            "wire": 14682,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14530,
+            "wire": 14582,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14773,
+            "wire": 14825,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15222,
+            "wire": 15274,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14296,
+            "wire": 14348,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14826,
+            "wire": 14878,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14395,
+            "wire": 14447,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14458,
+            "wire": 14510,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14936,
+            "wire": 14988,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14985,
+            "wire": 15037,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14679,
+            "wire": 14731,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15086,
+            "wire": 15138,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14660,
+            "wire": 14712,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14431,
+            "wire": 14483,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14820,
+            "wire": 14872,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14803,
+            "wire": 14855,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14923,
+            "wire": 14975,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14217,
+            "wire": 14269,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14332,
+            "wire": 14384,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14633,
+            "wire": 14685,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14674,
+            "wire": 14726,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14674,
+            "wire": 14726,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14880,
+            "wire": 14932,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14952,
+            "wire": 15004,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15012,
+            "wire": 15064,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15086,
+            "wire": 15138,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14708,
+            "wire": 14760,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14491,
+            "wire": 14543,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14792,
+            "wire": 14844,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14799,
+            "wire": 14851,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14685,
+            "wire": 14737,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14353,
+            "wire": 14405,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14322,
+            "wire": 14374,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14403,
+            "wire": 14455,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14937,
+            "wire": 14989,
+            "clientPayload": 386
+          }
+        ]
+      }
+    },
+    {
+      "cols": 50,
+      "k": 1,
+      "changed": 3,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 12138,
+        "payloadMin": 12063,
+        "payloadMax": 12182,
+        "wireMedian": 12186,
+        "wireMin": 12111,
+        "wireMax": 12230,
+        "clientPayloadMedian": 386
+      },
+      "B": {
+        "payloadMedian": 431,
+        "payloadMin": 369,
+        "payloadMax": 528,
+        "wireMedian": 471,
+        "wireMin": 409,
+        "wireMax": 568,
+        "clientPayloadMedian": 386
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 12119,
+            "wire": 12167,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12144,
+            "wire": 12192,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12182,
+            "wire": 12230,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12108,
+            "wire": 12156,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12174,
+            "wire": 12222,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12152,
+            "wire": 12200,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12154,
+            "wire": 12202,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12156,
+            "wire": 12204,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12115,
+            "wire": 12163,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12157,
+            "wire": 12205,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12137,
+            "wire": 12185,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12145,
+            "wire": 12193,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12141,
+            "wire": 12189,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12130,
+            "wire": 12178,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12093,
+            "wire": 12141,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12142,
+            "wire": 12190,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12133,
+            "wire": 12181,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12146,
+            "wire": 12194,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12091,
+            "wire": 12139,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12152,
+            "wire": 12200,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12167,
+            "wire": 12215,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12181,
+            "wire": 12229,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12170,
+            "wire": 12218,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12120,
+            "wire": 12168,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12162,
+            "wire": 12210,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12128,
+            "wire": 12176,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12114,
+            "wire": 12162,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12169,
+            "wire": 12217,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12063,
+            "wire": 12111,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12130,
+            "wire": 12178,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12134,
+            "wire": 12182,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12094,
+            "wire": 12142,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12098,
+            "wire": 12146,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12146,
+            "wire": 12194,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12130,
+            "wire": 12178,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12138,
+            "wire": 12186,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12108,
+            "wire": 12156,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12133,
+            "wire": 12181,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12157,
+            "wire": 12205,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12164,
+            "wire": 12212,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12138,
+            "wire": 12186,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12139,
+            "wire": 12187,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12132,
+            "wire": 12180,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12149,
+            "wire": 12197,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12144,
+            "wire": 12192,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12166,
+            "wire": 12214,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12109,
+            "wire": 12157,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12121,
+            "wire": 12169,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12104,
+            "wire": 12152,
+            "clientPayload": 386
+          },
+          {
+            "payload": 12107,
+            "wire": 12155,
+            "clientPayload": 386
+          }
+        ],
+        "B": [
+          {
+            "payload": 433,
+            "wire": 473,
+            "clientPayload": 386
+          },
+          {
+            "payload": 373,
+            "wire": 413,
+            "clientPayload": 386
+          },
+          {
+            "payload": 433,
+            "wire": 473,
+            "clientPayload": 386
+          },
+          {
+            "payload": 523,
+            "wire": 563,
+            "clientPayload": 386
+          },
+          {
+            "payload": 372,
+            "wire": 412,
+            "clientPayload": 386
+          },
+          {
+            "payload": 430,
+            "wire": 470,
+            "clientPayload": 386
+          },
+          {
+            "payload": 371,
+            "wire": 411,
+            "clientPayload": 386
+          },
+          {
+            "payload": 430,
+            "wire": 470,
+            "clientPayload": 386
+          },
+          {
+            "payload": 472,
+            "wire": 512,
+            "clientPayload": 386
+          },
+          {
+            "payload": 528,
+            "wire": 568,
+            "clientPayload": 386
+          },
+          {
+            "payload": 483,
+            "wire": 523,
+            "clientPayload": 386
+          },
+          {
+            "payload": 371,
+            "wire": 411,
+            "clientPayload": 386
+          },
+          {
+            "payload": 431,
+            "wire": 471,
+            "clientPayload": 386
+          },
+          {
+            "payload": 371,
+            "wire": 411,
+            "clientPayload": 386
+          },
+          {
+            "payload": 482,
+            "wire": 522,
+            "clientPayload": 386
+          },
+          {
+            "payload": 428,
+            "wire": 468,
+            "clientPayload": 386
+          },
+          {
+            "payload": 370,
+            "wire": 410,
+            "clientPayload": 386
+          },
+          {
+            "payload": 427,
+            "wire": 467,
+            "clientPayload": 386
+          },
+          {
+            "payload": 476,
+            "wire": 516,
+            "clientPayload": 386
+          },
+          {
+            "payload": 371,
+            "wire": 411,
+            "clientPayload": 386
+          },
+          {
+            "payload": 482,
+            "wire": 522,
+            "clientPayload": 386
+          },
+          {
+            "payload": 371,
+            "wire": 411,
+            "clientPayload": 386
+          },
+          {
+            "payload": 427,
+            "wire": 467,
+            "clientPayload": 386
+          },
+          {
+            "payload": 481,
+            "wire": 521,
+            "clientPayload": 386
+          },
+          {
+            "payload": 483,
+            "wire": 523,
+            "clientPayload": 386
+          },
+          {
+            "payload": 478,
+            "wire": 518,
+            "clientPayload": 386
+          },
+          {
+            "payload": 424,
+            "wire": 464,
+            "clientPayload": 386
+          },
+          {
+            "payload": 476,
+            "wire": 516,
+            "clientPayload": 386
+          },
+          {
+            "payload": 426,
+            "wire": 466,
+            "clientPayload": 386
+          },
+          {
+            "payload": 478,
+            "wire": 518,
+            "clientPayload": 386
+          },
+          {
+            "payload": 472,
+            "wire": 512,
+            "clientPayload": 386
+          },
+          {
+            "payload": 523,
+            "wire": 563,
+            "clientPayload": 386
+          },
+          {
+            "payload": 432,
+            "wire": 472,
+            "clientPayload": 386
+          },
+          {
+            "payload": 523,
+            "wire": 563,
+            "clientPayload": 386
+          },
+          {
+            "payload": 476,
+            "wire": 516,
+            "clientPayload": 386
+          },
+          {
+            "payload": 482,
+            "wire": 522,
+            "clientPayload": 386
+          },
+          {
+            "payload": 483,
+            "wire": 523,
+            "clientPayload": 386
+          },
+          {
+            "payload": 427,
+            "wire": 467,
+            "clientPayload": 386
+          },
+          {
+            "payload": 477,
+            "wire": 517,
+            "clientPayload": 386
+          },
+          {
+            "payload": 370,
+            "wire": 410,
+            "clientPayload": 386
+          },
+          {
+            "payload": 432,
+            "wire": 472,
+            "clientPayload": 386
+          },
+          {
+            "payload": 369,
+            "wire": 409,
+            "clientPayload": 386
+          },
+          {
+            "payload": 369,
+            "wire": 409,
+            "clientPayload": 386
+          },
+          {
+            "payload": 427,
+            "wire": 467,
+            "clientPayload": 386
+          },
+          {
+            "payload": 427,
+            "wire": 467,
+            "clientPayload": 386
+          },
+          {
+            "payload": 371,
+            "wire": 411,
+            "clientPayload": 386
+          },
+          {
+            "payload": 371,
+            "wire": 411,
+            "clientPayload": 386
+          },
+          {
+            "payload": 473,
+            "wire": 513,
+            "clientPayload": 386
+          },
+          {
+            "payload": 426,
+            "wire": 466,
+            "clientPayload": 386
+          },
+          {
+            "payload": 426,
+            "wire": 466,
+            "clientPayload": 386
+          }
+        ]
+      }
+    },
+    {
+      "cols": 50,
+      "k": 5,
+      "changed": 3,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 59697,
+        "payloadMin": 59516,
+        "payloadMax": 59812,
+        "wireMedian": 59793,
+        "wireMin": 59612,
+        "wireMax": 59908,
+        "clientPayloadMedian": 386
+      },
+      "B": {
+        "payloadMedian": 1937,
+        "payloadMin": 1706,
+        "payloadMax": 2087,
+        "wireMedian": 1977,
+        "wireMin": 1746,
+        "wireMax": 2127,
+        "clientPayloadMedian": 386
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 59762,
+            "wire": 59858,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59801,
+            "wire": 59897,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59713,
+            "wire": 59809,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59772,
+            "wire": 59868,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59653,
+            "wire": 59749,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59614,
+            "wire": 59710,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59749,
+            "wire": 59845,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59643,
+            "wire": 59739,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59751,
+            "wire": 59847,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59786,
+            "wire": 59882,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59581,
+            "wire": 59677,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59635,
+            "wire": 59731,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59731,
+            "wire": 59827,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59812,
+            "wire": 59908,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59698,
+            "wire": 59794,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59662,
+            "wire": 59758,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59722,
+            "wire": 59818,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59609,
+            "wire": 59705,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59727,
+            "wire": 59823,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59761,
+            "wire": 59857,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59608,
+            "wire": 59704,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59669,
+            "wire": 59765,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59623,
+            "wire": 59719,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59689,
+            "wire": 59785,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59687,
+            "wire": 59783,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59752,
+            "wire": 59848,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59634,
+            "wire": 59730,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59766,
+            "wire": 59862,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59713,
+            "wire": 59809,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59701,
+            "wire": 59797,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59642,
+            "wire": 59738,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59610,
+            "wire": 59706,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59644,
+            "wire": 59740,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59704,
+            "wire": 59800,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59648,
+            "wire": 59744,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59720,
+            "wire": 59816,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59699,
+            "wire": 59795,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59650,
+            "wire": 59746,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59697,
+            "wire": 59793,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59719,
+            "wire": 59815,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59516,
+            "wire": 59612,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59681,
+            "wire": 59777,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59655,
+            "wire": 59751,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59735,
+            "wire": 59831,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59690,
+            "wire": 59786,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59621,
+            "wire": 59717,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59630,
+            "wire": 59726,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59737,
+            "wire": 59833,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59651,
+            "wire": 59747,
+            "clientPayload": 386
+          },
+          {
+            "payload": 59718,
+            "wire": 59814,
+            "clientPayload": 386
+          }
+        ],
+        "B": [
+          {
+            "payload": 1894,
+            "wire": 1934,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1944,
+            "wire": 1984,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2087,
+            "wire": 2127,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1936,
+            "wire": 1976,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1843,
+            "wire": 1883,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2081,
+            "wire": 2121,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1801,
+            "wire": 1841,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1929,
+            "wire": 1969,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1985,
+            "wire": 2025,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1937,
+            "wire": 1977,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1980,
+            "wire": 2020,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1955,
+            "wire": 1995,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1893,
+            "wire": 1933,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1706,
+            "wire": 1746,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1853,
+            "wire": 1893,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1981,
+            "wire": 2021,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1993,
+            "wire": 2033,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1893,
+            "wire": 1933,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1989,
+            "wire": 2029,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1983,
+            "wire": 2023,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1930,
+            "wire": 1970,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1900,
+            "wire": 1940,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1935,
+            "wire": 1975,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1947,
+            "wire": 1987,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2038,
+            "wire": 2078,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1936,
+            "wire": 1976,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2034,
+            "wire": 2074,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1886,
+            "wire": 1926,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1800,
+            "wire": 1840,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1924,
+            "wire": 1964,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1787,
+            "wire": 1827,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1987,
+            "wire": 2027,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1748,
+            "wire": 1788,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1953,
+            "wire": 1993,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1988,
+            "wire": 2028,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1991,
+            "wire": 2031,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1992,
+            "wire": 2032,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1841,
+            "wire": 1881,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1885,
+            "wire": 1925,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1983,
+            "wire": 2023,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1937,
+            "wire": 1977,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1894,
+            "wire": 1934,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1797,
+            "wire": 1837,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1893,
+            "wire": 1933,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1992,
+            "wire": 2032,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1841,
+            "wire": 1881,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1989,
+            "wire": 2029,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1846,
+            "wire": 1886,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2040,
+            "wire": 2080,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2031,
+            "wire": 2071,
+            "clientPayload": 386
+          }
+        ]
+      }
+    },
+    {
+      "cols": 50,
+      "k": 40,
+      "changed": 3,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 475600,
+        "payloadMin": 475368,
+        "payloadMax": 475817,
+        "wireMedian": 476104,
+        "wireMin": 475872,
+        "wireMax": 476321,
+        "clientPayloadMedian": 386
+      },
+      "B": {
+        "payloadMedian": 14790,
+        "payloadMin": 14083,
+        "payloadMax": 15400,
+        "wireMedian": 14842,
+        "wireMin": 14135,
+        "wireMax": 15452,
+        "clientPayloadMedian": 386
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 475666,
+            "wire": 476170,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475734,
+            "wire": 476238,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475724,
+            "wire": 476228,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475744,
+            "wire": 476248,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475779,
+            "wire": 476283,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475817,
+            "wire": 476321,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475763,
+            "wire": 476267,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475690,
+            "wire": 476194,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475743,
+            "wire": 476247,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475729,
+            "wire": 476233,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475681,
+            "wire": 476185,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475732,
+            "wire": 476236,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475768,
+            "wire": 476272,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475788,
+            "wire": 476292,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475740,
+            "wire": 476244,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475742,
+            "wire": 476246,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475602,
+            "wire": 476106,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475614,
+            "wire": 476118,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475601,
+            "wire": 476105,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475573,
+            "wire": 476077,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475597,
+            "wire": 476101,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475580,
+            "wire": 476084,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475555,
+            "wire": 476059,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475600,
+            "wire": 476104,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475659,
+            "wire": 476163,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475602,
+            "wire": 476106,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475569,
+            "wire": 476073,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475494,
+            "wire": 475998,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475477,
+            "wire": 475981,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475453,
+            "wire": 475957,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475434,
+            "wire": 475938,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475439,
+            "wire": 475943,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475415,
+            "wire": 475919,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475425,
+            "wire": 475929,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475418,
+            "wire": 475922,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475368,
+            "wire": 475872,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475400,
+            "wire": 475904,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475406,
+            "wire": 475910,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475432,
+            "wire": 475936,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475434,
+            "wire": 475938,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475426,
+            "wire": 475930,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475425,
+            "wire": 475929,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475397,
+            "wire": 475901,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475465,
+            "wire": 475969,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475534,
+            "wire": 476038,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475582,
+            "wire": 476086,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475622,
+            "wire": 476126,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475619,
+            "wire": 476123,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475622,
+            "wire": 476126,
+            "clientPayload": 386
+          },
+          {
+            "payload": 475578,
+            "wire": 476082,
+            "clientPayload": 386
+          }
+        ],
+        "B": [
+          {
+            "payload": 14400,
+            "wire": 14452,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15338,
+            "wire": 15390,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15400,
+            "wire": 15452,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14599,
+            "wire": 14651,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14376,
+            "wire": 14428,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14564,
+            "wire": 14616,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14083,
+            "wire": 14135,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14556,
+            "wire": 14608,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14852,
+            "wire": 14904,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14582,
+            "wire": 14634,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14997,
+            "wire": 15049,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14712,
+            "wire": 14764,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14754,
+            "wire": 14806,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14888,
+            "wire": 14940,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14659,
+            "wire": 14711,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14769,
+            "wire": 14821,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15190,
+            "wire": 15242,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14157,
+            "wire": 14209,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14583,
+            "wire": 14635,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14668,
+            "wire": 14720,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14548,
+            "wire": 14600,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14531,
+            "wire": 14583,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15002,
+            "wire": 15054,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15091,
+            "wire": 15143,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15249,
+            "wire": 15301,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14947,
+            "wire": 14999,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14951,
+            "wire": 15003,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14266,
+            "wire": 14318,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14584,
+            "wire": 14636,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14187,
+            "wire": 14239,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15000,
+            "wire": 15052,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15263,
+            "wire": 15315,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14958,
+            "wire": 15010,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14790,
+            "wire": 14842,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14636,
+            "wire": 14688,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15039,
+            "wire": 15091,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14984,
+            "wire": 15036,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14450,
+            "wire": 14502,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14782,
+            "wire": 14834,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14584,
+            "wire": 14636,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15061,
+            "wire": 15113,
+            "clientPayload": 386
+          },
+          {
+            "payload": 15117,
+            "wire": 15169,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14810,
+            "wire": 14862,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14524,
+            "wire": 14576,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14957,
+            "wire": 15009,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14802,
+            "wire": 14854,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14605,
+            "wire": 14657,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14881,
+            "wire": 14933,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14932,
+            "wire": 14984,
+            "clientPayload": 386
+          },
+          {
+            "payload": 14805,
+            "wire": 14857,
+            "clientPayload": 386
+          }
+        ]
+      }
+    },
+    {
+      "cols": 20,
+      "k": 1,
+      "changed": -1,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 5286,
+        "payloadMin": 5250,
+        "payloadMax": 5315,
+        "wireMedian": 5330,
+        "wireMin": 5294,
+        "wireMax": 5359,
+        "clientPayloadMedian": 386
+      },
+      "B": {
+        "payloadMedian": 2274,
+        "payloadMin": 1943,
+        "payloadMax": 2513,
+        "wireMedian": 2314,
+        "wireMin": 1983,
+        "wireMax": 2553,
+        "clientPayloadMedian": 386
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 5259,
+            "wire": 5303,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5250,
+            "wire": 5294,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5307,
+            "wire": 5351,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5303,
+            "wire": 5347,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5273,
+            "wire": 5317,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5291,
+            "wire": 5335,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5281,
+            "wire": 5325,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5297,
+            "wire": 5341,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5258,
+            "wire": 5302,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5278,
+            "wire": 5322,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5295,
+            "wire": 5339,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5293,
+            "wire": 5337,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5271,
+            "wire": 5315,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5293,
+            "wire": 5337,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5293,
+            "wire": 5337,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5288,
+            "wire": 5332,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5279,
+            "wire": 5323,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5296,
+            "wire": 5340,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5294,
+            "wire": 5338,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5278,
+            "wire": 5322,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5285,
+            "wire": 5329,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5290,
+            "wire": 5334,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5270,
+            "wire": 5314,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5305,
+            "wire": 5349,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5266,
+            "wire": 5310,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5267,
+            "wire": 5311,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5284,
+            "wire": 5328,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5271,
+            "wire": 5315,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5305,
+            "wire": 5349,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5282,
+            "wire": 5326,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5288,
+            "wire": 5332,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5290,
+            "wire": 5334,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5263,
+            "wire": 5307,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5267,
+            "wire": 5311,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5285,
+            "wire": 5329,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5258,
+            "wire": 5302,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5312,
+            "wire": 5356,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5299,
+            "wire": 5343,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5315,
+            "wire": 5359,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5281,
+            "wire": 5325,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5272,
+            "wire": 5316,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5304,
+            "wire": 5348,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5306,
+            "wire": 5350,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5275,
+            "wire": 5319,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5286,
+            "wire": 5330,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5306,
+            "wire": 5350,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5299,
+            "wire": 5343,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5272,
+            "wire": 5316,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5264,
+            "wire": 5308,
+            "clientPayload": 386
+          },
+          {
+            "payload": 5293,
+            "wire": 5337,
+            "clientPayload": 386
+          }
+        ],
+        "B": [
+          {
+            "payload": 2358,
+            "wire": 2398,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2169,
+            "wire": 2209,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2480,
+            "wire": 2520,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2180,
+            "wire": 2220,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2429,
+            "wire": 2469,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2376,
+            "wire": 2416,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2266,
+            "wire": 2306,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2432,
+            "wire": 2472,
+            "clientPayload": 386
+          },
+          {
+            "payload": 1943,
+            "wire": 1983,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2217,
+            "wire": 2257,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2330,
+            "wire": 2370,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2140,
+            "wire": 2180,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2420,
+            "wire": 2460,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2274,
+            "wire": 2314,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2228,
+            "wire": 2268,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2473,
+            "wire": 2513,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2276,
+            "wire": 2316,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2419,
+            "wire": 2459,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2225,
+            "wire": 2265,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2267,
+            "wire": 2307,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2228,
+            "wire": 2268,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2431,
+            "wire": 2471,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2181,
+            "wire": 2221,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2286,
+            "wire": 2326,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2135,
+            "wire": 2175,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2228,
+            "wire": 2268,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2177,
+            "wire": 2217,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2136,
+            "wire": 2176,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2190,
+            "wire": 2230,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2513,
+            "wire": 2553,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2327,
+            "wire": 2367,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2187,
+            "wire": 2227,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2178,
+            "wire": 2218,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2228,
+            "wire": 2268,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2328,
+            "wire": 2368,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2127,
+            "wire": 2167,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2289,
+            "wire": 2329,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2330,
+            "wire": 2370,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2246,
+            "wire": 2286,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2316,
+            "wire": 2356,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2079,
+            "wire": 2119,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2277,
+            "wire": 2317,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2183,
+            "wire": 2223,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2084,
+            "wire": 2124,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2367,
+            "wire": 2407,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2387,
+            "wire": 2427,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2322,
+            "wire": 2362,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2461,
+            "wire": 2501,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2225,
+            "wire": 2265,
+            "clientPayload": 386
+          },
+          {
+            "payload": 2470,
+            "wire": 2510,
+            "clientPayload": 386
+          }
+        ]
+      }
+    },
+    {
+      "cols": 20,
+      "k": 5,
+      "changed": -1,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 25451,
+        "payloadMin": 25387,
+        "payloadMax": 25508,
+        "wireMedian": 25515,
+        "wireMin": 25451,
+        "wireMax": 25572,
+        "clientPayloadMedian": 386
+      },
+      "B": {
+        "payloadMedian": 10925,
+        "payloadMin": 10528,
+        "payloadMax": 11508,
+        "wireMedian": 10973,
+        "wireMin": 10576,
+        "wireMax": 11556,
+        "clientPayloadMedian": 386
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 25441,
+            "wire": 25505,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25488,
+            "wire": 25552,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25389,
+            "wire": 25453,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25483,
+            "wire": 25547,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25477,
+            "wire": 25541,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25452,
+            "wire": 25516,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25469,
+            "wire": 25533,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25455,
+            "wire": 25519,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25462,
+            "wire": 25526,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25471,
+            "wire": 25535,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25452,
+            "wire": 25516,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25450,
+            "wire": 25514,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25491,
+            "wire": 25555,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25489,
+            "wire": 25553,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25410,
+            "wire": 25474,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25463,
+            "wire": 25527,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25387,
+            "wire": 25451,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25421,
+            "wire": 25485,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25424,
+            "wire": 25488,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25443,
+            "wire": 25507,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25433,
+            "wire": 25497,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25438,
+            "wire": 25502,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25466,
+            "wire": 25530,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25460,
+            "wire": 25524,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25446,
+            "wire": 25510,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25472,
+            "wire": 25536,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25463,
+            "wire": 25527,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25440,
+            "wire": 25504,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25401,
+            "wire": 25465,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25497,
+            "wire": 25561,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25434,
+            "wire": 25498,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25426,
+            "wire": 25490,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25462,
+            "wire": 25526,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25442,
+            "wire": 25506,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25479,
+            "wire": 25543,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25451,
+            "wire": 25515,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25448,
+            "wire": 25512,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25444,
+            "wire": 25508,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25459,
+            "wire": 25523,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25415,
+            "wire": 25479,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25430,
+            "wire": 25494,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25436,
+            "wire": 25500,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25482,
+            "wire": 25546,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25442,
+            "wire": 25506,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25463,
+            "wire": 25527,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25441,
+            "wire": 25505,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25450,
+            "wire": 25514,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25419,
+            "wire": 25483,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25455,
+            "wire": 25519,
+            "clientPayload": 386
+          },
+          {
+            "payload": 25508,
+            "wire": 25572,
+            "clientPayload": 386
+          }
+        ],
+        "B": [
+          {
+            "payload": 10841,
+            "wire": 10889,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10826,
+            "wire": 10874,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11027,
+            "wire": 11075,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10623,
+            "wire": 10671,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10871,
+            "wire": 10919,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11010,
+            "wire": 11058,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10609,
+            "wire": 10657,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10807,
+            "wire": 10855,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11176,
+            "wire": 11224,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10999,
+            "wire": 11047,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10816,
+            "wire": 10864,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11316,
+            "wire": 11364,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10925,
+            "wire": 10973,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11261,
+            "wire": 11309,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10901,
+            "wire": 10949,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11057,
+            "wire": 11105,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10878,
+            "wire": 10926,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11051,
+            "wire": 11099,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10528,
+            "wire": 10576,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10712,
+            "wire": 10760,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10950,
+            "wire": 10998,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10805,
+            "wire": 10853,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10944,
+            "wire": 10992,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11044,
+            "wire": 11092,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11308,
+            "wire": 11356,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11154,
+            "wire": 11202,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10789,
+            "wire": 10837,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10884,
+            "wire": 10932,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10556,
+            "wire": 10604,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11159,
+            "wire": 11207,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10894,
+            "wire": 10942,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10996,
+            "wire": 11044,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11094,
+            "wire": 11142,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10806,
+            "wire": 10854,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10991,
+            "wire": 11039,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10621,
+            "wire": 10669,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11282,
+            "wire": 11330,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11182,
+            "wire": 11230,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10895,
+            "wire": 10943,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10793,
+            "wire": 10841,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11288,
+            "wire": 11336,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10728,
+            "wire": 10776,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11508,
+            "wire": 11556,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10852,
+            "wire": 10900,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10693,
+            "wire": 10741,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11197,
+            "wire": 11245,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10994,
+            "wire": 11042,
+            "clientPayload": 386
+          },
+          {
+            "payload": 11233,
+            "wire": 11281,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10607,
+            "wire": 10655,
+            "clientPayload": 386
+          },
+          {
+            "payload": 10680,
+            "wire": 10728,
+            "clientPayload": 386
+          }
+        ]
+      }
+    },
+    {
+      "cols": 20,
+      "k": 40,
+      "changed": -1,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 201884,
+        "payloadMin": 201701,
+        "payloadMax": 202022,
+        "wireMedian": 202120,
+        "wireMin": 201938,
+        "wireMax": 202258,
+        "clientPayloadMedian": 386
+      },
+      "B": {
+        "payloadMedian": 87632,
+        "payloadMin": 86044,
+        "payloadMax": 89184,
+        "wireMedian": 87756,
+        "wireMin": 86166,
+        "wireMax": 89308,
+        "clientPayloadMedian": 386
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 201895,
+            "wire": 202131,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201876,
+            "wire": 202112,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201952,
+            "wire": 202188,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201995,
+            "wire": 202231,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201884,
+            "wire": 202120,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201923,
+            "wire": 202159,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201810,
+            "wire": 202046,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201948,
+            "wire": 202184,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201921,
+            "wire": 202157,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201836,
+            "wire": 202072,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201923,
+            "wire": 202159,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201882,
+            "wire": 202118,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201899,
+            "wire": 202135,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201873,
+            "wire": 202109,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201858,
+            "wire": 202094,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201911,
+            "wire": 202147,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201805,
+            "wire": 202041,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201814,
+            "wire": 202050,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201956,
+            "wire": 202192,
+            "clientPayload": 386
+          },
+          {
+            "payload": 202022,
+            "wire": 202258,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201891,
+            "wire": 202127,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201913,
+            "wire": 202149,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201905,
+            "wire": 202141,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201803,
+            "wire": 202039,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201856,
+            "wire": 202092,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201958,
+            "wire": 202194,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201828,
+            "wire": 202064,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201859,
+            "wire": 202095,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201936,
+            "wire": 202172,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201917,
+            "wire": 202153,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201848,
+            "wire": 202084,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201706,
+            "wire": 201942,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201897,
+            "wire": 202133,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201821,
+            "wire": 202057,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201917,
+            "wire": 202153,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201862,
+            "wire": 202098,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201972,
+            "wire": 202208,
+            "clientPayload": 386
+          },
+          {
+            "payload": 201949,
+            "wire": 202186,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201823,
+            "wire": 202060,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201730,
+            "wire": 201967,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201849,
+            "wire": 202086,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201841,
+            "wire": 202078,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201860,
+            "wire": 202097,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201920,
+            "wire": 202157,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201878,
+            "wire": 202115,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201862,
+            "wire": 202099,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201701,
+            "wire": 201938,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201792,
+            "wire": 202029,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201988,
+            "wire": 202225,
+            "clientPayload": 387
+          },
+          {
+            "payload": 201903,
+            "wire": 202140,
+            "clientPayload": 387
+          }
+        ],
+        "B": [
+          {
+            "payload": 86827,
+            "wire": 86951,
+            "clientPayload": 386
+          },
+          {
+            "payload": 86978,
+            "wire": 87102,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88236,
+            "wire": 88360,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88293,
+            "wire": 88417,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87200,
+            "wire": 87324,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87981,
+            "wire": 88105,
+            "clientPayload": 386
+          },
+          {
+            "payload": 86790,
+            "wire": 86914,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88460,
+            "wire": 88584,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88631,
+            "wire": 88755,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87054,
+            "wire": 87178,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87333,
+            "wire": 87457,
+            "clientPayload": 386
+          },
+          {
+            "payload": 89184,
+            "wire": 89308,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88491,
+            "wire": 88615,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87037,
+            "wire": 87161,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88144,
+            "wire": 88268,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87125,
+            "wire": 87249,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87807,
+            "wire": 87931,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87844,
+            "wire": 87968,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88406,
+            "wire": 88530,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87632,
+            "wire": 87756,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88393,
+            "wire": 88517,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87445,
+            "wire": 87569,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87525,
+            "wire": 87649,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87463,
+            "wire": 87587,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87490,
+            "wire": 87614,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87928,
+            "wire": 88052,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87806,
+            "wire": 87930,
+            "clientPayload": 386
+          },
+          {
+            "payload": 86713,
+            "wire": 86837,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87806,
+            "wire": 87930,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87137,
+            "wire": 87261,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87154,
+            "wire": 87278,
+            "clientPayload": 386
+          },
+          {
+            "payload": 86044,
+            "wire": 86166,
+            "clientPayload": 386
+          },
+          {
+            "payload": 87221,
+            "wire": 87345,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88195,
+            "wire": 88319,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88621,
+            "wire": 88745,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88266,
+            "wire": 88390,
+            "clientPayload": 386
+          },
+          {
+            "payload": 88210,
+            "wire": 88335,
+            "clientPayload": 387
+          },
+          {
+            "payload": 88973,
+            "wire": 89098,
+            "clientPayload": 387
+          },
+          {
+            "payload": 87989,
+            "wire": 88114,
+            "clientPayload": 387
+          },
+          {
+            "payload": 87454,
+            "wire": 87579,
+            "clientPayload": 387
+          },
+          {
+            "payload": 87607,
+            "wire": 87732,
+            "clientPayload": 387
+          },
+          {
+            "payload": 86119,
+            "wire": 86242,
+            "clientPayload": 387
+          },
+          {
+            "payload": 86864,
+            "wire": 86989,
+            "clientPayload": 387
+          },
+          {
+            "payload": 88382,
+            "wire": 88507,
+            "clientPayload": 387
+          },
+          {
+            "payload": 86500,
+            "wire": 86625,
+            "clientPayload": 387
+          },
+          {
+            "payload": 88474,
+            "wire": 88599,
+            "clientPayload": 387
+          },
+          {
+            "payload": 88773,
+            "wire": 88898,
+            "clientPayload": 387
+          },
+          {
+            "payload": 87494,
+            "wire": 87619,
+            "clientPayload": 387
+          },
+          {
+            "payload": 87040,
+            "wire": 87165,
+            "clientPayload": 387
+          },
+          {
+            "payload": 87253,
+            "wire": 87378,
+            "clientPayload": 387
+          }
+        ]
+      }
+    },
+    {
+      "cols": 50,
+      "k": 1,
+      "changed": -1,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 12138,
+        "payloadMin": 12068,
+        "payloadMax": 12172,
+        "wireMedian": 12187,
+        "wireMin": 12117,
+        "wireMax": 12221,
+        "clientPayloadMedian": 387
+      },
+      "B": {
+        "payloadMedian": 5509,
+        "payloadMin": 5178,
+        "payloadMax": 5756,
+        "wireMedian": 5554,
+        "wireMin": 5223,
+        "wireMax": 5801,
+        "clientPayloadMedian": 387
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 12092,
+            "wire": 12141,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12132,
+            "wire": 12181,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12085,
+            "wire": 12134,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12147,
+            "wire": 12196,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12148,
+            "wire": 12197,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12069,
+            "wire": 12118,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12138,
+            "wire": 12187,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12071,
+            "wire": 12120,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12084,
+            "wire": 12133,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12151,
+            "wire": 12200,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12138,
+            "wire": 12187,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12154,
+            "wire": 12203,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12129,
+            "wire": 12178,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12076,
+            "wire": 12125,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12125,
+            "wire": 12174,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12128,
+            "wire": 12177,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12118,
+            "wire": 12167,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12068,
+            "wire": 12117,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12157,
+            "wire": 12206,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12141,
+            "wire": 12190,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12166,
+            "wire": 12215,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12150,
+            "wire": 12199,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12151,
+            "wire": 12200,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12138,
+            "wire": 12187,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12093,
+            "wire": 12142,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12124,
+            "wire": 12173,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12121,
+            "wire": 12170,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12157,
+            "wire": 12206,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12146,
+            "wire": 12195,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12144,
+            "wire": 12193,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12140,
+            "wire": 12189,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12167,
+            "wire": 12216,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12154,
+            "wire": 12203,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12143,
+            "wire": 12192,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12151,
+            "wire": 12200,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12171,
+            "wire": 12220,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12145,
+            "wire": 12194,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12119,
+            "wire": 12168,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12124,
+            "wire": 12173,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12147,
+            "wire": 12196,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12172,
+            "wire": 12221,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12114,
+            "wire": 12163,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12163,
+            "wire": 12212,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12126,
+            "wire": 12175,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12106,
+            "wire": 12155,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12103,
+            "wire": 12152,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12139,
+            "wire": 12188,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12125,
+            "wire": 12174,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12094,
+            "wire": 12143,
+            "clientPayload": 387
+          },
+          {
+            "payload": 12171,
+            "wire": 12220,
+            "clientPayload": 387
+          }
+        ],
+        "B": [
+          {
+            "payload": 5509,
+            "wire": 5554,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5489,
+            "wire": 5534,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5555,
+            "wire": 5600,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5500,
+            "wire": 5545,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5743,
+            "wire": 5788,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5444,
+            "wire": 5489,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5491,
+            "wire": 5536,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5468,
+            "wire": 5513,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5301,
+            "wire": 5346,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5366,
+            "wire": 5411,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5545,
+            "wire": 5590,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5457,
+            "wire": 5502,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5686,
+            "wire": 5731,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5347,
+            "wire": 5392,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5498,
+            "wire": 5543,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5381,
+            "wire": 5426,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5575,
+            "wire": 5620,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5538,
+            "wire": 5583,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5756,
+            "wire": 5801,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5502,
+            "wire": 5547,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5465,
+            "wire": 5510,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5607,
+            "wire": 5652,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5400,
+            "wire": 5445,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5599,
+            "wire": 5644,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5656,
+            "wire": 5701,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5593,
+            "wire": 5638,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5436,
+            "wire": 5481,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5564,
+            "wire": 5609,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5307,
+            "wire": 5352,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5543,
+            "wire": 5588,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5651,
+            "wire": 5696,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5516,
+            "wire": 5561,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5373,
+            "wire": 5418,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5458,
+            "wire": 5503,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5742,
+            "wire": 5787,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5362,
+            "wire": 5407,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5440,
+            "wire": 5485,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5512,
+            "wire": 5557,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5551,
+            "wire": 5596,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5634,
+            "wire": 5679,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5667,
+            "wire": 5712,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5611,
+            "wire": 5656,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5220,
+            "wire": 5265,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5679,
+            "wire": 5724,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5403,
+            "wire": 5448,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5554,
+            "wire": 5599,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5684,
+            "wire": 5729,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5248,
+            "wire": 5293,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5441,
+            "wire": 5486,
+            "clientPayload": 387
+          },
+          {
+            "payload": 5178,
+            "wire": 5223,
+            "clientPayload": 387
+          }
+        ]
+      }
+    },
+    {
+      "cols": 50,
+      "k": 5,
+      "changed": -1,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 59675,
+        "payloadMin": 59537,
+        "payloadMax": 59787,
+        "wireMedian": 59772,
+        "wireMin": 59634,
+        "wireMax": 59884,
+        "clientPayloadMedian": 387
+      },
+      "B": {
+        "payloadMedian": 27168,
+        "payloadMin": 26222,
+        "payloadMax": 28064,
+        "wireMedian": 27233,
+        "wireMin": 26287,
+        "wireMax": 28129,
+        "clientPayloadMedian": 387
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 59755,
+            "wire": 59852,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59618,
+            "wire": 59715,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59642,
+            "wire": 59739,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59713,
+            "wire": 59810,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59779,
+            "wire": 59876,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59537,
+            "wire": 59634,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59691,
+            "wire": 59788,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59585,
+            "wire": 59682,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59787,
+            "wire": 59884,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59650,
+            "wire": 59747,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59745,
+            "wire": 59842,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59572,
+            "wire": 59669,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59718,
+            "wire": 59815,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59661,
+            "wire": 59758,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59626,
+            "wire": 59723,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59655,
+            "wire": 59752,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59709,
+            "wire": 59806,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59589,
+            "wire": 59686,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59704,
+            "wire": 59801,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59632,
+            "wire": 59729,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59634,
+            "wire": 59731,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59615,
+            "wire": 59712,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59630,
+            "wire": 59727,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59683,
+            "wire": 59780,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59587,
+            "wire": 59684,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59727,
+            "wire": 59824,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59573,
+            "wire": 59670,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59699,
+            "wire": 59796,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59724,
+            "wire": 59821,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59609,
+            "wire": 59706,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59669,
+            "wire": 59766,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59701,
+            "wire": 59798,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59615,
+            "wire": 59712,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59626,
+            "wire": 59723,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59629,
+            "wire": 59726,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59663,
+            "wire": 59760,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59691,
+            "wire": 59788,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59656,
+            "wire": 59753,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59675,
+            "wire": 59772,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59741,
+            "wire": 59838,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59636,
+            "wire": 59733,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59751,
+            "wire": 59848,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59692,
+            "wire": 59789,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59689,
+            "wire": 59786,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59683,
+            "wire": 59780,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59684,
+            "wire": 59781,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59696,
+            "wire": 59793,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59659,
+            "wire": 59756,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59727,
+            "wire": 59824,
+            "clientPayload": 387
+          },
+          {
+            "payload": 59683,
+            "wire": 59780,
+            "clientPayload": 387
+          }
+        ],
+        "B": [
+          {
+            "payload": 27610,
+            "wire": 27675,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27129,
+            "wire": 27194,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26995,
+            "wire": 27060,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26966,
+            "wire": 27031,
+            "clientPayload": 387
+          },
+          {
+            "payload": 28064,
+            "wire": 28129,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26242,
+            "wire": 26307,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27460,
+            "wire": 27525,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26466,
+            "wire": 26531,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27522,
+            "wire": 27587,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27019,
+            "wire": 27084,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27400,
+            "wire": 27465,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27398,
+            "wire": 27463,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26941,
+            "wire": 27006,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27371,
+            "wire": 27436,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27275,
+            "wire": 27340,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26842,
+            "wire": 26907,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27386,
+            "wire": 27451,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27134,
+            "wire": 27199,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27667,
+            "wire": 27732,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27463,
+            "wire": 27528,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27829,
+            "wire": 27894,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26776,
+            "wire": 26841,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27743,
+            "wire": 27808,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27168,
+            "wire": 27233,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26222,
+            "wire": 26287,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27828,
+            "wire": 27893,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27148,
+            "wire": 27213,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27208,
+            "wire": 27273,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27667,
+            "wire": 27732,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26944,
+            "wire": 27009,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27069,
+            "wire": 27134,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27372,
+            "wire": 27437,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27486,
+            "wire": 27551,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26748,
+            "wire": 26813,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26436,
+            "wire": 26501,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27438,
+            "wire": 27503,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27210,
+            "wire": 27275,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27793,
+            "wire": 27858,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27026,
+            "wire": 27091,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26946,
+            "wire": 27011,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27837,
+            "wire": 27902,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26792,
+            "wire": 26857,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27385,
+            "wire": 27450,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26996,
+            "wire": 27061,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27320,
+            "wire": 27385,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26655,
+            "wire": 26720,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26461,
+            "wire": 26526,
+            "clientPayload": 387
+          },
+          {
+            "payload": 27006,
+            "wire": 27071,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26870,
+            "wire": 26935,
+            "clientPayload": 387
+          },
+          {
+            "payload": 26980,
+            "wire": 27045,
+            "clientPayload": 387
+          }
+        ]
+      }
+    },
+    {
+      "cols": 50,
+      "k": 40,
+      "changed": -1,
+      "ticks": 50,
+      "A": {
+        "payloadMedian": 475644,
+        "payloadMin": 475346,
+        "payloadMax": 475861,
+        "wireMedian": 476149,
+        "wireMin": 475851,
+        "wireMax": 476366,
+        "clientPayloadMedian": 387
+      },
+      "B": {
+        "payloadMedian": 216753,
+        "payloadMin": 213474,
+        "payloadMax": 218797,
+        "wireMedian": 217002,
+        "wireMin": 213723,
+        "wireMax": 219050,
+        "clientPayloadMedian": 387
+      },
+      "samples": {
+        "A": [
+          {
+            "payload": 475749,
+            "wire": 476254,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475346,
+            "wire": 475851,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475733,
+            "wire": 476238,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475653,
+            "wire": 476158,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475448,
+            "wire": 475953,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475515,
+            "wire": 476020,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475665,
+            "wire": 476170,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475646,
+            "wire": 476151,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475457,
+            "wire": 475962,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475596,
+            "wire": 476101,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475569,
+            "wire": 476074,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475696,
+            "wire": 476201,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475757,
+            "wire": 476262,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475526,
+            "wire": 476031,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475460,
+            "wire": 475965,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475861,
+            "wire": 476366,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475614,
+            "wire": 476119,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475798,
+            "wire": 476303,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475751,
+            "wire": 476256,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475487,
+            "wire": 475992,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475595,
+            "wire": 476100,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475416,
+            "wire": 475921,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475653,
+            "wire": 476158,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475683,
+            "wire": 476188,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475771,
+            "wire": 476276,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475779,
+            "wire": 476284,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475592,
+            "wire": 476097,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475523,
+            "wire": 476028,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475786,
+            "wire": 476291,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475666,
+            "wire": 476171,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475536,
+            "wire": 476041,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475784,
+            "wire": 476289,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475441,
+            "wire": 475946,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475779,
+            "wire": 476284,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475498,
+            "wire": 476003,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475715,
+            "wire": 476220,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475803,
+            "wire": 476308,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475602,
+            "wire": 476107,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475444,
+            "wire": 475949,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475702,
+            "wire": 476207,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475550,
+            "wire": 476055,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475425,
+            "wire": 475930,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475678,
+            "wire": 476183,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475571,
+            "wire": 476076,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475665,
+            "wire": 476170,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475644,
+            "wire": 476149,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475670,
+            "wire": 476175,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475603,
+            "wire": 476108,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475493,
+            "wire": 475998,
+            "clientPayload": 387
+          },
+          {
+            "payload": 475429,
+            "wire": 475934,
+            "clientPayload": 387
+          }
+        ],
+        "B": [
+          {
+            "payload": 217513,
+            "wire": 217766,
+            "clientPayload": 387
+          },
+          {
+            "payload": 213474,
+            "wire": 213723,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216753,
+            "wire": 217002,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216883,
+            "wire": 217132,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216552,
+            "wire": 216801,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215723,
+            "wire": 215972,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215539,
+            "wire": 215788,
+            "clientPayload": 387
+          },
+          {
+            "payload": 213878,
+            "wire": 214127,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216515,
+            "wire": 216764,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216866,
+            "wire": 217115,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216557,
+            "wire": 216806,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218234,
+            "wire": 218487,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217539,
+            "wire": 217792,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216604,
+            "wire": 216853,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215364,
+            "wire": 215613,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215499,
+            "wire": 215748,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215100,
+            "wire": 215349,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216276,
+            "wire": 216525,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216165,
+            "wire": 216414,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218363,
+            "wire": 218616,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216473,
+            "wire": 216722,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216894,
+            "wire": 217143,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217453,
+            "wire": 217706,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216281,
+            "wire": 216530,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218797,
+            "wire": 219050,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218477,
+            "wire": 218730,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216984,
+            "wire": 217233,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215817,
+            "wire": 216066,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217582,
+            "wire": 217835,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218450,
+            "wire": 218703,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215836,
+            "wire": 216085,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217592,
+            "wire": 217845,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217853,
+            "wire": 218106,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217277,
+            "wire": 217530,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218566,
+            "wire": 218819,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218461,
+            "wire": 218714,
+            "clientPayload": 387
+          },
+          {
+            "payload": 214781,
+            "wire": 215030,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216456,
+            "wire": 216705,
+            "clientPayload": 387
+          },
+          {
+            "payload": 215674,
+            "wire": 215923,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217332,
+            "wire": 217585,
+            "clientPayload": 387
+          },
+          {
+            "payload": 214916,
+            "wire": 215165,
+            "clientPayload": 387
+          },
+          {
+            "payload": 218439,
+            "wire": 218692,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216006,
+            "wire": 216255,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216085,
+            "wire": 216334,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216429,
+            "wire": 216678,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216968,
+            "wire": 217217,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217858,
+            "wire": 218111,
+            "clientPayload": 387
+          },
+          {
+            "payload": 216367,
+            "wire": 216616,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217999,
+            "wire": 218252,
+            "clientPayload": 387
+          },
+          {
+            "payload": 217331,
+            "wire": 217584,
+            "clientPayload": 387
+          }
+        ]
+      }
+    }
+  ]
+}

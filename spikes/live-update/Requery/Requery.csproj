@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- M4 and M5 of the research note "How ag-grid repaints when its data changes"
+       (docs/research/ag-grid-rendering-on-data-change.md, section 8): what a live batch costs
+       the bundled source today, a full requery for the batch, and a prototype incremental
+       requery, which M5 checks against GridQueryEngine.Apply before any timing is read.
+       Disposable. Run in Release. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\ExGrid\ExGrid.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,14 @@
+real ExGrid (A)  config                   batches   diffs    edits   frames     strB      estB disposed
+real ExGrid (A)  20 cols, k 1, 3 cells        1.0     2.0     11.0    236.7     2123      8123      1.0
+real ExGrid (A)  20 cols, k 5, 3 cells        1.0     6.0     23.0   1183.7     9400     37994      5.0
+real ExGrid (A)  20 cols, k 40, 3 cells       1.0    41.0    128.0   9468.1    73056    299291     40.0
+real ExGrid (A)  50 cols, k 1, 3 cells        1.0     2.0     11.0    535.7     4787     17965      1.0
+real ExGrid (A)  50 cols, k 5, 3 cells        1.0     6.0     23.0   2681.6    22755     87299      5.0
+real ExGrid (A)  50 cols, k 40, 3 cells       1.0    41.0    128.0  21441.4   179796    693409     40.0
+real ExGrid (A)  20 cols, k 1, all cells      1.0     2.0     11.0    236.7     2123      8125      1.0
+real ExGrid (A)  20 cols, k 5, all cells      1.0     6.0     23.0   1183.3     9397     37981      5.0
+real ExGrid (A)  20 cols, k 40, all cells     1.0    41.0    128.0   9466.5    73042    299242     40.0
+real ExGrid (A)  50 cols, k 1, all cells      1.0     2.0     11.0    536.2     4846     18035      1.0
+real ExGrid (A)  50 cols, k 5, all cells      1.0     6.0     23.0   2680.3    23002     87518      5.0
+real ExGrid (A)  50 cols, k 40, all cells     1.0    41.0    128.0  21448.1   181938    695709     40.0
+wrote verification/2026-10-05-macos-live-update-measure/raw/m2-realgrid-calibration-90px.json
