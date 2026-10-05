@@ -66,6 +66,11 @@
     height: 100%;
 }
 .mud-ex-pivot-pane > * { flex: none; }
+.mud-ex-pivot-pane > .mud-ex-pivot-pane-body { display: flex; flex-direction: column; gap: inherit; flex: 1 1 auto; min-height: 0; overflow: auto; }
+.mud-ex-pivot-pane-body > * { flex: none; }
+.mud-ex-pivot-pane-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mud-ex-pivot-pane .mud-ex-pivot-pane-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mud-ex-pivot-pane .mud-ex-pivot-pane-close { flex: none; }
 .mud-ex-pivot-pane .mud-ex-pivot-pane-caption { color: var(--mud-palette-text-secondary); }
 
 /* Defer Layout Update and Update at the pane's foot (ADR-0061). */
@@ -77,7 +82,7 @@
 }
 
 /* The list of fields: takes what the pane leaves and scrolls on its own. */
-.mud-ex-pivot-pane > .mud-ex-pivot-fields {
+.mud-ex-pivot-pane-body > .mud-ex-pivot-fields {
     flex: 1 1 0;
     display: flex;
     flex-direction: column;

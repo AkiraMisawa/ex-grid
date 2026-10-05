@@ -45,6 +45,23 @@
    grid's sticky header stands in layers of the grid's own, which would paint it over the records'
    header, and a report nobody sees takes no keyboard and is not read out. */
 .ex-pivot-sheet { position: relative; min-width: 0; }
+.ex-pivot-report-drop-remove {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    outline: 2px dashed var(--ex-pivot-drop-color, Highlight);
+    outline-offset: -2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ex-pivot-report-drop-remove > span {
+    padding: 0.3em 0.6em;
+    color: var(--ex-pivot-pane-color, CanvasText);
+    background: var(--ex-pivot-pane-background, Canvas);
+    border: 1px solid var(--ex-pivot-drop-color, Highlight);
+}
 .ex-pivot-sheet-covered > .ex-grid { visibility: hidden; }
 .ex-pivot-details-panel {
     position: absolute;
@@ -186,15 +203,20 @@
 .ex-pivot-field-list-scroll {
     position: absolute;
     inset: 0;
-    overflow: auto;
+    overflow: visible;
 }
 /* The pane as tall as the Field List, with the Areas always in view at its foot and the list of
    fields taking what is left, scrolling on its own — as Excel's pane does, so a field is dragged
    to an Area without either scrolling away. Where even the least of each does not fit, the Field
-   List scrolls as a whole. */
+   List's body scrolls, leaving the heading and its close button in view. */
 .ex-pivot-pane { display: flex; flex-direction: column; gap: 6px; padding: 8px; box-sizing: border-box; height: 100%; }
 .ex-pivot-pane > * { flex: none; }
-.ex-pivot-pane-title { font-weight: 600; font-size: 1.05em; }
+.ex-pivot-pane > .ex-pivot-pane-body { display: flex; flex-direction: column; gap: inherit; flex: 1 1 auto; min-height: 0; overflow: auto; }
+.ex-pivot-pane-body > * { flex: none; }
+.ex-pivot-pane-heading { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ex-pivot-pane-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 1.05em; }
+.ex-pivot-pane-close { flex: none; font: inherit; cursor: pointer; color: inherit; background: transparent; border: 0; padding: 0.2em 0.5em; }
+.ex-pivot-pane-close:hover { background: var(--ex-pivot-hover-background, ButtonFace); }
 .ex-pivot-pane-caption { color: var(--ex-pivot-muted-color, GrayText); font-size: 0.9em; }
 .ex-pivot-search, .ex-pivot-text, .ex-pivot-select {
     box-sizing: border-box;
@@ -205,7 +227,7 @@
     background: var(--ex-pivot-input-background, Field);
     border: 1px solid var(--ex-pivot-rule-color, rgba(128, 128, 128, 0.45));
 }
-.ex-pivot-pane > .ex-pivot-fields {
+.ex-pivot-pane-body > .ex-pivot-fields {
     flex: 1 1 0;
     list-style: none;
     margin: 0;

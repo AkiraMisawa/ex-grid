@@ -41,8 +41,8 @@ and a server all apply the same ones
   - A field dropped on Values from the list becomes a new Value Field.
   - An entry dropped on Values from another Area moves there.
   - A Value Field dropped on another Area moves there too, as Excel does.
-- **Dropping an entry back on the list of fields removes it**, as dragging out of the Areas does in
-  Excel.
+- **Dropping an entry on the list of fields or this ExPivot's report removes that placement.**
+  Other placements of the same field remain; the Source Records are unchanged.
 - **Σ Values** appears in Columns when a second Value Field is placed, and leaves when fewer than two
   remain.
   - It moves between Rows and Columns only.
@@ -128,7 +128,27 @@ report instead, in the Pivot Toolbar.**
   ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)),
   with Retry.
 
+### Closing a cramped Field List
+
+*Added 2026-10-05, decided with the user.* A close icon stands at the right of the Field List's
+title in both Chromes. The heading stays in view while the pane's body scrolls; a narrow heading
+truncates its title before squeezing the button. It uses the same visibility binding as the
+Pivot Toolbar's toggle, closes the pane's menu or panel, and preserves the layout and any pending
+Defer Layout Update edits. The Pivot Toolbar's toggle reopens it.
+
 ## Drag and drop without new JavaScript
+
+*Extended 2026-10-05, decided with the user.* Removal originally accepted only a drop on the
+list of fields. The report (including its empty state) now accepts the same removal, showing an
+outline and **Remove Field** while a removable entry is dragged. A details tab's records, a
+Show Details dialog, another ExPivot, an unplaced field from the list, and external drags are
+not removal targets. Passing over the report or cancelling a drag changes nothing. **Σ Values
+is never removable.** Removal follows Defer Layout Update just as the entry's Remove Field does.
+
+A drag carries the source and the pane's immutable layout from the render it began against.
+Every drop checks those against the current source and pane layout, and checks its target's
+rendered layout too. If either has changed, the drop does nothing: an index must never name a
+different field after a reorder. Hiding the pane ends its drag.
 
 The drag uses Blazor's own drag events: `dragstart`, `dragenter`, `drop` and `dragend`. `dragover`'s
 default is prevented by a directive, not by a handler. These are the framework's events, as

@@ -613,7 +613,9 @@ nobody had asked for. What that means when writing a test:
 - `pivot.spec.mjs` — ExPivot on `/pivot` (§29, docs/specs/expivot), **run once per Chrome**:
   ExPivot's own markup and `ExPivot.MudBlazor`'s (`/pivot?chrome=mud`), found by role and name,
   which both give the same. A field dragged from the list of fields onto an Area with the
-  browser's own drag and drop, an entry dropped before another and back onto the list (PV-10);
+  browser's own drag and drop, an entry dropped before another, back onto the list or onto the
+  report (PV-10); report removal following Defer Layout Update, an unused field and a details grid
+  changing nothing, and Escape cancelling the drag and its removal indication;
   the `−` button collapsing an Item with the Focus kept (PV-13); a double click on a value
   opening a tab at the report's foot, titled by the cell and holding the trades behind it, with
   the keyboard on the tab, a second tab beside it, and closing them; a dialog when the page asks
@@ -630,7 +632,8 @@ nobody had asked for. What that means when writing a test:
   the report and closed by a press on the backdrop, the keyboard back on its button (PV-12); the
   Layout menu over the report, its current choices marked, a no-op disabled, Escape and a choice
   giving the keyboard back to Layout (PV-30); the toggle hiding and showing the pane, bound by the
-  page; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
+  page; the heading's close icon still reachable in a narrow, short pane with its body scrolled
+  and a panel open, closing through the same binding; Defer Layout Update holding the report until Update (PV-28); the words switch speaking
   Excel's Japanese edition and back (PV-33); Month, declared as the month of the trade date, moved
   to Columns and painted `Jan` to `Sep` in the calendar's order, and `1月` to `9月` in the Japanese
   words (ADR-0060); and the code the page shows under "The code" equal to the regions of its source

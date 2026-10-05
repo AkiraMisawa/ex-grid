@@ -26,3 +26,16 @@ keeps the destination's keyboard, from Escape's return to the opener. The shared
 take focus without another Tab stop. Browser cases cover both Chromes, including back-to-back
 operations behind a circuit's round trip; component tests deliver an old rendered dismissal after
 a replacement menu or panel exists, and preserve the render-count and instance-independence checks.
+
+2026-10-05: extended removal to a drop on the same ExPivot's report, including its empty state.
+The indication says Remove Field; only the dragged placement is removed, following Defer Layout
+Update. Details, other pivots, list fields, external or cancelled drags and Σ Values do nothing.
+Drag and drop callbacks carry the source and rendered layout so a late entry index cannot remove
+or move a different field. The Field List's heading now has a close icon under both Chromes; its
+body scrolls independently, keeping the icon reachable when cramped, and closing keeps pending
+edits. ADR-0061, PV-10 and PV-30 record the extension.
+The review found that a view's delayed DOM lambda could still read a replacement Context. Both
+views now capture the render's context. Four component cases retain the actual rendered dragstart
+and drop bindings under both Chromes: all four failed before this fix and pass with it. The
+cramped-pane browser case also scrolls with Field Settings open and checks that the panel tracks
+its opener while the close button remains reachable.

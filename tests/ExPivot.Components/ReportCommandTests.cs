@@ -161,6 +161,12 @@ public class ReportCommandTests : PivotTestContext
         await RunMenuAsync(pivots[0], "Move to Column Labels");
         Assert.Equal(["Region"], AreaEntries(pivots[0], "Columns"));
         Assert.Equal(["Region"], AreaEntries(pivots[1], "Rows"));
+
+        await AreaElement(pivots[0], "Columns").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        await pivots[1].Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        await AreaElement(pivots[0], "Columns").QuerySelector(".ex-pivot-entry")!.DragEndAsync(new DragEventArgs());
+        Assert.Equal(["Region"], AreaEntries(pivots[0], "Columns"));
+        Assert.Equal(["Region"], AreaEntries(pivots[1], "Rows"));
     }
 
     /// <summary>A Chrome that draws a stub and keeps the contexts it was last handed.</summary>

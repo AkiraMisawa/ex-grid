@@ -137,6 +137,60 @@ for (const chrome of ['builtin', 'mud']) {
             await expect(page.getByRole('checkbox', { name: 'Desk', exact: true })).not.toBeChecked();
         });
 
+        test(`ADR-0061: entries dropped on the report are removed from Rows and Columns (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            for (const [caption, area, remaining] of [['Desk', 'Rows', ['Region']], ['Product', 'Columns', []]]) {
+                await entry(page, caption).dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+                await expect.poll(() => entriesOf(page, area)).toEqual(remaining);
+                await expect(field(page, caption).getByRole('checkbox')).not.toBeChecked();
+            }
+            await expect(page.locator('#pivot-status')).toContainText('2 changes made in the pane');
+        });
+
+        test(`ADR-0061: a report removal waits for Defer Layout Update (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const before = await reportRows(page);
+            await pane(page).getByRole('checkbox', { name: 'Defer Layout Update' }).check();
+            await entry(page, 'Desk').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+            await expect.poll(() => entriesOf(page, 'Rows')).toEqual(['Region']);
+            await circuitQuiet();
+            expect(await reportRows(page)).toBe(before);
+            await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+            await pane(page).getByRole('button', { name: 'Update', exact: true }).click();
+            await expect.poll(() => reportRows(page)).toBeLessThan(before);
+            await expect(page.locator('#pivot-status')).toContainText('1 changes made in the pane');
+        });
+
+        test(`ADR-0061: an unused field and a details grid do not accept report removal (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await field(page, 'Month').dragTo(report(page), { targetPosition: { x: 80, y: 60 } });
+            await circuitQuiet();
+            await expect(field(page, 'Month').getByRole('checkbox')).not.toBeChecked();
+            await firstValue(page).dblclick({ force: true });
+            const details = pivot(page).getByRole('tabpanel').getByRole('grid');
+            await expect(details).toBeVisible();
+            await entry(page, 'Desk').dragTo(details, { targetPosition: { x: 80, y: 60 } });
+            await circuitQuiet();
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+        });
+
+        test(`ADR-0061: cancelling over the report clears the removal indication without removing (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            const from = await entry(page, 'Desk').boundingBox();
+            const to = await report(page).boundingBox();
+            await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+            await page.mouse.down();
+            await page.mouse.move(to.x + 80, to.y + 60, { steps: 10 });
+            await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveText('Remove Field');
+            await page.keyboard.press('Escape');
+            await page.mouse.up();
+            await expect(pivot(page).locator('.ex-pivot-report-drop-remove')).toHaveCount(0);
+            await circuitQuiet();
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
+            await expect(page.locator('#pivot-status')).toContainText('0 changes made in the pane');
+        });
+
         test(`ADR-0059: the − button collapses an Item, and the Focus stays on it (${chrome})`, async ({ page }) => {
             await open(page, chrome);
             const toggle = report(page).locator('.ex-pivot-toggle').first();
@@ -720,6 +774,43 @@ for (const chrome of ['builtin', 'mud']) {
             await toggle.click();
             await expect(pane(page)).toBeVisible();
             await expect(page.locator('#pivot-field-list-status')).toHaveText('Field List shown: True');
+        });
+
+        test(`ADR-0061: a cramped Field List keeps its heading close button reachable while scrolling (${chrome})`, async ({ page }) => {
+            await open(page, chrome);
+            await alterPage(page, () => {
+                const root = document.querySelector('.ex-pivot');
+                const before = root.getAttribute('style');
+                root.style.setProperty('--ex-pivot-field-list-width', '160px');
+                root.style.height = '260px';
+                return () => root.setAttribute('style', before);
+            });
+            const body = pane(page).locator('.ex-pivot-pane-body, .mud-ex-pivot-pane-body');
+            await body.evaluate(b => { b.scrollTop = b.scrollHeight; });
+            await expect.poll(() => body.evaluate(b => b.scrollTop)).toBeGreaterThan(0);
+            await entry(page, 'Region').click();
+            await page.getByRole('menuitem', { name: 'Field Settings…', exact: true }).click();
+            await expect(page.getByRole('dialog', { name: 'Field Settings…', exact: true })).toBeVisible();
+            await body.evaluate(b => { b.scrollTop = 0; });
+            await expect.poll(async () => {
+                const opener = await entry(page, 'Region').boundingBox();
+                const panel = await page.getByRole('dialog', { name: 'Field Settings…', exact: true }).boundingBox();
+                return Math.abs(panel.y - (opener.y + opener.height));
+            }).toBeLessThan(8);
+            const close = pane(page).getByRole('button', { name: 'Hide Field List', exact: true });
+            await expect.poll(() => close.evaluate(b => {
+                const box = b.getBoundingClientRect();
+                const region = b.closest('[role=region]').getBoundingClientRect();
+                return box.left >= region.left && box.right <= region.right && box.top >= region.top
+                    && box.bottom <= region.bottom && b.contains(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2));
+            })).toBe(true);
+            await close.click();
+            await expect(pane(page)).toHaveCount(0);
+            await expect(page.locator('#pivot-field-list-status')).toHaveText('Field List shown: False');
+            await toolbarButton(page, 'Field List').click();
+            await expect(pane(page)).toBeVisible();
+            await expect(page.getByRole('dialog', { name: 'Field Settings…', exact: true })).toHaveCount(0);
+            expect(await entriesOf(page, 'Rows')).toEqual(['Region', 'Desk']);
         });
 
         test(`ADR-0061: while Defer Layout Update is ticked the pane's changes wait for Update (${chrome})`, async ({ page }) => {

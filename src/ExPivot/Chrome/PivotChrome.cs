@@ -166,6 +166,10 @@ public sealed record PivotFieldListContext(
     Action EndDrag,
     Func<string, string> Word)
 {
+    /// <summary>Hides the Field List from its heading, through the same visibility binding as
+    /// the Pivot Toolbar's toggle. The layout and pending edits are kept (ADR-0061).</summary>
+    public Func<Task> Close { get; init; } = static () => Task.CompletedTask;
+
     /// <summary>Whether Excel's Defer Layout Update is ticked, at the pane's foot (ADR-0061): the
     /// pane's changes then build a pending layout, which the fields and Areas above show, and the
     /// report and the source are left alone until Update.</summary>

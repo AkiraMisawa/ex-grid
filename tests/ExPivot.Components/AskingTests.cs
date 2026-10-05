@@ -416,6 +416,11 @@ public class AskingTests : PivotTestContext
         await cut.Find(".ex-pivot-layout-button").ClickAsync(new MouseEventArgs());
         await cut.Find(".ex-pivot-popup").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
+        await AreaElement(cut, "Rows").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        await cut.Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        await cut.Find("button[aria-label='Hide Field List']").ClickAsync(new MouseEventArgs());
+        await cut.Find(".ex-pivot-field-list-toggle").ClickAsync(new MouseEventArgs());
+
         Assert.Equal(rows, cut.FindComponents<ExGridRow<PivotReportRow>>().Sum(r => r.RenderCount));
         Assert.Equal(grid, Grid(cut).RenderCount);
     }
