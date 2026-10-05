@@ -44,6 +44,12 @@ nothing `main` did not, and a second integration branch would only fall behind.)
   two. At two each, those four shards were the wall clock: on run 37153502205 the WebAssembly
   ones took 20.4 to 22.0 minutes and the Server ones 12.7 to 17.0, while chrome-150's took 0.7
   to 4.0. The suite and the file boundary are unchanged.)*
+  *(Since 2026-10-05, decided with the user, layer 3 drives the hosts as `dotnet publish -c
+  Release` writes them, published once by a job of their own and taken by every runner, rather
+  than each runner building them and starting them with `dotnet run`. Their environment stays
+  Development, so what changed is how they are built. It was not done for time: on runs
+  37244202854 (Debug) and 37244249352 (Release) the suite took 143.5 and 149.2 runner minutes
+  and the slowest shard 12.9 and 12.7, the suite's time being the browser's and not the app's.)*
   - The **observational** specs still only record: each asserts that it measured something and
     never gates on the number (ADR-0026, "performance never gates").
   - The records a run writes — `console.json`, `metrics.json` — and any failure's trace are

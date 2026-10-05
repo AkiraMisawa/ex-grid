@@ -115,6 +115,38 @@ jobs:
           path: coverage/
           retention-days: 30
 
+  # The hosts layer 3 drives, published once in Release and handed to every runner that drives
+  # them: the WebAssembly DemoHost, the Server host and the demo API server (ADR-0069), as
+  # `dotnet publish -c Release` writes them, which is how a Consumer deploys. The suite starts
+  # them from EXGRID_HOSTS (playwright.config.mjs) instead of `dotnet run`; the environment they
+  # run in stays Development, as under `dotnet run`, so what changes is only how they are built.
+  hosts:
+    name: Layer 3's hosts, published in Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish the WebAssembly DemoHost
+        run: dotnet publish samples/ExGrid.DemoHost -c Release -o hosts/wasm
+
+      - name: Publish the Server host
+        run: dotnet publish samples/ExGrid.DemoHost.Server -c Release -o hosts/server
+
+      - name: Publish the demo API server
+        run: dotnet publish samples/ExGrid.DemoApi -c Release -o hosts/api
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: layer3-hosts
+          path: hosts/
+          if-no-files-found: error
+          retention-days: 7
+
   # Layer 3 in ten parts: each project (both browsers, and chrome-150's Layout Ceiling
   # selection, ADR-0053) in shards, each on a runner of its own — four for each browser,
   # whose shards took 20 minutes at two, and two for chrome-150's few files. The suite is
@@ -124,6 +156,7 @@ jobs:
   # between runners (ADR-0041).
   browser:
     name: Layer 3 on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }} (Linux, headed)
+    needs: hosts
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -156,15 +189,14 @@ jobs:
         working-directory: tests/ExGrid.Browser
         run: npm ci
 
-      # Built ahead, so the suite's own webServer start is a start and not a build.
-      - name: Build the DemoHost
-        run: dotnet build samples/ExGrid.DemoHost
-
-      # The demo API server the pages call (ADR-0069), which the suite starts beside the host.
-      # Its first start on a fresh runner generates the 20,000 trades the suite asks for, which
-      # takes about a second, well inside the webServer's timeout.
-      - name: Build the demo API server
-        run: dotnet build samples/ExGrid.DemoApi
+      # The hosts the hosts job published, among them the demo API server the pages call
+      # (ADR-0069), which the suite starts beside the host. Its first start on a fresh runner
+      # generates the 20,000 trades the suite asks for, which takes about a second, well inside
+      # the webServer's timeout.
+      - uses: actions/download-artifact@v8
+        with:
+          name: layer3-hosts
+          path: hosts
 
       # The screen is larger than any window the suite opens, so the chrome-150 project
       # (ADR-0053: Chrome at --force-device-scale-factor=1.5, its viewport left to the
@@ -172,6 +204,7 @@ jobs:
       - name: Layer 3, headed under xvfb
         working-directory: tests/ExGrid.Browser
         env:
+          EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
@@ -206,6 +239,7 @@ jobs:
   # WebAssembly run keeps its check name.
   browser-server:
     name: Layer 3 against the Server host on ${{ matrix.project }}, shard ${{ matrix.shard }}/${{ matrix.project == 'chrome-150' && 2 || 4 }} (Linux, headed)
+    needs: hosts
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -238,16 +272,17 @@ jobs:
         working-directory: tests/ExGrid.Browser
         run: npm ci
 
-      - name: Build the Server host
-        run: dotnet build samples/ExGrid.DemoHost.Server
-
-      # As beside the WebAssembly host: the suite starts it with 20,000 trades.
-      - name: Build the demo API server
-        run: dotnet build samples/ExGrid.DemoApi
+      # As beside the WebAssembly host: the published hosts, the demo API server started with
+      # 20,000 trades.
+      - uses: actions/download-artifact@v8
+        with:
+          name: layer3-hosts
+          path: hosts
 
       - name: Layer 3 against the Server host, headed under xvfb
         working-directory: tests/ExGrid.Browser
         env:
+          EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: server
           EXGRID_SOAK: ${{ env.LONG_RUN == 'true' && '1' || '' }}
         run: >
@@ -281,6 +316,7 @@ jobs:
   # the full run's to cover. retries stays 0 (ADR-0026), so a repeat that fails is a failure.
   browser-repeat:
     name: Changed specs, three times, against ${{ matrix.hosting }} on ${{ matrix.project }} (Linux, headed)
+    needs: hosts
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -336,19 +372,18 @@ jobs:
         working-directory: tests/ExGrid.Browser
         run: npm ci
 
-      - name: Build the host
+      # As in the full run: the published hosts, the demo API server among them (ADR-0069).
+      - uses: actions/download-artifact@v8
         if: steps.changed.outputs.specs != ''
-        run: dotnet build ${{ matrix.hosting == 'server' && 'samples/ExGrid.DemoHost.Server' || 'samples/ExGrid.DemoHost' }}
-
-      # As in the full run: the demo API server the suite starts beside the host (ADR-0069).
-      - name: Build the demo API server
-        if: steps.changed.outputs.specs != ''
-        run: dotnet build samples/ExGrid.DemoApi
+        with:
+          name: layer3-hosts
+          path: hosts
 
       - name: The changed specs, three times, headed under xvfb
         if: steps.changed.outputs.specs != ''
         working-directory: tests/ExGrid.Browser
         env:
+          EXGRID_HOSTS: ${{ github.workspace }}/hosts
           EXGRID_HOSTING: ${{ matrix.hosting }}
         run: >
           xvfb-run --auto-servernum --server-args="-screen 0 2560x1600x24"
