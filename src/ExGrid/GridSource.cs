@@ -61,11 +61,22 @@ public static class GridSource
     /// and Sorts produce — the ones in force — with the next matching position, as
     /// <see cref="Finding.GridFind.Step{TRow}"/> would over that result. Null reports that
     /// this source cannot search, and Ctrl+F is refused.</param>
+    /// <param name="rowKey">A row's Row Key, for live data (ADR-0141): with one, the source can be
+    /// told that the data moved on (<see cref="FetchingGridSource{TRow}.NotifyChanged"/>), pairs each
+    /// answer's rows with the painted ones by it, marks the cells that changed, and refuses an answer
+    /// that repeats a key. The Row Mark adapter's key is one (ADR-0140), and serves when this is
+    /// left out; both given must be the same delegate. Null with no adapter takes no live data.</param>
+    /// <param name="clock">The clock the notices are gathered on and the change times read from.
+    /// A source cannot see the host's services, so null is <see cref="TimeProvider.System"/>: a host
+    /// that registers a <see cref="TimeProvider"/> for the grid passes the same one here, and a test
+    /// passes its own.</param>
     public static FetchingGridSource<TRow> Fetch<TRow>(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
         int readAheadRows = 60,
         Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
         Rows.RowMarkAdapter<TRow>? marks = null,
-        Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null)
-        => new(fetch, readAheadRows, distinctValues, marks, find);
+        Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null,
+        Func<TRow, object>? rowKey = null,
+        TimeProvider? clock = null)
+        => new(fetch, readAheadRows, distinctValues, marks, find, rowKey, clock);
 }
