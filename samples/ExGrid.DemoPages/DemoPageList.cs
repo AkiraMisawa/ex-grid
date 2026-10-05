@@ -29,7 +29,7 @@ public static class DemoPageList
         new("shared", "Shared data", "Rows and data",
             "One store, a Grid Source per user; on the Server host a change reaches every tab, a sort reaches only one (ADR-0018)."),
         new("grid-live", "Live grid", "Rows and data",
-            "A live Window over the demo API server's trades: its hub names the trades that changed, the page reads them again, and the cells whose values moved are marked for a moment (ADR-0068, ADR-0069)."),
+            "A live Window over the demo API server's trades through GridSource.Fetch: its hub says the trades changed, the source reads its Window again by Row Key, and the cells whose values moved are marked for a moment (ADR-0068, ADR-0069, ADR-0141)."),
         new("cells", "Cells and rows", "Cells and rows",
             "Cell State, Row Kind, Template Columns and Action Columns — what the value alone cannot say (ADR-0006, ADR-0020, ADR-0024)."),
         new("marks", "Row Marks", "Cells and rows",

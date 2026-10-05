@@ -3,6 +3,7 @@
 @inject DemoApiClient Api
 @using System.Globalization
 @using System.Net.Http.Json
+@using System.Runtime.CompilerServices
 @using System.Text.Json
 @using Microsoft.AspNetCore.SignalR.Client
 @* global::, because this project's namespace nests inside ExGrid (the CS0426 trap in AGENTS.md). *@
@@ -20,22 +21,27 @@
 
 <p>
     <strong>The use case:</strong> a blotter over trades that a server keeps changing — ExGrid
-    alone, with no pivot. The page pushes a Window of the demo API server's trades, read a page at a
-    time (<code>GET /api/trades</code>) as the grid asks for rows (ADR-0001). The server's live
-    updates change trades several times a second, and its SignalR hub names them: "trades T10000123
-    and T10000456 changed". The page reads those trades again (<code>POST /api/trades/by-id</code>),
-    puts the new rows in its Window, and answers the grid's <code>CellChangedAt</code> with when each
-    cell's value moved. The grid marks those cells for <code>ChangeHighlightDuration</code> and takes
-    the marks away itself: keyed by row and column, never by the element, so a mark stays on its
-    trade as you scroll; one colour, without animating, and never announced (ADR-0068).
+    alone, with no pivot. The grid reads the demo API server's trades through
+    <code>GridSource.Fetch</code>, a page at a time (<code>GET /api/trades</code>) as it asks for
+    rows (ADR-0025), each trade named by its <code>TradeId</code>, its Row Key (ADR-0140). The
+    server's live updates change trades several times a second, and its SignalR hub says so: "trades
+    T10000123 and T10000456 changed". The page tells the source the data moved on
+    (<code>NotifyChanged</code>), and the source does the rest (ADR-0141): it reads its Window again,
+    at most four times a second, pairs the new trades with the painted ones by key, and answers the
+    grid's <code>CellChangedAt</code> for the cells whose text changed. The grid marks those cells for
+    <code>ChangeHighlightDuration</code> and takes the marks away itself: keyed by row and column,
+    never by the element, so a mark stays on its trade as you scroll; one colour, without animating,
+    and never announced (ADR-0068).
 </p>
 <p>
-    A trade cancelled moves every row after it up one, so the page then reads its Window again and
-    bumps <code>RowSequenceVersion</code>, which drops a selection rather than leave it on other
-    rows (ADR-0011). The live updates go off when you leave the page. The server gives every other
-    change to its first 500 trades, the busy ones this blotter opens on, so the rows in view change
-    several times a second whatever the trade count; further down, a change lands only now and
-    then.
+    A trade cancelled moves every row after it up one. The server sends an order token with every
+    page, which moves whenever a trade anywhere is cancelled or booked; the source moves the Row
+    Sequence Version on it, which drops a selection rather than leave it on other rows (ADR-0011) —
+    a trade cancelled far past the rows on screen included. The live updates go off when you leave
+    the page. The server gives every other change to its first 500 trades, the busy ones this blotter
+    opens on, so the rows in view change several times a second whatever the trade count; further
+    down, a change lands only now and then. The server orders its trades by <code>TradeId</code> and
+    nothing else, so the header selects its column rather than sort, and there is no column menu.
 </p>
 
 <div class="demo-toolbar">
@@ -59,11 +65,18 @@
 </div>
 
 <p class="demo-status">
-    <span id="grid-live-window">@WindowStatus</span>
+    <DemoStatusLine @ref="_windowLine" Id="grid-live-window" Initial="Reading the first trades from the demo API server…" />
     <DemoStatusLine @ref="_noticesLine" Id="grid-live-notices" Initial="@_noticesInitial" />
 </p>
 
-@if (DemoChrome.IsMud(ChromeName))
+@if (_source is null)
+{
+    @* Interactive only: on the Server host the page is prerendered first, and a prerender that read
+       the trades would do it for nothing. The source is made, and the grid bound to it, once the page
+       is interactive. *@
+    <p class="demo-status">Waiting for the page to be interactive…</p>
+}
+else if (DemoChrome.IsMud(ChromeName))
 {
     <MudExGridPaper Elevation="1">@Grid</MudExGridPaper>
 }
@@ -84,67 +97,35 @@ else
 <DemoCodeBlock File="GridLivePage.razor" Region="leaving" />
 
 @code {
-    // Rows either side of the range the grid asks for: read-ahead is the Consumer's (ADR-0001).
-    private const int ReadAhead = 40;
-
-    // The most GET /api/trades answers at once, and the most POST /api/trades/by-id is asked.
-    private const int MaxPage = 1_000;
-    private const int MaxIds = 2_000;
-
-    // The longest a mark can be asked to last here: an older change time marks nothing.
-    private static readonly TimeSpan LongestMark = TimeSpan.FromMinutes(1);
-
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     private readonly CancellationTokenSource _leaving = new();
     private IGridChrome? _chrome;
-    private EventCallback<RowRange> _onRangeNeeded;
+    private DemoStatusLine? _windowLine;
     private DemoStatusLine? _noticesLine;
     private string _noticesInitial = "Connecting to the demo API server's hub…";
-    private string? _version;
     private bool _connected;
     private bool _liveOn;
     private int _rate = 1_000;
     private int _highlightMs = 1_000;
     private long _notices;
     private long _named;
-    private long _changedInView;
-    private string? _heardVersion;
-    private string? _appliedVersion;
+    private bool _unavailable;
 
     [SupplyParameterFromQuery(Name = "chrome")]
     public string? ChromeName { get; set; }
-
-    protected override void OnInitialized()
-    {
-        // Held in fields: a delegate made per render would reach the grid as a change (ADR-0003).
-        _onRangeNeeded = EventCallback.Factory.Create<RowRange>(this, OnRangeNeededAsync);
-        _cellChangedAt = (row, column) => _changedAt.TryGetValue((row.TradeId, column.Name), out var at) ? at : null;
-    }
 
     protected override void OnParametersSet() => _chrome = DemoChrome.From(ChromeName);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Interactive only: on the Server host the page is prerendered first, and a prerender that
-        // read the trades or connected to the hub would do it for nothing.
         if (!firstRender)
             return;
         var token = _leaving.Token;
         try
         {
-            // An empty result asks for no range — nothing to show is not a range (ADR-0001) — so
-            // the first page is the page's to read.
-            await _turn.WaitAsync(token);
-            try
-            {
-                Show(await PageAsync(0, 100, token));
-            }
-            finally
-            {
-                _turn.Release();
-            }
+            Open();
             StateHasChanged();
             await ListenAsync(token);
             _connected = true;
@@ -163,114 +144,69 @@ else
     }
 
     #region The code: window
-    // A trade as GET /api/trades and POST /api/trades/by-id answer it.
+    // A trade as GET /api/trades answers it.
     public sealed record LiveTrade(string TradeId, string Region, string Desk, string Book, string Product,
         string? Currency, DateTime TradeDate, decimal Notional, decimal Pnl, int Quantity, bool Confirmed);
 
-    private sealed record TradePage(string Version, int Total, int Start, LiveTrade[] Trades);
+    // A page of trades, with the server's order token: it moves whenever a trade anywhere was
+    // cancelled or booked (ADR-0141).
+    private sealed record TradePage(string Version, int Total, int Start, LiveTrade[] Trades, string? OrderToken);
 
-    // The Window the page pushes (ADR-0001): the rows from WindowStart, of TotalCount in all, and
-    // where each trade stands in it.
-    private IReadOnlyList<LiveTrade> _window = [];
-    private int _windowStart;
-    private int _total;
-    private int _rowSequenceVersion;
-    private bool _loading = true;
-    private RowRange? _wanted;
-    private Dictionary<string, int> _at = new(StringComparer.Ordinal);
+    // The most GET /api/trades answers at once.
+    private const int MaxPage = 1_000;
 
-    // One question to the server at a time, in turn, so that an answer never lands over a newer
-    // one: a range the grid needs and the trades a notice named wait for each other.
-    private readonly SemaphoreSlim _turn = new(1, 1);
+    // The Grid Source holds the Window, reads a range as the grid asks for it with 40 rows either
+    // side (ADR-0025), and names each trade by its TradeId: the Row Key (ADR-0140/0141).
+    private FetchingGridSource<LiveTrade>? _source;
 
-    // The grid needs these rows: read them, with rows either side, at most a page of 1,000.
-    private async Task OnRangeNeededAsync(RowRange range)
+    // The Source Version each Window was read at, for the status line.
+    private readonly ConditionalWeakTable<IReadOnlyList<LiveTrade>, string> _readAt = new();
+
+    private void Open()
     {
-        _wanted = range;
-        var start = Math.Max(0, range.Start - ReadAhead);
-        var count = Math.Min(MaxPage, range.Start + range.Count + ReadAhead - start);
-        var token = _leaving.Token;
-        try
-        {
-            await _turn.WaitAsync(token);
-            try
-            {
-                // A later range overtook this one while it waited: its answer would be stale.
-                if (_wanted != range)
-                    return;
-                _loading = true;
-                Show(await PageAsync(start, count, token));
-            }
-            finally
-            {
-                // Not loading once the read is over, whether it landed or failed: a failure is said
-                // in the status line, never painted as a Window still on its way.
-                _loading = false;
-                _turn.Release();
-            }
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-        }
-        catch (HttpRequestException error)
-        {
-            Unavailable(error);
-        }
+        _source = GridSource.Fetch<LiveTrade>(FetchAsync, readAheadRows: 40, rowKey: trade => trade.TradeId);
+        // Subscribed, so a failure is said in the status line rather than rethrown (ADR-0025).
+        _source.FetchFailed += Failed;
+        _source.StateChanged += Describe;
+        // One delegate for the source's life, held in a field: the grid asks it as it paints a value
+        // cell, and only a row whose trade changed is a new instance that asks again (ADR-0068).
+        _cellChangedAt = _source.CellChangedAt;
     }
 
-    // GET /api/trades: `count` trades from the `start`-th in TradeId order, with how many there are.
-    private async Task<TradePage> PageAsync(int start, int count, CancellationToken token) =>
-        await Api.Http.GetFromJsonAsync<TradePage>($"api/trades?start={start}&count={count}", Json, token)
+    // GET /api/trades: the range the source asks for, in TradeId order, with how many there are.
+    private async ValueTask<GridPage<LiveTrade>> FetchAsync(GridQuery query, CancellationToken token)
+    {
+        // The server orders its trades by TradeId and filters nothing, so a question that sorts or
+        // filters is refused rather than answered in another order (ADR-0023).
+        if (query.Sorts.Count > 0 || query.Filter is not null)
+            throw new NotSupportedException("The demo API server pages its trades in TradeId order, unfiltered.");
+        var count = Math.Min(MaxPage, query.Range.Count);
+        var page = await Api.Http.GetFromJsonAsync<TradePage>($"api/trades?start={query.Range.Start}&count={count}", Json, token)
             ?? throw new InvalidOperationException("The server answered no page of trades.");
-
-    private void Show(TradePage page)
-    {
-        // A position that names another trade than it did is a new order: a selection, which is
-        // positions, would now cover other rows, so it is dropped (ADR-0011).
-        for (var i = Math.Max(page.Start, _windowStart); i < Math.Min(page.Start + page.Trades.Length, _windowStart + _window.Count); i++)
-        {
-            if (page.Trades[i - page.Start].TradeId != _window[i - _windowStart].TradeId)
-            {
-                _rowSequenceVersion++;
-                break;
-            }
-        }
-        _window = page.Trades;
-        _windowStart = page.Start;
-        _total = page.Total;
-        _version = page.Version;
-        _loading = false;
-        _at = Positions(page.Trades);
-    }
-
-    private static Dictionary<string, int> Positions(IReadOnlyList<LiveTrade> rows)
-    {
-        var at = new Dictionary<string, int>(rows.Count, StringComparer.Ordinal);
-        for (var i = 0; i < rows.Count; i++)
-            at[rows[i].TradeId] = i;
-        return at;
+        _readAt.AddOrUpdate(page.Trades, page.Version);
+        return new GridPage<LiveTrade>(page.Trades, page.Start, page.Total) { OrderToken = page.OrderToken };
     }
     #endregion
 
     #region The code: notices
-    // When each cell's shown value last changed, by trade and column: what the page knows, which
-    // the grid asks for by (row, column) as it paints a value cell (ADR-0068). The delegate is held
-    // in a field and never replaced: a row whose trade changed arrives as a new instance, so it
-    // paints again and asks again, and no other row has anything new to say.
-    private readonly Dictionary<(string TradeId, string Column), DateTimeOffset> _changedAt = new();
-    private CellChangeOf<LiveTrade>? _cellChangedAt;   // (row, column) => _changedAt[(row.TradeId, column.Name)], in OnInitialized
+    // The Change Highlight, answered by the source: when each cell's painted text last changed.
+    private CellChangeOf<LiveTrade>? _cellChangedAt;   // _source.CellChangedAt, in Open
 
     private HubConnection? _hub;
     private Task? _hubStarting;
     private bool _liveAsked;
-    private readonly HashSet<string> _heard = new(StringComparer.Ordinal);
-    private Task _reading = Task.CompletedTask;
+    private string? _heardVersion;
 
     private async Task ListenAsync(CancellationToken token)
     {
         var hub = _hub = new HubConnectionBuilder().WithUrl(Api.Hub).WithAutomaticReconnect().Build();
-        // "These trades changed": heard on a thread of SignalR's, and handed to the page's own.
-        hub.On<string, string[]>("TradesChanged", (version, tradeIds) => InvokeAsync(() => Heard(version, tradeIds)));
+        // "These trades changed": heard on a thread of SignalR's. The source gathers the notices and
+        // reads its Window again at most every 250 ms; it may be told on any thread (ADR-0141).
+        hub.On<string, string[]>("TradesChanged", (version, tradeIds) =>
+        {
+            _source?.NotifyChanged();
+            return InvokeAsync(() => Heard(version, tradeIds));
+        });
         // Not cancelled by the page's going: a connection cut off while it opens is an error in the
         // browser's console. DisposeAsync waits for it instead.
         await (_hubStarting = hub.StartAsync());
@@ -279,149 +215,22 @@ else
         await SetLiveAsync(true, token);
     }
 
-    // Notices that arrive while trades are being read are gathered into the next read.
     private void Heard(string version, string[] tradeIds)
     {
         _heardVersion = version;
         _notices++;
         _named += tradeIds.Length;
-        _heard.UnionWith(tradeIds);
-        if (_reading.IsCompleted)
-            _reading = Reported(ReadHeardAsync());
-    }
-
-    private async Task ReadHeardAsync()
-    {
-        var token = _leaving.Token;
-        try
-        {
-            while (_heard.Count > 0)
-            {
-                var version = _heardVersion;
-                string[] named = [.. _heard];
-                _heard.Clear();
-                await ApplyAsync(named, token);
-                _appliedVersion = version;
-                Describe();
-            }
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested)
-        {
-        }
-        catch (HttpRequestException error)
-        {
-            Unavailable(error);
-        }
-    }
-
-    // POST /api/trades/by-id: the named trades as they are now; a key no longer found is a trade
-    // cancelled. Asked only of the trades that can change what the grid shows: those in the Window
-    // or before it — a trade cancelled before the Window moves every row in it up one — and, while
-    // the Window reaches the last trade, those after it, which are trades booked into view.
-    private async Task ApplyAsync(string[] named, CancellationToken token)
-    {
-        await _turn.WaitAsync(token);
-        try
-        {
-            if (_window.Count == 0)
-                return;
-            var last = _window[^1].TradeId;
-            var atEnd = _windowStart + _window.Count >= _total;
-            string[] asked = [.. named.Where(id => atEnd || string.CompareOrdinal(id, last) <= 0)];
-            if (asked.Length == 0)
-                return;
-            var read = await ByIdAsync(asked, token);
-            var now = DateTimeOffset.UtcNow;
-            var before = _window;
-            var beforeAt = _at;
-            // A trade cancelled moves every row after it up one, and a trade booked after the last
-            // one comes into view while the Window reaches it: either way the Window is read again.
-            // (The server books a trade only as it cancels one, and a reset that puts a cancelled
-            // trade back takes the booked one away, so a trade put back comes with one missing.)
-            if (read.Missing.Count > 0
-                || read.Trades.Any(t => !beforeAt.ContainsKey(t.TradeId) && string.CompareOrdinal(t.TradeId, last) > 0))
-            {
-                Show(await PageAsync(_windowStart, Math.Max(before.Count, 1), token));
-            }
-            else
-            {
-                // Otherwise the trades in view are replaced, each by a new instance; a trade before
-                // the Window that only changed is read again when the grid scrolls to it.
-                var rows = before.ToArray();
-                foreach (var trade in read.Trades.Where(t => beforeAt.ContainsKey(t.TradeId)))
-                    rows[beforeAt[trade.TradeId]] = trade;
-                _window = rows;
-                _version = read.Version;
-            }
-            // The cells of the named trades in view whose values differ from what was shown; every
-            // cell of a trade booked into view, a row that appears.
-            var changed = 0;
-            foreach (var row in read.Trades)
-            {
-                if (!_at.ContainsKey(row.TradeId))
-                    continue;
-                if (beforeAt.TryGetValue(row.TradeId, out var at))
-                {
-                    var old = before[at];
-                    foreach (var column in Columns.Where(column => !Equals(column.Value(old), column.Value(row))))
-                    {
-                        _changedAt[(row.TradeId, column.Name)] = now;
-                        changed++;
-                    }
-                }
-                else if (atEnd && string.CompareOrdinal(row.TradeId, last) > 0)
-                {
-                    foreach (var column in Columns)
-                        _changedAt[(row.TradeId, column.Name)] = now;
-                    changed += Columns.Length;
-                }
-            }
-            _changedInView += changed;
-            Forget(now);
-        }
-        finally
-        {
-            _turn.Release();
-        }
-        StateHasChanged();
-    }
-
-    private sealed record TradesById(string Version, LiveTrade[] Trades, IReadOnlyList<string> Missing);
-
-    // At most 2,000 keys a question: a reset can name more, and they are asked in turn.
-    private async Task<TradesById> ByIdAsync(string[] ids, CancellationToken token)
-    {
-        var trades = new List<LiveTrade>();
-        var missing = new List<string>();
-        var version = "";
-        foreach (var chunk in ids.Chunk(MaxIds))
-        {
-            using var response = await Api.Http.PostAsJsonAsync("api/trades/by-id", new { ids = chunk }, Json, token);
-            response.EnsureSuccessStatusCode();
-            var read = await response.Content.ReadFromJsonAsync<TradesById>(Json, token)
-                ?? throw new InvalidOperationException("The server answered nothing for the trades named.");
-            trades.AddRange(read.Trades);
-            missing.AddRange(read.Missing);
-            version = read.Version;
-        }
-        return new TradesById(version, [.. trades], missing);
-    }
-
-    // A change time older than the longest mark marks nothing, and is let go.
-    private void Forget(DateTimeOffset now)
-    {
-        foreach (var key in _changedAt.Where(pair => now - pair.Value > LongestMark).Select(pair => pair.Key).ToArray())
-            _changedAt.Remove(key);
+        Describe();
     }
     #endregion
 
     #region The code: grid
-    // The live Window, its order's version, and the Change Highlight: when each cell changed, and
-    // how long a mark lasts.
-    private RenderFragment Grid => @<ExGrid TRow="LiveTrade" Window="_window" WindowStart="_windowStart" TotalCount="_total"
-                                            RowSequenceVersion="_rowSequenceVersion" IsLoading="_loading"
-                                            OnRangeNeeded="_onRangeNeeded" Columns="Columns" PinnedColumnCount="1"
+    // The source, and the Change Highlight it answers: when each cell changed, and how long a mark
+    // lasts. The server orders by TradeId alone, so a header click selects its column (ADR-0050) and
+    // there is no menu to sort or filter by.
+    private RenderFragment Grid => @<ExGrid TRow="LiveTrade" Source="_source" Columns="Columns" PinnedColumnCount="1"
                                             CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"
+                                            HeaderClickSelects="true" HideColumnMenu="true"
                                             ViewportHeight="480" ViewportWidth="1270" Chrome="_chrome" />;
 
     private TimeSpan Highlight => TimeSpan.FromMilliseconds(_highlightMs);
@@ -496,37 +305,42 @@ else
         }
     }
 
-    private string WindowStatus => _window.Count == 0
-        ? "Reading the first trades from the demo API server…"
-        : $"Window: rows {_windowStart.ToString("N0", Culture)}–{(_windowStart + _window.Count - 1).ToString("N0", Culture)} "
-            + $"of {_total.ToString("N0", Culture)}, at version {_version}.";
-
+    // The status lines, from the source's Window and the notices heard. Raised by the source on the
+    // page's context; each line renders on its own, so the page and its grid do not render with it.
     private void Describe()
     {
+        if (_source is not { } source)
+            return;
+        var window = source.Window;
+        string? readAt = window.Count > 0 && _readAt.TryGetValue(window, out var version) ? version : null;
+        if (readAt is not null)
+        {
+            _windowLine?.Show($"Window: rows {source.WindowStart.ToString("N0", Culture)}–{(source.WindowStart + window.Count - 1).ToString("N0", Culture)} "
+                + $"of {(source.TotalCount ?? 0).ToString("N0", Culture)}, at version {readAt}.");
+        }
+        if (_unavailable)
+            return;
+        // A read that failed is said until a later one lands, rather than left on screen as a
+        // Window that is current (ADR-0025).
+        if (source.LastError is { } error)
+        {
+            _noticesLine?.Show(error is HttpRequestException http ? Api.NotAnswering(http) : $"The trades could not be read: {error.Message}");
+            return;
+        }
+        if (!_connected)
+            return;
         var live = _liveOn ? $"on, {_rate.ToString("N0", Culture)} trades every 250 ms" : "off";
-        var heard = _appliedVersion is null ? "" : $" Read again up to version {_appliedVersion}.";
+        var heard = _heardVersion is null || readAt is null ? "" : $" Read again up to version {readAt}.";
         _noticesLine?.Show($"Live updates {live}. Heard {_notices.ToString("N0", Culture)} notices naming "
-            + $"{_named.ToString("N0", Culture)} trades; {_changedInView.ToString("N0", Culture)} cells in view changed.{heard}");
+            + $"{_named.ToString("N0", Culture)} trades.{heard}");
     }
 
-    // The page's own loop, which nothing awaits: a failure in it is reported as a render's is,
-    // never lost with the task.
-    private async Task Reported(Task loop)
-    {
-        try
-        {
-            await loop;
-        }
-        catch (Exception error)
-        {
-            await DispatchExceptionAsync(error);
-        }
-    }
+    // A failed read is held in the source's LastError, which the status line says.
+    private void Failed(Exception error) => Describe();
 
     private void Unavailable(HttpRequestException error)
     {
-        // Said in the status line, rather than left on screen as a Window still on its way.
-        _loading = false;
+        _unavailable = true;
         _noticesInitial = Api.NotAnswering(error);
         _noticesLine?.Show(_noticesInitial);
         _ = InvokeAsync(StateHasChanged);
@@ -534,10 +348,16 @@ else
 
     #region The code: leaving
     // The server's live updates go off when the page goes: the data then holds still for whoever
-    // reads it next (ADR-0069).
+    // reads it next (ADR-0069). The source is the page's, so the page disposes it (ADR-0025).
     public async ValueTask DisposeAsync()
     {
         _leaving.Cancel();
+        if (_source is { } source)
+        {
+            source.Dispose();
+            source.FetchFailed -= Failed;
+            source.StateChanged -= Describe;
+        }
         try
         {
             if (_hubStarting is not null)
