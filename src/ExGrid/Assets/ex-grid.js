@@ -12,7 +12,9 @@
 // that same mousedown and mouseup, and the keydown, selecting the Name Box's text for the press
 // that gives it the keyboard (ADR-0051, ticket 78); that same mousedown and mouseup telling the
 // core what each press on the rows was taken against, so a held one lands where it was made
-// (ED-31, ADR-0021's note of 2026-10-02);
+// (ED-31, ADR-0021's note of 2026-10-02); that same mousedown and mouseup, the keydown and the
+// paste reading the render the rows on screen were painted by (data-ex-paint), so that a write is
+// judged against what the user saw of its target (ADR-0142; ADR-0021's note of 2026-10-05);
 // and the editor listener keeping the coloured text beneath a field honest (ADR-0057). And the
 // seventh entry (ADR-0080): the Keyboard Field's composition and focus, heard on the root —
 // `compositionstart` and `compositionend`, always on, so a composition on a selected cell takes its
@@ -416,6 +418,17 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const field = root ? root.querySelector('.ex-key-field') : null;
         return field !== null && isKeyField(field) ? field : null;
     };
+    // The render whose cells are on screen now (ADR-0142; ADR-0021's note of 2026-10-05): the name
+    // the painting render wrote on this grid's own Viewport (data-ex-paint), the first in the
+    // scroller, ahead of any grid nested in a cell. A key and a paste carry it from the moment they
+    // are taken, held or not, as a press on the rows carries its own (takenAt): a write they make
+    // is judged against what the user saw then, never against a render that replaced it before the
+    // write landed. Reads an attribute; nothing is measured, and nothing per cell crosses.
+    const paintNow = () => {
+        const viewport = scroller ? scroller.querySelector('.ex-viewport') : null;
+        const value = viewport ? viewport.getAttribute('data-ex-paint') : null;
+        return value === null ? -1 : Number(value);
+    };
     const snapshot = (event) => ({
         key: event.key,
         ctrlKey: event.ctrlKey,
@@ -427,6 +440,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         inEditor: event.target instanceof Element && event.target.closest('.ex-editor') !== null,
         inPopover: popoverOf(event.target) !== null,
         inFindField: isTextField(event.target) && event.target.closest('.ex-popover-find') !== null,
+        paint: paintNow(),
     });
 
     // While editing, the key carries the editor's text and caret (ADR-0051): the core decides
@@ -440,14 +454,16 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // Whether the key is a held key's repeat goes with it too: auto-repeat is visible only here,
     // and by the time a key reaches .NET a repeat looks like a press. The core raises a
     // Consumer's OnLeave once per press, however long Escape is held (ADR-0070). A field of the
-    // event the listener already reads; no listener is added and no layout is read.
+    // event the listener already reads; no listener is added and no layout is read. And the render
+    // the key was pressed against, read at its keydown (paintNow): a held key keeps the one it was
+    // pressed on, as a held press does (ADR-0142, LV-14).
     const forward = (k) => {
         const input = editing !== 'none' ? editorInput() : null;
         return core.invokeMethodAsync(
             'OnKeyAsync', k.key, k.ctrlKey, k.shiftKey, k.altKey, k.metaKey, metaIsPrimary, !k.onRoot,
             input ? input.value : null, input ? (input.selectionStart ?? input.value.length) : -1,
             input ? (input.selectionEnd ?? input.value.length) : -1, input ? movedByUser(input) : false,
-            k.repeat === true)
+            k.repeat === true, k.paint)
             .catch((error) => {
                 // Disposal can overtake a key in flight, and that is not a fault. Anything
                 // else is reported: a swallowed failure here means keys that silently stop
@@ -1748,6 +1764,14 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     const inOwnScroller = (target) => target instanceof Element && !!scroller
         && target.closest('.ex-scroller') === scroller;
     const isOwnRows = (target) => inOwnScroller(target) && target.classList.contains('ex-viewport');
+    // An action's button on this grid's own rows, not a nested grid's (ADR-0020), or null.
+    const ownAction = (target) => (inOwnScroller(target) ? target.closest('.ex-action') : null);
+    // A press on an action carries the render its row was painted by (ADR-0142, LV-12): the paint
+    // the Viewport named at the press, told to the core at the release on the same button — the
+    // click that fires the action follows that release, and Blazor dispatches it after this
+    // message, so the press the core hears next is the one it was told of. A release elsewhere is
+    // no click, and tells nothing. Reads an attribute, as takenAt does; nothing is measured.
+    let actionPress = null;
     const isOwnRowsOrHeadings = (target) => isOwnRows(target)
         || (inOwnScroller(target) && target.closest('.ex-header') !== null);
     // What a press or release on this grid's own rows was taken against (ED-31; ADR-0021, note of
@@ -1758,7 +1782,9 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // the row the move brought there (`1` Enter PageDown `9` and a press on F6 at once, on the
     // Server host: the `2` typed next went into F18). The core is told this just before Blazor
     // dispatches the event — at once, or at the replay of a held one — and resolves the cell
-    // against it. Reads attributes and the scroll offset; nothing is measured.
+    // against it. With them, the render whose cells were on screen (data-ex-paint), which a
+    // fill-handle drag released here is judged against (ADR-0142). Reads attributes and the scroll
+    // offset; nothing is measured.
     const takenAt = (event) => {
         const viewport = event.target;
         const number = (name) => {
@@ -1769,6 +1795,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             x: event.offsetX, y: event.offsetY, first: number('data-ex-first-row'),
             left: scroller ? scroller.scrollLeft : 0,
             sequence: number('data-ex-sequence'), layout: number('data-ex-layout'),
+            paint: number('data-ex-paint'),
         };
     };
     const tellTaken = (kind, taken) => {
@@ -1776,7 +1803,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             return;
         }
         core.invokeMethodAsync('PressTakenAt', kind, taken.x, taken.y, taken.first, taken.left,
-            taken.sequence, taken.layout).catch((error) => {
+            taken.sequence, taken.layout, taken.paint).catch((error) => {
             if (core) {
                 console.error('[ex-grid] the grid failed to hear where a press was taken', error);
             }
@@ -1951,6 +1978,11 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         const nameBox = event.button === 0 && !replaying ? ownNameBox(event.target) : null;
         nameBoxPressed = nameBox !== document.activeElement ? nameBox : null;
         nameBoxSelected = null;
+        // A press on an action of this grid's rows keeps the render it was made on (actionPress).
+        if (!replaying) {
+            const button = event.button === 0 ? ownAction(event.target) : null;
+            actionPress = button !== null ? { button, paint: paintNow() } : null;
+        }
         // A press into an editor surface puts the keyboard there.
         noteSurface(event.target);
         // A press in an editor surface's text puts the caret where it lands: the user's move.
@@ -2065,6 +2097,19 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // (holdBehindPress).
         if (!replaying) {
             askAboutPress();
+        }
+        // The click this release makes on an action is judged against the render it was pressed
+        // on (actionPress).
+        const action = replaying ? null : actionPress;
+        if (!replaying) {
+            actionPress = null;
+        }
+        if (core && action !== null && event.button === 0 && ownAction(event.target) === action.button) {
+            core.invokeMethodAsync('ActionPressTakenAt', action.paint).catch((error) => {
+                if (core) {
+                    console.error('[ex-grid] the grid failed to hear where an action was pressed', error);
+                }
+            });
         }
         // The press gave the Name Box the keyboard: its whole text is selected now, and stays so
         // (nameBoxPressed).
@@ -2230,7 +2275,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
         // in C# (ADR-0014). preventDefault regardless: pasting into a non-editable
         // element does nothing by default, and must not start doing something later.
         event.preventDefault();
-        sendPaste(event.clipboardData.getData('text/plain'), event.clipboardData.getData('text/html'));
+        sendPaste(event.clipboardData.getData('text/plain'), event.clipboardData.getData('text/html'), paintNow());
     };
     // Handed over as streams, never as two strings in one call (ADR-0005): on a
     // Blazor Server circuit that call is one hub message, and a message past the
@@ -2238,13 +2283,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
     // connection. Excel's HTML for a few hundred cells is past it. A stream is
     // Blazor's own route for large interop data and is not subject to that limit;
     // its length travels with it, so C# can refuse a paste past the grid's ceiling
-    // without reading a byte. An empty flavour is sent as nothing at all.
-    const sendPaste = (plain, markup) => {
+    // without reading a byte. An empty flavour is sent as nothing at all. With them goes the
+    // render the paste was taken against, read at its event (paintNow): its target is judged
+    // against what that render painted (ADR-0142, LV-13/LV-14).
+    const sendPaste = (plain, markup, paint) => {
         const encoder = new TextEncoder();
         const stream = (value) => (value
             ? DotNet.createJSStreamReference(encoder.encode(value))
             : null);
-        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup))
+        return core.invokeMethodAsync('OnPasteStreamsAsync', stream(plain), stream(markup), paint)
             .catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to take a paste', error);
@@ -2269,6 +2316,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 clipboard: 'paste',
                 plain: event.clipboardData.getData('text/plain'),
                 markup: event.clipboardData.getData('text/html'),
+                paint: paintNow(),
             });
         } else if (event.type === 'copy') {
             // The write started inside the event, as the browser lets a copy write
@@ -2312,7 +2360,7 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
                 k.take(true);
                 await k.answer;
             } else if (k.clipboard === 'paste') {
-                await sendPaste(k.plain, k.markup);
+                await sendPaste(k.plain, k.markup, k.paint);
             }
             return;
         }
