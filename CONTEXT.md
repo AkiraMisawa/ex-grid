@@ -129,7 +129,17 @@ The basis on which a row counts as "the same row". The grid decides whether to r
 **change of identity**, not from a rewrite of contents, so when data changes the Consumer must
 **return a different instance** or bump the row's version. An in-place rewrite does not reach the
 screen ([ADR-0003](./docs/adr/0003-cells-are-plain-markup-by-default-not-components.md)).
-_Avoid_: key, id (Row Identity is the test for sameness, not the value itself)
+_Avoid_: key, id (Row Identity is the test for sameness, not the value itself; the value that names a
+row across versions is its **Row Key**)
+
+**Row Key**:
+The value the Consumer declares that tells one row from every other and stays the same when the
+row's data changes. A source finds a changed or removed row by it, the grid pairs a row's next
+version with the one it painted by it, and a Row Mark follows a row across versions by it. It never
+says whether a row changed; Row Identity does
+([ADR-0140](./docs/adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md)).
+_Avoid_: Row Identity (the test for sameness), id, primary key (the database's), Record Key (a
+Snapshot's declared column, from which a Snapshot's rows take their Row Key)
 
 **Placeholder**:
 A row not yet painted with real data. Two reasons, one mechanism — waiting for data from the
@@ -181,15 +191,18 @@ guessed; one suggested from a file's first rows is used only once the user has c
 _Avoid_: import settings, mapping, dialect, type inference (there is none)
 
 **Change Batch**:
-The records added, the records changed and the Record Keys removed since a Snapshot, applied as
-one to make the next Snapshot. A component shows the Snapshot before it or the one after it, never
-a batch half applied.
+The records added, the records changed and the keys removed since one version of the data, applied
+as one to make the next: a Snapshot's next Snapshot, by Record Key, or a bundled Grid Source's next
+rows, by Row Key. A component shows the version before it or the one after it, never a batch half
+applied
+([ADR-0141](./docs/adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md)).
 _Avoid_: delta (a risk measure here — rate delta, credit delta), diff, patch, transaction
 
 **Record Key**:
 The declared column whose value tells one record of a Snapshot from every other. A
 Change Batch changes and removes records by it, and two records under one key are refused.
-_Avoid_: Row Identity (the grid's test for sameness), id, primary key (the database's)
+_Avoid_: Row Identity (the grid's test for sameness), Row Key (the Consumer's value over its rows),
+id, primary key (the database's)
 
 **Query**:
 The whole of what the grid asks for — which range, under which Filter, under which Sort. Being
@@ -481,7 +494,8 @@ _Avoid_: cancel (that is Escape), rollback, revert
 The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
 the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
 column that is not Editable, a paste past its size ceiling, a clipboard the browser would not let
-it write. Because a Refusal never looked at what the user typed, it stops only
+it write, a target whose painted text changed between what the user saw and the write landing
+([ADR-0142](./docs/adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)). Because a Refusal never looked at what the user typed, it stops only
 the operation it named: a fill refused for covering a non-editable column leaves the editor open
 and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
 value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),

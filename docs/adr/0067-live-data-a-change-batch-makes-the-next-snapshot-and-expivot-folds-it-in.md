@@ -146,3 +146,6 @@ learns it: SignalR, polling, or a message bus (Q57).
   ([ADR-0069](./0069-the-demo-pages-call-a-demo-api-server-both-hosts-share.md)).
 - **ExGrid and ExSheet take live data up in ADRs of their own** (ADR-0064). A plain ExGrid can
   already show a live Window and mark its changes (ADR-0068, `/grid-live`).
+- *(2026-10-05.)* **ExGrid's is [ADR-0141](./0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md).** It adopts Q43's option b — a whole new
+  list paired by key — for `GridSource.From`, where pairing compares references and reads no
+  values. ExPivot's deferral stands.

@@ -543,3 +543,8 @@ reads.
 - **Before the grid is attached, and once it is gone, the control takes the keyboard by its own
   `FocusAsync`**, through Blazor, as it would without the grid. No script of the grid's is there to
   read where the keyboard is.
+
+*(2026-10-05, [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).)* **A keyboard gesture now carries the render it was taken
+against, as a press on the rows does.** The capture-phase key listener and the clipboard read — the
+first and third entries — read what the painting render wrote, so that a write is judged against
+what the user saw. It is not a new use, and nothing is measured.

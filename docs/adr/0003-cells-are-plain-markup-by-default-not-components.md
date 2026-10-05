@@ -70,3 +70,7 @@ is only +7% against plain markup.
   every mode (25–33 ms), and the row boundary does not help there because every row changes.
   Handled separately in [ADR-0004](./0004-cap-the-cells-touched-per-frame.md).
 - The numbers are from **Release IL without AOT**. AOT may widen the margin; untested.
+- *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md).)* **The change signal is still a different
+  instance.** Where a Consumer declares a Row Key, the key, not the instance, decides which
+  component repaints a changed row: the row keeps its component, and Blazor's diff writes only what
+  changed. `ShouldRender` still compares the row by reference.

@@ -231,3 +231,6 @@ when pressed. The grid's part is to have reported every change and to show the c
 - **Open:** the public shape of the notification and of the per-row question (a delegate, as Row
   Kind's, is the likely one), and how the mark count is handed to Chrome. They are implementation,
   held to what is written here.
+- *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md).)* **The mark adapter's "row's key" is a Row Key.** The
+  rejection above stands: the Row Key the grid now takes pairs one render's rows with the next and
+  holds nothing between Windows, and the marks stay the Consumer's.
