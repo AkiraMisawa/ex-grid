@@ -12,7 +12,7 @@
 
 |||
 |:---|:---|
-| Generated on: | 10/05/2026 - 00:44:57 |
+| Generated on: | 10/05/2026 - 01:02:28 |
 | Parser: | MultiReport (12x Cobertura) |
 | Assemblies: | 10 |
 | Classes: | 701 |
