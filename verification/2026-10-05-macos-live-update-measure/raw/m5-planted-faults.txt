@@ -1,0 +1,67 @@
+M5: 3000 cases, 175 batches, 10,206 rows compared, 23 cases also against ReplaceRow one at a time (seed 11): 20 FAILURE(S)
+  batches: 0 sort level(s): 32
+  batches: 1 sort level(s): 65
+  batches: 2 sort level(s): 35
+  batches: 3 sort level(s): 43
+  batches: empty: 37
+  batches: filtered: 149
+  batches: no filter: 26
+  batches: replacements only: 67
+  batches: result size changed: 37
+  batches: sequence kept: 120
+  batches: sequence moved: 55
+  batches: with adds or removes: 71
+  case 0 batch 0: result differs from GridQueryEngine.Apply: 7 rows, expected 6
+  sorts: Notional Ascending, Pnl Descending, TradeDate Ascending
+  filter: Confirmed: Equals False
+
+M5: 3000 cases, 227 batches, 13,595 rows compared, 21 cases also against ReplaceRow one at a time (seed 11): 20 FAILURE(S)
+  batches: 0 sort level(s): 66
+  batches: 1 sort level(s): 55
+  batches: 2 sort level(s): 69
+  batches: 3 sort level(s): 37
+  batches: empty: 50
+  batches: filtered: 196
+  batches: no filter: 31
+  batches: replacements only: 74
+  batches: result size changed: 77
+  batches: sequence kept: 141
+  batches: sequence moved: 86
+  batches: with adds or removes: 103
+  case 1 batch 0: result differs from GridQueryEngine.Apply: 158 rows, expected 152
+  sorts: Confirmed Descending, Desk Ascending
+  filter: Pnl: GreaterThan 0 Or NotEquals -2.5
+
+M5: 3000 cases, 417 batches, 32,900 rows compared, 35 cases also against ReplaceRow one at a time (seed 11): 20 FAILURE(S)
+  batches: 0 sort level(s): 138
+  batches: 1 sort level(s): 90
+  batches: 2 sort level(s): 105
+  batches: 3 sort level(s): 84
+  batches: empty: 117
+  batches: filtered: 358
+  batches: no filter: 59
+  batches: replacements only: 128
+  batches: result size changed: 122
+  batches: sequence kept: 273
+  batches: sequence moved: 144
+  batches: with adds or removes: 172
+  case 1 batch 0: result differs from GridQueryEngine.Apply: 154 rows, expected 152
+  sorts: Confirmed Descending, Desk Ascending
+  filter: Pnl: GreaterThan 0 Or NotEquals -2.5
+
+M5: 3000 cases, 131 batches, 2,915 rows compared, 18 cases also against ReplaceRow one at a time (seed 11): 20 FAILURE(S)
+  batches: 0 sort level(s): 20
+  batches: 1 sort level(s): 41
+  batches: 2 sort level(s): 41
+  batches: 3 sort level(s): 29
+  batches: empty: 34
+  batches: filtered: 125
+  batches: no filter: 6
+  batches: replacements only: 45
+  batches: result size changed: 38
+  batches: sequence kept: 91
+  batches: sequence moved: 40
+  batches: with adds or removes: 52
+  case 1 batch 0: result differs from GridQueryEngine.Apply: 164 rows, expected 152
+  sorts: Confirmed Descending, Desk Ascending
+  filter: Pnl: GreaterThan 0 Or NotEquals -2.5

@@ -42,6 +42,43 @@
                 channel.port2.postMessage(0);
             })),
 
+            // The live tick page (M1): one MutationObserver per grid, counting what each render
+            // did to the DOM — records, nodes added and removed, attribute and text changes. An
+            // element Blazor builds has its attributes set before it is inserted, so those are
+            // not seen here; its insertion and its children's are.
+            _live: null,
+            liveObserve: function (a, b) {
+                if (this._live) this._live.forEach((s) => s.observer.disconnect());
+                const make = (el) => {
+                    const s = { counts: [0, 0, 0, 0, 0] };
+                    s.count = (records) => {
+                        for (const r of records) {
+                            s.counts[0]++;
+                            if (r.type === 'childList') { s.counts[1] += r.addedNodes.length; s.counts[2] += r.removedNodes.length; }
+                            else if (r.type === 'attributes') s.counts[3]++;
+                            else if (r.type === 'characterData') s.counts[4]++;
+                        }
+                    };
+                    s.observer = new MutationObserver(s.count);
+                    s.observer.observe(el, { subtree: true, childList: true, attributes: true, characterData: true });
+                    return s;
+                };
+                this._live = [make(a), make(b)];
+            },
+            liveTake: function (i) {
+                const s = this._live[i];
+                s.count(s.observer.takeRecords());
+                const counts = s.counts;
+                s.counts = [0, 0, 0, 0, 0];
+                return counts;
+            },
+            // Whether the two grids paint the same text and classes: B updated in place must end
+            // where A rebuilt.
+            liveSame: (a, b) => {
+                const signature = (el) => el.textContent + '|' + [...el.querySelectorAll('[class]')].map((e) => e.className).join(',');
+                return signature(a) === signature(b);
+            },
+
             _fps: null,
             startFps: function () {
                 const s = { deltas: [], last: performance.now(), running: true };

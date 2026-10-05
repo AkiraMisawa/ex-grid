@@ -1,0 +1,3 @@
+Window of    45,017 rows: same instance pushed again    0.167 ms (min 0.085); new instance, one off-screen row replaced    1.451 ms (min 1.100, max 52.612)
+Window of   451,115 rows: same instance pushed again    0.100 ms (min 0.080); new instance, one off-screen row replaced   18.104 ms (min 15.938, max 30.870)
+wrote verification/2026-10-05-macos-live-update-measure/raw/m4-grid-window-pass.json

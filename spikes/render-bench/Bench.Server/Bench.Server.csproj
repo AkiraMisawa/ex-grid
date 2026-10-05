@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- M2's circuit half, measured: the live-tick grid of Bench.Live on Blazor Server, so that the
+       bytes a tick puts on the WebSocket can be read off the wire (tools/cdp-ws.mjs). Not the
+       layer-3 suite and not the DemoHost: a page of its own, on port 5199 like the rest of
+       render-bench. Disposable. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bench.Live\Bench.Live.csproj" />
+  </ItemGroup>
+
+</Project>

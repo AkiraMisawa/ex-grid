@@ -1,0 +1,13 @@
+M5: 20000 cases, 80010 batches, 6,504,260 rows compared, 6636 cases also against ReplaceRow one at a time (seed 4242): the incremental result equals GridQueryEngine.Apply in every batch
+  batches: 0 sort level(s): 19927
+  batches: 1 sort level(s): 19860
+  batches: 2 sort level(s): 19779
+  batches: 3 sort level(s): 20444
+  batches: empty: 18429
+  batches: filtered: 60062
+  batches: no filter: 19948
+  batches: replacements only: 29450
+  batches: result size changed: 25955
+  batches: sequence kept: 47460
+  batches: sequence moved: 32550
+  batches: with adds or removes: 32131

@@ -144,6 +144,48 @@ and the same at 1. Under emulation, on cells whose edges fall on device pixels, 
 and an inset shadow stay exact, while a tile of a fractional CSS height and a border are blended
 over two rows. Windows has not been checked.
 
+## A live tick (`/live`, M1 and M2 of the note on ag-grid's repaint)
+
+Measures what a live update costs when k of 40 painted rows are replaced by new instances, keyed
+two ways (the research note `docs/research/ag-grid-rendering-on-data-change.md`, section 8,
+candidate 2). Results and the reading of them:
+[`verification/2026-10-05-macos-live-update-measure`](../../verification/2026-10-05-macos-live-update-measure/README.md).
+
+- **`Bench.Live`** holds the components every host below renders: `LiveRow`, ExGrid's row shape in
+  miniature (a hand-written `ShouldRender` comparing the row by reference; plain-markup cells with
+  ExGridRow's class, style, role, id and aria-colindex), and `LiveGrid`, 40 rows keyed either by
+  instance (**A**, ExGrid today) or by the record's Id (**B**). `LiveTicker` makes the ticks: k rows
+  replaced, each with 3 (or all, or 0) painted values moved, from a seed, so every host sees the
+  same ticks.
+- **`/live`** (WebAssembly, this page): A and B on one page, ticked in turn; render, layout and
+  paint per tick as `/format` measures them, and a MutationObserver per grid counting what each
+  render did to the DOM (an element Blazor builds gets its attributes before it is inserted, so
+  those are not seen). The box sets the changed cells per row; `-1` (all) always runs as well.
+  ```sh
+  nix develop -c dotnet run -c Release --project Bench.Host --urls http://127.0.0.1:5199
+  CDP_PORT=9391 nix develop .#browser -c node tools/cdp-run.mjs http://127.0.0.1:5199/live 300 1800 30 3 "Measure live ticks" save
+  ```
+  (the fourth number is the warm-up ticks, the fifth the changed cells per row).
+- **`Bench.BatchCount`** renders `LiveGrid` with a test `Renderer` that captures each
+  `RenderBatch` — what Blazor Server serialises — and counts edits, frames and strings, with an
+  estimate of the batch's bytes transcribed from `RenderBatchWriter`'s layout; then times the .NET
+  render alone, A and B interleaved. `calibrate` renders the real `ExGrid` with the same ticks, and
+  `window` times the real grid's pass over a new, large Window instance.
+  ```sh
+  nix develop -c dotnet run -c Release --project Bench.BatchCount -- out.json 1000 50 1000
+  nix develop -c dotnet run -c Release --project Bench.BatchCount -- calibrate out.json 200 20
+  nix develop -c dotnet run -c Release --project Bench.BatchCount -- window out.json 45017,451115 30
+  ```
+- **`Bench.Server`** is the same two grids on Blazor Server, one tick per click, and
+  **`tools/cdp-ws.mjs`** reads each tick's `JS.RenderBatch` message off the WebSocket (as Chrome
+  reports it, decompressed) and the bytes Kestrel wrote to the circuit's connection during the tick
+  (`GET /api/wire`, after per-message compression). A tick is over when one more render batch has
+  arrived and one more `OnRenderCompleted` has gone back — no wait on a clock.
+  ```sh
+  nix develop -c dotnet run -c Release --project Bench.Server            # BENCH_NO_WS_COMPRESSION=1 to turn compression off
+  CDP_PORT=9391 nix develop .#browser -c node tools/cdp-ws.mjs http://127.0.0.1:5199/ ws.json 50 5
+  ```
+
 ## Running it
 
 ```sh

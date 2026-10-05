@@ -1,0 +1,9 @@
+M5: 2000 cases, 7966 batches, 649,829 rows compared, 654 cases also against ReplaceRow one at a time (seed 7): the incremental result equals GridQueryEngine.Apply in every batch
+n = 1,000,000: the Filter keeps 451,115 rows
+  grid: RequireDistinctRows over the Window    n=1,000,000 k=    0 runs=  15  min     10.862  median     11.530  max     22.465 ms  (Window of 451,115 rows)
+  (b) GridQueryEngine.Apply alone              n=1,000,000 k=    0 runs=   7  min    334.731  median    359.890  max    374.581 ms  (filter + two-key stable sort over every row)
+  (b) one requery for the batch                n=1,000,000 k=10000 runs=   7  min    377.824  median    388.984  max    409.234 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=1,000,000 k=10000 runs=  15  min     27.656  median     29.673  max     33.345 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+  (b) one requery for the batch                n=1,000,000 k=100000 runs=   7  min    389.599  median    406.291  max    410.342 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=1,000,000 k=100000 runs=  15  min    233.844  median    250.260  max    273.172 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+wrote verification/2026-10-05-macos-live-update-measure/raw/m4-requery-large-k-1e6.json

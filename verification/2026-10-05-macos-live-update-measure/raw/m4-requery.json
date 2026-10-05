@@ -1,0 +1,294 @@
+{
+  "environment": {
+    "runtime": ".NET 10.0.7",
+    "os": "macOS 26.6.2",
+    "arch": "Arm64",
+    "processors": "12",
+    "serverGc": "False",
+    "configuration": "Release",
+    "started": "2026-10-05T15:50:07.6915700\u002B01:00",
+    "finished": "2026-10-05T15:52:29.8075290\u002B01:00"
+  },
+  "stats": [
+    {
+      "Path": "grid: RequireDistinctRows over the Window",
+      "N": 100000,
+      "K": 0,
+      "Runs": 40,
+      "MinMs": 0.501792,
+      "MedianMs": 0.658167,
+      "MaxMs": 1.071334,
+      "Note": "Window of 45,017 rows"
+    },
+    {
+      "Path": "(b) GridQueryEngine.Apply alone",
+      "N": 100000,
+      "K": 0,
+      "Runs": 20,
+      "MinMs": 19.601791,
+      "MedianMs": 22.556207999999998,
+      "MaxMs": 25.659292,
+      "Note": "filter \u002B two-key stable sort over every row"
+    },
+    {
+      "Path": "(a) today: k x ReplaceRow",
+      "N": 100000,
+      "K": 1,
+      "Runs": 30,
+      "MinMs": 19.592375,
+      "MedianMs": 20.1403125,
+      "MaxMs": 23.024875,
+      "Note": "30 run(s) of 1 calls, timed whole"
+    },
+    {
+      "Path": "(a) one ReplaceRow call",
+      "N": 100000,
+      "K": 1,
+      "Runs": 30,
+      "MinMs": 19.590375,
+      "MedianMs": 20.1385205,
+      "MaxMs": 23.019375,
+      "Note": "each call: locate by reference, Apply, compare the sequence"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 100000,
+      "K": 1,
+      "Runs": 20,
+      "MinMs": 19.932667,
+      "MedianMs": 23.218458,
+      "MaxMs": 28.357125,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 100000,
+      "K": 1,
+      "Runs": 40,
+      "MinMs": 0.024792,
+      "MedianMs": 0.028999999999999998,
+      "MaxMs": 0.082542,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    },
+    {
+      "Path": "(a) today: k x ReplaceRow",
+      "N": 100000,
+      "K": 100,
+      "Runs": 5,
+      "MinMs": 2423.450041,
+      "MedianMs": 2438.179833,
+      "MaxMs": 2459.425791,
+      "Note": "5 run(s) of 100 calls, timed whole"
+    },
+    {
+      "Path": "(a) one ReplaceRow call",
+      "N": 100000,
+      "K": 100,
+      "Runs": 500,
+      "MinMs": 19.729875,
+      "MedianMs": 24.206229,
+      "MaxMs": 45.293625,
+      "Note": "each call: locate by reference, Apply, compare the sequence"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 100000,
+      "K": 100,
+      "Runs": 20,
+      "MinMs": 21.583458,
+      "MedianMs": 25.2834795,
+      "MaxMs": 30.51625,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 100000,
+      "K": 100,
+      "Runs": 40,
+      "MinMs": 0.147375,
+      "MedianMs": 0.18606250000000002,
+      "MaxMs": 0.327666,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    },
+    {
+      "Path": "(a) today: k x ReplaceRow",
+      "N": 100000,
+      "K": 1000,
+      "Runs": 1,
+      "MinMs": 24487.062625,
+      "MedianMs": 24487.062625,
+      "MaxMs": 24487.062625,
+      "Note": "1 run(s) of 1000 calls, timed whole"
+    },
+    {
+      "Path": "(a) one ReplaceRow call",
+      "N": 100000,
+      "K": 1000,
+      "Runs": 1000,
+      "MinMs": 19.153458,
+      "MedianMs": 23.984479,
+      "MaxMs": 40.042875,
+      "Note": "each call: locate by reference, Apply, compare the sequence"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 100000,
+      "K": 1000,
+      "Runs": 20,
+      "MinMs": 21.748375,
+      "MedianMs": 24.671,
+      "MaxMs": 32.13875,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 100000,
+      "K": 1000,
+      "Runs": 40,
+      "MinMs": 0.975834,
+      "MedianMs": 1.0490625,
+      "MaxMs": 1.166917,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    },
+    {
+      "Path": "grid: RequireDistinctRows over the Window",
+      "N": 1000000,
+      "K": 0,
+      "Runs": 15,
+      "MinMs": 10.640041,
+      "MedianMs": 10.928209,
+      "MaxMs": 13.790041,
+      "Note": "Window of 451,115 rows"
+    },
+    {
+      "Path": "(b) GridQueryEngine.Apply alone",
+      "N": 1000000,
+      "K": 0,
+      "Runs": 7,
+      "MinMs": 325.542917,
+      "MedianMs": 348.636209,
+      "MaxMs": 359.889,
+      "Note": "filter \u002B two-key stable sort over every row"
+    },
+    {
+      "Path": "(a) today: k x ReplaceRow",
+      "N": 1000000,
+      "K": 1,
+      "Runs": 10,
+      "MinMs": 331.333,
+      "MedianMs": 354.302646,
+      "MaxMs": 475.884666,
+      "Note": "10 run(s) of 1 calls, timed whole"
+    },
+    {
+      "Path": "(a) one ReplaceRow call",
+      "N": 1000000,
+      "K": 1,
+      "Runs": 10,
+      "MinMs": 331.328791,
+      "MedianMs": 354.2958545,
+      "MaxMs": 475.838709,
+      "Note": "each call: locate by reference, Apply, compare the sequence"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 1000000,
+      "K": 1,
+      "Runs": 7,
+      "MinMs": 346.946667,
+      "MedianMs": 369.701208,
+      "MaxMs": 507.809417,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 1000000,
+      "K": 1,
+      "Runs": 15,
+      "MinMs": 0.208084,
+      "MedianMs": 0.234417,
+      "MaxMs": 1.182959,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    },
+    {
+      "Path": "(a) today: k x ReplaceRow",
+      "N": 1000000,
+      "K": 100,
+      "Runs": 1,
+      "MinMs": 36869.52725,
+      "MedianMs": 36869.52725,
+      "MaxMs": 36869.52725,
+      "Note": "1 run(s) of 100 calls, timed whole"
+    },
+    {
+      "Path": "(a) one ReplaceRow call",
+      "N": 1000000,
+      "K": 100,
+      "Runs": 100,
+      "MinMs": 328.321875,
+      "MedianMs": 361.967583,
+      "MaxMs": 453.558959,
+      "Note": "each call: locate by reference, Apply, compare the sequence"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 1000000,
+      "K": 100,
+      "Runs": 7,
+      "MinMs": 344.311917,
+      "MedianMs": 361.545917,
+      "MaxMs": 389.855333,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 1000000,
+      "K": 100,
+      "Runs": 15,
+      "MinMs": 0.53575,
+      "MedianMs": 0.5905,
+      "MaxMs": 0.716125,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    },
+    {
+      "Path": "(a) today: k x ReplaceRow",
+      "N": 1000000,
+      "K": 1000,
+      "Runs": 100,
+      "MinMs": 329098.66699999996,
+      "MedianMs": 364545.29149999993,
+      "MaxMs": 435199.125,
+      "Note": "100 calls timed one by one; the batch is 1000 x the median call (derived, not run)"
+    },
+    {
+      "Path": "(a) one ReplaceRow call",
+      "N": 1000000,
+      "K": 1000,
+      "Runs": 100,
+      "MinMs": 329.098667,
+      "MedianMs": 364.54529149999996,
+      "MaxMs": 435.199125,
+      "Note": "each call: locate by reference, Apply, compare the sequence"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 1000000,
+      "K": 1000,
+      "Runs": 7,
+      "MinMs": 340.141208,
+      "MedianMs": 365.26675,
+      "MaxMs": 383.430625,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 1000000,
+      "K": 1000,
+      "Runs": 15,
+      "MinMs": 3.041167,
+      "MedianMs": 3.190166,
+      "MaxMs": 5.187667,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    }
+  ]
+}

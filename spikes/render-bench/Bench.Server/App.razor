@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <title>live tick bench (Server)</title>
+    <style>
+        body { font-family: system-ui, sans-serif; font-size: 13px; margin: 16px; }
+        .controls { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+        .controls input { width: 60px; }
+        .live-pair { display: flex; flex-direction: column; gap: 8px; }
+        .live-grid { border: 1px solid #ccc; overflow: hidden; width: max-content; }
+        .r { display: flex; height: 24px; line-height: 24px; }
+        .c { flex: 0 0 90px; width: 90px; padding: 0 6px; box-sizing: border-box; border-right: 1px solid #eee; overflow: hidden; white-space: nowrap; }
+        .c.num { text-align: right; }
+        .c.num.neg { color: #a33; }
+        .c.key { font-weight: 600; }
+    </style>
+</head>
+<body>
+    <Routes />
+    <script src="_framework/blazor.web.js"></script>
+</body>
+</html>
