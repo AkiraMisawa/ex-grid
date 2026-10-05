@@ -423,10 +423,12 @@
                     @* One loop over absolute row positions, and every sibling carries a
                        key: a keyed component beside an unkeyed element degrades the diff
                        to positional matching, which would recreate the very row
-                       components memoisation exists to keep (ADR-0003). Row keys are
-                       identity objects and Placeholder keys are boxed indices, so the
-                       two can never collide — and a position turning from Placeholder
-                       into a row correctly reads as a fresh mount. *@
+                       components memoisation exists to keep (ADR-0003). A row's key is
+                       its Row Key while one is in force, else an identity object for its
+                       instance (ADR-0140); a Placeholder's is its position in a type of
+                       the grid's own, so the two can never collide — and a position
+                       turning from Placeholder into a row correctly reads as a fresh
+                       mount. *@
                     @* The Change Highlight's time (ADR-0068): read once for the whole render,
                        so every row paints its marks by the same instant, and only while the
                        declaration is made. A row whose earliest mark ends by it renders again;
@@ -443,7 +445,7 @@
                             @* A Placeholder is handed no slice at all, so a fling that keeps
                                moving sideways does not churn the rows through renders whose
                                output is the same pinned cells every time. *@
-                            <ExGridRow @key="RowKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
+                            <ExGridRow @key="RowComponentKey(data)" Row="data" Columns="Columns" Styles="_columnStyles"
                                        Scrollable="@(_placeholderMode ? null : _scrollable)"
                                        Placeholder="_placeholderMode" Metrics="_metrics.CellMetrics"
                                        CellState="CellState" CellType="CellType" CellAlign="CellAlign" PaintedText="PaintedText" RowKind="RowKind"
@@ -465,11 +467,11 @@
                             {
                                 @* A Row Heading is a position's label, so a row that has not
                                    arrived still has one (ADR-0050). *@
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="PlaceholderKey(row)"><div class="ex-row-heading" style="@_rowHeadingStyle" aria-hidden="true">@RowHeadingAt(row)</div></div>
                             }
                             else
                             {
-                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="row"></div>
+                                <div class="@RowClasses.For(default, placeholder: true, StripeAt(row))" role="row" aria-rowindex="@(row + 1)" aria-busy="true" @key="PlaceholderKey(row)"></div>
                             }
                         }
                     }
@@ -966,12 +968,6 @@
     /// the font supplies its own <see cref="CellMetrics"/>.
     /// </summary>
     public static readonly CellTextMetrics DefaultCellMetrics = GridMetrics.Resolve(GridDensity.Compact).CellMetrics;
-
-    // One key object per row instance, so @key is reference identity even when TRow
-    // overrides Equals (a record row model): value-equal rows are still different rows
-    // (ADR-0003), and Blazor's duplicate-@key refusal must not fire on them. Entries
-    // die with their rows; the table is per closed generic type.
-    private static readonly ConditionalWeakTable<TRow, object> RowIdentityKeys = new();
 
     /// <summary>The contiguous block of rows the Consumer pushes in, starting at
     /// <see cref="WindowStart"/> (ADR-0001).</summary>
@@ -2686,11 +2682,9 @@
         var columnsChanged = !ReferenceEquals(_observedColumns, Columns);
         var metricsChanged = _observedMetrics != _metrics.CellMetrics;
 
-        if (!ReferenceEquals(_observedWindow, _window))
-        {
-            RequireDistinctRows(_window);
-            _observedWindow = _window;
-        }
+        // A new Window, or a new Row Key over the one in hand, is checked for a row or a key that
+        // appears twice, unless its source vouches for it (ADR-0003/0140/0141).
+        TakeInWindow();
 
         if (columnsChanged || metricsChanged)
         {
@@ -2845,32 +2839,6 @@
         {
             throw new InvalidOperationException(
                 $"The Window claims rows {_windowStart}-{_windowStart + _window.Count - 1}, past a TotalCount of {_total.Value}.");
-        }
-    }
-
-    // Refused up front rather than failing strangely mid-render: a duplicate instance
-    // makes Row Identity ambiguous (ADR-0003 — which row did the Consumer mean?), and
-    // a null is not a row (an absent row is a Placeholder, ADR-0004).
-    //
-    // Walking the whole Window is fine while a Window is tens or hundreds of rows. The
-    // pull layer that hands over an entire result at once (GridSource.From, Task 9)
-    // would make this a hash insert per row on every push, and is where to revisit it.
-    private static void RequireDistinctRows(IReadOnlyList<TRow> window)
-    {
-        var seen = new HashSet<object>(window.Count, ReferenceEqualityComparer.Instance);
-        for (var i = 0; i < window.Count; i++)
-        {
-            var row = window[i];
-            if (row is null)
-            {
-                throw new InvalidOperationException(
-                    $"Window[{i}] is null; a Window holds rows, not gaps.");
-            }
-            if (!seen.Add(row))
-            {
-                throw new InvalidOperationException(
-                    $"Window[{i}] is the same row instance as an earlier position; Row Identity cannot tell them apart (ADR-0003).");
-            }
         }
     }
 
@@ -8677,8 +8645,6 @@
             _self = null;
         }
     }
-
-    private static object RowKey(TRow row) => RowIdentityKeys.GetValue(row, static _ => new object());
 
     /// <summary>
     /// The Geometry Tokens, inline on the instance root and emitted from the same
