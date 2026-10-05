@@ -21,7 +21,7 @@ public class SelectionSummaryTests : GridTestContext
     private static GridColumn<TestRow>[] Columns(Func<object, string>? amountFormat = null) =>
     [
         new("Book", ColumnType.Text, r => r.Book, width: Fixed100),
-        new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, format: amountFormat),
+        new("Amount", ColumnType.Number, r => r.Amount, width: Fixed100, format: amountFormat, editable: true),
         new("AsOf", ColumnType.Date, r => r.AsOf, width: Fixed100),
     ];
 
@@ -52,6 +52,7 @@ public class SelectionSummaryTests : GridTestContext
               .Add(g => g.OnSelectionSummaryChanged, s => heard.Changes.Add(s));
             if (menu)
                 ps.Add(g => g.SummaryFiguresChanged, f => heard.Chosen.Add(f));
+            ps.Add(g => g.OnClear, _ => { });
             if (onSummarize is not null)
             {
                 ps.Add(g => g.OnSummarize, (request, token) =>
@@ -312,6 +313,50 @@ public class SelectionSummaryTests : GridTestContext
         Assert.DoesNotContain("Sum", cut.Find(".ex-announce").TextContent);
         Assert.Null(cut.Find(".ex-summary").GetAttribute("role"));
         Assert.Null(cut.Find(".ex-summary").GetAttribute("aria-live"));
+    }
+
+    [Fact] // ADR-0130 / SM-3: an edit the grid hands over asks again, under the selection that stands
+    public async Task ADR0130_an_edit_handed_over_asks_again()
+    {
+        var heard = new Heard();
+        var rows = TestRows.Many(500);
+        var cut = RenderGrid(heard, Reference(rows), rows);
+        await ClickCellAsync(cut, 150, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+        Assert.Single(heard.Requests);
+
+        await PressAsync(cut, "Delete");
+
+        Assert.Equal(2, heard.Requests.Count);
+        Assert.Equal(heard.Requests[0].Ranges, heard.Requests[1].Ranges);
+    }
+
+    [Fact] // ADR-0130: one cell Ctrl+clicked twice is one cell, and asks nothing
+    public async Task ADR0130_the_same_cell_twice_is_one_cell()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard, (_, _) => Task.FromResult(Answer(sum: 0m)));
+        await ClickCellAsync(cut, 150, 10);
+
+        await cut.Find(".ex-viewport").MouseDownAsync(new MouseEventArgs { Button = 0, Buttons = 1, OffsetX = 150, OffsetY = 10, CtrlKey = true });
+
+        Assert.Empty(heard.Requests);
+    }
+
+    [Fact] // ADR-0130 / ADR-0060: a figure that is not finite says #NUM!, never nothing
+    public async Task ADR0130_a_figure_that_is_not_finite_says_so()
+    {
+        var cut = RenderGrid(new Heard(), (_, _) => Task.FromResult(GridSummaryResult.Answered(
+            new Dictionary<SummaryFigures, AggregateResult>
+            {
+                [SummaryFigures.Average] = AggregateResult.Of(AggregateError.NotANumber),
+                [SummaryFigures.Count] = AggregateResult.Of(2m),
+                [SummaryFigures.Sum] = AggregateResult.Of(AggregateError.NotANumber),
+            })));
+        await ClickCellAsync(cut, 150, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+
+        cut.WaitForAssertion(() => Assert.Equal("Average: #NUM!Count: 2Sum: #NUM!", SummaryText(cut)));
     }
 
     private static GridSummaryResult Answer(decimal sum) => GridSummaryResult.Answered(

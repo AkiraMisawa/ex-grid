@@ -122,6 +122,37 @@ public class GridSummaryTests
         Assert.Equal(10_000m, result[SummaryFigures.Sum]!.Value.Exact);
     }
 
+    [Fact] // ADR-0130 / SM-4: the in-memory Source summarises a whole column of a million rows, never declining
+    public async Task ADR0130_the_in_memory_source_never_declines()
+    {
+        var rows = Enumerable.Range(0, 1_000_000).Select(i => new Trade("B", 0.01m, 0, default, false)).ToArray();
+        var source = GridSource.From(rows);
+        source.OnColumnsChanged([new GridColumn<Trade>("Notional", ColumnType.Number, t => t.Notional).Info]);
+
+        var result = await source.SummarizeAsync(
+            new GridSummaryRequest { Ranges = [new SelectionRange(0, 0, rows.Length, 1)], Columns = ["Notional"], RowSequenceVersion = 0, Figures = SummaryFigures.Sum },
+            CancellationToken.None);
+
+        Assert.False(result.IsDeclined);
+        Assert.Equal(10_000m, result[SummaryFigures.Sum]!.Value.Exact);
+    }
+
+    [Fact] // ADR-0130 / SM-6: a Template Column contributes its value accessor's answer, never its markup
+    public async Task ADR0130_a_template_column_is_summed_by_its_value()
+    {
+        var source = GridSource.From(Rows);
+        source.OnColumnsChanged(
+        [
+            GridColumn<Trade>.TemplateColumn("Shown", ColumnType.Number, t => t.Notional, _ => _ => { }).Info,
+        ]);
+
+        var result = await source.SummarizeAsync(
+            new GridSummaryRequest { Ranges = [new SelectionRange(0, 0, 4, 1)], Columns = ["Shown"], RowSequenceVersion = 0, Figures = SummaryFigures.Sum },
+            CancellationToken.None);
+
+        Assert.Equal(3_530.25m, result[SummaryFigures.Sum]!.Value.Exact);
+    }
+
     [Fact] // ADR-0130 / SM-6: the in-memory Source summarises the result in its order
     public async Task ADR0130_the_in_memory_source_summarises_the_result_in_its_order()
     {

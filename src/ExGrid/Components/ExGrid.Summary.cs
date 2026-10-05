@@ -102,7 +102,6 @@ public partial class ExGrid<TRow>
             if (_disposed || _summaryQuestion is null)
                 return;
             AskSummaryAgain();
-            StateHasChanged();
         });
 
     /// <summary>The values summed may have moved — an edit the grid handed over, a change it was
@@ -111,7 +110,9 @@ public partial class ExGrid<TRow>
     private void AskSummaryAgain()
     {
         _summaryRowsStamp++;
+        // A key reaches the grid through JavaScript, which re-renders nothing by itself.
         _suppressRender = false;
+        StateHasChanged();
     }
 
     /// <summary>
@@ -122,7 +123,7 @@ public partial class ExGrid<TRow>
     private void ReviewSummary()
     {
         var selection = _selection.Selection;
-        var asks = CanSummarize && SummaryFigures != SummaryFigures.None && !selection.IsEmpty && selection.CellCount > 1;
+        var asks = CanSummarize && SummaryFigures != SummaryFigures.None && SelectsTwoCells(selection);
         if (!asks)
         {
             if (_summaryQuestion is null && _summary.Status == SelectionSummaryStatus.None)
@@ -151,6 +152,21 @@ public partial class ExGrid<TRow>
         _summary = new SelectionSummary(SelectionSummaryStatus.Pending, RequestFor(_summaryQuestion), null);
         _summaryAskOwed = true;
         _summaryRaiseOwed = true;
+    }
+
+    // Two distinct cells or more: a range of two, or two ranges that are not the same one cell —
+    // Ctrl+clicking one cell twice selects one cell, whatever the areas add up to.
+    private static bool SelectsTwoCells(GridSelection selection)
+    {
+        if (selection.IsEmpty)
+            return false;
+        var first = selection.Ranges[0];
+        foreach (var range in selection.Ranges)
+        {
+            if (range.CellCount > 1 || range.TopRow != first.TopRow || range.LeftColumn != first.LeftColumn)
+                return true;
+        }
+        return false;
     }
 
     private bool SameColumns(string[] names)
@@ -193,7 +209,23 @@ public partial class ExGrid<TRow>
         if (_summaryAskOwed)
         {
             _summaryAskOwed = false;
+            // Started, not awaited: a slow answerer must not hold back the rest of this render's
+            // work, and its answer is matched to its question whenever it lands (ADR-0130).
+            _ = AskOrDispatchAsync();
+        }
+    }
+
+    private async Task AskOrDispatchAsync()
+    {
+        try
+        {
             await AskSummaryAsync();
+        }
+        catch (Exception ex)
+        {
+            // The Consumer's failure, or its defect named (an answer that is not the answer), reaches
+            // the host's error UI as any other handler's would.
+            await DispatchExceptionAsync(ex);
         }
     }
 
@@ -246,6 +278,10 @@ public partial class ExGrid<TRow>
         {
             if (result[figure] is { IsNumber: true } value)
                 texts.Add(new SummaryFigureText(figure, SummaryLabelIds.For(figure), SummaryText(figure, value)));
+            // A number that is not finite makes the figure #NUM!, which is said rather than left out:
+            // a Sum missing from the line reads as nothing to sum (ADR-0060, the spine's first rule).
+            else if (result[figure] is { Error: AggregateError.NotANumber })
+                texts.Add(new SummaryFigureText(figure, SummaryLabelIds.For(figure), "#NUM!"));
         }
         return texts;
     }

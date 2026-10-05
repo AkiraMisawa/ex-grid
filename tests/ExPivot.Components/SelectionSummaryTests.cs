@@ -30,6 +30,20 @@ public class SelectionSummaryTests : PivotTestContext
         cut.WaitForAssertion(() => Assert.Equal("Average: 114Count: 5Sum: 570", Summary(cut)));
     }
 
+    [Fact] // ADR-0130 / SM-13: subtotals are summed with the leaves when selected, as Excel sums them
+    public async Task ADR0130_subtotals_are_summed_with_the_rest()
+    {
+        var cut = RenderPivot(new PivotLayout { Rows = [P("Region"), P("Product")], Values = [Sum("Amount")] });
+        var rows = Grid(cut).Instance.Window.Count;
+        var version = Grid(cut).Instance.RowSequenceVersion;
+
+        await cut.InvokeAsync(() => Grid(cut).Instance.PlaceSelectionAsync(new SelectionRange(0, 1, rows, 1), new CellPosition(0, 1), version));
+
+        // The leaves (285), each Region's subtotal (285 together) and the grand total (285).
+        cut.WaitForAssertion(() => Assert.Contains("Sum: 855", Summary(cut)));
+        Assert.Contains($"Count: {rows}", Summary(cut));
+    }
+
     [Fact] // ADR-0130 / SM-13: a label is counted and never a number
     public async Task ADR0130_labels_are_counted()
     {
