@@ -38,10 +38,10 @@ npx playwright test --project=chrome --project=chrome-150   # where Edge is abse
 
 **CI runs this suite on every push and pull request** (ADR-0041): Linux, the runner's
 installed Chrome and Edge, headed under `xvfb-run`, with this directory's own config
-unchanged — against each host, each browser in two shards, every shard on a runner of its own
-(`--project=chrome --shard=1/2` and so on). A shard is a set of whole spec files. One job per
-host, under the name the host's run has always had, passes only when all four of its shards
-did, and a failure in any turns the run red. Each shard keeps `console.json`, `metrics.json`
+unchanged — against each host, Chrome and Edge in four shards each and `chrome-150` in two,
+every shard on a runner of its own (`--project=chrome --shard=1/4` and so on). A shard is a set
+of whole spec files. One job per host, under the name the host's run has always had, passes only
+when all ten of its shards did, and a failure in any turns the run red. Each shard keeps `console.json`, `metrics.json`
 and any failure's trace as an artifact of its own. The weekly run, or a dispatch asking for the
 long run, adds the soak (`EXGRID_SOAK=1`). The VZ-14 test still skips itself off Windows, so it
 stays a run by hand.
@@ -49,7 +49,7 @@ stays a run by hand.
 To run one shard as CI does:
 
 ```sh
-npx playwright test --project=chrome --shard=1/2
+npx playwright test --project=chrome --shard=1/4
 ```
 
 ## The two hosts
