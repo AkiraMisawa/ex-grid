@@ -162,6 +162,10 @@ public sealed record GridColumn<TRow>
     /// keyboard focuses itself when it sees one; the core never reaches into markup it did
     /// not render (ADR-0037). Such a control should also carry <c>tabindex="-1"</c>, or the
     /// grid stops being one tab stop.</para>
+    ///
+    /// <para>The grid does not judge what such a control writes (ADR-0142): its handler has the
+    /// row the template was painted with, and checking that row against the current one before
+    /// writing is the Consumer's job (see <see cref="TemplateCellContext{TRow}"/>).</para>
     /// </summary>
     public static GridColumn<TRow> TemplateColumn(
         string name,

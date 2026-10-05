@@ -348,6 +348,17 @@ nobody had asked for. What that means when writing a test:
   refusal (ED-24), Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R and a fill refused by
   name (CP-24/25), the keys staying the input's own inside the editor, and — on `/cells` —
   a display-only grid leaving Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25).
+- `write-refusal.spec.mjs` — a write over a target that changed after the user saw it (ADR-0142,
+  LV-11 to LV-14) on `/features?upstream=1`, where F9 moves the first five rows' Notional as a
+  live feed would. On both hosts, at 150 ms on the Server host: a commit over a cell that changed
+  under the editor refused with the new value in the refusal status, the typing kept, a second
+  Enter landing, Escape writing nothing, and a change to another cell of the row refusing nothing
+  (LV-11); a Ctrl+V pressed straight after F9 judged against the render it was pressed on —
+  refused where that render was the older one, pasted where it already showed the change (LV-13,
+  LV-14). On the Server host only, where a gesture can be taken before F9's render comes back: an
+  Action press, a Ctrl+Enter fill and a fill-handle release refused (LV-12, LV-13). Each race reads
+  what the page showed at the gesture first, from a capture listener ahead of the grid's, and says
+  so by name if the change had already been painted.
 - `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken
   from the browser and the keys typed after it landing in the panel's field, Enter and
   Shift+Enter stepping, a match beyond the painted rows revealed, "no match" in a live

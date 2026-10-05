@@ -3,6 +3,7 @@
 @using ExGrid.Chrome
 @using ExGrid.Clipboard
 @using ExGrid.Finding
+@using ExGrid.Keys
 @* global::, for the reason MudApp.razor gives (AGENTS.md, the name collisions). *@
 @using global::MudBlazor
 
@@ -32,10 +33,21 @@
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
     <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
+    @* A write refused because what the user saw of its target changed before it landed
+       (ADR-0142): announced as every refusal is (A11Y-16). The commit's sentence carries the
+       cell's new text, because the editor covers the cell. *@
+    <span id="commit-refused-status" role="status">Commit refused: @_commitRefusedStatus</span>
+    <span id="action-refused-status" role="status">Action refused: @_actionRefusedStatus</span>
     <span id="find-refused-status" role="status">Find: @_findStatus</span>
     <span id="context-status">Context: @_contextStatus</span>
     <span id="order-status">Order: @string.Join(",", _columns.Select(c => c.Name))</span>
     <span id="width-status">Width: @_widthStatus</span>
+    @if (UpstreamOn)
+    {
+        <span id="upstream-status">Upstream: @_upstreamStatus</span>
+        <span id="action-status">Action: @_actionStatus</span>
+        <span id="fill-status">Filled: @_fillStatus</span>
+    }
 </p>
 
 <ExGrid TRow="DemoTrade"
@@ -56,6 +68,13 @@
         OnCopyRefused="OnCopyRefused"
         OnPasteRefused="OnPasteRefused"
         OnEditDiscarded="OnEditDiscarded"
+        OnCommitRefused="OnCommitRefused"
+        OnAction="OnAction"
+        OnActionRefused="OnActionRefused"
+        ShowFillHandle="UpstreamOn"
+        OnFill="OnFill"
+        DeclaredKeys="@(UpstreamOn ? UpstreamKeys : null)"
+        OnDeclaredKey="OnUpstreamKey"
         OnFindRefused="OnFindRefused"
         OnColumnWidthChanged="OnWidthChanged"
         OnColumnOrderChanged="OnOrderChanged"
@@ -90,6 +109,21 @@
     /// </summary>
     [SupplyParameterFromQuery(Name = "modal")]
     public string? ModalOverlay { get; set; }
+
+    /// <summary>
+    /// <c>?upstream=1</c> lets the browser layer change values under a gesture, as a live feed
+    /// would (ADR-0142, LV-11 to LV-14): F9, declared to the grid, moves the Notional of the first
+    /// five rows up by one — with an edit open too, where the grid raises a declared key and
+    /// changes nothing in the editor (ADR-0050, item 14). It also adds an Action Column and the
+    /// fill handle, so that a press, a paste, a fill and a commit can each be raced against it.
+    /// Off, the page is what the other browser tests drive.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "upstream")]
+    public string? Upstream { get; set; }
+
+    private bool UpstreamOn => Upstream == "1";
+
+    private static readonly string[] UpstreamKeys = ["F9"];
 
     [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
 
@@ -155,7 +189,16 @@
         ];
     }
 
-    private GridColumn<DemoTrade>[] BuildColumns() =>
+    private GridColumn<DemoTrade>[] BuildColumns() => UpstreamOn
+        ? [.. BaseColumns().Take(3), ApproveColumn, .. BaseColumns().Skip(3)]
+        : BaseColumns();
+
+    /// <summary>An action that would write — approving a trade at the notional shown — so a press
+    /// on a row whose notional moved under it must be refused (ADR-0142, LV-12).</summary>
+    private static readonly GridColumn<DemoTrade> ApproveColumn = GridColumn<DemoTrade>.ActionColumn(
+        "Act", [new GridAction("approve", "Approve")], width: new ColumnWidthSpec(ColumnWidth.Fixed(90)));
+
+    private GridColumn<DemoTrade>[] BaseColumns() =>
     [
         new("Book", ColumnType.Text, t => t.Book,
             width: new ColumnWidthSpec(ColumnWidth.Fixed(110)), filterUi: FilterUiMode.Both),
@@ -195,6 +238,12 @@
     private string _editDiscardedStatus = "—";
     private string _contextStatus = "—";
     private string _widthStatus = "—";
+    private string _commitRefusedStatus = "—";
+    private string _actionRefusedStatus = "—";
+    private string _upstreamStatus = "—";
+    private string _actionStatus = "—";
+    private string _fillStatus = "—";
+    private int _upstreamTicks;
 
 
     /// <summary>Find's refusals (ADR-0055). This page's grid is bound to GridSource.From, which
@@ -383,8 +432,95 @@
                 "TargetNotEditable — the selection covers a column that is not editable",
             PasteRefusalReason.SingleCellTarget =>
                 "SingleCellTarget — reselect a target of the same shape",
+            // ADR-0142: the data under the target moved after the user saw it. Nothing was written,
+            // and the user, who has not seen the new values, is told to look before trying again.
+            PasteRefusalReason.TargetChanged =>
+                "TargetChanged — nothing was written: the cells changed before the write landed; check them and try again",
+            // Not "changed": the grid cannot tell whether they did, only that it no longer knows what was shown.
+            PasteRefusalReason.RenderNoLongerKept =>
+                "RenderNoLongerKept — nothing was written: the grid could no longer tell what the cells showed; try again",
             _ => reason.ToString(),
         }, s => _pasteRefusedStatus = s);
+
+    /// <summary>A commit over a cell whose value moved while the user typed (ADR-0142, LV-11). The
+    /// editor still stands with the typing and covers the cell, so the sentence is where the user
+    /// sees the new value; Enter again writes over it, Escape leaves it.</summary>
+    private void OnCommitRefused(GridCommitRefusal refusal)
+        => Status(refusal, $"{refusal.Column} changed to {refusal.PaintedText} while you were typing — " +
+            "press Enter again to write over it, or Escape to keep it", s => _commitRefusedStatus = s);
+
+    /// <summary>An action pressed on a row that moved before the press landed (ADR-0142, LV-12).
+    /// Nothing was done; one more press, on the row as it is now, does it.</summary>
+    private void OnActionRefused(GridActionRefusal<DemoTrade> refusal)
+        => Status(refusal.Reason, refusal.Reason switch
+        {
+            ActionRefusalReason.RowChanged =>
+                $"RowChanged — {refusal.Action.ActionName} was not done: the row changed before the press landed; check it and press again",
+            ActionRefusalReason.RenderNoLongerKept =>
+                $"RenderNoLongerKept — {refusal.Action.ActionName} was not done: the grid could no longer tell what the row showed; press again",
+            _ => refusal.Reason.ToString(),
+        }, s => _actionRefusedStatus = s);
+
+    private void OnAction(GridActionEventArgs<DemoTrade> press)
+        => _actionStatus = $"{press.ActionName} {press.Row.Book}/{press.Row.Trader} at {press.Row.Notional:0.00}";
+
+    /// <summary>F9 under <c>?upstream=1</c>: the data moves on under the user, as a live feed moves
+    /// it — new instances of the first five rows, each Notional up by one (ADR-0003, ADR-0142).</summary>
+    private void OnUpstreamKey(GridDeclaredKeyPress press)
+    {
+        var window = _source.Window;
+        var count = Math.Min(5, window.Count);
+        for (var row = 0; row < count; row++)
+        {
+            var old = window[row];
+            _source.ReplaceRow(old, new DemoTrade
+            {
+                Book = old.Book, Trader = old.Trader, Notional = old.Notional + 1m,
+                TradeDate = old.TradeDate, Confirmed = old.Confirmed,
+            });
+        }
+        _rules.Evaluate(_source.Window, _columns);
+        _upstreamStatus = $"rows 1-{count} moved (×{++_upstreamTicks})";
+    }
+
+    /// <summary>A fill-handle drag under <c>?upstream=1</c> (ADR-0050, item 5): each target cell
+    /// takes the source cell above or below it in its column, cycling through the source, as one
+    /// history step. Down and up only — this page has no use for a sideways fill.</summary>
+    private void OnFill(GridFillIntent intent)
+    {
+        if (intent.Direction is not (ExGrid.Selection.GridDirection.Down or ExGrid.Selection.GridDirection.Up))
+        {
+            _fillStatus = "only down or up";
+            return;
+        }
+        var window = _source.Window;
+        var source = intent.Source;
+        var target = intent.Target;
+        var sourceRows = source.BottomRow - source.TopRow + 1;
+        var changes = new List<(DemoTrade, DemoTrade)>();
+        for (var row = target.TopRow; row <= Math.Min(target.BottomRow, window.Count - 1); row++)
+        {
+            var from = window[source.TopRow + (((row - source.TopRow) % sourceRows) + sourceRows) % sourceRows];
+            var into = window[row];
+            for (var column = target.LeftColumn; column <= target.RightColumn; column++)
+            {
+                var name = _columns[column].Name;
+                var text = name switch
+                {
+                    "Trader" => from.Trader,
+                    "Notional" => from.Notional.ToString(System.Globalization.CultureInfo.CurrentCulture),
+                    _ => null,
+                };
+                if (text is not null && Edited(into, name, text) is { } replacement)
+                {
+                    changes.Add((into, replacement));
+                    into = replacement;
+                }
+            }
+        }
+        _fillStatus = $"{changes.Count} cells";
+        Apply(changes);
+    }
 
     /// <summary>The typing is already gone when this arrives; what a Consumer owes the
     /// user is the reason (ADR-0011). Announced, not merely painted — nobody asked for

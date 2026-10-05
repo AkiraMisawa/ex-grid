@@ -134,22 +134,26 @@ public partial class ExGrid<TRow>
     /// <param name="rowSequence">The Row Sequence Version the Viewport was painted under
     /// (<c>data-ex-sequence</c>).</param>
     /// <param name="layout">The layout the Viewport was painted under (<c>data-ex-layout</c>).</param>
+    /// <param name="paint">The render the Viewport's cells were painted by (<c>data-ex-paint</c>):
+    /// a fill-handle drag released here is judged against what it painted (ADR-0142, LV-13).</param>
     [JSInvokable]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
-        double scrollLeftPx, int rowSequence, int layout)
+        double scrollLeftPx, int rowSequence, int layout, int paint = PaintNotTold)
     {
         // It crosses the JS boundary: a NaN would travel silently into the offsets.
         _taken = !_disposed && double.IsFinite(offsetX) && double.IsFinite(offsetY) && double.IsFinite(scrollLeftPx)
-            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, rowSequence, layout)
+            ? new TakenAt(kind, offsetX, offsetY, firstRow, scrollLeftPx, rowSequence, layout, paint)
             : null;
     }
 
     private sealed record TakenAt(string Kind, double OffsetX, double OffsetY, int FirstRow,
-        double ScrollLeftPx, int RowSequence, int Layout);
+        double ScrollLeftPx, int RowSequence, int Layout, int Paint);
 
     /// <summary>A press or release as it was taken (ED-31): the offsets it was given, and the first
     /// row, horizontal scroll and layout they were measured against. <see cref="Layout"/> is null
-    /// when what it was taken on is no longer held: the press lands on no cell.</summary>
+    /// when what it was taken on is no longer held: the press lands on no cell. <see cref="Paint"/>
+    /// names the render whose cells it was taken on (ADR-0142), held or not: a paint no longer
+    /// kept is the judgement's to refuse.</summary>
     private sealed class TakenMouseEventArgs : MouseEventArgs
     {
         public PaintLayout? Layout { get; init; }
@@ -157,6 +161,8 @@ public partial class ExGrid<TRow>
         public int FirstRow { get; init; }
 
         public double ScrollLeftPx { get; init; }
+
+        public int Paint { get; init; } = PaintNotTold;
     }
 
     /// <summary>The event as it was taken, if the script told of it (ED-31); the event as it came
@@ -181,8 +187,13 @@ public partial class ExGrid<TRow>
             Layout = held ? layout : null,
             FirstRow = told.FirstRow,
             ScrollLeftPx = told.ScrollLeftPx,
+            Paint = told.Paint,
         };
     }
+
+    /// <summary>The render a press or release was taken against (ADR-0142): the one the script
+    /// told of, or the newest for an event nobody told of.</summary>
+    private static int PaintOf(MouseEventArgs e) => e is TakenMouseEventArgs taken ? taken.Paint : PaintNotTold;
 
     /// <summary>The first row the event's offsets were measured against: the one painted when it was
     /// taken, the slice held now for an event nobody told of, null for one taken on what is no
