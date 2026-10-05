@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" Version="2.0.3" />
+    <!-- A clock a test drives: the live sources gather on one (ADR-0141). -->
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.0.0" />
     <!-- Coverage for CI (ADR-0041), on the same Microsoft.Testing.Platform 1.6 line
          xunit.v3 2.0 runs on; the 18.x extensions move to platform 2. Inert unless
          the coverage switch is passed. -->

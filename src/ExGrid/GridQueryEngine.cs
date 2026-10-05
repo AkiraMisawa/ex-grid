@@ -22,15 +22,97 @@ public static class GridQueryEngine
     {
         ArgumentNullException.ThrowIfNull(rows);
 
+        var buffer = rows as IReadOnlyList<TRow> ?? rows.ToArray();
+        var positions = ApplyPositions(buffer, columns, filter, sorts);
+        var result = new List<TRow>(positions.Length);
+        foreach (var position in positions)
+            result.Add(buffer[position]);
+        return result;
+    }
+
+    /// <summary>
+    /// <see cref="Apply{TRow}"/>, answered as the positions in <paramref name="rows"/> of the rows
+    /// the result holds, in the result's order. <see cref="Apply{TRow}"/> is this, mapped back to the
+    /// rows; a live source (ADR-0141) needs the positions themselves, to carry each row's place in
+    /// its base beside it without looking every row up again.
+    /// </summary>
+    internal static int[] ApplyPositions<TRow>(
+        IReadOnlyList<TRow> rows,
+        IReadOnlyList<ColumnInfo<TRow>> columns,
+        GridFilter? filter,
+        IReadOnlyList<SortSpec>? sorts)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+
         var byName = IndexColumns(columns);
         var prepared = filter is null ? null : Prepare(byName, filter);
+        // The whole Sorts list is validated before any row is touched, as the Filter is: a
+        // malformed Query is refused whatever the rows hold.
+        var levels = sorts is { Count: > 0 } ? Levels(byName, sorts) : null;
 
-        IEnumerable<TRow> result = rows;
-        if (prepared is not null)
-            result = result.Where(row => Matches(row, prepared));
-        if (sorts is { Count: > 0 })
-            return Sort(result, byName, sorts);
-        return result.ToList();
+        var kept = new List<int>(prepared is null ? rows.Count : 0);
+        for (var i = 0; i < rows.Count; i++)
+        {
+            if (prepared is null || Matches(rows[i], prepared))
+                kept.Add(i);
+        }
+        var positions = kept.ToArray();
+        if (levels is not null)
+            Sort(rows, positions, levels);
+        return positions;
+    }
+
+    /// <summary>
+    /// The order <paramref name="sorts"/> put rows in, as one comparison of two rows — the sort's
+    /// own, level by level, without the tie-break by position that makes the sort stable: rows it
+    /// calls equal tie, and the caller breaks the tie. What a live source merges its changed rows
+    /// into the previous result with (ADR-0141), so that the merge and <see cref="Apply{TRow}"/>
+    /// can never order two rows differently. The Sorts are validated here, as
+    /// <see cref="Apply{TRow}"/> validates them.
+    /// </summary>
+    internal static RowOrder<TRow> OrderOf<TRow>(IReadOnlyList<ColumnInfo<TRow>> columns, IReadOnlyList<SortSpec> sorts)
+    {
+        ArgumentNullException.ThrowIfNull(sorts);
+        return new RowOrder<TRow>(sorts.Count == 0 ? [] : Levels(IndexColumns(columns), sorts));
+    }
+
+    /// <summary>The order of <see cref="OrderOf{TRow}"/>: a row's sort keys, extracted and
+    /// normalised once, compared with another row's level by level.</summary>
+    internal sealed class RowOrder<TRow>
+    {
+        private readonly (ColumnInfo<TRow> Column, SortDirection Direction)[] _levels;
+
+        internal RowOrder((ColumnInfo<TRow> Column, SortDirection Direction)[] levels) => _levels = levels;
+
+        /// <summary>Whether there is an order at all: none puts every row level with every other.</summary>
+        public bool IsEmpty => _levels.Length == 0;
+
+        /// <summary>A row's keys, one per level, normalised as the sort normalises them.</summary>
+        public object?[] KeysOf(TRow row)
+        {
+            var keys = new object?[_levels.Length];
+            for (var level = 0; level < _levels.Length; level++)
+            {
+                var column = _levels[level].Column;
+                keys[level] = NormalizeCell(column, column.Value(row));
+            }
+            return keys;
+        }
+
+        /// <summary>A row against keys taken with <see cref="KeysOf"/>, compared as the sort
+        /// compares them: negative when <paramref name="row"/> goes first, zero when they tie. The
+        /// row's keys are read level by level, and only as far as the first level that differs.</summary>
+        public int Compare(TRow row, object?[] keys)
+        {
+            for (var level = 0; level < _levels.Length; level++)
+            {
+                var (column, direction) = _levels[level];
+                var result = CompareKeys(column, NormalizeCell(column, column.Value(row)), keys[level], direction);
+                if (result != 0)
+                    return result;
+            }
+            return 0;
+        }
     }
 
     /// <summary>Whether one row passes <paramref name="filter"/>, under exactly the
@@ -40,6 +122,17 @@ public static class GridQueryEngine
     {
         ArgumentNullException.ThrowIfNull(filter);
         return Matches(row, Prepare(IndexColumns(columns), filter));
+    }
+
+    /// <summary>Whether a row passes <paramref name="filter"/>, as one predicate over a Filter
+    /// validated once — <see cref="Matches{TRow}(TRow, IReadOnlyList{ColumnInfo{TRow}}, GridFilter)"/>
+    /// for many rows. Null when there is no Filter, which every row passes.</summary>
+    internal static Func<TRow, bool>? PredicateOf<TRow>(IReadOnlyList<ColumnInfo<TRow>> columns, GridFilter? filter)
+    {
+        if (filter is null)
+            return null;
+        var prepared = Prepare(IndexColumns(columns), filter);
+        return row => Matches(row, prepared);
     }
 
     private static Dictionary<string, ColumnInfo<TRow>> IndexColumns<TRow>(IReadOnlyList<ColumnInfo<TRow>> columns)
@@ -230,8 +323,7 @@ public static class GridQueryEngine
 
     // ---- Sort ------------------------------------------------------------------
 
-    private static List<TRow> Sort<TRow>(
-        IEnumerable<TRow> rows,
+    private static (ColumnInfo<TRow> Column, SortDirection Direction)[] Levels<TRow>(
         Dictionary<string, ColumnInfo<TRow>> columns,
         IReadOnlyList<SortSpec> sorts)
     {
@@ -246,9 +338,16 @@ public static class GridQueryEngine
                     $"Sort on column '{spec.Column}' has an unknown direction ({(int)spec.Direction}).");
             levels[i] = (Resolve(columns, spec.Column), spec.Direction);
         }
+        return levels;
+    }
 
-        var buffer = rows.ToArray();
-
+    /// <summary>Sorts <paramref name="positions"/> — positions in <paramref name="rows"/>, rising —
+    /// by the rows' keys, stably.</summary>
+    private static void Sort<TRow>(
+        IReadOnlyList<TRow> rows,
+        int[] positions,
+        (ColumnInfo<TRow> Column, SortDirection Direction)[] levels)
+    {
         // Keys are extracted eagerly for every row and every level by this code — not
         // left to LINQ's buffering behaviour — so the one-date-type-per-column refusal
         // fires for the same Query and data regardless of what ties with what
@@ -257,13 +356,13 @@ public static class GridQueryEngine
         for (var level = 0; level < levels.Length; level++)
         {
             var column = levels[level].Column;
-            var levelKeys = new object?[buffer.Length];
-            for (var i = 0; i < buffer.Length; i++)
-                levelKeys[i] = NormalizeCell(column, column.Value(buffer[i]));
+            var levelKeys = new object?[positions.Length];
+            for (var i = 0; i < positions.Length; i++)
+                levelKeys[i] = NormalizeCell(column, column.Value(rows[positions[i]]));
             keys[level] = levelKeys;
         }
 
-        var indices = new int[buffer.Length];
+        var indices = new int[positions.Length];
         for (var i = 0; i < indices.Length; i++)
             indices[i] = i;
         Array.Sort(indices, (a, b) =>
@@ -278,13 +377,15 @@ public static class GridQueryEngine
                 if (result != 0)
                     return result;
             }
-            return a - b; // Array.Sort is unstable; the original index keeps equal keys in input order (ADR-0023)
+            // Array.Sort is unstable; the filtered order breaks ties, and it is the input order
+            // because the positions rise (ADR-0023).
+            return a - b;
         });
 
-        var sorted = new List<TRow>(buffer.Length);
-        foreach (var index in indices)
-            sorted.Add(buffer[index]);
-        return sorted;
+        var sorted = new int[positions.Length];
+        for (var i = 0; i < indices.Length; i++)
+            sorted[i] = positions[indices[i]];
+        sorted.CopyTo(positions, 0);
     }
 
     private static int CompareKeys<TRow>(ColumnInfo<TRow> column, object? x, object? y, SortDirection direction)
