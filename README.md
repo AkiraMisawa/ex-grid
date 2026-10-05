@@ -42,6 +42,7 @@ Each has a MudBlazor Wrapper (`ExGrid.MudBlazor`, `ExSheet.MudBlazor`, `ExPivot.
 - **Sorting and filtering**, with filter panels and a column menu; the bundled
   `GridSource.From` sorts and filters a list in memory, or your server does it
 - **Find (Ctrl+F)** over every row, not only the painted ones
+- **Excel's status-bar figures** (Average, Count, Sum…) over the selection, every selected row included
 - **Cell editing** and validation, a **Context Menu**, Row Stripes, live updates
 - **Replaceable Chrome** — menus, filter panel, Cell Editor and loading indicator are seams a
   design system fills; swapping them does not change behaviour

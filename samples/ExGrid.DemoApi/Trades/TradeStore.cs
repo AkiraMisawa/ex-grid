@@ -238,6 +238,11 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             return new TradePage(read.Version, read.Trades, start, trades);
         }, cancellationToken);
 
+    /// <summary>The Selection Summary's figures over the trades in <c>TradeId</c> order, in SQL
+    /// (ADR-0130, <see cref="TradeSummarySql"/>), read at one Source Version.</summary>
+    public Task<ExGrid.Summarizing.GridSummaryResult> SummarizeAsync(ExGrid.Summarizing.GridSummaryRequest request, CancellationToken cancellationToken) =>
+        ReadAsync((read, token) => TradeSummarySql.AnswerAsync(read, request, token), cancellationToken);
+
     /// <summary>
     /// The named trades as they are now, read at one Source Version: what a grid reads again for
     /// the trades the hub named (ADR-0068). A Record Key no trade has is a trade removed. Keys are

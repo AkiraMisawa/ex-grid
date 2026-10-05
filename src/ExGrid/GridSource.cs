@@ -38,11 +38,16 @@ public static class GridSource
     /// and Sorts produce — the ones in force — with the next matching position, as
     /// <see cref="Finding.GridFind.Step{TRow}"/> would over that result. Null reports that
     /// this source cannot search, and Ctrl+F is refused.</param>
+    /// <param name="summarize">Answers a Selection Summary (ADR-0130) against the result the handed
+    /// Filter and Sorts produce, as <see cref="Summarizing.GridSummary.Of{TRow}"/> would over that
+    /// result — typically SQL on a server — or declines with a reason. Null reports that this source
+    /// cannot summarise, and no figure is shown.</param>
     public static FetchingGridSource<TRow> Fetch<TRow>(
         Func<GridQuery, CancellationToken, ValueTask<GridPage<TRow>>> fetch,
         int readAheadRows = 60,
         Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
         Rows.RowMarkAdapter<TRow>? marks = null,
-        Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null)
-        => new(fetch, readAheadRows, distinctValues, marks, find);
+        Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null,
+        Func<Summarizing.GridSummaryRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Summarizing.GridSummaryResult>>? summarize = null)
+        => new(fetch, readAheadRows, distinctValues, marks, find, summarize);
 }

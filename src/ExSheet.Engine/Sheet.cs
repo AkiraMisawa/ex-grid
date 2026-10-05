@@ -107,6 +107,11 @@ public sealed partial class Sheet
     public IEnumerable<CellAddress> EntryAddresses =>
         _cells.Values.Where(c => c.Entry is not null).Select(c => c.Address).Order();
 
+    /// <summary>The addresses of every cell holding a Value — an Entry's, or an array's spilled into it
+    /// (ADR-0125) — in no particular order. The cells a Selection Summary folds in (ADR-0130).</summary>
+    public IEnumerable<CellAddress> ValueAddresses =>
+        _cells.Values.Where(c => c.Value is not null).Select(c => c.Address);
+
     /// <summary>The cell's Value, or <see langword="null"/> for a blank cell.</summary>
     public Value? GetValue(CellAddress address) => _cells.TryGetValue(address, out var cell) ? cell.Value : null;
 

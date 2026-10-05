@@ -1,0 +1,52 @@
+@namespace ExGrid.Components
+@using ExGrid.Chrome
+@using ExGrid.Summarizing
+@* The figures menu (ADR-0130): Excel's right-click on the status line, drawn in the grid's popover
+   frame. Each item is a figure, ticked while shown; a press reports the new choice and the menu
+   stays, as Excel's does. The contents take the keyboard on their frame's count (ADR-0039). *@
+<div class="ex-summary-menu" role="menu" aria-label="@Label(SummaryLabelIds.Menu)">
+    @for (var i = 0; i < SummaryFigureOrder.Each.Count; i++)
+    {
+        var index = i;
+        var figure = SummaryFigureOrder.Each[index];
+        var shown = (Shown & figure) != 0;
+        <button type="button" class="@(shown ? "ex-summary-menu-item ex-summary-menu-shown" : "ex-summary-menu-item")"
+                role="menuitemcheckbox" aria-checked="@(shown ? "true" : "false")"
+                @ref="_items[index]" @onclick="() => Toggle(figure)">
+            <span class="ex-summary-menu-tick" aria-hidden="true">@(shown ? "✓" : "")</span>@Label(SummaryLabelIds.For(figure))
+        </button>
+    }
+</div>
+
+@code {
+    private readonly ElementReference[] _items = new ElementReference[SummaryFigureOrder.Each.Count];
+    private int _focused;
+    private int _focusedLast;
+
+    /// <summary>The figures shown now.</summary>
+    [Parameter, EditorRequired] public SummaryFigures Shown { get; set; }
+
+    /// <summary>The grid's words, by id.</summary>
+    [Parameter, EditorRequired] public Func<string, string> Label { get; set; } = id => id;
+
+    /// <summary>Reports a figure ticked or unticked.</summary>
+    [Parameter, EditorRequired] public Func<SummaryFigures, Task> Toggle { get; set; } = _ => Task.CompletedTask;
+
+    /// <summary>The frame's context: the counts that ask the contents to take the keyboard.</summary>
+    [Parameter, EditorRequired] public GridPopoverContext Popover { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Popover.FocusRequest != _focused)
+        {
+            _focused = Popover.FocusRequest;
+            await _items[0].FocusAsync();
+        }
+        else if (Popover.FocusLastRequest != _focusedLast)
+        {
+            _focusedLast = Popover.FocusLastRequest;
+            await _items[^1].FocusAsync();
+        }
+    }
+}

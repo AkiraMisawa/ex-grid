@@ -76,6 +76,43 @@ public sealed class MudGridChrome : IGridChrome
         };
     }
 
+    /// <summary>The Selection Summary (ADR-0130): each figure a <c>MudText</c> caption in the core's
+    /// <c>ex-summary</c> box, named in the Chrome's words; the pending mark and a decline's reason
+    /// likewise. The figures' text is the core's, and the right-click on the box stays the core's.</summary>
+    public RenderFragment? SelectionSummary(SelectionSummaryContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return builder =>
+        {
+            switch (context.Status)
+            {
+                case Summarizing.SelectionSummaryStatus.Pending:
+                    Caption(builder, 0, "mud-ex-grid-summary-pending", MudExGridWords.Own(this, context.PendingLabelId));
+                    break;
+                case Summarizing.SelectionSummaryStatus.Declined:
+                    Caption(builder, 10, "mud-ex-grid-summary-declined", context.DeclineReason ?? "");
+                    break;
+                default:
+                    foreach (var figure in context.Figures)
+                    {
+                        Caption(builder, 20, "mud-ex-grid-summary-figure", $"{MudExGridWords.Own(this, figure.LabelId)}: {figure.Text}", figure.Figure);
+                    }
+                    break;
+            }
+        };
+    }
+
+    private static void Caption(RenderTreeBuilder builder, int sequence, string cssClass, string text, object? key = null)
+    {
+        builder.OpenComponent<MudText>(sequence);
+        if (key is not null)
+            builder.SetKey(key);
+        builder.AddComponentParameter(sequence + 1, nameof(MudText.Typo), Typo.caption);
+        builder.AddComponentParameter(sequence + 2, nameof(MudText.Class), cssClass);
+        builder.AddComponentParameter(sequence + 3, nameof(MudText.ChildContent), (RenderFragment)(b => b.AddContent(0, text)));
+        builder.CloseComponent();
+    }
+
     /// <summary>The column menu: the core's commands as <c>MudButton</c> menu items.</summary>
     public RenderFragment? ColumnMenu(ColumnMenuContext context)
     {

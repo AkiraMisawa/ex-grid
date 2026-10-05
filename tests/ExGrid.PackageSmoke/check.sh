@@ -46,9 +46,11 @@ for id in $packages; do
     grep -qxF "$f" <<<"$files" || fail "$id is missing $f"
   done
 done
-# The core's one dependency, at the floor ADR-0022 fixes.
-grep -q '<dependency id="Microsoft.AspNetCore.Components.Web" version="10.0.0"' <<<"$(nuspec ExGrid)" \
-  || fail "ExGrid's dependency on Microsoft.AspNetCore.Components.Web is not 10.0.0"
+# The core's dependencies: Blazor at the floor ADR-0022 fixes, and exactly the ExGrid.Data it was
+# built with, for the Aggregations' one definition (ADR-0130, DA-1).
+coredeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid)" | sort)
+[ "$coredeps" = "$(printf '%s\n' '<dependency id="Microsoft.AspNetCore.Components.Web" version="10.0.0"' "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" | sort)" ] \
+  || fail "ExGrid's dependencies are not exactly Microsoft.AspNetCore.Components.Web 10.0.0 and ExGrid.Data $version: $coredeps"
 # The Wrapper takes exactly this core (ADR-0042) and MudBlazor from its floor.
 grep -qF "<dependency id=\"ExGrid\" version=\"[$version]\"" <<<"$(nuspec ExGrid.MudBlazor)" \
   || fail "ExGrid.MudBlazor does not depend on exactly ExGrid $version"
@@ -95,8 +97,10 @@ arrowdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid
 enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
 [ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
-# Nothing else the family packs references a data package (DA-1).
-for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
+# Nothing else the family packs references a data package directly (DA-1), and nothing but the
+# Arrow package itself references ExGrid.Data.Arrow.
+if grep -q '<dependency id="ExGrid.Data.Arrow"' <<<"$(nuspec ExGrid)"; then fail "ExGrid references ExGrid.Data.Arrow"; fi
+for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
   if grep -qE '<dependency id="ExGrid\.Data(\.Arrow)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
 done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.

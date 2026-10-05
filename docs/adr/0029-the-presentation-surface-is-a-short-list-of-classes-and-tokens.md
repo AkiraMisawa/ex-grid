@@ -39,7 +39,11 @@ meaning, without an ADR. It marks a **meaning**, never a mechanism.
 `ex-header-groups-pinned`, `ex-focus-row`, `ex-pager`, `ex-status`, `ex-mark-count`, `ex-resize-grip`,
 `ex-menu-button`, `ex-popover`, `ex-popover-list`, `ex-popover-actions`, `ex-editor-pinned`,
 `ex-announce` are
-**implementation detail**. They may be renamed, merged or removed by any commit — the Focus
+**implementation detail**. *(So are the Selection Summary's `ex-summary`, `ex-summary-figure`,
+`ex-summary-pending`, `ex-summary-declined` and its menu's `ex-summary-menu`,
+`ex-summary-menu-item`, `ex-summary-menu-shown` and `ex-summary-menu-tick`, added 2026-10-05 by
+[ADR-0130](./0130-the-selection-summary-is-asked-of-the-consumer-like-find.md); its seam is the
+Chrome's `SelectionSummary`.)* They may be renamed, merged or removed by any commit — the Focus
 band's contract is its token (`--ex-focus-row-fill`) and the parameter that turns it on, never
 the element; the pager and status line are the minimal built-in chrome
 ([ADR-0015](./0015-paging-is-another-driver-for-range-requests.md)), replaceable when the Chrome

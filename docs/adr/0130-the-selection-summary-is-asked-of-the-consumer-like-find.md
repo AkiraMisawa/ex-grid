@@ -121,6 +121,35 @@ ADR of its own after measuring: a grid's rows are still the Consumer's objects, 
 changes Row Identity. It does make DA-1 untrue as written, and it puts the aggregation definitions'
 criteria inside ExGrid's release (Definition of Done §2).
 
+## Refined while implementing *(2026-10-05)*
+
+- **The strip stands whenever the grid can summarise**, figures or none; the figures appear once
+  two or more cells are selected. Shown only while two cells were selected, the status line would
+  take its strip from the Viewport at the first Shift+arrow and give it back at the next click — a
+  Fill-height grid's rows would jump under the user's hand. A grid that cannot summarise is
+  unchanged. The summary box keeps one line's height while it says nothing.
+- **What "the rows moved" means to the grid.** The grid compares the rows a new Window holds with
+  the rows the old one held at the same positions, by the row type's equality, and the row count;
+  a Window that only scrolled moves nothing. An edit, a paste, a fill or a clear the grid hands
+  over asks again after the Consumer's handler. A change the grid cannot see — outside the Window,
+  a recalculation — is told through `RefreshSummaryAsync()`, which ExSheet calls after every change
+  to the Sheet.
+- **The figures menu is offered only where `SummaryFiguresChanged` has a delegate**, since the grid
+  holds no choice and nobody else would. ExSheet and ExPivot are the grid's Consumers and hold the
+  choice themselves, so the menu works on every Sheet and every report.
+- **ExSheet's dates are numbers.** A Sheet date is a serial number shown with a date format
+  (ADR-0047), so summing it invents nothing; the table's "a date is not a number" is about a
+  `DateTime` in a grid row, which has no serial number.
+- **A server's parts merge into the same definition.** `AggregateAccumulator.Merge` folds a
+  server's `COUNT`, `SUM`, `MIN` and `MAX` in by the arithmetic that merges two pivot leaves; the
+  demo API server answers that way in SQL and is held to the reference (SM-8).
+- **A Focus column's format that cannot take the figure** — one written as `(int)v` — falls back
+  to the figure's own text rather than to nothing. Counts are whole numbers in the invariant
+  culture; an unformatted `double` shows fifteen significant digits, as Excel's General does.
+- **SM-7 and the format rule were implemented without waiting for the Windows run**, as the user
+  asked: an error among the values leaves Count, and the Focus's column's format is used. Both
+  stand to be corrected by the run.
+
 ## Considered options
 
 - **The grid sums what is in the Window, and shows nothing past it** — rejected. The figures would

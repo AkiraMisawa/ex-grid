@@ -3,6 +3,28 @@ namespace ExGrid.DemoApi;
 /// <summary>What <c>POST /api/trades/by-id</c> takes: <c>{ "ids": ["T10000001", "T10000002"] }</c>.</summary>
 internal sealed record TradeIdsRequest(string[]? Ids);
 
+/// <summary>What <c>POST /api/trades/summary</c> takes (ADR-0130): the selected ranges over the
+/// trades in <c>TradeId</c> order, the columns they index, and the figures asked —
+/// <c>{ "ranges": [{ "top": 0, "left": 7, "rows": 10, "columns": 1 }], "columns": ["TradeId", ...], "figures": "sum, count" }</c>.</summary>
+internal sealed record TradeSummaryRequest(TradeSummaryRange[]? Ranges, string[]? Columns, ExGrid.Summarizing.SummaryFigures Figures);
+
+/// <summary>One selected range: its top row and left column, and how many of each.</summary>
+internal sealed record TradeSummaryRange(int Top, int Left, int Rows, int Columns);
+
+/// <summary>What <c>POST /api/trades/summary</c> answers (ADR-0130): the decline's reason, or each
+/// figure asked.</summary>
+internal sealed record TradeSummaryResponse(string? Declined, IReadOnlyDictionary<string, TradeSummaryFigure> Figures);
+
+/// <summary>One figure: its exact value as text where it has one, its <c>double</c>, or its error.</summary>
+internal sealed record TradeSummaryFigure(bool Empty, string? Exact, double? Number, string? Error)
+{
+    public static TradeSummaryFigure Of(ExGrid.Data.AggregateResult result) => new(
+        result.IsEmpty,
+        result.Exact?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        result.IsNumber ? result.Number : null,
+        result.Error == ExGrid.Data.AggregateError.None ? null : result.Error.ToString());
+}
+
 /// <summary><c>GET /api/trades</c>, a page at a time, and <c>/api/trades/by-id</c>, the trades named.</summary>
 internal static class TradeEndpoints
 {
@@ -46,6 +68,26 @@ internal static class TradeEndpoints
             string[]? ids) => ById(store, response, ids, cancellationToken));
         app.MapPost("/api/trades/by-id", (TradeIdsRequest request, TradeStore store, HttpResponse response,
             CancellationToken cancellationToken) => ById(store, response, request.Ids, cancellationToken));
+        // The Selection Summary in SQL (ADR-0130): the request as the grid asks it, the figures as
+        // the one definition reads them — each its exact value, its double, or the error it is.
+        app.MapPost("/api/trades/summary", async (TradeSummaryRequest request, TradeStore store,
+            HttpResponse response, CancellationToken cancellationToken) =>
+        {
+            if (store.State != TradeStoreState.Ready)
+                return ApiResults.NotReady(store, response);
+            if (request.Ranges is not { } ranges || request.Columns is not { } columns)
+                return ApiResults.BadRequest("ranges and columns name the cells to summarise.");
+            var result = await store.SummarizeAsync(new ExGrid.Summarizing.GridSummaryRequest
+            {
+                Ranges = [.. ranges.Select(r => new ExGrid.Selection.SelectionRange(r.Top, r.Left, r.Rows, r.Columns))],
+                Columns = columns,
+                RowSequenceVersion = 0,
+                Figures = request.Figures,
+            }, cancellationToken);
+            return Results.Ok(new TradeSummaryResponse(result.DeclineReason, ExGrid.Summarizing.SummaryFigureOrder.Each
+                .Where(figure => result[figure] is not null)
+                .ToDictionary(figure => figure.ToString(), figure => TradeSummaryFigure.Of(result[figure]!.Value))));
+        });
         return app;
     }
 
