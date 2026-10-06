@@ -113,6 +113,14 @@ and the user is told why.**
 - **A refused commit says whether the cell changed or the grid can no longer tell** (P2). When the
   render the opening gesture was taken against is no longer kept, the refusal's reason is
   `RenderNoLongerKept`, never a change: a wrong reason is worse than none.
+- **No press is lost to Blazor** (found by the first layer-3 run, 2026-10-06). Blazor does not
+  deliver an event whose attribute a component since disposed had rendered. Without a Row Key, a
+  row whose instance a render replaced while a press was on its way has its component disposed, so
+  the click on its action never arrived: the press was neither fired nor refused, and nothing said
+  so. The listener now tells the core which row, column and action the press was on, with the
+  render it was taken against. A press whose row component is no longer rendered is answered by
+  the core — refused or fired by the rule above — at once, or after the render that disposes it.
+  Which, is decided by the order the core hears things in.
 - **With a Row Key, an Action press is paired with its row by key**
   ([ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md)).
   Without one, a press whose row moved cannot be paired, and is refused as taken against a render no

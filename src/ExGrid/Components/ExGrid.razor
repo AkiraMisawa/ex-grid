@@ -3070,6 +3070,10 @@
             _focusRequest = null;
         }
 
+        // A told action press whose row component this render disposed: Blazor will not deliver
+        // its click, so the core answers it (ADR-0142, 2026-10-06; ActionPressTakenAt).
+        await AnswerActionPressWithNoClickAsync();
+
         // A prerender's OnAfterRender does not run at all; this guard is for a renderer
         // that renders statically and still calls it.
         if (firstRender && RendererInfo.IsInteractive)

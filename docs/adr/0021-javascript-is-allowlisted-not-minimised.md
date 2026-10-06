@@ -552,4 +552,6 @@ what the user saw. It is not a new use, and nothing is measured.
 has, each told before Blazor dispatches what it carries: a press on an Action of the rows
 (`ActionPressTakenAt`, from the press listener ED-31 added), a press into the Formula Bar
 (`BarPressTakenAt`, from the existing `mousedown`), and an IME's `compositionstart` (the seventh
-entry), which opens the editor. No listener was added, and none reads layout.
+entry), which opens the editor. No listener was added, and none reads layout. The action press
+also names the row, column and action of the cell it was on, read from the ids the render wrote, so
+the core can answer a press whose click Blazor will not deliver (ADR-0142).

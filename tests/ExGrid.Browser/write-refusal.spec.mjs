@@ -79,7 +79,8 @@ async function watchWhatIsSeen(page, row, column) {
 /** What the watched cell showed at the last gesture of `type` (and `key`, for a keydown). */
 async function seenAt(page, type, key = null) {
     const seen = await page.evaluate(() => window.__seenAtGesture);
-    const matching = seen.filter((e) => e.type === type && (key === null || e.key === key));
+    // A key is matched without its case: a Ctrl+V reaches the page as `v` or `V`, as the platform has it.
+    const matching = seen.filter((e) => e.type === type && (key === null || e.key?.toLowerCase() === key.toLowerCase()));
     expect(matching.length, `a ${type}${key ? ` of ${key}` : ''} was seen`).toBeGreaterThan(0);
     return matching[matching.length - 1];
 }
@@ -169,10 +170,12 @@ test('LV-12: an Action press taken on a render whose row has changed since is re
     await circuitQuiet();
     await expect(page.locator('#action-status')).toHaveText('Action: —');
 
-    // Pressed again on the row as it shows now: it fires, once.
+    // Pressed again on the row as it shows now: it fires, once. Measured again: the refusal's
+    // sentence above the grid may wrap, and move the grid down.
     const moved = (await notional.textContent()).trim();
     expect(moved).not.toBe(before);
-    await page.mouse.click(button.x + button.width / 2, button.y + button.height / 2);
+    const again = await boxOf(cell(page, 0, ACT).locator('.ex-action'));
+    await page.mouse.click(again.x + again.width / 2, again.y + again.height / 2);
     await expect(page.locator('#action-status')).toContainText(`approve Alpha/`);
     await expect(page.locator('#action-status')).toContainText(moved);
     await circuitQuiet();
@@ -194,7 +197,7 @@ test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it l
     await setRoundTrip(150);
 
     await page.keyboard.press('F9');
-    await page.keyboard.press('ControlOrMeta+V');
+    await page.keyboard.press('ControlOrMeta+v');
 
     const atPaste = await seenAt(page, 'paste');
     await expect(page.locator('#upstream-status')).toContainText('(×1)');
@@ -213,7 +216,7 @@ test('LV-13/LV-14: a Ctrl+V pressed on a render a newer one replaced before it l
     }
 
     // Pressed again, on what the page shows now: it pastes.
-    await page.keyboard.press('ControlOrMeta+V');
+    await page.keyboard.press('ControlOrMeta+v');
     await expect(page.locator('#paste-status')).toContainText('2 cells from 1x1');
     await expect(notional).toHaveText('5');
 });
@@ -300,7 +303,7 @@ for (const rtt of [0, 150]) {
         await page.keyboard.type('5');
         await page.keyboard.press('Enter');
         await page.keyboard.press('ArrowUp');
-        await page.keyboard.press('ControlOrMeta+V');
+        await page.keyboard.press('ControlOrMeta+v');
 
         if (SERVER && rtt === 150) {
             expect((await seenAt(page, 'keydown', 'v')).text, 'Ctrl+V was taken on the render before the 5 was painted')

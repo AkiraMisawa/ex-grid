@@ -2129,7 +2129,15 @@ export function attach(root, scroller, core, takenKeys, canEdit, restDelayMs, ca
             actionPress = null;
         }
         if (core && action !== null && event.button === 0 && ownAction(event.target) === action.button) {
-            core.invokeMethodAsync('ActionPressTakenAt', action.paint).catch((error) => {
+            // And what it pressed — the row and column its cell's id names, and which of the cell's
+            // actions — so that the core can answer a press whose click Blazor will not deliver:
+            // one whose row component a render the browser has not seen yet has disposed (ADR-0142,
+            // 2026-10-06). Read from the ids the render wrote; nothing is measured.
+            const cell = action.button.closest('[role=gridcell]');
+            const at = cell !== null ? /r(\d+)c(\d+)$/.exec(cell.id) : null;
+            const index = cell !== null ? Array.prototype.indexOf.call(cell.querySelectorAll('.ex-action'), action.button) : -1;
+            core.invokeMethodAsync('ActionPressTakenAt', action.paint,
+                at ? Number(at[1]) : -1, at ? Number(at[2]) : -1, index).catch((error) => {
                 if (core) {
                     console.error('[ex-grid] the grid failed to hear where an action was pressed', error);
                 }

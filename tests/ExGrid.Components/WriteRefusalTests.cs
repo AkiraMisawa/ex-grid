@@ -1425,6 +1425,78 @@ public class WriteRefusalTests : GridTestContext
         Assert.Equal("z", cut.Find("input.ex-editor").GetAttribute("value"));
     }
 
+    // Blazor does not deliver an event whose attribute a since-disposed component rendered. Without
+    // a Row Key, a row whose instance a render replaced has its component disposed, and the click on
+    // its button never arrives: the core answers the press it was told of (ActionPressTakenAt).
+
+    [Fact] // ADR-0142 (2026-10-06) / LV-12: a told press whose row component is gone is refused by the core, with no click to wait for
+    public async Task A_told_press_whose_row_component_is_gone_is_refused_without_its_click()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, WithAction());
+        var pressedOn = Paint(cut);
+        Push(cut, Changed(rows, 0, amount: 777m));
+
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(pressedOn, row: 0, column: 2, action: 0));
+
+        Assert.Empty(heard.Actions);
+        var refusal = Assert.Single(heard.ActionRefusals);
+        Assert.Equal(ActionRefusalReason.RowChanged, refusal.Reason);
+        Assert.Same(rows[0], refusal.Action.Row);
+        Assert.Equal("approve", refusal.Action.ActionName);
+    }
+
+    [Fact] // ADR-0142 (2026-10-06) / LV-12: a told press whose row is still rendered waits for its click, and fires once
+    public async Task A_told_press_whose_row_is_still_rendered_waits_for_its_click()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, WithAction());
+        var pressedOn = Paint(cut);
+
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(pressedOn, row: 0, column: 2, action: 0));
+        Assert.Empty(heard.Actions);
+        await cut.FindAll(".ex-action")[0].ClickAsync(new MouseEventArgs());
+        // A render after the click answers nothing more.
+        Push(cut, Changed(rows, 0, amount: 777m));
+
+        Assert.Same(rows[0], Assert.Single(heard.Actions).Row);
+        Assert.Empty(heard.ActionRefusals);
+    }
+
+    [Fact] // ADR-0142 (2026-10-06) / LV-12: a told press whose row component a later render disposes before its click is answered after that render
+    public async Task A_told_press_whose_row_a_later_render_replaces_is_answered_after_it()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, WithAction());
+        var pressedOn = Paint(cut);
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(pressedOn, row: 0, column: 2, action: 0));
+        Assert.Empty(heard.ActionRefusals);
+
+        Push(cut, Changed(rows, 0, amount: 777m));
+
+        cut.WaitForAssertion(() => Assert.Equal(ActionRefusalReason.RowChanged, Assert.Single(heard.ActionRefusals).Reason));
+        Assert.Empty(heard.Actions);
+    }
+
+    [Fact] // ADR-0142 (2026-10-06) / LV-12: a told press whose row came back as an equal new instance is fired by the core, with the newest row
+    public async Task A_told_press_on_a_row_replaced_by_an_equal_one_is_fired_by_the_core()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var cut = RenderGrid(rows, heard, WithAction());
+        var pressedOn = Paint(cut);
+        var same = Changed(rows, 0);
+        Push(cut, same);
+
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(pressedOn, row: 0, column: 2, action: 0));
+
+        Assert.Empty(heard.ActionRefusals);
+        Assert.Same(same[0], Assert.Single(heard.Actions).Row);
+    }
+
     [Fact] // ADR-0142 D5 / LV-16, LV-12: an Action press asks for the gathered change first, and is judged against it
     public async Task An_action_press_is_judged_against_the_gathered_change()
     {

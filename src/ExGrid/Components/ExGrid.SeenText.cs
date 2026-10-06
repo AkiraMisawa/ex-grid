@@ -510,27 +510,101 @@ public partial class ExGrid<TRow>
 
     /// <summary>
     /// What the next press on an action of this grid's own rows was taken against (ADR-0142,
-    /// LV-12): the paint the Viewport named at its mousedown. Told by the grid's listener at the
-    /// release on the same button, just before Blazor dispatches the click, so the click the core
-    /// hears next is the one it describes. Reading what the render wrote is not a measurement, and
-    /// nothing per cell crosses (ADR-0021, note of 2026-10-05).
+    /// LV-12): the paint the Viewport named at its mousedown, and the row, column and action the
+    /// button stood for in it. Told by the grid's listener at the release on the same button, just
+    /// before Blazor dispatches the click, so the click the core hears next is the one it
+    /// describes. Reading what the render wrote is not a measurement, and nothing per cell crosses
+    /// (ADR-0021, notes of 2026-10-05 and 2026-10-06).
+    ///
+    /// <para>Blazor does not deliver an event whose attribute a component since disposed had
+    /// rendered. A row whose instance a render replaced while the press was on its way has its
+    /// component disposed when there is no Row Key (ADR-0140), and the click on its button would
+    /// then be lost without a word. So a press whose row component is no longer rendered is
+    /// answered here — refused, or fired, by ADR-0142's rule — and one whose component a later
+    /// render disposes before its click arrives is answered after that render.</para>
     ///
     /// <para>Called by the grid's own script module and not for Consumers: it is public
     /// only because JavaScript interop requires it.</para>
     /// </summary>
     /// <param name="paint">The paint the Viewport named at the press (<c>data-ex-paint</c>).</param>
+    /// <param name="row">The pressed cell's row, as its id names it, or −1.</param>
+    /// <param name="column">The pressed cell's column, as its id names it, or −1.</param>
+    /// <param name="action">Which of the cell's actions was pressed, or −1.</param>
     [JSInvokable]
-    public void ActionPressTakenAt(int paint)
+    public async Task ActionPressTakenAt(int paint, int row = -1, int column = -1, int action = -1)
     {
-        if (!_disposed)
-            _actionPressTold = paint;
+        if (_disposed)
+            return;
+        _actionPressTold = paint;
+        _actionPressPending = null;
+        if (row < 0 || column < 0 || action < 0 || PaintNamed(paint) is not { } painted
+            || row < painted.FirstRow || row >= painted.FirstRow + painted.Rows.Length
+            || painted.Rows[row - painted.FirstRow] is not { } pressed
+            || column >= painted.Columns.Count || action >= painted.Columns[column].Actions.Count)
+        {
+            return;
+        }
+        _actionPressPending = new ActionPressPending(paint, pressed, painted.Columns[column].Name,
+            painted.Columns[column].Actions[action].Name);
+        await AnswerActionPressWithNoClickAsync();
     }
 
-    /// <summary>The paint the press being heard was told, once: the next press is its own.</summary>
+    // A pointer press on an action told with what it pressed, until its click is heard, or until
+    // the core answers it because no click can come (ActionPressTakenAt).
+    private ActionPressPending? _actionPressPending;
+
+    private sealed record ActionPressPending(int Paint, TRow Pressed, string Column, string Action);
+
+    /// <summary>
+    /// Answers a told press whose click Blazor will not deliver, because the row component that
+    /// rendered its button is no longer rendered: by the Row Key where there is one, by the
+    /// instance where there is not (ADR-0140). Raised as the click would have been — judged against
+    /// the paint it was taken on, and refused or fired (ADR-0142). A press whose component is still
+    /// rendered waits for its click. Decided by the order the core hears things in, never by time.
+    /// </summary>
+    private async Task AnswerActionPressWithNoClickAsync()
+    {
+        if (_actionPressPending is not { } press || _disposed || RendersRowOf(press.Pressed))
+            return;
+        _actionPressPending = null;
+        _actionPressTold = null;
+        await RaiseActionAsync(new GridActionEventArgs<TRow>(press.Pressed, press.Column, press.Action), press.Paint, atRow: null);
+    }
+
+    /// <summary>Whether the newest paint rendered a row component for <paramref name="row"/>: one
+    /// under its Row Key, or, with none, for the instance itself.</summary>
+    private bool RendersRowOf(TRow row)
+    {
+        if (_paints.Count == 0)
+            return true;
+        var rows = _paints[^1].Rows;
+        if (_rowKey is { } rowKey)
+        {
+            var key = rowKey(row);
+            foreach (var painted in rows)
+            {
+                if (painted is not null && Equals(rowKey(painted), key))
+                    return true;
+            }
+            return false;
+        }
+        // By reference, never by value: a record row equal to the pressed one is another row's
+        // component (ADR-0003).
+        foreach (var painted in rows)
+        {
+            if (ReferenceEquals(painted, row))
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>The paint the press being heard was told, once: the next press is its own. Its
+    /// click has come, so the core has nothing left to answer for it.</summary>
     private int TakeActionPressTold()
     {
         var told = _actionPressTold ?? PaintNotTold;
         _actionPressTold = null;
+        _actionPressPending = null;
         return told;
     }
 
