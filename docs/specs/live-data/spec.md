@@ -1,7 +1,8 @@
 # Live data in ExGrid and ExPivot
 
-Status: in progress — the first version from `claude/exgrid-live-data` merged into `main` in
-PR #64; tickets 01 to 03 continue on `claude/live-data-next`
+Status: implemented and verified locally — the first version from `claude/exgrid-live-data`
+merged into `main` in PR #64. Tickets 01 to 03 are complete on `claude/live-data-next`;
+feature push and PR await user confirmation, and full layer 3 remains CI's.
 
 Decided with the user in the grilling of 2026-10-05, and in the decisions D1 to D10, P1 and P2 of
 2026-10-06:
@@ -23,8 +24,8 @@ Continuation Q3, decided with the user on 2026-10-06 after the A/B and memory ex
 [ADR-0151](../../adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)
 chooses server-computed report Windows and changes, with the same incremental engine in the
 browser for local CSV. ADR-0152 and ADR-0153 complete operations outside the Window and
-immutable row ownership. The diagnosed
-historical-Report retention must be repaired while preserving ADR-0142.
+immutable row ownership. The diagnosed historical-Report retention is repaired while preserving ADR-0142; the measurement record
+distinguishes source cardinality, report cardinality and remaining WASM capacity.
 
 Continuation Q5 to Q7, decided with the user on 2026-10-06:
 [ADR-0152](../../adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)
@@ -112,7 +113,8 @@ git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f
   — decided by ADR-0150, for ExGrid's push form and ExPivot alike; implemented and measured.
 - [03: ExPivot keeps its report across live redraws](issues/03-expivot-keeps-its-report-across-live-redraws.md)
   — ADR-0151 decides the shared engine and server Window boundary; ADR-0152 settles API freedom,
-  remote policies and recovery; ADR-0153 completes row ownership and incremental scope. Implemented; final browser verification is in progress.
+  remote policies and recovery; ADR-0153 completes row ownership and incremental scope.
+  Implemented and verified locally; see the [final measurements and verification](../../../verification/2026-10-06-macos-live-report-after/README.md).
 
 ## Numbers for the next decisions
 

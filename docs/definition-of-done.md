@@ -1195,7 +1195,7 @@ reading until a run settles it.
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
 | **PV-1** | MUST | `ExPivot.Engine` references `ExGrid.Data` exactly and no package. `ExPivot` references it and `ExGrid`, both exactly. `ExPivot.MudBlazor` references `ExPivot` and `ExGrid.MudBlazor` exactly, and MudBlazor from 9.0.0. Nothing references ExPivot but its Wrapper, the demo pages and the tests (ADR-0059/0062/0064) | the package check (`tests/ExGrid.PackageSmoke/check.sh`) | as stated |
-| **PV-2** | MUST | The report is one ExGrid. The existing local path supplies the whole Pivot Report as its Window; the server report path supplies the requested Window with the report's full extent (ADR-0151, LV-21). The label columns are pinned Template Columns, and the column Items are Header Groups over the value columns. Group rows paint as Group and totals as Total. No column is Editable, and the header click selects. There is no column menu, sort or filter (ADR-0059/0151) | Layer 2 | as stated |
+| **PV-2** | MUST | The report is one ExGrid. Local and server report sources supply the requested Window with the report's full extent through the same asynchronous contract (ADR-0151/0153, LV-21). The label columns are pinned Template Columns, and the column Items are Header Groups over the value columns. Group rows paint as Group and totals as Total. No column is Editable, and the header click selects. There is no column menu, sort or filter (ADR-0059/0151/0153) | Layer 2 | as stated |
 | **PV-3** | MUST | Items: text is told apart ignoring case and labelled by the first spelling to arrive among the records present; numbers by value, across Integer, Decimal and Double columns; dates by their clock value; a Blank as `(blank)`. They are ordered Number, Date, Text, Boolean, Error, Blank, with Blank last in either direction and a declared order first (ADR-0060) | Layer 1 | every clause a named test |
 | **PV-4** | MUST | The eleven Aggregations answer as Excel's, with blanks, text and errors among the records included. A total is aggregated from its records, never from the totals below it. Integer and Decimal columns are summed exactly. Only the parts the Value Fields ask for are accumulated (ADR-0060/0066) | Layer 1 | every row of each table |
 | **PV-5** | MUST | A Hidden Item's records are left out of every cell and every total. Hiding every Item of a field is refused with ExPivot's reason, and OK stays disabled (ADR-0060/0061) | Layer 1 + Layer 2 | as stated |
@@ -1326,7 +1326,8 @@ required.)*
 
 *(Design completed by [ADR-0153](adr/0153-reports-share-unchanged-computation-and-display-rows-own-no-report.md),
 2026-10-06: detached display rows and shared immutable versions, dependency-based updates and
-explicit full-refresh providers. LV-26 to LV-28 record these requirements; implementation is pending.)*
+explicit full-refresh providers. LV-26 to LV-28 record these requirements; the implementation
+and local verification are recorded in the [follow-up measurements](../verification/2026-10-06-macos-live-report-after/README.md).)*
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|

@@ -5,6 +5,59 @@ namespace ExPivot.Engine.Tests;
 
 public class ReportProtocolTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ADR0152_a_reply_superseded_during_validation_cannot_publish_state_or_refusal(bool malformed)
+    {
+        PivotReportClient client = null!;
+        var requests = 0;
+        var newerAdopted = false;
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) =>
+            {
+                var first = ++requests == 1;
+                var metadata = Metadata(first ? "older" : "newer");
+                if (first) metadata = metadata with { LabelWidths = new InterleavedWidths(malformed ? [double.NaN] : [], () =>
+                {
+                    newerAdopted = client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(0, 10),
+                        cancellationToken: TestContext.Current.CancellationToken).AsTask().GetAwaiter().GetResult();
+                }) };
+                return ValueTask.FromResult(PivotReportUpdate.Complete(request, metadata, []));
+            });
+        client = new(source);
+        Assert.False(await client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(0, 10),
+            cancellationToken: TestContext.Current.CancellationToken));
+        Assert.True(newerAdopted);
+        Assert.Equal("newer", client.Current!.Metadata.Version.Value);
+        Assert.Null(client.Refusal);
+        Assert.Equal(2, requests);
+    }
+
+    // A provider may complete another request while an older response's lists are validated.
+    // This deterministically interleaves that publication without delays or scheduler races.
+    private sealed class InterleavedWidths(double[] values, Action interleave) : IReadOnlyList<double>
+    {
+        private Action? _interleave = interleave;
+        public int Count { get { Interlocked.Exchange(ref _interleave, null)?.Invoke(); return values.Length; } }
+        public double this[int index] => values[index];
+        public IEnumerator<double> GetEnumerator() => ((IEnumerable<double>)values).GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+    [Fact]
+    public async Task ADR0152_a_window_must_echo_the_requested_highlight_duration()
+    {
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("v1") with {
+                Settings = request.Settings with { ChangeHighlightDuration = TimeSpan.FromSeconds(9) } }, [])));
+        var client = new PivotReportClient(source);
+        Assert.False(await client.ReadAsync(PivotLayout.Empty, PivotReportSettings.Invariant, new(0, 10),
+            cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Null(client.Current);
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, client.Refusal!.Kind);
+    }
+
     [Fact]
     public async Task ADR0152_missing_baseline_recovers_a_complete_window_before_publication()
     {

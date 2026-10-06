@@ -872,9 +872,9 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
   changes, publishing later changes before their interval was up.
 - **`/grid-live` missed a trade cancelled after the Window** while a Selection reached past it.
 
-**Not done.**
+**Outstanding in the original PR #64 record (before the continuation below).**
 
-- **Layer 3 has not run** the new and changed specs (`write-refusal.spec.mjs`,
+- **Layer 3 had not run** the new and changed specs (`write-refusal.spec.mjs`,
   `grid-live.spec.mjs`, `grid-live-local.spec.mjs`, `measure-live.spec.mjs`); CI runs them.
 - **LV-15 is observed only in part**: apply to frame has a spec; the bytes per update on the Server
   host, and the requery and the grid's pass per update in the browser, are not recorded yet.

@@ -74,7 +74,30 @@ non-gating. The original measurements and their browser limitations remain in th
 
 ## Verification and reproduction
 
-The permanent tests cover random structural batches and all existing aggregations/percentage modes against fresh computation, independent report sessions, versioned offscreen operations, unavailable versions, metadata-only updates, delayed Details commands and unchanged-row rendering. The final full layer 1/2 run passes 9,097 tests (eight existing skips), and the solution builds with zero warnings/errors. The changed remote browser spec and adjacent live spec pass three repetitions on each host: 42 WebAssembly and 42 Server cases, Chrome. The full Chrome/Edge cross-host suite remains CI's.
+The permanent tests cover random structural batches and all existing aggregations/percentage modes against fresh computation, independent report sessions, versioned offscreen operations, unavailable versions, metadata-only updates, delayed Details commands and unchanged-row rendering. The final full layer 1/2 run passes 9,100 tests (eight existing skips), and the solution builds with zero warnings/errors. The changed remote browser spec and adjacent live spec pass three repetitions on each host: 42 WebAssembly and 42 Server cases, Chrome. The full Chrome/Edge cross-host suite remains CI's.
+
+The [independent Standards and Spec review](review.md) found two issues on each axis, all fixed:
+trim-safe report JSON, complete display-settings validation, atomic publication after concurrent
+validation and the obsolete PV-2 wording. The protocol regressions pass 21 tests. The package
+smoke test packs all ten packages, compiles the README Consumers and publishes/runs a trimmed,
+reflection-disabled Consumer without blanket assembly roots; its report and Arrow round trips
+pass. The report smoke includes populated Details and explicit words, policies and glyph widths.
+
+The existing Server `write-refusal.spec.mjs` passes all 15 cases after the historical-text change.
+The Docs Site smoke exercises remote Details and both live examples with Built-in and MudBlazor
+Chrome: six observations, no console/runtime errors (`raw/docs-smoke.json`).
+
+The review fixes were followed by a fresh solution build, full layer 1/2 run, package smoke,
+Release publication and both targeted browser runs. Reproduce those checks with:
+
+```sh
+nix develop -c dotnet test ExGrid.slnx
+nix develop -c dotnet build ExGrid.slnx
+nix develop -c bash tests/ExGrid.PackageSmoke/check.sh
+# After publishing wasm, api and server under .memory-hosts/after:
+EXGRID_HOSTS="$PWD/.memory-hosts/after" EXGRID_BASE_URL=http://localhost:5499 nix develop .#browser -c bash -c 'cd tests/ExGrid.Browser && npx playwright test pivot-db.spec.mjs pivot-live.spec.mjs --project=chrome --repeat-each=3'
+EXGRID_HOSTS="$PWD/.memory-hosts/after" EXGRID_HOSTING=server EXGRID_BASE_URL=http://localhost:5498 nix develop .#browser -c bash -c 'cd tests/ExGrid.Browser && npx playwright test pivot-db.spec.mjs pivot-live.spec.mjs --project=chrome --repeat-each=3'
+```
 
 To reproduce the disposable measurements, copy the `.txt` harness files to their original locations (`ReportSteps.cs` in engine tests; `ReportRendering.cs` and `ReportGeneratorRendering.cs` in component tests; `LiveCostPage.razor` in demo pages; `oom.*` in browser tests). For M3 only, copy the current `samples/ExGrid.DemoPages/DemoPivotData.cs` into the component tests as `MeasurementDemoPivotData.cs`. Stage these new paths so nix sees them, then remove them from the working tree and index after measuring. Never commit them in these build locations.
 

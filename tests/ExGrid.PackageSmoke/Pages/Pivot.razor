@@ -4,7 +4,7 @@
 @using ExPivot.Components
 @using ExPivot.Engine
 
-<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="420" />
+<ExPivot DataSource="_source" @bind-Layout="_layout" ViewportHeight="420" />
 
 @code {
     private static readonly PivotField<Sale>[] Fields =

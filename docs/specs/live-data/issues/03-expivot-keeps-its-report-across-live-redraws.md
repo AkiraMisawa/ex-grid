@@ -1,6 +1,6 @@
 # 03: ExPivot keeps its report across live redraws
 
-Status: in-progress — ADR-0151 to ADR-0153 accepted; implementation started
+Status: done locally — ADR-0151 to ADR-0153 implemented, tested and measured; full layer 3 remains CI's
 
 **The aim:** a live redraw costs what changed, not what the report holds. Today ExPivot builds its
 cube, its report and every report row again on every redraw, at most four times a second. At 401,001
@@ -225,7 +225,7 @@ silently. ADR-0152 and LV-23 to LV-25 record these decisions, superseding the pr
 
 ## Completion of the design after Q5 to Q7
 
-*Accepted with the user in Q8 and Q9, 2026-10-06; recorded by ADR-0153. Implementation is pending.*
+*Accepted with the user in Q8 and Q9, 2026-10-06; recorded by ADR-0153. Implemented and verified locally; see the follow-up record below.*
 
 - The component consumes a report source with the same asynchronous operations locally and
   remotely. Its public state is the current report metadata and Window; direct synchronous

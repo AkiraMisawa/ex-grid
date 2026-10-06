@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Runs a Snapshot through an Arrow stream and back, taking ExGrid.Data and ExGrid.Data.Arrow
-       from the packages check.sh just packed (ADR-0065, DA-16): the Blazor application beside it
+       from the packages check.sh just packed (ADR-0065, DA-16), and round-trips the report protocol
+       through a trimmed, reflection-disabled Consumer (ADR-0152). The Blazor application beside it
        compiles the same code for a browser, and this one runs it, as a server would. Like that
        application, it is outside the solution, and check.sh is the only way in; nuget.config one
        directory up takes the family's packages from the packed feed alone. -->
@@ -10,12 +11,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>PackageSmoke</RootNamespace>
     <AssemblyName>PackageSmoke.RoundTrip</AssemblyName>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="ExGrid.Data" Version="$(ExGridVersion)" />
     <PackageReference Include="ExGrid.Data.Arrow" Version="$(ExGridVersion)" />
     <Compile Include="..\ArrowRoundTrip.cs" Link="ArrowRoundTrip.cs" />
+    <Compile Include="..\PivotReportRoundTrip.cs" Link="PivotReportRoundTrip.cs" />
+    <PackageReference Include="ExPivot.Engine" Version="$(ExGridVersion)" />
   </ItemGroup>
 
   <Target Name="RequireThePackedVersion" BeforeTargets="CollectPackageReferences">

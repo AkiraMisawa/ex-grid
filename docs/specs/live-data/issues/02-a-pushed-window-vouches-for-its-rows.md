@@ -1,6 +1,6 @@
 # 02: A pushed Window vouches for its rows
 
-Status: in-progress — ADR-0150 accepted; continuation design approved and implementation started
+Status: done locally — ADR-0150 implemented, tested and measured; feature push and PR await user confirmation
 
 **The question:** should a Consumer that pushes its Window itself be able to tell the grid that the
 Window holds no row twice, as a bundled source does — so that the grid stops walking every row of

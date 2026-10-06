@@ -11,10 +11,10 @@ namespace ExPivot.Engine;
 ///
 /// <para>It is made with the row, from the row's axis node, whose hash of its Items was made with the
 /// node from its parent's and its Item's — and an Item's own hash is computed once per Item. Reading
-/// a key, hashing it and comparing it within one report allocate nothing and walk nothing (PV-43):
-/// the grid checks a whole report's keys on every redraw, and that check costs what its check of the
-/// rows' instances did. Only a comparison across reports walks the Items, and Blazor makes one for a
-/// painted row, not for every row.</para>
+/// a key, hashing it and comparing it within one report allocate nothing and walk nothing (PV-43).
+/// The detached Item path owns no branching axis tree. ExPivot vouches for its requested Window
+/// (ADR-0150/0153), so the grid does not validate the full report's keys on every redraw.
+/// A comparison between distinct paths walks their Items, including comparisons across reports.</para>
 /// </summary>
 public sealed class PivotRowKey : IEquatable<PivotRowKey>
 {

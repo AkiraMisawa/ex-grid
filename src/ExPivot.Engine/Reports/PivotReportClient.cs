@@ -5,17 +5,20 @@ public sealed class PivotReportClient
 {
     private readonly PivotReportSource _source;
     private long _generation;
+    private readonly Lock _publication = new();
+    private PivotReportState? _current;
+    private PivotReportRefusal? _refusal;
     /// <summary>Creates the state owner for one report view; source lifetime remains the Consumer's.
     /// A previously validated Window may be carried across a source replacement as its baseline.</summary>
     public PivotReportClient(PivotReportSource source, PivotReportState? previous = null)
     {
         _source = source ?? throw new ArgumentNullException(nameof(source));
-        Current = previous;
+        _current = previous;
     }
     /// <summary>The last completely validated Window; a failed request leaves it unchanged.</summary>
-    public PivotReportState? Current { get; private set; }
+    public PivotReportState? Current { get { lock (_publication) return _current; } }
     /// <summary>The latest current request's refusal, or null after a successful adoption.</summary>
-    public PivotReportRefusal? Refusal { get; private set; }
+    public PivotReportRefusal? Refusal { get { lock (_publication) return _refusal; } }
 
     /// <summary>Reads the current request and, if its baseline is lost, requests one complete replacement.</summary>
     /// <returns>True if this request was adopted; false for a refusal or an obsolete reply.</returns>
@@ -27,8 +30,13 @@ public sealed class PivotReportClient
         ArgumentNullException.ThrowIfNull(window);
         if (window.Start < 0 || window.Count < 0)
             throw new ArgumentOutOfRangeException(nameof(window));
-        var generation = Interlocked.Increment(ref _generation);
-        var previous = Current;
+        long generation;
+        PivotReportState? previous;
+        lock (_publication)
+        {
+            generation = ++_generation;
+            previous = _current;
+        }
         var baseline = previous?.Window == window ? previous.Metadata.Version : null;
         var request = new PivotReportRequest(Guid.NewGuid().ToString("N"), layout, settings, window, baseline, maxLeaves)
             { MarkChanges = markChanges, RefreshData = refreshData };
@@ -43,11 +51,15 @@ public sealed class PivotReportClient
             catch (OperationCanceledException) { throw; }
             catch (Exception error)
             {
-                if (generation != Volatile.Read(ref _generation)) return false;
-                Refusal = new(PivotReportRefusalKind.StaleReport, error.Message);
-                return false;
+                lock (_publication)
+                {
+                    if (generation != _generation) return false;
+                    _refusal = new(PivotReportRefusalKind.StaleReport, error.Message);
+                    return false;
+                }
             }
-            if (generation != Volatile.Read(ref _generation)) return false;
+            lock (_publication)
+                if (generation != _generation) return false;
             cancellationToken.ThrowIfCancellationRequested();
             PivotReportRefusal? issue;
             PivotReportState? state;
@@ -57,21 +69,28 @@ public sealed class PivotReportClient
                 issue = Invalid("The report response is malformed: " + error.Message);
                 state = null;
             }
-            if (issue is null)
+            // Validation can run concurrently with a newer request. Adopting either its
+            // state or refusal must be serialized with starting that request (ADR-0152).
+            lock (_publication)
             {
-                Current = state;
-                Refusal = null;
-                return true;
+                if (generation != _generation) return false;
+                cancellationToken.ThrowIfCancellationRequested();
+                if (issue is null)
+                {
+                    _current = state;
+                    _refusal = null;
+                    return true;
+                }
+                if (!recovered && request.Baseline is not null
+                    && issue.Kind is PivotReportRefusalKind.BaselineNotHeld or PivotReportRefusalKind.InvalidResponse)
+                {
+                    recovered = true;
+                    request = request with { RequestId = Guid.NewGuid().ToString("N"), Baseline = null };
+                    continue;
+                }
+                _refusal = recovered ? new(PivotReportRefusalKind.StaleReport, issue.Message, issue.Field) : issue;
+                return false;
             }
-            if (!recovered && request.Baseline is not null
-                && issue.Kind is PivotReportRefusalKind.BaselineNotHeld or PivotReportRefusalKind.InvalidResponse)
-            {
-                recovered = true;
-                request = request with { RequestId = Guid.NewGuid().ToString("N"), Baseline = null };
-                continue;
-            }
-            Refusal = recovered ? new(PivotReportRefusalKind.StaleReport, issue.Message, issue.Field) : issue;
-            return false;
         }
     }
 
