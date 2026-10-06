@@ -1,0 +1,19 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+file:///Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost-wire.mjs:21
+   if(at+length>b.length)throw new Error('incomplete SignalR message');
+                         ^
+
+Error: incomplete SignalR message
+    at take (file:///Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost-wire.mjs:21:32)
+    at CDPSession2.<anonymous> (file:///Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/measure-cost-wire.mjs:27:45)
+    at CDPSession2._callHandler (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:10746:33)
+    at CDPSession2.emit (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:10736:16)
+    at Proxy.<anonymous> (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:57198:16)
+    at Proxy._callHandler (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:10746:33)
+    at Proxy.emit (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:10736:16)
+    at Connection.dispatch (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:63525:25)
+    at Immediate.<anonymous> (/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-measure/tests/ExGrid.Browser/node_modules/playwright-core/lib/coreBundle.js:63586:85)
+    at process.processImmediate (node:internal/timers:504:21)
+
+Node.js v24.14.1

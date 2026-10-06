@@ -28,10 +28,12 @@ _Avoid_: spreadsheet, worksheet, and **Sheet**, which names what ExSheet holds, 
 **ExPivot**:
 Excel's PivotTable inside the application. The Consumer gives it a **Pivot Source** over the
 **Source Records** and declares their **Pivot Fields**; the user places Pivot Fields into **Areas**
-through the **Field List**, and ExPivot computes the **Pivot Report** from the source's **Leaf
-Aggregates**. It is drawn by ExGrid, as that grid's **Consumer**: ExPivot holds the **Pivot Layout**
-and computes the report, ExGrid paints and reports. **Decided** with the user, 2026-09-30
-([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)).
+through the **Field List** to define the **Pivot Report**. It is drawn by ExGrid, as that grid's
+**Consumer**: ExPivot holds the **Pivot Layout** and supplies the report, ExGrid paints and reports.
+**Decided** with the user, 2026-09-30
+([ADR-0059](./docs/adr/0059-expivot-is-a-pivot-table-drawn-by-exgrid-as-its-consumer.md)); local and
+server reports follow the same meaning
+([ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: pivot grid, OLAP grid, cube (the cube is how the engine keeps what it aggregated, not the
 product), and **Pivot Report**, which names what ExPivot computes, not the product
 
@@ -782,10 +784,10 @@ server's Pivot Source it stays on the server
 _Avoid_: row (a row is the report's), item (that is a field's distinct value), fact, entity
 
 **Pivot Source**:
-What ExPivot asks for a report's aggregates, a field's Items and the Source Records behind a cell.
-The bundled one aggregates a Snapshot in process and is the reference implementation, as
-`GridSource.From` is ExGrid's; a Consumer's server may answer instead, and is held to the bundled
-one's answers.
+What supplies ExPivot with a report or the aggregates from which it is computed, a field's Items,
+and the Source Records behind a cell. The bundled one is the reference implementation, as
+`GridSource.From` is ExGrid's; a Consumer's server may answer instead, under the same rules
+([ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: data source, provider, backend, pivot cache (Excel's word; here that is the Snapshot)
 
 **Source Version**:
@@ -795,12 +797,21 @@ longer answer under it refuses rather than answer from newer data.
 _Avoid_: data version (it names nothing here), Row Sequence Version (that is the grid's order),
 timestamp, revision
 
+**Report Version**:
+Which settled state of a Pivot Report an answer or an operation refers to: its Source Version,
+Pivot Layout and display settings. Reports made from the same data can have different Report
+Versions. The Row Sequence Version names only the row keys and their order, not the report's
+values or settings
+([ADR-0152](./docs/adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+_Avoid_: Source Version (that names the data alone), Row Sequence Version (that names row order),
+timestamp
+
 **Leaf Aggregate**:
-What a Pivot Source answers a report with: for each combination of the row and column fields'
-Items that has records, the parts each Value Field's Aggregation is computed from — counts, sums,
-extremes. ExPivot computes every cell, subtotal and grand total from them; a source never answers
-with the report itself
-([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md)).
+For each combination of the row and column fields' Items that has records, the parts each Value
+Field's Aggregation is computed from — counts, sums, extremes. Every cell, subtotal and grand
+total is computed from these parts, whether the report is computed locally or on a server
+([ADR-0066](./docs/adr/0066-expivot-asks-a-pivot-source-and-a-server-answers-with-leaf-aggregates.md),
+[ADR-0151](./docs/adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)).
 _Avoid_: cube (the engine's own word for what it holds), summary, pre-aggregate, rollup
 
 **Pivot Field**:

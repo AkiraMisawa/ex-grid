@@ -1,0 +1,3509 @@
+{
+  "browser": "154.0.8037.98",
+  "results": [
+    {
+      "rows": 100000,
+      "changes": 1,
+      "circuitConnection": "0HNP3KEUV4QMS",
+      "protocolHandshakes": [
+        {
+          "dir": "out",
+          "opcode": 1,
+          "requestId": "72153.6",
+          "firstBytesHex": "7b2270726f746f636f6c223a22626c617a6f727061636b222c2276657273696f6e223a317d1e",
+          "payload": {
+            "protocol": "blazorpack",
+            "version": 1
+          }
+        },
+        {
+          "dir": "in",
+          "opcode": 2,
+          "requestId": "72153.6",
+          "firstBytesHex": "7b7d1e",
+          "payload": {}
+        }
+      ],
+      "paintedRows": 18,
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+      "runs": [
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 31,
+          "renderPayloadBytes": 356,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 356,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 42,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 43,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 44,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 45,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 28,
+          "renderPayloadBytes": 356,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 356,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 46,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 47,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 48,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 49,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 35,
+          "renderPayloadBytes": 356,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 356,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 50,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 51,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 52,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 53,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 43,
+          "renderPayloadBytes": 356,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 356,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 54,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 55,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 56,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 57,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 32,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 58,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 59,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 60,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 61,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 30,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 62,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 63,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 64,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 65,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 30,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 66,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 67,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 68,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 69,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 70,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 71,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 72,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 73,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 74,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 75,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 76,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 77,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 78,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 79,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 80,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 81,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 82,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 83,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 84,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 85,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 86,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 87,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 88,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 89,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 33,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 90,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 91,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 92,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 93,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 30,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 94,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 95,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 96,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 97,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 32,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 98,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 99,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 100,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 101,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        }
+      ],
+      "logs": []
+    },
+    {
+      "rows": 100000,
+      "changes": 100,
+      "circuitConnection": "0HNP3KEUV4QN0",
+      "protocolHandshakes": [
+        {
+          "dir": "out",
+          "opcode": 1,
+          "requestId": "72156.6",
+          "firstBytesHex": "7b2270726f746f636f6c223a22626c617a6f727061636b222c2276657273696f6e223a317d1e",
+          "payload": {
+            "protocol": "blazorpack",
+            "version": 1
+          }
+        },
+        {
+          "dir": "in",
+          "opcode": 2,
+          "requestId": "72156.6",
+          "firstBytesHex": "7b7d1e",
+          "payload": {}
+        }
+      ],
+      "paintedRows": 18,
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+      "runs": [
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 190,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 45,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 46,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 47,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 48,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 144,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 49,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 50,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 51,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 52,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 53,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 54,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 55,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 56,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 194,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 57,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 58,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 59,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 60,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 61,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 62,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 63,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 64,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 65,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 66,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 67,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 68,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 135,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 69,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 70,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 71,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 72,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 73,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 74,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 75,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 76,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 123,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 77,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 78,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 79,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 80,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 81,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 82,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 83,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 84,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 119,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 85,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 86,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 87,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 88,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 89,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 90,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 91,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 92,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 93,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 94,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 95,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 96,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 117,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 97,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 98,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 99,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 100,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 114,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 101,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 102,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 103,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 104,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        }
+      ],
+      "logs": []
+    },
+    {
+      "rows": 100000,
+      "changes": 1000,
+      "circuitConnection": "0HNP3KEUV4QN2",
+      "protocolHandshakes": [
+        {
+          "dir": "out",
+          "opcode": 1,
+          "requestId": "72168.6",
+          "firstBytesHex": "7b2270726f746f636f6c223a22626c617a6f727061636b222c2276657273696f6e223a317d1e",
+          "payload": {
+            "protocol": "blazorpack",
+            "version": 1
+          }
+        },
+        {
+          "dir": "in",
+          "opcode": 2,
+          "requestId": "72168.6",
+          "firstBytesHex": "7b7d1e",
+          "payload": {}
+        }
+      ],
+      "paintedRows": 18,
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+      "runs": [
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 190,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 45,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 46,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 47,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 48,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 144,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 49,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 50,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 51,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 52,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 53,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 54,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 55,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 56,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 194,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 57,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 58,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 59,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 60,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 61,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 62,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 63,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 64,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 65,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 66,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 67,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 68,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 135,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 69,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 70,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 71,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 72,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 73,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 74,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 75,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 76,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 123,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 77,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 78,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 79,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 80,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 81,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 82,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 83,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 84,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 119,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 85,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 86,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 87,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 88,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 89,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 90,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 91,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 92,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 93,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 94,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 95,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 96,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 117,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 97,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 98,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 99,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 100,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 114,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 101,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 102,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 103,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 104,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        }
+      ],
+      "logs": []
+    },
+    {
+      "rows": 1000000,
+      "changes": 1,
+      "circuitConnection": "0HNP3KEUV4QN4",
+      "protocolHandshakes": [
+        {
+          "dir": "out",
+          "opcode": 1,
+          "requestId": "72178.6",
+          "firstBytesHex": "7b2270726f746f636f6c223a22626c617a6f727061636b222c2276657273696f6e223a317d1e",
+          "payload": {
+            "protocol": "blazorpack",
+            "version": 1
+          }
+        },
+        {
+          "dir": "in",
+          "opcode": 2,
+          "requestId": "72178.6",
+          "firstBytesHex": "7b7d1e",
+          "payload": {}
+        }
+      ],
+      "paintedRows": 18,
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+      "runs": [
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 31,
+          "renderPayloadBytes": 356,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 45,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 356,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 46,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 47,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 48,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 28,
+          "renderPayloadBytes": 356,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 49,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 356,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 50,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 51,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 52,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 35,
+          "renderPayloadBytes": 356,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 53,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 356,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 54,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 55,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 56,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 43,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 57,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 58,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 59,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 60,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 32,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 61,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 62,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 63,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 64,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 65,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 66,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 67,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 68,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 30,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 69,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 70,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 71,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 72,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 73,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 74,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 75,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 76,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 77,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 78,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 79,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 80,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 81,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 82,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 83,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 84,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 85,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 86,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 87,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 88,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 29,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 89,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 90,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 91,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 92,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 33,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 93,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 94,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 95,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 96,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 30,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 97,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 98,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 99,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 100,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 32,
+          "renderPayloadBytes": 357,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 101,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 357,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 102,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 103,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 104,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        }
+      ],
+      "logs": []
+    },
+    {
+      "rows": 1000000,
+      "changes": 100,
+      "circuitConnection": "0HNP3KEUV4QN6",
+      "protocolHandshakes": [
+        {
+          "dir": "out",
+          "opcode": 1,
+          "requestId": "72184.6",
+          "firstBytesHex": "7b2270726f746f636f6c223a22626c617a6f727061636b222c2276657273696f6e223a317d1e",
+          "payload": {
+            "protocol": "blazorpack",
+            "version": 1
+          }
+        },
+        {
+          "dir": "in",
+          "opcode": 2,
+          "requestId": "72184.6",
+          "firstBytesHex": "7b7d1e",
+          "payload": {}
+        }
+      ],
+      "paintedRows": 18,
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+      "runs": [
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 190,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 45,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 46,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 47,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 48,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 144,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 49,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 50,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 51,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 52,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 53,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 54,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 55,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 56,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 194,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 57,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 58,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 59,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 60,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 61,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 62,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 63,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 64,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 65,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 66,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 67,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 68,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 135,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 69,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 70,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 71,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 72,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 73,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 74,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 75,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 76,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 123,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 77,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 78,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 79,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 80,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 81,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 82,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 83,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 84,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 119,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 85,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 86,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 87,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 88,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 89,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 90,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 91,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 92,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 93,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 94,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 95,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 96,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 117,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 97,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 98,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 99,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 100,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 114,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 101,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 102,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 103,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 104,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        }
+      ],
+      "logs": []
+    },
+    {
+      "rows": 1000000,
+      "changes": 1000,
+      "circuitConnection": "0HNP3KEUV4QN8",
+      "protocolHandshakes": [
+        {
+          "dir": "out",
+          "opcode": 1,
+          "requestId": "72194.6",
+          "firstBytesHex": "7b2270726f746f636f6c223a22626c617a6f727061636b222c2276657273696f6e223a317d1e",
+          "payload": {
+            "protocol": "blazorpack",
+            "version": 1
+          }
+        },
+        {
+          "dir": "in",
+          "opcode": 2,
+          "requestId": "72194.6",
+          "firstBytesHex": "7b7d1e",
+          "payload": {}
+        }
+      ],
+      "paintedRows": 18,
+      "webSocketExtensions": "permessage-deflate; client_max_window_bits=15",
+      "runs": [
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 190,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 45,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 46,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 47,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 48,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 144,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 364,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 49,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 50,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 51,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 32,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 52,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2479,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 53,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2479,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 54,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 55,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 56,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 194,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 57,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 58,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 59,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 60,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 61,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 62,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 63,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 64,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 126,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 65,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 66,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 67,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 68,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 135,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 69,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 70,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 71,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 72,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 122,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 73,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 74,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 75,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 76,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 123,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 77,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 78,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 79,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 80,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 81,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 82,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 83,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 84,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 119,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 85,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 86,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 87,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 88,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 89,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 90,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 91,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 92,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 121,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 93,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 94,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 95,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 96,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 117,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 97,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 98,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 99,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 100,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        },
+        {
+          "batches": 1,
+          "acks": 1,
+          "eventCompletions": 1,
+          "wireBytes": 114,
+          "renderPayloadBytes": 2480,
+          "frames": [
+            {
+              "dir": "out",
+              "bytes": 365,
+              "kind": "BeginInvokeDotNetFromJS",
+              "socketFrame": 101,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 2480,
+              "kind": "JS.RenderBatch",
+              "socketFrame": 102,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "out",
+              "bytes": 26,
+              "kind": "OnRenderCompleted",
+              "socketFrame": 103,
+              "messagesInSocketFrame": 1
+            },
+            {
+              "dir": "in",
+              "bytes": 33,
+              "kind": "JS.EndInvokeDotNet",
+              "socketFrame": 104,
+              "messagesInSocketFrame": 1
+            }
+          ]
+        }
+      ],
+      "logs": []
+    }
+  ]
+}

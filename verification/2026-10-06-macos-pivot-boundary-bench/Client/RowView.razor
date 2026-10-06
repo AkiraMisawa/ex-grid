@@ -1,0 +1,7 @@
+<tr data-id="@Value.Id"><td>@Value.Label</td><td>@Value.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)</td></tr>
+@code {
+    [Parameter, EditorRequired] public Row Value { get; set; } = default!;
+    private Row? _shown;
+    protected override bool ShouldRender() => !ReferenceEquals(_shown, Value);
+    protected override void OnAfterRender(bool firstRender) => _shown = Value;
+}

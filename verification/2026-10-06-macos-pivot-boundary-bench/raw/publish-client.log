@@ -1,0 +1,10 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-boundary-bench' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Shared -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-boundary-bench/verification/2026-10-06-macos-pivot-boundary-bench/Shared/bin/Release/net10.0/Shared.dll
+  Client -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-boundary-bench/verification/2026-10-06-macos-pivot-boundary-bench/Client/bin/Release/net10.0/Client.dll
+  Client (Blazor output) -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-boundary-bench/verification/2026-10-06-macos-pivot-boundary-bench/Client/bin/Release/net10.0/wwwroot
+  Optimizing assemblies for size may change the behavior of the app. Be sure to test after publishing. See: https://aka.ms/dotnet-illink
+  Publishing without optimizations. Although it's optional for Blazor, we strongly recommend using `wasm-tools` workload! You can install it by running `dotnet workload install wasm-tools` from the command line.
+  Client -> /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-boundary-bench/.boundary-publish/client/

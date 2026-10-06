@@ -1,5 +1,17 @@
 # ExPivot asks a Pivot Source, and a server answers with the Leaf Aggregates
 
+**Boundary changed, 2026-10-06:**
+[ADR-0151](./0151-server-pivots-send-report-windows-and-share-the-local-engine.md) chooses
+server-computed report Windows and changes, with the same incremental engine used locally for
+CSV. Its measurements made the initial-transfer and browser-retention trade-off concrete; the
+user accepts remote layout interactions paying a round trip. The rejection of finished report
+Windows below records the earlier decision and no longer applies to that path. The Leaf
+Aggregate API below is the existing API.
+[ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md) subsequently
+permits replacing/renaming that API, selects server-registered Order Keys, and defines automatic
+Window recovery when a delta baseline is missing. Reference semantics, Source Version correctness, cancellation, and the Consumer's
+ownership of transport remain in force. This amendment records a decision, not implementation.
+
 *(Numbered ADR-0065 until 2026-10-01. ExSheet's Pointing Scope took ADR-0058 first, and ExPivot's
 ADRs moved up by one into the block [`docs/agents/numbering.md`](../agents/numbering.md) reserves
 for them. Commit messages before then use the old numbers.)*
@@ -56,6 +68,11 @@ A report a person reads has far fewer leaves than the data has records. The meas
 million records had 2,976 leaves, and its aggregates took about 1 MB.
 
 ## The contract
+
+*The following is the original Leaf Aggregate contract. ADR-0152 permits its replacement rather
+than requiring a parallel compatibility path; repository Consumers and documentation must migrate
+with the new API. It is retained here to explain the earlier boundary, not to constrain the new
+component-facing report contract.*
 
 ```csharp
 public abstract class PivotSource

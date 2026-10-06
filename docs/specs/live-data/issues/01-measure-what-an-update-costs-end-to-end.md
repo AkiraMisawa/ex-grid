@@ -1,6 +1,6 @@
 # 01: Measure what an update costs, end to end
 
-Status: ready-for-agent
+Status: ready-for-human — measurements recorded; tickets 02 and 03 await the user's decisions
 
 **What to do:** find out, step by step, where the time of one live update goes, in ExGrid and in
 ExPivot, so that tickets 02 and 03 are decided on numbers (CLAUDE.md, "Measure before claiming
@@ -22,7 +22,7 @@ observational and never gates.
   where instance-keyed rows sent 40,712 (40 rows, 20 columns, 3 cells changed).
 - **ExPivot's redraw** (M3): at `/pivot-live`'s rate, a median of 5 of 11 painted rows unchanged per
   redraw with subtotals.
-- **Not known:** how a redraw's time divides between its steps, and the browser numbers for either
+- **Not known before this measurement:** how a redraw's time divides between its steps, and the browser numbers for either
   product at the sizes that hurt.
 
 ## What to measure
@@ -65,11 +65,23 @@ observational and never gates.
 
 ## Output
 
-- [ ] A `verification/<date>-<platform>-live-update-costs/README.md` in the shape of
+- [x] A `verification/<date>-<platform>-live-update-costs/README.md` in the shape of
   `2026-10-05-macos-live-update-measure`: the environment, a table per product, raw files beside it
-- [ ] For each product, the step that dominates an update, at each size
-- [ ] LV-15's parts recorded: apply to frame on `/grid-live-local`, the bytes per update on the
+- [x] For each product, the step that dominates an update, at each size
+- [x] LV-15's parts recorded: apply to frame on `/grid-live-local`, the bytes per update on the
   Server host, the requery and the grid's pass per update
-- [ ] What the numbers say about tickets 02 and 03, as a proposal — not a decision
+- [x] What the numbers say about tickets 02 and 03, as a proposal — not a decision
 
 ## Comments
+
+2026-10-06: [Measurements and reproduction artifacts](../../../../verification/2026-10-06-macos-live-update-costs/README.md)
+record the isolated CoreCLR steps, real component renders, published WebAssembly frames and Server
+bytes at `bd4b2e45`, after PR #64. No file under `src/` changed. The raw data, failed attempts and
+disposable harness are retained beside the README; tables were recalculated from the raw samples.
+
+Cube and Report construction dominate ExPivot's redraw at all three sizes. The largest published
+WebAssembly report failed with an out-of-memory exception on update seven in all three independent
+runs. Its completed frames are conditional observations, not a passed run or a steady-state claim.
+The failure's cause remains open and its reproduction must be part of the follow-up. The real
+ExPivot component's CoreCLR render and row counts were measured separately; its render includes
+the child grid's Window/key check. No separate WASM .NET-render time was inferred.

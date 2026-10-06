@@ -47,6 +47,10 @@ apart across Windows, and the grid has none: Row Identity is a reference
 - **The delegate's identity is the change signal**, as it is for Cell State. When the Consumer hands
   over a new delegate, the painted rows ask again. Rewriting what an unchanged delegate answers
   leaves the marks as they were.
+  - **ExPivot refinement, 2026-10-06 (ADR-0153):** the retained-report path holds one stable
+    lookup and replaces the immutable display row when its change information changes. The row
+    is the invalidation signal in that path, so unrelated rows skip rendering. Mutating an
+    unchanged row's hidden answers remains invalid; expiry still uses the grid's timer.
 - **A cell is marked while the current time is before its change time plus
   `ChangeHighlightDuration`.** The duration defaults to 1 s, and the Consumer may set it.
 - **The grid takes the mark away itself.** It keeps one timer, for the earliest end among the marks

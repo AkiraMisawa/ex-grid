@@ -1,12 +1,12 @@
 # 02: A pushed Window vouches for its rows
 
-Status: needs-triage — a decision for the user, then an amendment to ADR-0141 and LV-10
+Status: in-progress — ADR-0150 accepted; continuation design approved and implementation started
 
 **The question:** should a Consumer that pushes its Window itself be able to tell the grid that the
 Window holds no row twice, as a bundled source does — so that the grid stops walking every row of
 every new Window? ExPivot is such a Consumer, and so is any ExGrid page that pushes a large result.
 
-**Blocked by:** 01 for the numbers it adds; the question can be put now.
+**Prerequisites complete:** the shared design review is accepted; ticket 01 is recorded.
 
 ## Where it stands
 
@@ -38,9 +38,9 @@ every new Window? ExPivot is such a Consumer, and so is any ExGrid page that pus
 - **(ii) Keep the check** for every pushed Window. It costs what the check of instances cost before
   the Row Key (9.5 ms at 401,001 rows).
 
-## If (i) is taken
+## Implementation of (i), chosen by the user
 
-- [ ] ADR-0141 amended (who may vouch, and what a false vouch costs), and LV-10 restated, with the
+- [x] ADR-0150 recorded, ADR-0141 amended (who may vouch, and what a false vouch costs), and LV-10 restated, with the
   user's decision and its date
 - [ ] The parameter, its XML doc, and the grid taking it as it takes a source's vouch
 - [ ] ExPivot vouches for its report, with a comment at the site naming the engine's guarantee
@@ -49,3 +49,20 @@ every new Window? ExPivot is such a Consumer, and so is any ExGrid page that pus
 - [ ] PV-43's measurement repeated: the grid's share of a redraw at 401,001 rows
 
 ## Comments
+
+2026-10-06: Ticket 01's [measurements after PR #64](../../../../verification/2026-10-06-macos-live-update-costs/README.md)
+put the key check at 0.191 / 1.909 / 9.045 ms for 11,001 / 101,001 / 401,001 report rows
+(CoreCLR Release, the minimum of nine isolated observations). A vouch removes a whole-Window
+pass, but Cube and Report construction dominate the large redraw. This is evidence for the
+decision, not a decision to add the parameter.
+
+The contract review found two details to put to the user: the check also refuses null rows and
+null keys, so a vouch must account for those; and Blazor is not a fallback validator for a false
+vouch. Repeated keys that never coexist in the painted slice need not trigger its duplicate-key
+exception. The public source contract already lets a Consumer's own source vouch, as noted above.
+
+2026-10-06, continuation Q1: the user accepted the recommendation. A pushed Window with a Row Key
+may explicitly be vouched for; validation remains the default. The promise covers null rows, null
+keys and duplicate keys, and a false promise has no guaranteed Blazor fallback. The decision is
+[ADR-0150](../../../adr/0150-a-consumer-can-vouch-for-a-pushed-windows-rows.md); LV-10 and LV-19 record
+its criteria. No implementation is claimed by this status.

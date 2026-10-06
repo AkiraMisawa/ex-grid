@@ -1,0 +1,12 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-oom' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:96102) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 1 test using 1 worker
+
+(node:96103) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 [chrome] › oom.spec.mjs:3:1 › ADR-0067 live pivot does not exhaust memory (45.7s)
+
+  1 passed (47.1s)

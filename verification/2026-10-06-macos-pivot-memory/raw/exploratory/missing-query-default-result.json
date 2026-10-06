@@ -1,0 +1,128 @@
+{
+  "url": "/live-cost-pivot?b=400",
+  "completed": 0,
+  "samples": [],
+  "memory": [
+    {
+      "update": 0,
+      "records": 0,
+      "reportRows": 1,
+      "forcedGc": false,
+      "intervention": null,
+      "managedBeforeGc": 4788776,
+      "managedBytes": 4788776,
+      "allocatedBytes": 0,
+      "gc0": 0,
+      "gc1": 0,
+      "gc2": 0,
+      "tracked": {
+        "Report": {
+          "created": 1,
+          "alive": 1
+        },
+        "Cube": {
+          "created": 1,
+          "alive": 1
+        },
+        "Snapshot": {
+          "created": 1,
+          "alive": 1
+        },
+        "Answer": {
+          "created": 1,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 1,
+        "historyReports": [
+          "940733d464af43cf919ffea22cacebad:0"
+        ],
+        "paints": 2,
+        "paintRowReferences": 2,
+        "paintDistinctReports": 1,
+        "paintReportVersions": [
+          "940733d464af43cf919ffea22cacebad:0"
+        ],
+        "sourceAnsweredSnapshots": 1
+      }
+    }
+  ],
+  "errors": [],
+  "browser": "154.0.8037.98",
+  "runtime": {
+    "keys": [
+      "INTERNAL",
+      "invokeLibraryInitializers",
+      "Module",
+      "config",
+      "onConfigLoaded",
+      "onDownloadResourceProgress",
+      "out",
+      "err",
+      "onAbort",
+      "onExit",
+      "runtimeBuildInfo",
+      "runMain",
+      "runMainAndExit",
+      "exit",
+      "setEnvironmentVariable",
+      "getAssemblyExports",
+      "setModuleImports",
+      "getConfig",
+      "setHeapB32",
+      "setHeapB8",
+      "setHeapU8",
+      "setHeapU16",
+      "setHeapU32",
+      "setHeapI8",
+      "setHeapI16",
+      "setHeapI32",
+      "setHeapI52",
+      "setHeapU52",
+      "setHeapI64Big",
+      "setHeapF32",
+      "setHeapF64",
+      "getHeapB32",
+      "getHeapB8",
+      "getHeapU8",
+      "getHeapU16",
+      "getHeapU32",
+      "getHeapI8",
+      "getHeapI16",
+      "getHeapI32",
+      "getHeapI52",
+      "getHeapU52",
+      "getHeapI64Big",
+      "getHeapF32",
+      "getHeapF64",
+      "localHeapViewU8",
+      "localHeapViewU16",
+      "localHeapViewU32",
+      "localHeapViewI8",
+      "localHeapViewI16",
+      "localHeapViewI32",
+      "localHeapViewI64Big",
+      "localHeapViewF32",
+      "localHeapViewF64",
+      "collectCpuSamples",
+      "collectMetrics",
+      "collectGcDump",
+      "connectDSRouter",
+      "runtimeId"
+    ],
+    "moduleKeys": [
+      "HEAP8",
+      "HEAP16",
+      "HEAPU8",
+      "HEAPU16",
+      "HEAP32",
+      "HEAPU32",
+      "HEAPF32",
+      "HEAPF64",
+      "HEAP64",
+      "HEAPU64"
+    ],
+    "heapBytes": 58064896
+  }
+}

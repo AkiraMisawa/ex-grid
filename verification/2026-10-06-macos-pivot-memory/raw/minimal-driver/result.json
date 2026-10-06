@@ -1,0 +1,34 @@
+{
+  "url": "/live-cost-pivot?b=400",
+  "completed": 6,
+  "samples": [
+    {
+      "update": 1,
+      "status": "Batch 1: apply 51.900 ms"
+    },
+    {
+      "update": 2,
+      "status": "Batch 2: apply 38.700 ms"
+    },
+    {
+      "update": 3,
+      "status": "Batch 3: apply 37.200 ms"
+    },
+    {
+      "update": 4,
+      "status": "Batch 4: apply 37.900 ms"
+    },
+    {
+      "update": 5,
+      "status": "Batch 5: apply 36.800 ms"
+    },
+    {
+      "update": 6,
+      "status": "Batch 6: apply 39.000 ms"
+    }
+  ],
+  "errors": [
+    "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]\n      Unhandled exception rendering component: Out of memory\nSystem.OutOfMemoryException: Out of memory\n   at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )\n   at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)\n   at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)\n   at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()\n   at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)"
+  ],
+  "browser": "154.0.8037.98"
+}

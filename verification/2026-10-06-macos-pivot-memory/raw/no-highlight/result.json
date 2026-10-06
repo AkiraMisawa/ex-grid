@@ -1,0 +1,460 @@
+{
+  "url": "/live-cost-pivot?b=400&intervention=no-highlight",
+  "completed": 6,
+  "samples": [
+    {
+      "update": 1,
+      "status": "Batch 1: apply 49.900 ms"
+    },
+    {
+      "update": 2,
+      "status": "Batch 2: apply 38.800 ms"
+    },
+    {
+      "update": 3,
+      "status": "Batch 3: apply 37.700 ms"
+    },
+    {
+      "update": 4,
+      "status": "Batch 4: apply 38.000 ms"
+    },
+    {
+      "update": 5,
+      "status": "Batch 5: apply 37.200 ms"
+    },
+    {
+      "update": 6,
+      "status": "Batch 6: apply 39.100 ms"
+    }
+  ],
+  "memory": [
+    {
+      "update": 0,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "no-highlight",
+      "managedBeforeGc": 326844056,
+      "managedBytes": 326844056,
+      "allocatedBytes": 411062704,
+      "threadAllocatedBytes": 422255160,
+      "gc0": 32,
+      "gc1": 10,
+      "gc2": 10,
+      "tracked": {
+        "Report": {
+          "created": 1,
+          "alive": 1
+        },
+        "Cube": {
+          "created": 1,
+          "alive": 1
+        },
+        "Snapshot": {
+          "created": 1,
+          "alive": 1
+        },
+        "Answer": {
+          "created": 1,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 1,
+        "historyReports": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0"
+        ],
+        "paints": 2,
+        "paintRowReferences": 36,
+        "paintDistinctReports": 1,
+        "paintReportVersions": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0"
+        ],
+        "sourceAnsweredSnapshots": 1
+      },
+      "wasmHeapBytes": 518782976
+    },
+    {
+      "update": 1,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "no-highlight",
+      "managedBeforeGc": 486133936,
+      "managedBytes": 486133936,
+      "allocatedBytes": 637342296,
+      "threadAllocatedBytes": 647564984,
+      "gc0": 54,
+      "gc1": 12,
+      "gc2": 12,
+      "tracked": {
+        "Report": {
+          "created": 2,
+          "alive": 2
+        },
+        "Cube": {
+          "created": 2,
+          "alive": 2
+        },
+        "Snapshot": {
+          "created": 2,
+          "alive": 2
+        },
+        "Answer": {
+          "created": 2,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "7d41d6a6f6254cec97867a881c2dd82a:1",
+          "7d41d6a6f6254cec97867a881c2dd82a:0"
+        ],
+        "paints": 3,
+        "paintRowReferences": 54,
+        "paintDistinctReports": 2,
+        "paintReportVersions": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0",
+          "7d41d6a6f6254cec97867a881c2dd82a:1"
+        ],
+        "sourceAnsweredSnapshots": 2
+      },
+      "wasmHeapBytes": 744030208
+    },
+    {
+      "update": 2,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "no-highlight",
+      "managedBeforeGc": 651598512,
+      "managedBytes": 651598512,
+      "allocatedBytes": 862668064,
+      "threadAllocatedBytes": 872637816,
+      "gc0": 77,
+      "gc1": 13,
+      "gc2": 13,
+      "tracked": {
+        "Report": {
+          "created": 3,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 3,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 3,
+          "alive": 3
+        },
+        "Answer": {
+          "created": 3,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "7d41d6a6f6254cec97867a881c2dd82a:2",
+          "7d41d6a6f6254cec97867a881c2dd82a:1"
+        ],
+        "paints": 4,
+        "paintRowReferences": 72,
+        "paintDistinctReports": 3,
+        "paintReportVersions": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0",
+          "7d41d6a6f6254cec97867a881c2dd82a:1",
+          "7d41d6a6f6254cec97867a881c2dd82a:2"
+        ],
+        "sourceAnsweredSnapshots": 3
+      },
+      "wasmHeapBytes": 1049296896
+    },
+    {
+      "update": 3,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "no-highlight",
+      "managedBeforeGc": 810470000,
+      "managedBytes": 810470000,
+      "allocatedBytes": 1087728672,
+      "threadAllocatedBytes": 1097703824,
+      "gc0": 100,
+      "gc1": 14,
+      "gc2": 14,
+      "tracked": {
+        "Report": {
+          "created": 4,
+          "alive": 4
+        },
+        "Cube": {
+          "created": 4,
+          "alive": 4
+        },
+        "Snapshot": {
+          "created": 4,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 4,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "7d41d6a6f6254cec97867a881c2dd82a:3",
+          "7d41d6a6f6254cec97867a881c2dd82a:2"
+        ],
+        "paints": 5,
+        "paintRowReferences": 90,
+        "paintDistinctReports": 4,
+        "paintReportVersions": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0",
+          "7d41d6a6f6254cec97867a881c2dd82a:1",
+          "7d41d6a6f6254cec97867a881c2dd82a:2",
+          "7d41d6a6f6254cec97867a881c2dd82a:3"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1259470848
+    },
+    {
+      "update": 4,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "no-highlight",
+      "managedBeforeGc": 963770376,
+      "managedBytes": 963770376,
+      "allocatedBytes": 1312790632,
+      "threadAllocatedBytes": 1322763016,
+      "gc0": 123,
+      "gc1": 15,
+      "gc2": 15,
+      "tracked": {
+        "Report": {
+          "created": 5,
+          "alive": 5
+        },
+        "Cube": {
+          "created": 5,
+          "alive": 5
+        },
+        "Snapshot": {
+          "created": 5,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 5,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "7d41d6a6f6254cec97867a881c2dd82a:4",
+          "7d41d6a6f6254cec97867a881c2dd82a:3"
+        ],
+        "paints": 6,
+        "paintRowReferences": 108,
+        "paintDistinctReports": 5,
+        "paintReportVersions": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0",
+          "7d41d6a6f6254cec97867a881c2dd82a:1",
+          "7d41d6a6f6254cec97867a881c2dd82a:2",
+          "7d41d6a6f6254cec97867a881c2dd82a:3",
+          "7d41d6a6f6254cec97867a881c2dd82a:4"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1576271872
+    },
+    {
+      "update": 5,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "no-highlight",
+      "managedBeforeGc": 1173774608,
+      "managedBytes": 1173774608,
+      "allocatedBytes": 1536038728,
+      "threadAllocatedBytes": 1547812984,
+      "gc0": 146,
+      "gc1": 15,
+      "gc2": 15,
+      "tracked": {
+        "Report": {
+          "created": 6,
+          "alive": 6
+        },
+        "Cube": {
+          "created": 6,
+          "alive": 6
+        },
+        "Snapshot": {
+          "created": 6,
+          "alive": 5
+        },
+        "Answer": {
+          "created": 6,
+          "alive": 2
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "7d41d6a6f6254cec97867a881c2dd82a:5",
+          "7d41d6a6f6254cec97867a881c2dd82a:4"
+        ],
+        "paints": 7,
+        "paintRowReferences": 126,
+        "paintDistinctReports": 6,
+        "paintReportVersions": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0",
+          "7d41d6a6f6254cec97867a881c2dd82a:1",
+          "7d41d6a6f6254cec97867a881c2dd82a:2",
+          "7d41d6a6f6254cec97867a881c2dd82a:3",
+          "7d41d6a6f6254cec97867a881c2dd82a:4",
+          "7d41d6a6f6254cec97867a881c2dd82a:5"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1777729536
+    },
+    {
+      "update": 6,
+      "records": 400000,
+      "reportRows": 401001,
+      "forcedGc": false,
+      "intervention": "no-highlight",
+      "managedBeforeGc": 1287542192,
+      "managedBytes": 1287542192,
+      "allocatedBytes": 1761322624,
+      "threadAllocatedBytes": 1772866784,
+      "gc0": 169,
+      "gc1": 16,
+      "gc2": 16,
+      "tracked": {
+        "Report": {
+          "created": 7,
+          "alive": 7
+        },
+        "Cube": {
+          "created": 7,
+          "alive": 7
+        },
+        "Snapshot": {
+          "created": 7,
+          "alive": 4
+        },
+        "Answer": {
+          "created": 7,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "historyVersions": 2,
+        "historyReports": [
+          "7d41d6a6f6254cec97867a881c2dd82a:6",
+          "7d41d6a6f6254cec97867a881c2dd82a:5"
+        ],
+        "paints": 8,
+        "paintRowReferences": 144,
+        "paintDistinctReports": 7,
+        "paintReportVersions": [
+          "7d41d6a6f6254cec97867a881c2dd82a:0",
+          "7d41d6a6f6254cec97867a881c2dd82a:1",
+          "7d41d6a6f6254cec97867a881c2dd82a:2",
+          "7d41d6a6f6254cec97867a881c2dd82a:3",
+          "7d41d6a6f6254cec97867a881c2dd82a:4",
+          "7d41d6a6f6254cec97867a881c2dd82a:5",
+          "7d41d6a6f6254cec97867a881c2dd82a:6"
+        ],
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 1981546496
+    }
+  ],
+  "errors": [
+    "crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]\n      Unhandled exception rendering component: Out of memory\nSystem.OutOfMemoryException: Out of memory\n   at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )\n   at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)\n   at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)\n   at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()\n   at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)"
+  ],
+  "browser": "154.0.8037.98",
+  "runtime": {
+    "keys": [
+      "INTERNAL",
+      "invokeLibraryInitializers",
+      "Module",
+      "config",
+      "onConfigLoaded",
+      "onDownloadResourceProgress",
+      "out",
+      "err",
+      "onAbort",
+      "onExit",
+      "runtimeBuildInfo",
+      "runMain",
+      "runMainAndExit",
+      "exit",
+      "setEnvironmentVariable",
+      "getAssemblyExports",
+      "setModuleImports",
+      "getConfig",
+      "setHeapB32",
+      "setHeapB8",
+      "setHeapU8",
+      "setHeapU16",
+      "setHeapU32",
+      "setHeapI8",
+      "setHeapI16",
+      "setHeapI32",
+      "setHeapI52",
+      "setHeapU52",
+      "setHeapI64Big",
+      "setHeapF32",
+      "setHeapF64",
+      "getHeapB32",
+      "getHeapB8",
+      "getHeapU8",
+      "getHeapU16",
+      "getHeapU32",
+      "getHeapI8",
+      "getHeapI16",
+      "getHeapI32",
+      "getHeapI52",
+      "getHeapU52",
+      "getHeapI64Big",
+      "getHeapF32",
+      "getHeapF64",
+      "localHeapViewU8",
+      "localHeapViewU16",
+      "localHeapViewU32",
+      "localHeapViewI8",
+      "localHeapViewI16",
+      "localHeapViewI32",
+      "localHeapViewI64Big",
+      "localHeapViewF32",
+      "localHeapViewF64",
+      "collectCpuSamples",
+      "collectMetrics",
+      "collectGcDump",
+      "connectDSRouter",
+      "runtimeId"
+    ],
+    "moduleKeys": [
+      "HEAP8",
+      "HEAP16",
+      "HEAPU8",
+      "HEAPU16",
+      "HEAP32",
+      "HEAPU32",
+      "HEAPF32",
+      "HEAPF64",
+      "HEAP64",
+      "HEAPU64"
+    ],
+    "heapBytes": 1981546496
+  }
+}

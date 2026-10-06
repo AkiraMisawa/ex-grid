@@ -114,7 +114,13 @@ same Items under any culture, and a server can put them in a `WHERE`.
   - The key applies to ascending and descending sorts, and to the Item lists of Filter… and of the
     report filter band. It does not affect a sort by value.
   - The engine parses no tenor. The demo and the documentation show a tenor key.
-  - It runs where ExPivot runs, over the Items an answer carries, so a server never sees it.
+  - **Execution side changed, 2026-10-06:** it runs where the report is computed. For a remote
+    report, the application registers the function on the server and selects it by identifier;
+    local computation still uses the local function. An unsupported policy is refused, never
+    replaced with a different order. Culture and display words are explicit settings
+    ([ADR-0152](./0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md)).
+    The earlier Leaf Aggregate boundary ran the function only beside the component and said
+    the server never saw it; ADR-0151 moved report computation across that boundary.
 - **A field may be sorted by a Value Field**, ascending or descending. An Item's place is then its
   value at its total across the other axis, as shown, after Show Values As. Blank and error values
   go last, and ties fall back to the label, ascending.

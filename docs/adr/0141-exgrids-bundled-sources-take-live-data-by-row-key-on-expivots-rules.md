@@ -133,11 +133,24 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
   - The check is a pass over the whole Window, which under `GridSource.From` is the whole result:
     18.1 ms at 451,115 rows.
   - With the incremental requery, this pass becomes the largest cost of an update.
-- **A bundled source that has refused repeated Row Keys vouches for its Window**, and the grid does
-  not check a Window that is vouched for.
+- **A source that guarantees non-null rows and non-null, distinct Row Keys vouches for its Window**,
+  and the grid does not check a Window that is vouched for. This includes a Consumer's own source;
+  the guarantee applies to the source's own Row Key, not a Consumer override.
   - Two rows under different keys cannot be one instance, so the refusal is not weakened. It moves
     to the source, and it judges by key, which is stricter.
-- **A Window that is not vouched for**, such as a Consumer's own, is checked as today.
+- **A Consumer can also explicitly vouch for a pushed Window with a Row Key.** The default is no.
+  The promise covers null rows and null keys as well as repeated keys, and withdrawing it restores
+  validation even for the same Window instance. Without a Row Key the instance check still applies.
+- **A Window that is not vouched for** is checked as today. A false vouch is the Consumer's defect,
+  and Blazor does not guarantee to detect it among rows that never appear together on screen.
+
+*(Amended with the user, 2026-10-06, Q1 of the continuation:
+[ADR-0150](./0150-a-consumer-can-vouch-for-a-pushed-windows-rows.md). This section originally gave
+the promise to bundled sources only and required a pushed Window to be checked. The public source
+contract already allowed a Consumer's own source to vouch; the amendment makes that explicit and
+extends the same contract to pushed Windows. Ticket 01 measured the otherwise redundant check at
+9.045 ms for ExPivot's 401,001-row report. The promise is explicit and validation remains the
+default; the amendment does not make an invalid Window valid.)*
 
 ## Settled while building it
 

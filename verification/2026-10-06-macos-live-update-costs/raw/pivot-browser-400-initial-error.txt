@@ -1,0 +1,8 @@
+crit: Microsoft.AspNetCore.Components.WebAssembly.Rendering.WebAssemblyRenderer[100]
+      Unhandled exception rendering component: Out of memory
+System.OutOfMemoryException: Out of memory
+   at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]].Initialize(Int32 )
+   at System.Collections.Generic.Dictionary`2[[System.Int64, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.Int32, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]..ctor(Int32 capacity, IEqualityComparer`1 comparer)
+   at ExPivot.Engine.PivotCube.BuildAsync(PivotQuery query, PivotAnswer answer, IReadOnlyDictionary`2 meta, Slicer slicer, Object records, Object fields, Func`2 allItems)
+   at ExPivot.Components.ExPivot.Pace.<AfterAsync>d__8`1[[ExPivot.Engine.PivotCube, ExPivot.Engine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]].MoveNext()
+   at ExPivot.Components.ExPivot.AskAsync(PivotSource source, PivotQuery query, PivotLayout layout, Int32 generation, CancellationTokenSource asking, Boolean raise, Question kind)

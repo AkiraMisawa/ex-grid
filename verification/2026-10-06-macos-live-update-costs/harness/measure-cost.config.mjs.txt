@@ -1,0 +1,3 @@
+import { defineConfig } from '@playwright/test';
+import path from 'node:path';
+export default defineConfig({testDir:'.',testMatch:'measure-cost.spec.mjs',workers:1,fullyParallel:false,retries:0,reporter:[['list']],projects:[{name:'chrome',use:{channel:'chrome'}}],use:{headless:true,baseURL:process.env.EXGRID_BASE_URL,trace:'retain-on-failure'},webServer:{command:`node static-host.mjs ${JSON.stringify(path.join(process.env.EXGRID_HOSTS,'wasm','wwwroot'))} ${new URL(process.env.EXGRID_BASE_URL).port}`,url:process.env.EXGRID_BASE_URL,reuseExistingServer:false,timeout:60000}});
