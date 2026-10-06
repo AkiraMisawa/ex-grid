@@ -292,13 +292,16 @@ internal sealed class AxisNode
         Level = level;
         Parent = parent;
         Item = item;
-        PathHash = item is null ? 0 : HashCode.Combine(parent!.PathHash, item.KeyHash);
+        KeyPath = item is null ? null : new PivotItemPath(parent!.KeyPath, item.PublicKey);
+        PathHash = KeyPath?.Hash ?? 0;
     }
 
     /// <summary>The hash of this node's Items and its ancestors', as a report row's key compares
     /// them (<see cref="PivotRowKey"/>): made with the node from its parent's and its Item's, so a
     /// row's key hashes nothing and allocates nothing for its path. 0 for the root.</summary>
     public int PathHash { get; }
+
+    internal PivotItemPath? KeyPath { get; }
 
     public int Id { get; }
 

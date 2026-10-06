@@ -18,14 +18,15 @@ namespace ExPivot.Engine;
 /// </summary>
 public sealed class PivotRowKey : IEquatable<PivotRowKey>
 {
-    private readonly AxisNode _node;
+    private readonly PivotItemPath? _path;
+    private IReadOnlyList<PivotItemKey>? _items;
     private readonly int _hash;
 
     internal PivotRowKey(PivotRowRole role, int valueField, AxisNode node)
     {
         Role = role;
         ValueField = valueField;
-        _node = node;
+        _path = node.KeyPath;
         _hash = HashCode.Combine(role, valueField, node.PathHash);
     }
 
@@ -41,7 +42,7 @@ public sealed class PivotRowKey : IEquatable<PivotRowKey>
         => other is not null
            && (ReferenceEquals(this, other)
                || (_hash == other._hash && Role == other.Role && ValueField == other.ValueField
-                   && SameItems(_node, other._node)));
+                   && SameItems(_path, other._path)));
 
     /// <inheritdoc />
     public override bool Equals(object? obj) => obj is PivotRowKey other && Equals(other);
@@ -53,33 +54,58 @@ public sealed class PivotRowKey : IEquatable<PivotRowKey>
     /// <c>Group -1 [Text:East / Text:Rates]</c>.</summary>
     public override string ToString()
     {
-        var items = new List<PivotItemKey>();
-        for (var at = _node; at.Item is not null; at = at.Parent!)
-            items.Add(at.Item.PublicKey);
-        items.Reverse();
         var text = new StringBuilder();
         text.Append(Role).Append(' ').Append(ValueField).Append(" [");
-        text.AppendJoin(" / ", items);
+        text.AppendJoin(" / ", Items);
         return text.Append(']').ToString();
     }
 
-    // Two nodes stand for the same Items when their paths name them level by level. Within one report
-    // two rows' nodes are the same node or differ at once; across reports — another cube — the Items
-    // are compared, outermost last, the Item of one cube's Items being shared by its nodes.
-    private static bool SameItems(AxisNode a, AxisNode b)
+    /// <summary>Makes a detached key from immutable Item values, copying the sequence.</summary>
+    public PivotRowKey(PivotRowRole role, int valueField, IReadOnlyList<PivotItemKey> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        Role = role;
+        ValueField = valueField;
+        foreach (var item in items)
+        {
+            ArgumentNullException.ThrowIfNull(item);
+            _path = new PivotItemPath(_path, item);
+        }
+        _hash = HashCode.Combine(role, valueField, _path?.Hash ?? 0);
+    }
+
+    /// <summary>The detached Items, outermost first. The immutable sequence is materialized once.</summary>
+    public IReadOnlyList<PivotItemKey> Items
+    {
+        get
+        {
+            if (_items is not null)
+                return _items;
+            var items = new PivotItemKey[_path?.Length ?? 0];
+            for (var at = _path; at is not null; at = at.Parent)
+                items[at.Length - 1] = at.Item;
+            return _items = Array.AsReadOnly(items);
+        }
+    }
+
+    private static bool SameItems(PivotItemPath? a, PivotItemPath? b)
     {
         while (!ReferenceEquals(a, b))
         {
-            if (a.PathHash != b.PathHash || a.Level != b.Level)
+            if (a is null || b is null || a.Hash != b.Hash || a.Length != b.Length || !a.Item.Equals(b.Item))
                 return false;
-            var (itemA, itemB) = (a.Item, b.Item);
-            if (itemA is null || itemB is null)
-                return itemA is null && itemB is null;
-            if (!ReferenceEquals(itemA, itemB) && !itemA.PublicKey.Equals(itemB.PublicKey))
-                return false;
-            a = a.Parent!;
-            b = b.Parent!;
+            a = a.Parent;
+            b = b.Parent;
         }
         return true;
     }
+}
+
+// A parent-only identity path. Unlike an axis node, it owns neither children nor a Cube.
+internal sealed class PivotItemPath(PivotItemPath? parent, PivotItemKey item)
+{
+    public PivotItemPath? Parent { get; } = parent;
+    public PivotItemKey Item { get; } = item;
+    public int Hash { get; } = HashCode.Combine(parent?.Hash ?? 0, item.GetHashCode());
+    public int Length { get; } = (parent?.Length ?? 0) + 1;
 }

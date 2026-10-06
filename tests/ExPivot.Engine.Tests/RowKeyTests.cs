@@ -13,6 +13,19 @@ public class RowKeyTests
 {
     private static readonly PivotLayout RegionAndProduct = RowsBy("Region", "Product");
 
+    [Fact] // ADR-0153: a detached key round-trips without holding the report or its tree
+    public void A_detached_key_keeps_item_equality_and_copies_its_input()
+    {
+        var row = Report(RegionAndProduct).Rows.First(r => r.Role == PivotRowRole.Item);
+        var items = row.Key.Items.ToArray();
+        var copy = new PivotRowKey(row.Role, row.ValueField, items);
+        Assert.Equal(row.Key, copy);
+        Assert.Equal(row.Key.GetHashCode(), copy.GetHashCode());
+        items[0] = PivotItemKey.Text("different");
+        Assert.Equal(row.Key, copy);
+        Assert.Equal(row.Key.Items, copy.Items);
+    }
+
     [Fact] // ADR-0140 / PV-42: no two rows of one report stand for the same thing
     public void A_reports_row_keys_are_distinct()
     {
