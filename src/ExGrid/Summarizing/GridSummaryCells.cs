@@ -29,6 +29,18 @@ public sealed class GridSummaryCells
     /// <summary>Adds an error value: counted, and every figure but Count is shown nowhere.</summary>
     public void AddError() => _accumulator.AddError();
 
-    /// <summary>The figures asked for, over the cells added.</summary>
-    public GridSummaryResult Answer(SummaryFigures figures) => GridSummary.Answer(_accumulator, figures);
+    /// <summary>Adds the parts of cells summarised elsewhere — a server's <c>COUNT</c>, <c>SUM</c>,
+    /// <c>MIN</c> and <c>MAX</c> over a band — by the arithmetic that merges two pivot leaves
+    /// (<see cref="AggregateAccumulator.Merge"/>).</summary>
+    public void Merge(in AggregateCounts counts, in AggregateSum sum, in AggregateExtremes extremes)
+        => _accumulator.Merge(counts, sum, extremes);
+
+    /// <summary>The figures asked for, over the cells added; <paramref name="textOf"/>, where given,
+    /// writes the text of each figure that reads numbers — Average, Min, Max, Sum — in the format of
+    /// the request's Focus, or null to leave it to the grid. It is handed the figure as a column's
+    /// format is handed a value: a <c>decimal</c> where the figure is exact, a <c>double</c>
+    /// otherwise.</summary>
+    public GridSummaryResult Answer(SummaryFigures figures, Func<object, string?>? textOf = null)
+        => GridSummary.Answer(_accumulator, figures,
+            textOf is null ? null : (_, figure) => textOf(figure.Exact is { } exact ? exact : figure.Number));
 }

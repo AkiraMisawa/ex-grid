@@ -23,4 +23,9 @@ public sealed record GridSummaryRequest
 
     /// <summary>The figures shown, the only ones asked for: an answerer computes these alone.</summary>
     public required SummaryFigures Figures { get; init; }
+
+    /// <summary>The Focus — Excel's active cell — whose format the figures are shown in, as Excel shows
+    /// its status bar's. An answerer that formats cells itself (ExSheet, ExPivot) writes each figure's
+    /// text by it (<see cref="GridSummaryResult.TextOf"/>). Null when the grid has none.</summary>
+    public CellPosition? Focus { get; init; }
 }

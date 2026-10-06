@@ -33,6 +33,9 @@ done
 
 echo "== what the packages declare"
 nuspec() { unzip -p "$feed/$1.$version.nupkg" "$1.nuspec"; }
+# Read into a string before a grep -q, never piped to one: grep -q exits at its first match, unzip
+# then dies of SIGPIPE, and under pipefail the pipeline fails — a file that is there reported missing,
+# or, inside an if, a forbidden one passed over.
 entries() { unzip -Z1 "$feed/$1.$version.nupkg"; }
 for id in $packages; do
   [ -f "$feed/$id.$version.snupkg" ] || fail "$id has no symbol package"
@@ -70,17 +73,17 @@ sheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExShee
 mudsheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExSheet.MudBlazor)" | sort)
 [ "$mudsheetdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExSheet\" version=\"[$version]\"" '<dependency id="MudBlazor" version="9.0.0"' | sort)" ] \
   || fail "ExSheet.MudBlazor's dependencies are not exactly ExGrid.MudBlazor $version, ExSheet $version and MudBlazor 9.0.0: $mudsheetdeps"
-if entries ExSheet.MudBlazor | grep -qiE '\.(js|mjs|cjs)$'; then fail "ExSheet.MudBlazor ships a script"; fi
-entries ExSheet.MudBlazor | grep -qxF 'staticwebassets/mud-ex-sheet.min.css' || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.min.css"
+if grep -qiE '\.(js|mjs|cjs)$' <<<"$(entries ExSheet.MudBlazor)"; then fail "ExSheet.MudBlazor ships a script"; fi
+grep -qxF 'staticwebassets/mud-ex-sheet.min.css' <<<"$(entries ExSheet.MudBlazor)" || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.min.css"
 # What ships is minified, with its source map, and the sources stay home (ADR-0123): every script
 # and stylesheet a package serves is a .min file, and none packs its Assets folder.
 for p in ExGrid ExGrid.MudBlazor ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
   unminified=$(entries "$p" | grep -E '^staticwebassets/.*\.(css|js)$' | grep -vE '\.min\.(css|js)$' || true)
   [ -z "$unminified" ] || fail "$p ships an asset that is not minified: $unminified"
-  entries "$p" | grep -qE '^staticwebassets/.*\.min\.css\.map$' || fail "$p ships no source map for its stylesheet"
-  if entries "$p" | grep -qiE '(^|/)Assets/'; then fail "$p packs its Assets sources"; fi
+  grep -qE '^staticwebassets/.*\.min\.css\.map$' <<<"$(entries "$p")" || fail "$p ships no source map for its stylesheet"
+  if grep -qiE '(^|/)Assets/' <<<"$(entries "$p")"; then fail "$p packs its Assets sources"; fi
 done
-entries ExGrid | grep -qxF 'staticwebassets/ex-grid.min.js.map' || fail "ExGrid ships no source map for its script"
+grep -qxF 'staticwebassets/ex-grid.min.js.map' <<<"$(entries ExGrid)" || fail "ExGrid ships no source map for its script"
 
 # The Wrapper still takes no ExSheet package: the direction is one-way (SH-47).
 if grep -q '<dependency id="ExSheet' <<<"$(nuspec ExGrid.MudBlazor)"; then fail "ExGrid.MudBlazor depends on an ExSheet package"; fi

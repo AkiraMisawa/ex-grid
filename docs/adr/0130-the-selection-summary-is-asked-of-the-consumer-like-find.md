@@ -143,12 +143,34 @@ criteria inside ExGrid's release (Definition of Done §2).
 - **A server's parts merge into the same definition.** `AggregateAccumulator.Merge` folds a
   server's `COUNT`, `SUM`, `MIN` and `MAX` in by the arithmetic that merges two pivot leaves; the
   demo API server answers that way in SQL and is held to the reference (SM-8).
+- **The figures wear the Focus's format, and the answerer may write it** *(2026-10-06, found
+  when the Docs Site's budget recording showed `Sum: 136.159396402943` under cells that read
+  `(51)` and `-1.0%`)*. A Sheet's formats are its cells', not its columns', so "the Focus's
+  column's format" could not reach them. The request now carries the **Focus**, and an answer may
+  carry each figure's **text**: ExSheet writes Average, Min, Max and Sum in the Focus cell's Number
+  Format, ExPivot in the Focus cell's Value Field format, and the grid formats the rest itself.
+  Excel shows its status bar in the active cell's format, so this is Excel's rule, not a guess;
+  the Windows run still reads what Excel does across mixed formats.
 - **A Focus column's format that cannot take the figure** — one written as `(int)v` — falls back
   to the figure's own text rather than to nothing. Counts are whole numbers in the invariant
-  culture; an unformatted `double` shows fifteen significant digits, as Excel's General does.
+  culture; an unformatted `double` shows ten significant digits, as Excel's status bar does.
 - **SM-7 and the format rule were implemented without waiting for the Windows run**, as the user
   asked: an error among the values leaves Count, and the Focus's column's format is used. Both
   stand to be corrected by the run.
+
+## The strip can be switched off *(decided with the user, 2026-10-06)*
+
+The strip that stands whenever the grid can summarise (above) reaches every grid bound to
+`GridSource.From` without its Consumer asking — a visible change to grids that were finished
+before the Selection Summary existed. **`ShowSelectionSummary` switches it, and it is on by
+default**, so a new grid has Excel's status bar as Excel does, and an existing page that wants its
+old look back writes one parameter. Off means off entirely: no strip, no question asked, no figure,
+and `OnSelectionSummaryChanged` stays at None. ExSheet and ExPivot carry the same parameter to the
+grid they draw.
+
+Rejected: **opt-in** (off by default), which would hide the feature from every grid that could
+have it for free; and **a strip only while two cells are selected**, rejected above for moving the
+Viewport.
 
 ## Considered options
 

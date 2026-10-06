@@ -37,24 +37,18 @@ public static class GridSummary
             values[i] = valueOf(request.Columns[i]);
 
         var accumulator = new AggregateAccumulator();
-        foreach (var (top, bottom, columns) in Bands(request.Ranges, rows.Count, columnCount))
+        foreach (var (row, column) in Cells(request, rows.Count))
         {
-            for (var row = top; row < bottom; row++)
-            {
-                var item = rows[row];
-                foreach (var column in columns)
-                {
-                    if (values[column] is { } value)
-                        accumulator.Add(value(item));
-                }
-            }
+            if (values[column] is { } value)
+                accumulator.Add(value(rows[row]));
         }
         return Answer(accumulator, request.Figures);
     }
 
-    /// <summary>The figures asked for, read from an accumulator over the selected cells — for an
-    /// answerer that folds the cells in itself (ExSheet, ExPivot).</summary>
-    public static GridSummaryResult Answer(AggregateAccumulator accumulator, SummaryFigures figures)
+    /// <summary>The figures asked for, read from an accumulator over the selected cells. Answerers
+    /// that fold cells in themselves do it through <see cref="GridSummaryCells"/>.</summary>
+    internal static GridSummaryResult Answer(
+        AggregateAccumulator accumulator, SummaryFigures figures, Func<SummaryFigures, AggregateResult, string?>? textOf = null)
     {
         ArgumentNullException.ThrowIfNull(accumulator);
         var answers = new Dictionary<SummaryFigures, AggregateResult>();
@@ -66,7 +60,34 @@ public static class GridSummary
                 ? AggregateResult.Empty
                 : accumulator.Read(SummaryFigureOrder.AggregationOf(figure));
         }
-        return GridSummaryResult.Answered(answers);
+        var texts = new Dictionary<SummaryFigures, string>();
+        if (textOf is not null)
+        {
+            foreach (var (figure, answer) in answers)
+            {
+                if (answer.IsNumber && !SummaryFigureOrder.IsCount(figure) && textOf(figure, answer) is { } text)
+                    texts[figure] = text;
+            }
+        }
+        return GridSummaryResult.Answered(answers, texts);
+    }
+
+    /// <summary>
+    /// Every selected cell once, as a row and a position in the request's columns, band by band
+    /// (<see cref="Bands"/>): a cell covered by two ranges is visited once, and rows past
+    /// <paramref name="rowCount"/> are not cells.
+    /// </summary>
+    public static IEnumerable<(int Row, int Column)> Cells(GridSummaryRequest request, int rowCount)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        foreach (var (top, bottom, columns) in Bands(request.Ranges, rowCount, request.Columns.Count))
+        {
+            for (var row = top; row < bottom; row++)
+            {
+                foreach (var column in columns)
+                    yield return (row, column);
+            }
+        }
     }
 
     /// <summary>

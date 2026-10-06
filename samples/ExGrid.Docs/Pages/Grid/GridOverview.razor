@@ -27,6 +27,7 @@
         </p>
         <ul>
             <li>A <strong>header click</strong> asks for a sort. A <strong>filter panel</strong> asks for a filter. <kbd>Ctrl</kbd>+<kbd>F</kbd> asks where the next match is.</li>
+            <li>The <strong>status-bar figures</strong> — Excel's Average, Count and Sum over the selection — are asked of whoever holds the rows, for every selected row.</li>
             <li>A <strong>commit in the editor</strong>, a <strong>paste</strong> and a <strong>Delete</strong> each arrive as an intent — "this row, this column, this value" — that your application applies, or not.</li>
             <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> is forwarded to you, because only your application sees every change.</li>
             <li>Column widths, order and visibility are your state too: a drag reports the new layout, and you hand back a new column list.</li>
@@ -59,6 +60,7 @@
             <li>A copy larger than the cap copies <strong>nothing</strong>, rather than the first rows with a total quietly too small.</li>
             <li>A paste never writes outside the selection; a block pasted onto one cell is refused.</li>
             <li>When the order of the rows changes, the selection is dropped rather than left on rows nobody chose.</li>
+            <li>The status-bar figures belong to the selection standing now: a new selection clears them at once, and a total is never shown for part of what was selected.</li>
             <li>Where nothing can search every row, <kbd>Ctrl</kbd>+<kbd>F</kbd> is refused rather than left to the browser, which sees only the painted rows.</li>
             <li>A malformed filter, an unknown column or a contradictory parameter throws, naming what was wrong.</li>
         </ul>

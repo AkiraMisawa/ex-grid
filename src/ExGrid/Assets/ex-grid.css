@@ -1002,12 +1002,21 @@
     display: flex;
     gap: calc(2 * var(--ex-cell-padding-x, 8px));
     min-height: 1lh;
-    margin-inline-start: auto;
+    /* The rest of the line, figures at its far end: the right-click that opens the figures menu
+       lands anywhere there, figures or none, as on Excel's status bar. */
+    flex: 1 1 auto;
+    justify-content: flex-end;
     white-space: nowrap;
 }
-.ex-summary-menu { display: flex; flex-direction: column; }
+.ex-summary-menu { display: flex; flex-direction: column; align-items: stretch; min-width: 12em; }
 .ex-summary-menu-item {
     font: inherit;
+    width: 100%;
+    /* Laid out here, whatever a page's own stylesheet does to buttons: a design system's reset
+       that centres a flex button would centre every item. */
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
     text-align: start;
     background: none;
     border: 0;

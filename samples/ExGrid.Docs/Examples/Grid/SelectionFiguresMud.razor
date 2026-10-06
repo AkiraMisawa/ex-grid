@@ -1,0 +1,52 @@
+@using ExGrid.Summarizing
+@using ExGrid.Docs.Examples.Data
+
+<MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
+    <ToolBarContent>
+        <MudSwitch T="bool" @bind-Value="_show" Label="Status-bar figures" Color="Color.Primary" />
+        <MudSpacer />
+        <MudText Typo="Typo.body2">Your own status bar: @_elsewhere</MudText>
+    </ToolBarContent>
+    <ChildContent>
+        <ExGrid TRow="Trade" Source="_source" Columns="_columns" Chrome="_chrome"
+                ShowSelectionSummary="_show" @bind-SummaryFigures="_figures"
+                OnSelectionSummaryChanged="OnSummaryChanged"
+                ViewportHeight="300" ViewportWidth="ViewportSize.Stretch" />
+    </ChildContent>
+</MudExGridPaper>
+
+@code {
+    private static readonly MudGridChrome _chrome = new();
+
+    private readonly InMemoryGridSource<Trade> _source = GridSource.From(Trade.Sample());
+
+    private readonly GridColumn<Trade>[] _columns =
+    [
+        new("Id", ColumnType.Number, t => t.Id),
+        new("Book", ColumnType.Text, t => t.Book),
+        new("Trader", ColumnType.Text, t => t.Trader),
+        new("Currency", ColumnType.Text, t => t.Currency),
+        new("Notional", ColumnType.Number, t => t.Notional, format: v => ((decimal)v).ToString("N0")),
+        new("Price", ColumnType.Number, t => t.Price),
+        new("TradeDate", ColumnType.Date, t => t.TradeDate, header: "Trade date", dateType: DateType.DateOnly),
+    ];
+
+    // On by default; the figures menu (right-click the status line) writes the choice back here.
+    private bool _show = true;
+    private SummaryFigures _figures = SummaryFigures.Default;
+    private string _elsewhere = "select two cells or more";
+
+    // The same figures for a status bar of the application's own. A figure is only ever the answer to
+    // the selection standing now, so Pending says nothing rather than the last selection's total.
+    private void OnSummaryChanged(SelectionSummary summary)
+    {
+        _elsewhere = summary switch
+        {
+            { Status: SelectionSummaryStatus.Answered, Result: { } result }
+                when result[SummaryFigures.Sum] is { IsNumber: true } sum => $"Sum {sum.Number:N2}",
+            { Status: SelectionSummaryStatus.Answered } => "no numbers selected",
+            { Status: SelectionSummaryStatus.Pending } => "…",
+            _ => "select two cells or more",
+        };
+    }
+}

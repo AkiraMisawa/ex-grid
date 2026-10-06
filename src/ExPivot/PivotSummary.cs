@@ -37,38 +37,46 @@ internal static class PivotSummary
 
         var cells = new GridSummaryCells();
         var rows = report.Rows;
-        foreach (var (top, bottom, bandColumns) in GridSummary.Bands(request.Ranges, rows.Count, request.Columns.Count))
+        foreach (var (r, c) in GridSummary.Cells(request, rows.Count))
         {
-            for (var r = top; r < bottom; r++)
+            if (columns[c] is not { } column)
+                continue;
+            var row = rows[r];
+            if (!column.IsValue)
             {
-                var row = rows[r];
-                foreach (var c in bandColumns)
-                {
-                    if (columns[c] is not { } column)
-                        continue;
-                    if (!column.IsValue)
-                    {
-                        if (!string.IsNullOrEmpty(row.Labels[column.Index].Text))
-                            cells.AddOther();
-                        continue;
-                    }
-                    switch (row.ValueAt(column.Index))
-                    {
-                        case null:
-                            break;
-                        case { IsError: true }:
-                            cells.AddError();
-                            break;
-                        case { Exact: { } exact }:
-                            cells.AddNumber(exact);
-                            break;
-                        case { } value:
-                            cells.AddNumber(value.Number);
-                            break;
-                    }
-                }
+                if (!string.IsNullOrEmpty(row.Labels[column.Index].Text))
+                    cells.AddOther();
+                continue;
+            }
+            switch (row.ValueAt(column.Index))
+            {
+                case null:
+                    break;
+                case { IsError: true }:
+                    cells.AddError();
+                    break;
+                case { Exact: { } exact }:
+                    cells.AddNumber(exact);
+                    break;
+                case { } value:
+                    cells.AddNumber(value.Number);
+                    break;
             }
         }
-        return cells.Answer(request.Figures);
+        // Shown in the Focus cell's Value Field format, as the report shows that cell — Excel's status
+        // bar shows its figures in the active cell's format.
+        Func<object, string?>? textOf = null;
+        if (request.Focus is { } focus && focus.Row < rows.Count && focus.Column < columns.Length
+            && columns[focus.Column] is { IsValue: true } focused)
+        {
+            var valueField = report.ValueFieldAt(rows[focus.Row], focused.Index);
+            if (valueField >= 0 && valueField < report.Layout.Values.Count)
+            {
+                var field = report.Layout.Values[valueField];
+                var format = field.NumberFormat ?? (field.ShowValuesAs != PivotShowValuesAs.NoCalculation ? "0.00%" : "G15");
+                textOf = figure => ((IFormattable)figure).ToString(format, report.Culture);
+            }
+        }
+        return cells.Answer(request.Figures, textOf);
     }
 }

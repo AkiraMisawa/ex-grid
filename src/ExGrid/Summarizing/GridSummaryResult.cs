@@ -10,10 +10,12 @@ namespace ExGrid.Summarizing;
 public sealed class GridSummaryResult
 {
     private readonly Dictionary<SummaryFigures, AggregateResult> _figures;
+    private readonly Dictionary<SummaryFigures, string> _texts;
 
-    private GridSummaryResult(Dictionary<SummaryFigures, AggregateResult> figures, string? declined)
+    private GridSummaryResult(Dictionary<SummaryFigures, AggregateResult> figures, Dictionary<SummaryFigures, string> texts, string? declined)
     {
         _figures = figures;
+        _texts = texts;
         DeclineReason = declined;
     }
 
@@ -22,11 +24,14 @@ public sealed class GridSummaryResult
     public static GridSummaryResult Declined(string reason)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
-        return new([], reason);
+        return new([], [], reason);
     }
 
-    /// <summary>The figures answered, each a single figure.</summary>
-    public static GridSummaryResult Answered(IReadOnlyDictionary<SummaryFigures, AggregateResult> figures)
+    /// <summary>The figures answered, each a single figure, and — where the answerer formats cells
+    /// itself — the text each is shown with, in the format of the request's Focus. A figure with no
+    /// text is formatted by the grid.</summary>
+    public static GridSummaryResult Answered(
+        IReadOnlyDictionary<SummaryFigures, AggregateResult> figures, IReadOnlyDictionary<SummaryFigures, string>? texts = null)
     {
         ArgumentNullException.ThrowIfNull(figures);
         var copy = new Dictionary<SummaryFigures, AggregateResult>();
@@ -36,7 +41,14 @@ public sealed class GridSummaryResult
                 throw new ArgumentException($"'{figure}' is not a single figure (ADR-0130).", nameof(figures));
             copy[figure] = result;
         }
-        return new(copy, null);
+        var shown = new Dictionary<SummaryFigures, string>();
+        foreach (var (figure, text) in texts ?? new Dictionary<SummaryFigures, string>())
+        {
+            if (!copy.ContainsKey(figure))
+                throw new ArgumentException($"'{figure}' has a text and no answer (ADR-0130).", nameof(texts));
+            shown[figure] = text;
+        }
+        return new(copy, shown, null);
     }
 
     /// <summary>Whether the answerer declined.</summary>
@@ -56,6 +68,9 @@ public sealed class GridSummaryResult
             return figures;
         }
     }
+
+    /// <summary>The text the answerer gave a figure, or null for the grid to format it.</summary>
+    public string? TextOf(SummaryFigures figure) => _texts.TryGetValue(figure, out var text) ? text : null;
 
     /// <summary>A figure's answer, or null where it was not answered.</summary>
     public AggregateResult? this[SummaryFigures figure] => _figures.TryGetValue(figure, out var result) ? result : null;

@@ -47,7 +47,7 @@
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
-        OnSummarize="_summarize" SummaryFigures="_summaryFigures" SummaryFiguresChanged="_summaryFiguresChanged" OnSelectionSummaryChanged="OnSelectionSummaryChanged"
+        OnSummarize="_summarize" ShowSelectionSummary="ShowSelectionSummary" SummaryFigures="_summaryFigures.Shown" SummaryFiguresChanged="_summaryFiguresChanged" OnSelectionSummaryChanged="OnSelectionSummaryChanged"
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
         DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" OnBrowserTimeZone="_browserTimeZone" />
@@ -109,8 +109,7 @@
     // which this component holds as the grid's Consumer — so the figures menu works on every Sheet.
     private readonly Func<global::ExGrid.Summarizing.GridSummaryRequest, CancellationToken, Task<global::ExGrid.Summarizing.GridSummaryResult>> _summarize;
     private readonly EventCallback<global::ExGrid.Summarizing.SummaryFigures> _summaryFiguresChanged;
-    private global::ExGrid.Summarizing.SummaryFigures _summaryFigures = global::ExGrid.Summarizing.SummaryFigures.Default;
-    private global::ExGrid.Summarizing.SummaryFigures? _summaryFiguresHanded;
+    private readonly global::ExGrid.Summarizing.HeldSummaryFigures _summaryFigures = new();
     private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _rowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
     private readonly EventCallback<string> _browserTimeZone;
@@ -204,7 +203,7 @@
         _summaryFiguresChanged = new EventCallback<global::ExGrid.Summarizing.SummaryFigures>(null,
             (Func<global::ExGrid.Summarizing.SummaryFigures, Task>)(async figures =>
             {
-                _summaryFigures = figures;
+                _summaryFigures.Choose(figures);
                 StateHasChanged();
                 await SummaryFiguresChanged.InvokeAsync(figures);
             }));
@@ -303,6 +302,9 @@
     /// default. The Sheet holds the choice made in the figures menu from then on; a new value handed
     /// here replaces it.</summary>
     [Parameter] public global::ExGrid.Summarizing.SummaryFigures SummaryFigures { get; set; } = global::ExGrid.Summarizing.SummaryFigures.Default;
+
+    /// <summary>Whether the Selection Summary is shown under the Sheet (ADR-0130): on by default.</summary>
+    [Parameter] public bool ShowSelectionSummary { get; set; } = true;
 
     /// <summary>Raised when the figures menu changes the figures shown (ADR-0130).</summary>
     [Parameter] public EventCallback<global::ExGrid.Summarizing.SummaryFigures> SummaryFiguresChanged { get; set; }
@@ -464,12 +466,7 @@
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
-        // A value handed in replaces the menu's choice; the same value handed again does not.
-        if (_summaryFiguresHanded != SummaryFigures)
-        {
-            _summaryFiguresHanded = SummaryFigures;
-            _summaryFigures = SummaryFigures;
-        }
+        _summaryFigures.Adopt(SummaryFigures);
         RefuseUnreachableRows();
         BindPointingScope();
         ResolveToolbar();

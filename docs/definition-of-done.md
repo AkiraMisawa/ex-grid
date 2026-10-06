@@ -1267,7 +1267,7 @@ then relies on move into the release.
 [ADR-0130](adr/0130-the-selection-summary-is-asked-of-the-consumer-like-find.md).)* The grid asks
 and shows; whoever holds the data answers. These criteria hold the core to asking only the current
 question and showing only its answer, and `GridSource.From` to what each figure means. SM-1 to
-SM-11 gate ExGrid's release (§2); SM-12 and SM-13 judge ExSheet and ExPivot.
+SM-11 and SM-14 gate ExGrid's release (§2); SM-12 and SM-13 judge ExSheet and ExPivot.
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
@@ -1282,5 +1282,6 @@ SM-11 gate ExGrid's release (§2); SM-12 and SM-13 judge ExSheet and ExPivot.
 | **SM-9** | MUST | The built-in Chrome shows Average, Count and Sum by default in the status line whenever two or more cells are selected — the line standing whenever the grid can summarise, so selecting never moves the Viewport — formatted by the Focus's column's format until Excel's rule is recorded; the right-click menu reports a change of figures and the grid holds none (ADR-0130/0010) | Layer 2 + Layer 3 under both Chromes | as stated |
 | **SM-10** | MUST | The figures are not written to a live region (ADR-0130/0033) | Layer 2 | no announcement on a selection change |
 | **SM-11** | MUST | Behaviour is the core's: SM-2, SM-4 and SM-9 pass with `MudGridChrome` exactly as with the built-in Chrome (ADR-0130/0010) | Layer 3, under both Chromes | identical outcomes |
+| **SM-14** | MUST | `ShowSelectionSummary` is on by default; off, no strip, no request and no figure, whoever could answer; switched on again, the standing selection is asked about. ExSheet and ExPivot carry it to their grid (ADR-0130, 2026-10-06) | Layer 2 | as stated |
 | **SM-12** | MUST | ExSheet answers from its own cells: a formula's value, every cell of a spilled array, by the same table (ADR-0130) | Layer 1 | as stated |
 | **SM-13** | MUST | ExPivot answers from the cells it lays out, subtotals and grand totals summed with the rest (ADR-0130) | Layer 2 | as stated |

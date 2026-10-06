@@ -9,16 +9,7 @@ namespace ExGrid.Chrome;
 public static class SummaryLabelIds
 {
     /// <summary>The id of a single figure's name.</summary>
-    public static string For(Summarizing.SummaryFigures figure) => figure switch
-    {
-        Summarizing.SummaryFigures.Average => Average,
-        Summarizing.SummaryFigures.Count => Count,
-        Summarizing.SummaryFigures.NumericalCount => NumericalCount,
-        Summarizing.SummaryFigures.Min => Min,
-        Summarizing.SummaryFigures.Max => Max,
-        Summarizing.SummaryFigures.Sum => Sum,
-        _ => throw new ArgumentOutOfRangeException(nameof(figure), figure, "One figure, not a combination."),
-    };
+    public static string For(Summarizing.SummaryFigures figure) => Summarizing.SummaryFigureOrder.LabelIdOf(figure);
 
     /// <summary>Average.</summary>
     public const string Average = "summary-average";

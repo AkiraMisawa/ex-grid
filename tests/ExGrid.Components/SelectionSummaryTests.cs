@@ -99,6 +99,7 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Equal(7, request.RowSequenceVersion);
         Assert.Equal(["Book", "Amount", "AsOf"], request.Columns);
         Assert.Equal(SummaryFigures.Default, request.Figures);
+        Assert.Equal(new CellPosition(0, 1), request.Focus);
     }
 
     [Fact] // ADR-0130 / SM-9: the default figures, in Excel's order, the Focus's column's format applied
@@ -215,6 +216,25 @@ public class SelectionSummaryTests : GridTestContext
         Assert.False(cut.Instance.CanSummarize);
         Assert.Empty(cut.FindAll(".ex-summary"));
         Assert.Empty(cut.FindAll(".ex-status"));
+    }
+
+    [Fact] // ADR-0130 / SM-14: switched off, the grid shows no strip and asks nothing, whoever could answer
+    public async Task ADR0130_switched_off_nothing_is_shown_or_asked()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard, (_, _) => Task.FromResult(Answer(sum: 0m)));
+        cut.Render(ps => ps.Add(g => g.ShowSelectionSummary, false));
+        await ClickCellAsync(cut, 150, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+
+        Assert.True(cut.Instance.CanSummarize);
+        Assert.Empty(heard.Requests);
+        Assert.Empty(cut.FindAll(".ex-summary"));
+        Assert.Empty(cut.FindAll(".ex-status"));
+
+        // Switched back on, the standing selection is asked about.
+        cut.Render(ps => ps.Add(g => g.ShowSelectionSummary, true));
+        Assert.Single(heard.Requests);
     }
 
     [Fact] // ADR-0130 / SM-5: OnSummarize beside a bound Source is refused by name
@@ -357,6 +377,23 @@ public class SelectionSummaryTests : GridTestContext
         await PressAsync(cut, "ArrowDown", shift: true);
 
         cut.WaitForAssertion(() => Assert.Equal("Average: #NUM!Count: 2Sum: #NUM!", SummaryText(cut)));
+    }
+
+    [Fact] // ADR-0130: a figure's text from the answerer is shown as it is; a figure without one is the grid's
+    public async Task ADR0130_an_answerers_text_is_shown()
+    {
+        var cut = RenderGrid(new Heard(), (request, _) => Task.FromResult(GridSummaryResult.Answered(
+            new Dictionary<SummaryFigures, AggregateResult>
+            {
+                [SummaryFigures.Average] = AggregateResult.Of(1.5m),
+                [SummaryFigures.Count] = AggregateResult.Of(2m),
+                [SummaryFigures.Sum] = AggregateResult.Of(3m),
+            },
+            new Dictionary<SummaryFigures, string> { [SummaryFigures.Sum] = "¥3" })));
+        await ClickCellAsync(cut, 150, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+
+        cut.WaitForAssertion(() => Assert.Equal("Average: 1.5Count: 2Sum: ¥3", SummaryText(cut)));
     }
 
     private static GridSummaryResult Answer(decimal sum) => GridSummaryResult.Answered(

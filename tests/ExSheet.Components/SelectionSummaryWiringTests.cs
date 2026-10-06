@@ -53,4 +53,28 @@ public class SelectionSummaryWiringTests : SheetTestContext
 
         cut.WaitForAssertion(() => Assert.Contains("Sum: 1", Summary(cut)));
     }
+
+    [Fact] // ADR-0130 / SM-14: switched off, the Sheet's grid shows no summary
+    public async Task ADR0130_switched_off_the_sheet_shows_no_summary()
+    {
+        var cut = RenderSheet(ps => ps.Add(p => p.ShowSelectionSummary, false));
+        await EnterAsync(cut, "A1", "1");
+        await EnterAsync(cut, "A2", "2");
+
+        await GoToAsync(cut, "A1:A2");
+
+        Assert.Empty(cut.FindAll(".ex-summary"));
+    }
+
+    [Fact] // ADR-0130: the figures are shown in the Focus cell's Number Format, as Excel's status bar shows them
+    public async Task ADR0130_the_figures_wear_the_focus_cells_number_format()
+    {
+        var cut = RenderSheet();
+        await EnterAsync(cut, "A1", "1234");
+        await EnterAsync(cut, "A2", "1000.5");
+        await GoToAsync(cut, "A1:A2");
+        await cut.InvokeAsync(() => cut.Instance.SetNumberFormatAsync(global::ExSheet.Engine.NumberFormat.Parse("#,##0.00")));
+
+        cut.WaitForAssertion(() => Assert.Equal("Average: 1,117.25Count: 2Sum: 2,234.50", Summary(cut)));
+    }
 }

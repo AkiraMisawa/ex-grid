@@ -54,4 +54,16 @@ public class SelectionSummaryTests : PivotTestContext
 
         cut.WaitForAssertion(() => Assert.Equal("Average: 95Count: 4Sum: 190", Summary(cut)));
     }
+
+    [Fact] // ADR-0130 / SM-14: switched off, the report's grid shows no summary
+    public async Task ADR0130_switched_off_the_report_shows_no_summary()
+    {
+        var cut = RenderPivot(RegionAmount, ps => ps.Add(p => p.ShowSelectionSummary, false));
+        var version = Grid(cut).Instance.RowSequenceVersion;
+
+        await cut.InvokeAsync(() => Grid(cut).Instance.PlaceSelectionAsync(new SelectionRange(0, 1, 5, 1), new CellPosition(0, 1), version));
+
+        Assert.False(Grid(cut).Instance.ShowSelectionSummary);
+        Assert.Empty(cut.FindAll(".ex-summary"));
+    }
 }

@@ -98,6 +98,15 @@
         <DocsExample Builtin="typeof(UndoRedo)" Mud="typeof(UndoRedoMud)" Files="@(["Examples/Sheet/Expenses.cs"])" />
     </DocsSection>
 
+    <DocsSection Title="Status-bar figures">
+        <p>
+            Select cells and the line under the Sheet shows Excel's Average, Count and Sum; right-click it to
+            choose among all six. The Sheet answers from its own cells: a Formula's value, never its text, and
+            every cell an array spills into. A date is a number here, as in Excel. An error among the cells
+            leaves Count alone. <code>ShowSelectionSummary="false"</code> turns the line off.
+        </p>
+    </DocsSection>
+
     <DocsSection Title="See it in an application">
         <p>
             The <MudLink Href="showcase/budget" Target="_blank">budget sheet showcase</MudLink> is a departmental

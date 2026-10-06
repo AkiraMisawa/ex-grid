@@ -36,29 +36,39 @@ public enum SummaryFigures
     All = Average | Count | NumericalCount | Min | Max | Sum,
 }
 
-/// <summary>The figures one at a time, in the order Excel's status bar shows them.</summary>
+/// <summary>
+/// The figures one at a time, in the order Excel's status bar shows them, and what each one is: the
+/// id of its name, the Aggregation it means, and whether it counts cells rather than reading their
+/// numbers. One table, which every place that asks about a figure reads (ADR-0130).
+/// </summary>
 public static class SummaryFigureOrder
 {
-    /// <summary>Average, Count, Numerical Count, Min, Max, Sum.</summary>
-    public static IReadOnlyList<SummaryFigures> Each { get; } =
+    private sealed record Entry(SummaryFigures Figure, string LabelId, ExGrid.Data.Aggregation Aggregation, bool IsCount);
+
+    private static readonly Entry[] Table =
     [
-        SummaryFigures.Average, SummaryFigures.Count, SummaryFigures.NumericalCount,
-        SummaryFigures.Min, SummaryFigures.Max, SummaryFigures.Sum,
+        new(SummaryFigures.Average, Chrome.SummaryLabelIds.Average, ExGrid.Data.Aggregation.Average, false),
+        new(SummaryFigures.Count, Chrome.SummaryLabelIds.Count, ExGrid.Data.Aggregation.Count, true),
+        new(SummaryFigures.NumericalCount, Chrome.SummaryLabelIds.NumericalCount, ExGrid.Data.Aggregation.CountNumbers, true),
+        new(SummaryFigures.Min, Chrome.SummaryLabelIds.Min, ExGrid.Data.Aggregation.Min, false),
+        new(SummaryFigures.Max, Chrome.SummaryLabelIds.Max, ExGrid.Data.Aggregation.Max, false),
+        new(SummaryFigures.Sum, Chrome.SummaryLabelIds.Sum, ExGrid.Data.Aggregation.Sum, false),
     ];
+
+    /// <summary>Average, Count, Numerical Count, Min, Max, Sum.</summary>
+    public static IReadOnlyList<SummaryFigures> Each { get; } = [.. Table.Select(entry => entry.Figure)];
 
     /// <summary>Whether a single figure counts cells — Count and Numerical Count — rather than reading
     /// their numbers.</summary>
-    public static bool IsCount(SummaryFigures figure) => figure is SummaryFigures.Count or SummaryFigures.NumericalCount;
+    public static bool IsCount(SummaryFigures figure) => Of(figure).IsCount;
 
     /// <summary>The Aggregation a single figure means.</summary>
-    public static ExGrid.Data.Aggregation AggregationOf(SummaryFigures figure) => figure switch
-    {
-        SummaryFigures.Average => ExGrid.Data.Aggregation.Average,
-        SummaryFigures.Count => ExGrid.Data.Aggregation.Count,
-        SummaryFigures.NumericalCount => ExGrid.Data.Aggregation.CountNumbers,
-        SummaryFigures.Min => ExGrid.Data.Aggregation.Min,
-        SummaryFigures.Max => ExGrid.Data.Aggregation.Max,
-        SummaryFigures.Sum => ExGrid.Data.Aggregation.Sum,
-        _ => throw new ArgumentOutOfRangeException(nameof(figure), figure, "One figure, not a combination."),
-    };
+    public static ExGrid.Data.Aggregation AggregationOf(SummaryFigures figure) => Of(figure).Aggregation;
+
+    /// <summary>The id of a single figure's name (<see cref="Chrome.SummaryLabelIds"/>).</summary>
+    public static string LabelIdOf(SummaryFigures figure) => Of(figure).LabelId;
+
+    private static Entry Of(SummaryFigures figure)
+        => Array.Find(Table, entry => entry.Figure == figure)
+            ?? throw new ArgumentOutOfRangeException(nameof(figure), figure, "One figure, not a combination.");
 }

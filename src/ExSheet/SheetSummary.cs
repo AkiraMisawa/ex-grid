@@ -50,7 +50,14 @@ internal static class SheetSummary
                     break;
             }
         }
-        return cells.Answer(request.Figures);
+        // Shown in the Focus cell's Number Format, as Excel's status bar shows its figures.
+        var focus = request.Focus is { } at && at.Column < request.Columns.Count
+            && CellAddress.TryParseColumn(request.Columns[at.Column], out var focusColumn)
+            ? new CellAddress(at.Row, focusColumn)
+            : (CellAddress?)null;
+        return cells.Answer(request.Figures, focus is { } cell
+            ? figure => sheet.FormatAs(cell, Convert.ToDouble(figure, System.Globalization.CultureInfo.InvariantCulture))
+            : null);
     }
 
     // A cell covered by two ranges is one address, visited once.

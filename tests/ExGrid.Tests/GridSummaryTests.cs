@@ -206,6 +206,12 @@ public class GridSummaryTests
             source.SummarizeAsync(Ask(SummaryFigures.Sum, new SelectionRange(0, 0, 1, 1)), CancellationToken.None));
     }
 
+    [Fact] // ADR-0130: a text for a figure that was not answered is refused by name
+    public void ADR0130_a_text_without_an_answer_is_refused()
+        => Assert.Throws<ArgumentException>(() => GridSummaryResult.Answered(
+            new Dictionary<SummaryFigures, AggregateResult> { [SummaryFigures.Sum] = AggregateResult.Of(1m) },
+            new Dictionary<SummaryFigures, string> { [SummaryFigures.Average] = "1" }));
+
     [Fact] // ADR-0130: an answer names single figures, never a combination
     public void ADR0130_an_answer_names_single_figures()
         => Assert.Throws<ArgumentException>(() => GridSummaryResult.Answered(

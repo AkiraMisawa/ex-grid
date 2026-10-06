@@ -35,7 +35,7 @@ internal static class TradeSummarySql
     {
         ArgumentNullException.ThrowIfNull(read);
         ArgumentNullException.ThrowIfNull(request);
-        var accumulator = new AggregateAccumulator();
+        var cells = new GridSummaryCells();
         var rows = (int)Math.Min(read.Trades, int.MaxValue);
         foreach (var (top, bottom, columns) in GridSummary.Bands(request.Ranges, rows, request.Columns.Count))
         {
@@ -52,16 +52,16 @@ internal static class TradeSummarySql
                 var count = reader.GetInt64(0);
                 if (!column.IsNumber || count == 0)
                 {
-                    accumulator.Merge(new AggregateCounts { Values = count }, default, default);
+                    cells.Merge(new AggregateCounts { Values = count }, default, default);
                     continue;
                 }
-                accumulator.Merge(
+                cells.Merge(
                     new AggregateCounts { Values = count, Numbers = count },
                     new AggregateSum { Exact = Read(reader, 1) * column.Scale },
                     new AggregateExtremes { ExactMin = Read(reader, 2) * column.Scale, ExactMax = Read(reader, 3) * column.Scale });
             }
         }
-        return GridSummary.Answer(accumulator, request.Figures);
+        return cells.Answer(request.Figures);
     }
 
     private static decimal Read(SqliteDataReader reader, int ordinal) => reader.GetInt64(ordinal);

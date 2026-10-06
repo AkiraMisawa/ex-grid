@@ -75,13 +75,16 @@ public partial class ExPivot
     // every report.
     private readonly Func<GridSummaryRequest, CancellationToken, Task<GridSummaryResult>> _summarize;
     private readonly EventCallback<SummaryFigures> _summaryFiguresChanged;
-    private SummaryFigures _summaryFigures = SummaryFigures.Default;
-    private SummaryFigures? _summaryFiguresHanded;
+    private readonly HeldSummaryFigures _summaryFigures = new();
+    private bool _showSelectionSummary = true;
 
     /// <summary>The Selection Summary's figures over the report (ADR-0130): Excel's Average, Count
     /// and Sum by default. The report holds the choice made in the figures menu from then on; a new
     /// value handed here replaces it.</summary>
     [Parameter] public SummaryFigures SummaryFigures { get; set; } = SummaryFigures.Default;
+
+    /// <summary>Whether the Selection Summary is shown under the report (ADR-0130): on by default.</summary>
+    [Parameter] public bool ShowSelectionSummary { get; set; } = true;
 
     /// <summary>Raised when the figures menu changes the figures shown (ADR-0130).</summary>
     [Parameter] public EventCallback<SummaryFigures> SummaryFiguresChanged { get; set; }
@@ -90,19 +93,19 @@ public partial class ExPivot
     /// figures elsewhere.</summary>
     [Parameter] public EventCallback<SelectionSummary> OnSelectionSummaryChanged { get; set; }
 
-    // A value handed in replaces the menu's choice; the same value handed again does not.
+    // What the grid reads of the Selection Summary, from the parameters; the grid is drawn again
+    // only when it moved (PivotGridHost).
     private void AdoptSummaryFigures()
     {
-        if (_summaryFiguresHanded == SummaryFigures)
-            return;
-        _summaryFiguresHanded = SummaryFigures;
-        _summaryFigures = SummaryFigures;
-        _gridVersion++;
+        var moved = _summaryFigures.Adopt(SummaryFigures) | _showSelectionSummary != ShowSelectionSummary;
+        _showSelectionSummary = ShowSelectionSummary;
+        if (moved)
+            _gridVersion++;
     }
 
     private async Task OnSummaryFiguresChangedAsync(SummaryFigures figures)
     {
-        _summaryFigures = figures;
+        _summaryFigures.Choose(figures);
         _gridVersion++;
         StateHasChanged();
         await SummaryFiguresChanged.InvokeAsync(figures);
@@ -490,11 +493,12 @@ public partial class ExPivot
         builder.AddComponentParameter(23, nameof(ExGrid<PivotReportRow>.ChangeHighlightDuration), ChangeHighlightDuration);
         builder.AddComponentParameter(24, nameof(ExGrid<PivotReportRow>.Clock), _time);
         builder.AddComponentParameter(26, nameof(ExGrid<PivotReportRow>.OnSummarize), _summarize);
-        builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures);
+        builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures.Shown);
         builder.AddComponentParameter(28, nameof(ExGrid<PivotReportRow>.SummaryFiguresChanged), _summaryFiguresChanged);
+        builder.AddComponentParameter(29, nameof(ExGrid<PivotReportRow>.ShowSelectionSummary), _showSelectionSummary);
         if (OnSelectionSummaryChanged.HasDelegate)
-            builder.AddComponentParameter(29, nameof(ExGrid<PivotReportRow>.OnSelectionSummaryChanged), OnSelectionSummaryChanged);
-        builder.AddComponentReferenceCapture(30, grid => _grid = (ExGrid<PivotReportRow>)grid);
+            builder.AddComponentParameter(30, nameof(ExGrid<PivotReportRow>.OnSelectionSummaryChanged), OnSelectionSummaryChanged);
+        builder.AddComponentReferenceCapture(31, grid => _grid = (ExGrid<PivotReportRow>)grid);
         builder.CloseComponent();
     }
 

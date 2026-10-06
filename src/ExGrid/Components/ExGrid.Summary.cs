@@ -27,6 +27,11 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public Func<GridSummaryRequest, CancellationToken, Task<GridSummaryResult>>? OnSummarize { get; set; }
 
+    /// <summary>Whether the Selection Summary is shown (ADR-0130): on by default, so a grid that can
+    /// summarise shows Excel's status-bar figures without being asked. Off: no strip, no question
+    /// asked, no figure — the grid is as it was before the Selection Summary.</summary>
+    [Parameter] public bool ShowSelectionSummary { get; set; } = true;
+
     /// <summary>The figures the status line shows — Excel's Average, Count and Sum by default
     /// (ADR-0130). The Consumer's state: the figures menu reports a change through
     /// <see cref="SummaryFiguresChanged"/>, and the grid holds none.</summary>
@@ -60,11 +65,11 @@ public partial class ExGrid<TRow>
     private int? _summaryRowsTotal;
 
     private sealed record SummaryQuestion(
-        IReadOnlyList<SelectionRange> Ranges, int Version, string[] Columns, SummaryFigures Figures, int RowsStamp);
+        IReadOnlyList<SelectionRange> Ranges, CellPosition Focus, int Version, string[] Columns, SummaryFigures Figures, int RowsStamp);
 
     /// <summary>The status line stands whenever the grid can summarise, figures or none, so the
     /// strip the Viewport gives it does not come and go with every selection (ADR-0130).</summary>
-    private bool ShowsSummaryStrip => CanSummarize;
+    private bool ShowsSummaryStrip => ShowSelectionSummary && CanSummarize;
 
     /// <summary>
     /// Notes whether the rows moved under the positions the Window held before (ADR-0130): the
@@ -123,7 +128,7 @@ public partial class ExGrid<TRow>
     private void ReviewSummary()
     {
         var selection = _selection.Selection;
-        var asks = CanSummarize && SummaryFigures != SummaryFigures.None && SelectsTwoCells(selection);
+        var asks = ShowsSummaryStrip && SummaryFigures != SummaryFigures.None && SelectsTwoCells(selection);
         if (!asks)
         {
             if (_summaryQuestion is null && _summary.Status == SelectionSummaryStatus.None)
@@ -138,7 +143,7 @@ public partial class ExGrid<TRow>
         // Compared in place: this runs on every render of the root, and a question unchanged —
         // the common case, a scroll — allocates nothing.
         if (_summaryQuestion is { } standing && standing.Version == _sequenceVersion && standing.Figures == figures
-            && standing.RowsStamp == _summaryRowsStamp && SameColumns(standing.Columns)
+            && standing.RowsStamp == _summaryRowsStamp && standing.Focus == selection.Focus && SameColumns(standing.Columns)
             && (ReferenceEquals(standing.Ranges, selection.Ranges) || standing.Ranges.SequenceEqual(selection.Ranges)))
         {
             return;
@@ -148,7 +153,7 @@ public partial class ExGrid<TRow>
         for (var i = 0; i < Columns.Count; i++)
             names[i] = Columns[i].Name;
         CancelSummary();
-        _summaryQuestion = new SummaryQuestion(selection.Ranges, _sequenceVersion, names, figures, _summaryRowsStamp);
+        _summaryQuestion = new SummaryQuestion(selection.Ranges, selection.Focus, _sequenceVersion, names, figures, _summaryRowsStamp);
         _summary = new SelectionSummary(SelectionSummaryStatus.Pending, RequestFor(_summaryQuestion), null);
         _summaryAskOwed = true;
         _summaryRaiseOwed = true;
@@ -187,6 +192,7 @@ public partial class ExGrid<TRow>
         Columns = question.Columns,
         RowSequenceVersion = question.Version,
         Figures = question.Figures,
+        Focus = question.Focus,
     };
 
     private void CancelSummary()
@@ -277,7 +283,7 @@ public partial class ExGrid<TRow>
         foreach (var figure in SummaryFigureOrder.Each)
         {
             if (result[figure] is { IsNumber: true } value)
-                texts.Add(new SummaryFigureText(figure, SummaryLabelIds.For(figure), SummaryText(figure, value)));
+                texts.Add(new SummaryFigureText(figure, SummaryLabelIds.For(figure), result.TextOf(figure) ?? SummaryText(figure, value)));
             // A number that is not finite makes the figure #NUM!, which is said rather than left out:
             // a Sum missing from the line reads as nothing to sum (ADR-0060, the spine's first rule).
             else if (result[figure] is { Error: AggregateError.NotANumber })
@@ -290,7 +296,7 @@ public partial class ExGrid<TRow>
     /// A figure's text. Counts are whole numbers in the invariant culture. The others take the
     /// format of the Focus's column where it is a Number column with a format of its own — until
     /// Excel's own rule is read in a Windows run (ADR-0130) — and the number's own text otherwise:
-    /// exact as it is, or a <c>double</c> to fifteen significant digits, as Excel's General shows.
+    /// exact as it is, or a <c>double</c> to ten significant digits, as Excel's status bar shows one.
     /// </summary>
     private string SummaryText(SummaryFigures figure, AggregateResult value)
     {
@@ -312,8 +318,8 @@ public partial class ExGrid<TRow>
             }
         }
         return value.Exact is { } exactValue
-            ? AggregateArithmetic.Canonical(Math.Round(exactValue, 15)).ToString(CultureInfo.InvariantCulture)
-            : value.Number.ToString("G15", CultureInfo.InvariantCulture);
+            ? AggregateArithmetic.Canonical(Math.Round(exactValue, 10)).ToString(CultureInfo.InvariantCulture)
+            : value.Number.ToString("G10", CultureInfo.InvariantCulture);
     }
 
     /// <summary>The status line's summary box: the Chrome's fragment, or the core's own text. The
