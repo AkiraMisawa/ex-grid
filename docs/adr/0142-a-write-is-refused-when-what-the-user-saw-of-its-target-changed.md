@@ -75,6 +75,37 @@ and the user is told why.**
 - **How long the window is depends on the host.** On WebAssembly a press is handled within the
   render it was taken against, so the window is near zero. On a circuit it is a round trip.
 
+## Settled while building it
+
+*(2026-10-06, decided with the user — D1 to D5 — when the first build met the bundled sources.)*
+
+- **The user's own writes count as seen** (D1). A cell that one of the user's own earlier gestures
+  wrote, after the render a later gesture was taken against, is not compared for that gesture.
+  - The user knows what they wrote. Without this, `5` Enter ↑ Ctrl+V typed at machine speed on a
+    circuit would refuse the paste, because the render the paste was taken against did not yet show
+    the 5; on WebAssembly the same keys would paste.
+  - Rejected: judging a held key against the render when it is handed on (D1, option c). That
+    would miss a change made upstream while the key was held.
+- **The editor keeps the painted text of the render the gesture that opened it was taken against**
+  (D2), with the rule above. Keeping the text when the editor opens left a round trip between the
+  key and the open in which an upstream change went unseen.
+- **Delete, Ctrl+D and Ctrl+R are writes**, and follow the rule as a paste does (D3).
+- **A fill also judges its source** (D4). A fill-handle drag, Ctrl+D and Ctrl+R write the values of
+  their source cells. If a painted source cell's text changed, the fill would write values the user
+  did not see, so it is refused.
+- **A bound source puts out what it has gathered before a write is judged** (D5).
+  - The grid asks the source first, so the write is judged against the newest version, and the
+    Edit Intent carries that version.
+  - Without it, a commit made while `GridSource.From` was gathering passed the grid's check, and
+    the source's `ReplaceRow` then refused it with an exception the user never heard of. A
+    gathered change to the edited cell itself would have been written over unseen.
+  - A user's gesture brings the change forward, as in ExPivot
+    ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)).
+- **With a Row Key, an Action press is paired with its row by key**
+  ([ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md)).
+  Without one, a press whose row moved cannot be paired, and is refused as taken against a render no
+  longer kept.
+
 ## Considered options
 
 - **Refuse when the row's instance changed** (Q5a, option A). Rejected: a row with one
@@ -97,4 +128,4 @@ and the user is told why.**
   through the grid's existing channels and worded by Chrome. The grid holds no strings.
 - **On the Server host, a press on a row that changes faster than a round trip** may be refused more
   than once. Each refusal says why.
-- **The Definition of Done gains LV-11 to LV-14** (§31).
+- **The Definition of Done gains LV-11 to LV-14, LV-16 and LV-17** (§31).

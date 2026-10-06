@@ -72,6 +72,18 @@ changed:
 - **The grid compares a row's values to decide what to repaint, as ag-grid's cells do** (with
   `colDef.equals` or `===`). Rejected by ADR-0068: the grid never compares values itself.
 
+## Settled while building it
+
+*(2026-10-06, decided with the user — D10.)*
+
+- **A Row Key must cost no more to check than the instance did.** With a key, the grid checks a new
+  Window's keys in place of its instances, once per Window.
+  - The first build of ExPivot's key walked each row's path, built an array and hashed it on every
+    check. Over a whole report that cost 149 ms at 400,000 rows, against 10.4 ms for the instances,
+    and 3.6 ms against 0.2 ms at 10,000 rows, on every redraw.
+  - The user did not accept the slowdown. A report row's key is now made once, when the engine
+    builds the row, with its hash computed then, so a check reads it and hashes nothing.
+
 ## Consequences
 
 - **A row's component now lives as long as its key is in the Window**, not as long as its
@@ -86,4 +98,4 @@ changed:
 - **`CONTEXT.md` gains Row Key.** It is distinct from Row Identity, the test for sameness, and from
   Record Key, a Snapshot's declared column. A Snapshot's rows take their Row Key from the Record
   Key.
-- **The Definition of Done gains LV-1 and LV-2** (§31), and PV-42 for ExPivot's key.
+- **The Definition of Done gains LV-1 and LV-2** (§31), and PV-42 and PV-43 for ExPivot's key.

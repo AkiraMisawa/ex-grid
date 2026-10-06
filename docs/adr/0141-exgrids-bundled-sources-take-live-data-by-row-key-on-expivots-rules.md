@@ -139,6 +139,33 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
     to the source, and it judges by key, which is stricter.
 - **A Window that is not vouched for**, such as a Consumer's own, is checked as today.
 
+## Settled while building it
+
+*(2026-10-06, decided with the user — D5, D7 to D9 — when the first build was put together.)*
+
+- **A source puts out what it has gathered when the grid asks, before a write is judged** (D5;
+  [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)).
+  - `GridSource.From` publishes its gathered changes at once, so the write is judged against them,
+    and its `ReplaceRow` takes an edit built on the newest version.
+  - `GridSource.Fetch` has nothing to put out: what it waits for is an answer from the server. A
+    write under it is judged against what was painted, and whether the server's data moved under
+    the write is the Consumer's server's to judge.
+- **A whole new list sets the order** (D7). Rows are paired by key as above, and the source's own
+  order follows the list, as ag-grid's does under `getRowId`. The Row Sequence Version moves when the
+  sequence moved. A reload whose rows come back in a new order is shown in that order.
+- **The in-process path has a demo page of its own** (D8), with 10⁶ rows and Change Batches in the
+  browser, where LV-15 is observed. A second grid on `/grid-live` would have broken that page's
+  checks.
+- **Judgements made while building it** (D9):
+  - **The source's clock is `TimeProvider.System` by default.** A source cannot see the host's
+    services, as a grid can; a test or a host hands it its own.
+  - **A source keeps a cell's change time for `ChangeTimesKeptFor`**, one minute by default. It must
+    be at least the grid's `ChangeHighlightDuration`, or a mark would end early. The times of a
+    removed row are let go at once.
+  - **Reading the Window again after a change does not raise `IsLoading`.** Dimming the grid four
+    times a second would flicker; this is ExPivot's rule.
+  - **The demo server counts a reset as a move of the order.**
+
 ## Considered options
 
 - **Row views over a Snapshot.** Not now, for the reasons above.
@@ -161,4 +188,4 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
     and a row compares it by reference (`ExGridRow.razor:320`). A kept row would therefore still
     render.
 - **ExSheet's live data** remains the subject of its own ADR.
-- **The Definition of Done gains LV-3 to LV-10** (§31).
+- **The Definition of Done gains LV-3 to LV-10 and LV-16** (§31).
