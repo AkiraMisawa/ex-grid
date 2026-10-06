@@ -47,6 +47,9 @@ public class WriteRefusalTests : GridTestContext
 
         /// <summary>What the Consumer does with an Edit Intent beyond hearing it, if anything.</summary>
         public Action<GridEditIntent<TestRow>>? OnEdit { get; set; }
+
+        /// <summary>What the Consumer does with an Action beyond hearing it, if anything.</summary>
+        public Action<GridActionEventArgs<TestRow>>? OnAction { get; set; }
         public List<GridPasteIntent> Pastes { get; } = [];
         public List<PasteRefusalReason> PasteRefusals { get; } = [];
         public List<GridActionEventArgs<TestRow>> Actions { get; } = [];
@@ -82,7 +85,11 @@ public class WriteRefusalTests : GridTestContext
                       i.Refuse();
               })
               .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => heard.PasteRefusals.Add(r))
-              .Add(g => g.OnAction, (GridActionEventArgs<TestRow> a) => heard.Actions.Add(a))
+              .Add(g => g.OnAction, (GridActionEventArgs<TestRow> a) =>
+              {
+                  heard.Actions.Add(a);
+                  heard.OnAction?.Invoke(a);
+              })
               .Add(g => g.OnActionRefused, (GridActionRefusal<TestRow> r) => heard.ActionRefusals.Add(r))
               .Add(g => g.OnFill, (GridFillIntent i) => heard.Fills.Add(i))
               .Add(g => g.OnClear, (GridClearIntent i) => heard.Clears.Add(i));
@@ -1180,7 +1187,11 @@ public class WriteRefusalTests : GridTestContext
                       i.Refuse();
               })
               .Add(g => g.OnPasteRefused, (PasteRefusalReason r) => heard.PasteRefusals.Add(r))
-              .Add(g => g.OnAction, (GridActionEventArgs<TestRow> a) => heard.Actions.Add(a))
+              .Add(g => g.OnAction, (GridActionEventArgs<TestRow> a) =>
+              {
+                  heard.Actions.Add(a);
+                  heard.OnAction?.Invoke(a);
+              })
               .Add(g => g.OnActionRefused, (GridActionRefusal<TestRow> r) => heard.ActionRefusals.Add(r))
               .Add(g => g.OnFill, (GridFillIntent i) => heard.Fills.Add(i))
               .Add(g => g.OnClear, (GridClearIntent i) => heard.Clears.Add(i));
@@ -1430,6 +1441,62 @@ public class WriteRefusalTests : GridTestContext
         Assert.Equal(1, source.Asked);
         Assert.Empty(heard.Actions);
         Assert.Equal(ActionRefusalReason.RowChanged, Assert.Single(heard.ActionRefusals).Reason);
+    }
+
+    [Fact] // ADR-0142 D5 / LV-16, LV-12: a press the gathered change does not refuse fires with the newest version, as an Edit Intent carries it
+    public async Task An_action_press_fires_with_the_gathered_row()
+    {
+        var rows = TestRows.Many(50);
+        var source = new GatheringSource(rows);
+        var heard = new Heard();
+        var cut = RenderSourceGrid(source, heard, WithAction());
+        var pressedOn = Paint(cut);
+        // A change to a field no column paints: nothing the user saw moved.
+        var gathered = (TestRow[])rows.Clone();
+        gathered[0] = new TestRow { Book = rows[0].Book, Amount = rows[0].Amount, AsOf = new DateTime(2030, 1, 1), Active = rows[0].Active };
+        source.Gather(gathered);
+
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(pressedOn));
+        await cut.FindAll(".ex-action")[0].ClickAsync(new MouseEventArgs());
+
+        Assert.Empty(heard.ActionRefusals);
+        Assert.Same(gathered[0], Assert.Single(heard.Actions).Row);
+    }
+
+    [Fact] // ADR-0141/0142 D5 / LV-16: with GridSource.From gathering, an Action whose handler writes its row back is not refused as stale
+    public async Task An_action_on_GridSource_From_writes_back_after_a_gathered_change()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var source = GridSource.From(rows, r => r.Book, Clock);
+        var thrown = new List<Exception>();
+        heard.OnAction = action =>
+        {
+            try
+            {
+                var row = action.Row;
+                source.ReplaceRow(row, new TestRow { Book = row.Book, Amount = 0m, AsOf = row.AsOf, Active = row.Active });
+            }
+            catch (Exception error)
+            {
+                thrown.Add(error);
+            }
+        };
+        var cut = RenderSourceGrid(source, heard, WithAction());
+        source.Apply(new(changed: [Changed(rows, 5, amount: 55m)[5]]));
+        var pressedOn = Paint(cut);
+        var later = new DateTime(2030, 1, 1);
+        source.Apply(new(changed: [new TestRow { Book = rows[0].Book, Amount = rows[0].Amount, AsOf = later, Active = rows[0].Active }]));
+        Assert.NotEqual(later, source.Window[0].AsOf);
+
+        await cut.InvokeAsync(() => cut.Instance.ActionPressTakenAt(pressedOn));
+        await cut.FindAll(".ex-action")[0].ClickAsync(new MouseEventArgs());
+
+        Assert.Empty(heard.ActionRefusals);
+        Assert.Empty(thrown);
+        Assert.Equal(later, Assert.Single(heard.Actions).Row.AsOf);
+        Assert.Equal(0m, source.Window[0].Amount);
+        Assert.Equal(later, source.Window[0].AsOf);
     }
 
     [Fact] // ADR-0142 D5 / LV-16, LV-12, ADR-0011: Space on an action names its row by position; a gathered change that moves the order leaves it naming another, so it is refused rather than fired on that one

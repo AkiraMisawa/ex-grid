@@ -291,10 +291,14 @@ public partial class ExGrid<TRow>
     /// where the gesture names it (Space on the Focus). A cell the user's own earlier gesture
     /// wrote after that paint is not compared (D1, LV-17).
     /// </summary>
-    private Seen JudgeActionRow(int told, TRow pressed, int? atRow)
+    private Seen JudgeActionRow(int told, TRow pressed, int? atRow, out int? judgedAt)
     {
+        judgedAt = null;
         if (told == PaintNotTold && _paints.Count == 0)
+        {
+            judgedAt = atRow ?? (_rowKey is { } key0 ? PositionInHandByKey(key0, key0(pressed)) : PositionInHand(pressed));
             return Seen.Unchanged;
+        }
         if (PaintNamed(told) is not { } paint)
             return Seen.Unknown;
         int thenRow;
@@ -306,7 +310,10 @@ public partial class ExGrid<TRow>
             var key = rowKey(pressed);
             // A row the paint did not paint was not seen, and nothing of it is compared, as below.
             if (PaintedPositionOf(paint, rowKey, key) is not { } then)
+            {
+                judgedAt = PositionInHandByKey(rowKey, key);
                 return Seen.Unchanged;
+            }
             thenRow = then;
             var now = atRow is { } at && RowInHand(at) is { } there && Equals(rowKey(there), key)
                 ? at
@@ -336,7 +343,10 @@ public partial class ExGrid<TRow>
             // A row the paint did not paint was not seen, and nothing of it is compared: Space on
             // an action whose row the view has scrolled away from fires as before (ADR-0142).
             if (thenRow < paint.FirstRow || thenRow >= paint.FirstRow + paint.Rows.Length)
+            {
+                judgedAt = PositionInHand(pressed) ?? nowRow;
                 return Seen.Unchanged;
+            }
             if (RowInHand(nowRow) is null)
                 return Seen.Unknown;
         }
@@ -349,6 +359,7 @@ public partial class ExGrid<TRow>
             if (!string.Equals(seen, PaintedTextNow(nowRow, column), StringComparison.Ordinal))
                 return Seen.Changed;
         }
+        judgedAt = nowRow;
         return Seen.Unchanged;
     }
 
@@ -529,7 +540,7 @@ public partial class ExGrid<TRow>
     /// </summary>
     private async Task FireOrRefuseActionAsync(GridActionEventArgs<TRow> args, int told, int? atRow)
     {
-        var seen = JudgeActionRow(told, args.Row, atRow);
+        var seen = JudgeActionRow(told, args.Row, atRow, out var judgedAt);
         if (seen != Seen.Unchanged)
         {
             if (OnActionRefused.HasDelegate)
@@ -538,6 +549,16 @@ public partial class ExGrid<TRow>
                     seen == Seen.Changed ? ActionRefusalReason.RowChanged : ActionRefusalReason.RenderNoLongerKept));
             }
             return;
+        }
+        // Raised with the version it was judged against (ADR-0142 D5, LV-16), as an Edit Intent
+        // carries the newest row: the button held the row it was painted with, and a gathered change
+        // to cells the user did not see may have replaced it since. A handler that writes the row back
+        // through GridSource.From's ReplaceRow would otherwise be refused for a stale version — the
+        // exception D5 exists to prevent. The pressed instance stays where it is still the one in hand.
+        if (judgedAt is { } at && RowInHand(at) is { } newest && !ReferenceEquals(newest, args.Row)
+            && (_rowKey is { } rowKey ? Equals(rowKey(newest), rowKey(args.Row)) : PositionInHand(args.Row) is null))
+        {
+            args = args with { Row = newest };
         }
         if (OnAction.HasDelegate)
             await OnAction.InvokeAsync(args);

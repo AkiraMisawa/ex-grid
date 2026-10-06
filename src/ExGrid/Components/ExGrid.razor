@@ -5616,9 +5616,10 @@
         // And nothing else: no focus is moved (ADR-0037, amended). A press never focused the
         // button, so the keyboard is still where it was — or in whatever the handler opened,
         // which taking it back to the root would rob. A press on a row that changed since the
-        // render it was taken against is refused, with its reason (ADR-0142, LV-12). The press
-        // is raised with the row its button held, or Space read at the Focus: the newest version
-        // was judged, and a row the gathered change replaced paints what the user saw.
+        // render it was taken against is refused, with its reason (ADR-0142, LV-12). A press that
+        // is not refused is raised with the newest version it was judged against — a row the
+        // gathered change replaced paints what the user saw, and a write built on it must not be
+        // refused as stale (D5, LV-16).
         await FireOrRefuseActionAsync(args, told, atRow);
     }
 
