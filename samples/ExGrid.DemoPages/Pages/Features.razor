@@ -41,6 +41,10 @@
     @if (UpstreamOn)
     {
         <span>F9 updates the first five rows. Accepted writes replace current values; the Consumer validates them.</span>
+        @if (UpstreamReorderOn)
+        {
+            <span>F10 swaps the first two rows while their Row Keys stay the same.</span>
+        }
         <span id="upstream-status">Upstream: @_upstreamStatus</span>
         <span id="action-status">Action: @_actionStatus</span>
         <span id="fill-status">Filled: @_fillStatus</span>
@@ -69,7 +73,7 @@
         OnActionRefused="OnActionRefused"
         ShowFillHandle="UpstreamOn"
         OnFill="OnFill"
-        DeclaredKeys="@(UpstreamOn ? UpstreamKeys : null)"
+        DeclaredKeys="@(UpstreamOn ? (UpstreamReorderOn ? UpstreamReorderKeys : UpstreamKeys) : null)"
         OnDeclaredKey="OnUpstreamKey"
         OnFindRefused="OnFindRefused"
         OnColumnWidthChanged="OnWidthChanged"
@@ -121,9 +125,15 @@
     [SupplyParameterFromQuery(Name = "upstreamTrader")]
     public string? UpstreamTrader { get; set; }
 
+    /// <summary>Gives each fixture trade a stable date key and lets F10 swap the first two rows.</summary>
+    [SupplyParameterFromQuery(Name = "upstreamReorder")]
+    public string? UpstreamReorder { get; set; }
+
     private bool UpstreamOn => Upstream == "1";
+    private bool UpstreamReorderOn => UpstreamOn && UpstreamReorder == "1";
 
     private static readonly string[] UpstreamKeys = ["F9"];
+    private static readonly string[] UpstreamReorderKeys = ["F9", "F10"];
 
     [Inject] private Microsoft.Extensions.Options.IOptions<PopoverOptions> MudPopovers { get; set; } = default!;
 
@@ -162,12 +172,14 @@
                 Book = books[i % books.Length],
                 Trader = traders[(i / 3) % traders.Length],
                 Notional = 1_000_000m + (i * 12_345.67m),
-                TradeDate = new DateTime(2026, 1, 1).AddDays(i % 200),
+                TradeDate = new DateTime(2026, 1, 1).AddDays(UpstreamReorderOn ? i : i % 200),
                 Confirmed = i % 3 != 0,
             };
         }
 
-        _source = GridSource.From(rows);
+        // In the reorder fixture, TradeDate is unique and never edited. Replacements preserve
+        // that Row Key, so the same Action button moves with its row while a pointer is held.
+        _source = UpstreamReorderOn ? GridSource.From(rows, row => row.TradeDate) : GridSource.From(rows);
         _second = GridSource.From(rows.Take(20).ToArray());
         _rules
             .Column("Notional", (_, text) => !decimal.TryParse(text, out var value)
@@ -248,6 +260,7 @@
     private string _fillStatus = "—";
     private int _upstreamTicks;
     private int _actionCount;
+    private int _reorderCount;
 
 
     /// <summary>Find's refusals (ADR-0055). This page's grid is bound to GridSource.From, which
@@ -455,9 +468,19 @@
         => _actionStatus = $"{press.ActionName} {press.Row.Book}/{press.Row.Trader} at {press.Row.Notional:0.00} (×{++_actionCount})";
 
     /// <summary>F9 under <c>?upstream=1</c>: the data moves on under the user, as a live feed moves
-    /// it — new instances of the first five rows, each Notional up by one (ADR-0003, ADR-0154).</summary>
+    /// it — new instances of the first five rows, each Notional up by one (ADR-0003, ADR-0154).
+    /// The keyed fixture also declares F10 to move the original Action target during a press.</summary>
     private void OnUpstreamKey(GridDeclaredKeyPress press)
     {
+        if (press.Key == "F10" && UpstreamReorderOn)
+        {
+            var reordered = _source.Window.ToArray();
+            (reordered[0], reordered[1]) = (reordered[1], reordered[0]);
+            _source.ReplaceAll(reordered);
+            _source.PublishGathered();
+            _upstreamStatus = $"first two rows swapped (×{++_reorderCount})";
+            return;
+        }
         var window = _source.Window;
         var count = Math.Min(5, window.Count);
         for (var row = 0; row < count; row++)

@@ -165,6 +165,48 @@ test('LV-12: an Action reaches the current same row exactly once after an upstre
     await expect(page.locator('#action-refused-status')).toHaveText('Action refused: —');
 });
 
+test('LV-12: an Action held across a keyed row move keeps its original target and fires once (ADR-0154)', async ({ page }) => {
+    await page.goto('/features?upstream=1&upstreamReorder=1');
+    await expect(grid(page).locator('.ex-row').first()).toBeVisible();
+    await expectTabStopTaken(grid(page));
+    await expect(cell(page, 0, 0)).toHaveText('Alpha');
+    await expect(cell(page, 1, 0)).toHaveText('Beta');
+    await clickCell(page, 6, 0);
+    await expectActiveDescendant(grid(page), /r6c0$/);
+    await circuitQuiet();
+    await setRoundTrip(150);
+    await watchWhatIsSeen(page, 0, NOTIONAL);
+
+    const originalButton = await cell(page, 0, ACT).locator('.ex-action').elementHandle();
+    expect(originalButton).not.toBeNull();
+    const originalBox = await boxOf(originalButton);
+    await page.mouse.move(originalBox.x + originalBox.width / 2, originalBox.y + originalBox.height / 2);
+    await page.mouse.down();
+    try {
+        // The pointer stays down while the keyed component moves; no second press can refresh
+        // its original address. Waiting for the new rows makes this independent of wire timing.
+        await page.keyboard.press('F10');
+        await expect(page.locator('#upstream-status')).toHaveText('Upstream: first two rows swapped (×1)');
+        await expect(cell(page, 0, 0)).toHaveText('Beta');
+        await expect(cell(page, 1, 0)).toHaveText('Alpha');
+        const movedButton = cell(page, 1, ACT).locator('.ex-action');
+        expect(await movedButton.evaluate((button, original) => button === original, originalButton),
+            'the original Action button moved with its keyed row').toBe(true);
+        const movedBox = await boxOf(movedButton);
+        await page.mouse.move(movedBox.x + movedBox.width / 2, movedBox.y + movedBox.height / 2);
+    } finally {
+        await page.mouse.up();
+        await originalButton.dispose();
+    }
+
+    expect(await page.evaluate(() => window.__seenAtGesture.filter(event => event.type === 'mousedown').length),
+        'only the original press was made').toBe(1);
+    await expect(page.locator('#action-status')).toHaveText('Action: approve Alpha/Ishikawa at 1000000.00 (×1)');
+    await circuitQuiet();
+    await expect(page.locator('#action-status')).toHaveText('Action: approve Alpha/Ishikawa at 1000000.00 (×1)');
+    await expect(page.locator('#action-refused-status')).toHaveText('Action refused: —');
+});
+
 test('LV-13/LV-14: one Ctrl+V overwrites targets changed upstream before the paste lands (ADR-0154)', async ({ page }) => {
     await page.evaluate(() => navigator.clipboard.write([new ClipboardItem({
         'text/html': new Blob(['<table><tr><td>5</td></tr></table>'], { type: 'text/html' }),
