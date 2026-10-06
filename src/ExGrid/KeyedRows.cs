@@ -4,8 +4,9 @@ namespace ExGrid;
 /// The base of a <c>GridSource.From</c> given a Row Key (ADR-0141): the Consumer's rows by key, in
 /// base order, each with its ordinal — its place in that order. A changed row keeps the ordinal of
 /// the row it replaces; an added row takes the next, so it goes at the end; a removed row leaves a
-/// gap, closed when the gaps grow to half the base. The ordinals only ever rise, so the base order
-/// is ordinal order, and a row is found in it by binary search.
+/// gap, closed when the gaps grow to half the base. A whole new list in another order gives every
+/// row a new ordinal in that order (<see cref="Reorder"/>). The ordinals only ever rise, so the base
+/// order is ordinal order, and a row is found in it by binary search.
 ///
 /// <para>It holds no lock: its source takes one around every call.</para>
 /// </summary>
@@ -109,6 +110,34 @@ internal sealed class KeyedRows<TRow>
             Compact();
     }
 
+    /// <summary>
+    /// Puts the base in <paramref name="keys"/>' order, which names every key held once (ADR-0141, D7:
+    /// a whole new list sets the order). Each row takes a new ordinal, above every ordinal given
+    /// before, in that order: the ordinals still only rise, and the base order is still ordinal order,
+    /// but an ordinal taken before this no longer says where a row stands among the ones taken after.
+    /// </summary>
+    public void Reorder(IReadOnlyList<object> keys)
+    {
+        if (keys.Count != _byKey.Count)
+            throw new InvalidOperationException($"A new order names {keys.Count} keys of the {_byKey.Count} held (ADR-0141).");
+        var size = Math.Max(keys.Count, 4);
+        var rows = new TRow[size];
+        var ordinals = new long[size];
+        for (var i = 0; i < keys.Count; i++)
+        {
+            var held = _byKey[keys[i]];
+            held.Ordinal = _nextOrdinal + i;
+            rows[i] = held.Row;
+            ordinals[i] = held.Ordinal;
+        }
+        _rows = rows;
+        _ordinals = ordinals;
+        _gone = new bool[size];
+        _length = keys.Count;
+        _goneCount = 0;
+        _nextOrdinal += keys.Count;
+    }
+
     /// <summary>The rows held, in base order, with their ordinals: what a whole requery reads.</summary>
     public (TRow[] Rows, long[] Ordinals) Snapshot()
     {
@@ -164,6 +193,6 @@ internal sealed class KeyedRows<TRow>
     {
         public TRow Row { get; set; } = row;
 
-        public long Ordinal { get; } = ordinal;
+        public long Ordinal { get; set; } = ordinal;
     }
 }

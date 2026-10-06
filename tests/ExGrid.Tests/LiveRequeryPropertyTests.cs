@@ -14,7 +14,12 @@ namespace ExGrid.Tests;
 /// random batches of changes, additions and removals, from none to every row — so both the
 /// incremental path and the whole requery a large batch falls back to are compared. Several
 /// batches are gathered between two publications, so a key changed twice, removed and added again,
-/// or added and removed within one interval is folded as the source folds it. The values sit in the
+/// or added and removed within one interval is folded as the source folds it. A quarter of the
+/// batches are whole new lists instead (LV-4, D7): in the base order, which is the batch that says
+/// the same, or in a new one — shuffled, reversed, a few rows moved, rows added among the others —
+/// which puts the base in the list's order and takes the whole requery; the reference base is then
+/// the list itself, so the result is held to <see cref="GridQueryEngine.Apply{TRow}"/> over lists in
+/// new orders, gathered before and after batches. The values sit in the
 /// corners: Blanks, ties (1, 1.0, 1.00), case pairs, the Turkish i, ß against ss, accents, the empty
 /// string, equal DateTimes of different Kinds.
 ///
@@ -102,6 +107,12 @@ public class LiveRequeryPropertyTests
             Assert.True(outcome.Coverage.GetValueOrDefault("sequence kept") > 500, Describe(outcome));
             Assert.True(outcome.Coverage.GetValueOrDefault("key removed and added again") > 20, Describe(outcome));
             Assert.True(outcome.ReplaceRowPublications > 200, Describe(outcome));
+            // Whole new lists, in the base order and in new ones, and gathered with batches (LV-4, D7).
+            Assert.True(outcome.Coverage.GetValueOrDefault("list in the base order") > 1_000, Describe(outcome));
+            foreach (var kind in new[] { "list shuffled", "list reversed", "list with rows moved", "list with rows added among the others" })
+                Assert.True(outcome.Coverage.GetValueOrDefault(kind) > 100, Describe(outcome));
+            Assert.True(outcome.Coverage.GetValueOrDefault("a list then a batch in one gathering") > 100, Describe(outcome));
+            Assert.True(outcome.Coverage.GetValueOrDefault("a batch then a list in one gathering") > 100, Describe(outcome));
         }
         finally
         {
@@ -201,8 +212,47 @@ public class LiveRequeryPropertyTests
                 var touched = new HashSet<int>();
                 var removedEarlier = new List<int>();
                 var replaced = new List<(Row Old, Row New)>();
+                string? before = null;
                 for (var b = 0; b < batches; b++)
                 {
+                    // A quarter of the time, a whole new list instead of a batch (LV-4, D7): the reference
+                    // base is then the list itself, in its order.
+                    if (random.Next(4) == 0)
+                    {
+                        var (list, replacedByList, removedByList, addedByList, kind) =
+                            RandomList(random, baseRows, replaceOnly, Changed, NewRow, removedEarlier, Count);
+                        foreach (var pair in replacedByList)
+                        {
+                            replaced.Add(pair);
+                            touched.Add(pair.New.Id);
+                        }
+                        foreach (var id in removedByList)
+                        {
+                            removedEarlier.Add(id);
+                            touched.Add(id);
+                        }
+                        foreach (var row in addedByList)
+                            touched.Add(row.Id);
+                        baseRows.Clear();
+                        baseRows.AddRange(list);
+                        Count(kind);
+                        if (before is not null)
+                            Count($"{before} then a list in one gathering");
+                        before = "a list";
+                        try
+                        {
+                            source.ReplaceAll(list);
+                        }
+                        catch (Exception error)
+                        {
+                            failures.Add($"case {c} step {step} list {b} ({kind}): refused: {error.Message}");
+                            break;
+                        }
+                        continue;
+                    }
+                    if (before is not null)
+                        Count($"{before} then a batch in one gathering");
+                    before = "a batch";
                     var batch = RandomBatch(random, baseRows, replaceOnly, Changed, NewRow, removedEarlier, Count);
                     // The reference base: changed in place, removed, then added at the end.
                     foreach (var row in batch.Changed)
@@ -242,6 +292,14 @@ public class LiveRequeryPropertyTests
                     failures.Add($"case {c} step {step}: the result differs from GridQueryEngine.Apply: {why}\n"
                         + $"  sorts: {string.Join(", ", sorts.Select(s => $"{s.Column} {s.Direction}"))}; filtered: {filter is not null}; "
                         + $"culture {CultureInfo.CurrentCulture.Name}; {touched.Count} keys touched of {baseRows.Count}");
+                    break;
+                }
+                // What the grid was last told is what it reads: a Window or a version that moved
+                // without StateChanged would never reach the screen (ADR-0023's no-op principle).
+                if (!SameRows(source.Window, published, out why) || source.RowSequenceVersion != publishedVersion)
+                {
+                    failures.Add($"case {c} step {step}: the Window or the version moved without StateChanged: {why}; "
+                        + $"version {source.RowSequenceVersion}, last told {publishedVersion}");
                     break;
                 }
                 if (oneAtATime is not null)
@@ -303,6 +361,85 @@ public class LiveRequeryPropertyTests
             }
         }
         return new GridChangeBatch<Row>(added, changes, removed);
+    }
+
+    /// <summary>
+    /// A whole new list (LV-4, D7): the base with some rows changed and some removed, as a batch picks
+    /// them, and some added — then, in the cases that change more than rows, put in another order a
+    /// third of the time in four ways: shuffled, reversed, a few rows moved, or the rows added put
+    /// among the others. The list in the base order with its rows added at the end is the batch that
+    /// says the same, and is the one a case of changes alone hands over, so it can be replayed one
+    /// ReplaceRow at a time.
+    /// </summary>
+    private static (List<Row> List, List<(Row Old, Row New)> Replaced, List<int> Removed, List<Row> Added, string Kind) RandomList(
+        Random random, List<Row> baseRows, bool replaceOnly, Func<Row, Row> changed, Func<Row> newRow,
+        List<int> removedEarlier, Action<string> count)
+    {
+        var batch = RandomBatch(random, baseRows, replaceOnly, changed, newRow, removedEarlier, count);
+        var changes = batch.Changed.ToDictionary(row => row.Id);
+        var removed = batch.RemovedKeys.Select(key => (int)key).ToHashSet();
+        var list = new List<Row>(baseRows.Count + batch.Added.Count);
+        var replaced = new List<(Row Old, Row New)>();
+        foreach (var row in baseRows)
+        {
+            if (removed.Contains(row.Id))
+                continue;
+            if (changes.TryGetValue(row.Id, out var @new))
+            {
+                replaced.Add((row, @new));
+                list.Add(@new);
+            }
+            else
+            {
+                list.Add(row);
+            }
+        }
+        var added = batch.Added.ToList();
+        if (replaceOnly || random.Next(3) != 0)
+        {
+            list.AddRange(added);
+            return (list, replaced, [.. removed], added, "list in the base order");
+        }
+        string kind;
+        switch (random.Next(4))
+        {
+            case 0:
+                list.AddRange(added);
+                Shuffle(random, list);
+                kind = "list shuffled";
+                break;
+            case 1:
+                list.Reverse();
+                list.AddRange(added);
+                kind = "list reversed";
+                break;
+            case 2:
+                for (var moves = random.Next(1, 4); moves > 0 && list.Count > 1; moves--)
+                {
+                    var from = random.Next(list.Count);
+                    var row = list[from];
+                    list.RemoveAt(from);
+                    list.Insert(random.Next(list.Count + 1), row);
+                }
+                list.AddRange(added);
+                kind = "list with rows moved";
+                break;
+            default:
+                foreach (var row in added)
+                    list.Insert(random.Next(list.Count + 1), row);
+                kind = "list with rows added among the others";
+                break;
+        }
+        return (list, replaced, [.. removed], added, kind);
+    }
+
+    private static void Shuffle(Random random, List<Row> rows)
+    {
+        for (var i = rows.Count - 1; i > 0; i--)
+        {
+            var j = random.Next(i + 1);
+            (rows[i], rows[j]) = (rows[j], rows[i]);
+        }
     }
 
     private static IReadOnlyList<SortSpec> RandomSorts(Random random)
