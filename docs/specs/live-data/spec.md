@@ -37,6 +37,41 @@ incrementally and vouch that their Windows hold no row twice, so the grid does n
 pushes itself is walked whole each time, and ExPivot builds its cube, its report and every report
 row again on every redraw.
 
+## Reading ag-grid's source
+
+The note and the tickets cite ag-grid by permalinks into one commit. To read around them, take that
+commit locally — into the session's scratchpad, never into this repository:
+
+```sh
+git clone --depth 1 --branch release-36.2.0 https://github.com/ag-grid/ag-grid.git <scratchpad>/ag-grid
+git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f3c1375d
+```
+
+- **The licences.** `ag-grid-community` is MIT. `ag-grid-enterprise` — grouping, aggregation, pivot,
+  cell ranges — is under AG Grid's EULA: read it for research, describe its mechanisms in your own
+  words with permalinks, and never copy its code here.
+- **Every reference the note uses** is defined at its end, by label: `ag-` under
+  `packages/ag-grid-community/src`, `age-` under `packages/ag-grid-enterprise/src`, `agr-` under
+  `packages/ag-grid-react/src`, `doc-` under `documentation/ag-grid-docs/src/content/docs/`.
+- **Where to start, by ticket.**
+  - **02 (a pushed Window's vouch):** the map of ids, checked only when a node is made —
+    `clientSideRowModel/clientSideNodeManager.ts` (`createRowNode`, L304–L320; the immutable
+    `rowData` path, L86–L156).
+  - **03 (ExPivot keeps its report):**
+    - a row's id, computed once — `entities/rowNode.ts` (`setId`, L468–L493);
+    - a group's id and its reuse across updates — enterprise
+      `rowGrouping/groupStrategy/groupStrategy.ts` (L523; L492–L494; the delta, L107–L238);
+    - the changed path — `utils/changedPath.ts` (L102–L136) and enterprise
+      `rowHierarchy/changedPathImpl/changedPathFactory.ts`;
+    - aggregation along it — enterprise `aggregation/aggregationStage.ts` (L128–L427);
+    - pivot mode, which re-buckets every row and regenerates result columns by key — enterprise
+      `pivot/pivotStage.ts` (L60–L196) and `pivot/pivotResultColsService.ts` (L143–L247);
+    - row controllers kept by id across a refresh — `rendering/rowRenderer.ts` (L1040–L1061,
+      L1311–L1397), `rendering/row/rowCtrl.ts` (`instanceId`, L170), and in React
+      `reactUi/rows/rowContainerComp.tsx` (L74–L164).
+- **Line numbers are the pinned commit's.** A newer ag-grid may have moved them; read the pinned
+  one, or say which release you read.
+
 ## Tickets
 
 - [01: Measure what an update costs, end to end](issues/01-measure-what-an-update-costs-end-to-end.md)
