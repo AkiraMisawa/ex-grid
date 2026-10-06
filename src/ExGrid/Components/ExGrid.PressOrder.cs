@@ -22,14 +22,14 @@ public partial class ExGrid<TRow>
     {
         var taken = AsTaken(e, "mousedown");
         // A double click opens the editor on the render its second press was taken against
-        // (ADR-0142, D2): the double click itself is Blazor's, and follows that press.
+        // (ADR-0154): the double click itself is Blazor's, and follows that press.
         _lastPressPaint = PaintOf(taken);
         return _pressAnswer = AnswerPressAsync(taken);
     }
 
     private Task OnMouseUp(MouseEventArgs e) => _pressAnswer = AnswerReleaseAsync(AsTaken(e, "mouseup"));
 
-    // The render the last press on the rows was taken against (ADR-0142, D2), for the double click
+    // The render the last press on the rows was taken against (ADR-0154), for the double click
     // that follows it; the newest for a press nobody told of.
     private int _lastPressPaint = PaintNotTold;
 
@@ -55,7 +55,7 @@ public partial class ExGrid<TRow>
     {
         if (_disposed)
             return Task.CompletedTask;
-        // Answered again as the press: on the render that press was taken against (ADR-0142, D2).
+        // Answered again as the press: on the render that press was taken against (ADR-0154).
         if (barHoldsFocus && _editMode == EditMode.None)
             _pressAnswer = FromChromeAsync(() => OnFormulaBarFocusAsync(_barPressPaint));
         return PressAnsweredAsync();
@@ -147,7 +147,7 @@ public partial class ExGrid<TRow>
     /// (<c>data-ex-sequence</c>).</param>
     /// <param name="layout">The layout the Viewport was painted under (<c>data-ex-layout</c>).</param>
     /// <param name="paint">The render the Viewport's cells were painted by (<c>data-ex-paint</c>):
-    /// a fill-handle drag released here is judged against what it painted (ADR-0142, LV-13).</param>
+    /// a fill-handle drag released here keeps its original row and column address (ADR-0154).</param>
     [JSInvokable]
     public void PressTakenAt(string kind, double offsetX, double offsetY, int firstRow,
         double scrollLeftPx, int rowSequence, int layout, int paint = PaintNotTold)
@@ -164,8 +164,8 @@ public partial class ExGrid<TRow>
     /// <summary>A press or release as it was taken (ED-31): the offsets it was given, and the first
     /// row, horizontal scroll and layout they were measured against. <see cref="Layout"/> is null
     /// when what it was taken on is no longer held: the press lands on no cell. <see cref="Paint"/>
-    /// names the render whose cells it was taken on (ADR-0142), held or not: a paint no longer
-    /// kept is the judgement's to refuse.</summary>
+    /// names the address context it was taken on (ADR-0154), held or not: a stale address
+    /// cannot silently name a new target.</summary>
     private sealed class TakenMouseEventArgs : MouseEventArgs
     {
         public PaintLayout? Layout { get; init; }
@@ -203,7 +203,7 @@ public partial class ExGrid<TRow>
         };
     }
 
-    /// <summary>The render a press or release was taken against (ADR-0142): the one the script
+    /// <summary>The render a press or release was taken against (ADR-0154): the one the script
     /// told of, or the newest for an event nobody told of.</summary>
     private static int PaintOf(MouseEventArgs e) => e is TakenMouseEventArgs taken ? taken.Paint : PaintNotTold;
 

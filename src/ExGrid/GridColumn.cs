@@ -163,9 +163,9 @@ public sealed record GridColumn<TRow>
     /// not render (ADR-0037). Such a control should also carry <c>tabindex="-1"</c>, or the
     /// grid stops being one tab stop.</para>
     ///
-    /// <para>The grid does not judge what such a control writes (ADR-0142): its handler has the
-    /// row the template was painted with, and checking that row against the current one before
-    /// writing is the Consumer's job (see <see cref="TemplateCellContext{TRow}"/>).</para>
+    /// <para>The grid does not interpret such a control's writes (ADR-0154). Its handler has
+    /// the row the template was painted with. Identifying the current target and applying
+    /// business validation belongs to the Consumer (see <see cref="TemplateCellContext{TRow}"/>).</para>
     /// </summary>
     public static GridColumn<TRow> TemplateColumn(
         string name,

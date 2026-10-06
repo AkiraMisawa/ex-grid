@@ -75,7 +75,7 @@ public partial class ExGrid<TRow>
     // - What a Template cell's own components hold survives a change of the row's values and is
     //   handed the new version: the consequence ADR-0140 names, and the Consumer's to handle.
     // - A press on a kept row reads the row when it is handled. A press taken against an older render
-    //   is ADR-0142's to judge, by what that render painted.
+    //   resolves the original target and command before dispatch (ADR-0154).
     // RowKeyTests holds a test for each.
 
     /// <summary>A painted row's component key: its Row Key while one is in force, else an object

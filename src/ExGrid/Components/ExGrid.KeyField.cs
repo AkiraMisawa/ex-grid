@@ -94,9 +94,8 @@ public partial class ExGrid<TRow>
     /// because JavaScript interop requires it.</para>
     /// </summary>
     /// <param name="text">The composition's text.</param>
-    /// <param name="paint">The render the composition started on (<c>data-ex-paint</c>, read at
-    /// its <c>compositionstart</c>): the field covers the cell from then on, so the edit keeps
-    /// what that render showed of it (ADR-0142, LV-11, D2).</param>
+    /// <param name="paint">The address context at <c>compositionstart</c> (<c>data-ex-paint</c>):
+    /// the completed text may open an edit only on that original target (ADR-0154).</param>
     [JSInvokable]
     public async Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold)
     {

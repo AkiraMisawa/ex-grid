@@ -11,12 +11,11 @@ namespace ExGrid.Cells;
 /// sees a non-zero request it has not acted on yet. A template with nothing to enter — a
 /// bar, a badge — ignores it, and Space then leaves the keyboard where it was.</para>
 ///
-/// <para><b>A control's write is the Consumer's to judge.</b> The grid refuses a commit, a paste,
-/// a fill or an Action press over a target whose painted text changed after the user saw it
-/// (ADR-0142), but it cannot see what a template's control does. A handler receives
-/// <see cref="Row"/>, the row the template was painted with: a control that writes compares that
-/// row with the Consumer's current version of it, and refuses if what the user saw has changed —
-/// with a Row Key, the one that names it across versions (ADR-0140).</para>
+/// <para><b>A control's write is the Consumer's to judge.</b> The grid does not compare old
+/// displayed values before a write (ADR-0154), and cannot interpret a template's controls.
+/// A handler receives <see cref="Row"/>, the row the template was painted with. The Consumer
+/// identifies its current target, using a Row Key when declared (ADR-0140), and applies any
+/// business conflict or validation rules before writing.</para>
 /// </summary>
 /// <param name="Row">The row instance this cell belongs to.</param>
 /// <param name="FocusRequest">Handed over non-zero on exactly one render of exactly one

@@ -806,7 +806,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
     }
 
     /// <summary>
-    /// Puts out at once the live changes gathered and not yet published (ADR-0141/0142, LV-16), so
+    /// Puts out at once the live changes gathered and not yet published (ADR-0141/0154, LV-16), so
     /// the Window is the newest version this source holds: the grid calls it just before it judges a
     /// write, and a <see cref="ReplaceRow"/> built on the row it then reads is taken. It is a
     /// publication like the one at an interval's end: the next live change waits
@@ -943,7 +943,7 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
                 throw new ArgumentException(
                     $"The row under the Row Key '{key}' changed since this version of it was taken: a live change " +
                     "replaced it. A replacement built from it would quietly undo that change, so it is refused " +
-                    "(ADR-0141/0142); build the edit on the row as the source holds it now.", nameof(row));
+                    "(ADR-0141/0154); build the edit on the row as the source holds it now.", nameof(row));
             }
             var replacementKey = keyed.KeyOf(replacement, "The replacement");
             if (!Equals(replacementKey, key))

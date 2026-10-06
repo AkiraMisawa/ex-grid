@@ -908,7 +908,7 @@ public class ShippedStylesheetTests
         // .NET, a repeat looks like a press. The snapshot every key is gated and held as keeps
         // the browser's flag, and the one message to OnKeyAsync carries it, so a held key
         // replayed after a hold says so as well. The core raises OnLeave once per press from it.
-        // Only the render the key was pressed against comes after it (ADR-0142, LV-14).
+        // Only the address context captured at keydown comes after it (ADR-0154).
         Assert.Matches(new Regex(@"const snapshot = \(event\) => \(\{[^}]*repeat: event\.repeat,", RegexOptions.Singleline), script.Text);
         Assert.Matches(new Regex(@"'OnKeyAsync'[^;]*,\s*k\.repeat === true, k\.paint\)\s*\.catch\(", RegexOptions.Singleline), script.Text);
     }

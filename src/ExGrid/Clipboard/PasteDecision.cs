@@ -18,9 +18,8 @@ namespace ExGrid.Clipboard;
 /// cap (ADR-0035). The byte ceiling is component-level, never produced by the pure rules.
 /// <see cref="SpillPastExtent"/> exists only where a Consumer declared that a paste may
 /// spill (ADR-0050, item 3): the block would run past the grid's last row or column.
-/// <see cref="TargetChanged"/> and <see cref="RenderNoLongerKept"/> are not about shape either
-/// (ADR-0142): what the user saw of the target changed before the write landed, or can no longer
-/// be told. They are judged after every other rule, so the existing reasons still say their own.
+/// <see cref="RenderNoLongerKept"/> means the gesture's original row/column address is no
+/// longer current (ADR-0154). A value change alone never refuses a write.
 /// </summary>
 public enum PasteRefusalReason
 {
@@ -68,20 +67,9 @@ public enum PasteRefusalReason
     /// (ADR-0035). Component-level, never produced by the pure rules.</summary>
     SourceUnavailable,
 
-    /// <summary>A painted cell of the target shows other text than it did in the render the
-    /// gesture was taken against: the data under it changed between what the user saw and the
-    /// write landing, and writing over it would lose that change unseen (ADR-0142, LV-13). Raised
-    /// for a paste, a Ctrl+Enter fill, a fill-handle drag, a fill key and Delete alike — and for a
-    /// fill-handle drag or a fill key whose painted source cell changed, since it would write
-    /// values the user did not see (D4). Cells that were not painted were not seen, and cells the
-    /// user's own earlier write changed are known to them; neither is compared (D1).
+    /// <summary>The gesture's original row or column order can no longer be established
+    /// (ADR-0154). This is an address refusal, never a comparison of displayed values.
     /// Component-level, never produced by the pure rules.</summary>
-    TargetChanged,
-
-    /// <summary>The render the gesture was taken against is no longer kept, or showed the rows in
-    /// another order, so the grid can no longer tell what the user saw of the target (ADR-0142).
-    /// Chrome must not say the data changed: it may not have. Component-level, never produced by
-    /// the pure rules.</summary>
     RenderNoLongerKept,
 }
 
