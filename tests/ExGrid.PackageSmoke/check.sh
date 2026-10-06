@@ -33,6 +33,9 @@ done
 
 echo "== what the packages declare"
 nuspec() { unzip -p "$feed/$1.$version.nupkg" "$1.nuspec"; }
+# Read into a string before a grep -q, never piped to one: grep -q exits at its first match, unzip
+# then dies of SIGPIPE, and under pipefail the pipeline fails — a file that is there reported missing,
+# or, inside an if, a forbidden one passed over.
 entries() { unzip -Z1 "$feed/$1.$version.nupkg"; }
 for id in $packages; do
   [ -f "$feed/$id.$version.snupkg" ] || fail "$id has no symbol package"
@@ -46,9 +49,11 @@ for id in $packages; do
     grep -qxF "$f" <<<"$files" || fail "$id is missing $f"
   done
 done
-# The core's one dependency, at the floor ADR-0022 fixes.
-grep -q '<dependency id="Microsoft.AspNetCore.Components.Web" version="10.0.0"' <<<"$(nuspec ExGrid)" \
-  || fail "ExGrid's dependency on Microsoft.AspNetCore.Components.Web is not 10.0.0"
+# The core's dependencies: Blazor at the floor ADR-0022 fixes, and exactly the ExGrid.Data it was
+# built with, for the Aggregations' one definition (ADR-0130, DA-1).
+coredeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid)" | sort)
+[ "$coredeps" = "$(printf '%s\n' '<dependency id="Microsoft.AspNetCore.Components.Web" version="10.0.0"' "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" | sort)" ] \
+  || fail "ExGrid's dependencies are not exactly Microsoft.AspNetCore.Components.Web 10.0.0 and ExGrid.Data $version: $coredeps"
 # The Wrapper takes exactly this core (ADR-0042) and MudBlazor from its floor.
 grep -qF "<dependency id=\"ExGrid\" version=\"[$version]\"" <<<"$(nuspec ExGrid.MudBlazor)" \
   || fail "ExGrid.MudBlazor does not depend on exactly ExGrid $version"
@@ -68,17 +73,17 @@ sheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExShee
 mudsheetdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExSheet.MudBlazor)" | sort)
 [ "$mudsheetdeps" = "$(printf '%s\n' "<dependency id=\"ExGrid.MudBlazor\" version=\"[$version]\"" "<dependency id=\"ExSheet\" version=\"[$version]\"" '<dependency id="MudBlazor" version="9.0.0"' | sort)" ] \
   || fail "ExSheet.MudBlazor's dependencies are not exactly ExGrid.MudBlazor $version, ExSheet $version and MudBlazor 9.0.0: $mudsheetdeps"
-if entries ExSheet.MudBlazor | grep -qiE '\.(js|mjs|cjs)$'; then fail "ExSheet.MudBlazor ships a script"; fi
-entries ExSheet.MudBlazor | grep -qxF 'staticwebassets/mud-ex-sheet.min.css' || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.min.css"
+if grep -qiE '\.(js|mjs|cjs)$' <<<"$(entries ExSheet.MudBlazor)"; then fail "ExSheet.MudBlazor ships a script"; fi
+grep -qxF 'staticwebassets/mud-ex-sheet.min.css' <<<"$(entries ExSheet.MudBlazor)" || fail "ExSheet.MudBlazor is missing staticwebassets/mud-ex-sheet.min.css"
 # What ships is minified, with its source map, and the sources stay home (ADR-0123): every script
 # and stylesheet a package serves is a .min file, and none packs its Assets folder.
 for p in ExGrid ExGrid.MudBlazor ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
   unminified=$(entries "$p" | grep -E '^staticwebassets/.*\.(css|js)$' | grep -vE '\.min\.(css|js)$' || true)
   [ -z "$unminified" ] || fail "$p ships an asset that is not minified: $unminified"
-  entries "$p" | grep -qE '^staticwebassets/.*\.min\.css\.map$' || fail "$p ships no source map for its stylesheet"
-  if entries "$p" | grep -qiE '(^|/)Assets/'; then fail "$p packs its Assets sources"; fi
+  grep -qE '^staticwebassets/.*\.min\.css\.map$' <<<"$(entries "$p")" || fail "$p ships no source map for its stylesheet"
+  if grep -qiE '(^|/)Assets/' <<<"$(entries "$p")"; then fail "$p packs its Assets sources"; fi
 done
-entries ExGrid | grep -qxF 'staticwebassets/ex-grid.min.js.map' || fail "ExGrid ships no source map for its script"
+grep -qxF 'staticwebassets/ex-grid.min.js.map' <<<"$(entries ExGrid)" || fail "ExGrid ships no source map for its script"
 
 # The Wrapper still takes no ExSheet package: the direction is one-way (SH-47).
 if grep -q '<dependency id="ExSheet' <<<"$(nuspec ExGrid.MudBlazor)"; then fail "ExGrid.MudBlazor depends on an ExSheet package"; fi
@@ -95,8 +100,10 @@ arrowdeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExGrid
 enginedeps=$(grep -o '<dependency id="[^"]*" version="[^"]*"' <<<"$(nuspec ExPivot.Engine)" | sort)
 [ "$enginedeps" = "<dependency id=\"ExGrid.Data\" version=\"[$version]\"" ] \
   || fail "ExPivot.Engine's dependencies are not exactly ExGrid.Data $version: $enginedeps"
-# Nothing else the family packs references a data package (DA-1).
-for id in ExGrid ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
+# Nothing else the family packs references a data package directly (DA-1), and nothing but the
+# Arrow package itself references ExGrid.Data.Arrow.
+if grep -q '<dependency id="ExGrid.Data.Arrow"' <<<"$(nuspec ExGrid)"; then fail "ExGrid references ExGrid.Data.Arrow"; fi
+for id in ExGrid.MudBlazor ExSheet.Engine ExSheet ExSheet.MudBlazor ExPivot ExPivot.MudBlazor; do
   if grep -qE '<dependency id="ExGrid\.Data(\.Arrow)?"' <<<"$(nuspec "$id")"; then fail "$id references a data package"; fi
 done
 # ExPivot depends on exactly the core and the engine it was built with, and on nothing else.

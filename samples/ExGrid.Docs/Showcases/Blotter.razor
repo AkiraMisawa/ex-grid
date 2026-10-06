@@ -7,6 +7,7 @@
 @using ExGrid.Chrome
 @using ExGrid.Columns
 @using ExGrid.Selection
+@using ExGrid.Summarizing
 @using ExGrid.Docs.Examples.Grid.Blotter
 
 <ShowcaseFrame Title="Trade blotter">
@@ -43,7 +44,8 @@
             </div>
             <MudExGridPaper Class="blotter-mud-paper" Elevation="0" Outlined="true" Square="true" Striped="true" Hover="true" Dense="true">
                 <ExGrid TRow="BlotterTrade" Source="_source" Columns="_columns" HeaderGroups="Groups" PinnedColumnCount="2"
-                        CellChangedAt="_changedAt" CellState="StateOf" SelectionChanged="OnSelectionChanged"
+                        CellChangedAt="_changedAt" CellState="StateOf"
+                        ShowSelectionSummary="false" SummaryFigures="Figures" OnSelectionSummaryChanged="OnSummaryChanged"
                         HighlightFocusRow="true" Chrome="_mudChrome"
                         ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
             </MudExGridPaper>
@@ -85,7 +87,8 @@
             </div>
             <div class="blotter-grid">
                 <ExGrid TRow="BlotterTrade" Source="_source" Columns="_columns" HeaderGroups="Groups" PinnedColumnCount="2"
-                        CellChangedAt="_changedAt" CellState="StateOf" SelectionChanged="OnSelectionChanged"
+                        CellChangedAt="_changedAt" CellState="StateOf"
+                        ShowSelectionSummary="false" SummaryFigures="Figures" OnSelectionSummaryChanged="OnSummaryChanged"
                         HighlightFocusRow="true" StripeRows="true" Density="GridDensity.Excel"
                         ViewportHeight="ViewportSize.Stretch" ViewportWidth="ViewportSize.Stretch" />
             </div>
@@ -222,7 +225,6 @@
     private readonly Dictionary<string, DateTimeOffset> _movedAt = [];
     private BlotterSource _source = default!;
     private CellChangeOf<BlotterTrade> _changedAt = default!;
-    private GridSelection _selection = GridSelection.Empty;
     private string _selectionText = "";
     private string _desk = "All";
     private string _clock = "";
@@ -264,7 +266,6 @@
                         _movedAt[quote.Symbol] = now;
                     _source.Reprice(moved);
                     _ticks++;
-                    Measure();
                 }
                 StateHasChanged();
             }
@@ -276,7 +277,6 @@
 
     private void OnSourceChanged()
     {
-        Measure();
         _desk = DeskOf(_source.Filter);
         InvokeAsync(StateHasChanged);
     }
@@ -295,46 +295,25 @@
     private static string DeskOf(GridFilter? filter)
         => filter?.Columns.GetValueOrDefault("Desk") is { Clauses: [{ Operator: global::ExGrid.FilterOperator.Equals, Value: string desk }] } ? desk : "All";
 
-    private void OnSelectionChanged(GridSelection selection)
+    // Excel's status bar, in the blotter's own footer: the grid's Selection Summary (ADR-0130), with
+    // its own line switched off. Every selected cell is summed, the unpainted ones included, and a
+    // figure only ever answers the selection that stands.
+    private static readonly SummaryFigures Figures = SummaryFigures.Count | SummaryFigures.Sum;
+
+    private void OnSummaryChanged(SelectionSummary summary)
     {
-        _selection = selection;
-        Measure();
+        _selectionText = summary switch
+        {
+            { Status: SelectionSummaryStatus.Answered, Result: { } result } =>
+                $"Count {Whole(result[SummaryFigures.Count])}"
+                + (result[SummaryFigures.Sum] is { IsNumber: true } sum ? $"    Sum {sum.Exact?.ToString("#,##0.##", Invariant) ?? sum.Number.ToString("#,##0.##", Invariant)}" : ""),
+            { Status: SelectionSummaryStatus.Pending } => "…",
+            _ => "",
+        };
     }
 
-    // Excel's status bar: how many cells are selected, and the sum of the numbers among them.
-    private void Measure()
-    {
-        if (_selection.IsEmpty || _selection.CellCount <= 1)
-        {
-            _selectionText = "";
-            return;
-        }
-        if (_selection.CellCount > 500_000)
-        {
-            _selectionText = $"Count {_selection.CellCount:N0}";
-            return;
-        }
-        var rows = _source.Window;
-        decimal sum = 0;
-        var numbers = 0;
-        foreach (var range in _selection.Ranges)
-        {
-            for (var r = range.TopRow; r <= Math.Min(range.BottomRow, rows.Count - 1); r++)
-            {
-                for (var c = range.LeftColumn; c <= range.RightColumn; c++)
-                {
-                    switch (_columns[c].Value(rows[r]))
-                    {
-                        case decimal d: sum += d; numbers++; break;
-                        case long l: sum += l; numbers++; break;
-                    }
-                }
-            }
-        }
-        _selectionText = numbers == 0
-            ? $"Count {_selection.CellCount:N0}"
-            : $"Count {_selection.CellCount:N0}    Sum {sum.ToString("#,##0.##", Invariant)}";
-    }
+    private static string Whole(ExGrid.Data.AggregateResult? count)
+        => count is { IsNumber: true } value ? value.Number.ToString("N0", Invariant) : "0";
 
     private string StatusLeft()
     {

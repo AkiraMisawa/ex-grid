@@ -4,8 +4,10 @@
    ExPivot would have to measure; from the Pivot Toolbar it opens under the button that opened it,
    over the report — the Layout menu at the button's right edge. Escape closes it — unless a popup
    of the content's own is open, which ExPivot hears through the context and leaves the key
-   to (ADR-0039). *@
-<div class="@FrameClass" role="@Role" aria-label="@Label" @onkeydown="OnKeyDownAsync">
+   to (ADR-0039). A menu's frame takes focus on a press on padding or a disabled command, without
+   another Tab stop: Escape stays inside it (ADR-0061). *@
+<div class="@FrameClass" role="@Role" aria-label="@Label" @onkeydown="OnKeyDownAsync"
+     tabindex="@(Role == "menu" ? "-1" : null)" @onmousedown:stopPropagation @onfocusin:stopPropagation>
     @ChildContent
 </div>
 

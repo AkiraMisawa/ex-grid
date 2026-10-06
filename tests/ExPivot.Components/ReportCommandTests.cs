@@ -154,7 +154,17 @@ public class ReportCommandTests : PivotTestContext
 
         Assert.Single(pivots[0].FindAll(".ex-pivot-popup"));
         Assert.Empty(pivots[1].FindAll(".ex-pivot-popup"));
+        await OpenMenuAsync(pivots[1], "Rows", "Region");
+        await pivots[1].Find(".ex-pivot-search").FocusInAsync(new FocusEventArgs());
+        Assert.Single(pivots[0].FindAll(".ex-pivot-popup"));
+        Assert.Empty(pivots[1].FindAll(".ex-pivot-popup"));
         await RunMenuAsync(pivots[0], "Move to Column Labels");
+        Assert.Equal(["Region"], AreaEntries(pivots[0], "Columns"));
+        Assert.Equal(["Region"], AreaEntries(pivots[1], "Rows"));
+
+        await AreaElement(pivots[0], "Columns").QuerySelector(".ex-pivot-entry")!.DragStartAsync(new DragEventArgs());
+        await pivots[1].Find(".ex-pivot-sheet").DropAsync(new DragEventArgs());
+        await AreaElement(pivots[0], "Columns").QuerySelector(".ex-pivot-entry")!.DragEndAsync(new DragEventArgs());
         Assert.Equal(["Region"], AreaEntries(pivots[0], "Columns"));
         Assert.Equal(["Region"], AreaEntries(pivots[1], "Rows"));
     }

@@ -845,7 +845,7 @@ from a CSV in 955 ms and 14.6 s; read from Arrow in 475 ms and 3.7 s.
 decisions D1 to D10, P1 and P2 of 2026-10-06:
 [ADR-0140](adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md),
 [ADR-0141](adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md) and
-[ADR-0142](adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md). §31 of the
+[ADR-0142](adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md). §32 of the
 Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's key.)*
 
 **What exists.**

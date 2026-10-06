@@ -457,6 +457,28 @@ public sealed record EditorCompletionContext(
     string OptionIdPrefix);
 
 /// <summary>
+/// One figure of a Selection Summary as the line shows it (ADR-0130): which figure, the id of its
+/// name (<see cref="SummaryLabelIds"/>), and its value as text — formatted by the core, as a cell's
+/// text is, so swapping Chrome cannot change what a figure reads.
+/// </summary>
+public sealed record SummaryFigureText(Summarizing.SummaryFigures Figure, string LabelId, string Text);
+
+/// <summary>
+/// The Selection Summary seam (ADR-0130, ADR-0010): what the status line shows of it. The core
+/// decides when the question is asked, which answer stands and how each figure reads; the Chrome
+/// paints it inside the core's <c>ex-summary</c> box, which carries the right-click that opens
+/// the figures menu — so that stays the core's too.
+/// </summary>
+/// <param name="Status">Where the summary stands.</param>
+/// <param name="Figures">The figures to show, in Excel's order; empty unless Answered.</param>
+/// <param name="DeclineReason">The answerer's reason, when Declined. While Pending, the line says
+/// <see cref="SummaryLabelIds.Pending"/>'s words.</param>
+public sealed record SelectionSummaryContext(
+    Summarizing.SelectionSummaryStatus Status,
+    IReadOnlyList<SummaryFigureText> Figures,
+    string? DeclineReason);
+
+/// <summary>
 /// The substitutable UI seams (ADR-0009/0010): the filter panel, the column menu, the
 /// cell editor, the loading indicator, and the Formula Bar's two fields (ADR-0051). One
 /// rule throughout: Chrome renders and calls back; it does not decide meaning — the
@@ -512,4 +534,8 @@ public interface IGridChrome
     /// beneath the editor surface inside the grid's box and scrolls when its room is short
     /// (ADR-0040); the fragment paints the candidates, then the hint.</summary>
     RenderFragment? EditorCompletion(EditorCompletionContext context) => null;
+
+    /// <summary>The Selection Summary in the status line (ADR-0130). Null falls back to the core's
+    /// own text. A fragment is rendered inside the core's <c>ex-summary</c> box.</summary>
+    RenderFragment? SelectionSummary(SelectionSummaryContext context) => null;
 }

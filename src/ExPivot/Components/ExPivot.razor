@@ -17,7 +17,14 @@
     Editable and every write is refused by the grid's own gate (ADR-0035). The header click
     selects, and the column menu is left out; the grips stay.
 *@
-<div class="ex-pivot" style="@RootStyle">
+@{
+    var fieldMenu = _open is { Kind: Surface.Menu } menu ? menu : null;
+    var paneLayout = PaneLayout;
+    var reportShown = _selectedSheet is null && _dialog is null;
+}
+<div class="ex-pivot" style="@RootStyle"
+     @onmousedown="() => DismissFieldMenu(fieldMenu)" @onmousedown:stopPropagation
+     @onfocusin="() => DismissFieldMenu(fieldMenu)" @onfocusin:stopPropagation>
     @* While Show Details' dialog stands, what it covers takes neither the keyboard nor the pointer:
        the dialog is modal (ADR-0059). *@
     <div class="ex-pivot-report" inert="@(_dialog is not null)">
@@ -31,7 +38,8 @@
            its state, and is not painted: its own header would otherwise paint over the records'
            (ExGrid's layers are its own), and a report nobody sees takes no keyboard and is not
            read out (ADR-0059). *@
-        <div class="@(_selectedSheet is null ? "ex-pivot-sheet" : "ex-pivot-sheet ex-pivot-sheet-covered")" style="@SheetStyle">
+        <div class="@(_selectedSheet is null ? "ex-pivot-sheet" : "ex-pivot-sheet ex-pivot-sheet-covered")" style="@SheetStyle"
+             @ondragover:preventDefault @ondrop="() => DropOnReportAsync(paneLayout, reportShown)" @ondrop:preventDefault @ondrop:stopPropagation>
             @if (_report is null || _report.IsEmpty)
             {
                 <div class="ex-pivot-empty" style="@EmptyStyle" role="status">@EmptyText</div>
@@ -39,6 +47,12 @@
             else
             {
                 @Grid()
+            }
+            @if (ReportAcceptsDrop)
+            {
+                <div class="ex-pivot-report-drop-remove" aria-hidden="true">
+                    <span>@Word(PivotCommandIds.RemoveField)</span>
+                </div>
             }
             @if (_selectedSheet is { } sheet)
             {
@@ -254,6 +268,7 @@
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
+        AdoptSummaryFigures();
         if (FieldListWidth is not (> 0 and < 10_000) || !double.IsFinite(FieldListWidth))
             throw new ArgumentOutOfRangeException(nameof(FieldListWidth), FieldListWidth, "A width in pixels, above zero.");
         if (Source is null)
@@ -330,6 +345,8 @@
         {
             _showFieldListParameter = ShowFieldList;
             _fieldListShown = ShowFieldList;
+            if (!ShowFieldList)
+                EndDrag();
         }
         _initialised = true;
         // Whatever the Consumer passed may reach the grid: its geometry, its Chrome, its callbacks.

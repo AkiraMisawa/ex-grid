@@ -14,7 +14,7 @@ Decided with the user in the grilling of 2026-10-05, and in the decisions D1 to 
 - [ADR-0142](../../adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md):
   a write is refused when what the user saw of its target changed.
 
-The criteria are §31 of `docs/definition-of-done.md` (LV-1 to LV-18), PV-42 and PV-43 in §29, and
+The criteria are §32 of `docs/definition-of-done.md` (LV-1 to LV-18), PV-42 and PV-43 in §29, and
 two rows of §21.11. What is built, found and not done is in `docs/implementation-status.md`, "ExGrid's
 live data (2026-10-06)". This spec synthesises those decisions; where it and they disagree, they win.
 

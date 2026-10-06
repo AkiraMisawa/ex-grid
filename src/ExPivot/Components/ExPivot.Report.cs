@@ -6,6 +6,7 @@ using ExGrid.Columns;
 using ExGrid.Components;
 using ExGrid.Rows;
 using ExGrid.Selection;
+using ExGrid.Summarizing;
 using ExPivot.Chrome;
 using ExPivot.Engine;
 using Microsoft.AspNetCore.Components;
@@ -87,6 +88,47 @@ public partial class ExPivot
     // grid, and the label column its button is in.
     private (PivotToggle Toggle, int Column)? _focusAfterToggle;
 
+    // The Selection Summary (ADR-0130): answered from the cells the report lays out, and the
+    // figures shown, which ExPivot holds as the grid's Consumer — so the figures menu works on
+    // every report.
+    private readonly Func<GridSummaryRequest, CancellationToken, Task<GridSummaryResult>> _summarize;
+    private readonly EventCallback<SummaryFigures> _summaryFiguresChanged;
+    private readonly HeldSummaryFigures _summaryFigures = new();
+    private bool _showSelectionSummary = true;
+
+    /// <summary>The Selection Summary's figures over the report (ADR-0130): Excel's Average, Count
+    /// and Sum by default. The report holds the choice made in the figures menu from then on; a new
+    /// value handed here replaces it.</summary>
+    [Parameter] public SummaryFigures SummaryFigures { get; set; } = SummaryFigures.Default;
+
+    /// <summary>Whether the Selection Summary is shown under the report (ADR-0130): on by default.</summary>
+    [Parameter] public bool ShowSelectionSummary { get; set; } = true;
+
+    /// <summary>Raised when the figures menu changes the figures shown (ADR-0130).</summary>
+    [Parameter] public EventCallback<SummaryFigures> SummaryFiguresChanged { get; set; }
+
+    /// <summary>The Selection Summary as it now stands (ADR-0130), for an application that shows the
+    /// figures elsewhere.</summary>
+    [Parameter] public EventCallback<SelectionSummary> OnSelectionSummaryChanged { get; set; }
+
+    // What the grid reads of the Selection Summary, from the parameters; the grid is drawn again
+    // only when it moved (PivotGridHost).
+    private void AdoptSummaryFigures()
+    {
+        var moved = _summaryFigures.Adopt(SummaryFigures) | _showSelectionSummary != ShowSelectionSummary;
+        _showSelectionSummary = ShowSelectionSummary;
+        if (moved)
+            _gridVersion++;
+    }
+
+    private async Task OnSummaryFiguresChangedAsync(SummaryFigures figures)
+    {
+        _summaryFigures.Choose(figures);
+        _gridVersion++;
+        StateHasChanged();
+        await SummaryFiguresChanged.InvokeAsync(figures);
+    }
+
     /// <summary>Creates the component; the report is asked for when its parameters arrive.</summary>
     public ExPivot()
     {
@@ -96,6 +138,10 @@ public partial class ExPivot
         _contextCommands = ContextCommandsFor;
         _commandLabel = CommandLabelFor;
         _doubleClick = new EventCallback<CellPosition>(null, (Func<CellPosition, Task>)OnCellDoubleClickAsync);
+        _summarize = (request, _) => Task.FromResult(_report is { } shown && request.RowSequenceVersion == _rowSequenceVersion
+            ? PivotSummary.Answer(shown, request)
+            : new GridSummaryCells().Answer(request.Figures));
+        _summaryFiguresChanged = new EventCallback<SummaryFigures>(null, (Func<SummaryFigures, Task>)OnSummaryFiguresChangedAsync);
         _gridFragment = RenderGrid;
         _escape = new EventCallback(null, (Func<Task>)OnEscapeAsync);
         _closeDialog = new EventCallback(null, (Action)CloseDialog);
@@ -465,7 +511,13 @@ public partial class ExPivot
         builder.AddComponentParameter(23, nameof(ExGrid<PivotReportRow>.ChangeHighlightDuration), ChangeHighlightDuration);
         builder.AddComponentParameter(24, nameof(ExGrid<PivotReportRow>.Clock), _time);
         builder.AddComponentParameter(25, nameof(ExGrid<PivotReportRow>.RowKey), ReportRowKey);
-        builder.AddComponentReferenceCapture(26, grid => _grid = (ExGrid<PivotReportRow>)grid);
+        builder.AddComponentParameter(26, nameof(ExGrid<PivotReportRow>.OnSummarize), _summarize);
+        builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures.Shown);
+        builder.AddComponentParameter(28, nameof(ExGrid<PivotReportRow>.SummaryFiguresChanged), _summaryFiguresChanged);
+        builder.AddComponentParameter(29, nameof(ExGrid<PivotReportRow>.ShowSelectionSummary), _showSelectionSummary);
+        if (OnSelectionSummaryChanged.HasDelegate)
+            builder.AddComponentParameter(30, nameof(ExGrid<PivotReportRow>.OnSelectionSummaryChanged), OnSelectionSummaryChanged);
+        builder.AddComponentReferenceCapture(31, grid => _grid = (ExGrid<PivotReportRow>)grid);
         builder.CloseComponent();
     }
 
@@ -638,7 +690,7 @@ public partial class ExPivot
         return ReportEditAsync(layout => PivotLayoutEdits.SetCollapsed(layout, field, item, collapse));
     }
 
-    /// <summary>Shows or hides the Field List — the Pivot Toolbar's toggle, or the Context Menu —
+    /// <summary>Shows or hides the Field List — its heading, the Pivot Toolbar, or the Context Menu —
     /// and tells a Consumer that binds it (ADR-0061). The user's choice holds until the Consumer's
     /// <see cref="ShowFieldList"/> itself changes: a Consumer that binds it hands the choice back,
     /// and one that does not keeps passing the value it always passed.</summary>
@@ -647,6 +699,8 @@ public partial class ExPivot
         if (_fieldListShown == shown)
             return;
         _fieldListShown = shown;
+        if (!shown)
+            EndDrag();
         if (!shown && _open is { OnToolbar: false })
             CloseOpenQuietly();
         StateHasChanged();

@@ -41,8 +41,8 @@ and a server all apply the same ones
   - A field dropped on Values from the list becomes a new Value Field.
   - An entry dropped on Values from another Area moves there.
   - A Value Field dropped on another Area moves there too, as Excel does.
-- **Dropping an entry back on the list of fields removes it**, as dragging out of the Areas does in
-  Excel.
+- **Dropping an entry on the list of fields or this ExPivot's report removes that placement.**
+  Other placements of the same field remain; the Source Records are unchanged.
 - **Σ Values** appears in Columns when a second Value Field is placed, and leaves when fewer than two
   remain.
   - It moves between Rows and Columns only.
@@ -128,7 +128,27 @@ report instead, in the Pivot Toolbar.**
   ([ADR-0067](./0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md)),
   with Retry.
 
+### Closing a cramped Field List
+
+*Added 2026-10-05, decided with the user.* A close icon stands at the right of the Field List's
+title in both Chromes. The heading stays in view while the pane's body scrolls; a narrow heading
+truncates its title before squeezing the button. It uses the same visibility binding as the
+Pivot Toolbar's toggle, closes the pane's menu or panel, and preserves the layout and any pending
+Defer Layout Update edits. The Pivot Toolbar's toggle reopens it.
+
 ## Drag and drop without new JavaScript
+
+*Extended 2026-10-05, decided with the user.* Removal originally accepted only a drop on the
+list of fields. The report (including its empty state) now accepts the same removal, showing an
+outline and **Remove Field** while a removable entry is dragged. A details tab's records, a
+Show Details dialog, another ExPivot, an unplaced field from the list, and external drags are
+not removal targets. Passing over the report or cancelling a drag changes nothing. **Σ Values
+is never removable.** Removal follows Defer Layout Update just as the entry's Remove Field does.
+
+A drag carries the source and the pane's immutable layout from the render it began against.
+Every drop checks those against the current source and pane layout, and checks its target's
+rendered layout too. If either has changed, the drop does nothing: an index must never name a
+different field after a reorder. Hiding the pane ends its drag.
 
 The drag uses Blazor's own drag events: `dragstart`, `dragenter`, `drop` and `dragend`. `dragover`'s
 default is prevented by a directive, not by a handler. These are the framework's events, as
@@ -164,8 +184,15 @@ down over its pane.
   position ExPivot computes.
 - The pane scrolls, and nothing is clipped by it.
 - A menu's first command scrolls into view as the menu takes the keyboard.
-- A Chrome places the frame under its entry, and puts no positioned element of its own between the
-  frame and the Field List. Otherwise the frame would take that element's width instead.
+- A Chrome places the frame under its entry. Its full-width scrolling body is the frame's
+  containing block; no positioned Area or entry may intervene, since that would narrow the frame.
+
+*Refined 2026-10-05 after CI exposed the split heading's scroll bug.* The original rule forbade
+every positioned Chrome ancestor. Once the heading stayed outside the scrolling body, that left
+popups positioned against the outer pane: scrolling moved their opener but not the popup. The
+full-width body now establishes their containing block, so both scroll together and the popup's
+full height is reachable through that scroller. The heading and its close icon stay outside it.
+The body's horizontal padding is inside that full width; an Area never supplies the width.
 
 *Revised 2026-09-30, before it was decided.* The first version opened a menu or panel in the flow,
 pushing what follows down. Seen in a browser, that failed in two ways:
@@ -176,6 +203,29 @@ pushing what follows down. Seen in a browser, that failed in two ways:
 
 The static position keeps what the in-flow version was for — nothing measured and nothing clipped —
 and drops both failures.
+
+### A Field List menu closes when the user moves elsewhere
+
+*Added 2026-10-05, decided with the user after a browser reproduction.* A Field List menu used to
+stay open after the user pressed the report. Pressing a disabled command then left DOM focus on
+`body`, so Escape could no longer reach the menu. The same loss happened when a disabled command
+was pressed directly after opening the menu, without visiting the report.
+
+- A press outside the menu, or DOM focus moving to another control **in the same ExPivot**, closes
+  the Field List menu. The press keeps its meaning: a report cell is selected, and a search field
+  takes the keyboard. Dismissal does not ask the opener for focus.
+- The menu and its own opener are inside that boundary. Pressing the opener still toggles the
+  menu; focusing it alone does not close it. Another entry can open its own menu normally.
+- Escape and a command keep their existing way back to the opener. Panels retain their existing
+  Apply/Cancel rules and Inner Popup handling; this outside dismissal is for Field List menus.
+- The core's menu frame can take DOM focus without adding a Tab stop (`tabindex="-1"`). A press
+  on a disabled item or on the frame's padding then leaves Escape inside the menu. The command
+  remains disabled, and opening still focuses the first enabled command.
+- The boundaries use Blazor's own events, under the instance root. A Chrome keeps presses and
+  focus on an open entry from bubbling to that root; the core protects its popup frame itself.
+  Nothing listens on `document`, nothing is measured, and no JavaScript is added (ADR-0021).
+- A dismissal names the menu it was rendered for. A late dismissal cannot close a replacement
+  menu or a settings panel, and a pointer dismissal never requests focus back across a circuit.
 
 **The Pivot Toolbar's popups** — the report filter band's Filter… and the Layout menu — open
 under it, over the report, with a backdrop that closes them on a press elsewhere.

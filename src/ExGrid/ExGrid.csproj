@@ -8,9 +8,19 @@
 
   <ItemGroup>
     <!-- The lowest 10.0.x: the consumer's application resolves it upward, and a higher
-         version here would silently raise the real floor (ADR-0022). The only
-         dependency — ExGrid has no others (ADR-0019). -->
+         version here would silently raise the real floor (ADR-0022). -->
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="10.0.0" />
+    <!-- The family's data package, for the Aggregations' one definition, which the Selection
+         Summary shares with ExPivot (ADR-0130). Not the Snapshot: ExGrid has not adopted it
+         (ADR-0064). No other dependency (ADR-0019). -->
+    <ProjectReference Include="..\ExGrid.Data\ExGrid.Data.csproj" />
   </ItemGroup>
+
+  <!-- Exactly the ExGrid.Data this core was built with, as the engine takes it (DA-1). -->
+  <Target Name="DependOnExactlyThisData" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)" ProjectVersion="[%(ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
 
 </Project>

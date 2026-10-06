@@ -97,9 +97,15 @@ those ADRs the same day, in a grilling that also added ADR-0064 to ADR-0069.
   the rest of §26: `OnCellDoubleClick` (DC-63), the Change Highlight (DC-64 to DC-66), and
   `ReturnKeyboardAsync()` and `HandKeyboardToAsync()` with `OnLeave` (DC-61, DC-62).
 
-**ExGrid's live data is §31** (added 2026-10-05, with ADR-0140 to ADR-0142): the Row Key, the bundled
+**The Selection Summary is §31**, added 2026-10-05 with
+[ADR-0130](adr/0130-the-selection-summary-is-asked-of-the-consumer-like-find.md). Its ExGrid
+criteria gate the release; SM-12 and SM-13 judge ExSheet and ExPivot and do not. ExGrid now
+references `ExGrid.Data` for the Aggregations' definitions, so **DA-18 gates the release too**, and
+the rest of §30 still does not.
+
+**ExGrid's live data is §32** (added 2026-10-05, with ADR-0140 to ADR-0142): the Row Key, the bundled
 sources' live data, and the refusal of a write whose target changed under it. It is ExGrid code, and
-§31 gates the release like §26.
+§32 gates the release like §26.
 
 **"Finished" means every ADR from 0001 to 0030 is implemented** — and, since 2026-09-27, the
 ExGrid half of [ADR-0050](adr/0050-what-exsheet-asks-of-exgrids-core.md) and
@@ -1197,8 +1203,8 @@ reading until a run settles it.
 | **PV-7** | MUST | A value paints its engine text in its number format, and a copy carries its full-precision number. A number format the engine cannot write within its caps is refused by name, in the sample and on OK (ADR-0060) | Layer 1 + Layer 2 | as stated |
 | **PV-8** | MUST | The Field List's rules are functions from one layout to the next: tick, untick, drop at an index, move, remove, and Σ Values only between Rows and Columns. Each gives the layout Excel's pane gives. A command that would change nothing is disabled (ADR-0061) | Layer 1 + Layer 2 | as stated |
 | **PV-9** | MUST | Swapping the Chrome changes no behaviour: the same gestures under the built-in markup, a substituted `IPivotChrome` and `MudPivotChrome` make the same layout (ADR-0061/0062) | Layer 2 under the three; Layer 3 under the built-in markup and MudBlazor on both hosts | the same `PivotLayoutJson` |
-| **PV-10** | MUST | Drag and drop uses Blazor's own events, with no JavaScript of ExPivot's or its Wrapper's. Every drop target prevents `dragover`'s default, and a drop that means nothing changes nothing. In a real browser, a field dragged onto an Area lands there, an entry dropped on another lands before it, and an entry dragged back to the list of fields is removed (ADR-0061/0021) | Layer 3 under both Chromes on both hosts; inspect `wwwroot` and the Wrapper's script tests | green; no `.js` |
-| **PV-11** | MUST | A menu or panel opens directly under its entry, as wide as the pane and over what follows, one at a time per ExPivot. Escape, Cancel and a command close it, and the keyboard goes back to the entry. While a select's list inside is open, Escape is the list's (ADR-0061/0039) | Layer 2 + Layer 3 under both Chromes | as stated |
+| **PV-10** | MUST | Drag and drop uses Blazor's own events, with no JavaScript of ExPivot's or its Wrapper's. Every drop target prevents `dragover`'s default, and a drop that means nothing changes nothing. In a real browser, a field dragged onto an Area lands there, an entry dropped on another lands before it, and an entry dropped on the list of fields or its own report (including the empty state) removes only that placement. Details grids, other pivots, list fields, external or cancelled drags and Σ Values remove nothing. A replaced source or pane layout invalidates the drag; a late target cannot reuse an old index (ADR-0061/0021) | Layer 3 under both Chromes on both hosts; inspect `wwwroot` and the Wrapper's script tests | green; no `.js` |
+| **PV-11** | MUST | A menu or panel opens directly under its entry, as wide as the pane and over what follows, one at a time per ExPivot. It scrolls with its entry in the full-width body, which keeps every action reachable while the heading stays in view. Escape, Cancel and a command close it, and the keyboard goes back to the entry. A Field List menu also closes on a press or DOM focus elsewhere in the same ExPivot, outside the menu and its opener: the outside operation keeps its meaning and the keyboard is not taken back. A disabled menu item or frame padding can be pressed without losing Escape. A late dismissal cannot close a replacement surface. While a select's list inside is open, Escape is the list's (ADR-0061/0039) | Layer 2 + Layer 3 under both Chromes | as stated |
 | **PV-12** | MUST | The report filter band, on the Pivot Toolbar's left, shows `(All)`, the one Item shown or `(Multiple Items)`. Its Filter… opens under the Pivot Toolbar with a backdrop that closes it, and OK filters the report (ADR-0061) | Layer 2 + Layer 3 | as stated |
 | **PV-13** | MUST | An outer Item expands and collapses from its ± button, the Context Menu or a double click on its label, and the Focus stays on it. A refresh that changes only values keeps the Row Sequence Version, and so the Selection (ADR-0059/0011) | Layer 2 + Layer 3 | as stated |
 | **PV-14** | MUST | Show Details, from a double click (DC-63) or the Context Menu, shows the records behind a value cell: none hidden, in the Snapshot's order. It opens a tab at the report's foot by default: closable, titled by the cell, not in the Pivot Layout, and paged from the source. It opens a dialog when the Consumer asks for one. When the Consumer listens to `OnShowDetails`, it hands the records to the Consumer, and neither the tab nor the dialog opens. An empty cell shows nothing (ADR-0059/0063) | Layer 2 + Layer 3 | as stated |
@@ -1217,7 +1223,7 @@ reading until a run settles it.
 | **PV-27** | MUST | The bundled source works in slices and yields between them, and a cancelled question stops at the next slice (ADR-0066) | Layer 1 | as stated |
 | **PV-28** | MUST | Defer Layout Update: while it is ticked, the pane's changes build a pending layout, and the report and the source are left alone. Update, or unticking, applies the pending layout in one change. `LayoutChanged` is raised only for the layout the report shows (ADR-0061) | Layer 2 | as stated |
 | **PV-29** | MUST | Caps: a question carries `MaxLeaves`, and a source that would exceed it refuses. A layout whose report would pass 1,048,576 rows or 16,384 columns, or whose source refuses for its leaves, is refused by name, and the report stays on the layout before. The Consumer can change each cap (ADR-0066) | Layer 1 + Layer 2 | as stated |
-| **PV-30** | MUST | The Pivot Toolbar holds the report filter band on the left. On the right it holds Layout ▾, then Refresh (only when the source can be refreshed), then the pane's toggle, whose state the Consumer can bind. The Layout menu offers Excel's Design tab choices, marks the current one, and disables a choice that would change nothing (ADR-0061) | Layer 2 + Layer 3 | as stated |
+| **PV-30** | MUST | The Pivot Toolbar holds the report filter band on the left. On the right it holds Layout ▾, then Refresh (only when the source can be refreshed), then the pane's toggle, whose state the Consumer can bind. The pane's heading has a close icon at its right, still reachable when narrow or when the body scrolls; it uses the same binding, closes the pane's popup and keeps its layout and pending edits. The Layout menu offers Excel's Design tab choices, marks the current one, and disables a choice that would change nothing (ADR-0061) | Layer 2 + Layer 3 | as stated |
 | **PV-31** | MUST | Order Key: Items are ordered by their key, ascending, with ties falling back to the label. An Item with no key comes after the keyed ones. A key function that throws is refused, naming the field and the value. Two values with one key stay two Items. The key orders the Item lists of Filter… and of the report filter band, and does not touch a sort by value (ADR-0060) | Layer 1 | every clause a named test |
 | **PV-32** | MUST | Date parts: a field declared as a Date column's year, quarter or month is labelled as Excel labels it, in the report's words, and ordered by the calendar. The part of a Blank is a Blank (ADR-0060) | Layer 1 | as stated |
 | **PV-33** | MUST | The Japanese words, chosen in one line, replace every word ExPivot paints and the ExGrid commands in the report's Context Menu. They never follow the culture on their own (ADR-0060) | Layer 2 | no English word left on `/pivot` in Japanese |
@@ -1242,7 +1248,7 @@ then relies on move into the release.
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|
-| **DA-1** | MUST | `ExGrid.Data` references no package and nothing of ours. `ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated range. Nothing references either but `ExPivot.Engine` (`ExGrid.Data` only), the demo and the tests (ADR-0064/0065) | the package check | as stated |
+| **DA-1** | MUST | `ExGrid.Data` references no package and nothing of ours. `ExGrid.Data.Arrow` references `ExGrid.Data` exactly and `Apache.Arrow` within a stated range. Nothing references either but `ExPivot.Engine` and `ExGrid` (`ExGrid.Data` only), the demo and the tests (ADR-0064/0065; `ExGrid` since ADR-0130) | the package check | as stated |
 | **DA-2** | MUST | A Snapshot is immutable: no public member changes one. A Change Batch yields a new Snapshot, and the old one reads exactly as before (ADR-0064) | Layer 1 | as stated |
 | **DA-3** | MUST | The kinds hold their values as ADR-0064 says. Text is exact, with its dictionary in order of first appearance. Decimal is exact, and `1.5` and `1.50` read back alike. Double keeps non-finite values. Integer is 64-bit. Date is a clock value: a `DateTime`'s ticks with its `Kind` ignored, a `DateOnly`'s midnight, a `DateTimeOffset`'s clock without its offset. Boolean is true or false. A Blank is possible in every kind and differs from `""` and 0 (ADR-0064) | Layer 1 | every clause a named test |
 | **DA-4** | MUST | Built from objects with typed accessors, a Snapshot keeps the objects, by reference and in order, and boxes no value (ADR-0064) | Layer 1, with an allocation bound | as stated |
@@ -1259,8 +1265,41 @@ then relies on move into the release.
 | **DA-15** | MUST | Writing Arrow gives an uncompressed IPC stream. A Date column is written as `date32` when every value is a midnight, and otherwise as the coarsest `timestamp` unit that holds every value exactly (ADR-0065) | Layer 1 | as stated |
 | **DA-16** | MUST | The package check reads and writes an Arrow stream through the packed packages (ADR-0065/0042) | `tests/ExGrid.PackageSmoke/check.sh` | green |
 | **DA-17** | OBSERVATIONAL | A million records built from objects, read from a CSV and read from Arrow, on CoreCLR and in the browser | recorded in `metrics.json` | recorded, never gated |
+| **DA-18** | MUST | The eleven Aggregations' definitions — what each counts and includes, and how a result is finished from its parts — live in `ExGrid.Data`, and both `ExPivot.Engine` and ExGrid's Selection Summary answer through them. **Gates ExGrid's release** (ADR-0130/0060) | Layer 1; inspect the references | one definition; PV-4's tables pass through it |
 
-## 31. Live data (LV)
+---
+
+## 31. Selection Summary (SM)
+
+*(Added 2026-10-05, with
+[ADR-0130](adr/0130-the-selection-summary-is-asked-of-the-consumer-like-find.md).)* The grid asks
+and shows; whoever holds the data answers. These criteria hold the core to asking only the current
+question and showing only its answer, and `GridSource.From` to what each figure means. SM-1 to
+SM-11 and SM-14 gate ExGrid's release (§2); SM-12 and SM-13 judge ExSheet and ExPivot.
+
+| ID | Level | Statement | Verification | Pass |
+|---|---|---|---|---|
+| **SM-1** | MUST | A request carries the selected ranges, the Row Sequence Version, the visible columns in the current order and the figures shown, and nothing else (ADR-0130) | Layer 2 with a recording `OnSummarize` | every field as stated |
+| **SM-2** | MUST | A change of selection clears the figures at once and shows the pending mark; the request in flight is cancelled and its answer discarded; an answer under a stale Row Sequence Version shows nothing. The previous selection's figures are never shown beside a new selection (ADR-0130/0025/0011) | Layer 2 with a gated answerer | at no render are figures shown that answer another question; the cancelled token observed |
+| **SM-3** | MUST | A new Window, a Source's change or an edit under a standing selection clears the figures and asks again; the grid does not throttle (ADR-0130) | Layer 2 | one new request per change |
+| **SM-4** | MUST | A declined request shows its reason in place of the figures; no partial figure is ever shown. `InMemoryGridSource` never declines, at any size (ADR-0130) | Layer 1 + Layer 2 | as stated; a whole column of 1,000,000 rows summed |
+| **SM-5** | MUST | With nobody to answer, no figure, mark or refusal is shown, and `CanSummarize` is false. `OnSummarize` beside a bound `Source` is refused by name. `GridSource.Fetch` reports `CanSummarize` only with a `summarize` delegate; an existing `IGridSource` compiles and reports that it cannot (ADR-0130/0055) | Layer 1 + Layer 2 | as stated |
+| **SM-6** | MUST | `GridSource.From` answers each figure by ADR-0130's table: numbers in every figure; text, Booleans, dates and errors in Count only; blanks in none; a cell under two ranges once; hidden columns never; an Action Column blank; a Template Column by its value accessor; Integer and Decimal summed exactly (ADR-0130/0060) | Layer 1 | every row of the table a named test |
+| **SM-7** | MUST | An error among the values leaves Count alone, as Excel's status bar does — once a Windows run has read Excel's answer and recorded it in `verification/` (ADR-0130) | Layer 1; the Windows record | as recorded |
+| **SM-8** | MUST | The demo API server's SQL `summarize` gives, question for question, the answer `GridSource.From` gives over the same rows (ADR-0130) | `tests/ExGrid.DemoApi.Tests` | equal answers |
+| **SM-9** | MUST | The built-in Chrome shows Average, Count and Sum by default in the status line whenever two or more cells are selected — the line standing whenever the grid can summarise, so selecting never moves the Viewport — formatted by the Focus's column's format until Excel's rule is recorded; the right-click menu reports a change of figures and the grid holds none (ADR-0130/0010) | Layer 2 + Layer 3 under both Chromes | as stated |
+| **SM-10** | MUST | The figures are not written to a live region (ADR-0130/0033) | Layer 2 | no announcement on a selection change |
+| **SM-11** | MUST | Behaviour is the core's: SM-2, SM-4 and SM-9 pass with `MudGridChrome` exactly as with the built-in Chrome (ADR-0130/0010) | Layer 3, under both Chromes | identical outcomes |
+| **SM-14** | MUST | `ShowSelectionSummary` is on by default; off, no strip and no figure on the grid, and no request unless `OnSelectionSummaryChanged` has a delegate, which is still told; switched on again, the standing selection is asked about. ExSheet and ExPivot carry it to their grid (ADR-0130, 2026-10-06) | Layer 2 | as stated |
+| **SM-12** | MUST | ExSheet answers from its own cells: a formula's value, every cell of a spilled array, by the same table (ADR-0130) | Layer 1 | as stated |
+| **SM-13** | MUST | ExPivot answers from the cells it lays out, subtotals and grand totals summed with the rest (ADR-0130) | Layer 2 | as stated |
+
+---
+
+## 32. Live data (LV)
+
+*(Numbered §31 until 2026-10-06, when the Selection Summary reached `main` first and kept it (#65).
+Commit messages before then use the old number.)*
 
 *(Added 2026-10-05 with [ADR-0140](adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md),
 [ADR-0141](adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md) and

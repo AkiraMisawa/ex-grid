@@ -97,6 +97,9 @@ public sealed class MudSheetChrome : ISheetChrome
     /// <summary>The completion list and argument hint: <see cref="Grid"/>'s.</summary>
     public RenderFragment? EditorCompletion(EditorCompletionContext context) => GridSeams.EditorCompletion(context);
 
+    /// <summary>The Selection Summary (ADR-0130), as the Grid Chrome draws it.</summary>
+    public RenderFragment? SelectionSummary(SelectionSummaryContext context) => GridSeams.SelectionSummary(context);
+
     /// <summary>
     /// A Toolbar Item of the Sheet Toolbar in MudBlazor's controls (ADR-0100): a toggle as a
     /// <c>MudToggleIconButton</c>, a list as a <c>MudMenu</c>, a split control as a

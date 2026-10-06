@@ -850,7 +850,8 @@
             <button type="button" @onclick="() => TurnPageAsync(1)" disabled="@(_pageIndex >= PageCount - 1)">›</button>
         </div>
     }
-    @if ((!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView())) || ShowsMarkStatus)
+    @{ ReviewSummary(); }
+    @if ((!_selection.Selection.IsEmpty && (PageSize is not null || !SelectionIntersectsView())) || ShowsMarkStatus || ShowsSummaryStrip)
     {
         @* The selection count, the off-screen indicator that closes the invisible-paste
            hole — for paging and scrolling alike — and, under a pager, the explicit way
@@ -876,6 +877,11 @@
             @if (PageSize is not null && _markColumn >= 0)
             {
                 <button type="button" @onclick="_onMarkWholeResult">Mark all @MarkableRows rows</button>
+            }
+            @* Excel's status-bar figures over the selection (ADR-0130). *@
+            @if (ShowsSummaryStrip)
+            {
+                RenderSummary(__builder);
             }
         </div>
     }
@@ -2395,7 +2401,9 @@
          nameof(RowSequenceVersion), nameof(OnRangeNeeded), nameof(Sorts), nameof(OnSortChanged),
          nameof(OnCopyRowsNeeded), nameof(Filters), nameof(OnFilterChanged), nameof(OnDistinctValuesNeeded),
          // The push mode's answer to a Find: beside a Source, two answers to one question (ADR-0055).
-         nameof(OnFind)];
+         nameof(OnFind),
+         // The push mode's answer to a Selection Summary, likewise (ADR-0130).
+         nameof(OnSummarize)];
 
     /// <summary>
     /// Blazor's parameter entry point, overridden to refuse by name a Source passed
@@ -2565,6 +2573,7 @@
         _sequenceVersion = Source?.RowSequenceVersion ?? RowSequenceVersion;
         _sorts = Source is not null ? Source.Sorts : Sorts ?? [];
         _filter = Source is not null ? Source.Filter : Filters;
+        NoteRowsForSummary();
 
         if (_cellMetricsSupplied && CellMetrics.DigitWidthPx <= 0)
         {
@@ -3086,6 +3095,9 @@
             _scrollerFocusOwed = false;
             await ReclaimFocusAsync();
         }
+
+        // The Selection Summary's question owed by this render, and its news (ADR-0130).
+        await SettleSummaryAsync();
 
         if (_announcePending is { } pending)
         {
@@ -3711,6 +3723,7 @@
         // The user's own write (D1): a gesture taken before it is painted does not compare it.
         var written = NoteOwnWrite([intent.Target]);
         await OnFill.InvokeAsync(intent);
+        AskSummaryAgain();
         if (intent.IsRefused)
             ForgetOwnWrite(written);
         else
@@ -5908,6 +5921,7 @@
             if (intent.IsRefused)
                 ForgetOwnWrite(written);
         }
+        AskSummaryAgain();
         // A refused paste wrote nothing: the Selection stays where it was (ADR-0050, item 3).
         if (intent.IsRefused)
             return;
@@ -6902,6 +6916,7 @@
             NoteOwnWrite(decision.Plan.Targets);
             await OnClear.InvokeAsync(new GridClearIntent(decision.Plan.Targets, _sequenceVersion));
         }
+        AskSummaryAgain();
     }
 
     /// <summary>
@@ -6966,6 +6981,7 @@
             if (intent.IsRefused)
                 ForgetOwnWrite(written);
         }
+        AskSummaryAgain();
     }
 
     private string CellTextOf(CellPosition cell)
@@ -7370,6 +7386,7 @@
         if (OnEdit.HasDelegate)
             NoteOwnWrite([SelectionRange.FromCorners(cell, cell)]);
         await EndEditingAsync(reclaimFocus, byPress, OnEdit.HasDelegate ? () => OnEdit.InvokeAsync(intent) : null);
+        AskSummaryAgain();
         return true;
     }
 
@@ -7465,6 +7482,7 @@
         await EndEditingAsync(endedIn: OnPaste.HasDelegate ? () => OnPaste.InvokeAsync(intent) : null);
         if (written is not null && intent.IsRefused)
             ForgetOwnWrite(written);
+        AskSummaryAgain();
         StateHasChanged();
     }
 
@@ -8794,6 +8812,7 @@
         // (ADR-0055, the fetching Source's rule).
         _findCancellation?.Cancel();
         _findCancellation = null;
+        CancelSummary();
         _settleTimer?.Dispose();
         _edgeTimer?.Dispose();
         _announceTimer?.Dispose();

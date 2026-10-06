@@ -105,4 +105,4 @@ changed:
 - **`CONTEXT.md` gains Row Key.** It is distinct from Row Identity, the test for sameness, and from
   Record Key, a Snapshot's declared column. A Snapshot's rows take their Row Key from the Record
   Key.
-- **The Definition of Done gains LV-1 and LV-2** (§31), and PV-42 and PV-43 for ExPivot's key.
+- **The Definition of Done gains LV-1 and LV-2** (§32), and PV-42 and PV-43 for ExPivot's key.

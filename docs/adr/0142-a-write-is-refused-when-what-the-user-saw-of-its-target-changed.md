@@ -148,4 +148,4 @@ and the user is told why.**
   through the grid's existing channels and worded by Chrome. The grid holds no strings.
 - **On the Server host, a press on a row that changes faster than a round trip** may be refused more
   than once. Each refusal says why.
-- **The Definition of Done gains LV-11 to LV-14, LV-16 and LV-17** (§31).
+- **The Definition of Done gains LV-11 to LV-14, LV-16 and LV-17** (§32).

@@ -44,6 +44,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     private readonly int _readAheadRows;
     private readonly Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? _distinctValues;
     private readonly Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? _find;
+    private readonly Func<Summarizing.GridSummaryRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Summarizing.GridSummaryResult>>? _summarize;
 
     // Captured where the source is constructed — the Consumer's component, so Blazor's
     // dispatcher. It is where a failure nobody subscribed to is rethrown, since the task
@@ -92,6 +93,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
         Rows.RowMarkAdapter<TRow>? marks = null,
         Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null,
+        Func<Summarizing.GridSummaryRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Summarizing.GridSummaryResult>>? summarize = null,
         Func<TRow, object>? rowKey = null,
         TimeProvider? clock = null)
     {
@@ -110,6 +112,7 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         _readAheadRows = readAheadRows;
         _distinctValues = distinctValues;
         _find = find;
+        _summarize = summarize;
         Marks = marks is null ? null : new Rows.FetchingRowMarks<TRow>(this, marks);
         _key = rowKey ?? marks?.Key;
         if (_key is not null)
@@ -935,6 +938,23 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         if (_find is null)
             throw new NotSupportedException("This source was given no find delegate: CanFind is false (ADR-0055).");
         return _find(request, Filter, Sorts, cancellationToken);
+    }
+
+    /// <summary>Whether a <c>summarize</c> delegate was given (ADR-0130).</summary>
+    public bool CanSummarize => _summarize is not null;
+
+    /// <summary>
+    /// A Selection Summary, answered by the <c>summarize</c> delegate against the Filter and Sorts in
+    /// force (ADR-0130). It must answer as <see cref="Summarizing.GridSummary.Of{TRow}"/> would over
+    /// that result, or decline; the grid shows nothing of an answer read under another order.
+    /// </summary>
+    public Task<Summarizing.GridSummaryResult> SummarizeAsync(Summarizing.GridSummaryRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_summarize is null)
+            throw new NotSupportedException("This source was given no summarize delegate: CanSummarize is false (ADR-0130).");
+        return _summarize(request, Filter, Sorts, cancellationToken);
     }
 
     /// <summary>

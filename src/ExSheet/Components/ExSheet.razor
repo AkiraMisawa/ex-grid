@@ -47,6 +47,7 @@
         PasteMaySpill="true" OnPaste="OnPasteAsync" OnPasteRefused="OnPasteRefused"
         CopyAnswer="_copyAnswer" OnCopyRefused="OnCopyRefused" HideCopyWithHeaders="!AllowCopyWithHeaders"
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
+        OnSummarize="_summarize" ShowSelectionSummary="ShowSelectionSummary" SummaryFigures="_summaryFigures.Shown" SummaryFiguresChanged="_summaryFiguresChanged" OnSelectionSummaryChanged="OnSelectionSummaryChanged"
         OnCopyRowsNeeded="_rowsNeeded"
         OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" OnCommitRefused="_commitRefused"
         DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" OnBrowserTimeZone="_browserTimeZone" />
@@ -104,6 +105,11 @@
     private readonly Func<string, string?> _commandLabel;
     private readonly Func<global::ExGrid.Clipboard.GridCopyRequest, global::ExGrid.Clipboard.GridCopyAnswer> _copyAnswer;
     private readonly Func<global::ExGrid.Finding.GridFindRequest, CancellationToken, Task<global::ExGrid.Finding.GridFindResult>> _find;
+    // The Selection Summary (ADR-0130): answered from the Sheet's own cells, and the figures shown,
+    // which this component holds as the grid's Consumer — so the figures menu works on every Sheet.
+    private readonly Func<global::ExGrid.Summarizing.GridSummaryRequest, CancellationToken, Task<global::ExGrid.Summarizing.GridSummaryResult>> _summarize;
+    private readonly EventCallback<global::ExGrid.Summarizing.SummaryFigures> _summaryFiguresChanged;
+    private readonly global::ExGrid.Summarizing.HeldSummaryFigures _summaryFigures = new();
     private readonly Func<RowRange, CancellationToken, Task<IReadOnlyList<SheetRow>>> _rowsNeeded;
     private readonly EventCallback<GridSelection> _selectionChanged;
     private readonly EventCallback<string> _browserTimeZone;
@@ -192,6 +198,16 @@
         _find = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
             ? SheetFind.Step(sheet, request)
             : global::ExGrid.Finding.GridFindResult.NotFound);
+        _summarize = (request, _) => Task.FromResult(request.RowSequenceVersion == 0 && _sheet is { } sheet
+            ? SheetSummary.Answer(sheet, request)
+            : new global::ExGrid.Summarizing.GridSummaryCells().Answer(request.Figures));
+        _summaryFiguresChanged = new EventCallback<global::ExGrid.Summarizing.SummaryFigures>(null,
+            (Func<global::ExGrid.Summarizing.SummaryFigures, Task>)(async figures =>
+            {
+                _summaryFigures.Choose(figures);
+                StateHasChanged();
+                await SummaryFiguresChanged.InvokeAsync(figures);
+            }));
         // The Consumer's wording first, then ExSheet's own English for its commands; null falls
         // back to the grid's built-in words for the grid's own commands (ADR-0036).
         _commandLabel = id => CommandLabel?.Invoke(id) ?? SheetCommandIds.EnglishFor(id);
@@ -293,6 +309,21 @@
     /// </summary>
     /// <exception cref="SheetDocumentException">The document's version is one the engine does not know.</exception>
     [Parameter] public SheetDocument? Document { get; set; }
+
+    /// <summary>The Selection Summary's figures (ADR-0130): Excel's Average, Count and Sum by
+    /// default. The Sheet holds the choice made in the figures menu from then on; a new value handed
+    /// here replaces it.</summary>
+    [Parameter] public global::ExGrid.Summarizing.SummaryFigures SummaryFigures { get; set; } = global::ExGrid.Summarizing.SummaryFigures.Default;
+
+    /// <summary>Whether the Selection Summary is shown under the Sheet (ADR-0130): on by default.</summary>
+    [Parameter] public bool ShowSelectionSummary { get; set; } = true;
+
+    /// <summary>Raised when the figures menu changes the figures shown (ADR-0130).</summary>
+    [Parameter] public EventCallback<global::ExGrid.Summarizing.SummaryFigures> SummaryFiguresChanged { get; set; }
+
+    /// <summary>The Selection Summary as it now stands (ADR-0130), for an application that shows the
+    /// figures elsewhere.</summary>
+    [Parameter] public EventCallback<global::ExGrid.Summarizing.SelectionSummary> OnSelectionSummaryChanged { get; set; }
 
     /// <summary>
     /// Raised after every change to the Sheet with its Sheet Document — Entries, never Values
@@ -447,6 +478,7 @@
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        _summaryFigures.Adopt(SummaryFigures);
         RefuseUnreachableRows();
         BindPointingScope();
         ResolveToolbar();
@@ -1740,6 +1772,9 @@
             _window = rows;
         }
         StateHasChanged();
+        // A change may reach cells under the selection that the Window does not hold; the
+        // Selection Summary is asked again (ADR-0130).
+        if (_grid is { } summarized) await summarized.RefreshSummaryAsync();
         RefreshToolbar();
         if (raiseDocument && DocumentChanged.HasDelegate)
         {

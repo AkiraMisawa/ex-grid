@@ -20,6 +20,8 @@
     <ProjectReference Include="..\..\src\ExGrid.Data\ExGrid.Data.csproj" />
     <ProjectReference Include="..\..\src\ExGrid.Data.Arrow\ExGrid.Data.Arrow.csproj" />
     <ProjectReference Include="..\..\src\ExPivot.Engine\ExPivot.Engine.csproj" />
+    <!-- And the grid's Selection Summary contract, for "database → SQL summary" (ADR-0130). -->
+    <ProjectReference Include="..\..\src\ExGrid\ExGrid.csproj" />
   </ItemGroup>
 
   <ItemGroup>

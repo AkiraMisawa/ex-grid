@@ -18,7 +18,7 @@ export default {
     await press(page, 'Shift+ArrowDown');
     await press(page, 'Shift+ArrowDown', { after: 1300 });
     await click(page, page.getByText('All', { exact: true }).first(), { after: 900 });
-    await moveTo(page, await cellAt(page, 'Last', 10));
+    await moveTo(page, await cellAt(page, 'Last', 8));
     await pause(page, 1600);
   },
 };

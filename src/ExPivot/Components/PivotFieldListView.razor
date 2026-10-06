@@ -2,78 +2,87 @@
    ExPivot's Visual Tokens. It draws what the context hands it and calls back; what a tick, a
    drop or a command means is ExPivot's. Every Area and the list of fields prevent dragover's
    default, so a drop is never lost to a render still on its way; a drop that changes nothing is
-   ExPivot's to ignore. Each entry's open menu or panel stands directly under it, and no element
-   here is positioned, so the frame takes the pane's width. Defer Layout Update and Update stand
+   ExPivot's to ignore. Each entry's open menu or panel stands directly under it, positioned
+   against the full-width scrolling body. Defer Layout Update and Update stand
    at the foot. *@
+@* A delayed DOM gesture keeps the context from this render, including its layout (ADR-0061). *@
+@{ var renderedContext = Context; }
 <div class="ex-pivot-pane">
-    <div class="ex-pivot-pane-title">@Context.Title</div>
-    <div class="ex-pivot-pane-caption">@Context.Word("choose-fields")</div>
-    <input type="search" class="ex-pivot-search" placeholder="@Context.Word("search-fields")"
-           aria-label="@Context.Word("search-fields")"
-           @bind:get="Context.Search" @bind:set="Context.SearchChanged" @bind:event="oninput" />
-    <ul class="@(Context.ListAcceptsDrop ? "ex-pivot-fields ex-pivot-drop-remove" : "ex-pivot-fields")"
-        aria-label="@Context.Title" @ondragover:preventDefault @ondrop="Context.DropOnList">
-        @foreach (var field in Context.Fields)
-        {
-            <li @key="field.Name" class="@(Context.Dragging?.Field == field.Name ? "ex-pivot-field ex-pivot-dragging" : "ex-pivot-field")"
-                draggable="true"
-                @ondragstart="() => Context.StartDrag(PivotDragSubject.FromList(field.Name))"
-                @ondragend="Context.EndDrag">
-                <label class="ex-pivot-field-label">
-                    <input type="checkbox" checked="@field.IsPlaced" @onchange="field.Toggle" />
-                    <span class="ex-pivot-field-caption">@field.Caption</span>
-                </label>
-                @if (field.IsFiltered)
-                {
-                    <span class="ex-pivot-filtered-mark" role="img" aria-label="@Context.Word("filtered")" title="@Context.Word("filtered")"></span>
-                }
-            </li>
-        }
-    </ul>
-    <div class="ex-pivot-pane-caption">@Context.Word("drag-fields")</div>
-    <div class="ex-pivot-areas">
-        @foreach (var area in Context.Areas)
-        {
-            var end = area.Entries.Count(e => !e.IsValuesPseudoField);
-            <div @key="area.Area" class="@AreaClass(area)" @ondragover:preventDefault
-                 @ondragenter="() => Context.DragOver(area.Area, end)"
-                 @ondrop="() => Context.Drop(area.Area, end)">
-                <div class="ex-pivot-area-title">@area.Title</div>
-                <div class="ex-pivot-area-entries" role="list" aria-label="@area.Title">
-                    @foreach (var entry in area.Entries)
-                    {
-                        var index = entry.IsValuesPseudoField ? end : entry.Entry.Index;
-                        <div @key="entry.Entry" class="@EntryClass(area, entry, index)" role="listitem" draggable="true"
-                             @ondragstart="() => Context.StartDrag(PivotDragSubject.FromArea(entry.Entry))"
-                             @ondragend="Context.EndDrag"
-                             @ondragenter="() => Context.DragOver(area.Area, index)" @ondragenter:stopPropagation
-                             @ondragover:preventDefault
-                             @ondrop="() => Context.Drop(area.Area, index)" @ondrop:stopPropagation>
-                            <PivotFocusButton Class="ex-pivot-entry-button" OnClick="entry.OpenMenu" FocusRequest="entry.FocusRequest"
-                                              aria-haspopup="menu" aria-expanded="@(entry.IsMenuOpen ? "true" : "false")"
-                                              aria-label="@PivotWords.Fill(Context.Word("field-menu"), entry.Caption)">
-                                <span class="ex-pivot-entry-caption">@entry.Caption</span>
-                                @if (entry.IsFiltered)
-                                {
-                                    <span class="ex-pivot-filtered-mark" aria-hidden="true"></span>
-                                }
-                                <span class="ex-pivot-entry-arrow" aria-hidden="true">▾</span>
-                            </PivotFocusButton>
-                            @entry.Popup
-                        </div>
-                    }
-                </div>
-            </div>
-        }
+    <div class="ex-pivot-pane-heading">
+        <div class="ex-pivot-pane-title" title="@Context.Title">@Context.Title</div>
+        <button type="button" class="ex-pivot-pane-close" aria-label="@Context.Word("hide-field-list")"
+                title="@Context.Word("hide-field-list")" @onclick="Context.Close"><span aria-hidden="true">×</span></button>
     </div>
-    @* Excel's Defer Layout Update at the pane's foot (ADR-0061): while it is ticked, the pane's
-       changes build a pending layout, and Update applies it in one change. *@
-    <div class="ex-pivot-defer">
-        <label class="ex-pivot-defer-label">
-            <input type="checkbox" checked="@Context.DeferLayoutUpdate" @onchange="e => Context.DeferLayoutUpdateChanged(e.Value is true)" />
-            <span>@Context.Word("defer-layout-update")</span>
-        </label>
-        <button type="button" class="ex-pivot-update" disabled="@(!Context.CanUpdate)" @onclick="Context.Update">@Context.Word("update")</button>
+    <div class="ex-pivot-pane-body">
+        <div class="ex-pivot-pane-caption">@Context.Word("choose-fields")</div>
+        <input type="search" class="ex-pivot-search" placeholder="@Context.Word("search-fields")"
+               aria-label="@Context.Word("search-fields")"
+               @bind:get="Context.Search" @bind:set="Context.SearchChanged" @bind:event="oninput" />
+        <ul class="@(Context.ListAcceptsDrop ? "ex-pivot-fields ex-pivot-drop-remove" : "ex-pivot-fields")"
+            aria-label="@Context.Title" @ondragover:preventDefault @ondrop="Context.DropOnList">
+            @foreach (var field in Context.Fields)
+            {
+                <li @key="field.Name" class="@(Context.Dragging?.Field == field.Name ? "ex-pivot-field ex-pivot-dragging" : "ex-pivot-field")"
+                    draggable="true"
+                    @ondragstart="() => renderedContext.StartDrag(PivotDragSubject.FromList(field.Name))"
+                    @ondragend="Context.EndDrag">
+                    <label class="ex-pivot-field-label">
+                        <input type="checkbox" checked="@field.IsPlaced" @onchange="field.Toggle" />
+                        <span class="ex-pivot-field-caption">@field.Caption</span>
+                    </label>
+                    @if (field.IsFiltered)
+                    {
+                        <span class="ex-pivot-filtered-mark" role="img" aria-label="@Context.Word("filtered")" title="@Context.Word("filtered")"></span>
+                    }
+                </li>
+            }
+        </ul>
+        <div class="ex-pivot-pane-caption">@Context.Word("drag-fields")</div>
+        <div class="ex-pivot-areas">
+            @foreach (var area in Context.Areas)
+            {
+                var end = area.Entries.Count(e => !e.IsValuesPseudoField);
+                <div @key="area.Area" class="@AreaClass(area)" @ondragover:preventDefault
+                     @ondragenter="() => renderedContext.DragOver(area.Area, end)"
+                     @ondrop="() => renderedContext.Drop(area.Area, end)">
+                    <div class="ex-pivot-area-title">@area.Title</div>
+                    <div class="ex-pivot-area-entries" role="list" aria-label="@area.Title">
+                        @foreach (var entry in area.Entries)
+                        {
+                            var index = entry.IsValuesPseudoField ? end : entry.Entry.Index;
+                            <div @key="entry.Entry" class="@EntryClass(area, entry, index)" role="listitem" draggable="true"
+                                 @onmousedown:stopPropagation="entry.IsMenuOpen" @onfocusin:stopPropagation="entry.IsMenuOpen"
+                                 @ondragstart="() => renderedContext.StartDrag(PivotDragSubject.FromArea(entry.Entry))"
+                                 @ondragend="Context.EndDrag"
+                                 @ondragenter="() => renderedContext.DragOver(area.Area, index)" @ondragenter:stopPropagation
+                                 @ondragover:preventDefault
+                                 @ondrop="() => renderedContext.Drop(area.Area, index)" @ondrop:stopPropagation>
+                                <PivotFocusButton Class="ex-pivot-entry-button" OnClick="entry.OpenMenu" FocusRequest="entry.FocusRequest"
+                                                  aria-haspopup="menu" aria-expanded="@(entry.IsMenuOpen ? "true" : "false")"
+                                                  aria-label="@PivotWords.Fill(Context.Word("field-menu"), entry.Caption)">
+                                    <span class="ex-pivot-entry-caption">@entry.Caption</span>
+                                    @if (entry.IsFiltered)
+                                    {
+                                        <span class="ex-pivot-filtered-mark" aria-hidden="true"></span>
+                                    }
+                                    <span class="ex-pivot-entry-arrow" aria-hidden="true">▾</span>
+                                </PivotFocusButton>
+                                @entry.Popup
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        @* Excel's Defer Layout Update at the pane's foot (ADR-0061): while it is ticked, the pane's
+           changes build a pending layout, and Update applies it in one change. *@
+        <div class="ex-pivot-defer">
+            <label class="ex-pivot-defer-label">
+                <input type="checkbox" checked="@Context.DeferLayoutUpdate" @onchange="e => Context.DeferLayoutUpdateChanged(e.Value is true)" />
+                <span>@Context.Word("defer-layout-update")</span>
+            </label>
+            <button type="button" class="ex-pivot-update" disabled="@(!Context.CanUpdate)" @onclick="Context.Update">@Context.Word("update")</button>
+        </div>
     </div>
 </div>
 

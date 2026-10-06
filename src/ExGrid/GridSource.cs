@@ -65,6 +65,10 @@ public static class GridSource
     /// and Sorts produce — the ones in force — with the next matching position, as
     /// <see cref="Finding.GridFind.Step{TRow}"/> would over that result. Null reports that
     /// this source cannot search, and Ctrl+F is refused.</param>
+    /// <param name="summarize">Answers a Selection Summary (ADR-0130) against the result the handed
+    /// Filter and Sorts produce, as <see cref="Summarizing.GridSummary.Of{TRow}"/> would over that
+    /// result — typically SQL on a server — or declines with a reason. Null reports that this source
+    /// cannot summarise, and no figure is shown.</param>
     /// <param name="rowKey">A row's Row Key, for live data (ADR-0141): with one, the source can be
     /// told that the data moved on (<see cref="FetchingGridSource{TRow}.NotifyChanged()"/>), pairs each
     /// answer's rows with the painted ones by it, marks the cells that changed, and refuses an answer
@@ -80,7 +84,8 @@ public static class GridSource
         Func<string, GridFilter?, CancellationToken, Task<Chrome.DistinctValues>>? distinctValues = null,
         Rows.RowMarkAdapter<TRow>? marks = null,
         Func<Finding.GridFindRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Finding.GridFindResult>>? find = null,
+        Func<Summarizing.GridSummaryRequest, GridFilter?, IReadOnlyList<SortSpec>, CancellationToken, Task<Summarizing.GridSummaryResult>>? summarize = null,
         Func<TRow, object>? rowKey = null,
         TimeProvider? clock = null)
-        => new(fetch, readAheadRows, distinctValues, marks, find, rowKey, clock);
+        => new(fetch, readAheadRows, distinctValues, marks, find, summarize, rowKey, clock);
 }

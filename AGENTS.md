@@ -309,6 +309,36 @@ under xvfb. Performance never gates, and neither does coverage — it is reporte
 `spikes/render-bench` still works. **Add a mode and measure rather than asserting from
 reasoning.**
 
+## The Docs Site moves with the change
+
+The Docs Site (`samples/ExGrid.Docs`, published to GitHub Pages,
+[ADR-0110](docs/adr/0110-the-docs-site-is-a-webassembly-app-on-github-pages-and-its-examples-show-the-code-they-run.md))
+is where a Consumer meets each feature. **A change a Consumer can see is not finished until the
+site says it, in the same branch** — a feature added and a page that never mentions it is the
+site quietly wrong about the product, the spine's first rule turned on ourselves.
+
+- **A feature added** — a parameter, an event, a key, a gesture, a seam, a figure on screen —
+  gets its place on the product's page: the prose that says what it does and why, and an Example
+  that runs it, with a Built-in / MudBlazor switch where a Wrapper exists (ADR-0110). The API
+  table is generated; the prose and the Example are not.
+- **A behaviour changed or fixed** that a page describes, or that an Example shows, corrects that
+  page and that Example. Read the pages that touch the area before calling the work done; a fix
+  is often a sentence on a page that is now false.
+- **Something visible that arrives without being asked for** — a strip, a default, a key the grid
+  now takes — is said on the page of the feature it belongs to, because the reader will see it on
+  every Example.
+- **Every product it reaches.** A change in ExGrid that ExSheet or ExPivot shows is said on their
+  pages too.
+- **The Showcases and the README's GIFs** are re-recorded (`tools/readme-media/`) when a change
+  alters what they show; a GIF is never edited.
+- **Verified as the code is**: the site builds in `ExGrid.slnx`, so an Example that no longer
+  compiles fails the build. Run the site and use the new Example once before calling it done —
+  `nix develop -c dotnet run --project samples/ExGrid.Docs` — and say in the report that it was
+  run.
+- **A change with nothing for the site** — an internal refactor, a test, a CI script — says so in
+  one line of the report or the PR, naming why. Silence is not the same as "nothing to document".
+- **A background agent's brief carries this too**, and its report lists the pages it changed.
+
 ## Working in parallel
 
 Independent tasks may run as background agents, each in its own worktree
@@ -376,6 +406,10 @@ onto this repo as follows:
   full layer-3 run left to CI. A green build is still not a result.
 - **Invoking `/implement` is the request to commit** its work to the current branch. It is not a
   request to push.
+- **"Done" includes the Docs Site** ("The Docs Site moves with the change"): the pages and
+  Examples are written and run before the review step, and `/code-review`'s Standards axis checks
+  the diff against that section like any other rule here — a Consumer-visible change with no
+  `samples/ExGrid.Docs` hunk and no stated reason is a finding.
 - **A ticket that turns out to need a decision stops there.** Record the ADR first (or, as a
   background agent, return the proposal), as in "Working in parallel".
 

@@ -25,7 +25,9 @@ public interface IPivotChrome
     IGridChrome? GridChrome(Func<string, string?> commandLabel) => null;
 
     /// <summary>The Field List's content: the fields with their checkboxes and search, and the
-    /// four Areas with their entries, each entry's open menu or panel placed under it.</summary>
+    /// four Areas with their entries, each entry's open menu or panel placed under it. When the
+    /// heading stays outside a scrolling body, that full-width body is positioned to contain the
+    /// frames; no positioned Area or entry may narrow them (ADR-0061).</summary>
     RenderFragment? FieldList(PivotFieldListContext context) => null;
 
     /// <summary>The report filter band, on the Pivot Toolbar's left: one entry per field
@@ -166,6 +168,10 @@ public sealed record PivotFieldListContext(
     Action EndDrag,
     Func<string, string> Word)
 {
+    /// <summary>Hides the Field List from its heading, through the same visibility binding as
+    /// the Pivot Toolbar's toggle. The layout and pending edits are kept (ADR-0061).</summary>
+    public Func<Task> Close { get; init; } = static () => Task.CompletedTask;
+
     /// <summary>Whether Excel's Defer Layout Update is ticked, at the pane's foot (ADR-0061): the
     /// pane's changes then build a pending layout, which the fields and Areas above show, and the
     /// report and the source are left alone until Update.</summary>
@@ -206,7 +212,10 @@ public sealed record PivotAreaView(
 /// <param name="Entry">Which entry it is.</param>
 /// <param name="Caption">What it is called: the field's caption, a Value Field's caption, Σ Values.</param>
 /// <param name="IsFiltered">Whether its field hides Items now.</param>
-/// <param name="IsMenuOpen">Whether its menu or one of its panels is open.</param>
+/// <param name="IsMenuOpen">Whether its menu or one of its panels is open. While true, the
+/// Chrome stops Blazor's <c>mousedown</c> and <c>focusin</c> propagation on the entry containing
+/// the opener, so pressing or focusing it is not an outside dismissal (ADR-0061). The core's
+/// popup frame stops its own events.</param>
 /// <param name="OpenMenu">Opens its menu; closes it when it is open.</param>
 /// <param name="Popup">The open menu or panel, in ExPivot's frame, which the Chrome places
 /// directly under the entry, with no positioned element of its own around them: the frame takes
