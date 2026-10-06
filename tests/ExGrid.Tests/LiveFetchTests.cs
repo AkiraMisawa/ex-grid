@@ -397,4 +397,203 @@ public class LiveFetchTests
         clock.Advance(TimeSpan.FromSeconds(1));
         Assert.Equal(asked, server.Asked.Count);
     }
+
+    // ---- LV-16: nothing to put out without waiting ------------------------------------------------
+
+    [Fact] // ADR-0141/0142 / LV-16: GridSource.Fetch has nothing it could put out without waiting: PublishGathered asks nothing and changes nothing
+    public void PublishGathered_on_a_fetching_source_does_nothing()
+    {
+        var clock = new FakeTimeProvider();
+        var server = new Server(300);
+        var source = Live(server, clock);
+        source.NotifyChanged();
+        server.Change(3, d => d with { Amount = 77 });
+        // Within the interval: gathered.
+        source.NotifyChanged();
+        var asked = server.Asked.Count;
+        var window = source.Window;
+        var events = 0;
+        source.StateChanged += () => events++;
+
+        ((IGridSource<Deal>)source).PublishGathered();
+
+        Assert.Equal(asked, server.Asked.Count);
+        Assert.Same(window, source.Window);
+        Assert.Equal(0, events);
+        // The notice is still gathered, and read at the interval's end.
+        clock.Advance(TimeSpan.FromMilliseconds(250));
+        Assert.Equal(asked + 1, server.Asked.Count);
+        Assert.Equal(77m, source.Window[3].Amount);
+    }
+
+    // ---- LV-9 (D6): the Consumer names the keys it knows were added ---------------------------------
+
+    /// <summary>A row booked at <paramref name="at"/> of the server's rows, moving the order.</summary>
+    private static void Book(Server server, int at, string id)
+    {
+        server.Rows.Insert(at, new Deal(id, "FX", 5));
+        server.Token = $"order-{id}";
+    }
+
+    private static void AssertWhole(Cells.CellChangeOf<Deal> changedAt, Deal row, DateTimeOffset at)
+    {
+        foreach (var column in new[] { IdColumn, BookColumn, AmountColumn })
+            Assert.Equal(at, changedAt(row, column));
+    }
+
+    private static void AssertUnmarked(Cells.CellChangeOf<Deal> changedAt, Deal row)
+    {
+        foreach (var column in new[] { IdColumn, BookColumn, AmountColumn })
+            Assert.Null(changedAt(row, column));
+    }
+
+    [Fact] // ADR-0141 / LV-9 (D6): a key the Consumer names as added is marked whole wherever it lands in the Window, an edge included
+    public void A_named_key_is_marked_whole_wherever_it_lands()
+    {
+        var clock = new FakeTimeProvider();
+        var server = new Server(300);
+        var source = Live(server, clock);
+        var changedAt = source.CellChangedAt!;
+
+        // Booked as the Window's last row: where a row may also have slid in from below, which the
+        // source cannot tell apart without being told.
+        Book(server, 99, "T0098b");
+        source.NotifyChanged(["T0098b"]);
+
+        Assert.Equal("T0098b", source.Window[99].Id);
+        AssertWhole(changedAt, source.Window[99], clock.GetUtcNow());
+    }
+
+    [Fact] // ADR-0141 / LV-9 (D6): with names given, a key not named is not marked whole — it slid in — and a painted row's cells are compared
+    public void With_names_given_a_key_not_named_is_not_marked_whole()
+    {
+        var clock = new FakeTimeProvider();
+        var server = new Server(300);
+        var source = Live(server, clock);
+        var changedAt = source.CellChangedAt!;
+
+        // Two rows cancelled near the top, a row put between painted rows that the notice does not
+        // name, and a value changed: the Consumer says that no key was added.
+        server.Rows.RemoveAt(2);
+        server.Rows.RemoveAt(2);
+        Book(server, 8, "T0009b");
+        server.Change(3, d => d with { Amount = 77 });
+        source.NotifyChanged([]);
+
+        Assert.Equal("T0009b", source.Window[8].Id);
+        AssertUnmarked(changedAt, source.Window[8]);
+        Assert.Equal("T0100", source.Window[^1].Id);
+        AssertUnmarked(changedAt, source.Window[^1]);
+        // T0005 was painted before, and moved up: its cells are compared.
+        Assert.Equal("T0005", source.Window[3].Id);
+        Assert.Equal(clock.GetUtcNow(), changedAt(source.Window[3], AmountColumn));
+        Assert.Null(changedAt(source.Window[3], BookColumn));
+    }
+
+    [Fact] // ADR-0141 / LV-9 (D6): a nameless notice keeps the old guess for the keys no notice named, beside a named one
+    public void A_nameless_notice_keeps_the_guess()
+    {
+        var clock = new FakeTimeProvider();
+        var server = new Server(300);
+        var source = Live(server, clock);
+        var changedAt = source.CellChangedAt!;
+        // A first notice, read at once, so the two below are gathered into one read.
+        source.NotifyChanged([]);
+        clock.Advance(TimeSpan.FromMilliseconds(100));
+
+        Book(server, 8, "T0007b");
+        source.NotifyChanged();
+        Book(server, 99, "T0097b");
+        source.NotifyChanged(["T0097b"]);
+        clock.Advance(TimeSpan.FromMilliseconds(150));
+
+        // Between painted rows, and no notice named it: guessed, since one notice named nothing.
+        Assert.Equal("T0007b", source.Window[8].Id);
+        AssertWhole(changedAt, source.Window[8], clock.GetUtcNow());
+        // At the Window's foot, where the guess marks nothing: named.
+        Assert.Equal("T0097b", source.Window[99].Id);
+        AssertWhole(changedAt, source.Window[99], clock.GetUtcNow());
+    }
+
+    [Fact] // ADR-0141 / LV-9 (D6): every gathered notice's names are carried by the read; a name it does not show is let go
+    public void Names_are_gathered_and_let_go_after_the_read()
+    {
+        var clock = new FakeTimeProvider();
+        var server = new Server(300);
+        var source = Live(server, clock);
+        var changedAt = source.CellChangedAt!;
+        source.NotifyChanged([]);
+        clock.Advance(TimeSpan.FromMilliseconds(100));
+
+        Book(server, 98, "X");
+        source.NotifyChanged(["X"]);
+        Book(server, 99, "Y");
+        source.NotifyChanged(["Y"]);
+        // Booked just past the Window's foot: the read does not show it.
+        Book(server, 100, "Z");
+        source.NotifyChanged(["Z"]);
+        clock.Advance(TimeSpan.FromMilliseconds(150));
+
+        Assert.Equal(["X", "Y"], source.Window.Skip(98).Select(d => d.Id));
+        AssertWhole(changedAt, source.Window[98], clock.GetUtcNow());
+        AssertWhole(changedAt, source.Window[99], clock.GetUtcNow());
+        Assert.DoesNotContain(source.Window, d => d.Id == "Z");
+
+        // A row cancelled at the top: Z slides into the Window's foot, and its name was let go.
+        clock.Advance(TimeSpan.FromSeconds(1));
+        server.Rows.RemoveAt(0);
+        server.Token = "order-cancelled";
+        source.NotifyChanged([]);
+        Assert.Equal("Z", source.Window[99].Id);
+        AssertUnmarked(changedAt, source.Window[99]);
+    }
+
+    [Fact] // ADR-0141 / LV-9 (D6): a name heard while a question is out applies to its answer when that shows it, and otherwise to the next read's
+    public void A_name_heard_while_a_question_is_out_waits_for_the_answer_that_shows_it()
+    {
+        var clock = new FakeTimeProvider();
+        var server = new Server(300) { Holds = true };
+        var source = Live(server, clock);
+        server.AnswerHeld();
+        var changedAt = source.CellChangedAt!;
+
+        // Shown by the answer out: the server booked the row before it answered.
+        source.NotifyChanged([]);
+        Book(server, 50, "P");
+        source.NotifyChanged(["P"]);
+        server.AnswerHeld();
+        AssertWhole(changedAt, Assert.Single(source.Window, d => d.Id == "P"), clock.GetUtcNow());
+
+        // P's notice was heard while that question was out, so a read at the interval's end carries it;
+        // P is painted by then, and compared.
+        clock.Advance(TimeSpan.FromSeconds(1));
+        server.AnswerHeld();
+        AssertWhole(changedAt, Assert.Single(source.Window, d => d.Id == "P"), clock.GetUtcNow() - TimeSpan.FromSeconds(1));
+
+        // Not shown by the answer out, which the server made before it booked the row: the read after
+        // it carries the name.
+        clock.Advance(TimeSpan.FromSeconds(1));
+        source.NotifyChanged([]);
+        source.NotifyChanged(["Q"]);
+        server.AnswerHeld();
+        Assert.DoesNotContain(source.Window, d => d.Id == "Q");
+        Book(server, 60, "Q");
+        clock.Advance(TimeSpan.FromMilliseconds(250));
+        server.AnswerHeld();
+        AssertWhole(changedAt, Assert.Single(source.Window, d => d.Id == "Q"), clock.GetUtcNow());
+    }
+
+    [Fact] // ADR-0141 / LV-9 (D6): a null key among the names is refused by name, and nothing is heard
+    public void A_null_name_is_refused()
+    {
+        var server = new Server(10);
+        var source = Live(server, new FakeTimeProvider());
+        var asked = server.Asked.Count;
+
+        var refusal = Assert.Throws<ArgumentException>(() => source.NotifyChanged(["T0001", null!]));
+
+        Assert.Contains("null", refusal.Message);
+        Assert.Equal(asked, server.Asked.Count);
+        Assert.Throws<ArgumentNullException>(() => source.NotifyChanged(null!));
+    }
 }
