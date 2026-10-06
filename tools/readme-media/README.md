@@ -13,9 +13,16 @@ logs an error is not written.
 
 You need Node.js, ffmpeg, and the .NET SDK (or Nix).
 
+**Record the Release build, never `dotnet run`.** `dotnet run` serves a Debug build, whose
+WebAssembly runs several times slower than the build GitHub Pages serves: the blotter scene took 65
+seconds under it, against 12 in Release, and a GIF recorded that way shows a slower product than a
+reader gets. Publish the site as `docs.yml` does and serve the files with `serve.mjs`, which serves
+them as Pages does.
+
 ```sh
-# 1. Start the Docs Site
-nix develop -c dotnet run --project samples/ExGrid.Docs --urls http://localhost:5310
+# 1. Publish the Docs Site as docs.yml does, and serve it (from this folder)
+nix develop ../..#browser -c dotnet publish ../../samples/ExGrid.Docs/ExGrid.Docs.csproj -c Release -o site
+node serve.mjs site/wwwroot 5310
 
 # 2. Record (from this folder)
 npm ci

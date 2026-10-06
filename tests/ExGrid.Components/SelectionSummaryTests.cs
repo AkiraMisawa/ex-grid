@@ -218,23 +218,43 @@ public class SelectionSummaryTests : GridTestContext
         Assert.Empty(cut.FindAll(".ex-status"));
     }
 
-    [Fact] // ADR-0130 / SM-14: switched off, the grid shows no strip and asks nothing, whoever could answer
+    [Fact] // ADR-0130 / SM-14: switched off with nobody listening, the grid shows no strip and asks nothing
     public async Task ADR0130_switched_off_nothing_is_shown_or_asked()
     {
-        var heard = new Heard();
-        var cut = RenderGrid(heard, (_, _) => Task.FromResult(Answer(sum: 0m)));
-        cut.Render(ps => ps.Add(g => g.ShowSelectionSummary, false));
+        var requests = 0;
+        var cut = Render<ExGrid<TestRow>>(ps => ps
+            .Add(g => g.Window, TestRows.Many(50))
+            .Add(g => g.TotalCount, 50)
+            .Add(g => g.Columns, Columns())
+            .Add(g => g.RowHeight, 20d)
+            .Add(g => g.ViewportHeight, 120)
+            .Add(g => g.ViewportWidth, 350)
+            .Add(g => g.ShowSelectionSummary, false)
+            .Add(g => g.OnSummarize, (_, _) => { requests++; return Task.FromResult(Answer(sum: 0m)); }));
         await ClickCellAsync(cut, 150, 10);
         await PressAsync(cut, "ArrowDown", shift: true);
 
         Assert.True(cut.Instance.CanSummarize);
-        Assert.Empty(heard.Requests);
+        Assert.Equal(0, requests);
         Assert.Empty(cut.FindAll(".ex-summary"));
         Assert.Empty(cut.FindAll(".ex-status"));
 
         // Switched back on, the standing selection is asked about.
         cut.Render(ps => ps.Add(g => g.ShowSelectionSummary, true));
-        Assert.Single(heard.Requests);
+        Assert.Equal(1, requests);
+    }
+
+    [Fact] // ADR-0130 / SM-14: switched off, a Consumer that listens is still told, for a status bar of its own
+    public async Task ADR0130_switched_off_a_listener_is_still_told()
+    {
+        var heard = new Heard();
+        var cut = RenderGrid(heard, (_, _) => Task.FromResult(Answer(sum: 5m)));
+        cut.Render(ps => ps.Add(g => g.ShowSelectionSummary, false));
+        await ClickCellAsync(cut, 150, 10);
+        await PressAsync(cut, "ArrowDown", shift: true);
+
+        Assert.Empty(cut.FindAll(".ex-status"));
+        cut.WaitForAssertion(() => Assert.Equal(5m, heard.Changes[^1].Result?[SummaryFigures.Sum]?.Exact));
     }
 
     [Fact] // ADR-0130 / SM-5: OnSummarize beside a bound Source is refused by name

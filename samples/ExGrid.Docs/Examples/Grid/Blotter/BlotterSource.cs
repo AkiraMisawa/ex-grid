@@ -1,5 +1,6 @@
 using ExGrid.Chrome;
 using ExGrid.Finding;
+using ExGrid.Summarizing;
 
 namespace ExGrid.Docs.Examples.Grid.Blotter;
 
@@ -132,6 +133,16 @@ public sealed class BlotterSource : IGridSource<BlotterTrade>
     public Task<GridFindResult> FindAsync(GridFindRequest request, CancellationToken cancellationToken)
         => Task.FromResult(GridFind.Step(Window, request, name => _columns.FirstOrDefault(c => c.Name == name) is { IsQueryable: true } column
             ? column.TextOf
+            : null));
+
+    /// <inheritdoc />
+    public bool CanSummarize => true;
+
+    /// <summary>The status bar's figures over every selected cell (ADR-0130), by the reference: the
+    /// trades are all here, so nothing is ever declined or left out.</summary>
+    public Task<GridSummaryResult> SummarizeAsync(GridSummaryRequest request, CancellationToken cancellationToken)
+        => Task.FromResult(GridSummary.Of(Window, request, name => _columns.FirstOrDefault(c => c.Name == name) is { IsQueryable: true } column
+            ? column.Value
             : null));
 
     private void Requery(bool notify)

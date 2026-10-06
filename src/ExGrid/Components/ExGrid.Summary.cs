@@ -27,9 +27,11 @@ public partial class ExGrid<TRow>
     /// </summary>
     [Parameter] public Func<GridSummaryRequest, CancellationToken, Task<GridSummaryResult>>? OnSummarize { get; set; }
 
-    /// <summary>Whether the Selection Summary is shown (ADR-0130): on by default, so a grid that can
-    /// summarise shows Excel's status-bar figures without being asked. Off: no strip, no question
-    /// asked, no figure — the grid is as it was before the Selection Summary.</summary>
+    /// <summary>Whether the grid's own status line shows the Selection Summary (ADR-0130): on by
+    /// default, so a grid that can summarise shows Excel's status-bar figures without being asked.
+    /// Off: no strip and no figure on the grid. A Consumer listening to
+    /// <see cref="OnSelectionSummaryChanged"/> is still told — the figures for a status bar of its
+    /// own; with nobody listening either, nothing is asked.</summary>
     [Parameter] public bool ShowSelectionSummary { get; set; } = true;
 
     /// <summary>The figures the status line shows — Excel's Average, Count and Sum by default
@@ -128,7 +130,7 @@ public partial class ExGrid<TRow>
     private void ReviewSummary()
     {
         var selection = _selection.Selection;
-        var asks = ShowsSummaryStrip && SummaryFigures != SummaryFigures.None && SelectsTwoCells(selection);
+        var asks = CanSummarize && (ShowSelectionSummary || OnSelectionSummaryChanged.HasDelegate) && SummaryFigures != SummaryFigures.None && SelectsTwoCells(selection);
         if (!asks)
         {
             if (_summaryQuestion is null && _summary.Status == SelectionSummaryStatus.None)

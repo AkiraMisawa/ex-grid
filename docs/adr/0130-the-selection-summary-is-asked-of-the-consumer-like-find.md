@@ -164,9 +164,12 @@ The strip that stands whenever the grid can summarise (above) reaches every grid
 `GridSource.From` without its Consumer asking — a visible change to grids that were finished
 before the Selection Summary existed. **`ShowSelectionSummary` switches it, and it is on by
 default**, so a new grid has Excel's status bar as Excel does, and an existing page that wants its
-old look back writes one parameter. Off means off entirely: no strip, no question asked, no figure,
-and `OnSelectionSummaryChanged` stays at None. ExSheet and ExPivot carry the same parameter to the
-grid they draw.
+old look back writes one parameter. Off takes the strip and its figures off the grid. A Consumer that
+listens to `OnSelectionSummaryChanged` is still told, because a status bar of the application's own
+is the other place the figures belong (ADR-0018); with nobody listening either, nothing is asked.
+ExSheet and ExPivot carry the same parameter to the grid they draw. *(Corrected the same day: it
+first read "off means off entirely… `OnSelectionSummaryChanged` stays at None", which left a page
+that shows the figures in its own footer — the Docs Site's blotter — with no way to have them.)*
 
 Rejected: **opt-in** (off by default), which would hide the feature from every grid that could
 have it for free; and **a strip only while two cells are selected**, rejected above for moving the
