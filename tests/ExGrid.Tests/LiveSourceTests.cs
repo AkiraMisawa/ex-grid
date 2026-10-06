@@ -939,4 +939,38 @@ public class LiveSourceTests
         Assert.False(source.Marks.IsMarked(source.Window[^1]));
         Assert.Empty(source.Marks.MarkedRows);
     }
+
+    [Fact] // ADR-0141 / ADR-0043: a removed row's mark goes when the removal is shown, not when it is applied — Apply may run on any thread, and the marks are read on the grid's context
+    public async Task A_removed_rows_mark_goes_when_the_removal_is_shown()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        await source.Marks.OnMarkIntentAsync(new Rows.RowMarkIntent<Deal>.OneRow(rows[1], true));
+        source.Apply(new(changed: [rows[0] with { Amount = 9 }]));
+
+        // Within the interval: gathered, the row still shown, and its mark with it.
+        source.Apply(new(removedKeys: ["B"]));
+        Assert.Equal("A,B,C,D", Ids(source));
+        Assert.True(source.Marks.IsMarked(source.Window[1]));
+
+        clock.Advance(TimeSpan.FromMilliseconds(250));
+
+        Assert.Equal("A,C,D", Ids(source));
+        Assert.Empty(source.Marks.MarkedRows);
+    }
+
+    [Fact] // ADR-0141 / ADR-0043: a key removed and added again within one gathering is a changed row, and keeps its mark
+    public async Task A_key_removed_and_added_again_within_one_gathering_keeps_its_mark()
+    {
+        var clock = new FakeTimeProvider();
+        var source = Live(clock, out var rows, gather: true);
+        await source.Marks.OnMarkIntentAsync(new Rows.RowMarkIntent<Deal>.OneRow(rows[1], true));
+        source.Apply(new(changed: [rows[0] with { Amount = 9 }]));
+
+        source.Apply(new(removedKeys: ["B"]));
+        source.Apply(new(added: [rows[1] with { Amount = 7 }]));
+        clock.Advance(TimeSpan.FromMilliseconds(250));
+
+        Assert.True(source.Marks.IsMarked(source.Window.Single(d => d.Id == "B")));
+    }
 }

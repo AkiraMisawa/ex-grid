@@ -98,6 +98,11 @@ else
     [SupplyParameterFromQuery(Name = "batch")]
     public int? BatchAsked { get; set; }
 
+    // The source's gathering interval in milliseconds, for a measurement: LV-15 times Apply to the
+    // frame with 0, so that every batch is shown at once and no run waits on the clock to be quiet.
+    [SupplyParameterFromQuery(Name = "interval")]
+    public int? IntervalAsked { get; set; }
+
     private int RowCount => RowsAsked is > 0 and var count ? count : DefaultRows;
 
     private int TradesPerBatch => Math.Min(BatchAsked is > 0 and var count ? count : DefaultTradesPerBatch, _trades.Length);
@@ -120,6 +125,8 @@ else
         }
         if (token.IsCancellationRequested)
             return;
+        if (IntervalAsked is >= 0 and var interval && _source is { } source)
+            source.GatherInterval = TimeSpan.FromMilliseconds(interval);
         StateHasChanged();
         _ticks = new PeriodicTimer(BatchEvery);
         _ = Reported(AmendAsync(_ticks));

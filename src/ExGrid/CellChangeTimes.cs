@@ -102,8 +102,9 @@ internal sealed class CellChangeTimes<TRow>
         if (!_wanted)
             return;
         var now = _clock.GetUtcNow();
-        // Compared outside the lock: TextOf runs the Consumer's own formats, and the grid may be
-        // asking meanwhile.
+        // Compared where the publication runs: under GridSource.From's lock, on its context, and on
+        // GridSource.Fetch's context. TextOf runs the Consumer's own formats there, so a format must
+        // not call back into the source (it would wait on the lock it is under).
         List<(object Key, string Column)>? changed = null;
         foreach (var (key, old, @new) in pairs)
         {

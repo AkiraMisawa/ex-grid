@@ -692,7 +692,6 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         {
             Remember(keyed, key);
             keyed.Remove(key);
-            Marks.Removed(key);
         }
         foreach (var (key, row) in plan.Changed)
         {
@@ -842,6 +841,14 @@ public sealed class InMemoryGridSource<TRow> : IGridSource<TRow>, IBindsToOneCir
         }
         _pending.Clear();
         _gatherer!.Shown();
+        // A removed row's mark goes when its removal is shown, here, on the context where the grid
+        // reads the marks: Fold may run on any thread, and the marks' set has no lock of its own.
+        // A key removed and added again within one gathering is a changed row, and keeps its mark.
+        foreach (var change in changes)
+        {
+            if (!change.HasNew)
+                Marks.Removed(change.Key);
+        }
         var reordered = _reordered;
         _reordered = false;
         if (changes.Count == 0 && !reordered)

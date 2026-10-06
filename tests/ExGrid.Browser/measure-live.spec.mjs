@@ -40,12 +40,19 @@ const VIEWPORT = '.ex-grid .ex-viewport';
 function probe() {
     const p = { longTasks: [], watches: [] };
     window.__lv15 = p;
+    const keep = (entries) => {
+        for (const e of entries) {
+            p.longTasks.push({ start: e.startTime, duration: e.duration });
+        }
+    };
+    p.flush = () => {};
     try {
-        new PerformanceObserver((list) => {
-            for (const e of list.getEntries()) {
-                p.longTasks.push({ start: e.startTime, duration: e.duration });
-            }
-        }).observe({ type: 'longtask', buffered: true });
+        const observer = new PerformanceObserver((list) => keep(list.getEntries()));
+        observer.observe({ type: 'longtask', buffered: true });
+        // A long task's entry is queued when the task ends, and handed to the callback some time
+        // later: takeRecords() hands over what is queued now, so a reading made in a later task
+        // has every long task before it without waiting a fixed time.
+        p.flush = () => keep(observer.takeRecords());
     } catch {
         p.noLongTasks = true;
     }
@@ -86,7 +93,9 @@ function spread(results, pick) {
 test('LV-15: 1,000 changes applied to a million rows on /grid-live-local, from Apply to the frame that shows them', async ({ page }, testInfo) => {
     test.setTimeout(3_600_000);
     await page.addInitScript(probe);
-    await page.goto(`/grid-live-local?rows=${MILLION}&batch=1000`, { timeout: 600_000 });
+    // interval=0: every batch is shown at once, inside Apply, so no run waits for the source's clock
+    // to be quiet (ADR-0141; principle 6 — a test waits for what it reads, never a fixed time).
+    await page.goto(`/grid-live-local?rows=${MILLION}&batch=1000&interval=0`, { timeout: 600_000 });
     await expect(page.locator('#grid-live-local-made')).toContainText(`${MILLION.toLocaleString('en-US')} trades made in`, { timeout: 600_000 });
     await expect(page.locator(VIEWPORT).locator('.ex-row').first()).toBeVisible({ timeout: 300_000 });
     const load = await page.locator('#grid-live-local-made').textContent();
@@ -96,8 +105,6 @@ test('LV-15: 1,000 changes applied to a million rows on /grid-live-local, from A
 
     const runs = [];
     for (let run = 0; run < 12; run++) {
-        // Quiet for longer than the gathering interval, so that the batch is shown at once (ADR-0141).
-        await page.waitForTimeout(1_500);
         await page.evaluate(({ status, viewport }) => {
             window.__lv15.watch('batch', status);
             window.__lv15.watch('grid', viewport);
@@ -109,9 +116,9 @@ test('LV-15: 1,000 changes applied to a million rows on /grid-live-local, from A
         await expect(toggle).toHaveText("Resume the page's changes");
         await page.waitForFunction(() => window.__lv15.seen('batch').frameAt !== null && window.__lv15.seen('grid').frameAt !== null,
             null, { polling: 50, timeout: 60_000 });
-        await page.waitForTimeout(500);
         runs.push(await page.evaluate((status) => {
             const p = window.__lv15;
+            p.flush();
             const batch = p.seen('batch');
             const shown = p.seen('grid');
             const line = document.querySelector(status).textContent;

@@ -52,7 +52,9 @@ test('ADR-0141/D8, LV-9: a million trades in this process; a Change Batch reache
     const paused = await batches(page);
     await expect(marked(page)).toHaveCount(0, { timeout: 15_000 });
     await circuitQuiet();
-    expect(await batches(page)).toBeLessThanOrEqual(paused + 1);
+    // Exact: the timer's tick and Toggle both run on the renderer, and a tick checks the switch
+    // before it applies, so the count shown with "Resume" is the last (principle 6: no slack).
+    expect(await batches(page)).toBe(paused);
 
     // Resumed, the batches mark values again.
     await toggle(page).click();

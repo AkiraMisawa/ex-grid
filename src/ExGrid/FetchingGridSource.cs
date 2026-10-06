@@ -176,9 +176,12 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
         set
         {
             var gatherer = _gatherer ?? throw NoKey(nameof(GatherInterval));
-            gatherer.Interval = value;
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, TimeSpan.Zero);
+            // The gatherer is the source's context's alone (ChangeGatherer): the interval is set
+            // there too, and a setter on another thread only posts it.
             OnContext(() =>
             {
+                gatherer.Interval = value;
                 if (_changeWaiting && !_disposed && gatherer.ShouldAskNow(busy: _inFlight is not null))
                     AskForChange();
             });
