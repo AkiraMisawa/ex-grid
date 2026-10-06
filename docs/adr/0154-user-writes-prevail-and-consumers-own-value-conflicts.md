@@ -35,6 +35,13 @@ never silently redirected to another row or column. A reordering or loss of the 
 still discards the editor with its existing named reason (ADR-0011); a stale range is refused.
 A stable Row Key does not newly make a positional edit follow a reordered row.
 
+**Implementation clarification, 2026-10-07:** source-local sequence counters may be reused by a
+replacement Source. An operation captured under the old binding keeps a detached binding
+identity and refuses if that binding is replaced before delivery. This makes the original-target
+rule concrete when two sources both report sequence zero. Ordinary Selection rebinding and new
+gestures on the new Source are unchanged; publications by the same Source remain governed by
+the value-only rule above.
+
 An Action names its original row and command. With a Row Key, it resolves to the current row
 under that key, including after reordering. Without one, the existing instance/unchanged-order
 position evidence must establish the target. A missing or unidentifiable target is refused.
