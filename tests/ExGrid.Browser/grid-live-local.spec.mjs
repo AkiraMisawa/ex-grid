@@ -67,7 +67,9 @@ test('ADR-0141 LV-5/LV-7: under a sort by P&L, the painted rows stay in order as
     // 2,000 trades and a thousand amended a batch, so every batch moves rows on screen.
     await open(page, '?rows=2000&batch=1000', 2_000);
     const header = grid(page).locator('.ex-header-cell').nth(8); // P&L
-    await header.click();
+    // A header cell's label lets presses through to the header row, which takes them (ADR-0012), as
+    // features.spec.mjs clicks a header to sort.
+    await header.click({ position: { x: 30, y: 14 }, force: true });
     await expect(header).toHaveAttribute('aria-sort', 'ascending');
 
     const from = await batches(page);

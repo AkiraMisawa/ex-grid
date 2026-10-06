@@ -185,7 +185,11 @@
         _groups =
         [
             new HeaderGroup("Who", ["Book", "Trader"]),
-            new HeaderGroup("What", ["Notional", "Narrow", "TradeDate", "Confirmed"]),
+            // With ?upstream=1 the Act column stands between Notional and Narrow, so it joins the
+            // group: a Header Group's members are adjacent, or the grid refuses it (ADR-0032).
+            new HeaderGroup("What", UpstreamOn
+                ? ["Notional", "Act", "Narrow", "TradeDate", "Confirmed"]
+                : ["Notional", "Narrow", "TradeDate", "Confirmed"]),
         ];
     }
 

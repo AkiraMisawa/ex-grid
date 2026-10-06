@@ -336,7 +336,8 @@ test('LV-8/ADR-0141: a trade cancelled after the Window, with a Selection reachi
     const { trades: [trade] } = await api(`/api/trades?start=${beyond}&count=1`);
 
     // A Selection reaching past the Window: every row (ADR-0011's Ctrl+A).
-    await tradeAt(page, 2).click();
+    // Cells are pointer-events: none; the Viewport is the delegated target (ADR-0004).
+    await tradeAt(page, 2).click({ force: true });
     await page.keyboard.press('ControlOrMeta+a');
     await expect.poll(() => grid(page).locator('.ex-selection .ex-range').count(), { message: 'the whole result selected' })
         .toBeGreaterThan(0);
