@@ -13,7 +13,8 @@ Decided with the user in the grilling of 2026-10-05, and in the decisions D1 to 
   the bundled sources take live data by Row Key, on ExPivot's rules
   ([ADR-0067](../../adr/0067-live-data-a-change-batch-makes-the-next-snapshot-and-expivot-folds-it-in.md));
 - [ADR-0142](../../adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md):
-  a write is refused when what the user saw of its target changed.
+  originally refused a write when what the user saw of its target changed; ADR-0154 supersedes
+  that value-conflict policy, as recorded below.
 
 Continuation Q1, decided with the user on 2026-10-06:
 [ADR-0150](../../adr/0150-a-consumer-can-vouch-for-a-pushed-windows-rows.md) lets a Consumer
@@ -24,7 +25,8 @@ Continuation Q3, decided with the user on 2026-10-06 after the A/B and memory ex
 [ADR-0151](../../adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)
 chooses server-computed report Windows and changes, with the same incremental engine in the
 browser for local CSV. ADR-0152 and ADR-0153 complete operations outside the Window and
-immutable row ownership. The diagnosed historical-Report retention is repaired while preserving ADR-0142; the measurement record
+immutable row ownership. The diagnosed historical-Report retention was repaired while preserving
+the then-current ADR-0142; ADR-0154 subsequently removes painted-value history. The measurement record
 distinguishes source cardinality, report cardinality and remaining WASM capacity.
 
 Continuation Q5 to Q7, decided with the user on 2026-10-06:

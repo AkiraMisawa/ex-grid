@@ -76,22 +76,10 @@ internal static class SheetWords
         PasteRefusalReason.TargetNotEditable => "Nothing was pasted: the selection covers cells that cannot be written.",
         PasteRefusalReason.TooLarge => "Nothing was pasted: the clipboard holds more than a paste reads at once.",
         PasteRefusalReason.SpillPastExtent => "Nothing was pasted: the block would run past the Sheet's edge (XFD1048576).",
-        // ADR-0142: raised for a paste, a fill and Delete alike, so the sentence says written.
-        PasteRefusalReason.TargetChanged =>
-            "Nothing was written: cells it would have written changed before it landed. Check them and try again.",
         PasteRefusalReason.RenderNoLongerKept =>
-            "Nothing was written: the Sheet could no longer tell what those cells showed when you acted. Try again.",
+            "Nothing was written: the Sheet could no longer identify the original target. Select it again and retry.",
         _ => "Nothing was pasted.",
     };
-
-    /// <summary>A commit refused because the cell changed under the editor (ADR-0142, LV-11): the
-    /// editor covers the cell, so the sentence carries what it shows now.</summary>
-    internal static string CommitRefused(string address, string shown) =>
-        $"What was typed was not entered yet: {address} changed to {shown} while it was being edited. Press Enter to enter it over that, or Escape to keep it.";
-
-    // ADR-0142 (P2): the grid can no longer tell what the cell showed, so the notice must not say it changed.
-    internal static string CommitRefusedUnseen(string address, string shown) =>
-        $"What was typed was not entered yet: it can no longer be told what {address} showed when editing began. It shows {shown} now. Press Enter to enter it over that, or Escape to keep it.";
 
     internal static string CopyRefused(CopyRefusalReason reason) => reason switch
     {

@@ -860,7 +860,7 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
 - **`GridSource.Fetch` hears that its data moved on**: `NotifyChanged`, with the added keys when the
   Consumer knows them; the server's order token; `/grid-live` is built on it.
 - **`/grid-live-local`**: a million trades in the browser, fed Change Batches.
-- **Writes refused when what the user saw changed** (ADR-0142): the Cell Editor's commit, Actions,
+- **Original write policy, superseded by ADR-0154** (ADR-0142): the Cell Editor's commit, Actions,
   paste, fills and clears, each judged against the render it was taken against, keyboard gestures
   included; the user's own writes count as seen.
 
@@ -892,7 +892,7 @@ ADR-0150 to ADR-0153 implement the follow-up to PR #64:
 - ExPivot consumes versioned report Windows through `Source`, with `DataSource` as the local
   convenience path. Server data stays at the server; full-range Copy, Summary and Details use
   versioned operations. Baseline loss recovers automatically, and unavailable old versions refuse.
-- Detached display rows/keys and historical text evidence break the old whole-Report retention
+- Detached display rows/keys and, under the original policy, detached historical text evidence break the old whole-Report retention
   path. Unchanged display rows skip rendering. Offscreen changes retain their actual highlight
   time, and a Details menu keeps the version on which it was offered.
 - The demo API owns bounded/expiring report state and explicitly declares its SQL full-refresh
@@ -906,3 +906,12 @@ in 200 normal-GC updates; the million-record CSV and 70-update low-cardinality f
 This does not establish a universal data-size guarantee. Layers 1 and 2 pass locally; final
 browser and Docs Site results are recorded in the implementation measurement directory. The
 full cross-platform/browser suite remains CI's. Feature push and PR await the user's confirmation.
+
+## Explicit writes during live updates (2026-10-07)
+
+ADR-0154 replaces the original displayed-value conflict policy. Cell edits, paste, Delete,
+Ctrl+Enter and fills proceed when values alone change; Consumer validation and original-target
+checks remain. Actions resolve the original address to the current row and leave business
+conflicts to the Consumer. Implementation and local verification are in progress. Painted-value
+history is being removed; retained Action addresses must not own old Consumer row graphs.
+The earlier performance and memory results above describe the pre-revision implementation.

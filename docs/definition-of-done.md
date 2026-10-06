@@ -103,8 +103,8 @@ criteria gate the release; SM-12 and SM-13 judge ExSheet and ExPivot and do not.
 references `ExGrid.Data` for the Aggregations' definitions, so **DA-18 gates the release too**, and
 the rest of §30 still does not.
 
-**ExGrid's live data is §32** (added 2026-10-05, with ADR-0140 to ADR-0142): the Row Key, the bundled
-sources' live data, and the refusal of a write whose target changed under it. It is ExGrid code, and
+**ExGrid's live data is §32** (added 2026-10-05, with ADR-0140 to ADR-0142; revised by ADR-0154): the Row Key, the bundled
+sources' live data, and explicit writes that preserve their target while Consumers decide value conflicts. It is ExGrid code, and
 §32 gates the release like §26.
 
 **"Finished" means every ADR from 0001 to 0030 is implemented** — and, since 2026-09-27, the
@@ -1304,19 +1304,20 @@ Commit messages before then use the old number.)*
 *(Added 2026-10-05 with [ADR-0140](adr/0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md),
 [ADR-0141](adr/0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md) and
 [ADR-0142](adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md), decided with the
-user the same day.)* The Row Key, the bundled sources' live data, and the refusal of a write whose
-target changed under it. **They are ExGrid code, and they gate the release** (§2), as §26 does.
-Without a Row Key declared, nothing here changes what the grid does (DC-1).
+user the same day; value-conflict policy revised by ADR-0154.)* The Row Key, the bundled sources'
+live data, and explicit writes that preserve their target while Consumers decide value conflicts.
+**They are ExGrid code, and they gate the release** (§2), as §26 does.
+Row Key retention is opt-in (DC-1); ADR-0154's write policy also applies without a Row Key.
 
 *(Extended 2026-10-06 by [ADR-0150](adr/0150-a-consumer-can-vouch-for-a-pushed-windows-rows.md):
 LV-10 also covers a Consumer's own source and a pushed Window; LV-19 covers ExPivot's promise.
-These additions are decided and not yet implemented.)*
+These additions are implemented and covered by component tests.)*
 
 *(Extended again 2026-10-06 by
 [ADR-0151](adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md): LV-20 to
 LV-22 cover the shared local/server report engine, server report Windows, and the diagnosed
 retention defect. The server Window scope also updates PV-2 above. These requirements are
-decided; the detailed contracts and implementation remain pending.)*
+implemented under ADR-0152 and ADR-0153 below.)*
 
 *(Extended by [ADR-0152](adr/0152-report-apis-may-change-and-remote-reports-recover-their-baseline.md),
 2026-10-06: LV-23 to LV-25 cover remote Order Keys/settings, automatic baseline recovery and
@@ -1328,6 +1329,11 @@ required.)*
 2026-10-06: detached display rows and shared immutable versions, dependency-based updates and
 explicit full-refresh providers. LV-26 to LV-28 record these requirements; the implementation
 and local verification are recorded in the [follow-up measurements](../verification/2026-10-06-macos-live-report-after/README.md).)*
+
+*(Revised by [ADR-0154](adr/0154-user-writes-prevail-and-consumers-own-value-conflicts.md),
+2026-10-07: upstream value changes alone no longer refuse explicit writes or Actions.
+LV-11 to LV-14, LV-16, LV-17 and LV-22 require current-target delivery, Consumer validation and
+detached Action addresses without retaining painted-value history.)*
 
 | ID | Level | Statement | Verification | Pass |
 |---|---|---|---|---|

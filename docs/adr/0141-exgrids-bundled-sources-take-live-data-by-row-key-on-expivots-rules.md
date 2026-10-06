@@ -125,7 +125,8 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
   - a sort or a filter marks nothing;
   - a change the format hides is not marked.
 - **A write over live data** follows
-  [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).
+  [ADR-0154](./0154-user-writes-prevail-and-consumers-own-value-conflicts.md), which superseded
+  ADR-0142's displayed-value refusal on 2026-10-07. Values alone do not refuse explicit writes.
 
 ## The grid's pass over a new Window
 
@@ -153,6 +154,11 @@ extends the same contract to pushed Windows. Ticket 01 measured the otherwise re
 default; the amendment does not make an invalid Window valid.)*
 
 ## Settled while building it
+
+*(2026-10-07 amendment, ADR-0154: the D5 publication rule below remains, but displayed-value
+comparison does not. The grid publishes gathered changes to construct the intent from the current
+row; the Consumer decides business conflicts. Row-order/target checks and stale whole-row
+replacement protection remain. The original rationale follows for its historical context.)*
 
 *(2026-10-06, decided with the user — D5 to D9 — when the first build was put together.)*
 

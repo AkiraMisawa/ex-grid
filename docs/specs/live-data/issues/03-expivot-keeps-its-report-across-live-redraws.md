@@ -2,6 +2,13 @@
 
 Status: done locally — ADR-0151 to ADR-0153 implemented, tested and measured; full layer 3 remains CI's
 
+**Policy revision, 2026-10-07:** [ADR-0154](../../../adr/0154-user-writes-prevail-and-consumers-own-value-conflicts.md)
+supersedes ADR-0142's value-conflict refusal. The diagnostic and implementation record below
+describes the policy in force when those experiments ran. Its requirements to preserve historical
+seen-text evidence are superseded: explicit writes now prevail and Consumers decide Action
+business conflicts. Detached display ownership, versioned report operations and Change Highlight
+remain required. The follow-up removes painted-value history and remeasures sustained updates.
+
 **The aim:** a live redraw costs what changed, not what the report holds. Today ExPivot builds its
 cube, its report and every report row again on every redraw, at most four times a second. At 401,001
 report rows building the report alone took 337 ms (D10, ADR-0140). ag-grid keeps its row nodes,

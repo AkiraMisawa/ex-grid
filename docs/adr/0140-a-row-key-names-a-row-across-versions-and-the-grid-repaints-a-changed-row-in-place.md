@@ -102,6 +102,9 @@ changed:
     core, not by the row. They are re-read against this when it is built.
 - **A press on an Action names the row as it was painted when it was pressed.** See
   [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).
+  *(Revised 2026-10-07 by [ADR-0154](./0154-user-writes-prevail-and-consumers-own-value-conflicts.md):
+  the original address is resolved to the current row before delivery. Value changes alone do
+  not refuse it; an unavailable original target still does.)*
 - **`CONTEXT.md` gains Row Key.** It is distinct from Row Identity, the test for sameness, and from
   Record Key, a Snapshot's declared column. A Snapshot's rows take their Row Key from the Record
   Key.

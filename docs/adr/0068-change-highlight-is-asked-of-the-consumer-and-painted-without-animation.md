@@ -148,3 +148,5 @@ an unmarked cell of its kind, a Pinned Column's cell included.
   Row Key**, and the grid pairs a row's versions by it to repaint the row in place. The grid still
   compares no values to mark a cell. ADR-0142 compares what the grid painted, to keep a write off a
   cell the user did not see; that comparison marks nothing.
+  *(2026-10-07: ADR-0154 removes that displayed-value comparison for writes. Change Highlight's
+  comparison and lifetime remain independent and unchanged.)*
