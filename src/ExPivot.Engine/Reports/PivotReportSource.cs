@@ -28,6 +28,16 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// <summary>Raises the data-change notification.</summary>
     protected void OnChanged(PivotSourceChanged change) => Changed?.Invoke(change);
 
+    /// <summary>Runs a report over a local data provider, or on a server behind the Consumer's transport.</summary>
+    /// <param name="source">The data provider; this report does not own its lifetime.</param>
+    /// <param name="orderKeys">Server-registered Order Key functions, by policy identifier.</param>
+    /// <param name="versionsKept">Bounded number of immutable reports available to versioned operations.</param>
+    /// <param name="timeProvider">The clock that timestamps shown-text changes.</param>
+    public static LocalPivotReportSource From(PivotSource source,
+        IReadOnlyDictionary<string, Func<object, IComparable?>>? orderKeys = null,
+        int versionsKept = 2, TimeProvider? timeProvider = null)
+        => new(source, orderKeys, versionsKept, timeProvider ?? TimeProvider.System);
+
     /// <summary>Uses the Consumer's transport. Authentication, connection and server report lifetime remain the Consumer's.</summary>
     public static FetchingPivotReportSource Fetch(IReadOnlyList<PivotField> fields, PivotSourceFeatures features,
         PivotReportUpdateMode updateMode,
