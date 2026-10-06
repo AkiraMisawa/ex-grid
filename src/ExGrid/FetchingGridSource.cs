@@ -138,8 +138,9 @@ public sealed class FetchingGridSource<TRow> : IGridSource<TRow>, IDisposable, I
     /// paints a value cell; a change the format hides is not marked.</item>
     /// <item>On an answer that carries a change of data, a row not painted before under a key the
     /// Consumer named as added (<see cref="NotifyChanged(IEnumerable{object})"/>) is marked whole,
-    /// wherever it stands. When every notice the answer carries named its added keys, a row under a
-    /// key none named came into view by moving, and is not marked (D6).</item>
+    /// wherever it stands; one painted before is compared as any other. When every notice heard
+    /// since the last answer that carried a change named its added keys, a row under a key none
+    /// named came into view by moving, and is not marked (D6).</item>
     /// <item>When a notice named nothing (<see cref="NotifyChanged()"/>), the source guesses: a row
     /// not painted before is marked whole where it cannot have come into view by moving — between
     /// two rows painted before, or past an end of the result that the Window painted before also
