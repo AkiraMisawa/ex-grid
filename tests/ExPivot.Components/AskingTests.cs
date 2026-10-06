@@ -141,7 +141,9 @@ public class AskingTests : PivotTestContext
         await TickFieldAsync(cut, "Online", false);
         Assert.Equal(4, source.Questions.Count);
         await cut.InvokeAsync(late.AnswerAsync);
-        await SettleAsync(cut);
+        // The held answer's report request finishes asynchronously. Wait for the public
+        // layout notification, not a fixed number of renderer work items (ADR-0025).
+        cut.WaitForAssertion(() => Assert.Equal(2, told.Count));
         Assert.Equal(["Region", "Product"], cut.Instance.CurrentLayout.Rows.Select(p => p.Field));
         Assert.Equal("−East | 180 | 18", RowTexts(cut)[0]);
         Assert.Equal(2, told.Count);
