@@ -68,6 +68,37 @@ public sealed class TradesByIdTests(DemoApiServer server) : IClassFixture<DemoAp
         }
     }
 
+    [Fact] // ADR-0141 / LV-8: a trade cancelled by name over HTTP leaves, moves the order token, and a reset puts it back
+    public async Task ADR0141_a_trade_cancelled_by_name_moves_the_order_token()
+    {
+        using var client = server.Factory.CreateClient();
+        try
+        {
+            var before = await client.GetFromJsonAsync<JsonElement>("/api/trades?start=0&count=10", Token);
+            var id = TradeGenerator.TradeId(2_500);
+
+            using var cancelled = await client.PostAsJsonAsync("/api/trades/cancel", new { tradeId = id }, Token);
+            Assert.Equal(HttpStatusCode.OK, cancelled.StatusCode);
+            var after = await client.GetFromJsonAsync<JsonElement>("/api/trades?start=0&count=10", Token);
+
+            // The page's rows are the same rows; only the order token says a trade beyond it went.
+            Assert.Equal(
+                before.GetProperty("trades").EnumerateArray().Select(t => t.GetProperty("tradeId").GetString()),
+                after.GetProperty("trades").EnumerateArray().Select(t => t.GetProperty("tradeId").GetString()));
+            Assert.NotEqual(before.GetProperty("orderToken").GetString(), after.GetProperty("orderToken").GetString());
+            Assert.Equal(DemoApiServer.Trades - 1, after.GetProperty("total").GetInt64());
+
+            using var again = await client.PostAsJsonAsync("/api/trades/cancel", new { tradeId = id }, Token);
+            Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
+            using var nothing = await client.PostAsJsonAsync("/api/trades/cancel", new { }, Token);
+            Assert.Equal(HttpStatusCode.BadRequest, nothing.StatusCode);
+        }
+        finally
+        {
+            await server.Store.ResetAsync(Token);
+        }
+    }
+
     [Theory] // ADR-0069 and principle 1: a question naming no trade, or more than one answer holds, is refused by name, not cut short
     [InlineData("/api/trades/by-id", "ids names the trades to read")]
     [InlineData("/api/trades/by-id?ids=,", "ids names the trades to read")]
@@ -128,11 +159,16 @@ public sealed class ResetTests(DemoApiServer server) : IClassFixture<DemoApiServ
         Assert.Equal(TestData.Counter(told[^1].Version) + 1, TestData.Counter(reset.Version));
         Assert.Equal(TestData.Run(told[^1].Version), TestData.Run(reset.Version));
         Assert.Equal(differing, reset.TradeIds);
+        // ADR-0141 D6: the trades it puts back that the data no longer held — cancelled by a tick — are
+        // named as added.
+        Assert.Equal(differing.Where(id => before.ContainsKey(id) && !moved.ContainsKey(id)), reset.BookedIds);
+        Assert.NotEmpty(reset.BookedIds);
         Assert.Equal(reset.Version, store.Version);
         Assert.Equal(1_000, store.TradeCount);
         Assert.True(store.Changes.TryRead(out var said));
         Assert.Equal(reset.Version, said.Version);
         Assert.Equal(reset.TradeIds, said.TradeIds);
+        Assert.Equal(reset.BookedIds, said.BookedIds);
         using (var copy = TradeDatabase.Open(store.WorkingPath!, SqliteOpenMode.ReadOnly))
             Assert.Equal(TestData.Fingerprint(1_000), TestData.Fingerprint(copy));
         Assert.Equal(bytes, TestData.FileHash(generated));
@@ -153,7 +189,7 @@ public sealed class ResetTests(DemoApiServer server) : IClassFixture<DemoApiServ
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Token);
         timeout.CancelAfter(TimeSpan.FromSeconds(30));
         var token = timeout.Token;
-        var changes = Channel.CreateUnbounded<(string Version, string[] TradeIds)>();
+        var changes = Channel.CreateUnbounded<(string Version, string[] TradeIds, string[] BookedIds)>();
         await using var connection = new HubConnectionBuilder()
             .WithUrl(new Uri(server.Factory.Server.BaseAddress, TradesHub.Path.TrimStart('/')), options =>
             {
@@ -161,7 +197,8 @@ public sealed class ResetTests(DemoApiServer server) : IClassFixture<DemoApiServ
                 options.HttpMessageHandlerFactory = _ => server.Factory.Server.CreateHandler();
             })
             .Build();
-        connection.On<string, string[]>("TradesChanged", (version, tradeIds) => changes.Writer.TryWrite((version, tradeIds)));
+        connection.On<string, string[], string[]>("TradesChanged",
+            (version, tradeIds, bookedIds) => changes.Writer.TryWrite((version, tradeIds, bookedIds)));
         await connection.StartAsync(token);
 
         using var client = server.Factory.CreateClient();
@@ -179,7 +216,7 @@ public sealed class ResetTests(DemoApiServer server) : IClassFixture<DemoApiServ
         Assert.Equal(DemoApiServer.Trades, answer.GetProperty("trades").GetInt64());
         Assert.True(answer.GetProperty("restored").GetInt32() > 0);
         Assert.Equal(version, server.Store.Version);
-        (string Version, string[] TradeIds) said;
+        (string Version, string[] TradeIds, string[] BookedIds) said;
         do
             said = await changes.Reader.ReadAsync(token);
         while (said.Version != version);

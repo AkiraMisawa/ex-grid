@@ -2,13 +2,15 @@ import { test, expect, circuitQuiet, scrollRowToTop } from './fixtures.mjs';
 import { API_URL } from './hosting.mjs';
 import { expectCodeIsSource } from './demo-code.mjs';
 
-// /grid-live (ADR-0068/0069): ExGrid alone over the demo API server's trades. The page pushes a
-// Window of GET /api/trades, hears the hub's "these trades changed", reads them again and answers
-// CellChangedAt from when each cell's value moved. What only a browser can say: that a mark is
-// keyed by row and column and stays on its cell across a scroll (DC-65); that it paints without a
-// transition or an animation, under the core's stylesheet and under the Wrapper's, that forced
-// colours restate it, and that the grid's live region does not announce it (DC-66); and that the
-// page reads its Window from the server and turns the live updates off as it goes (PV-20).
+// /grid-live (ADR-0068/0069/0141): ExGrid alone over the demo API server's trades. The grid reads
+// GET /api/trades through GridSource.Fetch with TradeId as the Row Key; the page hears the hub's
+// "these trades changed" and tells the source, which reads its Window again, pairs the trades by
+// key and answers CellChangedAt for the cells whose text changed. What only a browser can say: that
+// a mark is keyed by row and column and stays on its cell across a scroll (DC-65); that it paints
+// without a transition or an animation, under the core's stylesheet and under the Wrapper's, that
+// forced colours restate it, and that the grid's live region does not announce it (DC-66); that the
+// page reads its Window from the server and turns the live updates off as it goes (PV-20); and that
+// a trade cancelled after the Window drops a Selection reaching past it (LV-8).
 //
 // The API server lives for the whole run and other spec files share it: each test starts from
 // POST /api/reset, which also turns live updates off, and turns them off again as it ends. The
@@ -306,11 +308,53 @@ test('PV-20/ADR-0069: the Window is read from the server as the grid scrolls, an
     await expect.poll(async () => (await api('/api/live')).on, { timeout: 15_000 }).toBe(false);
 });
 
-test('ADR-0069/0068: the code the page shows is the code it runs: the hub\'s notice read again, and CellChangedAt answered', async ({ page }) => {
+test('ADR-0069/0068/0141: the code the page shows is the code it runs: the hub\'s notice told to the source, and CellChangedAt answered by it', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
-    expect(code['GridLivePage.razor#notices']).toContain('hub.On<string, string[]>("TradesChanged"');
-    expect(code['GridLivePage.razor#notices']).toContain('"api/trades/by-id"');
+    expect(code['GridLivePage.razor#notices']).toContain('hub.On<string, string[], string[]>("TradesChanged"');
+    // The trades booked are named, so the source marks a new row whole wherever it lands (ADR-0141, D6).
+    expect(code['GridLivePage.razor#notices']).toContain('_source?.NotifyChanged(bookedIds)');
     expect(code['GridLivePage.razor#grid']).toContain('CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"');
     expect(code['GridLivePage.razor#window']).toContain('api/trades?start=');
+    expect(code['GridLivePage.razor#window']).toContain('GridSource.Fetch<LiveTrade>(FetchAsync, readAheadRows: 40, rowKey: trade => trade.TradeId)');
+    expect(code['GridLivePage.razor#window']).toContain('OrderToken = page.OrderToken');
+});
+
+/** The trades the grid paints, top to bottom. */
+const paintedTrades = (page) => grid(page).locator('.ex-viewport [id$="c0"]').allTextContents();
+
+test('LV-8/ADR-0141: a trade cancelled after the Window, with a Selection reaching past it, drops the Selection', async ({ page }) => {
+    test.setTimeout(120_000);
+    await open(page, 'builtin');
+    await holdStill(page);
+    // The Window the source holds, as its status line says: rows a–b of N.
+    const held = /rows ([\d,]+)–([\d,]+) of ([\d,]+)/.exec(await page.locator('#grid-live-window').textContent());
+    expect(held, 'the Window line').not.toBeNull();
+    const [last, total] = [Number(held[2].replace(/,/g, '')), Number(held[3].replace(/,/g, ''))];
+    const beyond = last + 50;
+    expect(beyond, 'a trade after the Window').toBeLessThan(total);
+    const { trades: [trade] } = await api(`/api/trades?start=${beyond}&count=1`);
+
+    // A Selection reaching past the Window: every row (ADR-0011's Ctrl+A).
+    // Cells are pointer-events: none; the Viewport is the delegated target (ADR-0004).
+    await tradeAt(page, 2).click({ force: true });
+    await page.keyboard.press('ControlOrMeta+a');
+    await expect.poll(() => grid(page).locator('.ex-selection .ex-range').count(), { message: 'the whole result selected' })
+        .toBeGreaterThan(0);
+    const painted = await paintedTrades(page);
+
+    try {
+        // The hub says so, the source reads its Window again, and only the server's answer can say
+        // that a position past the Window now names another trade.
+        await post('/api/trades/cancel', { tradeId: trade.tradeId });
+        await expect(grid(page).locator('.ex-range')).toHaveCount(0, { timeout: 15_000 });
+        await circuitQuiet();
+        await expect(grid(page).locator('.ex-range')).toHaveCount(0);
+        // The rows on screen are the same trades: nothing in the Window moved.
+        expect(await paintedTrades(page)).toEqual(painted);
+        expect(Number(await grid(page).getAttribute('aria-rowcount'))).toBe(total - 1);
+    } finally {
+        // The trade comes back for whoever reads the data next.
+        await post('/api/reset');
+    }
 });

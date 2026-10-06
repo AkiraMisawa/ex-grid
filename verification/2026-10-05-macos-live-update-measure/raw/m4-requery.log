@@ -1,0 +1,46 @@
+warning: Git tree '/Users/akira338/github/ex-grid/.claude/worktrees/agent-a595cfae2a55a2a4a' has uncommitted changes
+dotnet 10.0.203 (nix-managed)
+M5: 2000 cases, 7966 batches, 649,829 rows compared, 654 cases also against ReplaceRow one at a time (seed 7): the incremental result equals GridQueryEngine.Apply in every batch
+  batches: 0 sort level(s): 2010
+  batches: 1 sort level(s): 2092
+  batches: 2 sort level(s): 1913
+  batches: 3 sort level(s): 1951
+  batches: empty: 1817
+  batches: filtered: 6016
+  batches: no filter: 1950
+  batches: replacements only: 2919
+  batches: result size changed: 2590
+  batches: sequence kept: 4762
+  batches: sequence moved: 3204
+  batches: with adds or removes: 3230
+n = 100,000: the Filter keeps 45,017 rows
+  grid: RequireDistinctRows over the Window    n=  100,000 k=    0 runs=  40  min      0.502  median      0.658  max      1.071 ms  (Window of 45,017 rows)
+  (b) GridQueryEngine.Apply alone              n=  100,000 k=    0 runs=  20  min     19.602  median     22.556  max     25.659 ms  (filter + two-key stable sort over every row)
+  (a) today: k x ReplaceRow                    n=  100,000 k=    1 runs=  30  min     19.592  median     20.140  max     23.025 ms  (30 run(s) of 1 calls, timed whole)
+  (a) one ReplaceRow call                      n=  100,000 k=    1 runs=  30  min     19.590  median     20.139  max     23.019 ms  (each call: locate by reference, Apply, compare the sequence)
+  (b) one requery for the batch                n=  100,000 k=    1 runs=  20  min     19.933  median     23.218  max     28.357 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=  100,000 k=    1 runs=  40  min      0.025  median      0.029  max      0.083 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+  (a) today: k x ReplaceRow                    n=  100,000 k=  100 runs=   5  min   2423.450  median   2438.180  max   2459.426 ms  (5 run(s) of 100 calls, timed whole)
+  (a) one ReplaceRow call                      n=  100,000 k=  100 runs= 500  min     19.730  median     24.206  max     45.294 ms  (each call: locate by reference, Apply, compare the sequence)
+  (b) one requery for the batch                n=  100,000 k=  100 runs=  20  min     21.583  median     25.283  max     30.516 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=  100,000 k=  100 runs=  40  min      0.147  median      0.186  max      0.328 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+  (a) today: k x ReplaceRow                    n=  100,000 k= 1000 runs=   1  min  24487.063  median  24487.063  max  24487.063 ms  (1 run(s) of 1000 calls, timed whole)
+  (a) one ReplaceRow call                      n=  100,000 k= 1000 runs=1000  min     19.153  median     23.984  max     40.043 ms  (each call: locate by reference, Apply, compare the sequence)
+  (b) one requery for the batch                n=  100,000 k= 1000 runs=  20  min     21.748  median     24.671  max     32.139 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=  100,000 k= 1000 runs=  40  min      0.976  median      1.049  max      1.167 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+n = 1,000,000: the Filter keeps 451,115 rows
+  grid: RequireDistinctRows over the Window    n=1,000,000 k=    0 runs=  15  min     10.640  median     10.928  max     13.790 ms  (Window of 451,115 rows)
+  (b) GridQueryEngine.Apply alone              n=1,000,000 k=    0 runs=   7  min    325.543  median    348.636  max    359.889 ms  (filter + two-key stable sort over every row)
+  (a) today: k x ReplaceRow                    n=1,000,000 k=    1 runs=  10  min    331.333  median    354.303  max    475.885 ms  (10 run(s) of 1 calls, timed whole)
+  (a) one ReplaceRow call                      n=1,000,000 k=    1 runs=  10  min    331.329  median    354.296  max    475.839 ms  (each call: locate by reference, Apply, compare the sequence)
+  (b) one requery for the batch                n=1,000,000 k=    1 runs=   7  min    346.947  median    369.701  max    507.809 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=1,000,000 k=    1 runs=  15  min      0.208  median      0.234  max      1.183 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+  (a) today: k x ReplaceRow                    n=1,000,000 k=  100 runs=   1  min  36869.527  median  36869.527  max  36869.527 ms  (1 run(s) of 100 calls, timed whole)
+  (a) one ReplaceRow call                      n=1,000,000 k=  100 runs= 100  min    328.322  median    361.968  max    453.559 ms  (each call: locate by reference, Apply, compare the sequence)
+  (b) one requery for the batch                n=1,000,000 k=  100 runs=   7  min    344.312  median    361.546  max    389.855 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=1,000,000 k=  100 runs=  15  min      0.536  median      0.591  max      0.716 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+  (a) today: k x ReplaceRow                    n=1,000,000 k= 1000 runs= 100  min 329098.667  median 364545.291  max 435199.125 ms  (100 calls timed one by one; the batch is 1000 x the median call (derived, not run))
+  (a) one ReplaceRow call                      n=1,000,000 k= 1000 runs= 100  min    329.099  median    364.545  max    435.199 ms  (each call: locate by reference, Apply, compare the sequence)
+  (b) one requery for the batch                n=1,000,000 k= 1000 runs=   7  min    340.141  median    365.267  max    383.431 ms  (locate + replace + Apply + sequence check)
+  (c) incremental                              n=1,000,000 k= 1000 runs=  15  min      3.041  median      3.190  max      5.188 ms  (binary-search out, Apply on the k, binary-search in, block merge)
+wrote verification/2026-10-05-macos-live-update-measure/raw/m4-requery.json

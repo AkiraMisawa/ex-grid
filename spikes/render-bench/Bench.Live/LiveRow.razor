@@ -1,0 +1,86 @@
+@implements IDisposable
+@* ExGrid's row shape, in miniature (src/ExGrid/Components/ExGridRow.razor): one component per row
+   whose ShouldRender is written by hand and compares the row by reference (ADR-0003), cells as
+   plain markup, and on each cell the attributes ExGridRow writes — class, style, role, id,
+   aria-colindex — with the id composed once per cell for the row's life, as ExGridRow caches it. *@
+<div class="r" role="row" aria-rowindex="@(RowIndex + 1)">
+    <div class="c key" style="@Columns.KeyStyle" role="gridcell" id="@CellId(0)" aria-colindex="1">@Row.Book</div>
+    @for (var c = 0; c < Columns.Count; c++)
+    {
+        var value = Row.Values[c];
+        <div class="@LiveText.Class(value)" style="@Columns.Styles[c]" role="gridcell" id="@CellId(c + 1)" aria-colindex="@(c + 2)">@LiveText.Of(value)</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public LiveRecord Row { get; set; } = default!;
+    [Parameter, EditorRequired] public LiveColumns Columns { get; set; } = default!;
+    [Parameter] public int RowIndex { get; set; }
+    [Parameter] public string IdPrefix { get; set; } = "";
+    [Parameter] public LiveCounters? Counters { get; set; }
+
+    private LiveRecord? _renderedRow;
+    private LiveColumns? _renderedColumns;
+    private int _renderedRowIndex = -1;
+    private string? _renderedIdPrefix;
+
+    protected override void OnInitialized()
+    {
+        // As ExGridRow: the first render is unconditional, so record what it paints here.
+        Record();
+        if (Counters is not null)
+            Counters.Mounts++;
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (ReferenceEquals(_renderedRow, Row)
+            && ReferenceEquals(_renderedColumns, Columns)
+            && _renderedRowIndex == RowIndex
+            && ReferenceEquals(_renderedIdPrefix, IdPrefix))
+        {
+            return false;
+        }
+        Record();
+        return true;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (Counters is not null)
+            Counters.Renders++;
+    }
+
+    public void Dispose()
+    {
+        if (Counters is not null)
+            Counters.Disposals++;
+    }
+
+    private void Record()
+    {
+        _renderedRow = Row;
+        _renderedColumns = Columns;
+        _renderedRowIndex = RowIndex;
+        _renderedIdPrefix = IdPrefix;
+    }
+
+    // ExGridRow's cell id cache: one string per cell for as long as the row index and the prefix
+    // hold. A new component composes them again.
+    private string?[] _cellIds = [];
+    private int _cellIdsRow = -1;
+    private string _cellIdsPrefix = "";
+
+    private string CellId(int column)
+    {
+        if (_cellIdsRow != RowIndex || !ReferenceEquals(_cellIdsPrefix, IdPrefix))
+        {
+            Array.Clear(_cellIds);
+            _cellIdsRow = RowIndex;
+            _cellIdsPrefix = IdPrefix;
+        }
+        if (column >= _cellIds.Length)
+            Array.Resize(ref _cellIds, Math.Max(column + 1, Columns.Count + 1));
+        return _cellIds[column] ??= string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{IdPrefix}-r{RowIndex}-c{column}");
+    }
+}

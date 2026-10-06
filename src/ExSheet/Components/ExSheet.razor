@@ -49,7 +49,7 @@
         ShowFillHandle="true" OnFill="OnFillAsync" OnClear="OnClearAsync" OnFind="_find"
         OnSummarize="_summarize" ShowSelectionSummary="ShowSelectionSummary" SummaryFigures="_summaryFigures.Shown" SummaryFiguresChanged="_summaryFiguresChanged" OnSelectionSummaryChanged="OnSelectionSummaryChanged"
         OnCopyRowsNeeded="_rowsNeeded"
-        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded"
+        OnUndo="_undo" OnRedo="_redo" OnEditingChanged="_editingChanged" OnEditDiscarded="_editDiscarded" OnCommitRefused="_commitRefused"
         DeclaredKeys="DeclaredSheetKeys" OnDeclaredKey="_formatKey" OnBrowserTimeZone="_browserTimeZone" />
 @* Format Cells in a frame of the Chrome's own (ADR-0071, ADR-0010's note of 2026-09-30): beside the
    grid and outside its root, from the opening until OK or Cancel. Under the built-in Chrome it
@@ -118,6 +118,7 @@
     private readonly EventCallback _redo;
     private readonly EventCallback<bool> _editingChanged;
     private readonly EventCallback<EditDiscardReason> _editDiscarded;
+    private readonly EventCallback<GridCommitRefusal> _commitRefused;
     private readonly EventCallback<GridDeclaredKeyPress> _formatKey;
     private readonly Action<FormatCellsTab> _formatCellsTabShown;
     private readonly Func<Task> _returnKeyboard;
@@ -268,6 +269,17 @@
         _editDiscarded = new EventCallback<EditDiscardReason>(null, (Func<EditDiscardReason, Task>)(reason =>
         {
             OnEditDiscarded(reason);
+            return Task.CompletedTask;
+        }));
+        // A commit the grid refused because the cell changed under the editor (ADR-0142, LV-11):
+        // the editor stands with the typing, and the notice says what the cell shows now.
+        _commitRefused = new EventCallback<GridCommitRefusal>(null, (Func<GridCommitRefusal, Task>)(refusal =>
+        {
+            var address = new CellAddress(refusal.Cell.Row, refusal.Cell.Column).ToString();
+            Tell(refusal.Reason == CommitRefusalReason.RenderNoLongerKept
+                ? SheetWords.CommitRefusedUnseen(address, refusal.PaintedText)
+                : SheetWords.CommitRefused(address, refusal.PaintedText));
+            StateHasChanged();
             return Task.CompletedTask;
         }));
         // Excel's formatting keys, which the grid claims for this Sheet and raises with whether an

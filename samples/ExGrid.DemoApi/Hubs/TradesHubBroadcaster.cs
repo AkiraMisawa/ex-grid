@@ -20,7 +20,7 @@ internal sealed class TradesHubBroadcaster(
                 try
                 {
                     await hub.Clients.All.VersionChanged(change.Version);
-                    await hub.Clients.All.TradesChanged(change.Version, change.TradeIds);
+                    await hub.Clients.All.TradesChanged(change.Version, change.TradeIds, change.BookedIds);
                 }
                 catch (Exception e) when (e is not OperationCanceledException)
                 {

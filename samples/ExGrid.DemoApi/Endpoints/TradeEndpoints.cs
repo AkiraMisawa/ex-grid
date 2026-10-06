@@ -3,6 +3,9 @@ namespace ExGrid.DemoApi;
 /// <summary>What <c>POST /api/trades/by-id</c> takes: <c>{ "ids": ["T10000001", "T10000002"] }</c>.</summary>
 internal sealed record TradeIdsRequest(string[]? Ids);
 
+/// <summary>What <c>POST /api/trades/cancel</c> takes: <c>{ "tradeId": "T10000250" }</c>.</summary>
+internal sealed record TradeCancelRequest(string? TradeId);
+
 /// <summary>What <c>POST /api/trades/summary</c> takes (ADR-0130): the selected ranges over the
 /// trades in <c>TradeId</c> order, the columns they index, and the figures asked —
 /// <c>{ "ranges": [{ "top": 0, "left": 7, "rows": 10, "columns": 1 }], "columns": ["TradeId", ...], "figures": "sum, count" }</c>.</summary>
@@ -39,9 +42,11 @@ internal static class TradeEndpoints
 
     /// <summary>
     /// Maps <c>GET /api/trades?start=0&amp;count=100</c>: <c>count</c> trades from the
-    /// <c>start</c>th in <c>TradeId</c> order — fewer at the end — with how many there are and the
-    /// Source Version they were read at, all from one state of the data (<see cref="TradePage"/>).
-    /// A smoke test of the server, and the shape a page reads trades in.
+    /// <c>start</c>th in <c>TradeId</c> order — fewer at the end — with how many there are, the
+    /// Source Version they were read at and its order token, all from one state of the data
+    /// (<see cref="TradePage"/>). The order token moves when a trade anywhere is cancelled or booked,
+    /// which is what a grid's <c>GridSource.Fetch</c> drops a Selection on (ADR-0141). A smoke test
+    /// of the server, and the shape a page reads trades in.
     /// <para>
     /// And <c>GET /api/trades/by-id?ids=T10000001,T10000002</c>: the named trades as they are now,
     /// for <c>/grid-live</c> to read again the trades the hub's <c>TradesChanged</c> names
@@ -68,6 +73,19 @@ internal static class TradeEndpoints
             string[]? ids) => ById(store, response, ids, cancellationToken));
         app.MapPost("/api/trades/by-id", (TradeIdsRequest request, TradeStore store, HttpResponse response,
             CancellationToken cancellationToken) => ById(store, response, request.Ids, cancellationToken));
+        // One trade cancelled where a test says (ADR-0141's LV-8), told on the hub as a tick's change
+        // is; POST /api/reset puts it back.
+        app.MapPost("/api/trades/cancel", async (TradeCancelRequest request, TradeStore store, HttpResponse response,
+            CancellationToken cancellationToken) =>
+        {
+            if (store.State != TradeStoreState.Ready)
+                return ApiResults.NotReady(store, response);
+            if (string.IsNullOrEmpty(request.TradeId))
+                return ApiResults.BadRequest("tradeId names the trade to cancel.");
+            return await store.CancelAsync(request.TradeId, cancellationToken) is { } change
+                ? Results.Ok(change)
+                : Results.Problem($"No trade is {request.TradeId}.", statusCode: StatusCodes.Status404NotFound);
+        });
         // The Selection Summary in SQL (ADR-0130): the request as the grid asks it, the figures as
         // the one definition reads them — each its exact value, its double, or the error it is.
         app.MapPost("/api/trades/summary", async (TradeSummaryRequest request, TradeStore store,

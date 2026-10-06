@@ -111,8 +111,7 @@ internal sealed class ReportVersion
     private readonly Dictionary<string, int> _columnsByName;
     private readonly Dictionary<GridColumn<PivotReportRow>, int> _columns = new(ReferenceEqualityComparer.Instance);
     private Dictionary<PivotReportRow, int>? _rowsByInstance;
-    private Dictionary<RowKey, int>? _rowsByKey;
-    private Dictionary<int, RowKey>? _keys;
+    private Dictionary<PivotRowKey, int>? _rowsByKey;
     private int _hint;
 
     public ReportVersion(PivotReport report, DateTimeOffset at, bool sameRowsAsPrevious, ReportVersion? previous)
@@ -194,80 +193,20 @@ internal sealed class ReportVersion
         return _hint = index;
     }
 
-    /// <summary>What the row at <paramref name="index"/> stands for.</summary>
-    public RowKey KeyAt(int index)
-    {
-        _keys ??= [];
-        if (!_keys.TryGetValue(index, out var key))
-        {
-            key = RowKey.Of(Report, Report.Rows[index]);
-            _keys[index] = key;
-        }
-        return key;
-    }
+    /// <summary>What the row at <paramref name="index"/> stands for: its key, made with the row.</summary>
+    public PivotRowKey KeyAt(int index) => Report.Rows[index].Key;
 
     /// <summary>The position of the row that stands for <paramref name="key"/>, or −1: asked only
     /// of a version whose rows the next version does not share.</summary>
-    public int IndexOfKey(RowKey key)
+    public int IndexOfKey(PivotRowKey key)
     {
         if (_rowsByKey is null)
         {
             var rows = Report.Rows;
-            _rowsByKey = new Dictionary<RowKey, int>(rows.Count);
+            _rowsByKey = new Dictionary<PivotRowKey, int>(rows.Count);
             for (var i = 0; i < rows.Count; i++)
-                _rowsByKey.TryAdd(RowKey.Of(Report, rows[i]), i);
+                _rowsByKey.TryAdd(rows[i].Key, i);
         }
         return _rowsByKey.TryGetValue(key, out var index) ? index : -1;
     }
-}
-
-/// <summary>What a report row stands for, across the reports of one layout: its role, its Value
-/// Field and its Items, outermost first — the test <see cref="PivotReport.HasSameRowsAs"/> applies
-/// position by position. The row fields are the layout's, which a history shares.</summary>
-internal readonly struct RowKey : IEquatable<RowKey>
-{
-    private readonly PivotItemKey[] _items;
-    private readonly int _hash;
-
-    private RowKey(PivotRowRole role, int valueField, PivotItemKey[] items)
-    {
-        Role = role;
-        ValueField = valueField;
-        _items = items;
-        var hash = new HashCode();
-        hash.Add(role);
-        hash.Add(valueField);
-        foreach (var item in items)
-            hash.Add(item);
-        _hash = hash.ToHashCode();
-    }
-
-    public PivotRowRole Role { get; }
-
-    public int ValueField { get; }
-
-    public static RowKey Of(PivotReport report, PivotReportRow row)
-    {
-        var path = report.RowPath(row);
-        var items = new PivotItemKey[path.Count];
-        for (var i = 0; i < items.Length; i++)
-            items[i] = path[i].Item;
-        return new RowKey(row.Role, row.ValueField, items);
-    }
-
-    public bool Equals(RowKey other)
-    {
-        if (Role != other.Role || ValueField != other.ValueField || _items.Length != other._items.Length)
-            return false;
-        for (var i = 0; i < _items.Length; i++)
-        {
-            if (!_items[i].Equals(other._items[i]))
-                return false;
-        }
-        return true;
-    }
-
-    public override bool Equals(object? obj) => obj is RowKey other && Equals(other);
-
-    public override int GetHashCode() => _hash;
 }

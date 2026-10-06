@@ -94,13 +94,16 @@ public partial class ExGrid<TRow>
     /// because JavaScript interop requires it.</para>
     /// </summary>
     /// <param name="text">The composition's text.</param>
+    /// <param name="paint">The render the composition started on (<c>data-ex-paint</c>, read at
+    /// its <c>compositionstart</c>): the field covers the cell from then on, so the edit keeps
+    /// what that render showed of it (ADR-0142, LV-11, D2).</param>
     [JSInvokable]
-    public async Task<bool> OnKeyFieldTextAsync(string text)
+    public async Task<bool> OnKeyFieldTextAsync(string text, int paint = PaintNotTold)
     {
         if (_disposed)
             return false;
         if (_editMode == EditMode.None)
-            await TryStartEditingAsync(EditMode.Overwrite, text);
+            await TryStartEditingAsync(EditMode.Overwrite, text, paint);
         return _editMode != EditMode.None;
     }
 }

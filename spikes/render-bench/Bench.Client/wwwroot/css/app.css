@@ -93,6 +93,12 @@ tr.bad  td { background: #fdf0f0; }
 .c.missing { color: #999; background: #f7f7f7; }
 .c.err     { color: #a33; background: #fdf0f0; }
 
+/* ---- the live tick page (/live) ---- */
+
+.live-pair { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.live-grid { border: 1px solid #ccc; overflow: hidden; width: max-content; }
+.c.num.neg { color: #a33; }
+
 /* ---- template boot UI ---- */
 
 .loading-progress {

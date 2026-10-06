@@ -28,6 +28,17 @@ public class BoldWidthTests
         Assert.Equal(bold, bold.Bold);
     }
 
+    [Fact] // ADR-0050 item 15: Bold is metrics of the same type, so the generated ToString recursed through it forever
+    public void Metrics_print_their_widths_without_following_Bold()
+    {
+        var text = Metrics.ToString();
+
+        Assert.StartsWith("CellTextMetrics {", text);
+        Assert.Contains("DigitWidthPx = 9", text);
+        Assert.Contains("BoldDigitWidthPx = 10", text);
+        Assert.DoesNotContain("Bold = ", text);
+    }
+
     [Fact] // DC-58 / ADR-0016: a bold number that fits at the regular widths and not at the bold ones is ####
     public void A_bold_number_that_fits_only_at_the_regular_widths_is_hashed()
     {

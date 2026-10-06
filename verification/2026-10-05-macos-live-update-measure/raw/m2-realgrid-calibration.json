@@ -1,0 +1,318 @@
+{
+  "ticks": 200,
+  "warmup": 20,
+  "results": [
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 20,
+      "K": 1,
+      "ChangedCells": 3,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 2,
+      "Edits": 11,
+      "EditsByType": {
+        "PrependFrame": 2,
+        "RemoveFrame": 1,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 177,
+      "FramesByType": {
+        "Attribute": 133,
+        "Component": 1,
+        "Element": 22,
+        "Text": 21
+      },
+      "StringBytes": 1632.325,
+      "EstimatedBytes": 6230.325,
+      "DisposedComponents": 1
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 20,
+      "K": 5,
+      "ChangedCells": 3,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 6,
+      "Edits": 23,
+      "EditsByType": {
+        "PrependFrame": 10,
+        "RemoveFrame": 5,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 885,
+      "FramesByType": {
+        "Attribute": 665,
+        "Component": 5,
+        "Element": 110,
+        "Text": 105
+      },
+      "StringBytes": 7001.54,
+      "EstimatedBytes": 28615.54,
+      "DisposedComponents": 5
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 20,
+      "K": 40,
+      "ChangedCells": 3,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 41,
+      "Edits": 128,
+      "EditsByType": {
+        "PrependFrame": 80,
+        "RemoveFrame": 40,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 7080,
+      "FramesByType": {
+        "Attribute": 5320,
+        "Component": 40,
+        "Element": 880,
+        "Text": 840
+      },
+      "StringBytes": 53981.215,
+      "EstimatedBytes": 224485.215,
+      "DisposedComponents": 40
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 50,
+      "K": 1,
+      "ChangedCells": 3,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 2,
+      "Edits": 11,
+      "EditsByType": {
+        "PrependFrame": 2,
+        "RemoveFrame": 1,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 387,
+      "FramesByType": {
+        "Attribute": 283,
+        "Component": 1,
+        "Element": 52,
+        "Text": 51
+      },
+      "StringBytes": 3584.345,
+      "EstimatedBytes": 13282.345,
+      "DisposedComponents": 1
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 50,
+      "K": 5,
+      "ChangedCells": 3,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 6,
+      "Edits": 23,
+      "EditsByType": {
+        "PrependFrame": 10,
+        "RemoveFrame": 5,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 1935,
+      "FramesByType": {
+        "Attribute": 1415,
+        "Component": 5,
+        "Element": 260,
+        "Text": 255
+      },
+      "StringBytes": 16774.415,
+      "EstimatedBytes": 63888.415,
+      "DisposedComponents": 5
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 50,
+      "K": 40,
+      "ChangedCells": 3,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 41,
+      "Edits": 128,
+      "EditsByType": {
+        "PrependFrame": 80,
+        "RemoveFrame": 40,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 15480,
+      "FramesByType": {
+        "Attribute": 11320,
+        "Component": 40,
+        "Element": 2080,
+        "Text": 2040
+      },
+      "StringBytes": 132144.1,
+      "EstimatedBytes": 506648.1,
+      "DisposedComponents": 40
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 20,
+      "K": 1,
+      "ChangedCells": -1,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 2,
+      "Edits": 11,
+      "EditsByType": {
+        "PrependFrame": 2,
+        "RemoveFrame": 1,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 177,
+      "FramesByType": {
+        "Attribute": 133,
+        "Component": 1,
+        "Element": 22,
+        "Text": 21
+      },
+      "StringBytes": 1632.49,
+      "EstimatedBytes": 6230.49,
+      "DisposedComponents": 1
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 20,
+      "K": 5,
+      "ChangedCells": -1,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 6,
+      "Edits": 23,
+      "EditsByType": {
+        "PrependFrame": 10,
+        "RemoveFrame": 5,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 885,
+      "FramesByType": {
+        "Attribute": 665,
+        "Component": 5,
+        "Element": 110,
+        "Text": 105
+      },
+      "StringBytes": 7002.17,
+      "EstimatedBytes": 28616.17,
+      "DisposedComponents": 5
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 20,
+      "K": 40,
+      "ChangedCells": -1,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 41,
+      "Edits": 128,
+      "EditsByType": {
+        "PrependFrame": 80,
+        "RemoveFrame": 40,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 7080,
+      "FramesByType": {
+        "Attribute": 5320,
+        "Component": 40,
+        "Element": 880,
+        "Text": 840
+      },
+      "StringBytes": 53980.135,
+      "EstimatedBytes": 224484.135,
+      "DisposedComponents": 40
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 50,
+      "K": 1,
+      "ChangedCells": -1,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 2,
+      "Edits": 11,
+      "EditsByType": {
+        "PrependFrame": 2,
+        "RemoveFrame": 1,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 387,
+      "FramesByType": {
+        "Attribute": 283,
+        "Component": 1,
+        "Element": 52,
+        "Text": 51
+      },
+      "StringBytes": 3639.36,
+      "EstimatedBytes": 13337.36,
+      "DisposedComponents": 1
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 50,
+      "K": 5,
+      "ChangedCells": -1,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 6,
+      "Edits": 23,
+      "EditsByType": {
+        "PrependFrame": 10,
+        "RemoveFrame": 5,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 1935,
+      "FramesByType": {
+        "Attribute": 1415,
+        "Component": 5,
+        "Element": 260,
+        "Text": 255
+      },
+      "StringBytes": 17031.965,
+      "EstimatedBytes": 64145.965,
+      "DisposedComponents": 5
+    },
+    {
+      "Variant": "real ExGrid (A)",
+      "Columns": 50,
+      "K": 40,
+      "ChangedCells": -1,
+      "Ticks": 200,
+      "BatchesPerTick": 1,
+      "Diffs": 41,
+      "Edits": 128,
+      "EditsByType": {
+        "PrependFrame": 80,
+        "RemoveFrame": 40,
+        "StepIn": 4,
+        "StepOut": 4
+      },
+      "Frames": 15480,
+      "FramesByType": {
+        "Attribute": 11320,
+        "Component": 40,
+        "Element": 2080,
+        "Text": 2040
+      },
+      "StringBytes": 134230,
+      "EstimatedBytes": 508734,
+      "DisposedComponents": 40
+    }
+  ]
+}

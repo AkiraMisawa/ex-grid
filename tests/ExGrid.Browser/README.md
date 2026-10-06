@@ -348,6 +348,22 @@ nobody had asked for. What that means when writing a test:
   refusal (ED-24), Backspace's empty editor (ED-23), Ctrl+D / Ctrl+R and a fill refused by
   name (CP-24/25), the keys staying the input's own inside the editor, and — on `/cells` —
   a display-only grid leaving Delete, Backspace, Ctrl+Z, Ctrl+D and Ctrl+R to the page (ED-25).
+- `write-refusal.spec.mjs` — a write over a target that changed after the user saw it (ADR-0142,
+  LV-11 to LV-14) on `/features?upstream=1`, where F9 moves the first five rows' Notional as a
+  live feed would. On both hosts, at 150 ms on the Server host: a commit over a cell that changed
+  under the editor refused with the new value in the refusal status, the typing kept, a second
+  Enter landing, Escape writing nothing, and a change to another cell of the row refusing nothing
+  (LV-11); a Ctrl+V pressed straight after F9 judged against the render it was pressed on —
+  refused where that render was the older one, pasted where it already showed the change (LV-13,
+  LV-14). On the Server host only, where a gesture can be taken before F9's render comes back: an
+  Action press, a Ctrl+Enter fill and a fill-handle release refused (LV-12, LV-13); a commit whose
+  opening key was taken before F9's change refused with the new value (LV-11, D2); a Ctrl+D whose
+  source F9 moved refused though its target did not move (LV-13, D4); a Delete and a Ctrl+R whose
+  target F9 moved refused (LV-13, D3). The user's own writes count
+  as seen (LV-17, D1): `5` Enter ↑ Ctrl+V and `1` Enter ↑ `2` Enter, typed at once, land on both
+  hosts, the Server host at 0 and at 150 ms. Each race reads what the page showed at the gesture
+  first, from a capture listener ahead of the grid's, and says so by name if the change had
+  already been painted.
 - `find.spec.mjs` — Find (ADR-0055), **run once per Chrome** on `/features`: Ctrl+F taken
   from the browser and the keys typed after it landing in the panel's field, Enter and
   Shift+Enter stepping, a match beyond the painted rows revealed, "no match" in a live
@@ -445,6 +461,12 @@ nobody had asked for. What that means when writing a test:
   (`EXGRID_MEASURE_CSV` names the file). Times are in the page's own clock, from the
   input to the frame after the answer, and every long task is collected.
   `verification/2026-10-01-linux-measure/results.md` says how it was run.
+- `measure-live.spec.mjs` — LV-15's in-process half, recorded and never gated: 1,000 changes
+  to a million rows on `/grid-live-local` (ADR-0141, D8), from the source's `Apply` to the
+  frame that shows them, in a published WebAssembly build without AOT, against PV-21's 0.2 s.
+  It skips itself unless `EXGRID_MEASURE=live`, and on the Server host. Timed in the page's own
+  clock as `measure-pivot.spec.mjs` times `/pivot-live`'s 1,000 changes: the page's status line
+  says how long `Apply` took, and the probe keeps the task that wrote it and the frame after.
 - `mud.spec.mjs` — the Wrapper contract with a real Wrapper, `ExGrid.MudBlazor` on
   `/mud` (ADR-0030): painted geometry equals declared under the Wrapper's stylesheet
   and Roboto (UX-3), nothing under the Viewport animates (UX-6), the Focus outline
@@ -716,7 +738,15 @@ nobody had asked for. What that means when writing a test:
   cell paints without it, a Pinned Column's row rule among them; the grid's live region is not
   touched; and forced colours restate the mark as a dashed outline (DC-66). The Window is read from
   the server as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the
-  page shows is equal to its source.
+  page shows is equal to its source, the hub's notice passed on with the trades it booked named
+  (ADR-0141, D6).
+- `grid-live-local.spec.mjs` — `/grid-live-local` (ADR-0141, D8), the in-process path: a million
+  trades made in the page and bound through `GridSource.From` by Row Key, amended by the page's
+  own timer as Change Batches. The page loads with a million rows on both hosts; a batch reaches
+  the screen and marks the cells whose text changed (LV-9); a pause stops the batches and the
+  marks go; under a sort by P&L, with 2,000 trades and a thousand amended a batch, the painted
+  rows stay in order as the values move (LV-5/LV-7); the console stays clean; and the code the
+  page shows is equal to its source. It needs no API server.
 
   `pivot-db`, `pivot-live` and `grid-live` share the run's one API server: each test starts from
   `POST /api/reset`, reads the trade count and the Source Version from `/api/status`, and turns

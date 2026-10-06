@@ -44,6 +44,24 @@ public partial class ExPivot
     private static readonly Func<PivotReportRow, GridColumn<PivotReportRow>, CellAlign> AlignOf =
         static (row, column) => column.Value(row) is PivotValue { IsError: true } ? CellAlign.Center : CellAlign.Auto;
 
+    // The report grid's Row Key (ADR-0140, PV-42): what a row stands for — its role, its Value Field
+    // and its Items — the key ReportHistory pairs by for the Change Highlight, so a live redraw
+    // repaints a changed row in place instead of building its component again. A PivotRowKey is
+    // value-equal across reports, and the engine builds no two rows of one report that stand for the
+    // same thing, so the grid's own check never refuses a report. The engine makes it with the row,
+    // hash included, so the grid's check of a whole report's keys on every redraw reads keys and
+    // hashes nothing (PV-43). A key built here per check cost 82.6 ms at 401,001 rows against 9.5 ms
+    // for the instances; the engine's keys are checked in 8.3 ms, and cost 13.3 ms to make with a
+    // report built in 337 ms (2026-10-06, D10; ADR-0140). One instance for every ExPivot: its
+    // identity reaches the grid (ADR-0003).
+    //
+    // The key leaves the row fields out, as ReportHistory's does. Under a layout whose row fields
+    // differ, a row may pair with a row of the previous report whose Items happen to coincide. That is
+    // safe: a pairing only keeps a component, which renders the new row because it is a new instance
+    // (Row Identity), and a report row's cells keep no state of their own across renders — the
+    // Interactive toggle button is a component only on the one render that hands it a focus request.
+    private static readonly Func<PivotReportRow, object> ReportRowKey = static row => row.Key;
+
     // A value cell paints the text the engine formatted; its raw form is the number (ADR-0005/0060).
     private static readonly Func<object, string> TextOfValue = static value => ((PivotValue)value).Text;
 
@@ -492,6 +510,7 @@ public partial class ExPivot
         builder.AddComponentParameter(22, nameof(ExGrid<PivotReportRow>.CellChangedAt), _cellChangedAt);
         builder.AddComponentParameter(23, nameof(ExGrid<PivotReportRow>.ChangeHighlightDuration), ChangeHighlightDuration);
         builder.AddComponentParameter(24, nameof(ExGrid<PivotReportRow>.Clock), _time);
+        builder.AddComponentParameter(25, nameof(ExGrid<PivotReportRow>.RowKey), ReportRowKey);
         builder.AddComponentParameter(26, nameof(ExGrid<PivotReportRow>.OnSummarize), _summarize);
         builder.AddComponentParameter(27, nameof(ExGrid<PivotReportRow>.SummaryFigures), _summaryFigures.Shown);
         builder.AddComponentParameter(28, nameof(ExGrid<PivotReportRow>.SummaryFiguresChanged), _summaryFiguresChanged);

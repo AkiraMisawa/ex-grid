@@ -543,3 +543,15 @@ reads.
 - **Before the grid is attached, and once it is gone, the control takes the keyboard by its own
   `FocusAsync`**, through Blazor, as it would without the grid. No script of the grid's is there to
   read where the keyboard is.
+
+*(2026-10-05, [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).)* **A keyboard gesture now carries the render it was taken
+against, as a press on the rows does.** The capture-phase key listener and the clipboard read — the
+first and third entries — read what the painting render wrote, so that a write is judged against
+what the user saw. It is not a new use, and nothing is measured.
+*(2026-10-06, when it was built.)* The same reading rides on three more listeners the grid already
+has, each told before Blazor dispatches what it carries: a press on an Action of the rows
+(`ActionPressTakenAt`, from the press listener ED-31 added), a press into the Formula Bar
+(`BarPressTakenAt`, from the existing `mousedown`), and an IME's `compositionstart` (the seventh
+entry), which opens the editor. No listener was added, and none reads layout. The action press
+also names the row, column and action of the cell it was on, read from the ids the render wrote, so
+the core can answer a press whose click Blazor will not deliver (ADR-0142).

@@ -256,3 +256,7 @@ abandoned draft into a commit is a worse failure than losing it loudly.
 - **Bulk paste is expressed positionally.** The grid does not know identities outside the Window,
   so the edit intent takes the form "rows N–M of the current order, this column", and the Consumer
   resolves it to actual rows (ADR-0007). Disjoint selection just makes it several ranges.
+- *(2026-10-05, [ADR-0141](./0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md).)* **Live data keeps this rule as written.** Dropping
+  the Selection only where a move of the order meets it was considered and rejected by the user.
+  ag-grid keeps a cell range at its positions through a sort or new data, which is the "keep
+  positions" option rejected above.

@@ -1,0 +1,60 @@
+@implements IHandleEvent
+@* The same two grids as the WebAssembly page (/live), driven one tick per click so that each tick is
+   one render batch on the circuit, and nothing else renders: the page handles its own events
+   without re-rendering itself (IHandleEvent), so a click renders only the grid it ticks. *@
+
+<div class="controls">
+    <label>Columns <input id="cols" type="number" @bind="_cols" /></label>
+    <label>k <input id="k" type="number" @bind="_k" /></label>
+    <label>Changed cells (-1 all) <input id="changed" type="number" @bind="_changed" /></label>
+    <button id="configure" @onclick="Configure">Configure</button>
+    <button id="tick-a" @onclick="TickAAsync">Tick A</button>
+    <button id="tick-b" @onclick="TickBAsync">Tick B</button>
+    <span id="status">@_status</span>
+</div>
+
+<div class="live-pair">
+    @if (_tickerA is not null && _tickerB is not null && _columns is not null)
+    {
+        <LiveGrid @ref="_gridA" Ticker="_tickerA" Columns="_columns" KeyByInstance="true" IdPrefix="a" />
+        <LiveGrid @ref="_gridB" Ticker="_tickerB" Columns="_columns" KeyByInstance="false" IdPrefix="b" />
+    }
+</div>
+
+@code {
+    private int _cols = 20;
+    private int _k = 1;
+    private int _changed = 3;
+    private LiveTicker? _tickerA;
+    private LiveTicker? _tickerB;
+    private LiveColumns? _columns;
+    private LiveGrid? _gridA;
+    private LiveGrid? _gridB;
+    private string _status = "not configured";
+
+    // A click does what its handler says and nothing more: no render of the page after it.
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem item, object? arg) => item.InvokeAsync(arg);
+
+    private void Configure()
+    {
+        // The seeds the WebAssembly page and the batch counter use, so all three see the same ticks.
+        var seed = 1000 * _cols + 10 * _k + (_changed < 0 ? 1 : 0);
+        _tickerA = new LiveTicker(40, seed);
+        _tickerB = new LiveTicker(40, seed);
+        _columns = new LiveColumns(_cols);
+        _status = $"configured: {_cols} cols, k {_k}, changed {_changed}";
+        StateHasChanged();
+    }
+
+    private Task TickAAsync()
+    {
+        _tickerA!.Tick(_k, _changed, _cols);
+        return _gridA!.RenderAsync();
+    }
+
+    private Task TickBAsync()
+    {
+        _tickerB!.Tick(_k, _changed, _cols);
+        return _gridB!.RenderAsync();
+    }
+}

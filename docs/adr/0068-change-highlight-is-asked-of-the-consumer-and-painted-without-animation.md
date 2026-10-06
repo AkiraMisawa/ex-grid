@@ -140,3 +140,7 @@ an unmarked cell of its kind, a Pinned Column's cell included.
   plus one timer while any mark is showing.
 - **ExSheet and plain Consumers can use the same declaration later.** For ExSheet, the obvious case
   is a cell whose value a recalculation changed.
+- *(2026-10-05, [ADR-0140](./0140-a-row-key-names-a-row-across-versions-and-the-grid-repaints-a-changed-row-in-place.md), [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md).)* **A Consumer may now declare a
+  Row Key**, and the grid pairs a row's versions by it to repaint the row in place. The grid still
+  compares no values to mark a cell. ADR-0142 compares what the grid painted, to keep a write off a
+  cell the user did not see; that comparison marks nothing.

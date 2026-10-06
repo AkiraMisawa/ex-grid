@@ -44,6 +44,18 @@ public sealed record GridPage<TRow>
     /// <summary>Rows after filtering — what the scrollbar and the pager are made of.</summary>
     public int TotalCount { get; }
 
+    /// <summary>
+    /// The server's order token, or null for none (ADR-0141): a value that names the order of the
+    /// <em>whole</em> result under this Query, and changes whenever a row anywhere in it was added,
+    /// removed or moved — a trade cancelled after the Window included. <c>GridSource.Fetch</c>
+    /// moves the Row Sequence Version when an answer's token differs from the previous answer's,
+    /// which drops a Selection whose positions would now name other rows (ADR-0011). Only the
+    /// server can say this: the rows of a Window cannot show that a row beyond them went. A server
+    /// that sends none is taken to have moved the order with every change of data it is told of.
+    /// Compared ordinally; what it is made of is the server's own.
+    /// </summary>
+    public string? OrderToken { get; init; }
+
     /// <summary>The empty answer: a query that matched nothing.</summary>
     public static GridPage<TRow> Empty { get; } = new([], 0, 0);
 }

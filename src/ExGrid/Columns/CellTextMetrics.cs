@@ -237,6 +237,20 @@ public readonly record struct CellTextMetrics
         CellHorizontalPaddingPx, BoldWideWidthPx, BoldDigitWidthPx, BoldNarrowWidthPx,
         BoldOtherWidthPx, BoldOtherWidthPx, GlyphWidths, _glyphScale, glyphBold: true);
 
+    // The generated ToString prints every public property, Bold included, and Bold is metrics of
+    // this type whose own Bold is asked in turn: it recursed until the stack overflowed, which a
+    // refusal naming these metrics in its message (ExGrid's CellMetrics check) would hit as soon
+    // as the message is read — on the Server host, the process. The widths are printed instead.
+    private bool PrintMembers(System.Text.StringBuilder builder)
+    {
+        var c = System.Globalization.CultureInfo.InvariantCulture;
+        builder.Append(c, $"WideWidthPx = {WideWidthPx}, DigitWidthPx = {DigitWidthPx}, NarrowWidthPx = {NarrowWidthPx}, ");
+        builder.Append(c, $"OtherWidthPx = {OtherWidthPx}, FullWidthPx = {FullWidthPx}, CellHorizontalPaddingPx = {CellHorizontalPaddingPx}, ");
+        builder.Append(c, $"BoldWideWidthPx = {BoldWideWidthPx}, BoldDigitWidthPx = {BoldDigitWidthPx}, BoldNarrowWidthPx = {BoldNarrowWidthPx}, ");
+        builder.Append(c, $"BoldOtherWidthPx = {BoldOtherWidthPx}, GlyphWidths = {(GlyphWidths is null ? "none" : "a table")}");
+        return true;
+    }
+
     /// <summary>These metrics with measured bold widths in place of whatever they carried —
     /// derived, or another theme's (ADR-0050, item 15). The bold other class goes with them: it is
     /// charged its allowance over the new bold digit (<see cref="OtherWidthAllowance"/>).</summary>

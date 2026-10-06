@@ -292,7 +292,13 @@ internal sealed class AxisNode
         Level = level;
         Parent = parent;
         Item = item;
+        PathHash = item is null ? 0 : HashCode.Combine(parent!.PathHash, item.KeyHash);
     }
+
+    /// <summary>The hash of this node's Items and its ancestors', as a report row's key compares
+    /// them (<see cref="PivotRowKey"/>): made with the node from its parent's and its Item's, so a
+    /// row's key hashes nothing and allocates nothing for its path. 0 for the root.</summary>
+    public int PathHash { get; }
 
     public int Id { get; }
 
@@ -341,7 +347,12 @@ internal sealed class ItemRef
         Key = key;
         FirstValue = firstValue;
         PublicKey = publicKey ?? key.ToPublic();
+        KeyHash = PublicKey.GetHashCode();
     }
+
+    /// <summary>The hash of <see cref="PublicKey"/>, computed once per Item: every node under the
+    /// Item combines it into its <see cref="AxisNode.PathHash"/>.</summary>
+    public int KeyHash { get; }
 
     public ItemKey Key { get; }
 

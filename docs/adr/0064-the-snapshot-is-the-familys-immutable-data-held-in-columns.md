@@ -259,3 +259,7 @@ they hold for every reader.**
   a date's clock value, and a Blank. They are stated once, here, and ADR-0060 points to them.
 - **A Consumer holds a Snapshot as it holds any immutable value**: in a field, replaced by the next
   one, never rewritten.
+- *(2026-10-05, [ADR-0141](./0141-exgrids-bundled-sources-take-live-data-by-row-key-on-expivots-rules.md).)* **ExGrid's live data does not adopt the Snapshot.**
+  Its bundled sources hold the Consumer's objects, named by a Row Key; with an incremental requery,
+  1,000 changes to 10⁶ objects measured 3.2 ms. Adoption is reserved with two triggers (Definition
+  of Done §21.11).

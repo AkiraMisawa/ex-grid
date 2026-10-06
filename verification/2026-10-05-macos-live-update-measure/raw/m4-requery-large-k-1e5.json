@@ -1,0 +1,74 @@
+{
+  "environment": {
+    "runtime": ".NET 10.0.7",
+    "os": "macOS 26.6.2",
+    "arch": "Arm64",
+    "processors": "12",
+    "serverGc": "False",
+    "configuration": "Release",
+    "started": "2026-10-05T16:24:23.3762630\u002B01:00",
+    "finished": "2026-10-05T16:24:30.0081650\u002B01:00"
+  },
+  "stats": [
+    {
+      "Path": "grid: RequireDistinctRows over the Window",
+      "N": 100000,
+      "K": 0,
+      "Runs": 40,
+      "MinMs": 0.511958,
+      "MedianMs": 0.7403124999999999,
+      "MaxMs": 3.215125,
+      "Note": "Window of 45,017 rows"
+    },
+    {
+      "Path": "(b) GridQueryEngine.Apply alone",
+      "N": 100000,
+      "K": 0,
+      "Runs": 20,
+      "MinMs": 21.039167,
+      "MedianMs": 21.4594165,
+      "MaxMs": 22.540667,
+      "Note": "filter \u002B two-key stable sort over every row"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 100000,
+      "K": 10000,
+      "Runs": 20,
+      "MinMs": 24.146333,
+      "MedianMs": 25.836542,
+      "MaxMs": 32.8555,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 100000,
+      "K": 10000,
+      "Runs": 40,
+      "MinMs": 11.376167,
+      "MedianMs": 13.698167,
+      "MaxMs": 17.3235,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    },
+    {
+      "Path": "(b) one requery for the batch",
+      "N": 100000,
+      "K": 50000,
+      "Runs": 20,
+      "MinMs": 29.192958,
+      "MedianMs": 31.280333499999998,
+      "MaxMs": 36.833083,
+      "Note": "locate \u002B replace \u002B Apply \u002B sequence check"
+    },
+    {
+      "Path": "(c) incremental",
+      "N": 100000,
+      "K": 50000,
+      "Runs": 40,
+      "MinMs": 53.65675,
+      "MedianMs": 59.601292,
+      "MaxMs": 79.674833,
+      "Note": "binary-search out, Apply on the k, binary-search in, block merge"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+layout                                 subt    trades   chg  rows painted  mounted rendered   unchanged (min/med/mean/max) report unchanged
+pivot-live (Region > Desk x Product)     on     2,000     5    14      11       11       11                     3/5/4.99/9          6 of 14
+pivot-live (Region > Desk x Product)    off     2,000     5    14      11       11       11                    6/8/7.61/10          9 of 14
+Book > Month x Product                   on     2,000     5   101      11       11       11                   7/10/9.78/11        91 of 101
+Book > Month x Product                  off     2,000     5   101      11       11       11                  8/11/10.60/11        95 of 101
+wrote verification/2026-10-05-macos-live-update-measure/raw/m3-pivot-redraw-5-changes.json

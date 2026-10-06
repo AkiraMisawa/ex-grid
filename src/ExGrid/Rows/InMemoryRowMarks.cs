@@ -9,6 +9,11 @@ namespace ExGrid.Rows;
 /// <para>"All" is taken as the result stands at the press: every Detail row in it is
 /// marked there and then, so a row that joins the result afterwards — an edit that now
 /// matches the filter — is not.</para>
+///
+/// <para>A source given a Row Key keeps them by key instead (ADR-0140: one value names a row
+/// for its marks, for a source and for the grid). Its rows change by new instances under the
+/// same key, and arrive and leave in Change Batches, so a mark follows the key: a changed row
+/// keeps its mark, and a removed row takes its mark with it (ADR-0141).</para>
 /// </summary>
 public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
 {
@@ -22,6 +27,9 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
     private readonly int[] _nextSame;
     private readonly bool[] _marked;
     private Func<TRow, RowKind>? _rowKind;
+
+    // Under a Row Key: the keys marked. Null for a source without one.
+    private readonly HashSet<object>? _markedKeys;
 
     // The counts walk the whole result, so they are kept until what they are made of moves:
     // the Window (a new list on every requery), the marks, or the roles.
@@ -42,6 +50,17 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
             if (rows[i] is { } row)
                 Link(row, i);
         }
+    }
+
+    /// <summary>The marks of a source with a Row Key: kept by key (ADR-0140/0141).</summary>
+    internal InMemoryRowMarks(InMemoryGridSource<TRow> source)
+    {
+        _source = source;
+        _rows = [];
+        _marked = [];
+        _nextSame = [];
+        _slots = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);
+        _markedKeys = [];
     }
 
     /// <summary>Puts a position at the head of its instance's chain.</summary>
@@ -79,7 +98,11 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
 
     /// <inheritdoc />
     public bool IsMarked(TRow row)
-        => row is not null && _slots.TryGetValue(row, out var slot) && _marked[slot] && IsDetail(row);
+    {
+        if (_markedKeys is not null)
+            return row is not null && _source.KeyOrNull(row) is { } key && _markedKeys.Contains(key) && IsDetail(row);
+        return row is not null && _slots.TryGetValue(row, out var slot) && _marked[slot] && IsDetail(row);
+    }
 
     /// <inheritdoc />
     public RowMarkCounts? Counts
@@ -105,6 +128,16 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
     {
         get
         {
+            if (_markedKeys is not null)
+            {
+                var byKey = new List<TRow>();
+                foreach (var row in _source.HeldRows())
+                {
+                    if (_source.KeyOrNull(row) is { } key && _markedKeys.Contains(key) && IsDetail(row))
+                        byKey.Add(row);
+                }
+                return byKey;
+            }
             var marked = new List<TRow>();
             var listed = new HashSet<object>(ReferenceEqualityComparer.Instance);
             for (var i = 0; i < _rows.Count; i++)
@@ -144,13 +177,30 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         return Task.CompletedTask;
     }
 
+    /// <summary>A source with a Row Key removed the row under <paramref name="key"/>: its mark
+    /// goes with it, and a row added later under the same key starts unmarked.</summary>
+    internal void Removed(object key)
+    {
+        if (_markedKeys is not null && _markedKeys.Remove(key))
+            _countsStale = true;
+    }
+
+    /// <summary>A source with a Row Key published new versions of its rows: the counts read their
+    /// roles, so they are counted again.</summary>
+    internal void RowsChanged()
+    {
+        if (_markedKeys is not null)
+            _countsStale = true;
+    }
+
     /// <summary>The source replaced the row at one position of its base by a new
     /// instance: the mark belongs to the row, so the replacement carries it. A copy of the
     /// old instance at another position keeps its own. Should the replacement already
     /// stand elsewhere, it is one row by identity, and takes the mark that moved.</summary>
     internal void Replaced(int index, TRow row, TRow replacement)
     {
-        if (row is null || replacement is null)
+        // Under a Row Key the mark is the key's, and the replacement has the same one.
+        if (_markedKeys is not null || row is null || replacement is null)
             return;
         var marked = _marked[index];
         Unlink(row, index);
@@ -162,6 +212,13 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
     private bool MarkOne(TRow row, bool marked)
     {
         ArgumentNullException.ThrowIfNull(row);
+        if (_markedKeys is not null)
+        {
+            // A row this source holds no row under the key of is not one of its rows.
+            if (_source.KeyOrNull(row) is not { } key || !_source.TryGetHeld(key, out _) || !IsDetail(row))
+                return false;
+            return marked ? _markedKeys.Add(key) : _markedKeys.Remove(key);
+        }
         if (!_slots.TryGetValue(row, out var slot) || !IsDetail(row))
             return false;
         return Set(slot, marked);
@@ -175,6 +232,15 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         if (version != _source.RowSequenceVersion)
             return false;
         var changed = false;
+        if (_markedKeys is not null)
+        {
+            foreach (var row in _source.Window)
+            {
+                if (row is not null && IsDetail(row) && _source.KeyOrNull(row) is { } key)
+                    changed |= marked ? _markedKeys.Add(key) : _markedKeys.Remove(key);
+            }
+            return changed;
+        }
         foreach (var row in _source.Window)
         {
             if (row is not null && IsDetail(row) && _slots.TryGetValue(row, out var slot))
@@ -192,6 +258,8 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
             return false;
 
         var window = _source.Window;
+        if (_markedKeys is not null)
+            return MarkPositionsByKey(ranges, window);
         var slots = new HashSet<int>();
         var markedNow = 0;
         foreach (var range in ranges)
@@ -213,6 +281,31 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         var changed = false;
         foreach (var slot in slots)
             changed |= Set(slot, target);
+        return changed;
+    }
+
+    private bool MarkPositionsByKey(IReadOnlyList<RowRange> ranges, IReadOnlyList<TRow> window)
+    {
+        var keys = new HashSet<object>();
+        var markedNow = 0;
+        foreach (var range in ranges)
+        {
+            var end = Math.Min(range.Start + range.Count, window.Count);
+            for (var i = range.Start; i < end; i++)
+            {
+                var row = window[i];
+                if (row is null || !IsDetail(row) || _source.KeyOrNull(row) is not { } key || !keys.Add(key))
+                    continue;
+                if (_markedKeys!.Contains(key))
+                    markedNow++;
+            }
+        }
+        if (keys.Count == 0)
+            return false;
+        var target = RowMarkRules.LineUp(markedNow, keys.Count);
+        var changed = false;
+        foreach (var key in keys)
+            changed |= target ? _markedKeys!.Add(key) : _markedKeys!.Remove(key);
         return changed;
     }
 
@@ -246,6 +339,8 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
     /// </summary>
     private RowMarkCounts Count(IReadOnlyList<TRow> window)
     {
+        if (_markedKeys is not null)
+            return CountByKey(window);
         if (_seen.Length != _rows.Count)
             _seen = new int[_rows.Count];
         var stamp = ++_seenStamp;
@@ -265,6 +360,29 @@ public sealed class InMemoryRowMarks<TRow> : IRowMarks<TRow>
         {
             // Counted at the head of its chain only: once per instance.
             if (_marked[i] && _rows[i] is { } row && _slots.TryGetValue(row, out var head) && head == i && IsDetail(_rows[i]))
+                total++;
+        }
+        return new RowMarkCounts(inResult, rowsInResult, total - inResult);
+    }
+
+    /// <summary>The counts under a Row Key: the Window holds each key once, as the source vouches
+    /// (ADR-0141), and the marked rows outside it are counted from the marked keys it holds.</summary>
+    private RowMarkCounts CountByKey(IReadOnlyList<TRow> window)
+    {
+        var inResult = 0;
+        var rowsInResult = 0;
+        foreach (var row in window)
+        {
+            if (row is null || !IsDetail(row))
+                continue;
+            rowsInResult++;
+            if (_source.KeyOrNull(row) is { } key && _markedKeys!.Contains(key))
+                inResult++;
+        }
+        var total = 0;
+        foreach (var key in _markedKeys!)
+        {
+            if (_source.TryGetHeld(key, out var row) && IsDetail(row))
                 total++;
         }
         return new RowMarkCounts(inResult, rowsInResult, total - inResult);
