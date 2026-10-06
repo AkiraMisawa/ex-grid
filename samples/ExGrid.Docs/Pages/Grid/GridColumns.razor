@@ -103,7 +103,10 @@
             <li>
                 <strong><code>GridColumn.ActionColumn(...)</code></strong> carries buttons and no value. A press raises
                 <code>OnAction</code> with the row and the action's name. With the keyboard, Space presses a single
-                action, or enters a cell with several, where ← and → choose.
+                action, or enters a cell with several, where ← and → choose. The row is the current
+                version of the original target. Value changes do not automatically refuse the command;
+                your <code>OnAction</code> handler decides its business conflicts. See the
+                <a href="exgrid/editing">live editing Example</a> for a Consumer that declines an approval.
             </li>
         </ul>
         <DocsExample Title="Marks, a template and actions" Builtin="typeof(SpecialColumns)" Mud="typeof(SpecialColumnsMud)"

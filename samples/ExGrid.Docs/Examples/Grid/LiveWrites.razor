@@ -1,0 +1,70 @@
+@using ExGrid.Cells
+@using ExGrid.Columns
+@using ExGrid.Keys
+
+<div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px">
+    <button type="button" @onclick="AdvancePrices">Advance prices (F9)</button>
+    <span>@_feed</span>
+</div>
+
+<ExGrid TRow="Position" Source="_source" Columns="Columns"
+        OnEdit="OnEdit" OnAction="OnAction" DeclaredKeys="FeedKeys" OnDeclaredKey="OnFeedKey"
+        ViewportHeight="150" ViewportWidth="ViewportSize.Stretch" />
+<p role="status" style="margin: 12px 0 0">@_result</p>
+
+@code {
+    private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
+    private static readonly string[] FeedKeys = ["F9"];
+    private static readonly GridColumn<Position>[] Columns =
+    [
+        new("Id", ColumnType.Number, row => row.Id, width: Fixed(80)),
+        new("Trader", ColumnType.Text, row => row.Trader, width: Fixed(120), editable: true),
+        new("Price", ColumnType.Number, row => row.Price, width: Fixed(100), editable: true,
+            format: value => ((decimal)value).ToString("0.00", Invariant), validate: ValidatePrice),
+        GridColumn<Position>.ActionColumn("Actions", [new GridAction("approve", "Approve")], width: Fixed(110)),
+    ];
+    private readonly InMemoryGridSource<Position> _source = GridSource.From(
+        Position.Sample(3).Select((row, index) => row with { Price = 100m + index * 10m }).ToArray(),
+        row => row.Id);
+    private string _feed = "Prices start at 100, 110 and 120.";
+    private string _result = "Edit a Price, press F9 while typing, then Enter.";
+    private int _feedCount;
+    private int _actionCount;
+
+    // This Consumer allows positive prices; the grid keeps a rejected edit open.
+    private static EditVerdict ValidatePrice(Position row, string text)
+        => !decimal.TryParse(text, NumberStyles.Number, Invariant, out var price) || price <= 0
+            ? EditVerdict.Reject("Enter a positive price.")
+            : EditVerdict.Accept;
+
+    private void OnEdit(GridEditIntent<Position> edit)
+    {
+        // edit.Row is the current same row, so editing Trader preserves an upstream Price.
+        var replacement = edit.Column == "Trader"
+            ? edit.Row with { Trader = edit.Value }
+            : edit.Row with { Price = decimal.Parse(edit.Value, NumberStyles.Number, Invariant) };
+        _source.ReplaceRow(edit.Row, replacement);
+        _result = $"Written: {edit.Column}={edit.Value} on position {edit.Row.Id}.";
+    }
+
+    private void OnFeedKey(GridDeclaredKeyPress key) => AdvancePrices();
+
+    private void AdvancePrices()
+    {
+        // F9 is also declared inside the editor: the feed does not commit or change the typing.
+        foreach (var row in _source.Window.ToArray())
+            _source.ReplaceRow(row, row with { Price = row.Price + 1m });
+        _feed = $"Feed update {++_feedCount}: each price increased by 1.";
+    }
+
+    private void OnAction(GridActionEventArgs<Position> action)
+    {
+        // The Consumer decides this business rule from the current row supplied by the grid.
+        _actionCount++;
+        _result = action.Row.Price > 150m
+            ? $"Not approved: position {action.Row.Id} exceeds this desk's price limit of 150. Request {_actionCount}."
+            : $"Approved position {action.Row.Id} at {action.Row.Price.ToString("0.00", Invariant)}. Request {_actionCount}.";
+    }
+
+    private static ColumnWidthSpec Fixed(double width) => new(ColumnWidth.Fixed(width));
+}

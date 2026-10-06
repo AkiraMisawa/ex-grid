@@ -33,10 +33,6 @@
        a live region where the confirmations above are not: they report what did happen. *@
     <span id="paste-refused-status" role="status">Paste refused: @_pasteRefusedStatus</span>
     <span id="edit-discarded-status" role="status">Edit discarded: @_editDiscardedStatus</span>
-    @* A write refused because what the user saw of its target changed before it landed
-       (ADR-0142): announced as every refusal is (A11Y-16). The commit's sentence carries the
-       cell's new text, because the editor covers the cell. *@
-    <span id="commit-refused-status" role="status">Commit refused: @_commitRefusedStatus</span>
     <span id="action-refused-status" role="status">Action refused: @_actionRefusedStatus</span>
     <span id="find-refused-status" role="status">Find: @_findStatus</span>
     <span id="context-status">Context: @_contextStatus</span>
@@ -44,6 +40,7 @@
     <span id="width-status">Width: @_widthStatus</span>
     @if (UpstreamOn)
     {
+        <span>F9 updates the first five rows. Accepted writes replace current values; the Consumer validates them.</span>
         <span id="upstream-status">Upstream: @_upstreamStatus</span>
         <span id="action-status">Action: @_actionStatus</span>
         <span id="fill-status">Filled: @_fillStatus</span>
@@ -68,7 +65,6 @@
         OnCopyRefused="OnCopyRefused"
         OnPasteRefused="OnPasteRefused"
         OnEditDiscarded="OnEditDiscarded"
-        OnCommitRefused="OnCommitRefused"
         OnAction="OnAction"
         OnActionRefused="OnActionRefused"
         ShowFillHandle="UpstreamOn"
@@ -112,7 +108,7 @@
 
     /// <summary>
     /// <c>?upstream=1</c> lets the browser layer change values under a gesture, as a live feed
-    /// would (ADR-0142, LV-11 to LV-14): F9, declared to the grid, moves the Notional of the first
+    /// would (ADR-0154, LV-11 to LV-14): F9, declared to the grid, moves the Notional of the first
     /// five rows up by one — with an edit open too, where the grid raises a declared key and
     /// changes nothing in the editor (ADR-0050, item 14). It also adds an Action Column and the
     /// fill handle, so that a press, a paste, a fill and a commit can each be raced against it.
@@ -120,6 +116,10 @@
     /// </summary>
     [SupplyParameterFromQuery(Name = "upstream")]
     public string? Upstream { get; set; }
+
+    /// <summary>Also changes Trader on F9, so Delete can clear a changed value with a Blank.</summary>
+    [SupplyParameterFromQuery(Name = "upstreamTrader")]
+    public string? UpstreamTrader { get; set; }
 
     private bool UpstreamOn => Upstream == "1";
 
@@ -198,7 +198,7 @@
         : BaseColumns();
 
     /// <summary>An action that would write — approving a trade at the notional shown — so a press
-    /// on a row whose notional moved under it must be refused (ADR-0142, LV-12).</summary>
+    /// reaches the current same row once, even when its values changed (ADR-0154, LV-12).</summary>
     private static readonly GridColumn<DemoTrade> ApproveColumn = GridColumn<DemoTrade>.ActionColumn(
         "Act", [new GridAction("approve", "Approve")], width: new ColumnWidthSpec(ColumnWidth.Fixed(90)));
 
@@ -242,12 +242,12 @@
     private string _editDiscardedStatus = "—";
     private string _contextStatus = "—";
     private string _widthStatus = "—";
-    private string _commitRefusedStatus = "—";
     private string _actionRefusedStatus = "—";
     private string _upstreamStatus = "—";
     private string _actionStatus = "—";
     private string _fillStatus = "—";
     private int _upstreamTicks;
+    private int _actionCount;
 
 
     /// <summary>Find's refusals (ADR-0055). This page's grid is bound to GridSource.From, which
@@ -436,46 +436,26 @@
                 "TargetNotEditable — the selection covers a column that is not editable",
             PasteRefusalReason.SingleCellTarget =>
                 "SingleCellTarget — reselect a target of the same shape",
-            // ADR-0142: the data under the target moved after the user saw it. Nothing was written,
-            // and the user, who has not seen the new values, is told to look before trying again.
-            PasteRefusalReason.TargetChanged =>
-                "TargetChanged — nothing was written: the cells changed before the write landed; check them and try again",
-            // Not "changed": the grid cannot tell whether they did, only that it no longer knows what was shown.
             PasteRefusalReason.RenderNoLongerKept =>
-                "RenderNoLongerKept — nothing was written: the grid could no longer tell what the cells showed; try again",
+                "RenderNoLongerKept — nothing was written: the grid could no longer identify the target cells; select them again",
             _ => reason.ToString(),
         }, s => _pasteRefusedStatus = s);
 
-    /// <summary>A commit over a cell whose value moved while the user typed (ADR-0142, LV-11). The
-    /// editor still stands with the typing and covers the cell, so the sentence is where the user
-    /// sees the new value; Enter again writes over it, Escape leaves it.</summary>
-    private void OnCommitRefused(GridCommitRefusal refusal)
-        => Status(refusal, refusal.Reason switch
-        {
-            CommitRefusalReason.RenderNoLongerKept =>
-                $"Not written: the grid can no longer tell what {refusal.Column} showed when you started typing. " +
-                $"It shows {refusal.PaintedText} now — press Enter again to write over it, or Escape to keep it",
-            _ => $"{refusal.Column} changed to {refusal.PaintedText} while you were typing — " +
-                 "press Enter again to write over it, or Escape to keep it",
-        }, s => _commitRefusedStatus = s);
-
-    /// <summary>An action pressed on a row that moved before the press landed (ADR-0142, LV-12).
-    /// Nothing was done; one more press, on the row as it is now, does it.</summary>
-    private void OnActionRefused(GridActionRefusal<DemoTrade> refusal)
+    /// <summary>The original Action target is unavailable or no longer identifiable (ADR-0154).
+    /// Business conflicts belong to OnAction, which receives the current same row.</summary>
+    private void OnActionRefused(GridActionRefusal refusal)
         => Status(refusal.Reason, refusal.Reason switch
         {
-            ActionRefusalReason.RowChanged =>
-                $"RowChanged — {refusal.Action.ActionName} was not done: the row changed before the press landed; check it and press again",
             ActionRefusalReason.RenderNoLongerKept =>
-                $"RenderNoLongerKept — {refusal.Action.ActionName} was not done: the grid could no longer tell what the row showed; press again",
+                $"RenderNoLongerKept — {refusal.ActionName} was not done: the grid could no longer identify the original row; select it again",
             _ => refusal.Reason.ToString(),
         }, s => _actionRefusedStatus = s);
 
     private void OnAction(GridActionEventArgs<DemoTrade> press)
-        => _actionStatus = $"{press.ActionName} {press.Row.Book}/{press.Row.Trader} at {press.Row.Notional:0.00}";
+        => _actionStatus = $"{press.ActionName} {press.Row.Book}/{press.Row.Trader} at {press.Row.Notional:0.00} (×{++_actionCount})";
 
     /// <summary>F9 under <c>?upstream=1</c>: the data moves on under the user, as a live feed moves
-    /// it — new instances of the first five rows, each Notional up by one (ADR-0003, ADR-0142).</summary>
+    /// it — new instances of the first five rows, each Notional up by one (ADR-0003, ADR-0154).</summary>
     private void OnUpstreamKey(GridDeclaredKeyPress press)
     {
         var window = _source.Window;
@@ -485,7 +465,8 @@
             var old = window[row];
             _source.ReplaceRow(old, new DemoTrade
             {
-                Book = old.Book, Trader = old.Trader, Notional = old.Notional + 1m,
+                Book = old.Book, Trader = UpstreamTrader == "1" ? $"Upstream {_upstreamTicks + 1}" : old.Trader,
+                Notional = old.Notional + 1m,
                 TradeDate = old.TradeDate, Confirmed = old.Confirmed,
             });
         }

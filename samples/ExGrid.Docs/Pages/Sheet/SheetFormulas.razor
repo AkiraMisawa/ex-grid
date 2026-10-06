@@ -20,6 +20,13 @@
             kept as <code>=SUM(A1,2)</code>. Recalculation reaches only what a change affects, and Values are
             published only from a completed recalculation.
         </p>
+        <p>
+            ExSheet uses ExGrid's write policy: a Value changing through recalculation or a Linked
+            Table refresh does not by itself refuse a commit, paste, Delete or fill. The user's
+            accepted operation applies to the current target. ExSheet still checks Formula syntax
+            and its operation rules. Replacing the document still discards an open
+            editor; a change of value is not permission to redirect an edit to another cell.
+        </p>
         <DocsExample Builtin="typeof(Formulas)" Mud="typeof(FormulasMud)" Files="@(["Examples/Sheet/RegionalSales.cs"])">
             Select a total to read its Formula in the Formula Bar, press F2 to edit it, change a quarter's figure and watch the totals, the
             status and the lookup follow, or type another region into B7. Column E, from row 8, shows what the engine refuses.

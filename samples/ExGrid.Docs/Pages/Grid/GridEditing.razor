@@ -80,6 +80,40 @@
         </DocsExample>
     </DocsSection>
 
+    <DocsSection Title="Editing while values change">
+        <p>
+            A value changing upstream does not cancel your user's intent. If a cell showed 100,
+            the feed changed it to 200 and the user commits 150, <code>OnEdit</code> receives 150
+            with the current row. Your Consumer validates and applies that value. A later feed
+            update may change it again; a commit does not freeze the cell.
+        </p>
+        <p>
+            The same rule covers paste, <kbd>Ctrl</kbd>+<kbd>Enter</kbd>, <kbd>Delete</kbd>,
+            <kbd>Ctrl</kbd>+<kbd>D</kbd>, <kbd>Ctrl</kbd>+<kbd>R</kbd> and the fill handle.
+            The fill keys acquire current source values; a fill-handle intent gives your Consumer
+            the source and target ranges. If your application needs a price, permission or version
+            check, make it in your validation or intent handler and tell the user when it rejects
+            the operation. Values changing alone do not trigger an automatic grid refusal.
+        </p>
+        <p>
+            Target identity still matters: an editor is discarded when its row order changes,
+            and a delayed range write is refused if its row sequence or column layout no longer
+            identifies the original cells. Editable-column, shape and size rules still apply.
+            An Action identifies its original row and command and reaches <code>OnAction</code>
+            once with the current row. A Row Key lets it find that row after reordering; an
+            unavailable target is refused through <code>OnActionRefused</code>. Your Consumer
+            decides whether the command is still permitted by its business rules.
+        </p>
+        <DocsExample Title="A feed, a user edit and a Consumer decision" Builtin="typeof(LiveWrites)" Mud="typeof(LiveWritesMud)"
+                     Files="@(["Examples/Grid/Position.cs"])">
+            Select Price, type <code>125</code>, press <kbd>F9</kbd> to advance the feed while
+            the editor stays open, then press <kbd>Enter</kbd> once: 125 is written. Try
+            <code>abc</code> to keep the editor open with a validation message. Commit
+            <code>175</code>, then press Approve: this Consumer declines prices above 150
+            and reports why. The grid delivers the Action; this page makes the business decision.
+        </DocsExample>
+    </DocsSection>
+
     <DocsSection Title="API">
         <ApiTable Type="typeof(ExGrid.Cells.EditVerdict)" />
         <ApiTable Type="typeof(ExGrid.Validation.GridRuleset<>)" />
