@@ -13,8 +13,7 @@ namespace ExPivot.Components.Tests;
 /// The report's Change Highlight (ADR-0067/0068): ExPivot answers the grid's <c>CellChangedAt</c>
 /// by comparing the painted text of each value cell with the same cell — the same row Items, column
 /// Items and Value Field — in the reports of the recent data versions. Only data marks a cell; every
-/// cell of a row that appears is marked; a change the number format hides is not. The delegate is new
-/// for each data version and the same otherwise. The clock is the test's.
+/// cell of a row that appears is marked; a change the number format hides is not. The delegate stays stable; immutable display rows carry each change. The clock is the test's.
 /// </summary>
 public class ChangeHighlightTests : PivotTestContext
 {
@@ -64,6 +63,19 @@ public class ChangeHighlightTests : PivotTestContext
         Assert.Null(ChangedAt(cut, 0, 0));
         Assert.Same(Clock, Grid(cut).Instance.Clock);
         Assert.Equal(TimeSpan.FromSeconds(1), Grid(cut).Instance.ChangeHighlightDuration);
+    }
+
+    [Fact] // ADR-0153/0068: the local report uses the clock currently handed to its component
+    public async Task Replacing_the_clock_dates_new_changes_on_that_clock()
+    {
+        var source = new LiveSource();
+        var cut = RenderPivot(RegionAmount, source: source);
+        var nextClock = new Microsoft.Extensions.Time.Testing.FakeTimeProvider(Clock.GetUtcNow().AddDays(1));
+        cut.Render(ps => ps.Add(p => p.Clock, nextClock));
+        nextClock.Advance(TimeSpan.FromSeconds(3));
+        await PublishAsync(cut, source, EastApples(101));
+        Assert.Equal(nextClock.GetUtcNow(), ChangedAt(cut, 0, 1));
+        Assert.Equal(["181", "286"], MarkedTexts(cut));
     }
 
     [Fact] // ADR-0067 (PV-36): the comparison is of the painted text — a change the number format hides is not marked

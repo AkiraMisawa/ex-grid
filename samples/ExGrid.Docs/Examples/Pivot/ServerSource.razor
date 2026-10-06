@@ -1,4 +1,4 @@
-@implements IDisposable
+@implements IAsyncDisposable
 @using ExPivot.Components
 @using ExPivot.Engine
 
@@ -7,7 +7,7 @@
 @code {
     // Stands for the server across the network: each call below would be an HTTP request.
     private readonly SalesServer _server = new();
-    private FetchingPivotSource _source = default!;
+    private FetchingPivotReportSource _source = default!;
 
     private PivotLayout _layout = new()
     {
@@ -20,11 +20,13 @@
     {
         // ExPivot asks; each delegate writes the question as JSON, sends it, and reads the
         // answer back. The transport, its authentication and its retries are yours.
-        _source = PivotSource.Fetch(_server.Fields, PivotSourceFeatures.All,
-            async (query, token) => PivotJson.ReadAnswer(await _server.AggregateAsync(PivotJson.Write(query), token)),
-            async (query, token) => PivotJson.ReadItemPage(await _server.ItemsAsync(PivotJson.Write(query), token)),
-            async (query, token) => PivotJson.ReadDetailPage(await _server.DetailsAsync(PivotJson.Write(query), token)));
+        _source = PivotReportSource.Fetch(_server.Fields, PivotSourceFeatures.All, PivotReportUpdateMode.Incremental,
+            async (query, token) => PivotReportJson.Read<PivotReportUpdate>(await _server.WindowAsync(PivotReportJson.Write(query), token)),
+            copy: async (query, token) => PivotReportJson.Read<PivotReportCopyResult>(await _server.CopyAsync(PivotReportJson.Write(query), token)),
+            summary: async (query, token) => PivotReportJson.Read<PivotReportSummaryResult>(await _server.SummaryAsync(PivotReportJson.Write(query), token)),
+            details: async (query, token) => PivotReportJson.Read<PivotReportDetailsResult>(await _server.DetailsAsync(PivotReportJson.Write(query), token)),
+            reportItems: async (query, token) => PivotReportJson.Read<PivotReportItemsResult>(await _server.ItemsAsync(PivotReportJson.Write(query), token)));
     }
 
-    public void Dispose() => _server.Dispose();
+    public ValueTask DisposeAsync() => _server.DisposeAsync();
 }

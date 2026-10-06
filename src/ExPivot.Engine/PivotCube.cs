@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Collections.Immutable;
 
 namespace ExPivot.Engine;
 
@@ -14,6 +15,45 @@ public sealed class PivotCube
 {
     private readonly Dictionary<long, int> _cells;
     private readonly PartColumns[] _values;
+    internal ComputationCells? ComputedCells { get; private init; }
+
+    internal async ValueTask<ComputationCells> ShareCellsAsync(Slicer slicer)
+    {
+        if (ComputedCells is not null) return ComputedCells;
+        var cells = ImmutableDictionary.CreateBuilder<long, int>(CellKey.Comparer);
+        foreach (var (key, index) in _cells)
+        {
+            cells.Add(key, index);
+            if (slicer.Done(1)) await slicer.PauseAsync().ConfigureAwait(false);
+        }
+        return new(cells.ToImmutable(), _values, ImmutableDictionary<int, PartColumns[]>.Empty, _cells.Count);
+    }
+
+    internal ComputationAxis? ComputedRows { get; private init; }
+    internal ComputationAxis? ComputedColumns { get; private init; }
+    internal IReadOnlyList<AxisNode> ChildrenOf(AxisNode node, bool rows)
+        => (rows ? ComputedRows : ComputedColumns)?.ChildrenOf(node.Id) ?? node.Children;
+    internal AxisNode NodeOf(AxisNode node, bool rows)
+        => (rows ? ComputedRows : ComputedColumns)?.Nodes[node.Id] ?? node;
+    private Dictionary<int, AxisNode>? _initialRows;
+    internal AxisNode RowNode(int id)
+    {
+        if (ComputedRows is not null) return ComputedRows.Nodes[id];
+        if (_initialRows is null)
+        {
+            var nodes = new Dictionary<int, AxisNode>();
+            void Add(AxisNode node) { nodes.Add(node.Id, node); foreach (var child in node.Children) Add(child); }
+            Add(RowRoot);
+            _initialRows = nodes;
+        }
+        return _initialRows[id];
+    }
+
+    internal PivotCube WithCells(string sourceVersion, long included, ComputationCells cells,
+        ComputationAxis? rows = null, ComputationAxis? columns = null)
+        => new(Query, sourceVersion, included, Meta, RowRoot, ColumnRoot, Sources, _cells, _values)
+            { ComputedCells = cells, ComputedRows = rows, ComputedColumns = columns };
+
 
     private PivotCube(
         PivotQuery query,
@@ -278,7 +318,8 @@ public sealed class PivotCube
     /// <summary>An Aggregation of the field in Values <paramref name="source"/> where two nodes
     /// cross; empty where no included record carries both.</summary>
     internal AggregateValue Read(AxisNode row, AxisNode column, int source, PivotAggregation aggregation)
-        => _cells.TryGetValue(CellKey.Of(row.Id, column.Id), out var cell)
+        => ComputedCells is { } computed ? computed.Read(row.Id, column.Id, source, aggregation)
+            : _cells.TryGetValue(CellKey.Of(row.Id, column.Id), out var cell)
             ? _values[source].Read(cell, aggregation)
             : AggregateValue.Empty;
 }

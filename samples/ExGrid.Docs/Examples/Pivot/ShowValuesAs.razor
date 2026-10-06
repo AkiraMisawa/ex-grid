@@ -13,7 +13,7 @@
     </label>
 </p>
 
-<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="340" />
+<ExPivot DataSource="_source" @bind-Layout="_layout" ViewportHeight="340" />
 
 @code {
     private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);

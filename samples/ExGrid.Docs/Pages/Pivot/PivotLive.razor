@@ -47,8 +47,8 @@
     <DocsSection Title="A server whose data moves on">
         <p>
             A server's source learns of changes however your application does: SignalR, polling, a message bus. Pass
-            each notice to <code>FetchingPivotSource.NotifyChanged(version)</code>, and ExPivot asks the server again for
-            the whole answer. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
+            each notice to <code>FetchingPivotReportSource.NotifyChanged(version)</code>, and ExPivot asks the server again for
+            the current report Window and its changes. A <em>Refresh</em> on the Pivot Toolbar does the same when the source says it can be
             refreshed.
         </p>
         <p>

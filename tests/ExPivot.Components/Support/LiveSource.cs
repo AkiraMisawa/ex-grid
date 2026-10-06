@@ -25,6 +25,18 @@ internal sealed class LiveSource : PivotSource
 
     /// <summary>The questions asked, in order.</summary>
     public List<Question> Questions { get; } = [];
+    private readonly Dictionary<int, TaskCompletionSource<Question>> _asked = [];
+
+    public Task<Question> QuestionAsync(int index, CancellationToken cancellationToken)
+    {
+        lock (Questions)
+        {
+            if (Questions.Count > index) return Task.FromResult(Questions[index]);
+            if (!_asked.TryGetValue(index, out var completion))
+                _asked[index] = completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            return completion.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        }
+    }
 
     /// <summary>Whether a question is answered at once, rather than held for the test.</summary>
     public bool AnswersAtOnce { get; set; } = true;
@@ -79,7 +91,11 @@ internal sealed class LiveSource : PivotSource
     public override ValueTask<PivotAnswer> AggregateAsync(PivotQuery query, CancellationToken cancellationToken = default)
     {
         var question = new Question(this, _current, query, cancellationToken);
-        Questions.Add(question);
+        lock (Questions)
+        {
+            Questions.Add(question);
+            if (_asked.Remove(Questions.Count - 1, out var completion)) completion.TrySetResult(question);
+        }
         if (AnswersAtOnce)
         {
             question.Settle();

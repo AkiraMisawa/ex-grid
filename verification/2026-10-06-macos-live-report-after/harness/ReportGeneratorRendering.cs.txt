@@ -1,0 +1,67 @@
+#pragma warning disable xUnit1051
+using System.Globalization;
+using System.Text.Json;
+using Bunit;
+using ExGrid;
+using ExGrid.Components;
+using ExGrid.DemoPages;
+using ExPivot.Engine;
+using ExPivot.Components.Tests.Support;
+using Microsoft.AspNetCore.Components;
+using Xunit;
+using PC = ExPivot.Components.ExPivot;
+
+namespace ExPivot.Components.Tests;
+
+public sealed class ReportGeneratorRendering : PivotTestContext
+{
+    [Fact]
+    public async Task M3_actual_generator_rows()
+    {
+        SetRendererInfo(new RendererInfo("Server", true));
+        var results = new List<object>();
+        foreach (var subtotals in new[] { true, false })
+        {
+            var trades = DemoPivotData.Trades();
+            var source = PivotSource.From(trades, DemoPivotData.Fields);
+            var layout = new PivotLayout {
+                Filters = [new("Currency")], Rows = [new("Region") { Subtotals = subtotals }, new("Desk") { Subtotals = subtotals }],
+                Columns = [new("Product")], Values = [new("Pnl") { NumberFormat = "#,##0" }] };
+            var cut = Render<PC>(p => p.Add(c => c.DataSource, source).Add(c => c.Layout, layout)
+                .Add(c => c.Culture, CultureInfo.GetCultureInfo("en-US"))
+                .Add(c => c.RedrawInterval, TimeSpan.Zero).Add(c => c.Clock, Clock)
+                .Add(c => c.ViewportHeight, (ViewportSize)300).Add(c => c.ViewportWidth, (ViewportSize)1200));
+            cut.WaitForState(() => cut.Instance.Report is not null);
+            var random = new Random(20261001);
+            var runs = new List<object>();
+            for (var iteration = 0; iteration < 100; iteration++)
+            {
+                var picked = new HashSet<int>();
+                while (picked.Count < 5) picked.Add(random.Next(trades.Length));
+                var amended = new List<DemoPivotTrade>();
+                foreach (var at in picked)
+                {
+                    var trade = trades[at];
+                    var move = Math.Round(trade.Notional * (decimal)(random.NextDouble() - 0.5) / 500m, 2);
+                    amended.Add(trades[at] = trade with { Pnl = trade.Pnl + move });
+                }
+                Clock.Advance(TimeSpan.FromMilliseconds(250));
+                var before = cut.FindComponents<ExGridRow<PivotDisplayRow>>().ToDictionary(x => x.Instance, x => x.RenderCount);
+                var textBefore = RowTexts(cut);
+                var version = cut.Instance.Report!.Metadata.SourceVersion;
+                await cut.InvokeAsync(() => source.Apply(DemoPivotData.Fields.Batch(changed: amended)));
+                cut.WaitForState(() => cut.Instance.Report!.Metadata.SourceVersion != version);
+                var painted = cut.FindComponents<ExGridRow<PivotDisplayRow>>().Where(x => !x.Instance.Placeholder).ToArray();
+                var rendered = painted.Count(x => !before.TryGetValue(x.Instance, out var old) || old != x.RenderCount);
+                var mounted = painted.Count(x => !before.ContainsKey(x.Instance));
+                Assert.Equal(0, mounted);
+                runs.Add(new { painted = painted.Length, rendered, mounted,
+                    paintedTextRowsChanged = RowTexts(cut).Zip(textBefore).Count(x => x.First != x.Second) });
+            }
+            results.Add(new { subtotals, trades = trades.Length, batch = 5, reportRows = cut.Instance.Report!.Metadata.RowCount, runs });
+            cut.Dispose();
+        }
+        File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("LIVE_COST_OUTPUT")!, "pivot-generator.json"),
+            JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+    }
+}

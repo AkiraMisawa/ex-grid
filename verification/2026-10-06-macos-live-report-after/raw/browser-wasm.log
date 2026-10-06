@@ -1,0 +1,424 @@
+warning: Git tree '/Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next' has uncommitted changes
+node v24.14.1, dotnet 10.0.203
+[WebServer] (node:92527) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] Serving /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/wasm/wwwroot at http://localhost:5599
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generating 20000 trades into /tmp/nix-shell.pr70dT/exgrid-demo-api/trades-v1-20000.sqlite: the first start for this count.
+[DemoApi] info: Microsoft.Hosting.Lifetime[14]
+[DemoApi]       Now listening on: http://localhost:8599
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application started. Press Ctrl+C to shut down.
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Hosting environment: Development
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Content root path: /Users/akira338/.codex-workspaces/worktrees/33609b58-5b7d-4f08-b904-bcaa95f6f60e/ex-grid/.claude/worktrees/live-data-next/.memory-hosts/after/api
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 10000 of 20000 trades (50%).
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Generated 20000 trades in 0.3 s: 1.6 MB.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Serving 20000 trades at version e2545e18-0 from /tmp/nix-shell.pr70dT/exgrid-demo-api/runs/trades-v1-20000.92528.e2545e18.sqlite.
+
+Running 42 tests using 1 worker
+
+(node:92531) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-1: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-1: 20000 trades read into a Snapshot in 87 ms and written in 38 ms, 1.6 MB.
+  ✓   1 [chrome] › pivot-db.spec.mjs:72:1 › LV-20/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows (1.8s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-2: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-2: 20000 trades read into a Snapshot in 51 ms and written in 4 ms, 1.6 MB.
+  ✓   2 [chrome] › pivot-db.spec.mjs:87:1 › LV-25/ADR-0152: remote whole-column Copy and Summary include rows outside the Window (3.0s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-3: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-3: 20000 trades read into a Snapshot in 57 ms and written in 1 ms, 1.6 MB.
+  ✓   3 [chrome] › pivot-db.spec.mjs:115:9 › under the builtin Chrome › PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (builtin) (397ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-4: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-4: 20000 trades read into a Snapshot in 31 ms and written in 2 ms, 1.6 MB.
+  ✓   4 [chrome] › pivot-db.spec.mjs:135:9 › under the builtin Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (builtin) (458ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-5: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-5: 20000 trades read into a Snapshot in 30 ms and written in 3 ms, 1.6 MB.
+  ✓   5 [chrome] › pivot-db.spec.mjs:150:9 › under the builtin Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (builtin) (595ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-6: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-6: 20000 trades read into a Snapshot in 29 ms and written in 1 ms, 1.6 MB.
+  ✓   6 [chrome] › pivot-db.spec.mjs:115:9 › under the mud Chrome › PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (mud) (446ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-7: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-7: 20000 trades read into a Snapshot in 31 ms and written in 6 ms, 1.6 MB.
+  ✓   7 [chrome] › pivot-db.spec.mjs:135:9 › under the mud Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (mud) (428ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-8: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-8: 20000 trades read into a Snapshot in 29 ms and written in 3 ms, 1.6 MB.
+  ✓   8 [chrome] › pivot-db.spec.mjs:150:9 › under the mud Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (mud) (710ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-9: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-9: 20000 trades read into a Snapshot in 30 ms and written in 1 ms, 1.6 MB.
+  ✓   9 [chrome] › pivot-db.spec.mjs:183:1 › ADR-0069/0065: the code the page shows is the code it runs, the Arrow request read whole (180ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-10: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  10 [chrome] › pivot-live.spec.mjs:63:9 › under the builtin Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (builtin) (4.8s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-12: 20 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  11 [chrome] › pivot-live.spec.mjs:104:9 › under the builtin Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (builtin) (1.6s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-15: 40 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  12 [chrome] › pivot-live.spec.mjs:63:9 › under the mud Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (mud) (3.4s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-17: 22 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  13 [chrome] › pivot-live.spec.mjs:104:9 › under the mud Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (mud) (1.7s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-20: 40 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  14 [chrome] › pivot-live.spec.mjs:128:1 › ADR-0069/0067: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on (144ms)
+(node:92640) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-22: 20 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-22: 20000 trades read into a Snapshot in 29 ms and written in 1 ms, 1.6 MB.
+  ✓  15 [chrome] › pivot-db.spec.mjs:72:1 › LV-20/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows (1.3s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-23: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-23: 20000 trades read into a Snapshot in 30 ms and written in 1 ms, 1.6 MB.
+  ✓  16 [chrome] › pivot-db.spec.mjs:87:1 › LV-25/ADR-0152: remote whole-column Copy and Summary include rows outside the Window (2.6s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-24: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-24: 20000 trades read into a Snapshot in 31 ms and written in 1 ms, 1.6 MB.
+  ✓  17 [chrome] › pivot-db.spec.mjs:115:9 › under the builtin Chrome › PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (builtin) (312ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-25: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-25: 20000 trades read into a Snapshot in 30 ms and written in 1 ms, 1.6 MB.
+  ✓  18 [chrome] › pivot-db.spec.mjs:135:9 › under the builtin Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (builtin) (461ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-26: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-26: 20000 trades read into a Snapshot in 30 ms and written in 3 ms, 1.6 MB.
+  ✓  19 [chrome] › pivot-db.spec.mjs:150:9 › under the builtin Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (builtin) (594ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-27: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-27: 20000 trades read into a Snapshot in 29 ms and written in 1 ms, 1.6 MB.
+  ✓  20 [chrome] › pivot-db.spec.mjs:115:9 › under the mud Chrome › PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (mud) (445ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-28: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-28: 20000 trades read into a Snapshot in 43 ms and written in 1 ms, 1.6 MB.
+  ✓  21 [chrome] › pivot-db.spec.mjs:135:9 › under the mud Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (mud) (480ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-29: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-29: 20000 trades read into a Snapshot in 29 ms and written in 1 ms, 1.6 MB.
+  ✓  22 [chrome] › pivot-db.spec.mjs:150:9 › under the mud Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (mud) (712ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-30: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-30: 20000 trades read into a Snapshot in 31 ms and written in 2 ms, 1.6 MB.
+  ✓  23 [chrome] › pivot-db.spec.mjs:183:1 › ADR-0069/0065: the code the page shows is the code it runs, the Arrow request read whole (194ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-31: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  24 [chrome] › pivot-live.spec.mjs:63:9 › under the builtin Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (builtin) (4.8s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-33: 22 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  25 [chrome] › pivot-live.spec.mjs:104:9 › under the builtin Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (builtin) (1.6s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-36: 40 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  26 [chrome] › pivot-live.spec.mjs:63:9 › under the mud Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (mud) (3.4s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-38: 20 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  27 [chrome] › pivot-live.spec.mjs:104:9 › under the mud Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (mud) (1.7s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-41: 42 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  28 [chrome] › pivot-live.spec.mjs:128:1 › ADR-0069/0067: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on (143ms)
+(node:92709) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-43: 20 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-43: 20000 trades read into a Snapshot in 30 ms and written in 1 ms, 1.6 MB.
+  ✓  29 [chrome] › pivot-db.spec.mjs:72:1 › LV-20/ADR-0151: a server report scrolls beyond its first Window with bounded rendered rows (1.3s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-44: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-44: 20000 trades read into a Snapshot in 30 ms and written in 1 ms, 1.6 MB.
+  ✓  30 [chrome] › pivot-db.spec.mjs:87:1 › LV-25/ADR-0152: remote whole-column Copy and Summary include rows outside the Window (2.6s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-45: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-45: 20000 trades read into a Snapshot in 29 ms and written in 2 ms, 1.6 MB.
+  ✓  31 [chrome] › pivot-db.spec.mjs:115:9 › under the builtin Chrome › PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (builtin) (312ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-46: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-46: 20000 trades read into a Snapshot in 36 ms and written in 1 ms, 1.6 MB.
+  ✓  32 [chrome] › pivot-db.spec.mjs:135:9 › under the builtin Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (builtin) (429ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-47: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-47: 20000 trades read into a Snapshot in 29 ms and written in 3 ms, 1.6 MB.
+  ✓  33 [chrome] › pivot-db.spec.mjs:150:9 › under the builtin Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (builtin) (645ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-48: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-48: 20000 trades read into a Snapshot in 28 ms and written in 1 ms, 1.6 MB.
+  ✓  34 [chrome] › pivot-db.spec.mjs:115:9 › under the mud Chrome › PV-20/ADR-0069: the database read over Arrow and asked through PivotReportSource.Fetch shows the same numbers (mud) (443ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-49: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-49: 20000 trades read into a Snapshot in 28 ms and written in 1 ms, 1.6 MB.
+  ✓  35 [chrome] › pivot-db.spec.mjs:135:9 › under the mud Chrome › PV-20/ADR-0069: a layout changed on one, shown on the other, gives the same numbers there too (mud) (463ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-50: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-50: 20000 trades read into a Snapshot in 28 ms and written in 3 ms, 1.6 MB.
+  ✓  36 [chrome] › pivot-db.spec.mjs:150:9 › under the mud Chrome › PV-20/ADR-0066: Show Details pages the server's records as the Details tab scrolls (mud) (711ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-51: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.TradeArrow[0]
+[DemoApi]       The trades' Arrow stream at version e2545e18-51: 20000 trades read into a Snapshot in 29 ms and written in 1 ms, 1.6 MB.
+  ✓  37 [chrome] › pivot-db.spec.mjs:183:1 › ADR-0069/0065: the code the page shows is the code it runs, the Arrow request read whole (245ms)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-52: 0 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  38 [chrome] › pivot-live.spec.mjs:63:9 › under the builtin Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (builtin) (4.8s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-54: 20 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  39 [chrome] › pivot-live.spec.mjs:104:9 › under the builtin Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (builtin) (1.6s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-57: 39 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  40 [chrome] › pivot-live.spec.mjs:63:9 › under the mud Chrome › PV-36/ADR-0067: Change Batches folded into the bundled source mark the values they changed, and a collapse marks nothing (mud) (3.4s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-59: 20 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  41 [chrome] › pivot-live.spec.mjs:104:9 › under the mud Chrome › PV-36/ADR-0067: the server's changing data marks the values it changed, and the page turns its live updates off (mud) (1.7s)
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.TradeStore[0]
+[DemoApi]       Reset to the generated trades at version e2545e18-62: 40 trades put back.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates on: 20 trades every 250 ms.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+[DemoApi] info: ExGrid.DemoApi.LiveUpdater[0]
+[DemoApi]       Live updates off.
+  ✓  42 [chrome] › pivot-live.spec.mjs:128:1 › ADR-0069/0067: the code the page shows is the code it runs: a Change Batch by Record Key, and a notice passed on (144ms)
+[DemoApi] info: Microsoft.Hosting.Lifetime[0]
+[DemoApi]       Application is shutting down...
+
+  42 passed (1.1m)

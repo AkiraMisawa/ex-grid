@@ -1,0 +1,2779 @@
+{
+  "url": "/live-cost-pivot?b=10&outer=100&records=1000000",
+  "completed": 70,
+  "samples": [
+    {
+      "update": 1,
+      "status": "Batch 1: apply 35.000 ms"
+    },
+    {
+      "update": 2,
+      "status": "Batch 2: apply 13.700 ms"
+    },
+    {
+      "update": 3,
+      "status": "Batch 3: apply 28.600 ms"
+    },
+    {
+      "update": 4,
+      "status": "Batch 4: apply 14.700 ms"
+    },
+    {
+      "update": 5,
+      "status": "Batch 5: apply 14.800 ms"
+    },
+    {
+      "update": 6,
+      "status": "Batch 6: apply 17.500 ms"
+    },
+    {
+      "update": 7,
+      "status": "Batch 7: apply 14.200 ms"
+    },
+    {
+      "update": 8,
+      "status": "Batch 8: apply 11.900 ms"
+    },
+    {
+      "update": 9,
+      "status": "Batch 9: apply 12.500 ms"
+    },
+    {
+      "update": 10,
+      "status": "Batch 10: apply 11.800 ms"
+    },
+    {
+      "update": 11,
+      "status": "Batch 11: apply 10.700 ms"
+    },
+    {
+      "update": 12,
+      "status": "Batch 12: apply 11.900 ms"
+    },
+    {
+      "update": 13,
+      "status": "Batch 13: apply 10.600 ms"
+    },
+    {
+      "update": 14,
+      "status": "Batch 14: apply 12.300 ms"
+    },
+    {
+      "update": 15,
+      "status": "Batch 15: apply 16.100 ms"
+    },
+    {
+      "update": 16,
+      "status": "Batch 16: apply 10.200 ms"
+    },
+    {
+      "update": 17,
+      "status": "Batch 17: apply 9.500 ms"
+    },
+    {
+      "update": 18,
+      "status": "Batch 18: apply 10.100 ms"
+    },
+    {
+      "update": 19,
+      "status": "Batch 19: apply 9.700 ms"
+    },
+    {
+      "update": 20,
+      "status": "Batch 20: apply 10.900 ms"
+    },
+    {
+      "update": 21,
+      "status": "Batch 21: apply 9.500 ms"
+    },
+    {
+      "update": 22,
+      "status": "Batch 22: apply 10.400 ms"
+    },
+    {
+      "update": 23,
+      "status": "Batch 23: apply 12.300 ms"
+    },
+    {
+      "update": 24,
+      "status": "Batch 24: apply 9.500 ms"
+    },
+    {
+      "update": 25,
+      "status": "Batch 25: apply 9.900 ms"
+    },
+    {
+      "update": 26,
+      "status": "Batch 26: apply 9.700 ms"
+    },
+    {
+      "update": 27,
+      "status": "Batch 27: apply 10.600 ms"
+    },
+    {
+      "update": 28,
+      "status": "Batch 28: apply 8.900 ms"
+    },
+    {
+      "update": 29,
+      "status": "Batch 29: apply 10.300 ms"
+    },
+    {
+      "update": 30,
+      "status": "Batch 30: apply 10.000 ms"
+    },
+    {
+      "update": 31,
+      "status": "Batch 31: apply 9.400 ms"
+    },
+    {
+      "update": 32,
+      "status": "Batch 32: apply 10.000 ms"
+    },
+    {
+      "update": 33,
+      "status": "Batch 33: apply 10.000 ms"
+    },
+    {
+      "update": 34,
+      "status": "Batch 34: apply 9.700 ms"
+    },
+    {
+      "update": 35,
+      "status": "Batch 35: apply 9.500 ms"
+    },
+    {
+      "update": 36,
+      "status": "Batch 36: apply 9.400 ms"
+    },
+    {
+      "update": 37,
+      "status": "Batch 37: apply 10.300 ms"
+    },
+    {
+      "update": 38,
+      "status": "Batch 38: apply 9.200 ms"
+    },
+    {
+      "update": 39,
+      "status": "Batch 39: apply 9.300 ms"
+    },
+    {
+      "update": 40,
+      "status": "Batch 40: apply 9.400 ms"
+    },
+    {
+      "update": 41,
+      "status": "Batch 41: apply 9.300 ms"
+    },
+    {
+      "update": 42,
+      "status": "Batch 42: apply 8.900 ms"
+    },
+    {
+      "update": 43,
+      "status": "Batch 43: apply 8.800 ms"
+    },
+    {
+      "update": 44,
+      "status": "Batch 44: apply 9.100 ms"
+    },
+    {
+      "update": 45,
+      "status": "Batch 45: apply 9.600 ms"
+    },
+    {
+      "update": 46,
+      "status": "Batch 46: apply 9.400 ms"
+    },
+    {
+      "update": 47,
+      "status": "Batch 47: apply 9.000 ms"
+    },
+    {
+      "update": 48,
+      "status": "Batch 48: apply 9.100 ms"
+    },
+    {
+      "update": 49,
+      "status": "Batch 49: apply 11.700 ms"
+    },
+    {
+      "update": 50,
+      "status": "Batch 50: apply 11.700 ms"
+    },
+    {
+      "update": 51,
+      "status": "Batch 51: apply 9.600 ms"
+    },
+    {
+      "update": 52,
+      "status": "Batch 52: apply 9.500 ms"
+    },
+    {
+      "update": 53,
+      "status": "Batch 53: apply 9.300 ms"
+    },
+    {
+      "update": 54,
+      "status": "Batch 54: apply 9.500 ms"
+    },
+    {
+      "update": 55,
+      "status": "Batch 55: apply 9.700 ms"
+    },
+    {
+      "update": 56,
+      "status": "Batch 56: apply 9.200 ms"
+    },
+    {
+      "update": 57,
+      "status": "Batch 57: apply 9.700 ms"
+    },
+    {
+      "update": 58,
+      "status": "Batch 58: apply 9.500 ms"
+    },
+    {
+      "update": 59,
+      "status": "Batch 59: apply 10.600 ms"
+    },
+    {
+      "update": 60,
+      "status": "Batch 60: apply 10.100 ms"
+    },
+    {
+      "update": 61,
+      "status": "Batch 61: apply 9.700 ms"
+    },
+    {
+      "update": 62,
+      "status": "Batch 62: apply 10.100 ms"
+    },
+    {
+      "update": 63,
+      "status": "Batch 63: apply 9.700 ms"
+    },
+    {
+      "update": 64,
+      "status": "Batch 64: apply 8.300 ms"
+    },
+    {
+      "update": 65,
+      "status": "Batch 65: apply 35.000 ms"
+    },
+    {
+      "update": 66,
+      "status": "Batch 66: apply 7.300 ms"
+    },
+    {
+      "update": 67,
+      "status": "Batch 67: apply 8.100 ms"
+    },
+    {
+      "update": 68,
+      "status": "Batch 68: apply 8.300 ms"
+    },
+    {
+      "update": 69,
+      "status": "Batch 69: apply 8.900 ms"
+    },
+    {
+      "update": 70,
+      "status": "Batch 70: apply 8.300 ms"
+    }
+  ],
+  "memory": [
+    {
+      "update": 0,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 160188080,
+      "managedBytes": 160188080,
+      "allocatedBytes": 190939680,
+      "threadAllocatedBytes": 192235200,
+      "gc0": 27,
+      "gc1": 5,
+      "gc2": 5,
+      "tracked": {
+        "Report": {
+          "created": 1,
+          "alive": 1
+        },
+        "Cube": {
+          "created": 1,
+          "alive": 1
+        },
+        "Snapshot": {
+          "created": 1,
+          "alive": 1
+        }
+      },
+      "roots": {
+        "heldReports": 1,
+        "paints": 2,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 1
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 1,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 160463544,
+      "managedBytes": 160463544,
+      "allocatedBytes": 190939680,
+      "threadAllocatedBytes": 193133296,
+      "gc0": 27,
+      "gc1": 5,
+      "gc2": 5,
+      "tracked": {
+        "Report": {
+          "created": 2,
+          "alive": 2
+        },
+        "Cube": {
+          "created": 2,
+          "alive": 2
+        },
+        "Snapshot": {
+          "created": 2,
+          "alive": 2
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 3,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 2
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 2,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 160725928,
+      "managedBytes": 160725928,
+      "allocatedBytes": 190939680,
+      "threadAllocatedBytes": 193776832,
+      "gc0": 27,
+      "gc1": 5,
+      "gc2": 5,
+      "tracked": {
+        "Report": {
+          "created": 3,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 3,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 3,
+          "alive": 3
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 4,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 3
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 3,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 157028144,
+      "managedBytes": 157028144,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 194421600,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 4,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 4,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 4,
+          "alive": 4
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 5,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 4,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 157290480,
+      "managedBytes": 157290480,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 195061888,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 5,
+          "alive": 4
+        },
+        "Cube": {
+          "created": 5,
+          "alive": 4
+        },
+        "Snapshot": {
+          "created": 5,
+          "alive": 5
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 6,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 5,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 157552912,
+      "managedBytes": 157552912,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 195698416,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 6,
+          "alive": 5
+        },
+        "Cube": {
+          "created": 6,
+          "alive": 5
+        },
+        "Snapshot": {
+          "created": 6,
+          "alive": 6
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 7,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 6,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 157815248,
+      "managedBytes": 157815248,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 196328080,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 7,
+          "alive": 6
+        },
+        "Cube": {
+          "created": 7,
+          "alive": 6
+        },
+        "Snapshot": {
+          "created": 7,
+          "alive": 7
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 8,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 7,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 158077632,
+      "managedBytes": 158077632,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 196959608,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 8,
+          "alive": 7
+        },
+        "Cube": {
+          "created": 8,
+          "alive": 7
+        },
+        "Snapshot": {
+          "created": 8,
+          "alive": 8
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 9,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 8,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 158340088,
+      "managedBytes": 158340088,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 197589424,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 9,
+          "alive": 8
+        },
+        "Cube": {
+          "created": 9,
+          "alive": 8
+        },
+        "Snapshot": {
+          "created": 9,
+          "alive": 9
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 10,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 9,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 158602528,
+      "managedBytes": 158602528,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 198218800,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 10,
+          "alive": 9
+        },
+        "Cube": {
+          "created": 10,
+          "alive": 9
+        },
+        "Snapshot": {
+          "created": 10,
+          "alive": 10
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 11,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 10,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 158864864,
+      "managedBytes": 158864864,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 198846384,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 11,
+          "alive": 10
+        },
+        "Cube": {
+          "created": 11,
+          "alive": 10
+        },
+        "Snapshot": {
+          "created": 11,
+          "alive": 11
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 12,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 11,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 159127328,
+      "managedBytes": 159127328,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 199473512,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 12,
+          "alive": 11
+        },
+        "Cube": {
+          "created": 12,
+          "alive": 11
+        },
+        "Snapshot": {
+          "created": 12,
+          "alive": 12
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 13,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 12,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 159389664,
+      "managedBytes": 159389664,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 200101920,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 13,
+          "alive": 12
+        },
+        "Cube": {
+          "created": 13,
+          "alive": 12
+        },
+        "Snapshot": {
+          "created": 13,
+          "alive": 13
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 14,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 13,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 159652000,
+      "managedBytes": 159652000,
+      "allocatedBytes": 194014072,
+      "threadAllocatedBytes": 200728472,
+      "gc0": 27,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 14,
+          "alive": 13
+        },
+        "Cube": {
+          "created": 14,
+          "alive": 13
+        },
+        "Snapshot": {
+          "created": 14,
+          "alive": 14
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 15,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 14,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 160727160,
+      "managedBytes": 160727160,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 201353464,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 15,
+          "alive": 5
+        },
+        "Cube": {
+          "created": 15,
+          "alive": 5
+        },
+        "Snapshot": {
+          "created": 15,
+          "alive": 9
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 16,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 15,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 160989904,
+      "managedBytes": 160989904,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 202008352,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 16,
+          "alive": 6
+        },
+        "Cube": {
+          "created": 16,
+          "alive": 6
+        },
+        "Snapshot": {
+          "created": 16,
+          "alive": 10
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 17,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 16,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 161252288,
+      "managedBytes": 161252288,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 202633280,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 17,
+          "alive": 7
+        },
+        "Cube": {
+          "created": 17,
+          "alive": 7
+        },
+        "Snapshot": {
+          "created": 17,
+          "alive": 11
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 18,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 17,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 161514624,
+      "managedBytes": 161514624,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 203257952,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 18,
+          "alive": 8
+        },
+        "Cube": {
+          "created": 18,
+          "alive": 8
+        },
+        "Snapshot": {
+          "created": 18,
+          "alive": 12
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 19,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 18,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 161776960,
+      "managedBytes": 161776960,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 203883776,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 19,
+          "alive": 9
+        },
+        "Cube": {
+          "created": 19,
+          "alive": 9
+        },
+        "Snapshot": {
+          "created": 19,
+          "alive": 13
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 20,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 19,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 162039296,
+      "managedBytes": 162039296,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 204508168,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 20,
+          "alive": 10
+        },
+        "Cube": {
+          "created": 20,
+          "alive": 10
+        },
+        "Snapshot": {
+          "created": 20,
+          "alive": 14
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 21,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 20,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 162301632,
+      "managedBytes": 162301632,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 205130656,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 21,
+          "alive": 11
+        },
+        "Cube": {
+          "created": 21,
+          "alive": 11
+        },
+        "Snapshot": {
+          "created": 21,
+          "alive": 15
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 22,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 21,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 162563968,
+      "managedBytes": 162563968,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 205752584,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 22,
+          "alive": 12
+        },
+        "Cube": {
+          "created": 22,
+          "alive": 12
+        },
+        "Snapshot": {
+          "created": 22,
+          "alive": 16
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 23,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 22,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 162826304,
+      "managedBytes": 162826304,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 206375592,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 23,
+          "alive": 13
+        },
+        "Cube": {
+          "created": 23,
+          "alive": 13
+        },
+        "Snapshot": {
+          "created": 23,
+          "alive": 17
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 24,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 23,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 163088640,
+      "managedBytes": 163088640,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 206997696,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 24,
+          "alive": 14
+        },
+        "Cube": {
+          "created": 24,
+          "alive": 14
+        },
+        "Snapshot": {
+          "created": 24,
+          "alive": 18
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 25,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 24,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 163350976,
+      "managedBytes": 163350976,
+      "allocatedBytes": 201119376,
+      "threadAllocatedBytes": 207619720,
+      "gc0": 28,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 25,
+          "alive": 15
+        },
+        "Cube": {
+          "created": 25,
+          "alive": 15
+        },
+        "Snapshot": {
+          "created": 25,
+          "alive": 19
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 26,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 25,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 164384520,
+      "managedBytes": 164384520,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 208242032,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 26,
+          "alive": 6
+        },
+        "Cube": {
+          "created": 26,
+          "alive": 6
+        },
+        "Snapshot": {
+          "created": 26,
+          "alive": 13
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 27,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 26,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 164646856,
+      "managedBytes": 164646856,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 208864000,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 27,
+          "alive": 7
+        },
+        "Cube": {
+          "created": 27,
+          "alive": 7
+        },
+        "Snapshot": {
+          "created": 27,
+          "alive": 14
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 28,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 27,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 164909192,
+      "managedBytes": 164909192,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 209486456,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 28,
+          "alive": 8
+        },
+        "Cube": {
+          "created": 28,
+          "alive": 8
+        },
+        "Snapshot": {
+          "created": 28,
+          "alive": 15
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 29,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 28,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 165171728,
+      "managedBytes": 165171728,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 210110056,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 29,
+          "alive": 9
+        },
+        "Cube": {
+          "created": 29,
+          "alive": 9
+        },
+        "Snapshot": {
+          "created": 29,
+          "alive": 16
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 30,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 29,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 165434064,
+      "managedBytes": 165434064,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 210734216,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 30,
+          "alive": 10
+        },
+        "Cube": {
+          "created": 30,
+          "alive": 10
+        },
+        "Snapshot": {
+          "created": 30,
+          "alive": 17
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 31,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 30,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 165696400,
+      "managedBytes": 165696400,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 211362640,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 31,
+          "alive": 11
+        },
+        "Cube": {
+          "created": 31,
+          "alive": 11
+        },
+        "Snapshot": {
+          "created": 31,
+          "alive": 18
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 32,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 31,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 165958736,
+      "managedBytes": 165958736,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 211984960,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 32,
+          "alive": 12
+        },
+        "Cube": {
+          "created": 32,
+          "alive": 12
+        },
+        "Snapshot": {
+          "created": 32,
+          "alive": 19
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 33,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 32,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 166221072,
+      "managedBytes": 166221072,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 212607832,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 33,
+          "alive": 13
+        },
+        "Cube": {
+          "created": 33,
+          "alive": 13
+        },
+        "Snapshot": {
+          "created": 33,
+          "alive": 20
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 34,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 33,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 166483408,
+      "managedBytes": 166483408,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 213229952,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 34,
+          "alive": 14
+        },
+        "Cube": {
+          "created": 34,
+          "alive": 14
+        },
+        "Snapshot": {
+          "created": 34,
+          "alive": 21
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 35,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 34,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 166745744,
+      "managedBytes": 166745744,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 213852024,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 35,
+          "alive": 15
+        },
+        "Cube": {
+          "created": 35,
+          "alive": 15
+        },
+        "Snapshot": {
+          "created": 35,
+          "alive": 22
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 36,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 35,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 167008080,
+      "managedBytes": 167008080,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 214474120,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 36,
+          "alive": 16
+        },
+        "Cube": {
+          "created": 36,
+          "alive": 16
+        },
+        "Snapshot": {
+          "created": 36,
+          "alive": 23
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 37,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 36,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 167270416,
+      "managedBytes": 167270416,
+      "allocatedBytes": 208217152,
+      "threadAllocatedBytes": 215096264,
+      "gc0": 29,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 37,
+          "alive": 17
+        },
+        "Cube": {
+          "created": 37,
+          "alive": 17
+        },
+        "Snapshot": {
+          "created": 37,
+          "alive": 24
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 38,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 37,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 168392032,
+      "managedBytes": 168392032,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 215718576,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 38,
+          "alive": 9
+        },
+        "Cube": {
+          "created": 38,
+          "alive": 9
+        },
+        "Snapshot": {
+          "created": 38,
+          "alive": 18
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 39,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 38,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 168654368,
+      "managedBytes": 168654368,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 216340688,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 39,
+          "alive": 10
+        },
+        "Cube": {
+          "created": 39,
+          "alive": 10
+        },
+        "Snapshot": {
+          "created": 39,
+          "alive": 19
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 40,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 39,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 168916704,
+      "managedBytes": 168916704,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 216962832,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 40,
+          "alive": 11
+        },
+        "Cube": {
+          "created": 40,
+          "alive": 11
+        },
+        "Snapshot": {
+          "created": 40,
+          "alive": 20
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 41,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 40,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 169179040,
+      "managedBytes": 169179040,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 217585504,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 41,
+          "alive": 12
+        },
+        "Cube": {
+          "created": 41,
+          "alive": 12
+        },
+        "Snapshot": {
+          "created": 41,
+          "alive": 21
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 42,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 41,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 169441376,
+      "managedBytes": 169441376,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 218207672,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 42,
+          "alive": 13
+        },
+        "Cube": {
+          "created": 42,
+          "alive": 13
+        },
+        "Snapshot": {
+          "created": 42,
+          "alive": 22
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 43,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 42,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 169703712,
+      "managedBytes": 169703712,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 218829840,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 43,
+          "alive": 14
+        },
+        "Cube": {
+          "created": 43,
+          "alive": 14
+        },
+        "Snapshot": {
+          "created": 43,
+          "alive": 23
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 44,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 43,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 169966048,
+      "managedBytes": 169966048,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 219452032,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 44,
+          "alive": 15
+        },
+        "Cube": {
+          "created": 44,
+          "alive": 15
+        },
+        "Snapshot": {
+          "created": 44,
+          "alive": 24
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 45,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 44,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 170228384,
+      "managedBytes": 170228384,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 220074432,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 45,
+          "alive": 16
+        },
+        "Cube": {
+          "created": 45,
+          "alive": 16
+        },
+        "Snapshot": {
+          "created": 45,
+          "alive": 25
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 46,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 45,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 170490720,
+      "managedBytes": 170490720,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 220696648,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 46,
+          "alive": 17
+        },
+        "Cube": {
+          "created": 46,
+          "alive": 17
+        },
+        "Snapshot": {
+          "created": 46,
+          "alive": 26
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 47,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 46,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 170753056,
+      "managedBytes": 170753056,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 221318888,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 47,
+          "alive": 18
+        },
+        "Cube": {
+          "created": 47,
+          "alive": 18
+        },
+        "Snapshot": {
+          "created": 47,
+          "alive": 27
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 48,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 47,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 171015392,
+      "managedBytes": 171015392,
+      "allocatedBytes": 215389848,
+      "threadAllocatedBytes": 221941184,
+      "gc0": 30,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 48,
+          "alive": 19
+        },
+        "Cube": {
+          "created": 48,
+          "alive": 19
+        },
+        "Snapshot": {
+          "created": 48,
+          "alive": 28
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 49,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 48,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 172072928,
+      "managedBytes": 172072928,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 222565536,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 49,
+          "alive": 10
+        },
+        "Cube": {
+          "created": 49,
+          "alive": 10
+        },
+        "Snapshot": {
+          "created": 49,
+          "alive": 22
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 50,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 49,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 189112512,
+      "managedBytes": 189112512,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 239965680,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 50,
+          "alive": 11
+        },
+        "Cube": {
+          "created": 50,
+          "alive": 11
+        },
+        "Snapshot": {
+          "created": 50,
+          "alive": 23
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 51,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 50,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 189374848,
+      "managedBytes": 189374848,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 240588168,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 51,
+          "alive": 12
+        },
+        "Cube": {
+          "created": 51,
+          "alive": 12
+        },
+        "Snapshot": {
+          "created": 51,
+          "alive": 24
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 52,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 51,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 189637184,
+      "managedBytes": 189637184,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 241210456,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 52,
+          "alive": 13
+        },
+        "Cube": {
+          "created": 52,
+          "alive": 13
+        },
+        "Snapshot": {
+          "created": 52,
+          "alive": 25
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 53,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 52,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 189899520,
+      "managedBytes": 189899520,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 241832744,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 53,
+          "alive": 14
+        },
+        "Cube": {
+          "created": 53,
+          "alive": 14
+        },
+        "Snapshot": {
+          "created": 53,
+          "alive": 26
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 54,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 53,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 190161856,
+      "managedBytes": 190161856,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 242455056,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 54,
+          "alive": 15
+        },
+        "Cube": {
+          "created": 54,
+          "alive": 15
+        },
+        "Snapshot": {
+          "created": 54,
+          "alive": 27
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 55,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 54,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 190424192,
+      "managedBytes": 190424192,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 243077368,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 55,
+          "alive": 16
+        },
+        "Cube": {
+          "created": 55,
+          "alive": 16
+        },
+        "Snapshot": {
+          "created": 55,
+          "alive": 28
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 56,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 55,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 190686552,
+      "managedBytes": 190686552,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 243700568,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 56,
+          "alive": 17
+        },
+        "Cube": {
+          "created": 56,
+          "alive": 17
+        },
+        "Snapshot": {
+          "created": 56,
+          "alive": 29
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 57,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 56,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 190948888,
+      "managedBytes": 190948888,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 244322760,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 57,
+          "alive": 18
+        },
+        "Cube": {
+          "created": 57,
+          "alive": 18
+        },
+        "Snapshot": {
+          "created": 57,
+          "alive": 30
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 58,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 57,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 191211224,
+      "managedBytes": 191211224,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 244945048,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 58,
+          "alive": 19
+        },
+        "Cube": {
+          "created": 58,
+          "alive": 19
+        },
+        "Snapshot": {
+          "created": 58,
+          "alive": 31
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 59,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 58,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 191473560,
+      "managedBytes": 191473560,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 245567264,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 59,
+          "alive": 20
+        },
+        "Cube": {
+          "created": 59,
+          "alive": 20
+        },
+        "Snapshot": {
+          "created": 59,
+          "alive": 32
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 60,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 59,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 191735896,
+      "managedBytes": 191735896,
+      "allocatedBytes": 222537696,
+      "threadAllocatedBytes": 246189512,
+      "gc0": 31,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 60,
+          "alive": 21
+        },
+        "Cube": {
+          "created": 60,
+          "alive": 21
+        },
+        "Snapshot": {
+          "created": 60,
+          "alive": 33
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 61,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 60,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 192859104,
+      "managedBytes": 192859104,
+      "allocatedBytes": 246443496,
+      "threadAllocatedBytes": 246811760,
+      "gc0": 32,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 61,
+          "alive": 13
+        },
+        "Cube": {
+          "created": 61,
+          "alive": 13
+        },
+        "Snapshot": {
+          "created": 61,
+          "alive": 27
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 62,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 61,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 193121440,
+      "managedBytes": 193121440,
+      "allocatedBytes": 246443496,
+      "threadAllocatedBytes": 247434024,
+      "gc0": 32,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 62,
+          "alive": 14
+        },
+        "Cube": {
+          "created": 62,
+          "alive": 14
+        },
+        "Snapshot": {
+          "created": 62,
+          "alive": 28
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 63,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 62,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 193383776,
+      "managedBytes": 193383776,
+      "allocatedBytes": 246443496,
+      "threadAllocatedBytes": 248056296,
+      "gc0": 32,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 63,
+          "alive": 15
+        },
+        "Cube": {
+          "created": 63,
+          "alive": 15
+        },
+        "Snapshot": {
+          "created": 63,
+          "alive": 29
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 63,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 193646112,
+      "managedBytes": 193646112,
+      "allocatedBytes": 246443496,
+      "threadAllocatedBytes": 248679104,
+      "gc0": 32,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 64,
+          "alive": 16
+        },
+        "Cube": {
+          "created": 64,
+          "alive": 16
+        },
+        "Snapshot": {
+          "created": 64,
+          "alive": 30
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 64,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 193908448,
+      "managedBytes": 193908448,
+      "allocatedBytes": 246443496,
+      "threadAllocatedBytes": 249302968,
+      "gc0": 32,
+      "gc1": 6,
+      "gc2": 6,
+      "tracked": {
+        "Report": {
+          "created": 65,
+          "alive": 17
+        },
+        "Cube": {
+          "created": 65,
+          "alive": 17
+        },
+        "Snapshot": {
+          "created": 65,
+          "alive": 31
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 65,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 162951816,
+      "managedBytes": 162951816,
+      "allocatedBytes": 265436480,
+      "threadAllocatedBytes": 266092176,
+      "gc0": 33,
+      "gc1": 7,
+      "gc2": 7,
+      "tracked": {
+        "Report": {
+          "created": 66,
+          "alive": 3
+        },
+        "Cube": {
+          "created": 66,
+          "alive": 3
+        },
+        "Snapshot": {
+          "created": 66,
+          "alive": 4
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 66,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 163183384,
+      "managedBytes": 163183384,
+      "allocatedBytes": 265436480,
+      "threadAllocatedBytes": 266683160,
+      "gc0": 33,
+      "gc1": 7,
+      "gc2": 7,
+      "tracked": {
+        "Report": {
+          "created": 67,
+          "alive": 4
+        },
+        "Cube": {
+          "created": 67,
+          "alive": 4
+        },
+        "Snapshot": {
+          "created": 67,
+          "alive": 5
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 67,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 163414952,
+      "managedBytes": 163414952,
+      "allocatedBytes": 265436480,
+      "threadAllocatedBytes": 267257312,
+      "gc0": 33,
+      "gc1": 7,
+      "gc2": 7,
+      "tracked": {
+        "Report": {
+          "created": 68,
+          "alive": 5
+        },
+        "Cube": {
+          "created": 68,
+          "alive": 5
+        },
+        "Snapshot": {
+          "created": 68,
+          "alive": 6
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 68,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 163646520,
+      "managedBytes": 163646520,
+      "allocatedBytes": 265436480,
+      "threadAllocatedBytes": 267829328,
+      "gc0": 33,
+      "gc1": 7,
+      "gc2": 7,
+      "tracked": {
+        "Report": {
+          "created": 69,
+          "alive": 6
+        },
+        "Cube": {
+          "created": 69,
+          "alive": 6
+        },
+        "Snapshot": {
+          "created": 69,
+          "alive": 7
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 69,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 163878088,
+      "managedBytes": 163878088,
+      "allocatedBytes": 265436480,
+      "threadAllocatedBytes": 268401360,
+      "gc0": 33,
+      "gc1": 7,
+      "gc2": 7,
+      "tracked": {
+        "Report": {
+          "created": 70,
+          "alive": 7
+        },
+        "Cube": {
+          "created": 70,
+          "alive": 7
+        },
+        "Snapshot": {
+          "created": 70,
+          "alive": 8
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    },
+    {
+      "update": 70,
+      "records": 1000000,
+      "reportRows": 1101,
+      "forcedGc": false,
+      "managedBeforeGc": 164109656,
+      "managedBytes": 164109656,
+      "allocatedBytes": 265436480,
+      "threadAllocatedBytes": 268973392,
+      "gc0": 33,
+      "gc1": 7,
+      "gc2": 7,
+      "tracked": {
+        "Report": {
+          "created": 71,
+          "alive": 8
+        },
+        "Cube": {
+          "created": 71,
+          "alive": 8
+        },
+        "Snapshot": {
+          "created": 71,
+          "alive": 9
+        }
+      },
+      "roots": {
+        "heldReports": 2,
+        "paints": 64,
+        "windowRows": 64,
+        "sourceAnsweredSnapshots": 4
+      },
+      "wasmHeapBytes": 360185856
+    }
+  ],
+  "errors": [],
+  "browser": "154.0.8037.98",
+  "runtime": {
+    "keys": [
+      "INTERNAL",
+      "invokeLibraryInitializers",
+      "Module",
+      "config",
+      "onConfigLoaded",
+      "onDownloadResourceProgress",
+      "out",
+      "err",
+      "onAbort",
+      "onExit",
+      "runtimeBuildInfo",
+      "runMain",
+      "runMainAndExit",
+      "exit",
+      "setEnvironmentVariable",
+      "getAssemblyExports",
+      "setModuleImports",
+      "getConfig",
+      "setHeapB32",
+      "setHeapB8",
+      "setHeapU8",
+      "setHeapU16",
+      "setHeapU32",
+      "setHeapI8",
+      "setHeapI16",
+      "setHeapI32",
+      "setHeapI52",
+      "setHeapU52",
+      "setHeapI64Big",
+      "setHeapF32",
+      "setHeapF64",
+      "getHeapB32",
+      "getHeapB8",
+      "getHeapU8",
+      "getHeapU16",
+      "getHeapU32",
+      "getHeapI8",
+      "getHeapI16",
+      "getHeapI32",
+      "getHeapI52",
+      "getHeapU52",
+      "getHeapI64Big",
+      "getHeapF32",
+      "getHeapF64",
+      "localHeapViewU8",
+      "localHeapViewU16",
+      "localHeapViewU32",
+      "localHeapViewI8",
+      "localHeapViewI16",
+      "localHeapViewI32",
+      "localHeapViewI64Big",
+      "localHeapViewF32",
+      "localHeapViewF64",
+      "collectCpuSamples",
+      "collectMetrics",
+      "collectGcDump",
+      "connectDSRouter",
+      "runtimeId"
+    ],
+    "moduleKeys": [
+      "HEAP8",
+      "HEAP16",
+      "HEAPU8",
+      "HEAPU16",
+      "HEAP32",
+      "HEAPU32",
+      "HEAPF32",
+      "HEAPF64",
+      "HEAP64",
+      "HEAPU64"
+    ],
+    "heapBytes": 360185856
+  }
+}

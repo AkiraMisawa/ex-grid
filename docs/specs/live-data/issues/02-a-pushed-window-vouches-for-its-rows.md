@@ -42,11 +42,11 @@ every new Window? ExPivot is such a Consumer, and so is any ExGrid page that pus
 
 - [x] ADR-0150 recorded, ADR-0141 amended (who may vouch, and what a false vouch costs), and LV-10 restated, with the
   user's decision and its date
-- [ ] The parameter, its XML doc, and the grid taking it as it takes a source's vouch
-- [ ] ExPivot vouches for its report, with a comment at the site naming the engine's guarantee
-- [ ] Layer 2: a vouched pushed Window is not walked (count the key function's calls, as LV-10's
+- [x] The parameter, its XML doc, and the grid taking it as it takes a source's vouch
+- [x] ExPivot vouches for its report, with a comment at the site naming the engine's guarantee
+- [x] Layer 2: a vouched pushed Window is not walked (count the key function's calls, as LV-10's
   tests do); an unvouched one is; ExPivot's report is vouched
-- [ ] PV-43's measurement repeated: the grid's share of a redraw at 401,001 rows
+- [x] PV-43's measurement repeated: the grid's share of a redraw at 401,001 rows
 
 ## Comments
 
@@ -66,3 +66,9 @@ may explicitly be vouched for; validation remains the default. The promise cover
 keys and duplicate keys, and a false promise has no guaranteed Blazor fallback. The decision is
 [ADR-0150](../../../adr/0150-a-consumer-can-vouch-for-a-pushed-windows-rows.md); LV-10 and LV-19 record
 its criteria. No implementation is claimed by this status.
+
+2026-10-06, implementation: `VouchesDistinctRows` is implemented for pushed Windows, with
+validation as the default and revalidation when the promise is withdrawn. ExPivot vouches for
+its detached report Window. Layer 2 counts key calls, and the [follow-up measurements](../../../../verification/2026-10-06-macos-live-report-after/README.md)
+record the real grid admission cost at all three report sizes. The grid now receives 64 report
+rows at each size; the old full-report check is not repeated elsewhere in the client.

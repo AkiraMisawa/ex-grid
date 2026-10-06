@@ -12,7 +12,9 @@ public abstract class PivotReportSource : IAsyncDisposable
     /// <summary>A complete report Window or a delta from its named baseline.</summary>
     public abstract ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest request, CancellationToken cancellationToken = default);
     /// <summary>A field's Items at the requested Source Version.</summary>
-    public abstract ValueTask<PivotItemPage> ItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default);
+    public abstract ValueTask<PivotItemPage> RawItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default);
+    /// <summary>Items labeled and ordered in the report computation process.</summary>
+    public abstract ValueTask<PivotReportItemsResult> ItemsAsync(PivotReportItemsQuery query, CancellationToken cancellationToken = default);
     /// <summary>All selected cells at the requested Report Version, including offscreen cells.</summary>
     public abstract ValueTask<PivotReportCopyResult> CopyAsync(PivotReportCopyQuery query, CancellationToken cancellationToken = default);
     /// <summary>The selected cells' summary at the requested Report Version.</summary>
@@ -47,8 +49,10 @@ public abstract class PivotReportSource : IAsyncDisposable
         Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? copy = null,
         Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? summary = null,
         Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? details = null,
-        Func<CancellationToken, ValueTask>? refresh = null)
-        => new(fields, features, updateMode, window, items, copy, summary, details, refresh);
+        Func<CancellationToken, ValueTask>? refresh = null,
+        Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems = null,
+        Func<ValueTask>? dispose = null)
+        => new(fields, features, updateMode, window, items, copy, summary, details, refresh, reportItems, dispose);
 }
 
 /// <summary>A transport-neutral report source; delegates carry the complete versioned questions.</summary>
@@ -60,13 +64,18 @@ public sealed class FetchingPivotReportSource : PivotReportSource
     private readonly Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? _summary;
     private readonly Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? _details;
     private readonly Func<CancellationToken, ValueTask>? _refresh;
+    private readonly Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? _reportItems;
+    private readonly Dictionary<PivotReportVersion, string> _reportedVersions = [];
+    private readonly Func<ValueTask>? _dispose;
+    private int _disposed;
     internal FetchingPivotReportSource(IReadOnlyList<PivotField> fields, PivotSourceFeatures features,
         PivotReportUpdateMode updateMode, Func<PivotReportRequest, CancellationToken, ValueTask<PivotReportUpdate>> window,
         Func<PivotItemsQuery, CancellationToken, ValueTask<PivotItemPage>>? items,
         Func<PivotReportCopyQuery, CancellationToken, ValueTask<PivotReportCopyResult>>? copy,
         Func<PivotReportSummaryQuery, CancellationToken, ValueTask<PivotReportSummaryResult>>? summary,
         Func<PivotReportDetailsQuery, CancellationToken, ValueTask<PivotReportDetailsResult>>? details,
-        Func<CancellationToken, ValueTask>? refresh)
+        Func<CancellationToken, ValueTask>? refresh,
+        Func<PivotReportItemsQuery, CancellationToken, ValueTask<PivotReportItemsResult>>? reportItems, Func<ValueTask>? dispose)
     {
         Fields = Array.AsReadOnly(fields.ToArray());
         Features = features;
@@ -77,6 +86,8 @@ public sealed class FetchingPivotReportSource : PivotReportSource
         _summary = summary;
         _details = details;
         _refresh = refresh;
+        _reportItems = reportItems;
+        _dispose = dispose;
     }
     /// <inheritdoc />
     public override IReadOnlyList<PivotField> Fields { get; }
@@ -87,24 +98,100 @@ public sealed class FetchingPivotReportSource : PivotReportSource
     /// <summary>Informs the report Consumer of a server notification.</summary>
     public void NotifyChanged(string? sourceVersion = null) => OnChanged(new(sourceVersion));
     /// <inheritdoc />
-    public override ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest request, CancellationToken cancellationToken = default)
-        => _window(request, cancellationToken);
+    public override async ValueTask<PivotReportUpdate> WindowAsync(PivotReportRequest request, CancellationToken cancellationToken = default)
+    {
+        var update = await _window(request, cancellationToken).ConfigureAwait(false);
+        if (update?.Metadata is { } metadata && update.RequestId == request.RequestId && update.Window == request.Window)
+        {
+            lock (_reportedVersions)
+            {
+                _reportedVersions[metadata.Version] = metadata.SourceVersion;
+                while (_reportedVersions.Count > 16) _reportedVersions.Remove(_reportedVersions.Keys.First());
+            }
+        }
+        return update!;
+    }
     /// <inheritdoc />
-    public override ValueTask<PivotItemPage> ItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default)
-        => _items is { } read ? read(query, cancellationToken) : throw Missing("Items");
+    public override async ValueTask<PivotItemPage> RawItemsAsync(PivotItemsQuery query, CancellationToken cancellationToken = default)
+    {
+        var page = await (_items ?? throw Missing("Items"))(query, cancellationToken).ConfigureAwait(false);
+        if (page is null || !page.IsRefused && (page.SourceVersion != query.SourceVersion || page.Items.Count > query.Max))
+            throw new InvalidOperationException("The Items response does not answer the requested Source Version and extent.");
+        return page;
+    }
     /// <inheritdoc />
-    public override ValueTask<PivotReportCopyResult> CopyAsync(PivotReportCopyQuery query, CancellationToken cancellationToken = default)
-        => _copy is { } read ? read(query, cancellationToken) : throw Missing("Copy");
+    public override async ValueTask<PivotReportItemsResult> ItemsAsync(PivotReportItemsQuery query, CancellationToken cancellationToken = default)
+    {
+        var result = await (_reportItems ?? throw Missing("report Items"))(query, cancellationToken).ConfigureAwait(false);
+        if (result is null || result.Version != query.Version)
+            return new(query.Version, "", [], 0, WrongVersion());
+        if (result.Refusal is not null) return result;
+        string? sourceVersion;
+        lock (_reportedVersions) _reportedVersions.TryGetValue(query.Version, out sourceVersion);
+        if (result.Items.Count > query.Max || result.Total < result.Items.Count
+            || sourceVersion is not null && result.SourceVersion != sourceVersion
+            || result.Items.Select(item => item.Key).Distinct().Count() != result.Items.Count)
+            return new(query.Version, "", [], 0, Invalid("Items returned another version or an invalid extent."));
+        return result;
+    }
     /// <inheritdoc />
-    public override ValueTask<PivotReportSummaryResult> SummaryAsync(PivotReportSummaryQuery query, CancellationToken cancellationToken = default)
-        => _summary is { } read ? read(query, cancellationToken) : throw Missing("Summary");
+    public override async ValueTask<PivotReportCopyResult> CopyAsync(PivotReportCopyQuery query, CancellationToken cancellationToken = default)
+    {
+        var result = await (_copy ?? throw Missing("Copy"))(query, cancellationToken).ConfigureAwait(false);
+        if (result is null || result.Version != query.Version)
+            return new(query.Version, [], WrongVersion());
+        if (result.Refusal is not null) return result;
+        if (result.Blocks.Count != query.Ranges.Count)
+            return new(query.Version, [], Invalid("Copy returned a different number of selected rectangles."));
+        for (var i = 0; i < result.Blocks.Count; i++)
+        {
+            var range = query.Ranges[i];
+            var block = result.Blocks[i];
+            if (block.Rows.Count != (long)range.Bottom - range.Top + 1
+                || block.Headers.Count != (long)range.Right - range.Left + 1
+                || block.Rows.Any(row => row.Count != block.Headers.Count))
+                return new(query.Version, [], Invalid("Copy returned a partial selected rectangle."));
+        }
+        return result;
+    }
     /// <inheritdoc />
-    public override ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default)
-        => _details is { } read ? read(query, cancellationToken) : throw Missing("Details");
+    public override async ValueTask<PivotReportSummaryResult> SummaryAsync(PivotReportSummaryQuery query, CancellationToken cancellationToken = default)
+    {
+        var result = await (_summary ?? throw Missing("Summary"))(query, cancellationToken).ConfigureAwait(false);
+        return result is not null && result.Version == query.Version ? result
+            : new(query.Version, default, default, default, false, null, "", WrongVersion());
+    }
     /// <inheritdoc />
-    public override ValueTask RefreshAsync(CancellationToken cancellationToken = default)
-        => _refresh?.Invoke(cancellationToken) ?? ValueTask.CompletedTask;
+    public override async ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken cancellationToken = default)
+    {
+        var result = await (_details ?? throw Missing("Details"))(query, cancellationToken).ConfigureAwait(false);
+        if (result is null || result.Version != query.Version) return new(query.Version, null, WrongVersion());
+        if (result.Refusal is not null) return result;
+        if (result.Page is not { } page) return new(query.Version, null, Invalid("Details returned no page."));
+        if (page.IsRefused) return result;
+        string? sourceVersion;
+        lock (_reportedVersions) _reportedVersions.TryGetValue(query.Version, out sourceVersion);
+        if (sourceVersion is not null && page.SourceVersion != sourceVersion || page.Start != query.Start || page.Records.Count > query.Count
+            || !page.Fields.Select(field => field.Info).SequenceEqual(Fields.Select(field => field.Info)))
+            return new(query.Version, null, Invalid("Details returned another report's source records or a different extent."));
+        return result;
+    }
     /// <inheritdoc />
-    public override ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public override async ValueTask RefreshAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (!Features.CanRefresh) return;
+        if (_refresh is { } refresh) await refresh(cancellationToken).ConfigureAwait(false);
+        OnChanged(new());
+    }
+    /// <inheritdoc />
+    public override async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        lock (_reportedVersions) _reportedVersions.Clear();
+        if (_dispose is { } dispose) await dispose().ConfigureAwait(false);
+    }
+    private static PivotReportRefusal WrongVersion() => Invalid("The response names another Report Version.");
+    private static PivotReportRefusal Invalid(string message) => new(PivotReportRefusalKind.InvalidResponse, message);
     private static InvalidOperationException Missing(string operation) => new($"The report source has no {operation} transport.");
 }

@@ -101,6 +101,7 @@ public class AskingTests : PivotTestContext
         var first = source.Questions[1];
         await TickFieldAsync(cut, "Quantity", true);
 
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(3, source.Questions.Count);
         Assert.True(first.IsCancelled);
         Assert.False(source.Questions[2].IsCancelled);
@@ -121,7 +122,7 @@ public class AskingTests : PivotTestContext
         await TickFieldAsync(cut, "Product", true);
         var superseded = source.Questions[1];
         await TickFieldAsync(cut, "Quantity", true);
-        var current = source.Questions[2];
+        var current = await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
 
         // The superseded answer arrives first: discarded, and the report goes on waiting.
         Assert.False(superseded.Completion.Task.IsCompleted);

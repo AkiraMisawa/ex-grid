@@ -60,7 +60,7 @@ Then add the four stylesheets:
 @using ExPivot.MudBlazor
 
 <MudExGridPaper Elevation="1" Hover="true">
-    <ExPivot Source="_source" @bind-Layout="_layout"
+    <ExPivot DataSource="_source" @bind-Layout="_layout"
              PivotChrome="MudPivotChrome.Default" ViewportHeight="420" />
 </MudExGridPaper>
 ```

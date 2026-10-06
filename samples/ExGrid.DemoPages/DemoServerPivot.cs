@@ -7,11 +7,8 @@ using global::ExPivot.Engine;
 namespace ExGrid.DemoPages;
 
 /// <summary>
-/// The demo API server's Pivot Source (ADR-0066, ADR-0069), as <c>/pivot-db</c> and
-/// <c>/pivot-live</c> reach it: the fields it offers, from <c>GET /api/pivot/fields</c>, and
-/// <c>PivotSource.Fetch</c> over <c>POST /api/pivot/aggregate</c>, <c>/items</c> and
-/// <c>/details</c>, each question and each answer a <c>PivotJson</c> document. The server answers
-/// with SQL written by hand, and is held to the bundled source's answers (PV-22).
+/// The demo API's versioned report Windows and operations. SQL aggregation and report
+/// computation stay on the server; the browser receives its requested display rows.
 /// </summary>
 public static class DemoServerPivot
 {
@@ -38,50 +35,47 @@ public static class DemoServerPivot
     #endregion
 
     #region The code: fetch
-    // ExPivot asks the source, and PivotSource.Fetch hands each question to these delegates. Every
-    // question and every answer is a PivotJson document, so each delegate is one POST, and the
-    // server answers it with SQL written by hand (ADR-0066). ExPivot never opens a connection: the
-    // transport, its authentication and its retries are the application's.
-    public static FetchingPivotSource Fetch(
+    // A report identity belongs to one view. Its server calculation is bounded by the
+    // Consumer's store; an expired baseline is recovered by the Window protocol.
+    public static FetchingPivotReportSource Fetch(
         HttpClient http, IReadOnlyList<PivotField> fields, PivotSourceFeatures features, Action<string>? asked = null)
     {
-        async Task<string> PostAsync(string path, string document, CancellationToken token)
+        var path = "api/pivot/reports/" + Guid.NewGuid().ToString("N");
+        async ValueTask<TAnswer> PostAsync<TQuery, TAnswer>(string operation, TQuery query, CancellationToken token)
         {
-            asked?.Invoke(path);
-            using var content = new StringContent(document, Encoding.UTF8, "application/json");
-            using var response = await http.PostAsync(path, content, token);
+            asked?.Invoke("api/pivot/" + operation);
+            using var content = new StringContent(PivotReportJson.Write(query), Encoding.UTF8, "application/json");
+            using var response = await http.PostAsync(path + "/" + operation, content, token);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync(token);
+            return PivotReportJson.Read<TAnswer>(await response.Content.ReadAsStringAsync(token));
         }
-
-        // The server answers at most 10,000 records a page (ADR-0069), so a longer question is
-        // asked a page at a time, every page under the report's Source Version: if the data moves
-        // on between two pages, the server refuses, and ExPivot says the data has changed rather
-        // than show records that do not add up. ExPivot's own Details tab asks for no more than
-        // its grid paints and reads ahead.
-        async ValueTask<PivotDetailPage> DetailsAsync(PivotDetailsQuery query, CancellationToken token)
+        async ValueTask<PivotReportDetailsResult> DetailsAsync(PivotReportDetailsQuery query, CancellationToken token)
         {
-            if (query.Count <= MaxDetailsPage)
-                return PivotJson.ReadDetailPage(await PostAsync("api/pivot/details", PivotJson.Write(query), token));
             var records = new List<PivotDetailRecord>();
-            PivotDetailPage page;
+            PivotReportDetailsResult result;
             do
             {
-                var next = new PivotDetailsQuery(query.SourceVersion, query.RowItems, query.ColumnItems, query.HiddenItems,
-                    query.Start + records.Count, Math.Min(MaxDetailsPage, query.Count - records.Count));
-                page = PivotJson.ReadDetailPage(await PostAsync("api/pivot/details", PivotJson.Write(next), token));
-                if (page.IsRefused)
-                    return page;
+                var next = query with { Start = query.Start + records.Count, Count = Math.Min(MaxDetailsPage, query.Count - records.Count) };
+                result = await PostAsync<PivotReportDetailsQuery, PivotReportDetailsResult>("details", next, token);
+                if (result.Refusal is not null || result.Page is not { } page || page.IsRefused) return result;
                 records.AddRange(page.Records);
-            }
-            while (page.Records.Count > 0 && records.Count < query.Count && query.Start + records.Count < page.Total);
-            return new PivotDetailPage(page.SourceVersion, page.Fields, query.Start, page.Total, records);
+                if (page.Records.Count == 0 || records.Count >= query.Count || query.Start + records.Count >= page.Total) break;
+            } while (true);
+            var last = result.Page!;
+            return result with { Page = new PivotDetailPage(last.SourceVersion, last.Fields, query.Start, last.Total, records) };
         }
-
-        return PivotSource.Fetch(fields, features,
-            async (query, token) => PivotJson.ReadAnswer(await PostAsync("api/pivot/aggregate", PivotJson.Write(query), token)),
-            async (query, token) => PivotJson.ReadItemPage(await PostAsync("api/pivot/items", PivotJson.Write(query), token)),
-            DetailsAsync);
+        return PivotReportSource.Fetch(fields, features, PivotReportUpdateMode.FullRefresh,
+            (query, token) => PostAsync<PivotReportRequest, PivotReportUpdate>("window", query, token),
+            copy: (query, token) => PostAsync<PivotReportCopyQuery, PivotReportCopyResult>("copy", query, token),
+            summary: (query, token) => PostAsync<PivotReportSummaryQuery, PivotReportSummaryResult>("summary", query, token),
+            details: DetailsAsync,
+            reportItems: (query, token) => PostAsync<PivotReportItemsQuery, PivotReportItemsResult>("items", query, token),
+            dispose: async () =>
+            {
+                try { using var response = await http.DeleteAsync(path); }
+                catch (HttpRequestException) { /* The store's idle expiry releases an unreachable report. */ }
+                catch (OperationCanceledException) { /* Likewise when the transport has stopped. */ }
+            });
     }
 
     /// <summary>The most records the server answers in one Details page.</summary>

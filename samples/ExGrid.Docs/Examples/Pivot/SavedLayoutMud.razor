@@ -8,7 +8,7 @@
 </MudStack>
 
 <MudExGridPaper Class="docs-stretch-paper" Elevation="0" Outlined="true">
-    <ExPivot Source="_source" @bind-Layout="_layout" PivotChrome="MudPivotChrome.Default" ViewportHeight="320" />
+    <ExPivot DataSource="_source" @bind-Layout="_layout" PivotChrome="MudPivotChrome.Default" ViewportHeight="320" />
 </MudExGridPaper>
 
 @if (_saved is not null)

@@ -115,12 +115,12 @@ these cases before implementation starts.
 
 ## Done when (to be confirmed by the ADR)
 
-- [ ] The decisions above, recorded in the branch's reserved ADR block (0150 to 0159; see the
+- [x] The decisions above, recorded in the branch's reserved ADR block (0150 to 0159; see the
   spec), with criteria added to §32 and the affected §29 criteria updated
-- [ ] Ticket 01's ExPivot measurement repeated: the redraw at each size, before and after
-- [ ] M3 repeated: the rows mounted and rendered per redraw on `/pivot-live`'s generator
-- [ ] The property test
-- [ ] PV-21's observation in the browser (`measure-pivot.spec.mjs`), recorded beside the old one
+- [x] Ticket 01's ExPivot measurement repeated: the redraw at each size, before and after
+- [x] M3 repeated: the rows mounted and rendered per redraw on `/pivot-live`'s generator
+- [x] The property test
+- [x] PV-21's observation in the browser (`measure-pivot.spec.mjs`), recorded beside the old one
 
 ## Comments
 
@@ -267,3 +267,19 @@ Details keeps its captured version as already required. Those operations must no
 all report values just to display a Window, and a viewport-sized answer must never be substituted
 for a whole selection's answer. Type names and storage structures can be chosen during
 implementation under Q5; they are not additional user naming decisions.
+
+2026-10-06, implementation: `PivotComputationSession` retains each report's aggregate pass,
+immutable cell pages, axes and weighted report structure. `LocalPivotReportSource` supplies
+metadata, Windows and versioned offscreen operations; `FetchingPivotReportSource` uses the same
+contract over the Consumer's transport. ExPivot's local convenience parameter is `DataSource`;
+its `Source` accepts a report provider. `PivotReport.ValueAt(row, column)` reads an immutable
+engine version; detached `PivotDisplayRow` values do not retain that version. The demo SQL
+provider declares full refresh explicitly.
+
+The [follow-up measurements](../../../../verification/2026-10-06-macos-live-report-after/README.md)
+repeat the three report sizes and M3. The original 401,001-row browser reproduction now completes
+200 updates with the unmodified 64-paint history and normal GC. A separate million-record live
+fixture completes 70 updates, and the actual 85 MB million-record CSV loads successfully.
+These are observations of the stated fixtures, not an unlimited memory guarantee. Random
+structural batches, all existing Aggregations/percentage modes and extreme decimal cases are
+checked against fresh computation, including immutable older answers.

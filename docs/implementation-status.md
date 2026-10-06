@@ -879,3 +879,30 @@ Definition of Done judges it, and gates ExGrid; PV-42 and PV-43 judge ExPivot's 
 - **LV-15 is observed only in part**: apply to frame has a spec; the bytes per update on the Server
   host, and the requery and the grid's pass per update in the browser, are not recorded yet.
 
+
+## Live report continuation (2026-10-06)
+
+ADR-0150 to ADR-0153 implement the follow-up to PR #64:
+
+- A Consumer may explicitly vouch for a pushed Window. Default validation, null/repeated-key
+  refusal and withdrawal of the promise remain covered by component tests.
+- Report calculation is independent per report, retaining affected aggregate cells, axis paths
+  and report structure. All existing Aggregations and percentages are compared against fresh
+  computation over random structural batches; exact arithmetic is preserved.
+- ExPivot consumes versioned report Windows through `Source`, with `DataSource` as the local
+  convenience path. Server data stays at the server; full-range Copy, Summary and Details use
+  versioned operations. Baseline loss recovers automatically, and unavailable old versions refuse.
+- Detached display rows/keys and historical text evidence break the old whole-Report retention
+  path. Unchanged display rows skip rendering. Offscreen changes retain their actual highlight
+  time, and a Details menu keeps the version on which it was offered.
+- The demo API owns bounded/expiring report state and explicitly declares its SQL full-refresh
+  capability. Docs Site examples and API prose use the new report source boundary.
+
+The [baseline](../verification/2026-10-06-macos-live-update-costs/README.md),
+[ownership diagnosis](../verification/2026-10-06-macos-pivot-memory/README.md) and
+[implementation measurements](../verification/2026-10-06-macos-live-report-after/README.md)
+record the performance and memory evidence. The original large-report failure is not reproduced
+in 200 normal-GC updates; the million-record CSV and 70-update low-cardinality fixture pass too.
+This does not establish a universal data-size guarantee. Layers 1 and 2 pass locally; final
+browser and Docs Site results are recorded in the implementation measurement directory. The
+full cross-platform/browser suite remains CI's. Feature push and PR await the user's confirmation.

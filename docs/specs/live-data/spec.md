@@ -17,13 +17,13 @@ Decided with the user in the grilling of 2026-10-05, and in the decisions D1 to 
 Continuation Q1, decided with the user on 2026-10-06:
 [ADR-0150](../../adr/0150-a-consumer-can-vouch-for-a-pushed-windows-rows.md) lets a Consumer
 explicitly vouch for a pushed Window with a Row Key, with validation remaining the default.
-It clarifies the source form too. This decision is recorded; implementation is pending.
+It clarifies the source form too. The pushed-Window promise is implemented and covered by key-call tests.
 
 Continuation Q3, decided with the user on 2026-10-06 after the A/B and memory experiments:
 [ADR-0151](../../adr/0151-server-pivots-send-report-windows-and-share-the-local-engine.md)
 chooses server-computed report Windows and changes, with the same incremental engine in the
-browser for local CSV. The server boundary is settled; operations outside the Window and
-immutable row ownership still need their concrete design. The diagnosed
+browser for local CSV. ADR-0152 and ADR-0153 complete operations outside the Window and
+immutable row ownership. The diagnosed
 historical-Report retention must be repaired while preserving ADR-0142.
 
 Continuation Q5 to Q7, decided with the user on 2026-10-06:
@@ -66,9 +66,8 @@ computed once; the row's node, and so its rendered row; and a map of ids, checke
 is made. The family follows it where the ADRs allow. A Row Key names a row across versions and keeps
 its component (ADR-0140). The bundled sources keep a map of keys, take changes by key, requery
 incrementally and vouch that their Windows hold no row twice, so the grid does not walk them
-(ADR-0141). What still does not outlive an update is listed in the tickets: a Window a Consumer
-pushes itself is walked whole each time, and ExPivot builds its cube, its report and every report
-row again on every redraw.
+(ADR-0141). The continuation adds an explicit promise for pushed Windows and retains affected ExPivot
+computation across redraws; the tickets and follow-up measurements record the implementation.
 
 ## Reading ag-grid's source
 
@@ -110,10 +109,10 @@ git -C <scratchpad>/ag-grid rev-parse HEAD   # 0fee5b7b1e839ae23fe860e404042448f
 - [01: Measure what an update costs, end to end](issues/01-measure-what-an-update-costs-end-to-end.md)
   — first; the other two are decided on its numbers.
 - [02: A pushed Window vouches for its rows](issues/02-a-pushed-window-vouches-for-its-rows.md)
-  — decided by ADR-0150, for ExGrid's push form and ExPivot alike; implementation pending.
+  — decided by ADR-0150, for ExGrid's push form and ExPivot alike; implemented and measured.
 - [03: ExPivot keeps its report across live redraws](issues/03-expivot-keeps-its-report-across-live-redraws.md)
   — ADR-0151 decides the shared engine and server Window boundary; ADR-0152 settles API freedom,
-  remote policies and recovery; ADR-0153 completes row ownership and incremental scope. Ready for implementation.
+  remote policies and recovery; ADR-0153 completes row ownership and incremental scope. Implemented; final browser verification is in progress.
 
 ## Numbers for the next decisions
 

@@ -2,6 +2,22 @@ using ExGrid.Data;
 
 namespace ExPivot.Engine;
 
+/// <summary>Items labeled and ordered by the report's culture and registered Order Key policy.</summary>
+/// <param name="Version">The displayed report's version.</param>
+/// <param name="Field">The requested field.</param>
+/// <param name="Search">The optional provider-side search.</param>
+/// <param name="Max">The maximum Items returned.</param>
+public sealed record PivotReportItemsQuery(PivotReportVersion Version, string Field, string? Search = null, int Max = 10_000);
+
+/// <summary>A bounded, already ordered Items listing at one report version.</summary>
+/// <param name="Version">The answered report.</param>
+/// <param name="SourceVersion">Its source version.</param>
+/// <param name="Items">The labeled Items in their declared order.</param>
+/// <param name="Total">How many Items matched before the cap.</param>
+/// <param name="Refusal">A named refusal, if any.</param>
+public sealed record PivotReportItemsResult(PivotReportVersion Version, string SourceVersion,
+    IReadOnlyList<PivotItemInfo> Items, int Total, PivotReportRefusal? Refusal = null);
+
 /// <summary>An inclusive rectangular part of a report selection.</summary>
 /// <param name="Top">First row.</param>
 /// <param name="Left">First column among the query's Columns.</param>

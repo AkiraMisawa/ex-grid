@@ -1,7 +1,7 @@
 @using ExPivot.Components
 @using ExPivot.Engine
 
-<ExPivot Source="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList" ViewportHeight="380" />
+<ExPivot DataSource="_source" @bind-Layout="_layout" @bind-ShowFieldList="_showFieldList" ViewportHeight="380" />
 
 @code {
     private readonly PivotSource _source = PivotSource.From(Sales.Sample(), Sales.Fields);

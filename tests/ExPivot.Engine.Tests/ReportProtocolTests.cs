@@ -101,10 +101,36 @@ public class ReportProtocolTests
         Assert.Equal("BB", result.Rows![0].Labels[0].Text);
         Assert.Equal("1,25", result.Rows[1].Values[0]!.Text);
         Assert.Equal("My Total", result.Rows[2].Labels[0].Text);
+        var remote = PivotReportSource.Fetch(source.Fields, source.Features, source.UpdateMode, source.WindowAsync,
+            reportItems: async (query, ct) => PivotReportJson.Read<PivotReportItemsResult>(PivotReportJson.Write(
+                await source.ItemsAsync(PivotReportJson.Read<PivotReportItemsQuery>(PivotReportJson.Write(query)), ct))));
+        var items = await remote.ItemsAsync(new PivotReportItemsQuery(result.Metadata!.Version, "Label"), TestContext.Current.CancellationToken);
+        Assert.Null(items.Refusal);
+        Assert.Equal(["BB", "A"], items.Items.Select(item => item.Label));
+        Assert.Equal(result.Metadata.SourceVersion, items.SourceVersion);
         var denied = await source.WindowAsync(request with { Settings = settings with {
             OrderKeyPolicies = new Dictionary<string, string> { ["Label"] = "missing" } } }, TestContext.Current.CancellationToken);
         Assert.Equal(PivotReportRefusalKind.UnknownOrderKeyPolicy, denied.Refusal!.Kind);
         Assert.Equal("Label", denied.Refusal.Field);
+    }
+
+    [Fact]
+    public async Task ADR0153_unchanged_child_label_keeps_the_current_parent_spelling_in_details()
+    {
+        var fields = EntryFields().Text("Child", _ => "child");
+        var data = PivotSource.From<Entry>([new(1, "Parent", 1m)], fields);
+        await using var source = PivotReportSource.From(data);
+        var client = new PivotReportClient(source);
+        var layout = EntryLayout() with { Rows = [new("Label"), new("Child")] };
+        var ct = TestContext.Current.CancellationToken;
+        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
+        var before = client.Current!.Rows.Single(row => row.RowPath.Count == 2);
+        data.Apply(fields.Batch(changed: [new(1, "PARENT", 1m)]));
+        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(0, 10), cancellationToken: ct));
+        var after = client.Current!.Rows.Single(row => row.RowPath.Count == 2);
+        Assert.Equal("Parent", before.RowPath[0].Item.Value);
+        Assert.Equal("PARENT", after.RowPath[0].Item.Value);
+        Assert.Equal(before.Labels, after.Labels);
     }
 
     [Fact]
@@ -181,6 +207,168 @@ public class ReportProtocolTests
             cancellationToken: TestContext.Current.CancellationToken));
         Assert.Equal(PivotReportRefusalKind.InvalidResponse, client.Refusal!.Kind);
         Assert.Null(client.Current);
+    }
+
+    [Fact]
+    public async Task ADR0152_remote_operations_reject_answers_for_a_different_report_version()
+    {
+        var requested = new PivotReportVersion("selected");
+        var wrong = new PivotReportVersion("latest");
+        var source = PivotReportSource.Fetch([], PivotSourceFeatures.All, PivotReportUpdateMode.FullRefresh,
+            (request, _) => ValueTask.FromResult(PivotReportUpdate.Complete(request, Metadata("x"), [])),
+            copy: (_, _) => ValueTask.FromResult(new PivotReportCopyResult(wrong, [])),
+            summary: (_, _) => ValueTask.FromResult(new PivotReportSummaryResult(wrong, default, default, default, false, null, "")),
+            details: (_, _) => ValueTask.FromResult(new PivotReportDetailsResult(wrong, null)));
+        var ct = TestContext.Current.CancellationToken;
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.CopyAsync(new(requested, [], []), ct)).Refusal!.Kind);
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.SummaryAsync(new(requested, [], []), ct)).Refusal!.Kind);
+        Assert.Equal(PivotReportRefusalKind.InvalidResponse, (await source.DetailsAsync(new(requested, DisplayRow("A", 1m).Key, -1), ct)).Refusal!.Kind);
+    }
+
+    [Theory]
+    [InlineData(PivotReportForm.Compact, PivotShowValuesAs.NoCalculation, PivotAxis.Columns)]
+    [InlineData(PivotReportForm.Outline, PivotShowValuesAs.PercentOfGrandTotal, PivotAxis.Rows)]
+    [InlineData(PivotReportForm.Tabular, PivotShowValuesAs.PercentOfColumnTotal, PivotAxis.Columns)]
+    [InlineData(PivotReportForm.Tabular, PivotShowValuesAs.PercentOfRowTotal, PivotAxis.Rows)]
+    public async Task ADR0151_serialized_windows_match_fresh_engine_report_forms_and_percentages(
+        PivotReportForm form, PivotShowValuesAs show, PivotAxis axis)
+    {
+        var data = PivotSource.From(Pivot.Sales, Pivot.Fields);
+        await using var source = PivotReportSource.From(data);
+        var layout = new PivotLayout { Rows = [new("Region"), new("Product")], Columns = [new("Online")],
+            Values = [new("Amount") { ShowValuesAs = show }, new("Quantity", PivotAggregation.CountNumbers)],
+            Form = form, ValuesAxis = axis, RepeatItemLabels = true };
+        var expected = Pivot.Report(layout, options: new() { Culture = System.Globalization.CultureInfo.InvariantCulture });
+        var request = new PivotReportRequest("forms", layout, PivotReportSettings.Invariant, new(1, 3));
+        var actual = PivotReportJson.Read<PivotReportUpdate>(PivotReportJson.Write(await source.WindowAsync(request, TestContext.Current.CancellationToken)));
+        Assert.Equal(expected.Rows.Count, actual.Metadata!.RowCount);
+        Assert.Equal(expected.HeaderSpans, actual.Metadata.HeaderSpans);
+        Assert.Equal(expected.ValueColumns.Select(c => (c.Name, c.Header, c.Role, c.ValueField)),
+            actual.Metadata.ValueColumns.Select(c => (c.Name, c.Header, c.Role, c.ValueField)));
+        for (var i = 0; i < actual.Rows!.Count; i++)
+        {
+            var row = expected.Rows[i + 1];
+            Assert.Equal(row.Key, actual.Rows[i].Key);
+            Assert.Equal(row.Labels, actual.Rows[i].Labels);
+            for (var col = 0; col < expected.ValueColumns.Count; col++)
+            {
+                var value = expected.ValueAt(row, col);
+                Assert.Equal(value?.Text, actual.Rows[i].ValueAt(col)?.Text);
+                Assert.Equal(value?.Exact, actual.Rows[i].ValueAt(col)?.Exact);
+                Assert.Equal(value?.Number, actual.Rows[i].ValueAt(col)?.Number);
+                Assert.Equal(value?.Error, actual.Rows[i].ValueAt(col)?.Error);
+            }
+        }
+        var client = new PivotReportClient(PivotReportSource.Fetch(data.Fields, data.Features, source.UpdateMode,
+            async (q, ct) => PivotReportJson.Read<PivotReportUpdate>(PivotReportJson.Write(await source.WindowAsync(q, ct)))));
+        Assert.True(await client.ReadAsync(layout, PivotReportSettings.Invariant, new(1, 3), cancellationToken: TestContext.Current.CancellationToken), client.Refusal?.Message);
+    }
+
+    [Fact]
+    public async Task ADR0152_copy_summary_items_and_details_round_trip_without_rebinding_or_boxing_decimal_as_double()
+    {
+        var data = PivotSource.From(Pivot.Sales, Pivot.Fields);
+        await using var source = PivotReportSource.From(data);
+        var ct = TestContext.Current.CancellationToken;
+        var window = await source.WindowAsync(new("first", Pivot.RowsBy("Region"), PivotReportSettings.Invariant, new(0, 1)), ct);
+        var version = window.Metadata!.Version;
+        string[] columns = [window.Metadata.ValueColumns[0].Name];
+        var copyRequest = new PivotReportCopyQuery(version, columns, [new(1, 0, 3, 0)]);
+        var copy = PivotReportJson.Read<PivotReportCopyResult>(PivotReportJson.Write(await source.CopyAsync(
+            PivotReportJson.Read<PivotReportCopyQuery>(PivotReportJson.Write(copyRequest)), ct)));
+        Assert.Equal(new[] { "10", "90", "5" }, copy.Blocks[0].Rows.Select(r => r[0].Raw));
+        var summary = PivotReportJson.Read<PivotReportSummaryResult>(PivotReportJson.Write(await source.SummaryAsync(new(version, columns, [new(1, 0, 3, 0)]), ct)));
+        Assert.Equal(105m, summary.Sum.Exact);
+        Assert.Equal(3, summary.Counts.Numbers);
+        var query = new PivotReportDetailsQuery(version, window.Rows![0].Key, 0, 0, 10);
+        var details = PivotReportJson.Read<PivotReportDetailsResult>(PivotReportJson.Write(await source.DetailsAsync(
+            PivotReportJson.Read<PivotReportDetailsQuery>(PivotReportJson.Write(query)), ct)));
+        Assert.Equal(3, details.Page!.Total);
+        Assert.All(details.Page.Records, row => Assert.Null(row.Record));
+        Assert.Equal(100m, details.Page.Records[0].Values[3]);
+        var items = PivotReportJson.Read<PivotItemPage>(PivotReportJson.Write(await source.RawItemsAsync(
+            new("Region", window.Metadata.SourceVersion), ct)));
+        Assert.Equal(4, items.Total);
+    }
+
+    [Fact]
+    public async Task ADR0153_disposing_the_report_does_not_dispose_its_provider_and_rejects_more_report_work()
+    {
+        var fields = EntryFields();
+        var data = PivotSource.From<Entry>([new(1, "A", 1m)], fields);
+        var source = PivotReportSource.From(data);
+        var ct = TestContext.Current.CancellationToken;
+        var first = await source.WindowAsync(new("first", EntryLayout(), PivotReportSettings.Invariant, new(0, 1)), ct);
+        await source.DisposeAsync();
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await source.CopyAsync(new(first.Metadata!.Version, [], []), ct));
+        data.Apply(fields.Batch(changed: [new(1, "A", 2m)]));
+        await using var other = PivotReportSource.From(data);
+        Assert.Equal(2m, (await other.WindowAsync(new("next", EntryLayout(), PivotReportSettings.Invariant, new(0, 1)), ct)).Rows![0].Values[0]!.Exact);
+    }
+
+    [Fact]
+    public async Task ADR0152_published_operations_do_not_wait_for_a_new_report_computation()
+    {
+        var data = PivotSource.From<Entry>([new(1, "A", 10m)], EntryFields());
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var provider = PivotSource.Fetch(data.Fields, data.Features, async (query, ct) =>
+        {
+            if (++calls > 1) { entered.SetResult(); await release.Task.WaitAsync(ct); }
+            return await data.AggregateAsync(query, ct);
+        }, data.ItemsAsync, data.DetailsAsync);
+        await using var source = PivotReportSource.From(provider);
+        var ct = TestContext.Current.CancellationToken;
+        var request = new PivotReportRequest("first", EntryLayout(), PivotReportSettings.Invariant, new(0, 1));
+        var first = await source.WindowAsync(request, ct);
+        var newer = source.WindowAsync(request with { RequestId = "next", RefreshData = true }, ct).AsTask();
+        await entered.Task.WaitAsync(ct);
+        try
+        {
+            var version = first.Metadata!.Version;
+            string[] columns = [first.Metadata.ValueColumns[0].Name];
+            var copying = source.CopyAsync(new(version, columns, [new(0, 0, 1, 0)]), ct);
+            Assert.True(copying.IsCompleted, "A published report must be readable while its successor waits for data.");
+            Assert.Equal("10", (await copying).Blocks[0].Rows[1][0].Raw);
+            Assert.Equal(20m, (await source.SummaryAsync(new(version, columns, [new(0, 0, 1, 0)]), ct)).Sum.Exact);
+            var details = await source.DetailsAsync(new(version, first.Rows![0].Key, 0), ct);
+            Assert.Equal(first.Metadata.SourceVersion, details.Page!.SourceVersion);
+        }
+        finally { release.TrySetResult(); await newer; }
+    }
+
+    private sealed class ManualClock : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = new(2026, 10, 6, 12, 0, 0, TimeSpan.Zero);
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    [Fact]
+    public async Task ADR0153_scrolling_keeps_offscreen_changes_at_their_data_change_time()
+    {
+        var fields = EntryFields();
+        var data = PivotSource.From<Entry>([new(1, "A", 10m), new(2, "B", 20m)], fields);
+        var clock = new ManualClock();
+        await using var source = PivotReportSource.From(data, timeProvider: clock);
+        var client = new PivotReportClient(source);
+        var ct = TestContext.Current.CancellationToken;
+        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
+        clock.Now += TimeSpan.FromMilliseconds(100);
+        var changedAt = clock.Now;
+        data.Apply(fields.Batch(changed: [new(2, "B", 25m)]));
+        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
+        clock.Now += TimeSpan.FromMilliseconds(100);
+        data.Apply(fields.Batch(changed: [new(1, "A", 11m)]));
+        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
+        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(1, 1), cancellationToken: ct);
+        Assert.Equal(changedAt, client.Current!.Rows[0].ChangedAt[0]);
+        var row = client.Current.Rows[0];
+        clock.Now += TimeSpan.FromMilliseconds(100);
+        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(0, 1), cancellationToken: ct);
+        await client.ReadAsync(EntryLayout(), PivotReportSettings.Invariant, new(1, 1), cancellationToken: ct);
+        Assert.Equal(changedAt, client.Current!.Rows[0].ChangedAt[0]);
+        Assert.Equal(25m, row.Values[0]!.Exact);
     }
 
     private static PivotDisplayRow DisplayRow(string label, decimal value) => new(

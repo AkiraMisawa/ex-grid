@@ -1,6 +1,6 @@
 # 01: Measure what an update costs, end to end
 
-Status: ready-for-human — measurements recorded; tickets 02 and 03 await the user's decisions
+Status: done — baseline measurements recorded; follow-up decisions are ADR-0150 to ADR-0153
 
 **What to do:** find out, step by step, where the time of one live update goes, in ExGrid and in
 ExPivot, so that tickets 02 and 03 are decided on numbers (CLAUDE.md, "Measure before claiming

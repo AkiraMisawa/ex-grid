@@ -6,7 +6,7 @@ namespace ExPivot.Engine;
 /// A Pivot Report (ADR-0059/0060): the rows, the label columns, the value columns and the
 /// Header Group spans over them, laid out from a <see cref="PivotCube"/> under a
 /// <see cref="PivotLayout"/>. Immutable. A value cell is computed when it is first read
-/// (<see cref="PivotReportRow.ValueAt"/>), so a report of many rows costs its rows, not its
+/// (<see cref="ValueAt"/>), so a report of many rows costs its rows, not its
 /// cells.
 /// </summary>
 public sealed class PivotReport
@@ -34,14 +34,6 @@ public sealed class PivotReport
         HeaderTierCount = headerTierCount;
         Rows = rows;
         ValueCaptions = reader.Values.Select(v => v.Caption).ToArray();
-    }
-
-    /// <summary>Makes rows [<paramref name="from"/>, <paramref name="to"/>) this report's — every
-    /// row before the report is handed out, a piece at a time when it is laid out in slices.</summary>
-    internal void Attach(int from, int to)
-    {
-        for (var i = from; i < to; i++)
-            Rows[i].Attach(this);
     }
 
     /// <summary>The cube the report was laid out from.</summary>
@@ -114,7 +106,7 @@ public sealed class PivotReport
     private async ValueTask<bool> SameRowsAsync(PivotReport other, Slicer slicer)
     {
         var same = true;
-        await slicer.ForAsync(Rows.Count, (from, to) => same = SameRows(other, from, to), weight: 2).ConfigureAwait(false);
+        await slicer.ForAsync(Rows.Count, (from, to) => same = same && SameRows(other, from, to), weight: 2).ConfigureAwait(false);
         return same;
     }
 
@@ -150,18 +142,18 @@ public sealed class PivotReport
     public IReadOnlyList<(string Field, PivotItemKey Item)> RowPath(PivotReportRow row)
     {
         ArgumentNullException.ThrowIfNull(row);
-        return Path(row.Node, Layout.Rows);
+        return Path(row.Node, Layout.Rows, rows: true);
     }
 
     /// <summary>The Items a value column stands for, outermost first.</summary>
     public IReadOnlyList<(string Field, PivotItemKey Item)> ColumnPath(int valueColumn)
-        => Path(ValueColumns[valueColumn].Node, Layout.Columns);
+        => Path(ValueColumns[valueColumn].Node, Layout.Columns, rows: false);
 
-    private static IReadOnlyList<(string, PivotItemKey)> Path(AxisNode node, IReadOnlyList<PivotFieldPlacement> placements)
+    private IReadOnlyList<(string, PivotItemKey)> Path(AxisNode node, IReadOnlyList<PivotFieldPlacement> placements, bool rows)
     {
         var path = new List<(string, PivotItemKey)>();
         for (var at = node; at.Item is not null; at = at.Parent!)
-            path.Add((placements[at.Level].Field, at.Item.PublicKey));
+            path.Add((placements[at.Level].Field, Cube.NodeOf(at, rows).Item!.PublicKey));
         path.Reverse();
         return path;
     }
@@ -180,7 +172,7 @@ public sealed class PivotReport
     public PivotDetailsQuery DetailsQuery(PivotReportRow row, int valueColumn, int start = 0, int count = int.MaxValue)
     {
         ArgumentNullException.ThrowIfNull(row);
-        if (!ReferenceEquals(row.Report, this))
+        if (!Rows.Any(held => ReferenceEquals(held, row)))
             throw new ArgumentException("The row belongs to another report.", nameof(row));
         if (valueColumn < -1 || valueColumn >= ValueColumns.Count)
             throw new ArgumentOutOfRangeException(nameof(valueColumn), valueColumn, "Not a value column of the report, nor −1.");
@@ -204,6 +196,19 @@ public sealed class PivotReport
             return column.ValueField;
         return _reader.Values.Length == 1 ? 0 : -1;
     }
+
+    /// <summary>The value of a row in this immutable report version, computed when requested.</summary>
+    public PivotValue? ValueAt(PivotReportRow row, int valueColumn)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if ((uint)valueColumn >= (uint)ValueColumns.Count)
+            throw new ArgumentOutOfRangeException(nameof(valueColumn));
+        return Compute(row, valueColumn);
+    }
+
+    internal PivotReport WithCube(PivotCube cube)
+        => new(cube, Layout, Options, new CellReader(cube, _reader.Values), LabelColumns, ValueColumns,
+            HeaderSpans, HeaderTierCount, Rows);
 
     internal PivotValue? Compute(PivotReportRow row, int valueColumn)
     {
@@ -235,15 +240,11 @@ internal sealed record ValueFieldPlan(
 
 /// <summary>
 /// One row of a Pivot Report (ADR-0060): what it stands for, its labels — one per label column —
-/// and its value cells, computed when first read. The report is the row's owner; the row's
-/// identity is the grid's change signal (ADR-0003), and a new report is new rows.
+/// and its labels. Unchanged rows are shared by immutable report versions (ADR-0153).
+/// Read values through the report version; a structural row owns no report or cell cache.
 /// </summary>
 public sealed class PivotReportRow
 {
-    private static readonly object NoValue = new();
-    private object?[]? _cells;
-    private PivotReport? _report;
-
     internal PivotReportRow(PivotRowRole role, AxisNode node, int valueField, bool carriesValues, PivotRowLabel[] labels)
     {
         Role = role;
@@ -272,27 +273,8 @@ public sealed class PivotReportRow
     /// bottom or off, and for an Item's row whose values stand in rows beneath it.</summary>
     public bool CarriesValues { get; }
 
-    /// <summary>The report the row belongs to.</summary>
-    public PivotReport Report => _report ?? throw new InvalidOperationException("The row has not been attached to its report.");
-
     internal AxisNode Node { get; }
 
-    internal void Attach(PivotReport report) => _report = report;
-
-    /// <summary>The value in <paramref name="valueColumn"/>, or null for an empty cell. Computed on
-    /// the first read and kept.</summary>
-    public PivotValue? ValueAt(int valueColumn)
-    {
-        var report = Report;
-        _cells ??= new object?[report.ValueColumns.Count];
-        var cell = _cells[valueColumn];
-        if (cell is null)
-        {
-            cell = (object?)report.Compute(this, valueColumn) ?? NoValue;
-            _cells[valueColumn] = cell;
-        }
-        return cell as PivotValue;
-    }
 }
 
 /// <summary>One label cell of a row (ADR-0060).</summary>

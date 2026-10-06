@@ -72,6 +72,18 @@ internal sealed class AggregationPass
 
     public PivotQuery Query => _query;
 
+    internal HashSet<int> ChangedLeaves { get; } = [];
+    internal IReadOnlyList<ItemSpace> Axes => _axis;
+
+    internal async ValueTask<PartColumns[]> PartsOfAsync(int[] leaves, Slicer slicer)
+    {
+        var result = new PartColumns[_values.Length];
+        for (var v = 0; v < result.Length; v++)
+            result[v] = await _values[v].FinishedAsync(leaves, leaves.Length, slicer).ConfigureAwait(false);
+        return result;
+    }
+
+
     /// <summary>The Snapshot the pass has read: the one it began on, or the one a batch made.</summary>
     public Snapshot Snapshot => _snapshot;
 
@@ -390,6 +402,8 @@ internal sealed class AggregationPass
         // batches that add — folds additions alone.
         if (!_keepRows && change.Removed.Count > 0)
             return false;
+        ChangedLeaves.Clear();
+        foreach (var axis in _axis) axis.ChangedItems.Clear();
         var before = change.Before;
         var after = change.After;
         var marked = new HashSet<int>[_values.Length];
@@ -410,6 +424,7 @@ internal sealed class AggregationPass
             _leafOf[number] = -1;
             if (leaf < 0)
                 continue;
+            ChangedLeaves.Add(leaf);
             _leaves.Records[leaf]--;
             for (var v = 0; v < _values.Length; v++)
             {
@@ -442,6 +457,8 @@ internal sealed class AggregationPass
         {
             _added = null;
         }
+
+        ChangedLeaves.UnionWith(added);
 
         // 3. The leaves whose parts cannot be subtracted, from their rows. An exact sum is an
         // integer, which subtraction and addition keep exactly; one past 128 bits is a double,
@@ -564,6 +581,30 @@ internal sealed class AggregationPass
             if (leaf >= 0)
                 Chain(leaf, number);
         }
+    }
+
+    internal async ValueTask PrepareChainsAsync(Slicer slicer)
+    {
+        if (!_keepRows || _next is not null) return;
+        _next = new int[_leafOf.Length];
+        EnsureChains(_leaves.Count);
+        await slicer.ForAsync(_numbered, (from, to) =>
+        {
+            for (var number = from; number < to; number++)
+                if (_leafOf[number] is var leaf and >= 0) Chain(leaf, number);
+        }).ConfigureAwait(false);
+    }
+
+    // A fresh pass first encounters a leaf at its first surviving physical record.
+    // Stable leaf IDs alone cannot order floating-point merges after records move.
+    internal int FirstRecord(int leaf)
+    {
+        if (!_keepRows) return leaf;
+        if (_next is null) MakeChains();
+        if (leaf >= _first.Length) return int.MaxValue;
+        for (var row = _first[leaf]; row >= 0; row = _next![row])
+            if (_leafOf[row] == leaf) return row;
+        return int.MaxValue;
     }
 
     private void EnsureChains(int leaves)

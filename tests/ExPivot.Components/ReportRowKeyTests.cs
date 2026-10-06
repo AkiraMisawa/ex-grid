@@ -152,7 +152,9 @@ public class ReportRowKeyTests : PivotTestContext
         Assert.Equal(first.Rows.Count, second.Rows.Count);
         for (var i = 0; i < first.Rows.Count; i++)
         {
-            Assert.NotSame(first.Rows[i], second.Rows[i]);
+            if (first.Rows[i].Values.SequenceEqual(second.Rows[i].Values))
+                Assert.Same(first.Rows[i], second.Rows[i]);
+            else Assert.NotSame(first.Rows[i], second.Rows[i]);
             Assert.Equal(key(first.Rows[i]), key(second.Rows[i]));
         }
         Assert.Equal(first.Rows.Count, first.Rows.Select(row => key(row)).Distinct().Count());

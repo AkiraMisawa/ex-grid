@@ -106,8 +106,8 @@ internal sealed class PivotLabelSizing
     private readonly Dictionary<PivotRowKey, double[]> _rows = [];
     private SortedDictionary<double, int>[] _widths = [];
 
-    internal IReadOnlyList<double> Widths(PivotReport report, PivotReportLabelMetrics metrics,
-        IReadOnlyList<PivotReportRow> labelChanges, IReadOnlyList<PivotRowKey> removed, bool reset)
+    internal async ValueTask<IReadOnlyList<double>> WidthsAsync(PivotReport report, PivotReportLabelMetrics metrics,
+        IReadOnlyList<PivotReportRow> labelChanges, IReadOnlyList<PivotRowKey> removed, bool reset, Slicer slicer)
     {
         if (reset || _metrics is null || !_metrics.SameAs(metrics) || _widths.Length != report.LabelColumns.Count)
         {
@@ -115,7 +115,10 @@ internal sealed class PivotLabelSizing
             _widths = Enumerable.Range(0, report.LabelColumns.Count).Select(_ => new SortedDictionary<double, int>()).ToArray();
             _metrics = metrics;
             foreach (var row in report.Rows)
+            {
                 Add(row, metrics);
+                if (slicer.Done(4)) await slicer.PauseAsync().ConfigureAwait(false);
+            }
         }
         else
         {
@@ -125,6 +128,7 @@ internal sealed class PivotLabelSizing
             {
                 Remove(row.Key);
                 Add(row, metrics);
+                if (slicer.Done(4)) await slicer.PauseAsync().ConfigureAwait(false);
             }
         }
         return Array.AsReadOnly(_widths.Select(column => column.Count == 0 ? 0d : column.Last().Key).ToArray());

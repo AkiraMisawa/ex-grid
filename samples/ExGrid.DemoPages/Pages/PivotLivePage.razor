@@ -49,7 +49,7 @@
         updates on: twenty trades of its database changed four times a second, and one in eight
         ticks a trade cancelled and another booked. Its SignalR hub says each new Source Version,
         and the page passes it on (<code>source.NotifyChanged(version)</code>); ExPivot asks the
-        server again for the whole answer through <code>PivotSource.Fetch</code>, as on /pivot-db.
+        current report Window through <code>PivotReportSource.Fetch</code>, as on /pivot-db.
     </li>
 </ul>
 <p>
@@ -216,9 +216,9 @@
     #endregion
 
     #region The code: server
-    // The server's trades through PivotSource.Fetch (DemoServerPivot, as on /pivot-db). Then the
+    // The server's report through PivotReportSource.Fetch (DemoServerPivot, as on /pivot-db). Then the
     // server is asked to keep changing them, and the page passes on what its hub says.
-    private FetchingPivotSource? _server;
+    private FetchingPivotReportSource? _server;
     private HubConnection? _hub;
     private Task? _hubStarting;
     private bool _liveAsked;
@@ -260,7 +260,7 @@
     // ExPivot listens to its source's Changed, gathers the changes and redraws at most every
     // RedrawInterval from the newest data, and marks each value whose painted text changed for
     // ChangeHighlightDuration (ADR-0067/0068). Both are the defaults, written out.
-    private RenderFragment LocalPivot => @<ExPivot Source="_local" @bind-Layout="_localLayout"
+    private RenderFragment LocalPivot => @<ExPivot DataSource="_local" @bind-Layout="_localLayout"
                                                     RedrawInterval="RedrawInterval" ChangeHighlightDuration="Highlight"
                                                     PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                     Culture="Culture" ViewportHeight="300" />;
@@ -372,6 +372,7 @@
         }
         if (_hub is not null)
             await _hub.DisposeAsync();
+        if (_server is not null) await _server.DisposeAsync();
     }
     #endregion
 }

@@ -134,7 +134,7 @@ var report = PivotEngine.Report(cube, layout,
     new PivotOptions { Culture = CultureInfo.GetCultureInfo("en-US") });
 
 report.Rows[0].Labels[0].Text;    // the first region
-report.Rows[^1].ValueAt(0)!.Text; // the grand total of January
+report.ValueAt(report.Rows[^1], 0)!.Text; // the grand total of January
 ```
 
 A layout that changes only how the result is laid out — collapsing an Item, sorting, the form, the
@@ -156,6 +156,30 @@ var report = await PivotEngine.ReportAsync(cube, layout, options, slicing: null,
 
 Over records in memory, `PivotEngine.Compute(records, fields, layout)` does all of it in one step,
 on the calling thread.
+
+## Local and remote report Windows
+
+`PivotReportSource.From(data)` owns one independent report computation over a `PivotSource`.
+`WindowAsync` answers the requested rows and complete report metadata, or changed rows against
+its named baseline. Published reports are immutable; ordinary Snapshot batches update affected
+leaves, totals, axis paths and report portions while sharing unchanged structure. A data provider
+can serve independent report computations without one layout replacing another's held state.
+
+`PivotReportSource.Fetch` carries the application's Window, Items, Copy, Summary and Details
+transports. `PivotReportJson` preserves exact values, layout, culture, display words and versions.
+The server retains its `LocalPivotReportSource`; the browser receives detached display rows,
+not all aggregate leaves. `PivotReportClient` checks replies and recovers a missing baseline with
+a complete Window. Failed recovery retains the last complete report as stale.
+
+Copy, Summary and Details name a Report Version, including selections outside the Window. The
+local adapter retains two versions by default (`versionsKept`); an unavailable version refuses
+instead of switching data. The Consumer manages transport and server state lifetime. Remote
+Order Keys name server-registered policies; culture does not select display words.
+
+`UpdateMode` distinguishes incremental Snapshot calculations from providers that can only
+refresh their complete aggregate answer. Both use the same report semantics and Window boundary.
+The low-level `PivotSource.Fetch` API below remains useful behind a server report calculation;
+using it alone does not move report construction to the server.
 
 ## Asking a Pivot Source
 

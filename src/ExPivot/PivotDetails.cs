@@ -71,7 +71,10 @@ public sealed class PivotDetails
         if (result.Version != Query.Version)
             throw new InvalidOperationException("Show Details answered another Report Version (ADR-0152).");
         if (result.Refusal is { } refusal)
-            return PivotDetailPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(SourceVersion));
+            return refusal.SourceRefusal is { } sourceRefusal ? PivotDetailPage.Refused(sourceRefusal)
+                : refusal.Kind == PivotReportRefusalKind.ReportVersionNotHeld
+                    ? PivotDetailPage.Refused(PivotSourceRefusal.SourceVersionNotHeld(SourceVersion))
+                    : throw new InvalidOperationException(refusal.Message);
         return result.Page ?? throw new InvalidOperationException("Show Details returned neither a page nor a refusal.");
     }
 }

@@ -59,7 +59,8 @@ public class LiveDataTests : PivotTestContext
 
         // And asked for once, from the newest, when the interval has passed.
         Clock.Advance(TimeSpan.FromMilliseconds(1));
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         cut.WaitForAssertion(() => Assert.Equal("East | 183", RowTexts(cut)[0]));
         Assert.Equal(source.Questions[0].Query, source.Questions[2].Query);
 
@@ -130,7 +131,8 @@ public class LiveDataTests : PivotTestContext
         Assert.Equal(2, source.Questions.Count);
 
         Clock.Advance(Interval);
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 183", RowTexts(cut)[0]));
     }
@@ -421,10 +423,11 @@ public class LiveDataTests : PivotTestContext
         await cut.InvokeAsync(layoutQuestion.AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 180 | 18", RowTexts(cut)[0]));
         Assert.Single(told);
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(ChangeHighlightTests.MarkedTexts(cut));
 
         // The change is asked for after it: the whole answer, for the user's layout.
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         Assert.Equal(layoutQuestion.Query, source.Questions[2].Query);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 181 | 18", RowTexts(cut)[0]));
@@ -445,12 +448,13 @@ public class LiveDataTests : PivotTestContext
         await TickFieldAsync(cut, "Quantity", true);
 
         Assert.True(live.IsCancelled);
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(3, source.Questions.Count);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 181 | 18", RowTexts(cut)[0]));
         Assert.Single(told);
         // A new layout marks nothing, even with new data in the same redraw.
-        Assert.Null(Grid(cut).Instance.CellChangedAt);
+        Assert.Empty(ChangeHighlightTests.MarkedTexts(cut));
 
         await cut.InvokeAsync(live.AnswerAsync);
         Clock.Advance(TimeSpan.FromSeconds(1));
@@ -471,8 +475,9 @@ public class LiveDataTests : PivotTestContext
         await cut.FindAll(".ex-pivot-toggle")[0].ClickAsync(new MouseEventArgs());
 
         Assert.True(live.IsCancelled);
-        Assert.Equal("+East | 180", RowTexts(cut)[0]);
-        cut.WaitForAssertion(() => Assert.Equal(3, source.Questions.Count));
+        cut.WaitForAssertion(() => Assert.Equal("+East | 180", RowTexts(cut)[0]));
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(3, source.Questions.Count);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("+East | 181", RowTexts(cut)[0]));
         Assert.Equal(["181", "286"], ChangeHighlightTests.MarkedTexts(cut));
@@ -629,6 +634,7 @@ public class LiveDataTests : PivotTestContext
         await cut.Find(".ex-pivot-refresh-button").ClickAsync(new MouseEventArgs());
 
         Assert.True(layoutQuestion.IsCancelled);
+        await source.QuestionAsync(2, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal(layoutQuestion.Query, source.Questions[2].Query);
         await cut.InvokeAsync(source.Questions[2].AnswerAsync);
         cut.WaitForAssertion(() => Assert.Equal("East | 180 | 18", RowTexts(cut)[0]));

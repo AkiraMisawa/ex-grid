@@ -552,7 +552,7 @@ public partial class ExPivot
 
     private IEnumerable<GridCommand> ContextCommandsFor(ContextMenuContext<PivotDisplayRow> context)
     {
-        if (_report is not { } report || (_state is null || !_state.Rows.Contains(context.Row)))
+        if (_report is not { } report || (_state is null || !_state.Rows.Contains(context.Row)) || _reportSource is not { } source)
             return [];
         var layout = report.Layout;
         var row = context.Row;
@@ -599,7 +599,7 @@ public partial class ExPivot
             // Show Details is always offered: the tab, the dialog or the Consumer takes the
             // records (ADR-0059). An empty cell has none to show.
             commands.Add(new GridCommand(PivotCommandIds.ShowDetails, row.ValueAt(valueColumn) is not null,
-                () => ShowDetailsAsync(row, valueColumn)));
+                () => ShowDetailsAsync(report, source, row, valueColumn)));
             if (vf >= 0)
             {
                 // The panel opens in the pane, under the Value Field's entry: offered while the

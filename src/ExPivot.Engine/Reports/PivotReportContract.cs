@@ -26,6 +26,8 @@ public sealed record PivotReportSettings
 {
     /// <summary>Invariant numbers and English words.</summary>
     public static PivotReportSettings Invariant { get; } = new();
+    /// <summary>How long data-change evidence must remain available for cells first requested after the change.</summary>
+    public TimeSpan ChangeHighlightDuration { get; init; } = TimeSpan.FromSeconds(1);
     /// <summary>The .NET culture name; the empty name is invariant.</summary>
     public string CultureName { get; init; } = "";
     /// <summary>Resolved word overrides, by PivotWords or PivotDateWords identifier.</summary>
@@ -64,6 +66,8 @@ public sealed record PivotReportRequest(string RequestId, PivotLayout Layout, Pi
 {
     /// <summary>Whether this gesture can mark data changes; layout and display-setting gestures cannot.</summary>
     public bool MarkChanges { get; init; } = true;
+    /// <summary>Explicit Refresh/Retry asks a full-refresh provider again even without a notification.</summary>
+    public bool RefreshData { get; init; }
 }
 
 /// <summary>A detached value cell, including its exact value and shown text.</summary>
@@ -179,7 +183,11 @@ public enum PivotReportRefusalKind
 /// <param name="Kind">The machine-readable reason.</param>
 /// <param name="Message">The explanation suitable for a Consumer to present.</param>
 /// <param name="Field">The offending field where relevant.</param>
-public sealed record PivotReportRefusal(PivotReportRefusalKind Kind, string Message, string? Field = null);
+public sealed record PivotReportRefusal(PivotReportRefusalKind Kind, string Message, string? Field = null)
+{
+    /// <summary>The provider's typed refusal, when computation was refused by the source.</summary>
+    public PivotSourceRefusal? SourceRefusal { get; init; }
+}
 
 /// <summary>A replacement at one zero-based position within the requested Window.</summary>
 /// <param name="Offset">Its position within the Window.</param>

@@ -12,18 +12,20 @@ namespace ExPivot.Components;
 public partial class ExPivot
 {
     /// <summary>
-    /// How ExPivot shares the thread while it makes an answer's cube and lays out its report
+    /// How the local DataSource calculation shares the thread while it makes an answer's cube and lays out its report
     /// (ADR-0066, PV-40): in slices of about 30 ms, yielding between them, so that a browser keeps
     /// painting, the report on screen stays as it was — under the loading indication — until the
     /// new one is complete, and a newer gesture supersedes the work. A quick layout yields nothing.
     /// Null, the default, is <see cref="PivotSlicing.Default"/>; a test hands in its own to count
-    /// the yields, or to hold the work at one.
+    /// the yields, or to hold the work at one. An explicit Source owns its calculation policy.
     /// </summary>
     [Parameter] public PivotSlicing? Slicing { get; set; }
 
     private PivotReportSource? _source;
     private PivotSource? _dataSource;
     private LocalPivotReportSource? _ownedSource;
+    private TimeProvider? _ownedClock;
+    private PivotSlicing? _ownedSlicing;
     private PivotReportClient? _client;
     private PivotReportState? _state;
     private PivotReportWindow _wantedWindow = new(0, 64);
@@ -36,10 +38,13 @@ public partial class ExPivot
             _dataSource = null;
             return reports;
         }
-        if (_ownedSource is null || !ReferenceEquals(_dataSource, DataSource))
+        if (_ownedSource is null || !ReferenceEquals(_dataSource, DataSource)
+            || !ReferenceEquals(_ownedClock, _time) || !Equals(_ownedSlicing, Pacing))
         {
             var previous = _ownedSource;
             _dataSource = DataSource;
+            _ownedClock = _time;
+            _ownedSlicing = Pacing;
             var next = PivotReportSource.From(DataSource!, timeProvider: _time, slicing: Pacing);
             if (previous is not null)
                 await next.ContinueFromAsync(previous);
@@ -322,18 +327,23 @@ public partial class ExPivot
             var metrics = _metrics.CellMetrics;
             var settings = PivotReportSettings.From(_options) with
             {
+                ChangeHighlightDuration = ChangeHighlightDuration,
                 OrderKeyPolicies = OrderKeyPolicies ?? new Dictionary<string, string>(),
                 LabelMetrics = new(metrics.WideWidthPx, metrics.DigitWidthPx, metrics.NarrowWidthPx,
                     metrics.FullWidthPx, metrics.OtherWidthPx, metrics.CellHorizontalPaddingPx, metrics.ExportGlyphWidths()),
             };
-            var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token, markChanges: kind != Question.Layout);
+            var adopted = await client.ReadAsync(layout, settings, _wantedWindow, _caps.MaxLeaves, asking.Token, markChanges: kind != Question.Layout, refreshData: kind == Question.Data);
             if (_disposed || generation != _generation) return;
             var carried = FinishAsking();
             if (!adopted || client.Current is not { } state)
             {
                 var refusal = client.Refusal ?? new(PivotReportRefusalKind.InvalidResponse, "The report source returned no current Window.");
-                var error = new InvalidOperationException(refusal.Message);
-                FailFor(kind, layout, error);
+                if (refusal.SourceRefusal is { } sourceRefusal)
+                {
+                    if (IsStaleFor(kind, layout)) MarkStale(StaleRefusalOf(sourceRefusal), null, null);
+                    else Refuse(RefusalOf(sourceRefusal));
+                }
+                else FailFor(kind, layout, new InvalidOperationException(refusal.Message));
                 await LandedAsync(carried, null);
                 StateHasChanged();
                 return;
@@ -355,11 +365,14 @@ public partial class ExPivot
             _report = state.Metadata;
             _reportSource = source;
             _shown = layout;
-            _shownAt = Now();
-            _lastError = null;
-            _stale = null;
-            _staleNewest = null;
-            _staleRetryRefreshes = false;
+            if (previous is null || previous.SourceVersion != _report.SourceVersion) _shownAt = Now();
+            if (previous is null || previous.SourceVersion != _report.SourceVersion || kind is Question.Data or Question.Live)
+            {
+                _lastError = null;
+                _stale = null;
+                _staleNewest = null;
+                _staleRetryRefreshes = false;
+            }
             BuildColumns();
             LoadShownItems();
             if (ReferenceEquals(layout, _layout)) _raisePending = false;
@@ -371,7 +384,9 @@ public partial class ExPivot
             // A new version can change selected values outside the current Window.
             if (previous is not null && previous.Version != _report.Version && _grid is { } grid)
                 await grid.RefreshSummaryAsync();
-            await LandedAsync(carried, _report.SourceVersion);
+            if (kind == Question.Layout && carried && previous?.SourceVersion == _report.SourceVersion)
+                await RegatherAsync(true);
+            else await LandedAsync(carried, _report.SourceVersion);
             StateHasChanged();
         }
         catch (OperationCanceledException) when (asking.IsCancellationRequested) { }

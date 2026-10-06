@@ -38,10 +38,15 @@ public partial class ExPivot
     /// Consumer takes them when it listens; otherwise they open in a tab at the report's foot, or in
     /// a dialog when the Consumer asked for one.
     /// </summary>
-    private async Task ShowDetailsAsync(PivotDisplayRow row, int valueColumn)
+    private Task ShowDetailsAsync(PivotDisplayRow row, int valueColumn)
     {
         if (_report is not { } report || (_state is null || !_state.Rows.Contains(row)) || _reportSource is not { } source)
-            return;
+            return Task.CompletedTask;
+        return ShowDetailsAsync(report, source, row, valueColumn);
+    }
+
+    private async Task ShowDetailsAsync(PivotReportMetadata report, PivotReportSource source, PivotDisplayRow row, int valueColumn)
+    {
         if (row.ValueAt(valueColumn) is null)
             return;
         var rowItems = Items(report, row.RowPath);

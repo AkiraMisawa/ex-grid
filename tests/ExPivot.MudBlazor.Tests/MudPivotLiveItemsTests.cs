@@ -87,7 +87,7 @@ public class MudPivotLiveItemsTests : MudPivotTestContext
         await cut.InvokeAsync(() => server.Publish([.. Sales, new Sale("South", "Apples", 1m, 1, true)]));
         cut.WaitForAssertion(() => Assert.Equal(2, server.Items.Count));
 
-        Assert.Equal(cut.Instance.Report!.Cube.SourceVersion, server.Items[1].Query.SourceVersion);
+        Assert.Equal(cut.Instance.Report!.Metadata.SourceVersion, server.Items[1].Query.SourceVersion);
         Assert.NotEqual(server.Items[0].Query.SourceVersion, server.Items[1].Query.SourceVersion);
         Assert.Equal("(Multiple Items)", Summary(cut));
         Assert.Equal(["(Select All)", "East", "North", "West", "(blank)"], Listed(cut));

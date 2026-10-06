@@ -20,7 +20,7 @@ public sealed class PivotReportClient
     /// <summary>Reads the current request and, if its baseline is lost, requests one complete replacement.</summary>
     /// <returns>True if this request was adopted; false for a refusal or an obsolete reply.</returns>
     public async ValueTask<bool> ReadAsync(PivotLayout layout, PivotReportSettings settings, PivotReportWindow window,
-        int maxLeaves = PivotQuery.DefaultMaxLeaves, CancellationToken cancellationToken = default, bool markChanges = true)
+        int maxLeaves = PivotQuery.DefaultMaxLeaves, CancellationToken cancellationToken = default, bool markChanges = true, bool refreshData = false)
     {
         ArgumentNullException.ThrowIfNull(layout);
         ArgumentNullException.ThrowIfNull(settings);
@@ -31,7 +31,7 @@ public sealed class PivotReportClient
         var previous = Current;
         var baseline = previous?.Window == window ? previous.Metadata.Version : null;
         var request = new PivotReportRequest(Guid.NewGuid().ToString("N"), layout, settings, window, baseline, maxLeaves)
-            { MarkChanges = markChanges };
+            { MarkChanges = markChanges, RefreshData = refreshData };
         var recovered = false;
         while (true)
         {

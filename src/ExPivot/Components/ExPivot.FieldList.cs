@@ -65,7 +65,7 @@ public partial class ExPivot
 
         // Filter…'s search, asked of the source when the field has more Items than are listed.
         public int SearchGeneration { get; set; }
-        public PivotItemPage? SearchPage { get; set; }
+        public PivotReportItemsResult? SearchPage { get; set; }
         public SourceProblem? SearchProblem { get; set; }
 
         // Field Settings…
@@ -89,7 +89,7 @@ public partial class ExPivot
     {
         public required long Sequence { get; init; }
 
-        public PivotItemPage? Page { get; set; }
+        public PivotReportItemsResult? Page { get; set; }
 
         public SourceProblem? Problem { get; set; }
 
@@ -100,7 +100,7 @@ public partial class ExPivot
     /// report's Source Version, or why they cannot be — or, while those are on their way, the
     /// newest listed under an earlier version of the same source (<see cref="Updating"/>); none of
     /// these while a first listing is on its way.</summary>
-    private readonly record struct ItemsView(PivotItemPage? Page, SourceProblem? Problem, bool Updating)
+    private readonly record struct ItemsView(PivotReportItemsResult? Page, SourceProblem? Problem, bool Updating)
     {
         public bool Pending => Page is null && Problem is null;
     }
@@ -148,7 +148,7 @@ public partial class ExPivot
     {
         if (_report is not { } report || _reportSource is not { } source)
             return;
-        var version = report.SourceVersion;
+        var version = report.SourceVersion + "|" + PivotReportJson.Write(report.Settings);
         if (ReferenceEquals(source, _itemsSource) && version == _itemsVersion)
             return;
         if (ReferenceEquals(source, _itemsSource))
@@ -190,7 +190,7 @@ public partial class ExPivot
             return;
         var load = new ItemsLoad { Sequence = ++_itemsSequence };
         _itemLoads[field] = load;
-        _ = ListItemsAsync(source, new PivotItemsQuery(field, report.SourceVersion, max: ItemListCap),
+        _ = ListItemsAsync(source, new PivotReportItemsQuery(report.Version, field, Max: ItemListCap),
             page =>
             {
                 load.Page = page;
@@ -233,11 +233,11 @@ public partial class ExPivot
         }
     }
 
-    private async Task ListItemsAsync(PivotReportSource source, PivotItemsQuery query, Action<PivotItemPage> listed, Action<SourceProblem> failed)
+    private async Task ListItemsAsync(PivotReportSource source, PivotReportItemsQuery query, Action<PivotReportItemsResult> listed, Action<SourceProblem> failed)
     {
         try
         {
-            PivotItemPage page;
+            PivotReportItemsResult page;
             try
             {
                 page = await source.ItemsAsync(query);
@@ -248,8 +248,10 @@ public partial class ExPivot
                 Repaint();
                 return;
             }
-            if (page.IsRefused)
-                failed(new SourceProblem(page.Refusal, null));
+            if (page.Refusal is { } refusal)
+                failed(new SourceProblem(refusal.SourceRefusal ?? (refusal.Kind == PivotReportRefusalKind.ReportVersionNotHeld
+                    ? new(PivotSourceRefusalKind.SourceVersionNotHeld, refusal.Message) : null),
+                    refusal.Kind == PivotReportRefusalKind.ReportVersionNotHeld ? null : new InvalidOperationException(refusal.Message)));
             else
                 listed(page);
             Repaint();
@@ -792,7 +794,7 @@ public partial class ExPivot
                     unavailable = ProblemText(searchProblem);
                 else if (open.SearchPage is { } found)
                 {
-                    matches = PivotEngine.ItemsOf(found, layout, field, _options);
+                    matches = found.Items;
                     matchCount = found.Total;
                 }
                 else
@@ -802,7 +804,7 @@ public partial class ExPivot
             }
             else
             {
-                var every = PivotEngine.ItemsOf(page, layout, field, _options);
+                var every = page.Items;
                 var compare = _culture.CompareInfo;
                 matches = search.Length == 0
                     ? every
@@ -815,7 +817,7 @@ public partial class ExPivot
         bool? all = ticked == listed.Length ? true : ticked == 0 ? false : null;
         // The Items in view, an earlier version's while the report's are on their way: Hidden Items
         // are keys, so OK applies against them safely (ADR-0066 refined).
-        var held = items.Page?.Items ?? [];
+        IReadOnlyList<PivotItemKey> held = items.Page?.Items.Select(item => item.Key).ToArray() ?? [];
         var canApply = !loading && unavailable is null
             && (!allHeld || held.Count == 0 || held.Any(key => !open.Hidden.Contains(key)));
         return new PivotItemFilterContext(
@@ -872,7 +874,7 @@ public partial class ExPivot
         {
             // Under the report's Source Version, whichever version listed the Items in view. An
             // answer to an older search is discarded, as an answer to a superseded question is.
-            _ = ListItemsAsync(source, new PivotItemsQuery(open.Field, report.SourceVersion, text, ItemListCap),
+            _ = ListItemsAsync(source, new PivotReportItemsQuery(report.Version, open.Field, text, ItemListCap),
                 found =>
                 {
                     if (open.SearchGeneration == generation)

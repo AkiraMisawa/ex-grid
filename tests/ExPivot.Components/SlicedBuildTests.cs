@@ -172,7 +172,7 @@ public class SlicedBuildTests : PivotTestContext
         Assert.True(released > 3, $"{released} yields");
         Assert.Equal(released, yields.Count);
         var report = cut.Instance.Report!;
-        Assert.Equal(1 + 3 + 3_000, report.Rows.Count);
+        Assert.Equal(1 + 3 + 3_000, report.Metadata.RowCount);
         Assert.False(cut.Instance.IsLoading);
         Assert.False(Grid(cut).Instance.IsLoading);
         Assert.Equal("−Apples | 1498500", RowTexts(cut)[0]);
@@ -200,7 +200,7 @@ public class SlicedBuildTests : PivotTestContext
         await TickFieldAsync(cut, "Online", true);
 
         Assert.True(building.IsCancelled);
-        Assert.Equal(3, source.Questions.Count);
+        Until(() => source.Questions.Count == 3, "the superseding question");
         Assert.Equal(["Product", "Region", "Online"], AreaEntries(cut, "Rows"));
         // The superseded build stopped at its yield, which the cancellation released.
         await ReleaseAllAsync(cut, yields, () =>
@@ -211,7 +211,7 @@ public class SlicedBuildTests : PivotTestContext
 
         var report = cut.Instance.Report!;
         Assert.Equal(["Product", "Region", "Online"], report.Metadata.Layout.Rows.Select(p => p.Field));
-        Assert.Equal(1 + 3 + 3_000 + 3_000, report.Rows.Count);
+        Assert.Equal(1 + 3 + 3_000 + 3_000, report.Metadata.RowCount);
         // Only the layout shown is raised; the superseded one never is.
         Assert.Single(told);
         Assert.Same(report.Metadata.Layout, told[0]);
@@ -285,7 +285,7 @@ public class SlicedBuildTests : PivotTestContext
         await RunMenuAsync(cut, "Sort Z to A");
         Assert.True(cut.Instance.IsLoading);
         await ReleaseAllAsync(cut, yields);
-        Assert.Equal("R2999 | 2999", RowTexts(cut)[0]);
+        cut.WaitForAssertion(() => Assert.Equal("R2999 | 2999", RowTexts(cut)[0]));
         Assert.Equal(2, told.Count);
     }
 
@@ -348,13 +348,15 @@ public class SlicedBuildTests : PivotTestContext
         var report = cut.Instance.Report!;
         Assert.Equal(["Product", "Region"], report.Metadata.Layout.Rows.Select(p => p.Field));
         Assert.Equal("1", report.Rows[1].ValueAt(0)!.Text);
-        Assert.Equal("3000", report.Rows[^1].ValueAt(0)!.Text);
+        Assert.Equal("1000", report.Rows[0].ValueAt(0)!.Text);
+        Assert.EndsWith("Grand Total\t3000\r\n", await CopyAllAsync(cut, yields));
 
         // The batch was gathered, not lost, and asked for once the report was shown: quietly, as
         // newer data is, and shown whole once its report is complete.
         await cut.InvokeAsync(() => Clock.Advance(PivotComponent.DefaultRedrawInterval));
-        await ReleaseAllAsync(cut, yields, done: () => cut.Instance.Report!.Rows[^1].ValueAt(0)!.Text == "6000");
+        await ReleaseAllAsync(cut, yields, done: () => cut.Instance.Report!.Rows[0].ValueAt(0)!.Text == "2000");
         Assert.Equal("2", cut.Instance.Report!.Rows[1].ValueAt(0)!.Text);
+        Assert.EndsWith("Grand Total\t6000\r\n", await CopyAllAsync(cut, yields));
         Assert.Equal(["Product", "Region"], cut.Instance.Report.Metadata.Layout.Rows.Select(p => p.Field));
     }
 
@@ -373,10 +375,27 @@ public class SlicedBuildTests : PivotTestContext
 
         var report = cut.Instance.Report!;
         Assert.Equal(["Product", "Region"], report.Metadata.Layout.Rows.Select(p => p.Field));
-        Assert.Equal(PivotWords.Japanese(PivotWords.GrandTotal), report.Rows[^1].Labels[0].Text);
+        Assert.Equal(PivotWords.Japanese(PivotWords.GrandTotal), report.Metadata.Settings.Words[PivotWords.GrandTotal]);
+        Assert.EndsWith(PivotWords.Japanese(PivotWords.GrandTotal) + "\t4498500\r\n", await CopyAllAsync(cut, yields));
         Assert.Equal(PivotWords.Japanese(PivotWords.RowLabels), HeaderTexts(cut)[0]);
     }
 
     /// <summary>A keyed sale, for Change Batches.</summary>
     public sealed record Trade(long Id, string Region, string Product, decimal Amount);
+
+    // The current component holds a Window. Copy reads the complete selected report at that
+    // version, so a grand total outside the Window remains part of these publication checks.
+    private static async Task<string> CopyAllAsync(IRenderedComponent<PivotComponent> cut, HeldYields yields)
+    {
+        var grid = Grid(cut);
+        var selecting = cut.InvokeAsync(() => grid.Instance.OnKeyAsync("a", true, false, false, false, false));
+        await ReleaseAllAsync(cut, yields, done: () => selecting.IsCompleted);
+        await selecting;
+        var copying = cut.InvokeAsync(() => grid.Instance.BuildCopyPayloadAsync());
+        await ReleaseAllAsync(cut, yields, done: () => copying.IsCompleted);
+        var payload = await copying;
+        Assert.NotNull(payload);
+        Assert.Equal("data", payload.Kind);
+        return payload.Text!;
+    }
 }

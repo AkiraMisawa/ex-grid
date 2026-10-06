@@ -7,7 +7,7 @@
     <span>Snapshot version @_version</span>
 </p>
 
-<ExPivot Source="_source" @bind-Layout="_layout" ViewportHeight="300" />
+<ExPivot DataSource="_source" @bind-Layout="_layout" ViewportHeight="300" />
 
 @code {
     private readonly Sale[] _sales = Sales.Sample();

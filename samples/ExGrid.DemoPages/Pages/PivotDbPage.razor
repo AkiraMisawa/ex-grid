@@ -1,5 +1,5 @@
 @page "/pivot-db"
-@implements IDisposable
+@implements IAsyncDisposable
 @inject DemoApiClient Api
 @using System.Diagnostics
 @using System.Globalization
@@ -46,13 +46,12 @@
         gesture after it is local.
     </li>
     <li>
-        <strong>Database → server Pivot Source.</strong> <code>PivotSource.Fetch</code> sends each
-        question ExPivot asks to the server as a <code>PivotJson</code> document
-        (<code>POST /api/pivot/aggregate</code>, <code>/items</code> and <code>/details</code>), and
-        the server answers it with SQL written by hand: a <code>GROUP BY</code> for the Leaf
-        Aggregates, the Hidden Items as <code>WHERE</code>, and the records behind a cell as
-        <code>LIMIT</code>/<code>OFFSET</code> pages of at most 10,000 (ADR-0066). Only the answers
-        cross the wire.
+        <strong>Database → server report.</strong> <code>PivotReportSource.Fetch</code> requests
+        display Windows and versioned Items, Copy, Selection Summary and Details. The server
+        performs SQL aggregation and report computation; only the requested rows reach the page
+        (ADR-0151). SQL declares full refresh because it announces versions rather than individual
+        aggregate changes. The demo retains at most eight reports and expires them after five idle
+        minutes; an expired Window baseline is recovered automatically (ADR-0152).
     </li>
 </ul>
 <p>
@@ -112,7 +111,7 @@
     private string _snapshotStatus = "Reading the trades from the demo API server…";
     private bool _reading;
 
-    private FetchingPivotSource? _serverSource;
+    private FetchingPivotReportSource? _serverSource;
     private PivotLayout _serverLayout = FirstLayout();
     private string _serverStatus = "Asking the demo API server for its fields…";
     // How many questions of each kind the server has been asked, for the status line.
@@ -220,7 +219,7 @@
     #region The code: pivots
     // The same component over either source. A layout is View State, which the page holds and
     // binds; the Chromes are the page's ?chrome= switch.
-    private RenderFragment SnapshotPivot => @<ExPivot Source="_snapshotSource" @bind-Layout="_snapshotLayout"
+    private RenderFragment SnapshotPivot => @<ExPivot DataSource="_snapshotSource" @bind-Layout="_snapshotLayout"
                                                        PivotChrome="_pivotChrome" Chrome="_gridChrome"
                                                        Culture="Culture" ViewportHeight="360" />;
 
@@ -255,7 +254,7 @@
     private void DescribeServer()
     {
         string Count(string path) => _asked.GetValueOrDefault("api/pivot/" + path).ToString("N0", Culture);
-        _serverStatus = $"Asked of the server so far: {Count("aggregate")} aggregate, {Count("items")} items "
+        _serverStatus = $"Asked of the server so far: {Count("window")} Window, {Count("items")} items "
             + $"and {Count("details")} details questions, each one POST.";
     }
 
@@ -267,5 +266,9 @@
         _serverLayout = FirstLayout();
     }
 
-    public void Dispose() => _leaving.Cancel();
+    public async ValueTask DisposeAsync()
+    {
+        _leaving.Cancel();
+        if (_serverSource is not null) await _serverSource.DisposeAsync();
+    }
 }
