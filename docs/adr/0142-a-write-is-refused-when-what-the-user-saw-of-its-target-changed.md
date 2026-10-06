@@ -1,3 +1,18 @@
+# User writes prevail; value conflicts belong to the Consumer
+
+**Revised with the user, 2026-10-07.** [ADR-0154](./0154-user-writes-prevail-and-consumers-own-value-conflicts.md)
+replaces the automatic displayed-text conflict checks below. Editing, paste, Delete and fills
+proceed despite intervening value changes, subject to existing target/operation rules and
+Consumer validation. Actions resolve their original target and are delivered once; the
+Consumer decides business conflicts. Historical cell-text snapshots and own-write exemptions
+are no longer required. Gathered publication and target identity/order protections remain.
+
+The previous rationale is retained below as a **superseded decision**, not current requirements.
+It changed because the user chose explicit write intent over the grid's general protection of
+unseen upstream values; ADR-0154 states the full boundary and verification criteria.
+
+## Superseded decision of 2026-10-05 and 2026-10-06
+
 # A write is refused when what the user saw of its target changed before it lands
 
 *(Decided with the user, 2026-10-05, in the grilling of ExGrid's live data — Q5 with its parts a and

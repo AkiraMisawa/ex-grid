@@ -496,8 +496,8 @@ _Avoid_: cancel (that is Escape), rollback, revert
 The grid's own "no", raised on **the operation** — its target, its shape, its size — and never on
 the value being written: a copy cap, a misaligned selection, a paste shape, a target covering a
 column that is not Editable, a paste past its size ceiling, a clipboard the browser would not let
-it write, a target whose painted text changed between what the user saw and the write landing
-([ADR-0142](./docs/adr/0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)). Because a Refusal never looked at what the user typed, it stops only
+it write, or an operation whose original target can no longer be identified
+([ADR-0154](./docs/adr/0154-user-writes-prevail-and-consumers-own-value-conflicts.md)). Because a Refusal never looked at what the user typed, it stops only
 the operation it named: a fill refused for covering a non-editable column leaves the editor open
 and the single-cell Enter still available. Contrast an **Edit Verdict**'s Reject, which judges the
 value ([ADR-0005](./docs/adr/0005-copy-refuses-rather-than-truncates.md),

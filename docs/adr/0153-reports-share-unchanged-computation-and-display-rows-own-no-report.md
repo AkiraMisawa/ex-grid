@@ -45,6 +45,13 @@ shared. The engine's private working indexes may be mutable; published versions 
 
 ## Historical display and Change Highlight remain correct
 
+**Amended 2026-10-07:** [ADR-0154](./0154-user-writes-prevail-and-consumers-own-value-conflicts.md)
+removes the displayed-text conflict policy. The historical-text paragraphs below describe the
+previous requirement: their instruction not to shorten history no longer applies to value
+history. Remove that history; retain only target/gesture evidence still needed under ADR-0154.
+Detached ownership, immutable versions and the Change Highlight rules below remain current.
+
+
 The grid's evidence records the text a historical paint compared, with detached identity and
 position evidence where possible. A delayed gesture never recomputes its old value through a
 mutable current report. Preserve ADR-0142's comparison, including the accessible number behind

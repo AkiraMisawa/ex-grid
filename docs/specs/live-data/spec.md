@@ -1,6 +1,6 @@
 # Live data in ExGrid and ExPivot
 
-Status: implemented and verified locally — the first version from `claude/exgrid-live-data`
+Status: continuation in progress under ADR-0154; previous report implementation verified locally — the first version from `claude/exgrid-live-data`
 merged into `main` in PR #64. Tickets 01 to 03 are complete on `claude/live-data-next`;
 feature push and PR await user confirmation, and full layer 3 remains CI's.
 
@@ -124,3 +124,13 @@ promise; ADR-0151 records the shared local/server report engine and server Windo
 ADR-0152 records API freedom, remote policies and version recovery; ADR-0153 completes retained
 computation and detached display rows. ADR-0154 is the next number. The old
 branch's unused ADR-0143 to ADR-0149 stay unused; its reservation does not transfer with the work.
+
+## Accepted policy revision, 2026-10-07
+
+The user accepted both recommendations: explicit edits/range writes proceed despite intervening
+value changes, and Actions delegate business conflicts to the Consumer. ADR-0154 revises ADR-0142
+and the historical-text parts of ADR-0151/0153. Remove displayed-text history and own-write
+exemptions while preserving target/order validation, gathered publication, Consumer verdicts and
+exactly-once Action delivery. Copy/Details Report Versions and Change Highlight are separate.
+Repeat the relevant component/browser cases and memory measurements before requesting feature
+push/PR approval. Earlier completion and verification records describe the preceding policy.

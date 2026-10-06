@@ -62,6 +62,13 @@ not a finished-product performance claim or a timing gate.
 
 ## Memory correctness remains a separate obligation
 
+**Amended 2026-10-07:** ADR-0154 deliberately changes the write-conflict policy. The requirement
+below to preserve historical seen-text judgement applied to the original memory repair; it
+is superseded for the continuation that removes value history. Detached report ownership and
+correct target/gesture evidence remain required, and the earlier measurements remain evidence
+of the original defect rather than proof about the revised implementation.
+
+
 The [controlled memory diagnosis](../../verification/2026-10-06-macos-pivot-memory/README.md)
 found that ExGrid's retained paints keep `PivotReportRow` objects, each reaching a whole Report
 generation. At 401,001 Report Rows, full-GC live memory grew by about 151.5 MiB per generation
