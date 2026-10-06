@@ -18,11 +18,22 @@ public partial class ExGrid<TRow>
     // the core heard last, while the core is answering it.
     private Task _pressAnswer = Task.CompletedTask;
 
-    private Task OnMouseDown(MouseEventArgs e) => _pressAnswer = AnswerPressAsync(AsTaken(e, "mousedown"));
+    private Task OnMouseDown(MouseEventArgs e)
+    {
+        var taken = AsTaken(e, "mousedown");
+        // A double click opens the editor on the render its second press was taken against
+        // (ADR-0142, D2): the double click itself is Blazor's, and follows that press.
+        _lastPressPaint = PaintOf(taken);
+        return _pressAnswer = AnswerPressAsync(taken);
+    }
 
     private Task OnMouseUp(MouseEventArgs e) => _pressAnswer = AnswerReleaseAsync(AsTaken(e, "mouseup"));
 
-    private Task OnFormulaBarPressedAsync() => _pressAnswer = OnFormulaBarFocusAsync();
+    // The render the last press on the rows was taken against (ADR-0142, D2), for the double click
+    // that follows it; the newest for a press nobody told of.
+    private int _lastPressPaint = PaintNotTold;
+
+    private Task OnFormulaBarPressedAsync() => _pressAnswer = OnFormulaBarFocusAsync(TakeBarPressTold());
 
     /// <summary>
     /// A press into the Formula Bar, answered in its turn among the held keys (ADR-0051,
@@ -44,8 +55,9 @@ public partial class ExGrid<TRow>
     {
         if (_disposed)
             return Task.CompletedTask;
+        // Answered again as the press: on the render that press was taken against (ADR-0142, D2).
         if (barHoldsFocus && _editMode == EditMode.None)
-            _pressAnswer = FromChromeAsync(OnFormulaBarFocusAsync);
+            _pressAnswer = FromChromeAsync(() => OnFormulaBarFocusAsync(_barPressPaint));
         return PressAnsweredAsync();
     }
 
