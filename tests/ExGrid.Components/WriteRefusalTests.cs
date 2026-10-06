@@ -44,6 +44,9 @@ public class WriteRefusalTests : GridTestContext
     {
         public List<GridEditIntent<TestRow>> Edits { get; } = [];
         public List<GridCommitRefusal> CommitRefusals { get; } = [];
+
+        /// <summary>What the Consumer does with an Edit Intent beyond hearing it, if anything.</summary>
+        public Action<GridEditIntent<TestRow>>? OnEdit { get; set; }
         public List<GridPasteIntent> Pastes { get; } = [];
         public List<PasteRefusalReason> PasteRefusals { get; } = [];
         public List<GridActionEventArgs<TestRow>> Actions { get; } = [];
@@ -66,7 +69,11 @@ public class WriteRefusalTests : GridTestContext
               .Add(g => g.RowHeight, 20d)
               .Add(g => g.ViewportHeight, 120)
               .Add(g => g.ViewportWidth, 350)
-              .Add(g => g.OnEdit, (GridEditIntent<TestRow> i) => heard.Edits.Add(i))
+              .Add(g => g.OnEdit, (GridEditIntent<TestRow> i) =>
+              {
+                  heard.Edits.Add(i);
+                  heard.OnEdit?.Invoke(i);
+              })
               .Add(g => g.OnCommitRefused, (GridCommitRefusal r) => heard.CommitRefusals.Add(r))
               .Add(g => g.OnPaste, (GridPasteIntent i) =>
               {
@@ -1148,7 +1155,7 @@ public class WriteRefusalTests : GridTestContext
     }
 
     private IRenderedComponent<ExGrid<TestRow>> RenderSourceGrid(
-        GatheringSource source, Heard heard, GridColumn<TestRow>[]? columns = null,
+        IGridSource<TestRow> source, Heard heard, GridColumn<TestRow>[]? columns = null,
         Action<ComponentParameterCollectionBuilder<ExGrid<TestRow>>>? extra = null)
         => Render<ExGrid<TestRow>>(ps =>
         {
@@ -1157,7 +1164,11 @@ public class WriteRefusalTests : GridTestContext
               .Add(g => g.RowHeight, 20d)
               .Add(g => g.ViewportHeight, 120)
               .Add(g => g.ViewportWidth, 350)
-              .Add(g => g.OnEdit, (GridEditIntent<TestRow> i) => heard.Edits.Add(i))
+              .Add(g => g.OnEdit, (GridEditIntent<TestRow> i) =>
+              {
+                  heard.Edits.Add(i);
+                  heard.OnEdit?.Invoke(i);
+              })
               .Add(g => g.OnCommitRefused, (GridCommitRefusal r) => heard.CommitRefusals.Add(r))
               .Add(g => g.OnPaste, (GridPasteIntent i) =>
               {
@@ -1216,6 +1227,80 @@ public class WriteRefusalTests : GridTestContext
         // Judged again against the text the refusal showed: it lands on the newest row.
         await KeyAsync(cut, "Enter");
         Assert.Equal("Gathered upstream", Assert.Single(heard.Edits).Row.Book);
+    }
+
+    // The bundled source behind LV-16, end to end: GridSource.From keyed by Book, gathering on the
+    // test's clock, and a Consumer whose OnEdit writes the commit back through ReplaceRow, as the
+    // reference Consumer does. Before D5 the grid's check passed on the painted row and ReplaceRow
+    // then threw, because a gathered change had replaced the row the intent carried.
+    private static (InMemoryGridSource<TestRow> Source, List<Exception> Thrown) WritingBack(TestRow[] rows, Heard heard, Microsoft.Extensions.Time.Testing.FakeTimeProvider clock)
+    {
+        var source = GridSource.From(rows, r => r.Book, clock);
+        var thrown = new List<Exception>();
+        heard.OnEdit = intent =>
+        {
+            try
+            {
+                var row = intent.Row;
+                source.ReplaceRow(row, new TestRow
+                {
+                    Book = row.Book, Amount = decimal.Parse(intent.Value, CultureInfo.InvariantCulture), AsOf = row.AsOf, Active = row.Active,
+                });
+            }
+            catch (Exception error)
+            {
+                thrown.Add(error);
+            }
+        };
+        return (source, thrown);
+    }
+
+    [Fact] // ADR-0141/0142 D5 / LV-16: with GridSource.From gathering, a commit lands on the newest row, and the gathered change to another field survives the write
+    public async Task A_commit_inside_GridSource_Froms_gather_interval_lands_and_keeps_the_gathered_change()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var (source, thrown) = WritingBack(rows, heard, Clock);
+        var cut = RenderSourceGrid(source, heard);
+        source.Apply(new(changed: [Changed(rows, 5, amount: 55m)[5]]));
+        await ClickAsync(cut, 150, 10);
+        await KeyAsync(cut, "5");
+        var later = new DateTime(2030, 1, 1);
+        source.Apply(new(changed: [new TestRow { Book = rows[0].Book, Amount = rows[0].Amount, AsOf = later, Active = rows[0].Active }]));
+        Assert.NotEqual(later, source.Window[0].AsOf);
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(thrown);
+        Assert.Empty(heard.CommitRefusals);
+        Assert.Equal(later, Assert.Single(heard.Edits).Row.AsOf);
+        Assert.Equal(5m, source.Window[0].Amount);
+        Assert.Equal(later, source.Window[0].AsOf);
+    }
+
+    [Fact] // ADR-0141/0142 D5 / LV-16, LV-11: with GridSource.From gathering, a gathered change to the edited cell refuses the commit with its new text; the second Enter writes
+    public async Task A_gathered_change_to_the_edited_cell_in_GridSource_From_refuses_the_commit()
+    {
+        var rows = TestRows.Many(50);
+        var heard = new Heard();
+        var (source, thrown) = WritingBack(rows, heard, Clock);
+        var cut = RenderSourceGrid(source, heard);
+        source.Apply(new(changed: [Changed(rows, 5, amount: 55m)[5]]));
+        await ClickAsync(cut, 150, 10);
+        await KeyAsync(cut, "5");
+        source.Apply(new(changed: [Changed(rows, 0, amount: 777m)[0]]));
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(heard.Edits);
+        Assert.Equal("777", Assert.Single(heard.CommitRefusals).PaintedText);
+        Assert.Equal(777m, source.Window[0].Amount);
+
+        await KeyAsync(cut, "Enter");
+
+        Assert.Empty(thrown);
+        Assert.Single(heard.Edits);
+        Assert.Equal(5m, source.Window[0].Amount);
     }
 
     [Fact] // ADR-0142 D5 / LV-16, ADR-0011: a gathered change that moves the order discards the edit rather than committing it onto another row
