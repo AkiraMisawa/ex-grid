@@ -82,7 +82,14 @@ changed:
     check. Over a whole report that cost 149 ms at 400,000 rows, against 10.4 ms for the instances,
     and 3.6 ms against 0.2 ms at 10,000 rows, on every redraw.
   - The user did not accept the slowdown. A report row's key is now made once, when the engine
-    builds the row, with its hash computed then, so a check reads it and hashes nothing.
+    builds the row. Each Item's hash is computed once, each axis node combines its parent's with its
+    Item's when it is made, and a row's key takes its node's, so a check reads keys and hashes
+    nothing.
+  - Measured on 2026-10-06 (Release, one Mac, the least of repeated runs; never a gate). At 401,001
+    rows the check took 8.3 ms by the engine's keys against 9.5 ms by instances, and 82.6 ms by the
+    first build's. Making the keys added 13.3 ms to building the report (337 ms); at 101,001 rows,
+    1.0 ms to 105 ms. A redraw still pays that one allocation per row, a few per cent at the largest
+    reports, and in return no longer builds every painted row again.
 
 ## Consequences
 

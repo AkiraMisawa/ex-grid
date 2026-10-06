@@ -58,10 +58,10 @@ public class ReportRowKeyTests : PivotTestContext
     }
 
     /// <summary>Every painted report row component, by the key of the row it paints.</summary>
-    private static Dictionary<RowKey, ExGridRow<PivotReportRow>> PaintedByKey(IRenderedComponent<PivotComponent> cut)
+    private static Dictionary<PivotRowKey, ExGridRow<PivotReportRow>> PaintedByKey(IRenderedComponent<PivotComponent> cut)
         => cut.FindComponents<ExGridRow<PivotReportRow>>()
             .Select(row => row.Instance)
-            .ToDictionary(row => RowKey.Of(row.Row.Report, row.Row));
+            .ToDictionary(row => row.Row.Key);
 
     // Not Assert.Same: a failure would print the components, and a row component's CellTextMetrics
     // cannot be printed (its Bold is another CellTextMetrics, so the record's ToString never ends).

@@ -141,7 +141,7 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
 
 ## Settled while building it
 
-*(2026-10-06, decided with the user — D5, D7 to D9 — when the first build was put together.)*
+*(2026-10-06, decided with the user — D5 to D9 — when the first build was put together.)*
 
 - **A source puts out what it has gathered when the grid asks, before a write is judged** (D5;
   [ADR-0142](./0142-a-write-is-refused-when-what-the-user-saw-of-its-target-changed.md)).
@@ -150,6 +150,16 @@ These are ADR-0067's rules, so that an ExGrid and an ExPivot over one feed move 
   - `GridSource.Fetch` has nothing to put out: what it waits for is an answer from the server. A
     write under it is judged against what was painted, and whether the server's data moved under
     the write is the Consumer's server's to judge.
+- **Under `GridSource.Fetch`, the Consumer may name the keys it knows were added** (D6).
+  - The source holds only the Window, so a key new to the Window may be a record just added or one
+    that slid into the Window from outside it. Only the server knows which.
+  - When the Consumer names the added keys as it says the data moved on, a named key is marked
+    whole, and a key that was not named is not: it slid in.
+  - When it names none, the source guesses. A new key is marked whole only where it cannot have slid
+    in: between two rows painted before, or at an end of the result both Windows reached. Under a
+    server's sort, a row that a change of value moved into the middle is then marked whole too.
+  - ag-grid does not guess either: under its Server-Side Row Model, the application states which
+    rows were added, updated and removed (`applyServerSideTransaction`).
 - **A whole new list sets the order** (D7). Rows are paired by key as above, and the source's own
   order follows the list, as ag-grid's does under `getRowId`. The Row Sequence Version moves when the
   sequence moved. A reload whose rows come back in a new order is shown in that order.

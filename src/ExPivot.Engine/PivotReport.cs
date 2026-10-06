@@ -251,10 +251,16 @@ public sealed class PivotReportRow
         ValueField = valueField;
         CarriesValues = carriesValues;
         Labels = labels;
+        Key = new PivotRowKey(role, valueField, node);
     }
 
     /// <summary>What the row stands for.</summary>
     public PivotRowRole Role { get; }
+
+    /// <summary>What the row stands for, as a value equal across the reports of one layout
+    /// (ADR-0140): its role, its Value Field and its Items. Made with the row; reading it costs
+    /// nothing.</summary>
+    public PivotRowKey Key { get; }
 
     /// <summary>The Value Field the row's cells show when the values stand in rows, or −1.</summary>
     public int ValueField { get; }
