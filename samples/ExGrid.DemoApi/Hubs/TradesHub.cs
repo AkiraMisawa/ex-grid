@@ -9,7 +9,7 @@ namespace ExGrid.DemoApi;
 /// pages:
 /// <code>
 /// connection.On&lt;string&gt;("VersionChanged", version => …);
-/// connection.On&lt;string, string[]&gt;("TradesChanged", (version, tradeIds) => …);
+/// connection.On&lt;string, string[], string[]&gt;("TradesChanged", (version, tradeIds, bookedIds) => …);
 /// </code>
 /// SignalR is the demo's dependency, not a library's (ADR-0069, Q63): a page passes on what it
 /// heard, and neither ExGrid nor ExPivot learns how the notice arrived.
@@ -23,12 +23,14 @@ public interface ITradeNotices
     Task VersionChanged(string version);
 
     /// <summary>
-    /// <c>TradesChanged(version, tradeIds)</c>: moving on to this Source Version changed, added or
-    /// removed these trades, named by their Record Keys in ordinal order. A grid reads them again
-    /// — a key no longer found is a trade removed — and marks the cells whose values changed
-    /// (ADR-0068).
+    /// <c>TradesChanged(version, tradeIds, bookedIds)</c>: moving on to this Source Version changed,
+    /// added or removed these trades, named by their Record Keys in ordinal order, and of those added
+    /// the ones in <c>bookedIds</c> — booked, or put back by a reset — in ordinal order. A grid reads
+    /// them again — a key no longer found is a trade removed — and marks the cells whose values
+    /// changed (ADR-0068); told which keys are new, it marks a booked trade whole wherever it lands,
+    /// and no trade that only moved into view (ADR-0141, D6).
     /// </summary>
-    Task TradesChanged(string version, string[] tradeIds);
+    Task TradesChanged(string version, string[] tradeIds, string[] bookedIds);
 }
 
 /// <summary>

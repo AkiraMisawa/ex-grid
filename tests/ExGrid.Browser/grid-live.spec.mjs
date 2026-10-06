@@ -311,8 +311,9 @@ test('PV-20/ADR-0069: the Window is read from the server as the grid scrolls, an
 test('ADR-0069/0068/0141: the code the page shows is the code it runs: the hub\'s notice told to the source, and CellChangedAt answered by it', async ({ page }) => {
     await open(page, 'builtin');
     const code = await expectCodeIsSource(page);
-    expect(code['GridLivePage.razor#notices']).toContain('hub.On<string, string[]>("TradesChanged"');
-    expect(code['GridLivePage.razor#notices']).toContain('_source?.NotifyChanged()');
+    expect(code['GridLivePage.razor#notices']).toContain('hub.On<string, string[], string[]>("TradesChanged"');
+    // The trades booked are named, so the source marks a new row whole wherever it lands (ADR-0141, D6).
+    expect(code['GridLivePage.razor#notices']).toContain('_source?.NotifyChanged(bookedIds)');
     expect(code['GridLivePage.razor#grid']).toContain('CellChangedAt="_cellChangedAt" ChangeHighlightDuration="Highlight"');
     expect(code['GridLivePage.razor#window']).toContain('api/trades?start=');
     expect(code['GridLivePage.razor#window']).toContain('GridSource.Fetch<LiveTrade>(FetchAsync, readAheadRows: 40, rowKey: trade => trade.TradeId)');

@@ -33,9 +33,11 @@ internal sealed record GenerationProgress(long Done, long Of)
     public double Percent => Of == 0 ? 100 : Math.Floor(1000.0 * Done / Of) / 10;
 }
 
-/// <summary>A committed change: the Source Version it moved the data on to, and the Record Keys
-/// of the trades it changed, added or removed, in ordinal order.</summary>
-internal sealed record TradeChange(string Version, string[] TradeIds);
+/// <summary>A committed change: the Source Version it moved the data on to, the Record Keys of the
+/// trades it changed, added or removed, in ordinal order, and of those, the trades it added — booked,
+/// or put back by a reset — in ordinal order. A grid told which keys are new marks a new row whole
+/// wherever it lands, and no row that only moved into view (ADR-0141, D6).</summary>
+internal sealed record TradeChange(string Version, string[] TradeIds, string[] BookedIds);
 
 /// <summary>A page of trades in <c>TradeId</c> order, read at one Source Version, with how many
 /// trades that version holds, and the order token of that version (ADR-0141): it changes whenever
@@ -308,21 +310,15 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             // Attached outside the transaction, which ATTACH cannot run inside.
             TradeDatabase.Execute(writer, null, "ATTACH DATABASE $path AS generated", ("$path", _generatedPath!));
             string[] ids;
+            string[] putBack;
             long trades;
             try
             {
                 using var transaction = writer.BeginTransaction();
                 TradeDatabase.Execute(writer, transaction, ResetSql);
-                using (var changed = writer.CreateCommand())
-                {
-                    changed.Transaction = transaction;
-                    changed.CommandText = "SELECT TradeId FROM temp.reset ORDER BY TradeId";
-                    using var reader = changed.ExecuteReader();
-                    var list = new List<string>();
-                    while (reader.Read())
-                        list.Add(reader.GetString(0));
-                    ids = [.. list];
-                }
+                ids = ReadIds(writer, transaction, "SELECT TradeId FROM temp.reset ORDER BY TradeId");
+                // The trades the reset put back that the data did not hold: added, as a booking is.
+                putBack = ReadIds(writer, transaction, "SELECT TradeId FROM temp.reset_added ORDER BY TradeId");
                 using (var count = writer.CreateCommand())
                 {
                     count.Transaction = transaction;
@@ -345,7 +341,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             }
 
             _latest = new Latest(counter, trades, NextNumber(writer));
-            var change = new TradeChange(FormatVersion(counter), ids);
+            var change = new TradeChange(FormatVersion(counter), ids, putBack);
             _changes.Writer.TryWrite(change);
             logger.LogInformation("Reset to the generated trades at version {Version}: {Count} trades put back.", change.Version, ids.Length);
             return change;
@@ -389,7 +385,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             transaction.Commit();
 
             _latest = new Latest(counter, trades, latest.NextNumber);
-            var change = new TradeChange(FormatVersion(counter), ids);
+            var change = new TradeChange(FormatVersion(counter), ids, []);
             _changes.Writer.TryWrite(change);
             logger.LogInformation("Cancelled {TradeId} at version {Version}.", tradeId, change.Version);
             return change;
@@ -400,12 +396,26 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
         }
     }
 
+    private static string[] ReadIds(SqliteConnection writer, SqliteTransaction transaction, string sql)
+    {
+        using var command = writer.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = sql;
+        using var reader = command.ExecuteReader();
+        var list = new List<string>();
+        while (reader.Read())
+            list.Add(reader.GetString(0));
+        return [.. list];
+    }
+
     // The trades that differ from the generated ones — a row changed, or present on one side
-    // only — each put back as generated. Compared column by column with IS NOT, which tells a
-    // NULL apart and compares text exactly.
+    // only — each put back as generated; and apart, the ones the data did not hold, which the reset
+    // adds. Compared column by column with IS NOT, which tells a NULL apart and compares text exactly.
     private const string ResetSql = $"""
         CREATE TEMP TABLE IF NOT EXISTS reset (TradeId TEXT NOT NULL PRIMARY KEY) WITHOUT ROWID;
+        CREATE TEMP TABLE IF NOT EXISTS reset_added (TradeId TEXT NOT NULL PRIMARY KEY) WITHOUT ROWID;
         DELETE FROM temp.reset;
+        DELETE FROM temp.reset_added;
         INSERT INTO temp.reset (TradeId)
             SELECT t.TradeId FROM main.trades AS t LEFT JOIN generated.trades AS g ON g.TradeId = t.TradeId
             WHERE g.TradeId IS NULL
@@ -413,9 +423,10 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                OR t.Product IS NOT g.Product OR t.Currency IS NOT g.Currency OR t.TradeDate IS NOT g.TradeDate
                OR t.Notional IS NOT g.Notional OR t.Pnl IS NOT g.Pnl OR t.Quantity IS NOT g.Quantity
                OR t.Confirmed IS NOT g.Confirmed;
-        INSERT INTO temp.reset (TradeId)
+        INSERT INTO temp.reset_added (TradeId)
             SELECT g.TradeId FROM generated.trades AS g
             WHERE NOT EXISTS (SELECT 1 FROM main.trades AS t WHERE t.TradeId = g.TradeId);
+        INSERT INTO temp.reset (TradeId) SELECT TradeId FROM temp.reset_added;
         DELETE FROM main.trades WHERE TradeId IN (SELECT TradeId FROM temp.reset);
         INSERT INTO main.trades ({TradeDatabase.TradeColumns})
             SELECT {TradeDatabase.TradeColumns} FROM generated.trades WHERE TradeId IN (SELECT TradeId FROM temp.reset);
@@ -475,6 +486,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             }
 
             var booking = false;
+            string[] bookedIds = [];
             if (random.Next(BookingOneTickIn) == 0 && trades > 1
                 && Pick(ref random, next, touched, select) is { } cancelled)
             {
@@ -485,6 +497,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
                 TradeDatabase.SetValues(values, booked);
                 insert.ExecuteNonQuery();
                 touched.Add(booked.TradeId);
+                bookedIds = [booked.TradeId];
                 booking = true;
             }
 
@@ -499,7 +512,7 @@ internal sealed partial class TradeStore(DemoApiOptions options, ILogger<TradeSt
             transaction.Commit();
 
             _latest = new Latest(counter, trades, next);
-            var change = new TradeChange(FormatVersion(counter), ids);
+            var change = new TradeChange(FormatVersion(counter), ids, bookedIds);
             _changes.Writer.TryWrite(change);
             return change;
         }

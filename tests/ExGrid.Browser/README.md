@@ -718,7 +718,8 @@ nobody had asked for. What that means when writing a test:
   cell paints without it, a Pinned Column's row rule among them; the grid's live region is not
   touched; and forced colours restate the mark as a dashed outline (DC-66). The Window is read from
   the server as the grid scrolls, and leaving turns the live updates off (PV-20); and the code the
-  page shows is equal to its source.
+  page shows is equal to its source, the hub's notice passed on with the trades it booked named
+  (ADR-0141, D6).
 
   `pivot-db`, `pivot-live` and `grid-live` share the run's one API server: each test starts from
   `POST /api/reset`, reads the trade count and the Source Version from `/api/status`, and turns

@@ -25,10 +25,12 @@
     <code>GridSource.Fetch</code>, a page at a time (<code>GET /api/trades</code>) as it asks for
     rows (ADR-0025), each trade named by its <code>TradeId</code>, its Row Key (ADR-0140). The
     server's live updates change trades several times a second, and its SignalR hub says so: "trades
-    T10000123 and T10000456 changed". The page tells the source the data moved on
-    (<code>NotifyChanged</code>), and the source does the rest (ADR-0141): it reads its Window again,
-    at most four times a second, pairs the new trades with the painted ones by key, and answers the
-    grid's <code>CellChangedAt</code> for the cells whose text changed. The grid marks those cells for
+    T10000123 and T10000456 changed, and T10000456 was booked". The page tells the source the data
+    moved on, naming the trades booked (<code>NotifyChanged(bookedIds)</code>), and the source does the
+    rest (ADR-0141): it reads its Window again, at most four times a second, pairs the new trades
+    with the painted ones by key, and answers the grid's <code>CellChangedAt</code> for the cells
+    whose text changed, and for every cell of a booked trade; a trade that only moved into view as
+    another was cancelled is not marked. The grid marks those cells for
     <code>ChangeHighlightDuration</code> and takes the marks away itself: keyed by row and column,
     never by the element, so a mark stays on its trade as you scroll; one colour, without animating,
     and never announced (ADR-0068).
@@ -200,11 +202,13 @@ else
     private async Task ListenAsync(CancellationToken token)
     {
         var hub = _hub = new HubConnectionBuilder().WithUrl(Api.Hub).WithAutomaticReconnect().Build();
-        // "These trades changed": heard on a thread of SignalR's. The source gathers the notices and
-        // reads its Window again at most every 250 ms; it may be told on any thread (ADR-0141).
-        hub.On<string, string[]>("TradesChanged", (version, tradeIds) =>
+        // "These trades changed, and these of them were booked": heard on a thread of SignalR's. The
+        // source gathers the notices and reads its Window again at most every 250 ms; it may be told
+        // on any thread (ADR-0141). Told which trades are new, it marks a booked trade whole wherever
+        // it lands, and no trade that only moved into view as another was cancelled (D6).
+        hub.On<string, string[], string[]>("TradesChanged", (version, tradeIds, bookedIds) =>
         {
-            _source?.NotifyChanged();
+            _source?.NotifyChanged(bookedIds);
             return InvokeAsync(() => Heard(version, tradeIds));
         });
         // Not cancelled by the page's going: a connection cut off while it opens is an error in the
